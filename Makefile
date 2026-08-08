@@ -2,8 +2,8 @@ CXX := g++
 CXXFLAGS := -O2 $(shell root-config --cflags)
 LDFLAGS := $(shell root-config --libs)
 
-TARGET := atom_sim
-SRC := main.cpp
+TARGET := positronium
+SRC := positronium.cpp
 
 all: $(TARGET)
 

@@ -26,7 +26,7 @@ Wymagany jest CERN ROOT (z `root-config` dostępnym w `PATH`).
 
 ```bash
 make
-./atom_sim
+./positronium
 ```
 
 Wykres jest w jednostkach promienia Bohra `a₀`. Odczyt na dole zawiera czas w

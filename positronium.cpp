@@ -17,6 +17,7 @@
 #include <iostream>
 #include <random>
 #include <sstream>
+#include <stdexcept>
 #include <vector>
 
 // These functions are intentionally global: ROOT's TButton invokes its action
@@ -45,7 +46,7 @@ constexpr double c = 299792458.0;
 constexpr double mu0 = 4.0 * pi * 1.0e-7;
 constexpr double eCharge = 1.602176634e-19;
 constexpr double electronMass = 9.1093837139e-31;
-constexpr double protonMass = 1.67262192595e-27;
+constexpr double positronMass = electronMass;
 constexpr double bohrMagneton = 9.2740100657e-24;
 constexpr double nuclearMagneton = 5.0507837461e-27;
 constexpr double coulomb = 1.0 / (4.0 * pi * epsilon0);
@@ -73,20 +74,20 @@ Vec3 unit(const Vec3& v) { return v / v.norm(); }
 struct ElectromagneticField { Vec3 electric, magnetic; };
 
 struct State {
-    Vec3 electronPosition, protonPosition;
-    Vec3 electronVelocity, protonVelocity;
-    Vec3 electronAcceleration, protonAcceleration;
-    Vec3 electronDipole, protonDipole; // classical magnetic moments, in J/T
+    Vec3 electronPosition, positronPosition;
+    Vec3 electronVelocity, positronVelocity;
+    Vec3 electronAcceleration, positronAcceleration;
+    Vec3 electronDipole, positronDipole; // classical magnetic moments, in J/T
     double time = 0;
     double radiatedEnergy = 0;
 };
 
 struct Frame {
-    Vec3 electron, proton, electronDipole, protonDipole;
+    Vec3 electron, positron, electronDipole, positronDipole;
     double time, radius, radiatedEnergy, mechanicalEnergy;
 };
 
-double separation(const State& s) { return (s.electronPosition - s.protonPosition).norm(); }
+double separation(const State& s) { return (s.electronPosition - s.positronPosition).norm(); }
 
 double dot(const Vec3& a, const Vec3& b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
 
@@ -151,62 +152,70 @@ void precessDipole(Vec3& dipole, const Vec3& field, double gyromagneticRatio, do
     dipole = rotated * (dipole.norm() / rotated.norm());
 }
 
+Vec3 coulombAcceleration(const Vec3& targetPosition, const Vec3& sourcePosition, double coefficient) {
+    const Vec3 displacement = targetPosition - sourcePosition;
+    const double distanceSquared = displacement.squaredNorm();
+    if (distanceSquared <= 0.0) return {};
+    const double distanceCubed = distanceSquared * std::sqrt(distanceSquared);
+    return displacement * (coefficient * coulomb / distanceCubed);
+}
+
 // Mechanical energy of both particles: translational kinetic energy, Coulomb
 // potential and magnetic dipole-dipole potential.  It deliberately excludes
 // energy that has already escaped as electromagnetic radiation.
 double mechanicalEnergy(const State& s) {
     const double r = separation(s);
     const double kinetic = 0.5 * electronMass * s.electronVelocity.squaredNorm()
-                         + 0.5 * protonMass * s.protonVelocity.squaredNorm();
+                         + 0.5 * positronMass * s.positronVelocity.squaredNorm();
     const double coulombPotential = -coulomb * eCharge*eCharge / r;
     const double dipolePotential = -dot(s.electronDipole,
-                                        dipoleField(s.electronPosition, s.protonPosition, s.protonDipole));
+                                        dipoleField(s.electronPosition, s.positronPosition, s.positronDipole));
     return kinetic + coulombPotential + dipolePotential;
 }
 
 // Coulomb motion plus the force and torque of two classical magnetic dipoles.
 void advance(State& s, double dt) {
-    Vec3 ae = coulombAcceleration(s.electronPosition, s.protonPosition, -eCharge*eCharge/electronMass);
-    Vec3 ap = coulombAcceleration(s.protonPosition, s.electronPosition, -eCharge*eCharge/protonMass);
-    ae += dipoleForce(s.electronPosition, s.protonPosition, s.electronDipole, s.protonDipole) / electronMass;
-    ap += dipoleForce(s.protonPosition, s.electronPosition, s.protonDipole, s.electronDipole) / protonMass;
+    Vec3 ae = coulombAcceleration(s.electronPosition, s.positronPosition, -eCharge*eCharge/electronMass);
+    Vec3 ap = coulombAcceleration(s.positronPosition, s.electronPosition, -eCharge*eCharge/positronMass);
+    ae += dipoleForce(s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole) / electronMass;
+    ap += dipoleForce(s.positronPosition, s.electronPosition, s.positronDipole, s.electronDipole) / positronMass;
     s.electronVelocity += ae * (0.5 * dt);
-    s.protonVelocity += ap * (0.5 * dt);
+    s.positronVelocity += ap * (0.5 * dt);
     s.electronPosition += s.electronVelocity * dt;
-    s.protonPosition += s.protonVelocity * dt;
-    ae = coulombAcceleration(s.electronPosition, s.protonPosition, -eCharge*eCharge/electronMass);
-    ap = coulombAcceleration(s.protonPosition, s.electronPosition, -eCharge*eCharge/protonMass);
-    ae += dipoleForce(s.electronPosition, s.protonPosition, s.electronDipole, s.protonDipole) / electronMass;
-    ap += dipoleForce(s.protonPosition, s.electronPosition, s.protonDipole, s.electronDipole) / protonMass;
+    s.positronPosition += s.positronVelocity * dt;
+    ae = coulombAcceleration(s.electronPosition, s.positronPosition, -eCharge*eCharge/electronMass);
+    ap = coulombAcceleration(s.positronPosition, s.electronPosition, -eCharge*eCharge/positronMass);
+    ae += dipoleForce(s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole) / electronMass;
+    ap += dipoleForce(s.positronPosition, s.electronPosition, s.positronDipole, s.electronDipole) / positronMass;
     s.electronVelocity += ae * (0.5 * dt);
-    s.protonVelocity += ap * (0.5 * dt);
+    s.positronVelocity += ap * (0.5 * dt);
 
-    const Vec3 fieldAtElectron = dipoleField(s.electronPosition, s.protonPosition, s.protonDipole);
-    const Vec3 fieldAtProton = dipoleField(s.protonPosition, s.electronPosition, s.electronDipole);
+    const Vec3 fieldAtElectron = dipoleField(s.electronPosition, s.positronPosition, s.positronDipole);
+    const Vec3 fieldAtPositron = dipoleField(s.positronPosition, s.electronPosition, s.electronDipole);
     // The real dipole precession is extremely slow on an orbital timescale.
     // This factor advances only the displayed spin dynamics so its changing
     // 3D direction is observable; the mechanical dipole force above remains
     // at its physical, unamplified value.
     constexpr double visibleSpinTimeScale = 3.0e4;
     precessDipole(s.electronDipole, fieldAtElectron, -1.76085963023e11, dt * visibleSpinTimeScale);
-    precessDipole(s.protonDipole, fieldAtProton, 2.6752218744e8, dt * visibleSpinTimeScale);
+    precessDipole(s.positronDipole, fieldAtPositron, 1.76085963023e11, dt * visibleSpinTimeScale);
 
     // Larmor power of both accelerated charges: P = q^2 a^2/(6 pi eps0 c^3).
     // The corresponding energy is removed from relative motion only, preserving
     // the centre-of-mass momentum of the isolated atom.
     const double radiatedPower = eCharge*eCharge * (ae.squaredNorm() + ap.squaredNorm()) /
                                  (6.0 * pi * epsilon0 * c*c*c);
-    const Vec3 relativeVelocity = s.electronVelocity - s.protonVelocity;
-    const double reducedMass = electronMass * protonMass / (electronMass + protonMass);
+    const Vec3 relativeVelocity = s.electronVelocity - s.positronVelocity;
+    const double reducedMass = electronMass * positronMass / (electronMass + positronMass);
     const double relativeKineticEnergy = 0.5 * reducedMass * relativeVelocity.squaredNorm();
     const double removedEnergy = std::min(radiatedPower * dt, 0.02 * relativeKineticEnergy);
     if (relativeKineticEnergy > 0.0 && removedEnergy > 0.0) {
         const double scale = std::sqrt(1.0 - removedEnergy / relativeKineticEnergy);
-        const Vec3 centreVelocity = (s.electronVelocity * electronMass + s.protonVelocity * protonMass) /
-                                    (electronMass + protonMass);
+        const Vec3 centreVelocity = (s.electronVelocity * electronMass + s.positronVelocity * positronMass) /
+                                    (electronMass + positronMass);
         const Vec3 newRelativeVelocity = relativeVelocity * scale;
-        s.electronVelocity = centreVelocity + newRelativeVelocity * (protonMass / (electronMass + protonMass));
-        s.protonVelocity = centreVelocity - newRelativeVelocity * (electronMass / (electronMass + protonMass));
+        s.electronVelocity = centreVelocity + newRelativeVelocity * (positronMass / (electronMass + positronMass));
+        s.positronVelocity = centreVelocity - newRelativeVelocity * (electronMass / (electronMass + positronMass));
         s.radiatedEnergy += removedEnergy;
     }
 
@@ -214,15 +223,15 @@ void advance(State& s, double dt) {
 }
 
 std::vector<Frame> simulate() {
-    const double reducedMass = electronMass * protonMass / (electronMass + protonMass);
+    const double reducedMass = electronMass * positronMass / (electronMass + positronMass);
     const double circularSpeed = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * bohrRadius));
     State s;
-    // Centre of mass is at rest; both bodies therefore move, with the proton's
+    // Centre of mass is at rest; both bodies therefore move, with the positron's
     // small reflex orbit included.
-    s.electronPosition = {bohrRadius * protonMass / (electronMass + protonMass), 0, 0};
-    s.protonPosition = {-bohrRadius * electronMass / (electronMass + protonMass), 0, 0};
-    s.electronVelocity = {0, circularSpeed * protonMass / (electronMass + protonMass), 0};
-    s.protonVelocity = {0, -circularSpeed * electronMass / (electronMass + protonMass), 0};
+    s.electronPosition = {bohrRadius * positronMass / (electronMass + positronMass), 0, 0};
+    s.positronPosition = {-bohrRadius * electronMass / (electronMass + positronMass), 0, 0};
+    s.electronVelocity = {0, circularSpeed * positronMass / (electronMass + positronMass), 0};
+    s.positronVelocity = {0, -circularSpeed * electronMass / (electronMass + positronMass), 0};
     // Fixed seed means the initial, randomly distributed directions are
     // repeatable between runs, which makes the simulation comparable.
     std::mt19937_64 random(0x484944524f47454eULL);
@@ -235,10 +244,10 @@ std::vector<Frame> simulate() {
         return Vec3{radial*std::cos(phi), radial*std::sin(phi), z};
     };
     s.electronDipole = randomDirection() * bohrMagneton;
-    s.protonDipole = randomDirection() * (2.79284734463 * nuclearMagneton);
+    s.positronDipole = randomDirection() * bohrMagneton;
 
-    constexpr int frameCount = 2400;
-    constexpr double displayedLifetime = 1.60e-11;
+    constexpr int frameCount = 15000;
+    constexpr double displayedLifetime = 1.50e-10;
     std::vector<Frame> frames;
     frames.reserve(frameCount);
     double nextFrame = 0.0;
@@ -246,7 +255,7 @@ std::vector<Frame> simulate() {
 
     while (frames.size() < frameCount && separation(s) > nuclearCutoff) {
         if (s.time >= nextFrame) {
-            frames.push_back({s.electronPosition, s.protonPosition, s.electronDipole, s.protonDipole,
+            frames.push_back({s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole,
                               s.time, separation(s), s.radiatedEnergy, mechanicalEnergy(s)});
             nextFrame += frameInterval;
         }
@@ -322,7 +331,7 @@ int main(int argc, char** argv) {
     gStyle->SetCanvasColor(kBlack);
     gStyle->SetPadColor(kBlack);
 
-    TCanvas canvas("atom", "Klasyczny atom wodoru: zapadanie radiacyjne", 1100, 820);
+    TCanvas canvas("atom", "Klasyczne positronium: zapadanie radiacyjne", 1100, 820);
     canvas.SetFillColor(kBlack);
     canvas.SetSupportGL(kTRUE);
     TPad scene("scene", "Symulacja", 0.0, 0.0, 1.0, 0.86);
@@ -355,25 +364,25 @@ int main(int argc, char** argv) {
     // Three great circles and a central marker form each visible 3D ball.
     constexpr int spherePoints = 29;
     TPolyLine3D electronXY(spherePoints), electronXZ(spherePoints), electronYZ(spherePoints);
-    TPolyLine3D protonXY(spherePoints), protonXZ(spherePoints), protonYZ(spherePoints);
-    TPolyMarker3D electron(1), proton(1);
+    TPolyLine3D positronXY(spherePoints), positronXZ(spherePoints), positronYZ(spherePoints);
+    TPolyMarker3D electron(1), positron(1);
     for (TPolyLine3D* ring : {&electronXY, &electronXZ, &electronYZ}) {
         ring->SetLineColor(kAzure + 1); ring->SetLineWidth(2); ring->Draw("same");
     }
-    for (TPolyLine3D* ring : {&protonXY, &protonXZ, &protonYZ}) {
+    for (TPolyLine3D* ring : {&positronXY, &positronXZ, &positronYZ}) {
         ring->SetLineColor(kRed + 1); ring->SetLineWidth(2); ring->Draw("same");
     }
     electron.SetMarkerStyle(20); electron.SetMarkerSize(1.8); electron.SetMarkerColor(kAzure + 1);
-    proton.SetMarkerStyle(20); proton.SetMarkerSize(2.5); proton.SetMarkerColor(kRed + 1);
+    positron.SetMarkerStyle(20); positron.SetMarkerSize(2.5); positron.SetMarkerColor(kRed + 1);
     electron.Draw("same");
-    proton.Draw("same");
+    positron.Draw("same");
 
     TPolyLine3D electronDipoleShaft(2), electronDipoleLeft(2), electronDipoleRight(2);
-    TPolyLine3D protonDipoleShaft(2), protonDipoleLeft(2), protonDipoleRight(2);
+    TPolyLine3D positronDipoleShaft(2), positronDipoleLeft(2), positronDipoleRight(2);
     for (TPolyLine3D* arrow : {&electronDipoleShaft, &electronDipoleLeft, &electronDipoleRight}) {
         arrow->SetLineColor(kMagenta + 1); arrow->SetLineWidth(3); arrow->Draw("same");
     }
-    for (TPolyLine3D* arrow : {&protonDipoleShaft, &protonDipoleLeft, &protonDipoleRight}) {
+    for (TPolyLine3D* arrow : {&positronDipoleShaft, &positronDipoleLeft, &positronDipoleRight}) {
         arrow->SetLineColor(kGreen + 2); arrow->SetLineWidth(3); arrow->Draw("same");
     }
 
@@ -396,7 +405,7 @@ int main(int argc, char** argv) {
     TLatex title, subtitle;
     title.SetNDC(); title.SetTextColor(kWhite); title.SetTextSize(0.25); title.SetTextFont(62);
     subtitle.SetNDC(); subtitle.SetTextColor(kGray + 1); subtitle.SetTextSize(0.15);
-    title.DrawLatex(0.035, 0.70, "Klasyczny atom wodoru — zapadanie radiacyjne");
+    title.DrawLatex(0.035, 0.70, "Klasyczne positronium — zapadanie radiacyjne");
     subtitle.DrawLatex(0.035, 0.30, "Coulomb + dipole + promieniowanie Larmora; mysz obraca kamer#281;");
 
     // Make the compiled callbacks visible to ROOT's command interpreter.
@@ -432,15 +441,15 @@ int main(int argc, char** argv) {
         syncStopButton();
         const Frame& f = frames[i];
         electron.SetPoint(0, f.electron.x * scale, f.electron.y * scale, f.electron.z * scale);
-        proton.SetPoint(0, f.proton.x * scale, f.proton.y * scale, f.proton.z * scale);
+        positron.SetPoint(0, f.positron.x * scale, f.positron.y * scale, f.positron.z * scale);
         const Vec3 electronPosition = f.electron * scale;
-        const Vec3 protonPosition = f.proton * scale;
+        const Vec3 positronPosition = f.positron * scale;
         setBall(electronXY, electronXZ, electronYZ, electronPosition, 0.075);
-        setBall(protonXY, protonXZ, protonYZ, protonPosition, 0.105);
+        setBall(positronXY, positronXZ, positronYZ, positronPosition, 0.105);
         setDipoleArrow(electronDipoleShaft, electronDipoleLeft, electronDipoleRight,
                        electronPosition, f.electronDipole);
-        setDipoleArrow(protonDipoleShaft, protonDipoleLeft, protonDipoleRight,
-                       protonPosition, f.protonDipole);
+        setDipoleArrow(positronDipoleShaft, positronDipoleLeft, positronDipoleRight,
+                       positronPosition, f.positronDipole);
         readout.SetText(0.04, 0.065, labelFor(f).c_str());
         deltaReadout.SetText(0.04, 0.025, deltaLabelFor(f, frames.front()).c_str());
         if (i % 4 == 0 || i + 1 == frames.size()) {
