@@ -12,9 +12,10 @@ elektron–pozyton:
   kontroli wyniku, ale nie jest używana do korygowania trajektorii.
 
 Każda cząstka ma też klasyczny moment dipolowy o losowym kierunku początkowym.
-Losowane są również radialna i styczna prędkość względna. Kontrolowane zakresy
-losowania pozwalają uzyskać bezpośrednie zderzenie, rozproszenie albo związany
-stan para-/orto-podobny. Rzeczywista precesja jest na tej skali czasu bardzo
+Losowane są również radialna i styczna prędkość względna. Wybrane w menu
+zjawisko określa kontrolowany zakres losowania prowadzący do bezpośredniego
+zderzenia, rozproszenia albo związanego stanu para-/orto-podobnego. Rzeczywista
+precesja jest na tej skali czasu bardzo
 wolna, dlatego orientacja strzałek może zmieniać się tylko nieznacznie. Momenty
 dipolowe nie są włączone do ruchu orbitalnego: ich klasyczne oddziaływanie jest
 tutaj wiele rzędów wielkości słabsze od przyciągania Coulomba, a spin
@@ -33,6 +34,17 @@ Wymagany jest CERN ROOT (z `root-config` dostępnym w `PATH`).
 ```bash
 make
 ```
+
+Przed rozpoczęciem obliczeń program prosi o wybór zjawiska:
+
+```text
+1 -> Para-positronium (125 ps)
+2 -> Ortho-positronium (142 000 ps)
+3 -> Direct collision
+4 -> Scattering
+```
+
+W skryptach wybór można przekazać bez interakcji, np. `--phenomenon 2`.
 
 Wykres jest w jednostkach promienia Bohra `a₀`. Odczyt na dole zawiera czas w
 pikosekundach, odległość cząstek w pm oraz całkowitą energię mechaniczną układu
@@ -53,13 +65,13 @@ Bilans energii (łącznie z energią bliskiego pola Schotta) i zakres odległoś
 można sprawdzić bez uruchamiania okna:
 
 ```bash
-./positronium --diagnose
+./positronium --diagnose --phenomenon 1
 ```
 
 Konkretny losowy przypadek można odtworzyć przez podanie ziarna, np.:
 
 ```bash
-./positronium --diagnose --seed 8
+./positronium --diagnose --phenomenon 4 --seed 8
 ```
 
 Symulacja jest renderowana w 3D. Przeciągnij myszą w obszarze orbity, aby

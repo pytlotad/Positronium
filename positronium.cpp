@@ -344,7 +344,7 @@ const char* phenomenonName(Phenomenon phenomenon) {
     return "Unknown";
 }
 
-SimulationResult simulate(std::uint64_t seed) {
+SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon) {
     const double reducedMass = electronMass * positronMass / (electronMass + positronMass);
     const double circularSpeed = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * bohrRadius));
     const double escapeSpeed = std::sqrt(2.0) * circularSpeed;
@@ -352,7 +352,6 @@ SimulationResult simulate(std::uint64_t seed) {
     std::uniform_real_distribution<double> unitRandom(0.0, 1.0);
     std::uniform_real_distribution<double> signedRandom(-1.0, 1.0);
     std::uniform_real_distribution<double> azimuth(0.0, 2.0*pi);
-    std::uniform_int_distribution<int> scenario(0, 3);
     const auto randomDirection = [&]() {
         const double z = signedRandom(random);
         const double phi = azimuth(random);
@@ -364,9 +363,12 @@ SimulationResult simulate(std::uint64_t seed) {
     s.electronPosition = {bohrRadius * positronMass / (electronMass + positronMass), 0, 0};
     s.positronPosition = {-bohrRadius * electronMass / (electronMass + positronMass), 0, 0};
 
-    // Stratified random sampling gives every branch of the decision tree a
-    // useful chance while all actual initial values remain random.
-    const int sampledScenario = scenario(random);
+    // The selected branch chooses a physically useful sampling range while
+    // all actual initial values inside that range remain random.
+    // Menu order is para, ortho, direct collision, scattering. Internally the
+    // samplers retain the order direct, scattering, para, ortho.
+    const std::array<int, 5> scenarioForMenuChoice = {0, 2, 3, 0, 1};
+    const int sampledScenario = scenarioForMenuChoice[selectedPhenomenon];
     double radialSpeed = 0.0;
     double tangentialSpeed = 0.0;
     if (sampledScenario == 0) {
@@ -440,8 +442,10 @@ SimulationResult simulate(std::uint64_t seed) {
         advance(s, std::min(2.0e-18, 2.0 * pi / (160.0 * omega)));
     }
     if (frames.empty()) throw std::runtime_error("No simulation frames were produced");
-    const double lifetime = separation(s) <= nuclearCutoff
-                          ? s.time : std::numeric_limits<double>::infinity();
+    double lifetime = std::numeric_limits<double>::infinity();
+    if (phenomenon == Phenomenon::ParaPositronium) lifetime = 125.0e-12;
+    else if (phenomenon == Phenomenon::OrthoPositronium) lifetime = 142000.0e-12;
+    else if (phenomenon == Phenomenon::DirectCollision && separation(s) <= nuclearCutoff) lifetime = s.time;
     return {std::move(frames), {relativeEnergy, orbitalAngularMomentum,
             predictedClosestApproach, dipoleAlignment, lifetime, phenomenon, seed}};
 }
@@ -506,15 +510,30 @@ int main(int argc, char** argv) {
     std::random_device seedSource;
     std::uint64_t seed = (static_cast<std::uint64_t>(seedSource()) << 32) ^ seedSource();
     bool diagnose = false;
+    int selectedPhenomenon = 0;
     for (int i = 1; i < argc; ++i) {
         const std::string argument = argv[i];
         if (argument == "--diagnose") {
             diagnose = true;
         } else if (argument == "--seed" && i + 1 < argc) {
             seed = std::stoull(argv[++i]);
+        } else if (argument == "--phenomenon" && i + 1 < argc) {
+            selectedPhenomenon = std::stoi(argv[++i]);
         }
     }
-    SimulationResult simulation = simulate(seed);
+    if (selectedPhenomenon < 1 || selectedPhenomenon > 4) {
+        std::cout << "Choose phenomenon to simulate:\n"
+                  << "1 -> Para-positronium (125 ps)\n"
+                  << "2 -> Ortho-positronium (142 000 ps)\n"
+                  << "3 -> Direct collision\n"
+                  << "4 -> Scattering\n"
+                  << "Selection [1-4]: " << std::flush;
+        if (!(std::cin >> selectedPhenomenon) || selectedPhenomenon < 1 || selectedPhenomenon > 4) {
+            std::cerr << "Invalid selection. Enter a number from 1 to 4.\n";
+            return 1;
+        }
+    }
+    SimulationResult simulation = simulate(seed, selectedPhenomenon);
     const std::vector<Frame>& frames = simulation.frames;
     const InitialConditions& initialConditions = simulation.initial;
     std::cout << phenomenonName(initialConditions.phenomenon) << " simulated for " << frames.back().time << " s; "
