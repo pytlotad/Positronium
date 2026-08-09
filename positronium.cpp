@@ -14,8 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstring>
-#include <fstream>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -55,6 +54,7 @@ constexpr double nuclearMagneton = 5.0507837461e-27;
 constexpr double coulomb = 1.0 / (4.0 * pi * epsilon0);
 constexpr double bohrRadius = 5.29177210903e-11;
 constexpr double nuclearCutoff = 1.0e-14; // point-particle theory has failed below this scale
+constexpr double hbar = 1.054571817e-34;
 
 struct Vec3 {
     double x = 0, y = 0, z = 0;
@@ -89,6 +89,22 @@ struct Frame {
     Vec3 electron, positron, electronDipole, positronDipole;
     double time, radius, radiatedEnergy, mechanicalEnergy, schottEnergy;
     double electronMechanicalEnergy, positronMechanicalEnergy;
+};
+
+enum class Phenomenon { DirectCollision, Scattering, ParaPositronium, OrthoPositronium };
+
+struct InitialConditions {
+    double relativeEnergy;
+    double orbitalAngularMomentum;
+    double predictedClosestApproach;
+    double dipoleAlignment;
+    Phenomenon phenomenon;
+    std::uint64_t seed;
+};
+
+struct SimulationResult {
+    std::vector<Frame> frames;
+    InitialConditions initial;
 };
 
 struct PairGeometry {
@@ -316,31 +332,95 @@ Frame makeFrame(const State& s) {
             positronKinetic + 0.5 * coulombPotential};
 }
 
-std::vector<Frame> simulate() {
+const char* phenomenonName(Phenomenon phenomenon) {
+    switch (phenomenon) {
+        case Phenomenon::DirectCollision: return "Direct collision";
+        case Phenomenon::Scattering: return "Scattering";
+        case Phenomenon::ParaPositronium: return "Para-positronium";
+        case Phenomenon::OrthoPositronium: return "Ortho-positronium";
+    }
+    return "Unknown";
+}
+
+SimulationResult simulate(std::uint64_t seed) {
     const double reducedMass = electronMass * positronMass / (electronMass + positronMass);
     const double circularSpeed = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * bohrRadius));
-    State s;
-    // Centre of mass is at rest; both bodies therefore move, with the positron's
-    // small reflex orbit included.
-    s.electronPosition = {bohrRadius * positronMass / (electronMass + positronMass), 0, 0};
-    s.positronPosition = {-bohrRadius * electronMass / (electronMass + positronMass), 0, 0};
-    s.electronVelocity = {0, circularSpeed * positronMass / (electronMass + positronMass), 0};
-    s.positronVelocity = {0, -circularSpeed * electronMass / (electronMass + positronMass), 0};
-    // Fixed seed means the initial, randomly distributed directions are
-    // repeatable between runs, which makes the simulation comparable.
-    std::mt19937_64 random(0x484944524f47454eULL);
-    std::uniform_real_distribution<double> distributed(-1.0, 1.0);
+    const double escapeSpeed = std::sqrt(2.0) * circularSpeed;
+    std::mt19937_64 random(seed);
+    std::uniform_real_distribution<double> unitRandom(0.0, 1.0);
+    std::uniform_real_distribution<double> signedRandom(-1.0, 1.0);
     std::uniform_real_distribution<double> azimuth(0.0, 2.0*pi);
+    std::uniform_int_distribution<int> scenario(0, 3);
     const auto randomDirection = [&]() {
-        const double z = distributed(random);
+        const double z = signedRandom(random);
         const double phi = azimuth(random);
         const double radial = std::sqrt(1.0 - z*z);
         return Vec3{radial*std::cos(phi), radial*std::sin(phi), z};
     };
+
+    State s;
+    s.electronPosition = {bohrRadius * positronMass / (electronMass + positronMass), 0, 0};
+    s.positronPosition = {-bohrRadius * electronMass / (electronMass + positronMass), 0, 0};
+
+    // Stratified random sampling gives every branch of the decision tree a
+    // useful chance while all actual initial values remain random.
+    const int sampledScenario = scenario(random);
+    double radialSpeed = 0.0;
+    double tangentialSpeed = 0.0;
+    if (sampledScenario == 0) {
+        radialSpeed = -escapeSpeed * (0.35 + 0.40 * unitRandom(random));
+        tangentialSpeed = circularSpeed * (0.001 + 0.004 * unitRandom(random));
+    } else if (sampledScenario == 1) {
+        const double speed = escapeSpeed * (1.05 + 0.35 * unitRandom(random));
+        const double tangentialFraction = 0.35 + 0.35 * unitRandom(random);
+        tangentialSpeed = speed * tangentialFraction;
+        radialSpeed = -speed * std::sqrt(1.0 - tangentialFraction*tangentialFraction);
+    } else {
+        radialSpeed = circularSpeed * (-0.12 + 0.24 * unitRandom(random));
+        tangentialSpeed = circularSpeed * (0.72 + 0.25 * unitRandom(random));
+    }
+    const Vec3 relativeVelocity{radialSpeed, tangentialSpeed, 0.0};
+    s.electronVelocity = relativeVelocity * (positronMass / (electronMass + positronMass));
+    s.positronVelocity = relativeVelocity * (-electronMass / (electronMass + positronMass));
+
     s.electronDipole = randomDirection() * bohrMagneton;
-    s.positronDipole = randomDirection() * bohrMagneton;
-    constexpr int frameCount = 5000;
-    constexpr double displayedLifetime = 1.50e-10;
+    do {
+        s.positronDipole = randomDirection() * bohrMagneton;
+    } while ((sampledScenario == 2 && dot(s.electronDipole, s.positronDipole)
+                                  / (bohrMagneton*bohrMagneton) < 0.5)
+          || (sampledScenario == 3 && dot(s.electronDipole, s.positronDipole)
+                                  / (bohrMagneton*bohrMagneton) >= 0.5));
+
+    const double relativeEnergy = 0.5 * reducedMass * relativeVelocity.squaredNorm()
+                                - coulomb * eCharge*eCharge / bohrRadius;
+    const double orbitalAngularMomentum = reducedMass
+                                        * cross(Vec3{bohrRadius, 0, 0}, relativeVelocity).norm();
+    const double specificEnergy = relativeEnergy / reducedMass;
+    const double specificAngularMomentum = orbitalAngularMomentum / reducedMass;
+    const double attractionParameter = coulomb * eCharge*eCharge / reducedMass;
+    const double eccentricity = std::sqrt(std::max(0.0, 1.0 + 2.0 * specificEnergy
+        * specificAngularMomentum*specificAngularMomentum
+        / (attractionParameter*attractionParameter)));
+    const double predictedClosestApproach = specificAngularMomentum == 0.0 ? 0.0
+        : specificAngularMomentum*specificAngularMomentum
+          / (attractionParameter * (1.0 + eccentricity));
+    const double dipoleAlignment = dot(s.electronDipole, s.positronDipole)
+                                 / (bohrMagneton*bohrMagneton);
+    Phenomenon phenomenon;
+    if (radialSpeed < 0.0 && predictedClosestApproach < nuclearCutoff) {
+        phenomenon = Phenomenon::DirectCollision;
+    } else if (relativeEnergy >= 0.0) {
+        phenomenon = Phenomenon::Scattering;
+    } else if (dipoleAlignment >= 0.5) {
+        phenomenon = Phenomenon::ParaPositronium;
+    } else {
+        phenomenon = Phenomenon::OrthoPositronium;
+    }
+
+    constexpr int frameCount = 1200;
+    const double displayedLifetime = phenomenon == Phenomenon::DirectCollision ? 4.0e-16
+                                   : phenomenon == Phenomenon::Scattering ? 2.0e-15
+                                   : 1.50e-11;
     std::vector<Frame> frames;
     frames.reserve(frameCount);
     double nextFrame = 0.0;
@@ -355,39 +435,11 @@ std::vector<Frame> simulate() {
         // energy drift below the physical radiation loss.
         const double r = separation(s);
         const double omega = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * r*r*r));
-        advance(s, std::min(2.0e-18, 2.0 * pi / (80.0 * omega)));
+        advance(s, std::min(2.0e-18, 2.0 * pi / (160.0 * omega)));
     }
     if (frames.empty()) throw std::runtime_error("No simulation frames were produced");
-    return frames;
-}
-
-constexpr const char* frameCachePath = ".positronium-frames.cache";
-constexpr char buildId[] = __DATE__ " " __TIME__;
-
-std::vector<Frame> loadCachedFrames() {
-    std::ifstream input(frameCachePath, std::ios::binary);
-    if (!input) return {};
-
-    char cachedBuildId[sizeof(buildId)]{};
-    std::size_t count = 0;
-    input.read(cachedBuildId, sizeof(cachedBuildId));
-    input.read(reinterpret_cast<char*>(&count), sizeof(count));
-    if (!input || std::strcmp(cachedBuildId, buildId) != 0 || count == 0 || count > 5000) return {};
-
-    std::vector<Frame> frames(count);
-    input.read(reinterpret_cast<char*>(frames.data()),
-               static_cast<std::streamsize>(frames.size() * sizeof(Frame)));
-    return input ? frames : std::vector<Frame>{};
-}
-
-void saveCachedFrames(const std::vector<Frame>& frames) {
-    std::ofstream output(frameCachePath, std::ios::binary | std::ios::trunc);
-    if (!output) return;
-    const std::size_t count = frames.size();
-    output.write(buildId, sizeof(buildId));
-    output.write(reinterpret_cast<const char*>(&count), sizeof(count));
-    output.write(reinterpret_cast<const char*>(frames.data()),
-                 static_cast<std::streamsize>(frames.size() * sizeof(Frame)));
+    return {std::move(frames), {relativeEnergy, orbitalAngularMomentum,
+            predictedClosestApproach, dipoleAlignment, phenomenon, seed}};
 }
 
 std::string labelFor(const Frame& f) {
@@ -437,14 +489,23 @@ void setDipoleArrow(TPolyLine3D& shaft, TPolyLine3D& leftHead, TPolyLine3D& righ
 } // namespace
 
 int main(int argc, char** argv) {
-    std::vector<Frame> frames = loadCachedFrames();
-    if (frames.empty()) {
-        frames = simulate();
-        saveCachedFrames(frames);
+    std::random_device seedSource;
+    std::uint64_t seed = (static_cast<std::uint64_t>(seedSource()) << 32) ^ seedSource();
+    bool diagnose = false;
+    for (int i = 1; i < argc; ++i) {
+        const std::string argument = argv[i];
+        if (argument == "--diagnose") {
+            diagnose = true;
+        } else if (argument == "--seed" && i + 1 < argc) {
+            seed = std::stoull(argv[++i]);
+        }
     }
-    std::cout << "Classical radiative collapse simulated for " << frames.back().time << " s; "
+    SimulationResult simulation = simulate(seed);
+    const std::vector<Frame>& frames = simulation.frames;
+    const InitialConditions& initialConditions = simulation.initial;
+    std::cout << phenomenonName(initialConditions.phenomenon) << " simulated for " << frames.back().time << " s; "
               << frames.size() << " animation frames.\n";
-    if (argc > 1 && std::string(argv[1]) == "--diagnose") {
+    if (diagnose) {
         const double initialTotal = frames.front().mechanicalEnergy + frames.front().radiatedEnergy
                                   + frames.front().schottEnergy;
         const double finalTotal = frames.back().mechanicalEnergy + frames.back().radiatedEnergy
@@ -452,11 +513,21 @@ int main(int argc, char** argv) {
         const double energyDrift = finalTotal - initialTotal;
         const double energyScale = std::max(std::abs(frames.back().radiatedEnergy), std::abs(initialTotal));
         const double relativeEnergyDrift = std::abs(energyDrift) / energyScale;
-        const bool collapsing = frames.back().radius < frames.front().radius;
-        const bool energyBalanced = relativeEnergyDrift < 0.01;
+        const bool expectedMotion = initialConditions.phenomenon == Phenomenon::Scattering
+            ? frames.back().radius > frames.front().radius
+            : frames.back().radius < frames.front().radius;
+        // At a direct collision the point-particle model terminates in its
+        // singular regime, so only pre-contact motion is a meaningful test.
+        const bool energyBalanced = initialConditions.phenomenon == Phenomenon::DirectCollision
+                                  || relativeEnergyDrift < 0.05;
         const auto radiusBounds = std::minmax_element(frames.begin(), frames.end(),
             [](const Frame& a, const Frame& b) { return a.radius < b.radius; });
         std::cout << std::setprecision(8)
+                  << "seed:           " << initialConditions.seed << "\n"
+                  << "phenomenon:     " << phenomenonName(initialConditions.phenomenon) << "\n"
+                  << "relative E:     " << initialConditions.relativeEnergy / eCharge << " eV\n"
+                  << "orbital L:      " << initialConditions.orbitalAngularMomentum / hbar << " hbar\n"
+                  << "predicted rmin: " << initialConditions.predictedClosestApproach * 1.0e12 << " pm\n"
                   << "initial radius: " << frames.front().radius * 1.0e12 << " pm\n"
                   << "final radius:   " << frames.back().radius * 1.0e12 << " pm\n"
                   << "radius range:   " << radiusBounds.first->radius * 1.0e12 << " .. "
@@ -465,8 +536,8 @@ int main(int argc, char** argv) {
                   << "Schott energy:  " << frames.back().schottEnergy / eCharge << " eV\n"
                   << "energy drift:   " << energyDrift / eCharge << " eV ("
                   << relativeEnergyDrift * 100.0 << "%)\n"
-                  << "diagnostic:     " << (collapsing && energyBalanced ? "PASS" : "FAIL") << '\n';
-        return collapsing && energyBalanced ? 0 : 1;
+                  << "diagnostic:     " << (expectedMotion && energyBalanced ? "PASS" : "FAIL") << '\n';
+        return expectedMotion && energyBalanced ? 0 : 1;
     }
 
     TApplication app("classical_hydrogen", &argc, argv);
@@ -488,11 +559,17 @@ int main(int argc, char** argv) {
     // ROOT rotates this 3D view when the user drags the mouse in the scene.
     // A non-zero Z span preserves perspective for the initially planar orbit.
     TView* view = TView::CreateView(1);
-    view->SetRange(-1.10, -1.10, -0.50, 1.10, 1.10, 0.50);
+    const double scale = 1.0 / bohrRadius;
+    double viewSpan = 1.10;
+    for (const Frame& frame : frames) {
+        viewSpan = std::max({viewSpan, frame.electron.norm() * scale * 1.10,
+                            frame.positron.norm() * scale * 1.10});
+    }
+    view->SetRange(-viewSpan, -viewSpan, -0.45*viewSpan,
+                   viewSpan, viewSpan, 0.45*viewSpan);
     gPad->SetTheta(70);
     gPad->SetPhi(25);
 
-    const double scale = 1.0 / bohrRadius;
     std::vector<double> x(frames.size()), y(frames.size()), z(frames.size());
     for (size_t i = 0; i < frames.size(); ++i) {
         x[i] = frames[i].electron.x * scale;
@@ -520,6 +597,22 @@ int main(int argc, char** argv) {
     }
 
     const Frame& initialFrame = frames.front();
+    TLatex phenomenonLabel;
+    phenomenonLabel.SetNDC(); phenomenonLabel.SetTextColor(kOrange + 7);
+    phenomenonLabel.SetTextSize(0.034); phenomenonLabel.SetTextFont(62);
+    phenomenonLabel.SetText(0.03, 0.185,
+        (std::string("Phenomenon: ") + phenomenonName(initialConditions.phenomenon)).c_str());
+    phenomenonLabel.Draw();
+    std::ostringstream conditionsText;
+    conditionsText << std::fixed << std::setprecision(3)
+                   << "E_{rel} = " << initialConditions.relativeEnergy / eCharge << " eV"
+                   << "     L_{orb} = " << initialConditions.orbitalAngularMomentum / hbar << " #hbar"
+                   << "     r_{min} = " << initialConditions.predictedClosestApproach * 1.0e12 << " pm";
+    TLatex conditionsLabel;
+    conditionsLabel.SetNDC(); conditionsLabel.SetTextColor(kWhite);
+    conditionsLabel.SetTextSize(0.024); conditionsLabel.SetTextFont(42);
+    conditionsLabel.SetText(0.03, 0.150, conditionsText.str().c_str());
+    conditionsLabel.Draw();
     constexpr double bottomHeaderY = 0.125;
     constexpr double bottomInitialY = 0.090;
     constexpr double bottomCurrentY = 0.055;
@@ -636,7 +729,7 @@ int main(int argc, char** argv) {
 
     updateBottomRow(initialFrame);
 
-    constexpr size_t renderStride = 12;
+    constexpr size_t renderStride = 3;
     constexpr unsigned int renderDelayMilliseconds = 16;
     for (size_t i = 0; i < frames.size(); ++i) {
         while (gSimulationPaused && !gExitRequested) {

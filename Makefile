@@ -18,4 +18,4 @@ $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f $(TARGET) .positronium-frames.cache
+	rm -f $(TARGET)

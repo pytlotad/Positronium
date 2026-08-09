@@ -11,8 +11,10 @@ elektron–pozyton:
 - moc promieniowania jest niezależnie liczona wzorem Liénarda i służy do
   kontroli wyniku, ale nie jest używana do korygowania trajektorii.
 
-Każda cząstka ma też klasyczny moment dipolowy o losowym (lecz powtarzalnym)
-kierunku początkowym. Rzeczywista precesja jest na tej skali czasu bardzo
+Każda cząstka ma też klasyczny moment dipolowy o losowym kierunku początkowym.
+Losowane są również radialna i styczna prędkość względna. Kontrolowane zakresy
+losowania pozwalają uzyskać bezpośrednie zderzenie, rozproszenie albo związany
+stan para-/orto-podobny. Rzeczywista precesja jest na tej skali czasu bardzo
 wolna, dlatego orientacja strzałek może zmieniać się tylko nieznacznie. Momenty
 dipolowe nie są włączone do ruchu orbitalnego: ich klasyczne oddziaływanie jest
 tutaj wiele rzędów wielkości słabsze od przyciągania Coulomba, a spin
@@ -39,6 +41,10 @@ Wyświetlana jest również skumulowana energia wypromieniowana w eV. Linia nad
 bieżącymi licznikami pokazuje ich wartości początkowe, a linia pod nimi zmiany
 względem początku, oznaczone symbolem `Δ`.
 
+Nad tabelą widoczny jest wynik klasycznego drzewa decyzyjnego oraz trzy
+decydujące warunki początkowe: energia względna `E_rel`, orbitalny moment pędu
+`L_orb` i przewidywana odległość największego zbliżenia `r_min`.
+
 Przyciski nad widokiem: `STOP` wstrzymuje animację (zmienia się na `START`), a
 `EXIT` natychmiast zamyka program.
 
@@ -47,6 +53,12 @@ można sprawdzić bez uruchamiania okna:
 
 ```bash
 ./positronium --diagnose
+```
+
+Konkretny losowy przypadek można odtworzyć przez podanie ziarna, np.:
+
+```bash
+./positronium --diagnose --seed 8
 ```
 
 Symulacja jest renderowana w 3D. Przeciągnij myszą w obszarze orbity, aby
