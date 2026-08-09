@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -O2 $(shell root-config --cflags)
+CXXFLAGS := -O3 -march=native $(shell root-config --cflags)
 LDFLAGS := $(shell root-config --libs)
 
 TARGET := positronium

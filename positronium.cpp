@@ -89,7 +89,26 @@ struct Frame {
     double electronMechanicalEnergy, positronMechanicalEnergy;
 };
 
-double separation(const State& s) { return (s.electronPosition - s.positronPosition).norm(); }
+struct PairGeometry {
+    Vec3 electronMinusPositron;
+    double distance;
+    double inverseDistance;
+    double inverseDistanceCubed;
+    double inverseDistanceFourth;
+};
+
+PairGeometry pairGeometry(const State& s) {
+    const Vec3 electronMinusPositron = s.electronPosition - s.positronPosition;
+    const double distanceSquared = electronMinusPositron.squaredNorm();
+    const double distance = std::sqrt(distanceSquared);
+    const double inverseDistance = 1.0 / distance;
+    const double inverseDistanceSquared = inverseDistance * inverseDistance;
+    return {electronMinusPositron, distance, inverseDistance,
+            inverseDistanceSquared * inverseDistance,
+            inverseDistanceSquared * inverseDistanceSquared};
+}
+
+double separation(const State& s) { return pairGeometry(s).distance; }
 
 double dot(const Vec3& a, const Vec3& b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
 
@@ -122,25 +141,21 @@ ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
 }
 
 // Static magnetic field of a point dipole.  'at' is the field point.
-Vec3 dipoleField(const Vec3& at, const Vec3& sourcePosition, const Vec3& sourceDipole) {
-    const Vec3 r = at - sourcePosition;
-    const double rLength = r.norm();
-    const Vec3 n = r / rLength;
+Vec3 dipoleField(const Vec3& sourceToTarget, const PairGeometry& geometry, const Vec3& sourceDipole) {
+    const Vec3 n = sourceToTarget * geometry.inverseDistance;
     return (n * (3.0 * sourceDipole.x*n.x + 3.0 * sourceDipole.y*n.y + 3.0 * sourceDipole.z*n.z) - sourceDipole)
-           * (mu0 / (4.0 * pi * rLength*rLength*rLength));
+           * (mu0 / (4.0 * pi) * geometry.inverseDistanceCubed);
 }
 
 // F = grad(m_target . B_source), with r directed from source to target.
-Vec3 dipoleForce(const Vec3& targetPosition, const Vec3& sourcePosition,
+Vec3 dipoleForce(const Vec3& sourceToTarget, const PairGeometry& geometry,
                  const Vec3& targetDipole, const Vec3& sourceDipole) {
-    const Vec3 r = targetPosition - sourcePosition;
-    const double rLength = r.norm();
-    const Vec3 n = r / rLength;
+    const Vec3 n = sourceToTarget * geometry.inverseDistance;
     const double mnTarget = targetDipole.x*n.x + targetDipole.y*n.y + targetDipole.z*n.z;
     const double mnSource = sourceDipole.x*n.x + sourceDipole.y*n.y + sourceDipole.z*n.z;
     const double dots = targetDipole.x*sourceDipole.x + targetDipole.y*sourceDipole.y + targetDipole.z*sourceDipole.z;
     return (sourceDipole * mnTarget + targetDipole * mnSource + n * (dots - 5.0*mnTarget*mnSource))
-           * (3.0 * mu0 / (4.0 * pi * rLength*rLength*rLength*rLength));
+           * (3.0 * mu0 / (4.0 * pi) * geometry.inverseDistanceFourth);
 }
 
 void precessDipole(Vec3& dipole, const Vec3& field, double gyromagneticRatio, double dt) {
@@ -154,64 +169,27 @@ void precessDipole(Vec3& dipole, const Vec3& field, double gyromagneticRatio, do
     dipole = rotated * (dipole.norm() / rotated.norm());
 }
 
-Vec3 coulombAcceleration(const Vec3& targetPosition, const Vec3& sourcePosition, double coefficient) {
-    const Vec3 displacement = targetPosition - sourcePosition;
-    const double distanceSquared = displacement.squaredNorm();
-    if (distanceSquared <= 0.0) return {};
-    const double distanceCubed = distanceSquared * std::sqrt(distanceSquared);
-    return displacement * (coefficient * coulomb / distanceCubed);
-}
-
-// Mechanical energy of both particles: translational kinetic energy, Coulomb
-// potential and magnetic dipole-dipole potential.  It deliberately excludes
-// energy that has already escaped as electromagnetic radiation.
-double mechanicalEnergy(const State& s) {
-    const double r = separation(s);
-    const double kinetic = 0.5 * electronMass * s.electronVelocity.squaredNorm()
-                         + 0.5 * positronMass * s.positronVelocity.squaredNorm();
-    const double coulombPotential = -coulomb * eCharge*eCharge / r;
-    const double dipolePotential = -dot(s.electronDipole,
-                                        dipoleField(s.electronPosition, s.positronPosition, s.positronDipole));
-    return kinetic + coulombPotential + dipolePotential;
-}
-
-double electronMechanicalEnergy(const State& s) {
-    const double r = separation(s);
-    const double kinetic = 0.5 * electronMass * s.electronVelocity.squaredNorm();
-    const double coulombShare = -0.5 * coulomb * eCharge*eCharge / r;
-    const double dipoleShare = -0.5 * dot(s.electronDipole,
-                                          dipoleField(s.electronPosition, s.positronPosition, s.positronDipole));
-    return kinetic + coulombShare + dipoleShare;
-}
-
-double positronMechanicalEnergy(const State& s) {
-    const double r = separation(s);
-    const double kinetic = 0.5 * positronMass * s.positronVelocity.squaredNorm();
-    const double coulombShare = -0.5 * coulomb * eCharge*eCharge / r;
-    const double dipoleShare = -0.5 * dot(s.positronDipole,
-                                          dipoleField(s.positronPosition, s.electronPosition, s.electronDipole));
-    return kinetic + coulombShare + dipoleShare;
-}
-
 // Coulomb motion plus the force and torque of two classical magnetic dipoles.
 void advance(State& s, double dt) {
-    Vec3 ae = coulombAcceleration(s.electronPosition, s.positronPosition, -eCharge*eCharge/electronMass);
-    Vec3 ap = coulombAcceleration(s.positronPosition, s.electronPosition, -eCharge*eCharge/positronMass);
-    ae += dipoleForce(s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole) / electronMass;
-    ap += dipoleForce(s.positronPosition, s.electronPosition, s.positronDipole, s.electronDipole) / positronMass;
+    PairGeometry geometry = pairGeometry(s);
+    Vec3 electronForce = geometry.electronMinusPositron * (-coulomb * eCharge*eCharge * geometry.inverseDistanceCubed);
+    electronForce += dipoleForce(geometry.electronMinusPositron, geometry, s.electronDipole, s.positronDipole);
+    Vec3 ae = electronForce / electronMass;
+    Vec3 ap = electronForce * (-1.0 / positronMass);
     s.electronVelocity += ae * (0.5 * dt);
     s.positronVelocity += ap * (0.5 * dt);
     s.electronPosition += s.electronVelocity * dt;
     s.positronPosition += s.positronVelocity * dt;
-    ae = coulombAcceleration(s.electronPosition, s.positronPosition, -eCharge*eCharge/electronMass);
-    ap = coulombAcceleration(s.positronPosition, s.electronPosition, -eCharge*eCharge/positronMass);
-    ae += dipoleForce(s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole) / electronMass;
-    ap += dipoleForce(s.positronPosition, s.electronPosition, s.positronDipole, s.electronDipole) / positronMass;
+    geometry = pairGeometry(s);
+    electronForce = geometry.electronMinusPositron * (-coulomb * eCharge*eCharge * geometry.inverseDistanceCubed);
+    electronForce += dipoleForce(geometry.electronMinusPositron, geometry, s.electronDipole, s.positronDipole);
+    ae = electronForce / electronMass;
+    ap = electronForce * (-1.0 / positronMass);
     s.electronVelocity += ae * (0.5 * dt);
     s.positronVelocity += ap * (0.5 * dt);
 
-    const Vec3 fieldAtElectron = dipoleField(s.electronPosition, s.positronPosition, s.positronDipole);
-    const Vec3 fieldAtPositron = dipoleField(s.positronPosition, s.electronPosition, s.electronDipole);
+    const Vec3 fieldAtElectron = dipoleField(geometry.electronMinusPositron, geometry, s.positronDipole);
+    const Vec3 fieldAtPositron = dipoleField(geometry.electronMinusPositron * -1.0, geometry, s.electronDipole);
     // The real dipole precession is extremely slow on an orbital timescale.
     // This factor advances only the displayed spin dynamics so its changing
     // 3D direction is observable; the mechanical dipole force above remains
@@ -242,6 +220,20 @@ void advance(State& s, double dt) {
     s.time += dt;
 }
 
+Frame makeFrame(const State& s) {
+    const PairGeometry geometry = pairGeometry(s);
+    const double electronKinetic = 0.5 * electronMass * s.electronVelocity.squaredNorm();
+    const double positronKinetic = 0.5 * positronMass * s.positronVelocity.squaredNorm();
+    const double coulombPotential = -coulomb * eCharge*eCharge * geometry.inverseDistance;
+    const double dipolePotential = -dot(s.electronDipole,
+                                        dipoleField(geometry.electronMinusPositron, geometry, s.positronDipole));
+    return {s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole,
+            s.time, geometry.distance, s.radiatedEnergy,
+            electronKinetic + positronKinetic + coulombPotential + dipolePotential,
+            electronKinetic + 0.5 * (coulombPotential + dipolePotential),
+            positronKinetic + 0.5 * (coulombPotential + dipolePotential)};
+}
+
 std::vector<Frame> simulate() {
     const double reducedMass = electronMass * positronMass / (electronMass + positronMass);
     const double circularSpeed = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * bohrRadius));
@@ -266,7 +258,7 @@ std::vector<Frame> simulate() {
     s.electronDipole = randomDirection() * bohrMagneton;
     s.positronDipole = randomDirection() * bohrMagneton;
 
-    constexpr int frameCount = 15000;
+    constexpr int frameCount = 5000;
     constexpr double displayedLifetime = 1.50e-10;
     std::vector<Frame> frames;
     frames.reserve(frameCount);
@@ -275,9 +267,7 @@ std::vector<Frame> simulate() {
 
     while (frames.size() < frameCount && separation(s) > nuclearCutoff) {
         if (s.time >= nextFrame) {
-            frames.push_back({s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole,
-                              s.time, separation(s), s.radiatedEnergy, mechanicalEnergy(s),
-                              electronMechanicalEnergy(s), positronMechanicalEnergy(s)});
+            frames.push_back(makeFrame(s));
             nextFrame += frameInterval;
         }
         // At least 80 steps per instantaneous orbit.  This shortens with the
@@ -433,7 +423,6 @@ int main(int argc, char** argv) {
     const auto drawBottomRow = [&](std::array<TLatex, 5>& row, double y, const std::array<std::string, 5>& values) {
         for (size_t i = 0; i < row.size(); ++i) {
             row[i].SetText(bottomXs[i], y, values[i].c_str());
-            row[i].Draw();
         }
     };
 
@@ -482,7 +471,6 @@ int main(int argc, char** argv) {
         };
         drawBottomRow(currentBottomRow, bottomCurrentY, currentValues);
         currentBottomRad.SetText(0.75, bottomCurrentY, formatTableValue(f.radiatedEnergy / eCharge).c_str());
-        currentBottomRad.Draw();
 
         const std::array<std::string, 5> deltaValues = {
             "delta",
@@ -494,11 +482,12 @@ int main(int argc, char** argv) {
         drawBottomRow(deltaBottomRow, bottomDeltaY, deltaValues);
         deltaBottomRad.SetText(0.75, bottomDeltaY,
                                formatTableValue((f.radiatedEnergy - initialFrame.radiatedEnergy) / eCharge).c_str());
-        deltaBottomRad.Draw();
     };
 
     updateBottomRow(initialFrame);
 
+    constexpr size_t renderStride = 12;
+    constexpr unsigned int renderDelayMilliseconds = 16;
     for (size_t i = 0; i < frames.size(); ++i) {
         while (gSimulationPaused && !gExitRequested) {
             syncStopButton();
@@ -508,6 +497,7 @@ int main(int argc, char** argv) {
             gSystem->Sleep(20);
         }
         if (gExitRequested) return 0;
+        if (i % renderStride != 0 && i + 1 != frames.size()) continue;
         syncStopButton();
         const Frame& f = frames[i];
         electron.SetPoint(0, f.electron.x * scale, f.electron.y * scale, f.electron.z * scale);
@@ -519,14 +509,12 @@ int main(int argc, char** argv) {
         setDipoleArrow(positronDipoleShaft, positronDipoleLeft, positronDipoleRight,
                        positronPosition, f.positronDipole);
         updateBottomRow(f);
-        if (i % 4 == 0 || i + 1 == frames.size()) {
-            scene.Modified();
-            canvas.Modified();
-            canvas.Update();
-            gSystem->ProcessEvents();
-            syncStopButton();
-            gSystem->Sleep(8);
-        }
+        scene.Modified();
+        canvas.Modified();
+        canvas.Update();
+        gSystem->ProcessEvents();
+        syncStopButton();
+        gSystem->Sleep(renderDelayMilliseconds);
     }
     controls.cd();
     canvas.Modified();
