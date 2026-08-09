@@ -85,8 +85,25 @@ U_{dd}=\frac{\mu_0}{4\pi r^3}
 \]
 
 a siła dipol–dipol jest wyznaczana z gradientu tej energii. Orientacje dipoli
-są losowane na początku i pozostają stałe podczas symulacji. Program nie
-całkuje precesji ani momentów sił obracających dipole.
+są losowane na początku, a następnie dynamicznie obracają się pod wpływem
+lokalnego pola magnetycznego.
+
+Pole działające na każdy dipol jest sumą regularizowanego pola drugiego dipola
+oraz pola magnetycznego wytwarzanego przez ruch drugiego ładunku. Klasyczny
+moment siły \(\boldsymbol\tau=\boldsymbol\mu\times\mathbf B\) prowadzi do
+równania precesji
+
+\[
+\frac{d\boldsymbol\mu_i}{dt}
+=\gamma_i\boldsymbol\mu_i\times\mathbf B_i,
+\qquad
+\gamma_i=\frac{q_i}{2m_i}.
+\]
+
+Znaki precesji elektronu i pozytonu są więc przeciwne. Obrót jest wykonywany
+wzorem Rodriguesa w dwóch symetrycznych półkrokach; zachowuje to dokładnie
+wartość \(|\boldsymbol\mu_i|=\mu_B\). Jest to klasyczny współczynnik
+giromagnetyczny ładunku orbitalnego, bez kwantowego czynnika Landégo.
 
 Punktowe wzory magnetyczne są osobliwe dla \(r\to0\), dlatego pole orbitalne,
 energia i siła dipolowa są płynnie tłumione funkcją
@@ -204,7 +221,8 @@ końcowych.
 
 Równania są całkowane relatywistycznym schematem predyktor–korektor. Siły
 zależne od położenia wykonują dwa półkroki pędu, część magnetyczna obraca pęd,
-a pomiędzy nimi wykonywany jest krok położenia. Krok czasu jest adaptacyjny:
+a precesja dipoli jest dzielona na dwa symetryczne półkroki. Pomiędzy
+półkrokami wykonywany jest krok położenia. Krok czasu jest adaptacyjny:
 jest ograniczony do \(2\times10^{-18}\,\mathrm s\) i dodatkowo zmniejszany na
 podstawie chwilowej częstości Coulombowskiej. Symulacja zapisuje najwyżej 1200
 klatek i kończy się wcześniej po przekroczeniu progu zderzenia.
@@ -268,8 +286,8 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
   Maxwella;
 - kompletne relatywistyczne oddziaływanie dwóch ładunków, w tym pełny człon
   Darwina;
-- dynamiczna precesja dipoli, sprzężenie spin–orbita i momenty sił działające
-  na dipole;
+- pełne sprzężenie zwrotne momentu siły dipola z orbitalnym i polowym momentem
+  pędu oraz kwantowe sprzężenie spin–orbita;
 - skończony rozmiar cząstek i struktura krótkiego zasięgu — zastępuje je próg
   \(10^{-14}\,\mathrm m\);
 - pola zewnętrzne, zderzenia z materią, grawitacja i wpływ ośrodka;

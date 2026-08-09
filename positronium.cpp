@@ -51,7 +51,6 @@ constexpr double eCharge = 1.602176634e-19;
 constexpr double electronMass = 9.1093837139e-31;
 constexpr double positronMass = electronMass;
 constexpr double bohrMagneton = 9.2740100657e-24;
-constexpr double nuclearMagneton = 5.0507837461e-27;
 constexpr double coulomb = 1.0 / (4.0 * pi * epsilon0);
 constexpr double bohrRadius = 5.29177210903e-11;
 constexpr double nuclearCutoff = 1.0e-14; // point-particle theory has failed below this scale
@@ -207,7 +206,9 @@ void precessDipole(Vec3& dipole, const Vec3& field, double gyromagneticRatio, do
     const double fieldMagnitude = field.norm();
     if (fieldMagnitude == 0.0) return;
     const Vec3 axis = field / fieldMagnitude;
-    const double angle = gyromagneticRatio * fieldMagnitude * dt;
+    // d(mu)/dt = gamma mu x B. rotatedAround uses B x mu for a positive
+    // angle, hence the minus sign.
+    const double angle = -gyromagneticRatio * fieldMagnitude * dt;
     // Rodrigues rotation preserves the magnitude of the magnetic moment.
     const Vec3 rotated = dipole * std::cos(angle) + cross(axis, dipole) * std::sin(angle)
                        + axis * ((axis.x*dipole.x + axis.y*dipole.y + axis.z*dipole.z) * (1.0 - std::cos(angle)));
@@ -245,6 +246,7 @@ double electricDipoleRadiationPower(const Vec3& electronAcceleration,
 }
 
 struct MutualForces { Vec3 electron, positron; };
+struct LocalMagneticFields { Vec3 atElectron, atPositron; };
 
 double shortRangeFieldWeight(double distance) {
     constexpr double regularizationRadius = 0.70 * bohrRadius;
@@ -284,6 +286,37 @@ MutualForces orbitalMagneticForces(const State& s) {
     const Vec3 fieldAtPositron = cross(s.electronVelocity, geometry.electronMinusPositron) * fieldScale;
     return {cross(s.electronVelocity, fieldAtElectron) * (-eCharge),
             cross(s.positronVelocity, fieldAtPositron) * eCharge};
+}
+
+LocalMagneticFields localMagneticFields(const State& s) {
+    const PairGeometry geometry = pairGeometry(s);
+    const double weight = shortRangeFieldWeight(geometry.distance);
+    const double orbitalScale = mu0 / (4.0 * pi) * eCharge
+                              * geometry.inverseDistanceCubed * weight;
+    const Vec3 orbitalAtElectron =
+        cross(s.positronVelocity, geometry.electronMinusPositron) * orbitalScale;
+    const Vec3 orbitalAtPositron =
+        cross(s.electronVelocity, geometry.electronMinusPositron) * orbitalScale;
+    const Vec3 dipoleAtElectron = dipoleField(
+        geometry.electronMinusPositron, geometry, s.positronDipole) * weight;
+    const Vec3 dipoleAtPositron = dipoleField(
+        geometry.electronMinusPositron * -1.0, geometry, s.electronDipole) * weight;
+    return {orbitalAtElectron + dipoleAtElectron,
+            orbitalAtPositron + dipoleAtPositron};
+}
+
+void applyDipolePrecession(State& s, double dt) {
+    const LocalMagneticFields fields = localMagneticFields(s);
+    // Classical orbital gyromagnetic ratios. Their signs follow the charges.
+    constexpr double electronGyromagneticRatio = -eCharge / (2.0 * electronMass);
+    constexpr double positronGyromagneticRatio = eCharge / (2.0 * positronMass);
+    Vec3 electronDipole = s.electronDipole;
+    Vec3 positronDipole = s.positronDipole;
+    precessDipole(electronDipole, fields.atElectron, electronGyromagneticRatio, dt);
+    precessDipole(positronDipole, fields.atPositron, positronGyromagneticRatio, dt);
+    // Update simultaneously so neither particle sees an already-updated peer.
+    s.electronDipole = electronDipole;
+    s.positronDipole = positronDipole;
 }
 
 MutualForces allExternalForces(const State& s) {
@@ -364,6 +397,7 @@ MutualForces collectiveRadiationReactionForces(const State& s) {
 // about 0.005, the instantaneous Coulomb interaction is the controlled leading
 // term; radiation reaction is an order-reduced electric-dipole model.
 void advance(State& s, double dt) {
+    applyDipolePrecession(s, 0.5 * dt);
     MutualForces forces = mutualForces(s);
     const MutualForces radiationForces = allExternalForces(s);
     const MutualForces reactions = collectiveRadiationReactionForces(s);
@@ -402,6 +436,7 @@ void advance(State& s, double dt) {
     positronMomentum += (trialForces.positron + trialReactions.positron) * (0.5 * dt);
     trial.electronVelocity = velocityFromMomentum(electronMomentum, electronMass);
     trial.positronVelocity = velocityFromMomentum(positronMomentum, positronMass);
+    applyDipolePrecession(trial, 0.5 * dt);
     trial.electronAcceleration = relativisticAcceleration(trial.electronVelocity, trialForces.electron, electronMass);
     trial.positronAcceleration = relativisticAcceleration(trial.positronVelocity, trialForces.positron, positronMass);
     trial.radiatedEnergy += 0.5 * (radiationPower + trialRadiationPower) * dt;
