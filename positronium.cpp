@@ -39,9 +39,9 @@ void ExitSimulation() {
     if (gApplication) gApplication->Terminate(0);
 }
 
-// Relativistic two-body electrodynamics in SI units.  Mutual fields are
-// evaluated at retarded time; radiation reaction uses a local, order-reduced
-// Landau-Lifshitz approximation.
+// Approximate relativistic two-body electrodynamics in SI units. Mutual
+// Coulomb and low-velocity magnetic fields are evaluated instantaneously;
+// radiation reaction uses a local, order-reduced Landau-Lifshitz model.
 namespace {
 constexpr double pi = 3.14159265358979323846;
 constexpr double epsilon0 = 8.8541878128e-12;
