@@ -41,7 +41,7 @@ void ExitSimulation() {
 
 // Approximate relativistic two-body electrodynamics in SI units. Mutual
 // Coulomb and low-velocity magnetic fields are evaluated instantaneously;
-// radiation reaction uses a local, order-reduced Landau-Lifshitz model.
+// radiation reaction uses a local, order-reduced electric-dipole model.
 namespace {
 constexpr double pi = 3.14159265358979323846;
 constexpr double epsilon0 = 8.8541878128e-12;
@@ -234,10 +234,13 @@ Vec3 lorentzForce(double charge, const Vec3& velocity, const ElectromagneticFiel
     return (field.electric + cross(velocity, field.magnetic)) * charge;
 }
 
-double lienardPower(double charge, const Vec3& velocity, const Vec3& acceleration) {
-    const double gammaValue = gamma(velocity);
-    const double transverseTerm = cross(velocity, acceleration).squaredNorm() / (c*c);
-    return charge*charge * std::pow(gammaValue, 6) * (acceleration.squaredNorm() - transverseTerm) /
+double electricDipoleRadiationPower(const Vec3& electronAcceleration,
+                                    const Vec3& positronAcceleration) {
+    // p = sum(q_i r_i), hence p'' = e(a_p - a_e). Squaring the sum of
+    // amplitudes, rather than adding two Larmor powers, retains interference.
+    const Vec3 dipoleSecondDerivative =
+        (positronAcceleration - electronAcceleration) * eCharge;
+    return dipoleSecondDerivative.squaredNorm() /
            (6.0 * pi * epsilon0 * c*c*c);
 }
 
@@ -318,7 +321,7 @@ void applyOrbitalMagneticRotation(State& s, double dt) {
     s.positronVelocity = velocityFromMomentum(positronMomentum, positronMass);
 }
 
-MutualForces landauLifshitzForces(const State& s) {
+MutualForces collectiveRadiationReactionForces(const State& s) {
     const MutualForces external = allExternalForces(s);
     const Vec3 electronAcceleration = relativisticAcceleration(s.electronVelocity, external.electron,
                                                                 electronMass);
@@ -339,24 +342,37 @@ MutualForces landauLifshitzForces(const State& s) {
     after.positronVelocity = s.positronVelocity + positronAcceleration * derivativeStep;
     const MutualForces beforeForces = allExternalForces(before);
     const MutualForces afterForces = allExternalForces(after);
-    const double tau = eCharge * eCharge / (6.0 * pi * epsilon0 * electronMass * c*c*c);
-    return {(afterForces.electron - beforeForces.electron) * (tau / (2.0 * derivativeStep)),
-            (afterForces.positron - beforeForces.positron) * (tau / (2.0 * derivativeStep))};
+    const Vec3 beforeElectronAcceleration = relativisticAcceleration(
+        before.electronVelocity, beforeForces.electron, electronMass);
+    const Vec3 beforePositronAcceleration = relativisticAcceleration(
+        before.positronVelocity, beforeForces.positron, positronMass);
+    const Vec3 afterElectronAcceleration = relativisticAcceleration(
+        after.electronVelocity, afterForces.electron, electronMass);
+    const Vec3 afterPositronAcceleration = relativisticAcceleration(
+        after.positronVelocity, afterForces.positron, positronMass);
+    const Vec3 dipoleThirdDerivative =
+        ((afterPositronAcceleration - afterElectronAcceleration)
+       - (beforePositronAcceleration - beforeElectronAcceleration))
+        * (eCharge / (2.0 * derivativeStep));
+    const Vec3 radiationReactionField = dipoleThirdDerivative /
+        (6.0 * pi * epsilon0 * c*c*c);
+    return {radiationReactionField * (-eCharge),
+            radiationReactionField * eCharge};
 }
 
 // Relativistic predictor-corrector update. At positronium's initial v/c of
 // about 0.005, the instantaneous Coulomb interaction is the controlled leading
-// term; radiation reaction is the Landau-Lifshitz reduction of order.
+// term; radiation reaction is an order-reduced electric-dipole model.
 void advance(State& s, double dt) {
     MutualForces forces = mutualForces(s);
     const MutualForces radiationForces = allExternalForces(s);
-    const MutualForces reactions = landauLifshitzForces(s);
+    const MutualForces reactions = collectiveRadiationReactionForces(s);
     const Vec3 electronAcceleration = relativisticAcceleration(s.electronVelocity, radiationForces.electron,
                                                                 electronMass);
     const Vec3 positronAcceleration = relativisticAcceleration(s.positronVelocity, radiationForces.positron,
                                                                 positronMass);
-    const double electronPower = lienardPower(-eCharge, s.electronVelocity, electronAcceleration);
-    const double positronPower = lienardPower(eCharge, s.positronVelocity, positronAcceleration);
+    const double radiationPower = electricDipoleRadiationPower(electronAcceleration,
+                                                               positronAcceleration);
     Vec3 electronMomentum = momentum(s.electronVelocity, electronMass) + (forces.electron + reactions.electron) * (0.5 * dt);
     Vec3 positronMomentum = momentum(s.positronVelocity, positronMass) + (forces.positron + reactions.positron) * (0.5 * dt);
     State trial = s;
@@ -373,23 +389,22 @@ void advance(State& s, double dt) {
 
     const MutualForces trialForces = mutualForces(trial);
     const MutualForces trialRadiationForces = allExternalForces(trial);
-    const MutualForces trialReactions = landauLifshitzForces(trial);
+    const MutualForces trialReactions = collectiveRadiationReactionForces(trial);
     const Vec3 trialElectronAcceleration = relativisticAcceleration(trial.electronVelocity,
                                                                     trialRadiationForces.electron,
                                                                     electronMass);
     const Vec3 trialPositronAcceleration = relativisticAcceleration(trial.positronVelocity,
                                                                     trialRadiationForces.positron,
                                                                     positronMass);
-    const double trialElectronPower = lienardPower(-eCharge, trial.electronVelocity, trialElectronAcceleration);
-    const double trialPositronPower = lienardPower(eCharge, trial.positronVelocity, trialPositronAcceleration);
+    const double trialRadiationPower = electricDipoleRadiationPower(trialElectronAcceleration,
+                                                                    trialPositronAcceleration);
     electronMomentum += (trialForces.electron + trialReactions.electron) * (0.5 * dt);
     positronMomentum += (trialForces.positron + trialReactions.positron) * (0.5 * dt);
     trial.electronVelocity = velocityFromMomentum(electronMomentum, electronMass);
     trial.positronVelocity = velocityFromMomentum(positronMomentum, positronMass);
     trial.electronAcceleration = relativisticAcceleration(trial.electronVelocity, trialForces.electron, electronMass);
     trial.positronAcceleration = relativisticAcceleration(trial.positronVelocity, trialForces.positron, positronMass);
-    trial.radiatedEnergy += 0.5 * (electronPower + positronPower
-                                 + trialElectronPower + trialPositronPower) * dt;
+    trial.radiatedEnergy += 0.5 * (radiationPower + trialRadiationPower) * dt;
     s = trial;
 }
 
@@ -404,11 +419,14 @@ Frame makeFrame(const State& s) {
     const MutualForces forces = allExternalForces(s);
     const Vec3 electronAcceleration = relativisticAcceleration(s.electronVelocity, forces.electron, electronMass);
     const Vec3 positronAcceleration = relativisticAcceleration(s.positronVelocity, forces.positron, positronMass);
-    const double tau = eCharge * eCharge / (6.0 * pi * epsilon0 * electronMass * c*c*c);
-    // Near-field (Schott) energy required by the instantaneous radiation
-    // balance: d(E_mech + E_rad + E_Schott)/dt = 0 to LL order.
-    const double schottEnergy = -electronMass * tau
-        * (dot(electronAcceleration, s.electronVelocity) + dot(positronAcceleration, s.positronVelocity));
+    const Vec3 dipoleFirstDerivative =
+        (s.positronVelocity - s.electronVelocity) * eCharge;
+    const Vec3 dipoleSecondDerivative =
+        (positronAcceleration - electronAcceleration) * eCharge;
+    // Collective near-field term paired with electric-dipole radiation:
+    // d(E_mech + E_rad + E_Schott)/dt = 0 at this approximation order.
+    const double schottEnergy = -dot(dipoleSecondDerivative, dipoleFirstDerivative)
+        / (6.0 * pi * epsilon0 * c*c*c);
     return {s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole,
             s.time, geometry.distance, s.radiatedEnergy,
             electronKinetic + positronKinetic + coulombPotential + dipolePotential,

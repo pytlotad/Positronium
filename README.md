@@ -100,49 +100,63 @@ siła pozostaje zgodna z regularizowaną energią potencjalną \(wU_{dd}\).
 Regularizacja jest założeniem numeryczno-modelowym, a nie nowym prawem
 fizycznym.
 
-### 5. Emisja promieniowania elektromagnetycznego
+### 5. Koherentne promieniowanie elektromagnetyczne pary
 
-Chwilowa moc wypromieniowana przez każdą przyspieszaną cząstkę jest liczona ze
-wzoru Liénarda
+Elektron i pozyton są traktowane jako jedno, koherentne źródło promieniowania
+w przybliżeniu dipola elektrycznego. Moment dipolowy całego układu i jego druga
+pochodna wynoszą
 
 \[
-P=\frac{q^2\gamma^6}{6\pi\varepsilon_0c^3}
-\left(a^2-\frac{|\mathbf v\times\mathbf a|^2}{c^2}\right).
+\mathbf p=\sum_i q_i\mathbf r_i=e(\mathbf r_p-\mathbf r_e),
+\qquad
+\ddot{\mathbf p}=e(\mathbf a_p-\mathbf a_e).
 \]
 
-Moc obu cząstek jest całkowana numerycznie w czasie i prezentowana jako
-skumulowana energia promieniowania. Nie jest ona odejmowana od energii ruchu
-przez późniejszą korektę trajektorii.
+Moc promieniowania jest liczona z kwadratu sumy amplitud pól obu ładunków:
 
-### 6. Reakcja promieniowania Landaua–Lifshitza
+\[
+P_{dip}=\frac{|\ddot{\mathbf p}|^2}{6\pi\varepsilon_0c^3}.
+\]
+
+Zawiera to automatycznie człony interferencyjne, których brakowałoby w sumie
+dwóch niezależnych mocy Larmora lub Liénarda. Moc jest całkowana numerycznie w
+czasie i prezentowana jako skumulowana energia promieniowania. Przybliżenie
+wymaga, aby rozmiar układu był mały względem charakterystycznej długości fali;
+nie obejmuje jeszcze promieniowania dipola magnetycznego ani kwadrupola
+elektrycznego.
+
+### 6. Kolektywna reakcja promieniowania
 
 Wpływ emisji na ruch jest wprowadzony bezpośrednio do równania dynamiki przez
-lokalne, zredukowane przybliżenie
+pole reakcji odpowiadające temu samemu przybliżeniu dipolowemu:
 
 \[
-\mathbf F_{RR}=\tau\frac{d\mathbf F_{ext}}{dt},
+\mathbf E_{RR}=\frac{\dddot{\mathbf p}}
+{6\pi\varepsilon_0c^3},
 \qquad
-\tau=\frac{e^2}{6\pi\varepsilon_0mc^3}.
+\mathbf F_{RR,i}=q_i\mathbf E_{RR}.
 \]
 
-\(\mathbf F_{ext}\) obejmuje w kodzie siłę Coulomba, regularizowaną siłę
-dipol–dipol i orbitalną siłę magnetyczną. Pochodna jest obliczana centralną
-różnicą kierunkową wzdłuż chwilowej trajektorii. Reakcja promieniowania wpływa
-zatem na kolejne położenia i pędy; zasada zachowania energii nie jest używana
-jako więz ani mechanizm korygujący ruch. Zastosowany wzór jest uproszczoną,
-nierelatywistyczną postacią redukcji rzędu, a nie pełnym kowariantnym równaniem
-Landaua–Lifshitza.
+Trzecia pochodna momentu dipolowego jest obliczana przez centralną różnicę
+przyspieszeń wyznaczonych z siły Coulomba, regularizowanej siły dipol–dipol i
+orbitalnej siły magnetycznej. Jest to redukcja rzędu: nie wprowadza niezależnej
+zmiennej przyspieszenia i nie dopuszcza rozwiązań samoprzyspieszających.
+Reakcja wpływa na kolejne położenia i pędy; energia promieniowania nie służy do
+późniejszego korygowania trajektorii. Zastosowany wzór pozostaje
+nierelatywistycznym przybliżeniem długofalowym, a nie pełnym kowariantnym
+równaniem reakcji promieniowania.
 
 ### 7. Energia bliskiego pola Schotta
 
 Do diagnostycznego bilansu energii dołączana jest energia Schotta
 
 \[
-E_S=-m\tau\,\mathbf a\cdot\mathbf v,
+E_S=-\frac{\ddot{\mathbf p}\cdot\dot{\mathbf p}}
+{6\pi\varepsilon_0c^3},
 \]
 
-sumowana dla obu cząstek. Reprezentuje ona odwracalną wymianę energii z
-bliskim polem przyspieszanego ładunku. Raportowana wielkość kontrolna to
+dla wspólnego momentu dipolowego pary. Reprezentuje ona odwracalną wymianę
+energii z bliskim polem układu. Raportowana wielkość kontrolna to
 
 \[
 E_{diag}=K_e+K_p+U_C+wU_{dd}+E_{rad}+E_S.
@@ -259,7 +273,9 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
 - skończony rozmiar cząstek i struktura krótkiego zasięgu — zastępuje je próg
   \(10^{-14}\,\mathrm m\);
 - pola zewnętrzne, zderzenia z materią, grawitacja i wpływ ośrodka;
-- energia orbitalnego pola magnetycznego w prezentowanym bilansie energii.
+- energia orbitalnego pola magnetycznego w prezentowanym bilansie energii;
+- wyższe multipole promieniowania: dipol magnetyczny, kwadrupol elektryczny i
+  kolejne człony rozwinięcia.
 
 ## Literatura pomocnicza
 
