@@ -41,9 +41,10 @@ Wyświetlana jest również skumulowana energia wypromieniowana w eV. Linia nad
 bieżącymi licznikami pokazuje ich wartości początkowe, a linia pod nimi zmiany
 względem początku, oznaczone symbolem `Δ`.
 
-Nad tabelą widoczny jest wynik klasycznego drzewa decyzyjnego oraz trzy
+Nad tabelą widoczny jest wynik klasycznego drzewa decyzyjnego oraz cztery
 decydujące warunki początkowe: energia względna `E_rel`, orbitalny moment pędu
-`L_orb` i przewidywana odległość największego zbliżenia `r_min`.
+`L_orb`, przewidywana odległość największego zbliżenia `r_min` i czas życia
+`Lifetime`. Dla rozproszenia czas życia jest nieskończony.
 
 Przyciski nad widokiem: `STOP` wstrzymuje animację (zmienia się na `START`), a
 `EXIT` natychmiast zamyka program.

@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -98,6 +99,7 @@ struct InitialConditions {
     double orbitalAngularMomentum;
     double predictedClosestApproach;
     double dipoleAlignment;
+    double lifetime;
     Phenomenon phenomenon;
     std::uint64_t seed;
 };
@@ -438,8 +440,10 @@ SimulationResult simulate(std::uint64_t seed) {
         advance(s, std::min(2.0e-18, 2.0 * pi / (160.0 * omega)));
     }
     if (frames.empty()) throw std::runtime_error("No simulation frames were produced");
+    const double lifetime = separation(s) <= nuclearCutoff
+                          ? s.time : std::numeric_limits<double>::infinity();
     return {std::move(frames), {relativeEnergy, orbitalAngularMomentum,
-            predictedClosestApproach, dipoleAlignment, phenomenon, seed}};
+            predictedClosestApproach, dipoleAlignment, lifetime, phenomenon, seed}};
 }
 
 std::string labelFor(const Frame& f) {
@@ -463,6 +467,16 @@ std::string deltaLabelFor(const Frame& current, const Frame& initial) {
 std::string formatTableValue(double value) {
     std::ostringstream out;
     out << std::fixed << std::setprecision(2) << value;
+    return out.str();
+}
+
+std::string lifetimeLabel(double lifetime) {
+    if (std::isinf(lifetime)) return "#infty";
+    const double picoseconds = lifetime * 1.0e12;
+    std::ostringstream out;
+    if (picoseconds < 1.0e-3) out << std::scientific << std::setprecision(2);
+    else out << std::fixed << std::setprecision(3);
+    out << picoseconds << " ps";
     return out.str();
 }
 
@@ -528,6 +542,10 @@ int main(int argc, char** argv) {
                   << "relative E:     " << initialConditions.relativeEnergy / eCharge << " eV\n"
                   << "orbital L:      " << initialConditions.orbitalAngularMomentum / hbar << " hbar\n"
                   << "predicted rmin: " << initialConditions.predictedClosestApproach * 1.0e12 << " pm\n"
+                  << "lifetime:       ";
+        if (std::isinf(initialConditions.lifetime)) std::cout << "infinity\n";
+        else std::cout << initialConditions.lifetime * 1.0e12 << " ps\n";
+        std::cout
                   << "initial radius: " << frames.front().radius * 1.0e12 << " pm\n"
                   << "final radius:   " << frames.back().radius * 1.0e12 << " pm\n"
                   << "radius range:   " << radiusBounds.first->radius * 1.0e12 << " .. "
@@ -607,7 +625,9 @@ int main(int argc, char** argv) {
     conditionsText << std::fixed << std::setprecision(3)
                    << "E_{rel} = " << initialConditions.relativeEnergy / eCharge << " eV"
                    << "     L_{orb} = " << initialConditions.orbitalAngularMomentum / hbar << " #hbar"
-                   << "     r_{min} = " << initialConditions.predictedClosestApproach * 1.0e12 << " pm";
+                   << "     r_{min} = " << initialConditions.predictedClosestApproach * 1.0e12 << " pm"
+                   << "     Lifetime = ";
+    conditionsText << lifetimeLabel(initialConditions.lifetime);
     TLatex conditionsLabel;
     conditionsLabel.SetNDC(); conditionsLabel.SetTextColor(kWhite);
     conditionsLabel.SetTextSize(0.024); conditionsLabel.SetTextFont(42);
