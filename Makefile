@@ -5,7 +5,14 @@ LDFLAGS := $(shell root-config --libs)
 TARGET := positronium
 SRC := positronium.cpp
 
-all: $(TARGET)
+.PHONY: all build run clean
+
+all: run
+
+build: $(TARGET)
+
+run: $(TARGET)
+	./$(TARGET)
 
 $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
