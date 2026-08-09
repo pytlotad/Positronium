@@ -38,8 +38,8 @@ make
 Przed rozpoczęciem obliczeń program prosi o wybór zjawiska:
 
 ```text
-1 -> Para-positronium (125 ps)
-2 -> Ortho-positronium (142 000 ps)
+1 -> Para-positronium
+2 -> Ortho-positronium
 3 -> Direct collision
 4 -> Scattering
 ```

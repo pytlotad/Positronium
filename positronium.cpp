@@ -442,10 +442,8 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon) {
         advance(s, std::min(2.0e-18, 2.0 * pi / (160.0 * omega)));
     }
     if (frames.empty()) throw std::runtime_error("No simulation frames were produced");
-    double lifetime = std::numeric_limits<double>::infinity();
-    if (phenomenon == Phenomenon::ParaPositronium) lifetime = 125.0e-12;
-    else if (phenomenon == Phenomenon::OrthoPositronium) lifetime = 142000.0e-12;
-    else if (phenomenon == Phenomenon::DirectCollision && separation(s) <= nuclearCutoff) lifetime = s.time;
+    const double lifetime = separation(s) <= nuclearCutoff
+                          ? s.time : std::numeric_limits<double>::infinity();
     return {std::move(frames), {relativeEnergy, orbitalAngularMomentum,
             predictedClosestApproach, dipoleAlignment, lifetime, phenomenon, seed}};
 }
@@ -523,8 +521,8 @@ int main(int argc, char** argv) {
     }
     if (selectedPhenomenon < 1 || selectedPhenomenon > 4) {
         std::cout << "Choose phenomenon to simulate:\n"
-                  << "1 -> Para-positronium (125 ps)\n"
-                  << "2 -> Ortho-positronium (142 000 ps)\n"
+                  << "1 -> Para-positronium\n"
+                  << "2 -> Ortho-positronium\n"
                   << "3 -> Direct collision\n"
                   << "4 -> Scattering\n"
                   << "Selection [1-4]: " << std::flush;
@@ -619,8 +617,8 @@ int main(int argc, char** argv) {
     path.Draw();
 
     TPolyMarker3D electron(1), positron(1);
-    electron.SetMarkerStyle(20); electron.SetMarkerSize(1.8); electron.SetMarkerColor(kAzure + 1);
-    positron.SetMarkerStyle(20); positron.SetMarkerSize(2.5); positron.SetMarkerColor(kRed + 1);
+    electron.SetMarkerStyle(20); electron.SetMarkerSize(2.2); electron.SetMarkerColor(kAzure + 1);
+    positron.SetMarkerStyle(20); positron.SetMarkerSize(2.2); positron.SetMarkerColor(kRed + 1);
     electron.Draw("same");
     positron.Draw("same");
 
