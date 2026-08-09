@@ -37,9 +37,9 @@ void ExitSimulation() {
     if (gApplication) gApplication->Terminate(0);
 }
 
-// Classical, non-relativistic two-body electrodynamics in SI units.
-// The orbital energy lost through Larmor radiation is removed from relative
-// motion via a stable, order-reduced radiation-reaction approximation.
+// Relativistic two-body electrodynamics in SI units.  Mutual fields are
+// evaluated at retarded time; radiation reaction uses a local, order-reduced
+// Landau-Lifshitz approximation.
 namespace {
 constexpr double pi = 3.14159265358979323846;
 constexpr double epsilon0 = 8.8541878128e-12;
@@ -78,6 +78,7 @@ struct State {
     Vec3 electronPosition, positronPosition;
     Vec3 electronVelocity, positronVelocity;
     Vec3 electronAcceleration, positronAcceleration;
+    Vec3 electronExternalForce, positronExternalForce;
     Vec3 electronDipole, positronDipole; // classical magnetic moments, in J/T
     double time = 0;
     double radiatedEnergy = 0;
@@ -112,30 +113,48 @@ double separation(const State& s) { return pairGeometry(s).distance; }
 
 double dot(const Vec3& a, const Vec3& b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
 
-// Mutual, retarded Lienard-Wiechert field of a moving point charge.  The
-// source at t-R/c is reconstructed locally from its velocity and acceleration.
+struct ChargeKinematics { Vec3 position, velocity, acceleration; };
+
+Vec3 lerp(const Vec3& first, const Vec3& second, double fraction) {
+    return first + (second - first) * fraction;
+}
+
+ChargeKinematics interpolatedCharge(const State& older, const State& newer, bool electron, double time) {
+    const double span = newer.time - older.time;
+    const double fraction = span > 0.0 ? std::clamp((time - older.time) / span, 0.0, 1.0) : 1.0;
+    const Vec3 oldPosition = electron ? older.electronPosition : older.positronPosition;
+    const Vec3 newPosition = electron ? newer.electronPosition : newer.positronPosition;
+    const Vec3 oldVelocity = electron ? older.electronVelocity : older.positronVelocity;
+    const Vec3 newVelocity = electron ? newer.electronVelocity : newer.positronVelocity;
+    const Vec3 oldAcceleration = electron ? older.electronAcceleration : older.positronAcceleration;
+    const Vec3 newAcceleration = electron ? newer.electronAcceleration : newer.positronAcceleration;
+    return {lerp(oldPosition, newPosition, fraction), lerp(oldVelocity, newVelocity, fraction),
+            lerp(oldAcceleration, newAcceleration, fraction)};
+}
+
+// Mutual, retarded Lienard-Wiechert field of a moving point charge.
 ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
-                                          const Vec3& sourcePosition,
-                                          const Vec3& sourceVelocity,
-                                          const Vec3& sourceAcceleration,
+                                          const State& olderSourceState,
+                                          const State& newerSourceState,
+                                          bool sourceIsElectron,
                                           double sourceCharge) {
-    double delay = (observationPosition - sourcePosition).norm() / c;
-    Vec3 retardedPosition, retardedVelocity;
-    for (int iteration = 0; iteration < 3; ++iteration) {
-        retardedPosition = sourcePosition - sourceVelocity * delay + sourceAcceleration * (0.5 * delay * delay);
-        retardedVelocity = sourceVelocity - sourceAcceleration * delay;
-        delay = (observationPosition - retardedPosition).norm() / c;
+    ChargeKinematics source = interpolatedCharge(olderSourceState, newerSourceState, sourceIsElectron,
+                                                  newerSourceState.time);
+    double retardedTime = newerSourceState.time - (observationPosition - source.position).norm() / c;
+    for (int iteration = 0; iteration < 6; ++iteration) {
+        source = interpolatedCharge(olderSourceState, newerSourceState, sourceIsElectron, retardedTime);
+        retardedTime = newerSourceState.time - (observationPosition - source.position).norm() / c;
     }
-    const Vec3 displacement = observationPosition - retardedPosition;
+    const Vec3 displacement = observationPosition - source.position;
     const double distance = displacement.norm();
     const Vec3 direction = displacement / distance;
-    const Vec3 beta = retardedVelocity / c;
+    const Vec3 beta = source.velocity / c;
     const double betaSquared = beta.squaredNorm();
     const double kappa = std::max(1.0e-8, 1.0 - dot(direction, beta));
     const Vec3 velocityField = (direction - beta) * ((1.0 - betaSquared) /
                               (kappa*kappa*kappa * distance*distance));
-    const Vec3 accelerationField = cross(direction, cross(direction - beta, sourceAcceleration)) /
-                                   (c * kappa*kappa*kappa * distance);
+    const Vec3 accelerationField = cross(direction, cross(direction - beta, source.acceleration)) /
+                                   (c*c * kappa*kappa*kappa * distance);
     const Vec3 electric = (velocityField + accelerationField) * (coulomb * sourceCharge);
     return {electric, cross(direction, electric) / c};
 }
@@ -169,61 +188,108 @@ void precessDipole(Vec3& dipole, const Vec3& field, double gyromagneticRatio, do
     dipole = rotated * (dipole.norm() / rotated.norm());
 }
 
-// Coulomb motion plus the force and torque of two classical magnetic dipoles.
-void advance(State& s, double dt) {
-    PairGeometry geometry = pairGeometry(s);
-    Vec3 electronForce = geometry.electronMinusPositron * (-coulomb * eCharge*eCharge * geometry.inverseDistanceCubed);
-    electronForce += dipoleForce(geometry.electronMinusPositron, geometry, s.electronDipole, s.positronDipole);
-    Vec3 ae = electronForce / electronMass;
-    Vec3 ap = electronForce * (-1.0 / positronMass);
-    s.electronVelocity += ae * (0.5 * dt);
-    s.positronVelocity += ap * (0.5 * dt);
-    s.electronPosition += s.electronVelocity * dt;
-    s.positronPosition += s.positronVelocity * dt;
-    geometry = pairGeometry(s);
-    electronForce = geometry.electronMinusPositron * (-coulomb * eCharge*eCharge * geometry.inverseDistanceCubed);
-    electronForce += dipoleForce(geometry.electronMinusPositron, geometry, s.electronDipole, s.positronDipole);
-    ae = electronForce / electronMass;
-    ap = electronForce * (-1.0 / positronMass);
-    s.electronVelocity += ae * (0.5 * dt);
-    s.positronVelocity += ap * (0.5 * dt);
+double gamma(const Vec3& velocity) {
+    return 1.0 / std::sqrt(std::max(1.0e-15, 1.0 - velocity.squaredNorm() / (c*c)));
+}
 
-    const Vec3 fieldAtElectron = dipoleField(geometry.electronMinusPositron, geometry, s.positronDipole);
-    const Vec3 fieldAtPositron = dipoleField(geometry.electronMinusPositron * -1.0, geometry, s.electronDipole);
+Vec3 momentum(const Vec3& velocity, double mass) { return velocity * (gamma(velocity) * mass); }
+
+Vec3 velocityFromMomentum(const Vec3& momentum, double mass) {
+    const double gammaFromMomentum = std::sqrt(1.0 + momentum.squaredNorm() / (mass*mass*c*c));
+    return momentum / (gammaFromMomentum * mass);
+}
+
+Vec3 relativisticAcceleration(const Vec3& velocity, const Vec3& force, double mass) {
+    const double velocityForce = dot(velocity, force);
+    return (force - velocity * (velocityForce / (c*c))) / (gamma(velocity) * mass);
+}
+
+Vec3 lorentzForce(double charge, const Vec3& velocity, const ElectromagneticField& field) {
+    return (field.electric + cross(velocity, field.magnetic)) * charge;
+}
+
+double lienardPower(double charge, const Vec3& velocity, const Vec3& acceleration) {
+    const double gammaValue = gamma(velocity);
+    const double transverseTerm = cross(velocity, acceleration).squaredNorm() / (c*c);
+    return charge*charge * std::pow(gammaValue, 6) * (acceleration.squaredNorm() - transverseTerm) /
+           (6.0 * pi * epsilon0 * c*c*c);
+}
+
+// In the weak-self-field regime this is the local, order-reduced
+// Landau-Lifshitz force.  The derivative of the external force is evaluated
+// from consecutive integration steps, avoiding the unstable third derivative
+// in the Lorentz-Abraham-Dirac equation.
+Vec3 landauLifshitzForce(const Vec3& externalForce, const Vec3& previousExternalForce,
+                         double mass, double dt, bool hasHistory) {
+    if (!hasHistory) return {};
+    const double tau = eCharge*eCharge / (6.0 * pi * epsilon0 * mass * c*c*c);
+    return (externalForce - previousExternalForce) * (tau / dt);
+}
+
+struct MutualForces { Vec3 electron, positron; };
+
+MutualForces mutualForces(const State& history, const State& s) {
+    const ElectromagneticField positronField = lienardWiechertField(s.electronPosition, history, s, false, eCharge);
+    const ElectromagneticField electronField = lienardWiechertField(s.positronPosition, history, s, true, -eCharge);
+    const PairGeometry geometry = pairGeometry(s);
+    const Vec3 dipoleForceOnElectron = dipoleForce(geometry.electronMinusPositron, geometry,
+                                                    s.electronDipole, s.positronDipole);
+    return {lorentzForce(-eCharge, s.electronVelocity, positronField) + dipoleForceOnElectron,
+            lorentzForce(eCharge, s.positronVelocity, electronField) - dipoleForceOnElectron};
+}
+
+// Relativistic momentum update driven by mutually retarded fields.
+void advance(State& s, const State& history, double dt, bool hasHistory) {
+    MutualForces forces = mutualForces(history, s);
+    const Vec3 electronReaction = landauLifshitzForce(forces.electron, s.electronExternalForce,
+                                                      electronMass, dt, hasHistory);
+    const Vec3 positronReaction = landauLifshitzForce(forces.positron, s.positronExternalForce,
+                                                      positronMass, dt, hasHistory);
+    Vec3 electronMomentum = momentum(s.electronVelocity, electronMass) + (forces.electron + electronReaction) * (0.5 * dt);
+    Vec3 positronMomentum = momentum(s.positronVelocity, positronMass) + (forces.positron + positronReaction) * (0.5 * dt);
+    State trial = s;
+    trial.time += dt;
+    trial.electronVelocity = velocityFromMomentum(electronMomentum, electronMass);
+    trial.positronVelocity = velocityFromMomentum(positronMomentum, positronMass);
+    trial.electronPosition += trial.electronVelocity * dt;
+    trial.positronPosition += trial.positronVelocity * dt;
+    trial.electronAcceleration = relativisticAcceleration(trial.electronVelocity, forces.electron, electronMass);
+    trial.positronAcceleration = relativisticAcceleration(trial.positronVelocity, forces.positron, positronMass);
+
+    const MutualForces trialForces = mutualForces(s, trial);
+    const Vec3 trialElectronReaction = landauLifshitzForce(trialForces.electron, forces.electron,
+                                                           electronMass, dt, true);
+    const Vec3 trialPositronReaction = landauLifshitzForce(trialForces.positron, forces.positron,
+                                                           positronMass, dt, true);
+    electronMomentum += (trialForces.electron + trialElectronReaction) * (0.5 * dt);
+    positronMomentum += (trialForces.positron + trialPositronReaction) * (0.5 * dt);
+    trial.electronVelocity = velocityFromMomentum(electronMomentum, electronMass);
+    trial.positronVelocity = velocityFromMomentum(positronMomentum, positronMass);
+    trial.electronAcceleration = relativisticAcceleration(trial.electronVelocity, trialForces.electron, electronMass);
+    trial.positronAcceleration = relativisticAcceleration(trial.positronVelocity, trialForces.positron, positronMass);
+    trial.electronExternalForce = trialForces.electron;
+    trial.positronExternalForce = trialForces.positron;
+
+    PairGeometry geometry = pairGeometry(trial);
+
+    const Vec3 fieldAtElectron = dipoleField(geometry.electronMinusPositron, geometry, trial.positronDipole);
+    const Vec3 fieldAtPositron = dipoleField(geometry.electronMinusPositron * -1.0, geometry, trial.electronDipole);
     // The real dipole precession is extremely slow on an orbital timescale.
     // This factor advances only the displayed spin dynamics so its changing
     // 3D direction is observable; the mechanical dipole force above remains
     // at its physical, unamplified value.
     constexpr double visibleSpinTimeScale = 3.0e4;
-    precessDipole(s.electronDipole, fieldAtElectron, -1.76085963023e11, dt * visibleSpinTimeScale);
-    precessDipole(s.positronDipole, fieldAtPositron, 1.76085963023e11, dt * visibleSpinTimeScale);
-
-    // Larmor power of both accelerated charges: P = q^2 a^2/(6 pi eps0 c^3).
-    // The corresponding energy is removed from relative motion only, preserving
-    // the centre-of-mass momentum of the isolated atom.
-    const double radiatedPower = eCharge*eCharge * (ae.squaredNorm() + ap.squaredNorm()) /
-                                 (6.0 * pi * epsilon0 * c*c*c);
-    const Vec3 relativeVelocity = s.electronVelocity - s.positronVelocity;
-    const double reducedMass = electronMass * positronMass / (electronMass + positronMass);
-    const double relativeKineticEnergy = 0.5 * reducedMass * relativeVelocity.squaredNorm();
-    const double removedEnergy = std::min(radiatedPower * dt, 0.02 * relativeKineticEnergy);
-    if (relativeKineticEnergy > 0.0 && removedEnergy > 0.0) {
-        const double scale = std::sqrt(1.0 - removedEnergy / relativeKineticEnergy);
-        const Vec3 centreVelocity = (s.electronVelocity * electronMass + s.positronVelocity * positronMass) /
-                                    (electronMass + positronMass);
-        const Vec3 newRelativeVelocity = relativeVelocity * scale;
-        s.electronVelocity = centreVelocity + newRelativeVelocity * (positronMass / (electronMass + positronMass));
-        s.positronVelocity = centreVelocity - newRelativeVelocity * (electronMass / (electronMass + positronMass));
-        s.radiatedEnergy += removedEnergy;
-    }
-
-    s.time += dt;
+    precessDipole(trial.electronDipole, fieldAtElectron, -1.76085963023e11, dt * visibleSpinTimeScale);
+    precessDipole(trial.positronDipole, fieldAtPositron, 1.76085963023e11, dt * visibleSpinTimeScale);
+    trial.radiatedEnergy += (lienardPower(-eCharge, trial.electronVelocity, trial.electronAcceleration)
+                           + lienardPower(eCharge, trial.positronVelocity, trial.positronAcceleration)) * dt;
+    s = trial;
 }
 
 Frame makeFrame(const State& s) {
     const PairGeometry geometry = pairGeometry(s);
-    const double electronKinetic = 0.5 * electronMass * s.electronVelocity.squaredNorm();
-    const double positronKinetic = 0.5 * positronMass * s.positronVelocity.squaredNorm();
+    const double electronKinetic = (gamma(s.electronVelocity) - 1.0) * electronMass * c*c;
+    const double positronKinetic = (gamma(s.positronVelocity) - 1.0) * positronMass * c*c;
     const double coulombPotential = -coulomb * eCharge*eCharge * geometry.inverseDistance;
     const double dipolePotential = -dot(s.electronDipole,
                                         dipoleField(geometry.electronMinusPositron, geometry, s.positronDipole));
@@ -257,6 +323,8 @@ std::vector<Frame> simulate() {
     };
     s.electronDipole = randomDirection() * bohrMagneton;
     s.positronDipole = randomDirection() * bohrMagneton;
+    State history = s;
+    bool hasHistory = false;
 
     constexpr int frameCount = 5000;
     constexpr double displayedLifetime = 1.50e-10;
@@ -274,7 +342,10 @@ std::vector<Frame> simulate() {
         // radius and keeps the Coulomb integration stable through the plunge.
         const double r = separation(s);
         const double omega = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * r*r*r));
-        advance(s, std::min(2.0e-18, 2.0 * pi / (80.0 * omega)));
+        const State current = s;
+        advance(s, history, std::min(2.0e-18, 2.0 * pi / (80.0 * omega)), hasHistory);
+        history = current;
+        hasHistory = true;
     }
     if (frames.empty()) throw std::runtime_error("No simulation frames were produced");
     return frames;

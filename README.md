@@ -1,13 +1,13 @@
-# Klasyczny atom wodoru — symulacja elektrodynamiczna
+# Klasyczne pozytonium — symulacja elektrodynamiczna
 
 Program w CERN ROOT przedstawia klasyczny model elektrodynamiczny układu
-elektron–proton:
+elektron–pozyton:
 
-- oba ładunki poruszają się w polu Coulomba w układzie środka masy;
-- całkowanie ruchu wykorzystuje metodę velocity-Verlet;
-- promieniowanie Larmora jest liczone dla obu przyspieszających ładunków;
-- energia wypromieniowana jest odejmowana od ruchu względnego, więc elektron
-  spiralnie zbliża się do protonu.
+- wzajemne pola ładunków są liczone z opóźnionych pól Liénarda–Wiecherta;
+- ruch jest całkowany dla relatywistycznego pędu `p = γmv`;
+- reakcja promieniowania jest lokalną, zredukowaną aproksymacją
+  Landaua–Lifshitza, wykorzystującą zmianę siły zewnętrznej między krokami;
+- skumulowana energia promieniowania jest liczona wzorem Liénarda.
 
 Każda cząstka ma też klasyczny moment dipolowy o losowym (lecz powtarzalnym)
 kierunku początkowym. Symulacja uwzględnia pole dipola, siłę dipol–dipol oraz
@@ -15,8 +15,9 @@ moment skręcający, który zmienia kierunki strzałek. Rzeczywista precesja jes
 na tej skali czasu zbyt wolna do zauważenia, dlatego wyłącznie wizualna ewolucja
 orientacji dipoli jest przyspieszona; ich wpływ mechaniczny nie jest wzmacniany.
 
-To jest oczekiwany rezultat klasycznej elektrodynamiki: przyspieszany ładunek
-promieniuje, dlatego taka orbita traci energię. Stabilność prawdziwego wodoru
+To nadal jest przybliżony model punktowych ładunków: dipole reprezentują
+fenomenologicznie spin, a lokalna postać reakcji promieniowania nie zastępuje
+pełnego problemu samopola. Stabilność i anihilację prawdziwego pozytonium
 opisuje mechanika kwantowa. Program kończy ruch przy `1e-14 m`, ponieważ model
 punktowych ładunków nie jest już tam wiarygodny.
 
@@ -26,11 +27,11 @@ Wymagany jest CERN ROOT (z `root-config` dostępnym w `PATH`).
 
 ```bash
 make
-./positronium
 ```
 
 Wykres jest w jednostkach promienia Bohra `a₀`. Odczyt na dole zawiera czas w
-pikosekundach oraz całkowitą energię mechaniczną układu elektron–proton w eV.
+pikosekundach, odległość cząstek w pm oraz całkowitą energię mechaniczną układu
+elektron–pozyton w eV.
 Wyświetlana jest również skumulowana energia wypromieniowana w eV. Linia nad
 bieżącymi licznikami pokazuje ich wartości początkowe, a linia pod nimi zmiany
 względem początku, oznaczone symbolem `Δ`.
