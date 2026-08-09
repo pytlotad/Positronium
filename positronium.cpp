@@ -12,6 +12,7 @@
 #include <TView.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -85,6 +86,7 @@ struct State {
 struct Frame {
     Vec3 electron, positron, electronDipole, positronDipole;
     double time, radius, radiatedEnergy, mechanicalEnergy;
+    double electronMechanicalEnergy, positronMechanicalEnergy;
 };
 
 double separation(const State& s) { return (s.electronPosition - s.positronPosition).norm(); }
@@ -173,6 +175,24 @@ double mechanicalEnergy(const State& s) {
     return kinetic + coulombPotential + dipolePotential;
 }
 
+double electronMechanicalEnergy(const State& s) {
+    const double r = separation(s);
+    const double kinetic = 0.5 * electronMass * s.electronVelocity.squaredNorm();
+    const double coulombShare = -0.5 * coulomb * eCharge*eCharge / r;
+    const double dipoleShare = -0.5 * dot(s.electronDipole,
+                                          dipoleField(s.electronPosition, s.positronPosition, s.positronDipole));
+    return kinetic + coulombShare + dipoleShare;
+}
+
+double positronMechanicalEnergy(const State& s) {
+    const double r = separation(s);
+    const double kinetic = 0.5 * positronMass * s.positronVelocity.squaredNorm();
+    const double coulombShare = -0.5 * coulomb * eCharge*eCharge / r;
+    const double dipoleShare = -0.5 * dot(s.positronDipole,
+                                          dipoleField(s.positronPosition, s.electronPosition, s.electronDipole));
+    return kinetic + coulombShare + dipoleShare;
+}
+
 // Coulomb motion plus the force and torque of two classical magnetic dipoles.
 void advance(State& s, double dt) {
     Vec3 ae = coulombAcceleration(s.electronPosition, s.positronPosition, -eCharge*eCharge/electronMass);
@@ -256,7 +276,8 @@ std::vector<Frame> simulate() {
     while (frames.size() < frameCount && separation(s) > nuclearCutoff) {
         if (s.time >= nextFrame) {
             frames.push_back({s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole,
-                              s.time, separation(s), s.radiatedEnergy, mechanicalEnergy(s)});
+                              s.time, separation(s), s.radiatedEnergy, mechanicalEnergy(s),
+                              electronMechanicalEnergy(s), positronMechanicalEnergy(s)});
             nextFrame += frameInterval;
         }
         // At least 80 steps per instantaneous orbit.  This shortens with the
@@ -287,22 +308,10 @@ std::string deltaLabelFor(const Frame& current, const Frame& initial) {
     return out.str();
 }
 
-void setCircle(TPolyLine3D& line, const Vec3& centre, double radius, int plane) {
-    constexpr int segments = 28;
-    for (int i = 0; i <= segments; ++i) {
-        const double angle = 2.0 * pi * i / segments;
-        const double a = radius * std::cos(angle);
-        const double b = radius * std::sin(angle);
-        if (plane == 0) line.SetPoint(i, centre.x + a, centre.y + b, centre.z);       // xy
-        if (plane == 1) line.SetPoint(i, centre.x + a, centre.y, centre.z + b);       // xz
-        if (plane == 2) line.SetPoint(i, centre.x, centre.y + a, centre.z + b);       // yz
-    }
-}
-
-void setBall(TPolyLine3D& xy, TPolyLine3D& xz, TPolyLine3D& yz, const Vec3& centre, double radius) {
-    setCircle(xy, centre, radius, 0);
-    setCircle(xz, centre, radius, 1);
-    setCircle(yz, centre, radius, 2);
+std::string formatTableValue(double value) {
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(2) << value;
+    return out.str();
 }
 
 void setDipoleArrow(TPolyLine3D& shaft, TPolyLine3D& leftHead, TPolyLine3D& rightHead,
@@ -331,11 +340,11 @@ int main(int argc, char** argv) {
     gStyle->SetCanvasColor(kBlack);
     gStyle->SetPadColor(kBlack);
 
-    TCanvas canvas("atom", "Klasyczne positronium: zapadanie radiacyjne", 1100, 820);
+    TCanvas canvas("atom", "Classical model of positronium", 1100, 820);
     canvas.SetFillColor(kBlack);
     canvas.SetSupportGL(kTRUE);
-    TPad scene("scene", "Symulacja", 0.0, 0.0, 1.0, 0.86);
-    TPad controls("controls", "Sterowanie", 0.0, 0.86, 1.0, 1.0);
+    TPad scene("scene", "Simulation", 0.0, 0.0, 1.0, 0.86);
+    TPad controls("controls", "Controls", 0.0, 0.86, 1.0, 1.0);
     scene.SetFillColor(kBlack);
     controls.SetFillColor(kBlack);
     scene.Draw();
@@ -345,7 +354,7 @@ int main(int argc, char** argv) {
     // ROOT rotates this 3D view when the user drags the mouse in the scene.
     // A non-zero Z span preserves perspective for the initially planar orbit.
     TView* view = TView::CreateView(1);
-    view->SetRange(-1.25, -1.25, -0.55, 1.25, 1.25, 0.55);
+    view->SetRange(-1.10, -1.10, -0.50, 1.10, 1.10, 0.50);
     gPad->SetTheta(70);
     gPad->SetPhi(25);
 
@@ -361,17 +370,7 @@ int main(int argc, char** argv) {
     path.SetLineWidth(2);
     path.Draw();
 
-    // Three great circles and a central marker form each visible 3D ball.
-    constexpr int spherePoints = 29;
-    TPolyLine3D electronXY(spherePoints), electronXZ(spherePoints), electronYZ(spherePoints);
-    TPolyLine3D positronXY(spherePoints), positronXZ(spherePoints), positronYZ(spherePoints);
     TPolyMarker3D electron(1), positron(1);
-    for (TPolyLine3D* ring : {&electronXY, &electronXZ, &electronYZ}) {
-        ring->SetLineColor(kAzure + 1); ring->SetLineWidth(2); ring->Draw("same");
-    }
-    for (TPolyLine3D* ring : {&positronXY, &positronXZ, &positronYZ}) {
-        ring->SetLineColor(kRed + 1); ring->SetLineWidth(2); ring->Draw("same");
-    }
     electron.SetMarkerStyle(20); electron.SetMarkerSize(1.8); electron.SetMarkerColor(kAzure + 1);
     positron.SetMarkerStyle(20); positron.SetMarkerSize(2.5); positron.SetMarkerColor(kRed + 1);
     electron.Draw("same");
@@ -380,35 +379,81 @@ int main(int argc, char** argv) {
     TPolyLine3D electronDipoleShaft(2), electronDipoleLeft(2), electronDipoleRight(2);
     TPolyLine3D positronDipoleShaft(2), positronDipoleLeft(2), positronDipoleRight(2);
     for (TPolyLine3D* arrow : {&electronDipoleShaft, &electronDipoleLeft, &electronDipoleRight}) {
-        arrow->SetLineColor(kMagenta + 1); arrow->SetLineWidth(3); arrow->Draw("same");
+        arrow->SetLineColor(kAzure + 1); arrow->SetLineWidth(3); arrow->Draw("same");
     }
     for (TPolyLine3D* arrow : {&positronDipoleShaft, &positronDipoleLeft, &positronDipoleRight}) {
-        arrow->SetLineColor(kGreen + 2); arrow->SetLineWidth(3); arrow->Draw("same");
+        arrow->SetLineColor(kRed + 1); arrow->SetLineWidth(3); arrow->Draw("same");
     }
 
-    TLatex readout;
-    // High-contrast overlay: it remains readable over the dark 3D scene.
-    readout.SetNDC(); readout.SetTextColor(kYellow + 1); readout.SetTextSize(0.028); readout.SetTextFont(62);
-    readout.SetText(0.04, 0.065, "");
-    readout.Draw();
-    TLatex initialReadout;
-    initialReadout.SetNDC(); initialReadout.SetTextColor(kCyan + 1); initialReadout.SetTextSize(0.024); initialReadout.SetTextFont(62);
-    const std::string initialValues = labelFor(frames.front());
-    initialReadout.SetText(0.04, 0.105, initialValues.c_str());
-    initialReadout.Draw();
-    TLatex deltaReadout;
-    deltaReadout.SetNDC(); deltaReadout.SetTextColor(kGreen + 2); deltaReadout.SetTextSize(0.024); deltaReadout.SetTextFont(62);
-    deltaReadout.SetText(0.04, 0.025, "");
-    deltaReadout.Draw();
+    const Frame& initialFrame = frames.front();
+    constexpr double bottomHeaderY = 0.125;
+    constexpr double bottomInitialY = 0.090;
+    constexpr double bottomCurrentY = 0.055;
+    constexpr double bottomDeltaY = 0.020;
+    const std::array<double, 5> bottomXs = {0.05, 0.21, 0.34, 0.47, 0.61};
+    const std::array<const char*, 6> bottomHeaders = {
+        "stan", "t [ps]", "E_{e} [eV]", "E_{p} [eV]", "E_{sum} [eV]", "E_{rad} [eV]"
+    };
+    std::array<TLatex, 5> bottomHeaderLabels;
+    for (size_t i = 0; i < bottomHeaderLabels.size(); ++i) {
+        bottomHeaderLabels[i].SetNDC(); bottomHeaderLabels[i].SetTextColor(kWhite);
+        bottomHeaderLabels[i].SetTextSize(0.024); bottomHeaderLabels[i].SetTextFont(62);
+        bottomHeaderLabels[i].SetText(bottomXs[i], bottomHeaderY, bottomHeaders[i]);
+        bottomHeaderLabels[i].Draw();
+    }
+    TLatex bottomRadHeader;
+    bottomRadHeader.SetNDC(); bottomRadHeader.SetTextColor(kWhite);
+    bottomRadHeader.SetTextSize(0.024); bottomRadHeader.SetTextFont(62);
+    bottomRadHeader.SetText(0.75, bottomHeaderY, bottomHeaders.back());
+    bottomRadHeader.Draw();
+    std::array<TLatex, 5> initialBottomRow;
+    std::array<TLatex, 5> currentBottomRow;
+    std::array<TLatex, 5> deltaBottomRow;
+    TLatex initialBottomRad;
+    TLatex currentBottomRad;
+    TLatex deltaBottomRad;
+    const auto initializeBottomRow = [&](std::array<TLatex, 5>& row, int color, double textSize) {
+        for (TLatex& cell : row) {
+            cell.SetNDC(); cell.SetTextColor(color);
+            cell.SetTextSize(textSize); cell.SetTextFont(62);
+            cell.SetText(0, 0, "");
+            cell.Draw();
+        }
+    };
+    initializeBottomRow(initialBottomRow, kCyan + 1, 0.024);
+    initializeBottomRow(currentBottomRow, kYellow + 1, 0.024);
+    initializeBottomRow(deltaBottomRow, kGreen + 2, 0.024);
+    initialBottomRad.SetNDC(); initialBottomRad.SetTextColor(kCyan + 1);
+    initialBottomRad.SetTextSize(0.024); initialBottomRad.SetTextFont(62);
+    currentBottomRad.SetNDC(); currentBottomRad.SetTextColor(kYellow + 1);
+    currentBottomRad.SetTextSize(0.024); currentBottomRad.SetTextFont(62);
+    deltaBottomRad.SetNDC(); deltaBottomRad.SetTextColor(kGreen + 2);
+    deltaBottomRad.SetTextSize(0.024); deltaBottomRad.SetTextFont(62);
+
+    const auto drawBottomRow = [&](std::array<TLatex, 5>& row, double y, const std::array<std::string, 5>& values) {
+        for (size_t i = 0; i < row.size(); ++i) {
+            row[i].SetText(bottomXs[i], y, values[i].c_str());
+            row[i].Draw();
+        }
+    };
+
+    drawBottomRow(initialBottomRow, bottomInitialY, std::array<std::string, 5>{
+        "initial",
+        formatTableValue(initialFrame.time * 1.0e12),
+        formatTableValue(initialFrame.electronMechanicalEnergy / eCharge),
+        formatTableValue(initialFrame.positronMechanicalEnergy / eCharge),
+        formatTableValue(initialFrame.mechanicalEnergy / eCharge)
+    });
+    initialBottomRad.SetText(0.75, bottomInitialY, formatTableValue(initialFrame.radiatedEnergy / eCharge).c_str());
+    initialBottomRad.Draw();
+    drawBottomRow(currentBottomRow, bottomCurrentY, std::array<std::string, 5>{"current", "0.00", "0.00", "0.00", "0.00"});
+    currentBottomRad.SetText(0.75, bottomCurrentY, "0.00");
+    currentBottomRad.Draw();
+    drawBottomRow(deltaBottomRow, bottomDeltaY, std::array<std::string, 5>{"delta", "0.00", "0.00", "0.00", "0.00"});
+    deltaBottomRad.SetText(0.75, bottomDeltaY, "0.00");
+    deltaBottomRad.Draw();
 
     controls.cd();
-    TLatex title, subtitle;
-    title.SetNDC(); title.SetTextColor(kWhite); title.SetTextSize(0.25); title.SetTextFont(62);
-    subtitle.SetNDC(); subtitle.SetTextColor(kGray + 1); subtitle.SetTextSize(0.15);
-    title.DrawLatex(0.035, 0.70, "Klasyczne positronium — zapadanie radiacyjne");
-    subtitle.DrawLatex(0.035, 0.30, "Coulomb + dipole + promieniowanie Larmora; mysz obraca kamer#281;");
-
-    // Make the compiled callbacks visible to ROOT's command interpreter.
     gInterpreter->Declare("void ToggleSimulation(); void ExitSimulation();");
     TButton stopButton("STOP", "ToggleSimulation();", 0.73, 0.25, 0.85, 0.78);
     stopButton.SetFillColor(kOrange + 7);
@@ -419,8 +464,6 @@ int main(int argc, char** argv) {
     exitButton.SetFillColor(kRed + 1);
     exitButton.SetTextFont(62);
     exitButton.Draw();
-    // Keep the label tied to the actual state, rather than to the last click.
-    // STOP is shown while frames are advancing; START while animation is paused.
     const auto syncStopButton = [&]() {
         if (gStopButton) gStopButton->SetTitle(gSimulationPaused ? "START" : "STOP");
         controls.Modified();
@@ -428,6 +471,33 @@ int main(int argc, char** argv) {
     syncStopButton();
     controls.Modified();
     controls.Update();
+
+    const auto updateBottomRow = [&](const Frame& f) {
+        const std::array<std::string, 5> currentValues = {
+            "current",
+            formatTableValue(f.time * 1.0e12),
+            formatTableValue(f.electronMechanicalEnergy / eCharge),
+            formatTableValue(f.positronMechanicalEnergy / eCharge),
+            formatTableValue(f.mechanicalEnergy / eCharge)
+        };
+        drawBottomRow(currentBottomRow, bottomCurrentY, currentValues);
+        currentBottomRad.SetText(0.75, bottomCurrentY, formatTableValue(f.radiatedEnergy / eCharge).c_str());
+        currentBottomRad.Draw();
+
+        const std::array<std::string, 5> deltaValues = {
+            "delta",
+            formatTableValue((f.time - initialFrame.time) * 1.0e12),
+            formatTableValue((f.electronMechanicalEnergy - initialFrame.electronMechanicalEnergy) / eCharge),
+            formatTableValue((f.positronMechanicalEnergy - initialFrame.positronMechanicalEnergy) / eCharge),
+            formatTableValue((f.mechanicalEnergy - initialFrame.mechanicalEnergy) / eCharge)
+        };
+        drawBottomRow(deltaBottomRow, bottomDeltaY, deltaValues);
+        deltaBottomRad.SetText(0.75, bottomDeltaY,
+                               formatTableValue((f.radiatedEnergy - initialFrame.radiatedEnergy) / eCharge).c_str());
+        deltaBottomRad.Draw();
+    };
+
+    updateBottomRow(initialFrame);
 
     for (size_t i = 0; i < frames.size(); ++i) {
         while (gSimulationPaused && !gExitRequested) {
@@ -444,14 +514,11 @@ int main(int argc, char** argv) {
         positron.SetPoint(0, f.positron.x * scale, f.positron.y * scale, f.positron.z * scale);
         const Vec3 electronPosition = f.electron * scale;
         const Vec3 positronPosition = f.positron * scale;
-        setBall(electronXY, electronXZ, electronYZ, electronPosition, 0.075);
-        setBall(positronXY, positronXZ, positronYZ, positronPosition, 0.105);
         setDipoleArrow(electronDipoleShaft, electronDipoleLeft, electronDipoleRight,
                        electronPosition, f.electronDipole);
         setDipoleArrow(positronDipoleShaft, positronDipoleLeft, positronDipoleRight,
                        positronPosition, f.positronDipole);
-        readout.SetText(0.04, 0.065, labelFor(f).c_str());
-        deltaReadout.SetText(0.04, 0.025, deltaLabelFor(f, frames.front()).c_str());
+        updateBottomRow(f);
         if (i % 4 == 0 || i + 1 == frames.size()) {
             scene.Modified();
             canvas.Modified();
@@ -462,8 +529,6 @@ int main(int argc, char** argv) {
         }
     }
     controls.cd();
-    subtitle.SetTextColor(kYellow);
-    subtitle.SetText(0.035, 0.08, "STOP zatrzymuje animacj#281;; ponowne klikni#281;cie j#261; wznawia.");
     canvas.Modified();
     canvas.Update();
     app.Run();
