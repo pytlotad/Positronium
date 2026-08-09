@@ -48,9 +48,39 @@ commit_changes() {
 
     if git commit -m "$summary" -m "$body"; then
         echo "Committed: $summary"
+        sync_changes
     else
         echo "WARNING: automatic commit failed; changes remain staged." >&2
     fi
+}
+
+sync_changes() {
+    local branch
+    branch=$(git branch --show-current)
+    if [[ -z "$branch" ]]; then
+        echo "WARNING: automatic sync skipped in detached HEAD state." >&2
+        return 0
+    fi
+    if ! git remote get-url origin >/dev/null 2>&1; then
+        echo "WARNING: automatic sync skipped: remote 'origin' is not configured." >&2
+        return 0
+    fi
+
+    echo "Syncing branch: $branch"
+    if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
+        if ! GIT_TERMINAL_PROMPT=0 git pull --rebase --autostash; then
+            echo "WARNING: automatic pull failed; local commit is preserved." >&2
+            return 0
+        fi
+        if ! GIT_TERMINAL_PROMPT=0 git push; then
+            echo "WARNING: automatic push failed; local commit is preserved." >&2
+            return 0
+        fi
+    elif ! GIT_TERMINAL_PROMPT=0 git push --set-upstream origin "$branch"; then
+        echo "WARNING: automatic push failed; local commit is preserved." >&2
+        return 0
+    fi
+    echo "Sync complete: $branch"
 }
 
 echo "Watching repository for saved files..."
