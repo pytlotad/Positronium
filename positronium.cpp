@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -78,7 +80,6 @@ struct State {
     Vec3 electronPosition, positronPosition;
     Vec3 electronVelocity, positronVelocity;
     Vec3 electronAcceleration, positronAcceleration;
-    Vec3 electronExternalForce, positronExternalForce;
     Vec3 electronDipole, positronDipole; // classical magnetic moments, in J/T
     double time = 0;
     double radiatedEnergy = 0;
@@ -86,7 +87,7 @@ struct State {
 
 struct Frame {
     Vec3 electron, positron, electronDipole, positronDipole;
-    double time, radius, radiatedEnergy, mechanicalEnergy;
+    double time, radius, radiatedEnergy, mechanicalEnergy, schottEnergy;
     double electronMechanicalEnergy, positronMechanicalEnergy;
 };
 
@@ -143,7 +144,14 @@ ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
     double retardedTime = newerSourceState.time - (observationPosition - source.position).norm() / c;
     for (int iteration = 0; iteration < 6; ++iteration) {
         source = interpolatedCharge(olderSourceState, newerSourceState, sourceIsElectron, retardedTime);
-        retardedTime = newerSourceState.time - (observationPosition - source.position).norm() / c;
+        const double refinedTime = newerSourceState.time - (observationPosition - source.position).norm() / c;
+        // The fixed-point iteration converges very quickly here (v/c is small).
+        // Avoid doing all six rounds once the retarded time is already stable.
+        if (std::abs(refinedTime - retardedTime) <= 1.0e-24) {
+            retardedTime = refinedTime;
+            break;
+        }
+        retardedTime = refinedTime;
     }
     const Vec3 displacement = observationPosition - source.position;
     const double distance = displacement.norm();
@@ -215,38 +223,44 @@ double lienardPower(double charge, const Vec3& velocity, const Vec3& acceleratio
            (6.0 * pi * epsilon0 * c*c*c);
 }
 
-// In the weak-self-field regime this is the local, order-reduced
-// Landau-Lifshitz force.  The derivative of the external force is evaluated
-// from consecutive integration steps, avoiding the unstable third derivative
-// in the Lorentz-Abraham-Dirac equation.
-Vec3 landauLifshitzForce(const Vec3& externalForce, const Vec3& previousExternalForce,
-                         double mass, double dt, bool hasHistory) {
-    if (!hasHistory) return {};
-    const double tau = eCharge*eCharge / (6.0 * pi * epsilon0 * mass * c*c*c);
-    return (externalForce - previousExternalForce) * (tau / dt);
-}
-
 struct MutualForces { Vec3 electron, positron; };
 
-MutualForces mutualForces(const State& history, const State& s) {
-    const ElectromagneticField positronField = lienardWiechertField(s.electronPosition, history, s, false, eCharge);
-    const ElectromagneticField electronField = lienardWiechertField(s.positronPosition, history, s, true, -eCharge);
+MutualForces mutualForces(const State& s) {
     const PairGeometry geometry = pairGeometry(s);
-    const Vec3 dipoleForceOnElectron = dipoleForce(geometry.electronMinusPositron, geometry,
-                                                    s.electronDipole, s.positronDipole);
-    return {lorentzForce(-eCharge, s.electronVelocity, positronField) + dipoleForceOnElectron,
-            lorentzForce(eCharge, s.positronVelocity, electronField) - dipoleForceOnElectron};
+    const Vec3 forceOnElectron = geometry.electronMinusPositron
+                               * (-coulomb * eCharge * eCharge * geometry.inverseDistanceCubed);
+    return {forceOnElectron, forceOnElectron * -1.0};
 }
 
-// Relativistic momentum update driven by mutually retarded fields.
-void advance(State& s, const State& history, double dt, bool hasHistory) {
-    MutualForces forces = mutualForces(history, s);
-    const Vec3 electronReaction = landauLifshitzForce(forces.electron, s.electronExternalForce,
-                                                      electronMass, dt, hasHistory);
-    const Vec3 positronReaction = landauLifshitzForce(forces.positron, s.positronExternalForce,
-                                                      positronMass, dt, hasHistory);
-    Vec3 electronMomentum = momentum(s.electronVelocity, electronMass) + (forces.electron + electronReaction) * (0.5 * dt);
-    Vec3 positronMomentum = momentum(s.positronVelocity, positronMass) + (forces.positron + positronReaction) * (0.5 * dt);
+MutualForces landauLifshitzForces(const State& s) {
+    const PairGeometry geometry = pairGeometry(s);
+    const Vec3 relativeVelocity = s.electronVelocity - s.positronVelocity;
+    const double radialVelocity = dot(geometry.electronMinusPositron, relativeVelocity);
+    const double inverseDistanceFifth = geometry.inverseDistanceFourth * geometry.inverseDistance;
+    const double strength = coulomb * eCharge * eCharge;
+    // Total time derivative of F_e = -k e^2 r/r^3.  In the non-relativistic
+    // reduction of order, F_RR = tau dF_ext/dt; it is derived from the
+    // Abraham-Lorentz equation rather than fitted to the radiated power.
+    const Vec3 electronForceDerivative = relativeVelocity * (-strength * geometry.inverseDistanceCubed)
+                                       + geometry.electronMinusPositron
+                                       * (3.0 * strength * radialVelocity * inverseDistanceFifth);
+    const double tau = eCharge * eCharge / (6.0 * pi * epsilon0 * electronMass * c*c*c);
+    const Vec3 electronReaction = electronForceDerivative * tau;
+    return {electronReaction, electronReaction * -1.0};
+}
+
+// Relativistic predictor-corrector update. At positronium's initial v/c of
+// about 0.005, the instantaneous Coulomb interaction is the controlled leading
+// term; radiation reaction is the Landau-Lifshitz reduction of order.
+void advance(State& s, double dt) {
+    MutualForces forces = mutualForces(s);
+    const MutualForces reactions = landauLifshitzForces(s);
+    const Vec3 electronAcceleration = relativisticAcceleration(s.electronVelocity, forces.electron, electronMass);
+    const Vec3 positronAcceleration = relativisticAcceleration(s.positronVelocity, forces.positron, positronMass);
+    const double electronPower = lienardPower(-eCharge, s.electronVelocity, electronAcceleration);
+    const double positronPower = lienardPower(eCharge, s.positronVelocity, positronAcceleration);
+    Vec3 electronMomentum = momentum(s.electronVelocity, electronMass) + (forces.electron + reactions.electron) * (0.5 * dt);
+    Vec3 positronMomentum = momentum(s.positronVelocity, positronMass) + (forces.positron + reactions.positron) * (0.5 * dt);
     State trial = s;
     trial.time += dt;
     trial.electronVelocity = velocityFromMomentum(electronMomentum, electronMass);
@@ -256,33 +270,28 @@ void advance(State& s, const State& history, double dt, bool hasHistory) {
     trial.electronAcceleration = relativisticAcceleration(trial.electronVelocity, forces.electron, electronMass);
     trial.positronAcceleration = relativisticAcceleration(trial.positronVelocity, forces.positron, positronMass);
 
-    const MutualForces trialForces = mutualForces(s, trial);
-    const Vec3 trialElectronReaction = landauLifshitzForce(trialForces.electron, forces.electron,
-                                                           electronMass, dt, true);
-    const Vec3 trialPositronReaction = landauLifshitzForce(trialForces.positron, forces.positron,
-                                                           positronMass, dt, true);
-    electronMomentum += (trialForces.electron + trialElectronReaction) * (0.5 * dt);
-    positronMomentum += (trialForces.positron + trialPositronReaction) * (0.5 * dt);
+    const MutualForces trialForces = mutualForces(trial);
+    const MutualForces trialReactions = landauLifshitzForces(trial);
+    const Vec3 trialElectronAcceleration = relativisticAcceleration(trial.electronVelocity, trialForces.electron,
+                                                                    electronMass);
+    const Vec3 trialPositronAcceleration = relativisticAcceleration(trial.positronVelocity, trialForces.positron,
+                                                                    positronMass);
+    const double trialElectronPower = lienardPower(-eCharge, trial.electronVelocity, trialElectronAcceleration);
+    const double trialPositronPower = lienardPower(eCharge, trial.positronVelocity, trialPositronAcceleration);
+    electronMomentum += (trialForces.electron + trialReactions.electron) * (0.5 * dt);
+    positronMomentum += (trialForces.positron + trialReactions.positron) * (0.5 * dt);
     trial.electronVelocity = velocityFromMomentum(electronMomentum, electronMass);
     trial.positronVelocity = velocityFromMomentum(positronMomentum, positronMass);
     trial.electronAcceleration = relativisticAcceleration(trial.electronVelocity, trialForces.electron, electronMass);
     trial.positronAcceleration = relativisticAcceleration(trial.positronVelocity, trialForces.positron, positronMass);
-    trial.electronExternalForce = trialForces.electron;
-    trial.positronExternalForce = trialForces.positron;
-
     PairGeometry geometry = pairGeometry(trial);
 
     const Vec3 fieldAtElectron = dipoleField(geometry.electronMinusPositron, geometry, trial.positronDipole);
     const Vec3 fieldAtPositron = dipoleField(geometry.electronMinusPositron * -1.0, geometry, trial.electronDipole);
-    // The real dipole precession is extremely slow on an orbital timescale.
-    // This factor advances only the displayed spin dynamics so its changing
-    // 3D direction is observable; the mechanical dipole force above remains
-    // at its physical, unamplified value.
-    constexpr double visibleSpinTimeScale = 3.0e4;
-    precessDipole(trial.electronDipole, fieldAtElectron, -1.76085963023e11, dt * visibleSpinTimeScale);
-    precessDipole(trial.positronDipole, fieldAtPositron, 1.76085963023e11, dt * visibleSpinTimeScale);
-    trial.radiatedEnergy += (lienardPower(-eCharge, trial.electronVelocity, trial.electronAcceleration)
-                           + lienardPower(eCharge, trial.positronVelocity, trial.positronAcceleration)) * dt;
+    precessDipole(trial.electronDipole, fieldAtElectron, -1.76085963023e11, dt);
+    precessDipole(trial.positronDipole, fieldAtPositron, 1.76085963023e11, dt);
+    trial.radiatedEnergy += 0.5 * (electronPower + positronPower
+                                 + trialElectronPower + trialPositronPower) * dt;
     s = trial;
 }
 
@@ -291,13 +300,20 @@ Frame makeFrame(const State& s) {
     const double electronKinetic = (gamma(s.electronVelocity) - 1.0) * electronMass * c*c;
     const double positronKinetic = (gamma(s.positronVelocity) - 1.0) * positronMass * c*c;
     const double coulombPotential = -coulomb * eCharge*eCharge * geometry.inverseDistance;
-    const double dipolePotential = -dot(s.electronDipole,
-                                        dipoleField(geometry.electronMinusPositron, geometry, s.positronDipole));
+    const MutualForces forces = mutualForces(s);
+    const Vec3 electronAcceleration = relativisticAcceleration(s.electronVelocity, forces.electron, electronMass);
+    const Vec3 positronAcceleration = relativisticAcceleration(s.positronVelocity, forces.positron, positronMass);
+    const double tau = eCharge * eCharge / (6.0 * pi * epsilon0 * electronMass * c*c*c);
+    // Near-field (Schott) energy required by the instantaneous radiation
+    // balance: d(E_mech + E_rad + E_Schott)/dt = 0 to LL order.
+    const double schottEnergy = -electronMass * tau
+        * (dot(electronAcceleration, s.electronVelocity) + dot(positronAcceleration, s.positronVelocity));
     return {s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole,
             s.time, geometry.distance, s.radiatedEnergy,
-            electronKinetic + positronKinetic + coulombPotential + dipolePotential,
-            electronKinetic + 0.5 * (coulombPotential + dipolePotential),
-            positronKinetic + 0.5 * (coulombPotential + dipolePotential)};
+            electronKinetic + positronKinetic + coulombPotential,
+            schottEnergy,
+            electronKinetic + 0.5 * coulombPotential,
+            positronKinetic + 0.5 * coulombPotential};
 }
 
 std::vector<Frame> simulate() {
@@ -323,9 +339,6 @@ std::vector<Frame> simulate() {
     };
     s.electronDipole = randomDirection() * bohrMagneton;
     s.positronDipole = randomDirection() * bohrMagneton;
-    State history = s;
-    bool hasHistory = false;
-
     constexpr int frameCount = 5000;
     constexpr double displayedLifetime = 1.50e-10;
     std::vector<Frame> frames;
@@ -338,17 +351,43 @@ std::vector<Frame> simulate() {
             frames.push_back(makeFrame(s));
             nextFrame += frameInterval;
         }
-        // At least 80 steps per instantaneous orbit.  This shortens with the
-        // radius and keeps the Coulomb integration stable through the plunge.
+        // Resolve each instantaneous orbit well enough to keep numerical
+        // energy drift below the physical radiation loss.
         const double r = separation(s);
         const double omega = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * r*r*r));
-        const State current = s;
-        advance(s, history, std::min(2.0e-18, 2.0 * pi / (80.0 * omega)), hasHistory);
-        history = current;
-        hasHistory = true;
+        advance(s, std::min(2.0e-18, 2.0 * pi / (80.0 * omega)));
     }
     if (frames.empty()) throw std::runtime_error("No simulation frames were produced");
     return frames;
+}
+
+constexpr const char* frameCachePath = ".positronium-frames.cache";
+constexpr char buildId[] = __DATE__ " " __TIME__;
+
+std::vector<Frame> loadCachedFrames() {
+    std::ifstream input(frameCachePath, std::ios::binary);
+    if (!input) return {};
+
+    char cachedBuildId[sizeof(buildId)]{};
+    std::size_t count = 0;
+    input.read(cachedBuildId, sizeof(cachedBuildId));
+    input.read(reinterpret_cast<char*>(&count), sizeof(count));
+    if (!input || std::strcmp(cachedBuildId, buildId) != 0 || count == 0 || count > 5000) return {};
+
+    std::vector<Frame> frames(count);
+    input.read(reinterpret_cast<char*>(frames.data()),
+               static_cast<std::streamsize>(frames.size() * sizeof(Frame)));
+    return input ? frames : std::vector<Frame>{};
+}
+
+void saveCachedFrames(const std::vector<Frame>& frames) {
+    std::ofstream output(frameCachePath, std::ios::binary | std::ios::trunc);
+    if (!output) return;
+    const std::size_t count = frames.size();
+    output.write(buildId, sizeof(buildId));
+    output.write(reinterpret_cast<const char*>(&count), sizeof(count));
+    output.write(reinterpret_cast<const char*>(frames.data()),
+                 static_cast<std::streamsize>(frames.size() * sizeof(Frame)));
 }
 
 std::string labelFor(const Frame& f) {
@@ -375,6 +414,12 @@ std::string formatTableValue(double value) {
     return out.str();
 }
 
+std::string spinLabel(const Frame& frame) {
+    const char* electronArrow = frame.electronDipole.z >= 0.0 ? "#uparrow" : "#downarrow";
+    const char* positronArrow = frame.positronDipole.z >= 0.0 ? "#uparrow" : "#downarrow";
+    return std::string(electronArrow) + " " + positronArrow;
+}
+
 void setDipoleArrow(TPolyLine3D& shaft, TPolyLine3D& leftHead, TPolyLine3D& rightHead,
                     const Vec3& centre, const Vec3& dipole) {
     const Vec3 direction = unit(dipole);
@@ -392,9 +437,37 @@ void setDipoleArrow(TPolyLine3D& shaft, TPolyLine3D& leftHead, TPolyLine3D& righ
 } // namespace
 
 int main(int argc, char** argv) {
-    std::vector<Frame> frames = simulate();
+    std::vector<Frame> frames = loadCachedFrames();
+    if (frames.empty()) {
+        frames = simulate();
+        saveCachedFrames(frames);
+    }
     std::cout << "Classical radiative collapse simulated for " << frames.back().time << " s; "
               << frames.size() << " animation frames.\n";
+    if (argc > 1 && std::string(argv[1]) == "--diagnose") {
+        const double initialTotal = frames.front().mechanicalEnergy + frames.front().radiatedEnergy
+                                  + frames.front().schottEnergy;
+        const double finalTotal = frames.back().mechanicalEnergy + frames.back().radiatedEnergy
+                                + frames.back().schottEnergy;
+        const double energyDrift = finalTotal - initialTotal;
+        const double energyScale = std::max(std::abs(frames.back().radiatedEnergy), std::abs(initialTotal));
+        const double relativeEnergyDrift = std::abs(energyDrift) / energyScale;
+        const bool collapsing = frames.back().radius < frames.front().radius;
+        const bool energyBalanced = relativeEnergyDrift < 0.01;
+        const auto radiusBounds = std::minmax_element(frames.begin(), frames.end(),
+            [](const Frame& a, const Frame& b) { return a.radius < b.radius; });
+        std::cout << std::setprecision(8)
+                  << "initial radius: " << frames.front().radius * 1.0e12 << " pm\n"
+                  << "final radius:   " << frames.back().radius * 1.0e12 << " pm\n"
+                  << "radius range:   " << radiusBounds.first->radius * 1.0e12 << " .. "
+                  << radiusBounds.second->radius * 1.0e12 << " pm\n"
+                  << "radiated:       " << frames.back().radiatedEnergy / eCharge << " eV\n"
+                  << "Schott energy:  " << frames.back().schottEnergy / eCharge << " eV\n"
+                  << "energy drift:   " << energyDrift / eCharge << " eV ("
+                  << relativeEnergyDrift * 100.0 << "%)\n"
+                  << "diagnostic:     " << (collapsing && energyBalanced ? "PASS" : "FAIL") << '\n';
+        return collapsing && energyBalanced ? 0 : 1;
+    }
 
     TApplication app("classical_hydrogen", &argc, argv);
     gStyle->SetOptStat(0);
@@ -451,11 +524,11 @@ int main(int argc, char** argv) {
     constexpr double bottomInitialY = 0.090;
     constexpr double bottomCurrentY = 0.055;
     constexpr double bottomDeltaY = 0.020;
-    const std::array<double, 6> bottomXs = {0.03, 0.16, 0.29, 0.41, 0.53, 0.66};
-    const std::array<const char*, 7> bottomHeaders = {
-        "stan", "t [ps]", "r [pm]", "E_{e} [eV]", "E_{p} [eV]", "E_{sum} [eV]", "E_{rad} [eV]"
+    const std::array<double, 7> bottomXs = {0.02, 0.13, 0.23, 0.33, 0.45, 0.57, 0.69};
+    const std::array<const char*, 8> bottomHeaders = {
+        "stan", "t [ps]", "Spin (e^{-},e^{+})", "r [pm]", "E_{e} [eV]", "E_{p} [eV]", "E_{sum} [eV]", "E_{rad} [eV]"
     };
-    std::array<TLatex, 6> bottomHeaderLabels;
+    std::array<TLatex, 7> bottomHeaderLabels;
     for (size_t i = 0; i < bottomHeaderLabels.size(); ++i) {
         bottomHeaderLabels[i].SetNDC(); bottomHeaderLabels[i].SetTextColor(kWhite);
         bottomHeaderLabels[i].SetTextSize(0.024); bottomHeaderLabels[i].SetTextFont(62);
@@ -465,15 +538,15 @@ int main(int argc, char** argv) {
     TLatex bottomRadHeader;
     bottomRadHeader.SetNDC(); bottomRadHeader.SetTextColor(kWhite);
     bottomRadHeader.SetTextSize(0.024); bottomRadHeader.SetTextFont(62);
-    bottomRadHeader.SetText(0.80, bottomHeaderY, bottomHeaders.back());
+    bottomRadHeader.SetText(0.84, bottomHeaderY, bottomHeaders.back());
     bottomRadHeader.Draw();
-    std::array<TLatex, 6> initialBottomRow;
-    std::array<TLatex, 6> currentBottomRow;
-    std::array<TLatex, 6> deltaBottomRow;
+    std::array<TLatex, 7> initialBottomRow;
+    std::array<TLatex, 7> currentBottomRow;
+    std::array<TLatex, 7> deltaBottomRow;
     TLatex initialBottomRad;
     TLatex currentBottomRad;
     TLatex deltaBottomRad;
-    const auto initializeBottomRow = [&](std::array<TLatex, 6>& row, int color, double textSize) {
+    const auto initializeBottomRow = [&](std::array<TLatex, 7>& row, int color, double textSize) {
         for (TLatex& cell : row) {
             cell.SetNDC(); cell.SetTextColor(color);
             cell.SetTextSize(textSize); cell.SetTextFont(62);
@@ -491,27 +564,28 @@ int main(int argc, char** argv) {
     deltaBottomRad.SetNDC(); deltaBottomRad.SetTextColor(kGreen + 2);
     deltaBottomRad.SetTextSize(0.024); deltaBottomRad.SetTextFont(62);
 
-    const auto drawBottomRow = [&](std::array<TLatex, 6>& row, double y, const std::array<std::string, 6>& values) {
+    const auto drawBottomRow = [&](std::array<TLatex, 7>& row, double y, const std::array<std::string, 7>& values) {
         for (size_t i = 0; i < row.size(); ++i) {
             row[i].SetText(bottomXs[i], y, values[i].c_str());
         }
     };
 
-    drawBottomRow(initialBottomRow, bottomInitialY, std::array<std::string, 6>{
+    drawBottomRow(initialBottomRow, bottomInitialY, std::array<std::string, 7>{
         "initial",
         formatTableValue(initialFrame.time * 1.0e12),
+        spinLabel(initialFrame),
         formatTableValue(initialFrame.radius * 1.0e12),
         formatTableValue(initialFrame.electronMechanicalEnergy / eCharge),
         formatTableValue(initialFrame.positronMechanicalEnergy / eCharge),
         formatTableValue(initialFrame.mechanicalEnergy / eCharge)
     });
-    initialBottomRad.SetText(0.80, bottomInitialY, formatTableValue(initialFrame.radiatedEnergy / eCharge).c_str());
+    initialBottomRad.SetText(0.84, bottomInitialY, formatTableValue(initialFrame.radiatedEnergy / eCharge).c_str());
     initialBottomRad.Draw();
-    drawBottomRow(currentBottomRow, bottomCurrentY, std::array<std::string, 6>{"current", "0.00", "0.00", "0.00", "0.00", "0.00"});
-    currentBottomRad.SetText(0.80, bottomCurrentY, "0.00");
+    drawBottomRow(currentBottomRow, bottomCurrentY, std::array<std::string, 7>{"current", "0.00", spinLabel(initialFrame), "0.00", "0.00", "0.00", "0.00"});
+    currentBottomRad.SetText(0.84, bottomCurrentY, "0.00");
     currentBottomRad.Draw();
-    drawBottomRow(deltaBottomRow, bottomDeltaY, std::array<std::string, 6>{"delta", "0.00", "0.00", "0.00", "0.00", "0.00"});
-    deltaBottomRad.SetText(0.80, bottomDeltaY, "0.00");
+    drawBottomRow(deltaBottomRow, bottomDeltaY, std::array<std::string, 7>{"delta", "0.00", "--", "0.00", "0.00", "0.00", "0.00"});
+    deltaBottomRad.SetText(0.84, bottomDeltaY, "0.00");
     deltaBottomRad.Draw();
 
     controls.cd();
@@ -534,27 +608,29 @@ int main(int argc, char** argv) {
     controls.Update();
 
     const auto updateBottomRow = [&](const Frame& f) {
-        const std::array<std::string, 6> currentValues = {
+        const std::array<std::string, 7> currentValues = {
             "current",
             formatTableValue(f.time * 1.0e12),
+            spinLabel(f),
             formatTableValue(f.radius * 1.0e12),
             formatTableValue(f.electronMechanicalEnergy / eCharge),
             formatTableValue(f.positronMechanicalEnergy / eCharge),
             formatTableValue(f.mechanicalEnergy / eCharge)
         };
         drawBottomRow(currentBottomRow, bottomCurrentY, currentValues);
-        currentBottomRad.SetText(0.80, bottomCurrentY, formatTableValue(f.radiatedEnergy / eCharge).c_str());
+        currentBottomRad.SetText(0.84, bottomCurrentY, formatTableValue(f.radiatedEnergy / eCharge).c_str());
 
-        const std::array<std::string, 6> deltaValues = {
+        const std::array<std::string, 7> deltaValues = {
             "delta",
             formatTableValue((f.time - initialFrame.time) * 1.0e12),
+            "--",
             formatTableValue((f.radius - initialFrame.radius) * 1.0e12),
             formatTableValue((f.electronMechanicalEnergy - initialFrame.electronMechanicalEnergy) / eCharge),
             formatTableValue((f.positronMechanicalEnergy - initialFrame.positronMechanicalEnergy) / eCharge),
             formatTableValue((f.mechanicalEnergy - initialFrame.mechanicalEnergy) / eCharge)
         };
         drawBottomRow(deltaBottomRow, bottomDeltaY, deltaValues);
-        deltaBottomRad.SetText(0.80, bottomDeltaY,
+        deltaBottomRad.SetText(0.84, bottomDeltaY,
                                formatTableValue((f.radiatedEnergy - initialFrame.radiatedEnergy) / eCharge).c_str());
     };
 

@@ -3,21 +3,24 @@
 Program w CERN ROOT przedstawia klasyczny model elektrodynamiczny układu
 elektron–pozyton:
 
-- wzajemne pola ładunków są liczone z opóźnionych pól Liénarda–Wiecherta;
+- przyciąganie cząstek jest liczone w kontrolowanym, niskoprędkościowym
+  przybliżeniu Coulomba (początkowo `v/c ≈ 0,005`);
 - ruch jest całkowany dla relatywistycznego pędu `p = γmv`;
-- reakcja promieniowania jest lokalną, zredukowaną aproksymacją
-  Landaua–Lifshitza, wykorzystującą zmianę siły zewnętrznej między krokami;
-- skumulowana energia promieniowania jest liczona wzorem Liénarda.
+- reakcja promieniowania wynika z nierelatywistycznej redukcji rzędu
+  Landaua–Lifshitza `F_RR = τ dF_C/dt`, z analityczną pochodną siły Coulomba;
+- moc promieniowania jest niezależnie liczona wzorem Liénarda i służy do
+  kontroli wyniku, ale nie jest używana do korygowania trajektorii.
 
 Każda cząstka ma też klasyczny moment dipolowy o losowym (lecz powtarzalnym)
-kierunku początkowym. Symulacja uwzględnia pole dipola, siłę dipol–dipol oraz
-moment skręcający, który zmienia kierunki strzałek. Rzeczywista precesja jest
-na tej skali czasu zbyt wolna do zauważenia, dlatego wyłącznie wizualna ewolucja
-orientacji dipoli jest przyspieszona; ich wpływ mechaniczny nie jest wzmacniany.
+kierunku początkowym. Rzeczywista precesja jest na tej skali czasu bardzo
+wolna, dlatego orientacja strzałek może zmieniać się tylko nieznacznie. Momenty
+dipolowe nie są włączone do ruchu orbitalnego: ich klasyczne oddziaływanie jest
+tutaj wiele rzędów wielkości słabsze od przyciągania Coulomba, a spin
+pozytonium jest w istocie zjawiskiem kwantowym.
 
 To nadal jest przybliżony model punktowych ładunków: dipole reprezentują
-fenomenologicznie spin, a lokalna postać reakcji promieniowania nie zastępuje
-pełnego problemu samopola. Stabilność i anihilację prawdziwego pozytonium
+fenomenologicznie spin, a redukcja Landaua–Lifshitza nie zastępuje pełnego
+problemu samopola. Stabilność i anihilację prawdziwego pozytonium
 opisuje mechanika kwantowa. Program kończy ruch przy `1e-14 m`, ponieważ model
 punktowych ładunków nie jest już tam wiarygodny.
 
@@ -38,6 +41,13 @@ względem początku, oznaczone symbolem `Δ`.
 
 Przyciski nad widokiem: `STOP` wstrzymuje animację (zmienia się na `START`), a
 `EXIT` natychmiast zamyka program.
+
+Bilans energii (łącznie z energią bliskiego pola Schotta) i zakres odległości
+można sprawdzić bez uruchamiania okna:
+
+```bash
+./positronium --diagnose
+```
 
 Symulacja jest renderowana w 3D. Przeciągnij myszą w obszarze orbity, aby
 zmienić kąt kamery i obejrzeć ruch z innej perspektywy.

@@ -1,46 +1,69 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
-cd "$(dirname "$0")/.." || exit 1
+repo_dir=$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel) || exit 1
+cd "$repo_dir" || exit 1
+
 if ! command -v inotifywait >/dev/null 2>&1; then
-  echo "ERROR: inotifywait is required. Install inotify-tools." >&2
-  exit 1
+    echo "ERROR: inotifywait is required. Install inotify-tools." >&2
+    exit 1
 fi
 
-echo "Watching repository for saved files..."
-
-while inotifywait -m -r -e close_write --exclude '(^|/)(\.git|\.vscode|\..*~?|.*\.swp$|.*\.tmp$)' . | while read -r path action file; do
-    echo "Detected save: ${path}${file}"
+commit_changes() {
+    # Editors often save several related files a moment apart. Group them into
+    # one coherent commit instead of producing one commit per filesystem event.
+    sleep 1
     git add -A
-    if git diff --cached --quiet; then
-        continue
+    git diff --cached --quiet && return 0
+
+    local changed_files summary body
+    changed_files=$(git diff --cached --name-only)
+    summary="Aktualizuj projekt"
+    body=""
+
+    if grep -qx 'positronium.cpp' <<<"$changed_files"; then
+        summary="Aktualizuj symulację pozytonium"
+        body+="- Zmień implementację i zachowanie symulacji."$'\n'
     fi
-    files=$(git diff --cached --name-only | tr '\n' ' ' | sed 's/ $//')
-    summary="Auto commit on save"
-    if git diff --cached --name-only | grep -q '^\.vscode/git-auto-commit\.sh$'; then
-        summary="Add auto-commit watcher"
+    if grep -qx 'README.md' <<<"$changed_files"; then
+        body+="- Zaktualizuj dokumentację projektu."$'\n'
     fi
-    if git diff --cached --name-only | grep -q '^\.vscode/tasks\.json$'; then
-        summary="Add VS Code auto-commit task"
+    if grep -qx 'Makefile' <<<"$changed_files"; then
+        body+="- Dostosuj budowanie i uruchamianie programu."$'\n'
     fi
-    if git diff --cached --name-only | grep -q '^\.vscode/settings\.json$'; then
-        summary="Update editor auto-save / git settings"
-    fi
-    if git diff --cached --name-only | grep -q '^positronium\.cpp$'; then
-        diff=$(git diff --cached --unified=0 -- positronium.cpp)
-        if echo "$diff" | grep -q 'SetLineColor(kAzure' && echo "$diff" | grep -q 'SetLineColor(kRed'; then
-            summary="Color electron blue and positron red"
-        elif echo "$diff" | grep -q 'labelFor(' && echo "$diff" | grep -q 'deltaLabelFor('; then
-            summary="Update energy readouts"
-        elif echo "$diff" | grep -q 'git-auto-commit' ; then
-            summary="Update auto-commit integration"
-        else
-            summary="Update positronium code"
+    if grep -q '^\.vscode/' <<<"$changed_files"; then
+        if [[ "$summary" == "Aktualizuj projekt" ]]; then
+            summary="Skonfiguruj automatyczne commity w VS Code"
         fi
+        body+="- Zaktualizuj konfigurację środowiska VS Code."$'\n'
     fi
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    commit_message="${summary} (${timestamp}): ${files}"
-    git commit -m "$commit_message"
-    echo "Committed: $commit_message"
-done
-done
+    if grep -qx '.gitignore' <<<"$changed_files"; then
+        body+="- Zaktualizuj reguły ignorowania plików roboczych."$'\n'
+    fi
+
+    body+=$'\nPliki:\n'
+    while IFS= read -r changed_file; do
+        body+="- ${changed_file}"$'\n'
+    done <<<"$changed_files"
+
+    if git commit -m "$summary" -m "$body"; then
+        echo "Committed: $summary"
+    else
+        echo "WARNING: automatic commit failed; changes remain staged." >&2
+    fi
+}
+
+echo "Watching repository for saved files..."
+inotifywait -m -r -e close_write,move,create,delete \
+    --exclude '(^|/)(\.git|\.positronium-frames\.cache|\..*~?|.*\.swp$|.*\.tmp$)' \
+    --format '%w%f' . 2>&1 | while IFS= read -r changed_path; do
+        case "$changed_path" in
+            "Setting up watches."*|"Watches established.")
+                echo "$changed_path"
+                ;;
+            *)
+                echo "Detected change: $changed_path"
+                commit_changes
+                ;;
+        esac
+    done

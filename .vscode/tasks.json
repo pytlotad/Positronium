@@ -5,11 +5,21 @@
       "label": "Git Auto Commit on Save",
       "type": "shell",
       "command": "${workspaceFolder}/.vscode/git-auto-commit.sh",
-      "problemMatcher": [],
+      "problemMatcher": {
+        "owner": "git-auto-commit",
+        "pattern": {
+          "regexp": "^(?!)$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Watching repository for saved files\\.\\.\\.$",
+          "endsPattern": "^Watches established\\.$"
+        }
+      },
       "isBackground": true,
       "presentation": {
-        "echo": true,
-        "reveal": "always",
+        "echo": false,
+        "reveal": "silent",
         "focus": false,
         "panel": "dedicated",
         "showReuseMessage": true,

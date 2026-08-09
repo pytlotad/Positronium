@@ -1,4 +1,5 @@
 {
+  "task.allowAutomaticTasks": "on",
   "chat.tools.terminal.autoApprove": {
     "git rev-parse": true,
     "./positronium": true
