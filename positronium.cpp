@@ -380,11 +380,11 @@ int main(int argc, char** argv) {
     constexpr double bottomInitialY = 0.090;
     constexpr double bottomCurrentY = 0.055;
     constexpr double bottomDeltaY = 0.020;
-    const std::array<double, 5> bottomXs = {0.05, 0.21, 0.34, 0.47, 0.61};
-    const std::array<const char*, 6> bottomHeaders = {
-        "stan", "t [ps]", "E_{e} [eV]", "E_{p} [eV]", "E_{sum} [eV]", "E_{rad} [eV]"
+    const std::array<double, 6> bottomXs = {0.03, 0.16, 0.29, 0.41, 0.53, 0.66};
+    const std::array<const char*, 7> bottomHeaders = {
+        "stan", "t [ps]", "r [pm]", "E_{e} [eV]", "E_{p} [eV]", "E_{sum} [eV]", "E_{rad} [eV]"
     };
-    std::array<TLatex, 5> bottomHeaderLabels;
+    std::array<TLatex, 6> bottomHeaderLabels;
     for (size_t i = 0; i < bottomHeaderLabels.size(); ++i) {
         bottomHeaderLabels[i].SetNDC(); bottomHeaderLabels[i].SetTextColor(kWhite);
         bottomHeaderLabels[i].SetTextSize(0.024); bottomHeaderLabels[i].SetTextFont(62);
@@ -394,15 +394,15 @@ int main(int argc, char** argv) {
     TLatex bottomRadHeader;
     bottomRadHeader.SetNDC(); bottomRadHeader.SetTextColor(kWhite);
     bottomRadHeader.SetTextSize(0.024); bottomRadHeader.SetTextFont(62);
-    bottomRadHeader.SetText(0.75, bottomHeaderY, bottomHeaders.back());
+    bottomRadHeader.SetText(0.80, bottomHeaderY, bottomHeaders.back());
     bottomRadHeader.Draw();
-    std::array<TLatex, 5> initialBottomRow;
-    std::array<TLatex, 5> currentBottomRow;
-    std::array<TLatex, 5> deltaBottomRow;
+    std::array<TLatex, 6> initialBottomRow;
+    std::array<TLatex, 6> currentBottomRow;
+    std::array<TLatex, 6> deltaBottomRow;
     TLatex initialBottomRad;
     TLatex currentBottomRad;
     TLatex deltaBottomRad;
-    const auto initializeBottomRow = [&](std::array<TLatex, 5>& row, int color, double textSize) {
+    const auto initializeBottomRow = [&](std::array<TLatex, 6>& row, int color, double textSize) {
         for (TLatex& cell : row) {
             cell.SetNDC(); cell.SetTextColor(color);
             cell.SetTextSize(textSize); cell.SetTextFont(62);
@@ -420,26 +420,27 @@ int main(int argc, char** argv) {
     deltaBottomRad.SetNDC(); deltaBottomRad.SetTextColor(kGreen + 2);
     deltaBottomRad.SetTextSize(0.024); deltaBottomRad.SetTextFont(62);
 
-    const auto drawBottomRow = [&](std::array<TLatex, 5>& row, double y, const std::array<std::string, 5>& values) {
+    const auto drawBottomRow = [&](std::array<TLatex, 6>& row, double y, const std::array<std::string, 6>& values) {
         for (size_t i = 0; i < row.size(); ++i) {
             row[i].SetText(bottomXs[i], y, values[i].c_str());
         }
     };
 
-    drawBottomRow(initialBottomRow, bottomInitialY, std::array<std::string, 5>{
+    drawBottomRow(initialBottomRow, bottomInitialY, std::array<std::string, 6>{
         "initial",
         formatTableValue(initialFrame.time * 1.0e12),
+        formatTableValue(initialFrame.radius * 1.0e12),
         formatTableValue(initialFrame.electronMechanicalEnergy / eCharge),
         formatTableValue(initialFrame.positronMechanicalEnergy / eCharge),
         formatTableValue(initialFrame.mechanicalEnergy / eCharge)
     });
-    initialBottomRad.SetText(0.75, bottomInitialY, formatTableValue(initialFrame.radiatedEnergy / eCharge).c_str());
+    initialBottomRad.SetText(0.80, bottomInitialY, formatTableValue(initialFrame.radiatedEnergy / eCharge).c_str());
     initialBottomRad.Draw();
-    drawBottomRow(currentBottomRow, bottomCurrentY, std::array<std::string, 5>{"current", "0.00", "0.00", "0.00", "0.00"});
-    currentBottomRad.SetText(0.75, bottomCurrentY, "0.00");
+    drawBottomRow(currentBottomRow, bottomCurrentY, std::array<std::string, 6>{"current", "0.00", "0.00", "0.00", "0.00", "0.00"});
+    currentBottomRad.SetText(0.80, bottomCurrentY, "0.00");
     currentBottomRad.Draw();
-    drawBottomRow(deltaBottomRow, bottomDeltaY, std::array<std::string, 5>{"delta", "0.00", "0.00", "0.00", "0.00"});
-    deltaBottomRad.SetText(0.75, bottomDeltaY, "0.00");
+    drawBottomRow(deltaBottomRow, bottomDeltaY, std::array<std::string, 6>{"delta", "0.00", "0.00", "0.00", "0.00", "0.00"});
+    deltaBottomRad.SetText(0.80, bottomDeltaY, "0.00");
     deltaBottomRad.Draw();
 
     controls.cd();
@@ -462,25 +463,27 @@ int main(int argc, char** argv) {
     controls.Update();
 
     const auto updateBottomRow = [&](const Frame& f) {
-        const std::array<std::string, 5> currentValues = {
+        const std::array<std::string, 6> currentValues = {
             "current",
             formatTableValue(f.time * 1.0e12),
+            formatTableValue(f.radius * 1.0e12),
             formatTableValue(f.electronMechanicalEnergy / eCharge),
             formatTableValue(f.positronMechanicalEnergy / eCharge),
             formatTableValue(f.mechanicalEnergy / eCharge)
         };
         drawBottomRow(currentBottomRow, bottomCurrentY, currentValues);
-        currentBottomRad.SetText(0.75, bottomCurrentY, formatTableValue(f.radiatedEnergy / eCharge).c_str());
+        currentBottomRad.SetText(0.80, bottomCurrentY, formatTableValue(f.radiatedEnergy / eCharge).c_str());
 
-        const std::array<std::string, 5> deltaValues = {
+        const std::array<std::string, 6> deltaValues = {
             "delta",
             formatTableValue((f.time - initialFrame.time) * 1.0e12),
+            formatTableValue((f.radius - initialFrame.radius) * 1.0e12),
             formatTableValue((f.electronMechanicalEnergy - initialFrame.electronMechanicalEnergy) / eCharge),
             formatTableValue((f.positronMechanicalEnergy - initialFrame.positronMechanicalEnergy) / eCharge),
             formatTableValue((f.mechanicalEnergy - initialFrame.mechanicalEnergy) / eCharge)
         };
         drawBottomRow(deltaBottomRow, bottomDeltaY, deltaValues);
-        deltaBottomRad.SetText(0.75, bottomDeltaY,
+        deltaBottomRad.SetText(0.80, bottomDeltaY,
                                formatTableValue((f.radiatedEnergy - initialFrame.radiatedEnergy) / eCharge).c_str());
     };
 
