@@ -278,14 +278,60 @@ MutualForces mutualForces(const State& s) {
             electrostatic.positron - dipoleOnElectron};
 }
 
-MutualForces orbitalMagneticForces(const State& s) {
+Vec3 darwinForceOnFirst(const Vec3& firstVelocity, const Vec3& secondVelocity,
+                        const Vec3& secondLeadingAcceleration,
+                        const Vec3& firstMinusSecond, double chargeProduct) {
+    const double distance = firstMinusSecond.norm();
+    const Vec3 n = firstMinusSecond / distance;
+    const double firstRadial = dot(firstVelocity, n);
+    const double secondRadial = dot(secondVelocity, n);
+    const double radialRate = firstRadial - secondRadial;
+    const Vec3 relativeVelocity = firstVelocity - secondVelocity;
+    const Vec3 nRate = (relativeVelocity - n * radialRate) / distance;
+    const double secondRadialRate = dot(secondLeadingAcceleration, n)
+                                  + dot(secondVelocity, nRate);
+    const double coefficient = coulomb * chargeProduct / (2.0 * c*c * distance);
+    const double velocityProduct = dot(firstVelocity, secondVelocity);
+
+    // Euler-Lagrange force from
+    // L_D = C [v1.v2 + (v1.n)(v2.n)]. Accelerations inside d/dt(dL/dv)
+    // are reduced to their leading Coulomb values, consistently through
+    // order v^2/c^2.
+    const Vec3 spatialDerivative =
+        (secondVelocity * firstRadial + firstVelocity * secondRadial
+       - n * (velocityProduct + 3.0 * firstRadial * secondRadial))
+        * (coefficient / distance);
+    const Vec3 momentumDerivative =
+        (secondVelocity + n * secondRadial)
+            * (-coefficient * radialRate / distance)
+      + (secondLeadingAcceleration + nRate * secondRadial
+       + n * secondRadialRate) * coefficient;
+    return spatialDerivative - momentumDerivative;
+}
+
+MutualForces darwinForces(const State& s) {
     const PairGeometry geometry = pairGeometry(s);
-    const double fieldScale = mu0 / (4.0 * pi) * eCharge * geometry.inverseDistanceCubed
-                            * shortRangeFieldWeight(geometry.distance);
-    const Vec3 fieldAtElectron = cross(s.positronVelocity, geometry.electronMinusPositron) * fieldScale;
-    const Vec3 fieldAtPositron = cross(s.electronVelocity, geometry.electronMinusPositron) * fieldScale;
-    return {cross(s.electronVelocity, fieldAtElectron) * (-eCharge),
-            cross(s.positronVelocity, fieldAtPositron) * eCharge};
+    const MutualForces leading = coulombForces(s);
+    const Vec3 electronLeadingAcceleration = leading.electron / electronMass;
+    const Vec3 positronLeadingAcceleration = leading.positron / positronMass;
+    constexpr double chargeProduct = -eCharge * eCharge;
+    return {
+        darwinForceOnFirst(s.electronVelocity, s.positronVelocity,
+                           positronLeadingAcceleration,
+                           geometry.electronMinusPositron, chargeProduct),
+        darwinForceOnFirst(s.positronVelocity, s.electronVelocity,
+                           electronLeadingAcceleration,
+                           geometry.electronMinusPositron * -1.0, chargeProduct)
+    };
+}
+
+double darwinInteractionEnergy(const State& s) {
+    const PairGeometry geometry = pairGeometry(s);
+    const Vec3 n = geometry.electronMinusPositron * geometry.inverseDistance;
+    constexpr double chargeProduct = -eCharge * eCharge;
+    return coulomb * chargeProduct * geometry.inverseDistance / (2.0 * c*c)
+         * (dot(s.electronVelocity, s.positronVelocity)
+          + dot(s.electronVelocity, n) * dot(s.positronVelocity, n));
 }
 
 LocalMagneticFields localMagneticFields(const State& s) {
@@ -321,37 +367,14 @@ void applyDipolePrecession(State& s, double dt) {
 
 MutualForces allExternalForces(const State& s) {
     const MutualForces positionForces = mutualForces(s);
-    const MutualForces magneticForces = orbitalMagneticForces(s);
-    return {positionForces.electron + magneticForces.electron,
-            positionForces.positron + magneticForces.positron};
+    const MutualForces velocityForces = darwinForces(s);
+    return {positionForces.electron + velocityForces.electron,
+            positionForces.positron + velocityForces.positron};
 }
 
 Vec3 rotatedAround(const Vec3& vector, const Vec3& axis, double angle) {
     return vector * std::cos(angle) + cross(axis, vector) * std::sin(angle)
          + axis * (dot(axis, vector) * (1.0 - std::cos(angle)));
-}
-
-void applyOrbitalMagneticRotation(State& s, double dt) {
-    const PairGeometry geometry = pairGeometry(s);
-    const double fieldScale = mu0 / (4.0 * pi) * eCharge * geometry.inverseDistanceCubed
-                            * shortRangeFieldWeight(geometry.distance);
-    const Vec3 fieldAtElectron = cross(s.positronVelocity, geometry.electronMinusPositron) * fieldScale;
-    const Vec3 fieldAtPositron = cross(s.electronVelocity, geometry.electronMinusPositron) * fieldScale;
-
-    Vec3 electronMomentum = momentum(s.electronVelocity, electronMass);
-    Vec3 positronMomentum = momentum(s.positronVelocity, positronMass);
-    if (fieldAtElectron.squaredNorm() > 0.0) {
-        const double angle = eCharge * fieldAtElectron.norm() * dt
-                           / (gamma(s.electronVelocity) * electronMass);
-        electronMomentum = rotatedAround(electronMomentum, unit(fieldAtElectron), angle);
-    }
-    if (fieldAtPositron.squaredNorm() > 0.0) {
-        const double angle = -eCharge * fieldAtPositron.norm() * dt
-                           / (gamma(s.positronVelocity) * positronMass);
-        positronMomentum = rotatedAround(positronMomentum, unit(fieldAtPositron), angle);
-    }
-    s.electronVelocity = velocityFromMomentum(electronMomentum, electronMass);
-    s.positronVelocity = velocityFromMomentum(positronMomentum, positronMass);
 }
 
 MutualForces collectiveRadiationReactionForces(const State& s) {
@@ -398,7 +421,7 @@ MutualForces collectiveRadiationReactionForces(const State& s) {
 // term; radiation reaction is an order-reduced electric-dipole model.
 void advance(State& s, double dt) {
     applyDipolePrecession(s, 0.5 * dt);
-    MutualForces forces = mutualForces(s);
+    MutualForces forces = allExternalForces(s);
     const MutualForces radiationForces = allExternalForces(s);
     const MutualForces reactions = collectiveRadiationReactionForces(s);
     const Vec3 electronAcceleration = relativisticAcceleration(s.electronVelocity, radiationForces.electron,
@@ -413,7 +436,6 @@ void advance(State& s, double dt) {
     trial.time += dt;
     trial.electronVelocity = velocityFromMomentum(electronMomentum, electronMass);
     trial.positronVelocity = velocityFromMomentum(positronMomentum, positronMass);
-    applyOrbitalMagneticRotation(trial, dt);
     electronMomentum = momentum(trial.electronVelocity, electronMass);
     positronMomentum = momentum(trial.positronVelocity, positronMass);
     trial.electronPosition += trial.electronVelocity * dt;
@@ -421,7 +443,7 @@ void advance(State& s, double dt) {
     trial.electronAcceleration = relativisticAcceleration(trial.electronVelocity, forces.electron, electronMass);
     trial.positronAcceleration = relativisticAcceleration(trial.positronVelocity, forces.positron, positronMass);
 
-    const MutualForces trialForces = mutualForces(trial);
+    const MutualForces trialForces = allExternalForces(trial);
     const MutualForces trialRadiationForces = allExternalForces(trial);
     const MutualForces trialReactions = collectiveRadiationReactionForces(trial);
     const Vec3 trialElectronAcceleration = relativisticAcceleration(trial.electronVelocity,
@@ -451,6 +473,7 @@ Frame makeFrame(const State& s) {
     const double dipolePotential = -dot(s.electronDipole,
         dipoleField(geometry.electronMinusPositron, geometry, s.positronDipole))
         * shortRangeFieldWeight(geometry.distance);
+    const double darwinEnergy = darwinInteractionEnergy(s);
     const MutualForces forces = allExternalForces(s);
     const Vec3 electronAcceleration = relativisticAcceleration(s.electronVelocity, forces.electron, electronMass);
     const Vec3 positronAcceleration = relativisticAcceleration(s.positronVelocity, forces.positron, positronMass);
@@ -464,10 +487,10 @@ Frame makeFrame(const State& s) {
         / (6.0 * pi * epsilon0 * c*c*c);
     return {s.electronPosition, s.positronPosition, s.electronDipole, s.positronDipole,
             s.time, geometry.distance, s.radiatedEnergy,
-            electronKinetic + positronKinetic + coulombPotential + dipolePotential,
+            electronKinetic + positronKinetic + coulombPotential + dipolePotential + darwinEnergy,
             schottEnergy,
-            electronKinetic + 0.5 * (coulombPotential + dipolePotential),
-            positronKinetic + 0.5 * (coulombPotential + dipolePotential)};
+            electronKinetic + 0.5 * (coulombPotential + dipolePotential + darwinEnergy),
+            positronKinetic + 0.5 * (coulombPotential + dipolePotential + darwinEnergy)};
 }
 
 const char* phenomenonName(Phenomenon phenomenon) {
@@ -575,7 +598,7 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon) {
         // energy drift below the physical radiation loss.
         const double r = separation(s);
         const double omega = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * r*r*r));
-        advance(s, std::min(2.0e-18, 2.0 * pi / (160.0 * omega)));
+        advance(s, std::min(2.0e-18, 2.0 * pi / (640.0 * omega)));
     }
     if (frames.empty()) throw std::runtime_error("No simulation frames were produced");
     const double lifetime = separation(s) <= nuclearCutoff
@@ -706,7 +729,7 @@ int main(int argc, char** argv) {
                   << "Schott energy:  " << frames.back().schottEnergy / eCharge << " eV\n"
                   << "energy drift:   " << energyDrift / eCharge << " eV ("
                   << relativeEnergyDrift * 100.0 << "%)\n"
-                  << "energy scope:   particles + radiation + Schott + dipoles; magnetic field energy omitted\n"
+                  << "energy scope:   particles + Darwin + dipoles + radiation + Schott\n"
                   << "trajectory:     " << (trajectoryValid ? "PASS" : "FAIL") << '\n';
         return trajectoryValid ? 0 : 1;
     }

@@ -52,25 +52,39 @@ jest to siła przyciągająca. Program nie dodaje sztucznej siły odpychającej,
 która miałaby stabilizować orbitę; niezerowy orbitalny moment pędu może jednak
 powodować klasyczną barierę odśrodkową wynikającą z samego ruchu.
 
-### 3. Magnetyzm orbitalny i magnetyczna część siły Lorentza
+### 3. Oddziaływanie Darwina do rzędu \(v^2/c^2\)
 
-Poruszający się ładunek jest źródłem pola w przybliżeniu niskich prędkości
+Wzajemne oddziaływanie poruszających się ładunków jest wyprowadzane z
+lagrangianu Darwina. Oprócz członu Coulomba zawiera on
 
 \[
-\mathbf B=\frac{\mu_0}{4\pi}
-q\frac{\mathbf v\times\mathbf R}{R^3}.
+L_D=\frac{kq_eq_p}{2c^2r}\left[
+\mathbf v_e\cdot\mathbf v_p+
+(\mathbf v_e\cdot\hat{\mathbf r})
+(\mathbf v_p\cdot\hat{\mathbf r})\right].
 \]
 
-Druga cząstka podlega magnetycznej części siły Lorentza
-\(\mathbf F_B=q\,\mathbf v\times\mathbf B\). Jej działanie jest realizowane
-jako obrót pędu (krok typu Boris/Rodrigues), dzięki czemu sama część
-magnetyczna nie zmienia modułu pędu i nie wykonuje pracy. Jest to poprawna
-własność siły \(q\mathbf v\times\mathbf B\).
+Równania Eulera–Lagrange’a dostarczają kompletnej zachowawczej poprawki
+zależnej od prędkości w tym rzędzie: magnetyzmu orbitalnego oraz związanych z
+nim elektrycznych członów relatywistycznych. Przyspieszenia występujące w
+\(d(\partial L_D/\partial\mathbf v)/dt\) są zastępowane przyspieszeniami
+Coulombowskimi. Jest to redukcja rzędu, której błąd zaczyna się poza
+dokładnością \(v^2/c^2\).
 
-Jest to model chwilowy i niskoprędkościowy, a nie pełne rozwiązanie równań
-Maxwella z czasem opóźnionym. Nie stanowi też kompletnego przybliżenia Darwina,
-ponieważ nie uwzględnia wszystkich poprawek zależnych od prędkości tego samego
-rzędu.
+Odpowiadający człon energii, zapisany za pomocą prędkości, ma postać
+
+\[
+E_D=\frac{kq_eq_p}{2c^2r}\left[
+\mathbf v_e\cdot\mathbf v_p+
+(\mathbf v_e\cdot\hat{\mathbf r})
+(\mathbf v_p\cdot\hat{\mathbf r})\right].
+\]
+
+Jest on uwzględniany w energii mechanicznej. Poprzednia, osobno dodawana siła
+\(q\mathbf v\times\mathbf B\) została usunięta z ruchu orbitalnego, aby nie
+liczyć magnetyzmu dwukrotnie. Model Darwina jest chwilowy i bezpromienisty;
+koherentne promieniowanie jest dodawane oddzielnie jako poprawka
+niezachowawcza.
 
 ### 4. Oddziaływanie klasycznych dipoli magnetycznych
 
@@ -156,7 +170,7 @@ pole reakcji odpowiadające temu samemu przybliżeniu dipolowemu:
 
 Trzecia pochodna momentu dipolowego jest obliczana przez centralną różnicę
 przyspieszeń wyznaczonych z siły Coulomba, regularizowanej siły dipol–dipol i
-orbitalnej siły magnetycznej. Jest to redukcja rzędu: nie wprowadza niezależnej
+poprawki Darwina. Jest to redukcja rzędu: nie wprowadza niezależnej
 zmiennej przyspieszenia i nie dopuszcza rozwiązań samoprzyspieszających.
 Reakcja wpływa na kolejne położenia i pędy; energia promieniowania nie służy do
 późniejszego korygowania trajektorii. Zastosowany wzór pozostaje
@@ -176,13 +190,14 @@ dla wspólnego momentu dipolowego pary. Reprezentuje ona odwracalną wymianę
 energii z bliskim polem układu. Raportowana wielkość kontrolna to
 
 \[
-E_{diag}=K_e+K_p+U_C+wU_{dd}+E_{rad}+E_S.
+E_{diag}=K_e+K_p+U_C+E_D+wU_{dd}+E_{rad}+E_S.
 \]
 
 Bilans ten jest diagnostyką konsekwencji równań ruchu, a nie narzuconą zasadą.
-Nie obejmuje energii pola magnetycznego wytworzonego przez ruch ładunków, więc
-nie należy oczekiwać jego dokładnej stałości. Pozostaje też błąd dyskretyzacji
-numerycznej.
+Efektywna energia pola bliskiego związana z ruchem ładunków jest reprezentowana
+przez \(E_D\), ale bilans nie obejmuje pełnej przestrzennej energii pola
+Maxwella. Nie należy więc oczekiwać jego dokładnej stałości; pozostaje również
+błąd dyskretyzacji numerycznej, rosnący w końcowej fazie ciasnej spirali.
 
 ## Warunki początkowe i klasyfikacja zjawiska
 
@@ -220,11 +235,11 @@ końcowych.
 ## Metoda numeryczna
 
 Równania są całkowane relatywistycznym schematem predyktor–korektor. Siły
-zależne od położenia wykonują dwa półkroki pędu, część magnetyczna obraca pęd,
-a precesja dipoli jest dzielona na dwa symetryczne półkroki. Pomiędzy
+Coulomba, dipolowe i Darwina wykonują dwa półkroki pędu, a precesja dipoli jest
+dzielona na dwa symetryczne półkroki. Pomiędzy
 półkrokami wykonywany jest krok położenia. Krok czasu jest adaptacyjny:
-jest ograniczony do \(2\times10^{-18}\,\mathrm s\) i dodatkowo zmniejszany na
-podstawie chwilowej częstości Coulombowskiej. Symulacja zapisuje najwyżej 1200
+jest ograniczony do \(2\times10^{-18}\,\mathrm s\), a okres chwilowego ruchu
+Coulombowskiego jest rozwiązywany przez co najmniej 640 kroków. Symulacja zapisuje najwyżej 1200
 klatek i kończy się wcześniej po przekroczeniu progu zderzenia.
 
 Równe masy i przeciwne siły wewnętrzne pozwalają utrzymywać środek masy w
@@ -275,6 +290,14 @@ energii:
 ./positronium --diagnose --phenomenon 4 --seed 42
 ```
 
+Dla referencyjnego ziarna 42 wszystkie cztery scenariusze przechodzą kontrolę
+kierunku trajektorii. Po włączeniu Darwina względny dryf bilansu wynosi około
+0,03% dla rozproszenia, 0,32% dla bezpośredniego zderzenia oraz 4,6% dla
+końcowej, ciasnej fazy obu trajektorii związanych. Te wartości są testem
+numerycznym konkretnej konfiguracji, a nie oszacowaniem niepewności fizycznej
+modelu. Wyniki przeznaczone do analizy ilościowej wymagają osobnego badania
+zbieżności względem kroku czasu.
+
 Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
 
 ## Ograniczenia — efekty nieuwzględniane
@@ -284,8 +307,7 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
 - kwantowa anihilacja oraz emisja dwóch albo trzech fotonów;
 - pełne, wzajemnie opóźnione pola Liénarda–Wiecherta i kompletna dynamika pola
   Maxwella;
-- kompletne relatywistyczne oddziaływanie dwóch ładunków, w tym pełny człon
-  Darwina;
+- poprawki oddziaływania ładunków wyższe niż rząd \(v^2/c^2\);
 - pełne sprzężenie zwrotne momentu siły dipola z orbitalnym i polowym momentem
   pędu oraz kwantowe sprzężenie spin–orbita;
 - skończony rozmiar cząstek i struktura krótkiego zasięgu — zastępuje je próg
