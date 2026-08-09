@@ -5,21 +5,26 @@ elektron–pozyton:
 
 - przyciąganie cząstek jest liczone w kontrolowanym, niskoprędkościowym
   przybliżeniu Coulomba (początkowo `v/c ≈ 0,005`);
+- pole magnetyczne poruszających się ładunków jest uwzględniane w przybliżeniu
+  niskich prędkości wraz z siłą Lorentza `q v × B`;
 - ruch jest całkowany dla relatywistycznego pędu `p = γmv`;
 - reakcja promieniowania wynika z nierelatywistycznej redukcji rzędu
-  Landaua–Lifshitza `F_RR = τ dF_C/dt`, z analityczną pochodną siły Coulomba;
+  Landaua–Lifshitza `F_RR = τ dF_ext/dt`; pochodna całej siły zewnętrznej jest
+  liczona symetrycznie wzdłuż chwilowej trajektorii;
 - moc promieniowania jest niezależnie liczona wzorem Liénarda i służy do
   kontroli wyniku, ale nie jest używana do korygowania trajektorii.
 
 Każda cząstka ma też klasyczny moment dipolowy o losowym kierunku początkowym.
 Losowane są również radialna i styczna prędkość względna. Wybrane w menu
 zjawisko określa kontrolowany zakres losowania prowadzący do bezpośredniego
-zderzenia, rozproszenia albo związanego stanu para-/orto-podobnego. Rzeczywista
-precesja jest na tej skali czasu bardzo
-wolna, dlatego orientacja strzałek może zmieniać się tylko nieznacznie. Momenty
-dipolowe nie są włączone do ruchu orbitalnego: ich klasyczne oddziaływanie jest
-tutaj wiele rzędów wielkości słabsze od przyciągania Coulomba, a spin
-pozytonium jest w istocie zjawiskiem kwantowym.
+zderzenia, rozproszenia albo związanego stanu para-/orto-podobnego. Momenty
+dipolowe zachowują w trakcie pojedynczej symulacji wylosowaną orientację.
+Siła dipol–dipol i jej energia potencjalna są włączone do ruchu orbitalnego,
+choć przy promieniu Bohra pozostają wiele rzędów wielkości słabsze od
+przyciągania Coulomba. Spin pozytonium jest w istocie zjawiskiem kwantowym,
+więc dipole stanowią tutaj jedynie klasyczny model fenomenologiczny.
+Punktowe oddziaływania magnetyczne są gładko wygaszane poniżej `0,7 a₀`, gdzie
+ich osobliwe prawa `1/r³` i `1/r⁴` przestają stanowić wiarygodne przybliżenie.
 
 To nadal jest przybliżony model punktowych ładunków: dipole reprezentują
 fenomenologicznie spin, a redukcja Landaua–Lifshitza nie zastępuje pełnego
@@ -61,8 +66,9 @@ decydujące warunki początkowe: energia względna `E_rel`, orbitalny moment pę
 Przyciski nad widokiem: `STOP` wstrzymuje animację (zmienia się na `START`), a
 `EXIT` natychmiast zamyka program.
 
-Bilans energii (łącznie z energią bliskiego pola Schotta) i zakres odległości
-można sprawdzić bez uruchamiania okna:
+Bilans energii cząstek (łącznie z energią dipoli i bliskiego pola Schotta) oraz
+zakres odległości można sprawdzić bez uruchamiania okna. Raport nie obejmuje
+jeszcze energii pola magnetycznego poruszających się ładunków:
 
 ```bash
 ./positronium --diagnose --phenomenon 1
