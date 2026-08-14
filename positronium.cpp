@@ -2913,7 +2913,7 @@ int main(int argc, char** argv) {
     int selectedMode = 0;
     VisualStyle visualStyle = VisualStyle::Unselected;
     int selectedPhenomenon = 0;
-    int statisticalRuns = 10000;
+    int statisticalRuns = 1000000;
     bool statisticalRunsExplicit = false;
     double beamEnergyEv = 20.0;
     double thetaMinimumDegrees = 5.0;
@@ -3035,8 +3035,10 @@ int main(int argc, char** argv) {
                      <<" trajectories; "
                        "override with --runs N.\n";
         }
-        if (statisticalRuns < 1 || statisticalRuns > 100000) {
-            std::cerr << "The number of statistical events/trials must be from 1 to 100000.\n";
+        const int maximumStatisticalRuns=selectedPhenomenon<=2?1000000:100000;
+        if (statisticalRuns < 1 || statisticalRuns > maximumStatisticalRuns) {
+            std::cerr << "The number of statistical events/trials must be from 1 to "
+                      <<maximumStatisticalRuns<<" for this experiment.\n";
             return 1;
         }
         try {

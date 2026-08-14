@@ -132,22 +132,24 @@ potem kończy aplikację.
 ### 5.3 Statistical 1 — para-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 1 --runs 10000 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 1 --runs 1000000 --seed 12345 --no-gui
 ```
 
 Losowany jest czas życia z rozkładu wykładniczego i rozpad 2 gamma w spoczynku.
 Model obejmuje idealną próżnię, bez materiału, detektora i poprawek
 radiacyjnych. Sprawdzane są domknięcia energii, pędu i powłoki masowej.
+Domyślna próbka obejmuje 1 000 000 zdarzeń.
 
 ### 5.4 Statistical 2 — orto-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 2 --runs 10000 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 2 --runs 1000000 --seed 12345 --no-gui
 ```
 
 Losowany jest czas życia oraz rozpad 3 gamma z inkluzywnym widmem
 Ore'a–Powella. Zapisywane są energia fotonów, wykres Dalitza i kąt wiodących
-fotonów oraz diagnostyki zachowania czteropędu.
+fotonów oraz diagnostyki zachowania czteropędu. Domyślna próbka obejmuje
+1 000 000 zdarzeń.
 
 ### 5.5 Statistical 3 — kanał krótkiego zasięgu
 
@@ -190,7 +192,8 @@ bilans energii/pędu/momentu pędu, dryf norm dipoli i `PASS/FAIL`.
 - `--phenomenon 1|2|3|4` — numer eksperymentu;
 - `--visual-style line|dot` — styl Visual;
 - `--seed UINT64` — deterministyczne ziarno;
-- `--runs 1..100000` — liczebność Statistical;
+- `--runs` — liczebność Statistical: maksymalnie 1 000 000 dla 1/2 i 100 000
+  dla kosztownych eksperymentów trajektorii 3/4;
 - `--beam-energy-ev VALUE` — energia kinetyczna CM dla 3/4;
 - `--theta-min-deg VALUE` — próg akceptacji kąta;
 - `--angle-bins 4..90` — liczba koszyków kąta;

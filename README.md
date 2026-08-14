@@ -871,7 +871,7 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    animację 3D z liniami torów, cząstkami i momentami magnetycznymi. Wariant
    `Dot` pokazuje wyłącznie próbki położenia: ciemnoniebieskie dla elektronu
    i pomarańczowe dla pozytonu.
-2. `Statistical analysis` generuje domyślnie 10 000 rozpadów dla kanałów 1/2
+2. `Statistical analysis` generuje domyślnie 1 000 000 rozpadów dla kanałów 1/2
    oraz szybki podgląd 20/100 trajektorii odpowiednio dla kanałów 3/4. Zestaw
    paneli zależy od wybranego eksperymentu; program nie wymusza tych samych
    czterech histogramów dla zjawisk o innej fizyce.
@@ -1171,7 +1171,7 @@ Pierwsze menu wybiera sposób uruchomienia:
 
 ```text
 1 -> Visual simulation
-2 -> Statistical analysis (10000 events/trials)
+2 -> Statistical analysis
 ```
 
 W trybie wizualnym wybierany jest najpierw sposób prezentacji, a następnie
