@@ -3,5 +3,8 @@
   "chat.tools.terminal.autoApprove": {
     "git rev-parse": true,
     "./positronium": true
-  }
+  },
+  "C_Cpp.default.includePath": [
+    "${env:ROOTSYS}/include/"
+  ]
 }

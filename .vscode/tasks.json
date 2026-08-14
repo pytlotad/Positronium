@@ -1,33 +1,66 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Git Auto Commit on Save",
-      "type": "shell",
-      "command": "${workspaceFolder}/.vscode/git-auto-commit.sh",
-      "problemMatcher": {
-        "owner": "git-auto-commit",
-        "pattern": {
-          "regexp": "^(?!)$"
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Git Auto Commit on Save",
+            "type": "shell",
+            "command": "${workspaceFolder}/.vscode/git-auto-commit.sh",
+            "problemMatcher": {
+                "owner": "git-auto-commit",
+                "pattern": {
+                    "regexp": "^(?!)$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^Watching repository for saved files\\.\\.\\.$",
+                    "endsPattern": "^Watches established\\.$"
+                }
+            },
+            "isBackground": true,
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
         },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^Watching repository for saved files\\.\\.\\.$",
-          "endsPattern": "^Watches established\\.$"
+        {
+            "label": "Cern Root: Build ROOT Program (Production)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "g++ ${file} -o ${fileDirname}/${fileBasenameNoExtension} $($ROOTSYS/bin/root-config --cflags --libs)",
+                "# Everything needs to be on a single line due to the 'bash -c' command."
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Cern Root: Run in ROOT interpreter as Macro",
+            "type": "shell",
+            "command": "${env:ROOTSYS}/bin/root",
+            "args": [
+                "-l",
+                "-q",
+                "${file}"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Cern Root: Build ROOT Program (Debug)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "g++ -ggdb ${file} -o ${fileDirname}/${fileBasenameNoExtension} $($ROOTSYS/bin/root-config --cflags --libs)",
+                "# Everything needs to be on a single line due to the 'bash -c' command."
+            ],
+            "problemMatcher": []
         }
-      },
-      "isBackground": true,
-      "presentation": {
-        "echo": false,
-        "reveal": "silent",
-        "focus": false,
-        "panel": "dedicated",
-        "showReuseMessage": true,
-        "clear": false
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
-      }
-    }
-  ]
+    ]
 }

@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug ROOT Program",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/${relativeFileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Cern Root: Build ROOT Program (Debug)"
+        }
+    ]
+}

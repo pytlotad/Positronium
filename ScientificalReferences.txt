@@ -1,0 +1,312 @@
+# Scientific references used by positronium statistical plots
+schema_version=1
+generated_from=in-program scientific reference catalogue
+numeric_format=shortest round-trip decimal
+
+[source:pdg_positronium_2025]
+authors=Particle Data Group
+title=Atomic and nuclear properties of positronium (Ps)
+publication=Review of Particle Physics 2025 tables
+year=2025
+doi=
+url=https://pdg.lbl.gov/2025/AtomicNuclearProperties/positronium.html
+accessed=2026-08-11
+
+[source:al_ramadhan_gidley_1994]
+authors=A. H. Al-Ramadhan; D. W. Gidley
+title=New precision measurement of the decay rate of singlet positronium
+publication=Physical Review Letters 72, 1632-1635
+year=1994
+doi=10.1103/PhysRevLett.72.1632
+url=https://doi.org/10.1103/PhysRevLett.72.1632
+accessed=2026-08-11
+
+[source:vallery_zitzewitz_gidley_2003]
+authors=R. S. Vallery; P. W. Zitzewitz; D. W. Gidley
+title=Resolution of the Orthopositronium-Lifetime Puzzle
+publication=Physical Review Letters 90, 203402
+year=2003
+doi=10.1103/PhysRevLett.90.203402
+url=https://doi.org/10.1103/PhysRevLett.90.203402
+accessed=2026-08-11
+
+[source:ore_powell_1949]
+authors=A. Ore; J. L. Powell
+title=Three-Photon Annihilation of an Electron-Positron Pair
+publication=Physical Review 75, 1696-1699
+year=1949
+doi=10.1103/PhysRev.75.1696
+url=https://doi.org/10.1103/PhysRev.75.1696
+accessed=2026-08-11
+
+[source:geant4_ore_powell]
+authors=Geant4 Collaboration
+title=Decays of orthopositronium at rest to 3 photons
+publication=Geant4 Physics Reference Manual 11.4
+year=2025
+doi=
+url=https://geant4.web.cern.ch/documentation/dev/prm_html/PhysicsReferenceManual/decay/OrthoPositronium.html
+accessed=2026-08-11
+
+[source:chang_tang_li_1985]
+authors=T. C. Chang; C. M. Tang; W. L. Li
+title=Gamma-ray energy spectrum from orthopositronium three-gamma decay
+publication=Physics Letters B 157, 357-360
+year=1985
+doi=10.1016/0370-2693(85)90380-6
+url=https://doi.org/10.1016/0370-2693(85)90380-6
+accessed=2026-08-11
+
+[source:rutherford_1911]
+authors=E. Rutherford
+title=The Scattering of Alpha and Beta Particles by Matter and the Structure of the Atom
+publication=Philosophical Magazine 21, 669-688
+year=1911
+doi=10.1080/14786440508637080
+url=https://doi.org/10.1080/14786440508637080
+accessed=2026-08-11
+
+[source:internal_ideal_model]
+authors=Positronium simulation
+title=Ideal statistical model assumptions
+publication=In-program model definition
+year=2026
+doi=
+url=
+accessed=2026-08-11
+
+[value:pdg_para_lifetime_input]
+source=pdg_positronium_2025
+phenomenon_mask=1
+phenomena=1
+observable=annihilation_time
+role=generator_input
+quantity=mean p-Ps lifetime
+symbol=tau_p_input
+value=125
+unit=ps
+stat_uncertainty=n/a
+systematic_uncertainty=n/a
+total_uncertainty=n/a
+exact=false
+derived=false
+derivation=
+note=Rounded ideal-vacuum input used by the decay generator.
+
+[value:pdg_ortho_lifetime_input]
+source=pdg_positronium_2025
+phenomenon_mask=2
+phenomena=2
+observable=annihilation_time
+role=generator_input
+quantity=mean o-Ps lifetime
+symbol=tau_o_input
+value=142
+unit=ns
+stat_uncertainty=n/a
+systematic_uncertainty=n/a
+total_uncertainty=n/a
+exact=false
+derived=false
+derivation=
+note=Rounded ideal-vacuum input used by the decay generator.
+
+[value:para_decay_rate_measurement]
+source=al_ramadhan_gidley_1994
+phenomenon_mask=1
+phenomena=1
+observable=annihilation_time
+role=experimental_measurement
+quantity=singlet positronium decay rate
+symbol=lambda_p
+value=7990.9
+unit=us^-1
+stat_uncertainty=n/a
+systematic_uncertainty=n/a
+total_uncertainty=1.7
+exact=false
+derived=false
+derivation=
+note=Published total uncertainty.
+
+[value:para_lifetime_from_rate]
+source=al_ramadhan_gidley_1994
+phenomenon_mask=1
+phenomena=1
+observable=annihilation_time
+role=experimental_derived
+quantity=singlet positronium lifetime
+symbol=tau_p
+value=125.14234942246806
+unit=ps
+stat_uncertainty=n/a
+systematic_uncertainty=n/a
+total_uncertainty=0.026623032952257656
+exact=false
+derived=true
+derivation=tau_p[ps]=1e6/lambda_p[us^-1]; linear uncertainty propagation
+note=Value displayed in the Experimental section.
+
+[value:ortho_decay_rate_measurement]
+source=vallery_zitzewitz_gidley_2003
+phenomenon_mask=2
+phenomena=2
+observable=annihilation_time
+role=experimental_measurement
+quantity=orthopositronium decay rate
+symbol=lambda_o
+value=7.0404
+unit=us^-1
+stat_uncertainty=0.001
+systematic_uncertainty=0.0008
+total_uncertainty=0.0012806248474865698
+exact=false
+derived=false
+derivation=
+note=Statistical and systematic uncertainties retained separately.
+
+[value:ortho_lifetime_from_rate]
+source=vallery_zitzewitz_gidley_2003
+phenomenon_mask=2
+phenomena=2
+observable=annihilation_time
+role=experimental_derived
+quantity=orthopositronium lifetime
+symbol=tau_o
+value=142.03738423953183
+unit=ns
+stat_uncertainty=0.020174618521608408
+systematic_uncertainty=0.016139694817286727
+total_uncertainty=0.025836117767334493
+exact=false
+derived=true
+derivation=tau_o[ns]=1000/lambda_o[us^-1]; linear uncertainty propagation
+note=Value displayed in the Experimental section.
+
+[value:pdg_positronium_mass_energy]
+source=pdg_positronium_2025
+phenomenon_mask=3
+phenomena=1,2
+observable=photon_energy
+role=evaluated_accepted_value
+quantity=ground-state positronium mass energy
+symbol=m_Ps_c2
+value=1.021991097
+unit=MeV
+stat_uncertainty=n/a
+systematic_uncertainty=n/a
+total_uncertainty=3e-09
+exact=false
+derived=false
+derivation=
+note=PDG evaluated value.
+
+[value:pdg_two_photon_energy]
+source=pdg_positronium_2025
+phenomenon_mask=3
+phenomena=1,2
+observable=photon_energy
+role=evaluated_derived
+quantity=photon energy for at-rest two-body split
+symbol=E_gamma
+value=510.9955485
+unit=keV
+stat_uncertainty=n/a
+systematic_uncertainty=n/a
+total_uncertainty=1.5e-06
+exact=false
+derived=true
+derivation=E_gamma[keV]=500*m_Ps_c2[MeV]
+note=Line energy for p-Ps and kinematic endpoint used for o-Ps comparison.
+
+[value:ideal_para_anisotropy]
+source=internal_ideal_model
+phenomenon_mask=1
+phenomena=1
+observable=photon_polar_angle
+role=theory_benchmark
+quantity=unpolarized p-Ps Legendre anisotropy
+symbol=a2
+value=0
+unit=1
+stat_uncertainty=n/a
+systematic_uncertainty=n/a
+total_uncertainty=n/a
+exact=true
+derived=false
+derivation=
+note=Exact only within the stated ideal unpolarized spin-zero model.
+
+[value:rutherford_shape_normalization]
+source=rutherford_1911
+phenomenon_mask=12
+phenomena=3,4
+observable=differential_cross_section
+role=analytic_benchmark
+quantity=Rutherford-shape normalization
+symbol=C_R
+value=1
+unit=1
+stat_uncertainty=n/a
+systematic_uncertainty=n/a
+total_uncertainty=n/a
+exact=true
+derived=false
+derivation=
+note=Exact only within the pure instantaneous Coulomb reference model; not experimental data.
+
+[model:exponential_lifetime]
+source=internal_ideal_model
+phenomenon_mask=3
+phenomena=1,2
+observable=annihilation_time
+role=probability_model
+formula=f(t;tau)=exp(-t/tau)/tau, t>=0
+domain=t>=0
+assumptions=Ideal vacuum, constant decay rate.
+implementation=tau is estimated by the unbinned sample mean.
+
+[model:ore_powell_three_gamma]
+source=ore_powell_1949
+phenomenon_mask=2
+phenomena=2
+observable=photon_energy,three_photon_dalitz,leading_photon_angle
+role=theory_model
+formula=P proportional sum_ij(1-cos(theta_ij))^2 dk1 dk2 dOmega1; F(x)=x(1-x)/(2-x)^2-2(1-x)^2*ln(1-x)/(2-x)^3+(2-x)/x+2(1-x)*ln(1-x)/x^2
+domain=x=E/Emax; 0<=x<=1 (x=0 understood by the limiting value)
+assumptions=Unpolarized o-Ps at rest; leading order; photon polarizations summed.
+implementation=Sampling follows the Geant4 G4OrePowellAtRestModel prescription.
+
+[model:geant4_ore_powell_implementation]
+source=geant4_ore_powell
+phenomenon_mask=2
+phenomena=2
+observable=photon_energy,three_photon_dalitz,leading_photon_angle
+role=implementation_reference
+formula=acceptance proportional to sum_ij(1-cos(theta_ij))^2
+domain=physical three-photon phase space
+assumptions=Random polarization.
+implementation=Reference for the implemented rejection sampler.
+
+[model:ortho_continuum_validation]
+source=chang_tang_li_1985
+phenomenon_mask=2
+phenomena=2
+observable=photon_energy
+role=experimental_validation
+formula=
+domain=apparatus-specific measured spectrum
+assumptions=Detector response required.
+implementation=Published continuum was reported consistent with QED; no numeric overlay is embedded.
+
+[model:rutherford_cross_section]
+source=rutherford_1911
+phenomenon_mask=12
+phenomena=3,4
+observable=differential_cross_section,cumulative_cross_section
+role=analytic_benchmark
+formula=dSigma/dOmega=l_C^2/(4*sin(theta/2)^4); sigma(theta>=theta0)=pi*l_C^2*cot(theta0/2)^2
+domain=0<theta<=pi
+assumptions=Classical Coulomb scattering.
+implementation=The trajectory result fits a single normalization C_R to this fixed shape.
+
