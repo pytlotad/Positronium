@@ -1,0 +1,337 @@
+# Positronium — kontekst aplikacji dla PRISM
+
+CANONICAL_REPOSITORY: http://github.com/pytlotad/Positronium
+PRIMARY_LANGUAGE: C++20
+DOCUMENT_LANGUAGE: Polish
+ENTRY_POINT: positronium.cpp
+BUILD_FILE: Makefile
+PHYSICS_DOCUMENTATION: README.md
+SCIENTIFIC_REFERENCE_CATALOGUE: ScientificalReferences.txt
+GENERATED_PLOTS_DIRECTORY: distributions/
+
+## 1. Cel tego pliku
+
+Ten dokument jest samodzielnym indeksem repozytorium przeznaczonym dla PRISM
+lub innego systemu analizującego projekt. Po wskazaniu repozytorium PRISM
+powinien:
+
+1. traktować `positronium.cpp` i dołączane nagłówki jako źródło prawdy o
+   aktualnym zachowaniu programu;
+2. używać tego pliku do odnalezienia kodu, dokumentacji, trybów wykonania i
+   wygenerowanych wykresów;
+3. używać `README.md` jako szczegółowego opisu fizyki, założeń, audytu
+   kompletności i ograniczeń modelu;
+4. interpretować każdy PDF w `distributions/` według formalnej konwencji z
+   sekcji 8 tego dokumentu;
+5. nie przedstawiać klasycznego modelu trajektorii jako pełnego modelu QED.
+
+W razie rozbieżności obowiązuje kolejność: kod źródłowy, `README.ap`,
+`README.md`, istniejące binaria, wygenerowane PDF-y. Binaria `positronium` i
+`positronium_validation` są artefaktami kompilacji, a nie źródłem programu.
+
+## 2. Opis programu
+
+Program bada układ elektron–pozyton dwiema różnymi ścieżkami:
+
+- `Visual simulation` całkuje jedną klasyczną trajektorię i pokazuje ją na
+  interaktywnej kanwie ROOT;
+- `Statistical analysis` generuje próbkę rozpadów pozytonium albo próbkę
+  klasycznych trajektorii wiązkowych i zapisuje osobne wykresy PDF.
+
+To rozróżnienie jest fundamentalne. Statystyczne rozpady p-Ps i o-Ps nie są
+otrzymywane przez całkowanie klasycznej orbity do małej odległości. Korzystają
+z osobnego generatora fenomenologicznego i kinematyki 2 gamma / 3 gamma.
+
+Program pracuje w SI. Prezentacja i wykresy przeliczają wybrane wielkości na
+pm, ps/ns, eV/keV, barny i jednostki hbar.
+
+## 3. Mapa kodu
+
+- `positronium.cpp` — CLI, menu, warunki początkowe, integrator adaptacyjny,
+  sterowanie Visual, eksperymenty Statistical, histogramy ROOT i raportowanie.
+- `parameters/physical_constants.hpp` — stałe fizyczne i granice numeryczne.
+- `objects/vector3.hpp` — wektor trójwymiarowy.
+- `objects/dipole_tensor.hpp` — tensor dipolowy.
+- `objects/state.hpp` — pełny stan dwóch cząstek i historia stanu.
+- `interactions/electrodynamics.hpp` — siły retardowane, precesja, reakcja
+  promieniowania, strumienie pola i pojedynczy krok elektrodynamiczny.
+- `decays/bound_decay.hpp` — generator czasu rozpadu i produktów 2 gamma / 3
+  gamma w idealnej próżni, w tym rozkład Ore'a–Powella.
+- `statistics/statistics_archive.hpp` — wartości referencyjne, źródła naukowe
+  i zapis `ScientificalReferences.txt`.
+- `io/root_export.hpp` — atomowy eksport kanw/padów ROOT do PDF i implementacja
+  konwencji nazw.
+- `fields/maxwell_validation_backend.hpp` — backend walidacji pól Maxwella.
+- `tests/maxwell_validation.hpp` — testy fizyczne i numeryczne uruchamiane
+  przez `positronium_validation`.
+- `README.md` — obszerny opis równań, walidacji, ograniczeń i interpretacji.
+- `ScientificalReferences.txt` — generowany katalog wartości, modeli, DOI i
+  założeń używanych w adnotacjach Statistical.
+- `distributions/` — ostatnie poprawnie zapisane wykresy i kanwy PDF.
+
+## 4. Budowanie i walidacja
+
+Wymagania: Linux lub zgodne środowisko, `g++`, `make`, CERN ROOT oraz
+`root-config` w `PATH`.
+
+```text
+make build                 # buduje ./positronium
+make validation            # buduje ./positronium_validation
+./positronium_validation   # uruchamia pełny zestaw walidacyjny
+make run                   # uruchamia program interaktywnie
+```
+
+`make` jest aliasem ścieżki `run`, więc po kompilacji uruchamia aplikację.
+
+## 5. Interfejs i wszystkie ścieżki wykonania
+
+### 5.1 Wspólny numer eksperymentu
+
+Numer ma to samo ogólne znaczenie w nazwach plików i menu:
+
+1. para-pozytonium;
+2. orto-pozytonium;
+3. zderzenie bezpośrednie / wiązkowy kanał krótkiego zasięgu;
+4. rozpraszanie / wiązkowy kanał elastyczny.
+
+Znaczenie fizyczne zależy jednak od trybu. Visual 1/2 pokazuje klasyczne
+związane trajektorie rozróżnione orientacją dipoli. Statistical 1/2 generuje
+kwantowe kanały zaniku w modelu idealnej próżni.
+
+### 5.2 Visual simulation
+
+Uruchomienie:
+
+```text
+./positronium --mode visual --phenomenon N --visual-style line
+./positronium --mode visual --phenomenon N --visual-style dot
+```
+
+Bez argumentów wybory są zadawane w menu. `Line` pokazuje tory, bieżące
+położenia i wektory dipoli. `Dot` pokazuje próbki położeń. Kanwa zawiera scenę
+3D, opis warunków początkowych, tabelę bieżących wielkości oraz przyciski
+`STOP/START` i `EXIT`.
+
+Visual używa klasycznej dynamiki dwóch cząstek. Klasyfikacja początkowa opiera
+się na energii względnej, momencie orbitalnym, przewidywanym najmniejszym
+zbliżeniu i ustawieniu dipoli. Związane ścieżki 1/2 obejmują krótkie okno
+kilkunastu orbit, a nie fizyczny czas życia pozytonium. Zderzenie bezpośrednie
+kończy się na granicy rozdzielczości chmury ładunku `0.01*a0`; pozostałe
+trajektorie używają mniejszej granicy punktowego modelu.
+
+Po naturalnym zakończeniu oraz po kliknięciu `EXIT` aktualna pełna kanwa jest
+zapisywana jako:
+
+```text
+distributions/N_1_1_visual_simulation.pdf
+```
+
+Kliknięcie `EXIT` w trakcie obliczeń najpierw zapisuje aktualny stan, a dopiero
+potem kończy aplikację.
+
+### 5.3 Statistical 1 — para-pozytonium
+
+```text
+./positronium --mode statistical --phenomenon 1 --runs 10000 --seed 12345 --no-gui
+```
+
+Losowany jest czas życia z rozkładu wykładniczego i rozpad 2 gamma w spoczynku.
+Model obejmuje idealną próżnię, bez materiału, detektora i poprawek
+radiacyjnych. Sprawdzane są domknięcia energii, pędu i powłoki masowej.
+
+### 5.4 Statistical 2 — orto-pozytonium
+
+```text
+./positronium --mode statistical --phenomenon 2 --runs 10000 --seed 12345 --no-gui
+```
+
+Losowany jest czas życia oraz rozpad 3 gamma z inkluzywnym widmem
+Ore'a–Powella. Zapisywane są energia fotonów, wykres Dalitza i kąt wiodących
+fotonów oraz diagnostyki zachowania czteropędu.
+
+### 5.5 Statistical 3 — kanał krótkiego zasięgu
+
+```text
+./positronium --mode statistical --phenomenon 3 --runs 20 --seed 12345 --no-gui
+```
+
+Program losuje parametr zderzenia równomiernie po powierzchni i całkuje każdą
+trajektorię od sfery dopasowania. Wyniki mają kanały `escaped`, `short-range`,
+`captured`, `unresolved` i `failed`. `captured` oznacza ujemną energię na
+gałęzi wychodzącej. `short-range` oznacza osiągnięcie cutoffu modelu i nie jest
+przekrojem anihilacji QED. Niestabilna szybka trajektoria jest deterministycznie
+ponawiana z ciaśniejszą tolerancją; pozostający `failed` unieważnia raport.
+
+Domyślny podgląd ma 20 trajektorii. Większe `--runs` zwiększa dokładność
+statystyczną i czas obliczeń.
+
+### 5.6 Statistical 4 — rozpraszanie elastyczne
+
+```text
+./positronium --mode statistical --phenomenon 4 --runs 100 --seed 12345 --no-gui
+```
+
+Program estymuje różniczkowy i skumulowany przekrój elastyczny oraz porównuje
+go z klasycznym Rutherfordem. Nie jest to obliczenie amplitudy Bhabhy. Domyślny
+podgląd ma 100 trajektorii.
+
+### 5.7 Diagnostyka jednej trajektorii
+
+```text
+./positronium --diagnose --phenomenon N --seed 12345
+```
+
+Ścieżka nie otwiera interaktywnej kanwy; wypisuje warunki, zakres promienia,
+bilans energii/pędu/momentu pędu, dryf norm dipoli i `PASS/FAIL`.
+
+### 5.8 Argumenty CLI
+
+- `--mode visual|statistical` — wybór głównego trybu;
+- `--phenomenon 1|2|3|4` — numer eksperymentu;
+- `--visual-style line|dot` — styl Visual;
+- `--seed UINT64` — deterministyczne ziarno;
+- `--runs 1..100000` — liczebność Statistical;
+- `--beam-energy-ev VALUE` — energia kinetyczna CM dla 3/4;
+- `--theta-min-deg VALUE` — próg akceptacji kąta;
+- `--angle-bins 4..90` — liczba koszyków kąta;
+- `--bmax-pm VALUE` — maksymalny parametr zderzenia, zero wybiera automat;
+- `--matching-radius-pm VALUE` — sfera dopasowania, zero wybiera automat;
+- `--no-gui` — kompatybilność CLI; Statistical zawsze jest batch-only;
+- `--diagnose` — tekstowa diagnostyka Visual.
+
+Usunięte `--stat-window-ps` i `--maxwell-test` w głównym programie zwracają
+błąd. Walidację Maxwella uruchamia osobny `./positronium_validation`.
+
+## 6. Model fizyczny — minimalny kontekst interpretacyjny
+
+Warstwa klasyczna obejmuje relatywistyczną relację pęd–prędkość, wzajemne
+pola Liénarda–Wiecherta, siłę Lorentza, sprzężenia dipolowe, człony Darwina,
+precesję dipoli, zredukowaną reakcję promieniowania Landaua–Lifshitza i
+całkowanie strumienia pola. Historia źródeł jest retardowana, a krok czasu
+adaptacyjny.
+
+Bilans `particles + radiation + bound/interference field` jest domykany przez
+rezerwuar `boundField*`. Jest to księgowanie brakującej części bilansu, nie
+niezależne obliczenie pełnego pola bliskiego. Surowe residua i testy Maxwella
+są opisane w `README.md` oraz wypisywane przez walidator.
+
+Warstwa rozpadu 1/2 używa danych fenomenologicznych: około 125 ps dla p-Ps i
+142 ns dla o-Ps, kinematyki 2 gamma oraz wiodącego rozkładu 3 gamma. Nie ma
+odpowiedzi detektora, pick-off, quenchingu, materiału ani kompletnej QED.
+
+Nazwy `para` i `ortho` w Visual są klasyfikacją modelową klasycznych dipoli,
+nie kwantowymi singlet/triplet. Wykresów Visual nie wolno używać jako
+ilościowego przewidywania czasu anihilacji.
+
+## 7. Kontekst tworzenia PDF
+
+Eksport wykonuje ROOT. Każdy PDF Statistical zawiera dokładnie jeden wykres
+z jednego pada, a nie całą czteropanelową stronę. Pliki są najpierw tworzone
+tymczasowo, sprawdzane pod kątem sygnatury PDF, a następnie atomowo zastępują
+poprzednią wersję.
+
+PDF jest wynikiem ostatniego udanego uruchomienia, które generowało daną nazwę.
+Nazwa NIE zawiera ziarna, `--runs`, energii wiązki, progów ani czasu utworzenia.
+Nie należy zakładać, że wszystkie pliki w katalogu pochodzą z tej samej sesji.
+Parametry trzeba odczytać z adnotacji wewnątrz wykresu, konsoli lub jawnego
+polecenia reprodukującego. Ponowne uruchomienie atomowo nadpisuje ten sam plik.
+
+Brak oczekiwanego PDF nie oznacza braku obsługi w kodzie: repozytorium może nie
+zawierać jeszcze wyniku ostatniego uruchomienia danego kanału. Obecność PDF nie
+oznacza z kolei, że jest on aktualniejszy od kodu źródłowego.
+
+## 8. Formalna konwencja nazw plików graficznych
+
+### 8.1 Statistical
+
+Gramatyka:
+
+```text
+distributions/<experiment>_<screen>_<pad>_<observable>.pdf
+```
+
+- `experiment`: `1`, `2`, `3` albo `4`, zgodnie z sekcją 5.1;
+- `screen=1`: rozkłady/obserwable fizyczne;
+- `screen=2`: diagnostyki numeryczne;
+- `pad`: pozycja wykresu na logicznej stronie ROOT, liczona od 1;
+- `observable`: małe litery ASCII, cyfry i `_`, semantyczna nazwa wykresu.
+
+Pełne mapowanie obsługiwanych nazw:
+
+```text
+1_1_1_annihilation_time.pdf
+1_1_2_photon_energy.pdf
+1_1_3_photon_polar_angle.pdf
+1_2_1_diagnostic_energy_closure.pdf
+1_2_2_diagnostic_momentum_closure.pdf
+1_2_3_diagnostic_photon_mass_shell.pdf
+1_2_4_diagnostic_parent_invariant_mass.pdf
+
+2_1_1_annihilation_time.pdf
+2_1_2_photon_energy.pdf
+2_1_3_three_photon_dalitz.pdf
+2_1_4_leading_photon_angle.pdf
+2_2_1_diagnostic_energy_closure.pdf
+2_2_2_diagnostic_momentum_closure.pdf
+2_2_3_diagnostic_photon_mass_shell.pdf
+2_2_4_diagnostic_parent_invariant_mass.pdf
+
+3_1_1_differential_cross_section.pdf
+3_1_2_cumulative_cross_section.pdf
+3_1_3_energy_loss_cross_section.pdf
+3_2_1_diagnostic_energy_balance.pdf
+3_2_2_diagnostic_momentum_balance.pdf
+3_2_3_diagnostic_angular_momentum_balance.pdf
+
+4_1_1_differential_cross_section.pdf
+4_1_2_cumulative_cross_section.pdf
+4_2_1_diagnostic_energy_balance.pdf
+4_2_2_diagnostic_momentum_balance.pdf
+4_2_3_diagnostic_angular_momentum_balance.pdf
+```
+
+`3_1_3_energy_loss_cross_section.pdf` jest warunkowy: powstaje tylko wtedy,
+gdy w eksperymencie 3 istnieją trajektorie `escaped` przechodzące akceptację
+kątową, dla których można wyznaczyć stratę energii. Kanał 4 celowo
+nie tworzy analogicznego wąskiego histogramu energii wyjściowej.
+
+### 8.2 Visual
+
+Gramatyka:
+
+```text
+distributions/<experiment>_1_1_visual_simulation.pdf
+```
+
+Jest to cała kanwa, nie pojedynczy histogram: scena, tabela, adnotacje i
+przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
+
+### 8.3 Znaczenie najważniejszych obserwabli
+
+- `annihilation_time` — próbka czasu zaniku z rozkładu wykładniczego;
+- `photon_energy` — energia fotonów 2 gamma albo inkluzywne widmo 3 gamma;
+- `photon_polar_angle` — rozkład kierunku fotonu p-Ps;
+- `three_photon_dalitz` — korelacja energii w rozpadzie 3 gamma;
+- `leading_photon_angle` — kąt między wiodącymi fotonami;
+- `differential_cross_section` — modelowe `d sigma/d Omega`;
+- `cumulative_cross_section` — `sigma(theta >= theta_min)`;
+- `energy_loss_cross_section` — modelowe `d sigma/d DeltaE`;
+- `diagnostic_*_closure` — residua zachowania w generatorze zaniku;
+- `diagnostic_*_balance` — residua bilansu trajektorii i strumienia pola;
+- `visual_simulation` — migawka interaktywnej symulacji.
+
+## 9. Zasady odpowiedzi PRISM
+
+Analizując repozytorium, PRISM powinien zawsze rozdzielać:
+
+- model klasycznej trajektorii od fenomenologicznego generatora zaniku;
+- obserwable fizyczne (`screen=1`) od diagnostyk numerycznych (`screen=2`);
+- referencję Rutherforda od wyniku modelu oraz od pełnego QED/Bhabhy;
+- `short-range` od anihilacji i `captured` od `failed`;
+- dokładne prawa zachowania od rezerwuarów domykających bilans księgowo;
+- kod źródłowy od artefaktów ostatniego uruchomienia.
+
+Każda interpretacja wykresu powinna podać co najmniej numer eksperymentu,
+tryb, obserwablę, jednostki osi, status modelu (klasyczny/fenomenologiczny),
+znane ograniczenia oraz fakt, że parametry uruchomienia nie są w pełni
+zakodowane w nazwie pliku.
