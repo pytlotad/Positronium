@@ -799,7 +799,6 @@ private:
             appendStateHistory(history_,state);
             return true;
         }
-
         state=start;
         history_=startingHistory;
         return advanceAdaptive(state,0.5*dt,depth+1)
@@ -1741,7 +1740,9 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     return persistenceOk ? 0 : 3;
 }
 
-enum class BeamOutcome { Escaped, ShortRange, Unresolved, NumericalFailure };
+enum class BeamOutcome {
+    Escaped, ShortRange, Captured, Unresolved, NumericalFailure
+};
 
 struct BeamConfiguration {
     double centreOfMassKineticEnergy;
@@ -1934,7 +1935,12 @@ BeamEvent simulateBeamEvent(std::uint64_t seed, const BeamConfiguration& configu
     state.positronVelocity = relativeVelocity * -0.5;
     state.electronDipole = randomDirection() * bohrMagneton;
     state.positronDipole = randomDirection() * bohrMagneton;
-    ClassicalTrajectoryEngine trajectory(state);
+    // Beam statistics need many independent trajectories. A 1e-3 local state
+    // tolerance is below the histogram/binomial uncertainty while the
+    // endpoint conservation diagnostics below still expose any accumulated
+    // drift. The visual single-trajectory path retains the stricter default.
+    ClassicalTrajectoryEngine trajectory(state,
+        {.relativeTolerance=1.0e-3,.maximumDepth=8});
     const State initialState = state;
     const EndpointDiagnostics initialDiagnostics = endpointDiagnostics(state);
     std::uint64_t integrationSteps = 0;
@@ -1970,7 +1976,12 @@ BeamEvent simulateBeamEvent(std::uint64_t seed, const BeamConfiguration& configu
         const double omega = std::sqrt(coulomb * eCharge*eCharge
                                       / (reducedMass * radius*radius*radius));
         const double transitStep = 0.02 * radius/std::max(relativeSpeed, 1.0);
-        const double dt = std::min({2.0e-18, 2.0*pi/(320.0*omega), transitStep,
+        // Far from the interaction region the transit and orbital scales are
+        // much longer than 2 as. A global attosecond cap forced tens of
+        // thousands of needless steps before the particles reached one
+        // another. The adaptive trajectory engine still subdivides this
+        // ceiling whenever its local-error estimate requires it.
+        const double dt = std::min({1.0e-15, 2.0*pi/(320.0*omega), transitStep,
             configuration.maximumFlightTime - state.time});
         if (!(dt > 0.0) || !std::isfinite(dt)) {
             return makeResult(BeamOutcome::NumericalFailure,
@@ -2011,6 +2022,17 @@ BeamEvent simulateBeamEvent(std::uint64_t seed, const BeamConfiguration& configu
         }
         if (dot(currentRelativePosition, currentRelativeVelocity) > 0.0) {
             passedClosestApproach = true;
+        }
+        // Once an outgoing branch has negative conservative particle energy,
+        // it is a captured/bound trajectory and cannot reach the matching
+        // sphere without a later external energy source. Do not integrate its
+        // many tiny bound-orbit periods all the way to the wall-clock flight
+        // gate; report it as a distinct captured channel.
+        if(passedClosestApproach&&conservativeParticleEnergy(state)<0.0) {
+            return makeResult(BeamOutcome::Captured,
+                std::numeric_limits<double>::quiet_NaN(),
+                std::numeric_limits<double>::quiet_NaN(),
+                state.radiatedEnergy,&state);
         }
         if (passedClosestApproach && currentRadius >= configuration.matchingRadius) {
             const double angle = std::acos(std::clamp(
@@ -2153,6 +2175,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     int escaped = 0;
     int fiducial = 0;
     int shortRange = 0;
+    int captured = 0;
     int unresolved = 0;
     int failed = 0;
     std::vector<double> fiducialEnergyLossesEv;
@@ -2168,12 +2191,14 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                 }
                 break;
             case BeamOutcome::ShortRange: ++shortRange; break;
+            case BeamOutcome::Captured: ++captured; break;
             case BeamOutcome::Unresolved: ++unresolved; break;
             case BeamOutcome::NumericalFailure: ++failed; break;
         }
     }
     if (failed > 0) {
         std::cerr << "Outcomes: escaped=" << escaped << ", short-range=" << shortRange
+                  << ", captured=" << captured
                   << ", unresolved=" << unresolved << ", failed=" << failed << '\n'
                   << "Cross-section report is INVALID because at least one trajectory "
                      "became numerically non-finite. No plots were produced.\n";
@@ -2262,6 +2287,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     const double rutherfordNormalizationUpper95 = normalizationConversion
         * std::min(1.0, wilsonCenter + wilsonHalfWidth);
     std::cout << "Outcomes: escaped=" << escaped << ", short-range=" << shortRange
+              << ", captured=" << captured
               << ", unresolved=" << unresolved << ", failed=" << failed << '\n'
               << "Model sigma(theta >= acceptance) = "
               << crossSectionEstimate(sampledArea, fiducial, runCount, barn)
@@ -2281,11 +2307,17 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                   << analyticCutoff/barn << " barn\n"
                   << "Important: cutoff reach is not a QED annihilation cross section.\n";
     }
+    if(captured>0) {
+        std::cout<<"Captured="<<captured
+                 <<": negative-energy outgoing states are a separate bound channel "
+                   "and are excluded from escaped/cutoff cross sections.\n";
+    }
     std::cout << "Elastic data are a classical low-velocity model, not Bhabha scattering.\n";
     if (unresolved > 0) {
         std::cout << "Warning: " << unresolved
-                  << " trajectories did not leave the interaction region before the "
-                     "flight-time gate; reported channel cross sections are finite-gate values.\n";
+                  << " trajectories did not produce a resolved outgoing endpoint within "
+                     "the flight-time/accuracy gate; reported channel cross sections "
+                     "are censored finite-gate values.\n";
     }
     if (runCount < 1000) {
         std::cout << "Statistical note: " << runCount
@@ -2612,15 +2644,15 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     }
     summary.AddText(referenceLine.str().c_str());
     std::ostringstream outcomeLine;
-    outcomeLine << "escaped/cutoff/time-limit/failed = " << escaped << '/'
-                << shortRange << '/' << unresolved << '/' << failed;
+    outcomeLine << "escaped/cutoff/captured/gated/failed = " << escaped << '/'
+                << shortRange << '/' << captured << '/' << unresolved << '/' << failed;
     summary.AddText(outcomeLine.str().c_str());
     summary.AddText("Classical low-v trajectory model");
     if (configuration.shortRangeFocus) {
         summary.AddText("#sigma_{cutoff} is not an annihilation cross section");
     }
     if (unresolved > 0) {
-        summary.AddText("Finite flight-time gate: channel values are incomplete");
+        summary.AddText("Finite flight-time/accuracy gate: channels are censored");
     }
     if (configuration.asymptoticRelativeSpeed/(2.0*c) > 0.1) {
         summary.AddText("WARNING: outside the intended low-velocity regime");
@@ -2700,7 +2732,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     } else {
         diagnosticSummary.AddText("No escaped endpoint pair: closure histograms are empty");
     }
-    diagnosticSummary.AddText("Cutoff and time-gate outcomes are excluded");
+    diagnosticSummary.AddText("Cutoff, captured and unresolved outcomes are excluded");
     diagnosticSummary.AddText("P_{rad}, J_{rad}: integrated Maxwell flux on the control wavefront");
     diagnosticSummary.AddText("P_{N}, J_{N}: approximate near-field/particle Noether sector");
     if (configuration.asymptoticRelativeSpeed/(2.0*c) > 0.1) {
@@ -2813,6 +2845,7 @@ int main(int argc, char** argv) {
     VisualStyle visualStyle = VisualStyle::Unselected;
     int selectedPhenomenon = 0;
     int statisticalRuns = 10000;
+    bool statisticalRunsExplicit = false;
     double beamEnergyEv = 20.0;
     double thetaMinimumDegrees = 5.0;
     int angleBins = 10;
@@ -2841,6 +2874,7 @@ int main(int argc, char** argv) {
                 selectedPhenomenon = std::stoi(requireValue(argument));
             } else if (argument == "--runs") {
                 statisticalRuns = std::stoi(requireValue(argument));
+                statisticalRunsExplicit = true;
             } else if (argument == "--stat-window-ps") {
                 (void)requireValue(argument);
                 throw std::invalid_argument(
@@ -2884,8 +2918,7 @@ int main(int argc, char** argv) {
     if (selectedMode == 0) {
         std::cout << "Choose simulation mode:\n"
                   << "1 -> Visual simulation\n"
-                  << "2 -> Statistical analysis (" << statisticalRuns
-                  << " event" << (statisticalRuns == 1 ? "" : "s/trials") << ")\n"
+                  << "2 -> Statistical analysis\n"
                   << "Selection [1-2]: " << std::flush;
         if (!(std::cin >> selectedMode) || selectedMode < 1 || selectedMode > 2) {
             std::cerr << "Invalid selection. Enter 1 or 2.\n";
@@ -2927,6 +2960,12 @@ int main(int argc, char** argv) {
         }
     }
     if (selectedMode == 2) {
+        if(!statisticalRunsExplicit&&selectedPhenomenon>=3) {
+            statisticalRuns=selectedPhenomenon==3?20:100;
+            std::cout<<"Beam-statistics preview: using "<<statisticalRuns
+                     <<" trajectories; "
+                       "override with --runs N.\n";
+        }
         if (statisticalRuns < 1 || statisticalRuns > 100000) {
             std::cerr << "The number of statistical events/trials must be from 1 to 100000.\n";
             return 1;
