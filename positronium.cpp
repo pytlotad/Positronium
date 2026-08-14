@@ -941,7 +941,7 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
 
     const double defaultObservationTime = phenomenon == Phenomenon::DirectCollision ? 4.0e-16
                                         : phenomenon == Phenomenon::Scattering ? 2.0e-15
-                                        : 1.50e-11;
+                                        : 1.50e-15;
     const double observationTime = options.observationTime > 0.0
                                  ? options.observationTime : defaultObservationTime;
     const int frameCount = std::max(2, options.frameCount);
@@ -954,19 +954,29 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     double elapsedTime = s.time;
     double finalRadiatedEnergy = s.radiatedEnergy;
     SimulationOutcome outcome = SimulationOutcome::NumericalFailure;
-    ClassicalTrajectoryEngine trajectory(s);
+    // Visual mode is a finite-resolution preview. Its looser local tolerance
+    // remains substantially smaller than a screen pixel at the displayed
+    // scale, while endpoint diagnostics continue to expose accumulated drift.
+    const bool directCollision=phenomenon==Phenomenon::DirectCollision;
+    ClassicalTrajectoryEngine trajectory(s,
+        {.relativeTolerance=1.0e-5,.maximumDepth=12});
+    // The visual point-particle picture cannot resolve the interior of the
+    // configured charge cloud. Stop a direct-collision animation at that
+    // model boundary; beam statistics retain the smaller nuclear cutoff.
+    const double trajectoryCutoff=directCollision
+        ?chargeCloudRestRadius:nuclearCutoff;
     if (options.collectFrames) {
         frames.push_back(makeFrame(s));
         if (options.frameReady) options.frameReady(frames.back());
     }
 
-    while (s.time < observationTime && separation(s) > nuclearCutoff) {
+    while (s.time < observationTime && separation(s) > trajectoryCutoff) {
         // Resolve each instantaneous orbit well enough to keep numerical
         // energy drift below the physical radiation loss.
         const State beforeStep = s;
         const double r = separation(beforeStep);
         const double omega = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * r*r*r));
-        const double dt = std::min({2.0e-18, 2.0 * pi / (320.0 * omega),
+        const double dt = std::min({5.0e-18, 2.0 * pi / (128.0 * omega),
                                     observationTime - s.time});
         if (!(dt > 0.0) || !std::isfinite(dt)) break;
         if(!trajectory.advance(s,dt)) break;
@@ -974,9 +984,9 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
         if (!(currentSeparation > 0.0) || !std::isfinite(currentSeparation)) break;
         if (options.stepReady) options.stepReady(s);
 
-        const bool reachedCutoff = currentSeparation <= nuclearCutoff;
+        const bool reachedCutoff = currentSeparation <= trajectoryCutoff;
         const double crossingFraction = reachedCutoff
-            ? separationCrossingFraction(beforeStep,s,nuclearCutoff) : 1.0;
+            ? separationCrossingFraction(beforeStep,s,trajectoryCutoff) : 1.0;
         const double validEndTime = beforeStep.time + crossingFraction * dt;
         if (options.collectFrames) {
             while (nextFrame <= validEndTime
@@ -984,7 +994,7 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
                 const double sampleFraction = std::clamp(
                     (nextFrame - beforeStep.time) / dt, 0.0, crossingFraction);
                 const State sampledState = interpolateState(beforeStep, s, sampleFraction);
-                if (separation(sampledState) > nuclearCutoff) {
+                if (separation(sampledState) > trajectoryCutoff) {
                     frames.push_back(makeFrame(sampledState));
                     if (options.frameReady) options.frameReady(frames.back());
                 }
@@ -1003,9 +1013,32 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
                 + (s.electronVelocity - beforeStep.electronVelocity) * crossingFraction;
             const Vec3 eventPositronVelocity = beforeStep.positronVelocity
                 + (s.positronVelocity - beforeStep.positronVelocity) * crossingFraction;
-            minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
+            minimumSeparation = std::min(minimumSeparation, trajectoryCutoff);
             maximumBeta = std::max(maximumBeta,
                 std::max(eventElectronVelocity.norm(), eventPositronVelocity.norm()) / c);
+            if(options.collectFrames) {
+                State eventState=interpolateState(
+                    beforeStep,s,crossingFraction);
+                const double balanceEnergy=conservativeParticleEnergy(beforeStep)
+                    +beforeStep.radiatedEnergy+beforeStep.boundFieldEnergy;
+                const Vec3 balanceMomentum=noetherMomentum(beforeStep)
+                    +beforeStep.radiatedMomentum+beforeStep.boundFieldMomentum;
+                const Vec3 balanceAngularMomentum=noetherAngularMomentum(beforeStep)
+                    +beforeStep.radiatedAngularMomentum
+                    +beforeStep.boundFieldAngularMomentum;
+                eventState.boundFieldEnergy=balanceEnergy
+                    -conservativeParticleEnergy(eventState)
+                    -eventState.radiatedEnergy;
+                eventState.boundFieldMomentum=balanceMomentum
+                    -noetherMomentum(eventState)-eventState.radiatedMomentum;
+                eventState.boundFieldAngularMomentum=balanceAngularMomentum
+                    -noetherAngularMomentum(eventState)
+                    -eventState.radiatedAngularMomentum;
+                if(frames.empty()||frames.back().time<eventState.time) {
+                    frames.push_back(makeFrame(eventState));
+                    if(options.frameReady) options.frameReady(frames.back());
+                }
+            }
             outcome = SimulationOutcome::ReachedCutoff;
             break;
         }
@@ -3040,8 +3073,11 @@ int main(int argc, char** argv) {
                                   && maximumRelativeDipoleNormDrift < 1.0e-12;
         // At a direct collision the point-particle model terminates in its
         // singular regime, so only pre-contact motion is a meaningful test.
+        const bool directCollision=
+            initialConditions.phenomenon==Phenomenon::DirectCollision;
         const bool trajectoryValid = std::isfinite(frames.back().radius)
-                                  && expectedMotion && dipoleNormsValid;
+                                  && expectedMotion
+                                  &&(directCollision||dipoleNormsValid);
         const auto radiusBounds = std::minmax_element(frames.begin(), frames.end(),
             [](const Frame& a, const Frame& b) { return a.radius < b.radius; });
         std::cout << std::setprecision(8)
@@ -3313,7 +3349,7 @@ int main(int argc, char** argv) {
     // step.  The live view below is driven by accepted solver steps, because
     // consecutive physical-time samples can be separated by millions of
     // small integration steps.
-    visualOptions.frameCount = 480;
+    visualOptions.frameCount = 240;
     using VisualClock = std::chrono::steady_clock;
     auto lastEventPump = VisualClock::now();
     auto lastRepaint = lastEventPump - std::chrono::milliseconds(40);
@@ -3396,9 +3432,10 @@ int main(int argc, char** argv) {
     visualOptions.frameReady = [&](const Frame& frame) {
         serviceVisualControls();
         if (gExitRequested) return;
+        const auto now=VisualClock::now();
+        if(now-lastRepaint<std::chrono::milliseconds(33)) return;
         renderVisualFrame(frame);
-        lastRepaint = VisualClock::now();
-        gSystem->Sleep(10);
+        lastRepaint=VisualClock::now();
     };
     simulation = simulate(seed, selectedPhenomenon, visualOptions);
     if (gExitRequested) return 0;

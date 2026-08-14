@@ -856,8 +856,10 @@ Próg orientacji dipoli jest fenomenologiczną regułą programu. Nie jest
 klasycznym odpowiednikiem kwantowego singletu i trypletu.
 
 `Cutoff time` w trybie wizualnym oznacza wyłącznie czas dojścia klasycznej
-trajektorii do granicy modelu \(r\le10^{-14}\,\mathrm m\). Jeśli granica nie
-zostanie osiągnięta, program wyświetla `not reached`. Wielkość ta nie jest
+trajektorii do granicy rozdzielczości modelu. Dla zderzenia bezpośredniego
+jest nią promień chmury ładunku \(0{,}01a_0\), a dla pozostałych przebiegów
+\(10^{-14}\,\mathrm m\). Jeśli granica nie zostanie osiągnięta, program
+wyświetla `not reached`. Wielkość ta nie jest
 czasem życia ani czasem anihilacji i nie jest używana na wykresach zaniku
 pozytonium.
 
@@ -869,7 +871,8 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    animację 3D z liniami torów, cząstkami i momentami magnetycznymi. Wariant
    `Dot` pokazuje wyłącznie próbki położenia: ciemnoniebieskie dla elektronu
    i pomarańczowe dla pozytonu.
-2. `Statistical analysis` generuje domyślnie 100 niezależnych zdarzeń. Zestaw
+2. `Statistical analysis` generuje domyślnie 10 000 rozpadów dla kanałów 1/2
+   oraz szybki podgląd 20/100 trajektorii odpowiednio dla kanałów 3/4. Zestaw
    paneli zależy od wybranego eksperymentu; program nie wymusza tych samych
    czterech histogramów dla zjawisk o innej fizyce.
 
@@ -1120,11 +1123,11 @@ cytowania, DOI i adresy źródeł. Kolejne uruchomienie nadpisuje go atomowo.
 Równania są całkowane jawnym schematem kick–drift–kick. Siły
 Coulomba, dipolowe, lagrangianowe ładunek–dipol i Darwina wykonują dwa półkroki pędu,
 a precesja dipoli jest dzielona na dwa półkroki. Pomiędzy
-półkrokami wykonywany jest krok położenia. Krok czasu jest adaptacyjny:
-jest ograniczony do \(2\times10^{-18}\,\mathrm s\), a okres chwilowego ruchu
-Coulombowskiego jest rozwiązywany przez co najmniej 640 kroków. Tryb wizualny
-zapisuje około 1200 klatek i kończy się wcześniej po przekroczeniu progu
-zderzenia. Próby wiązkowe nie przechowują klatek. Statystyka zaniku stanów
+półkrokami wykonywany jest krok położenia. Krok czasu jest adaptacyjny. Tryb
+Visual proponuje krok nie większy niż \(5\times10^{-18}\,\mathrm s\) i 1/128
+chwilowego okresu Coulombowskiego, a następnie dzieli go według lokalnej
+estymaty błędu. Animacja przechowuje około 240 klatek i kończy się wcześniej
+po przekroczeniu granicy modelu. Próby wiązkowe nie przechowują klatek. Statystyka zaniku stanów
 związanych korzysta z niezależnego generatora zdarzeń i nie całkuje
 klasycznej orbity aż do cutoffu.
 Przekroczenie progu zderzenia jest lokalizowane przez interpolację wewnątrz
