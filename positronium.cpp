@@ -55,6 +55,9 @@
 bool gSimulationPaused = false;
 bool gExitRequested = false;
 TButton* gStopButton = nullptr;
+TCanvas* gVisualCanvas = nullptr;
+int gVisualPhenomenon = 0;
+bool gVisualExitSaveAttempted = false;
 
 void ToggleSimulation() {
     gSimulationPaused = !gSimulationPaused;
@@ -63,6 +66,22 @@ void ToggleSimulation() {
 }
 void ExitSimulation() {
     gExitRequested = true;
+    if(gVisualCanvas&&gVisualPhenomenon>=1&&gVisualPhenomenon<=4) {
+        gVisualExitSaveAttempted=true;
+        gVisualCanvas->Modified();
+        gVisualCanvas->Update();
+        const root_export::ExportResult screenshot=
+            root_export::saveVisualScreenshot(
+                *gVisualCanvas,gVisualPhenomenon);
+        if(screenshot) {
+            std::cout<<"Saved visual screenshot: "
+                     <<screenshot.path.string()<<'\n';
+        } else {
+            std::cerr<<"Warning: could not save visual screenshot "
+                     <<screenshot.path.string()<<": "
+                     <<screenshot.error<<'\n';
+        }
+    }
     if (gApplication) gApplication->Terminate(0);
 }
 
@@ -274,6 +293,7 @@ struct SimulationOptions {
     // is independent of physical-time sampling and is therefore suitable for
     // keeping an interactive visualization responsive.
     std::function<void(const State&)> stepReady;
+    std::function<bool()> stopRequested;
 };
 
 struct PairGeometry {
@@ -970,7 +990,8 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
         if (options.frameReady) options.frameReady(frames.back());
     }
 
-    while (s.time < observationTime && separation(s) > trajectoryCutoff) {
+    while (s.time < observationTime && separation(s) > trajectoryCutoff
+           &&!(options.stopRequested&&options.stopRequested())) {
         // Resolve each instantaneous orbit well enough to keep numerical
         // energy drift below the physical radiation loss.
         const State beforeStep = s;
@@ -3140,6 +3161,9 @@ int main(int argc, char** argv) {
     gStyle->SetPadColor(kBlack);
 
     TCanvas canvas("atom", "Classical model of positronium", 1100, 820);
+    gVisualCanvas=&canvas;
+    gVisualPhenomenon=selectedPhenomenon;
+    gVisualExitSaveAttempted=false;
     canvas.SetFillColor(kBlack);
     canvas.SetSupportGL(kTRUE);
     TPad scene("scene", "Simulation", 0.0, 0.0, 1.0, 0.86);
@@ -3365,6 +3389,7 @@ int main(int argc, char** argv) {
     // consecutive physical-time samples can be separated by millions of
     // small integration steps.
     visualOptions.frameCount = 240;
+    visualOptions.stopRequested=[](){return gExitRequested;};
     using VisualClock = std::chrono::steady_clock;
     auto lastEventPump = VisualClock::now();
     auto lastRepaint = lastEventPump - std::chrono::milliseconds(40);
@@ -3452,8 +3477,27 @@ int main(int argc, char** argv) {
         renderVisualFrame(frame);
         lastRepaint=VisualClock::now();
     };
+    const auto saveVisualCanvas=[&]() {
+        canvas.cd();
+        canvas.Modified();
+        canvas.Update();
+        const root_export::ExportResult screenshot =
+            root_export::saveVisualScreenshot(canvas,selectedPhenomenon);
+        if(screenshot) {
+            std::cout<<"Saved visual screenshot: "
+                     <<screenshot.path.string()<<'\n';
+        } else {
+            std::cerr<<"Warning: could not save visual screenshot "
+                     <<screenshot.path.string()<<": "
+                     <<screenshot.error<<'\n';
+        }
+        return screenshot.succeeded();
+    };
     simulation = simulate(seed, selectedPhenomenon, visualOptions);
-    if (gExitRequested) return 0;
+    if (gExitRequested) {
+        if(!gVisualExitSaveAttempted) saveVisualCanvas();
+        return 0;
+    }
     if (simulation.outcome == SimulationOutcome::NumericalFailure) {
         std::cerr << "Simulation stopped because the numerical state became invalid.\n";
         return 2;
@@ -3472,17 +3516,10 @@ int main(int argc, char** argv) {
     controls.cd();
     canvas.Modified();
     canvas.Update();
-    const root_export::ExportResult screenshot =
-        root_export::saveVisualScreenshot(canvas, selectedPhenomenon);
-    if (screenshot) {
-        std::cout << "Saved visual screenshot: "
-                  << screenshot.path.string() << '\n';
-    } else {
-        std::cerr << "Warning: could not save visual screenshot "
-                  << screenshot.path.string() << ": "
-                  << screenshot.error << '\n';
-    }
+    saveVisualCanvas();
     app.Run();
+    if(gExitRequested&&!gVisualExitSaveAttempted) saveVisualCanvas();
+    gVisualCanvas=nullptr;
     return 0;
 #endif
 }

@@ -1107,7 +1107,8 @@ Eksport działa także z `--no-gui`.
 
 Po zakończeniu animacji trybu wizualnego cały ekran (scena, tabela i przyciski)
 jest zapisywany jako `N_1_1_visual_simulation.pdf`, gdzie `N` jest numerem
-eksperymentu.
+eksperymentu. Kliknięcie `EXIT` zapisuje w tym samym pliku aktualny stan kanwy
+przed zakończeniem programu, również gdy animacja nie dobiegła jeszcze końca.
 
 ### Katalog źródeł
 
