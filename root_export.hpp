@@ -126,58 +126,27 @@ inline bool renderPadToPdf(TVirtualPad& pad,
         pad.Print(temporary.string().c_str(), "pdf");
         return true;
     }
-    TCanvas* canvas=pad.GetCanvas();
-    if (!canvas) {
+    if (!pad.GetCanvas()) {
         error = "pad has no parent canvas";
         return false;
     }
-    // Never create or reuse a second TCanvas in a GUI process. ROOT 6.40 may
-    // route Clear/Update of such a canvas through an invalid TGX11 drawable.
-    // Temporarily enlarge the requested existing pad and move its sibling pads
-    // outside the parent's NDC rectangle. Enlarging only the requested pad is
-    // insufficient: ROOT still paints the three siblings afterwards, which
-    // produced four diagnostic plots in every nominally single-plot PDF.
-    struct PadGeometryGuard {
-        struct Geometry {
-            TVirtualPad* pad=nullptr;
-            double xlow=0.0,ylow=0.0,xup=0.0,yup=0.0;
-        };
-        TVirtualPad& pad;
-        TCanvas& canvas;
-        std::vector<Geometry> geometries;
-        PadGeometryGuard(TVirtualPad& value,TCanvas& owner)
-            :pad(value),canvas(owner) {
-            TVirtualPad* mother=pad.GetMother();
-            if(mother&&mother->GetListOfPrimitives()) {
-                TIter next(mother->GetListOfPrimitives());
-                while(TObject* object=next()) {
-                    auto* sibling=dynamic_cast<TVirtualPad*>(object);
-                    if(!sibling) continue;
-                    geometries.push_back({sibling,sibling->GetXlowNDC(),
-                        sibling->GetYlowNDC(),
-                        sibling->GetXlowNDC()+sibling->GetWNDC(),
-                        sibling->GetYlowNDC()+sibling->GetHNDC()});
-                    if(sibling!=&pad)
-                        sibling->SetPad(0.0,0.0,1.0e-9,1.0e-9);
-                }
-            }
-            if(std::ranges::none_of(geometries,
-                [&](const Geometry& item){return item.pad==&pad;}))
-                geometries.push_back({&pad,pad.GetXlowNDC(),pad.GetYlowNDC(),
-                    pad.GetXlowNDC()+pad.GetWNDC(),
-                    pad.GetYlowNDC()+pad.GetHNDC()});
-            pad.SetPad(0.0,0.0,1.0,1.0);
-            pad.Pop();
-            canvas.Modified();
-            canvas.Update();
-        }
-        ~PadGeometryGuard() {
-            for(const Geometry& item:geometries)
-                item.pad->SetPad(item.xlow,item.ylow,item.xup,item.yup);
-            canvas.Modified();
-        }
-    } geometryGuard(pad,*canvas);
-    canvas->Print(temporary.string().c_str(), "pdf");
+    // Statistical export runs in ROOT's batch backend. Clone only the selected
+    // pad into a temporary full-size canvas: printing its parent canvas would
+    // also paint the other overlapping page and all four diagnostic panels.
+    const std::string canvasName=temporaryRootObjectName("canvas");
+    TCanvas exportCanvas(canvasName.c_str(),pad.GetTitle(),900,700);
+    exportCanvas.cd();
+    TObject* cloneObject=pad.DrawClone();
+    auto* clone=dynamic_cast<TPad*>(cloneObject);
+    if(!clone) {
+        error="cannot clone ROOT pad for PDF export";
+        return false;
+    }
+    clone->SetPad(0.0,0.0,1.0,1.0);
+    clone->SetBit(kCanDelete);
+    exportCanvas.Modified();
+    exportCanvas.Update();
+    exportCanvas.Print(temporary.string().c_str(), "pdf");
     return true;
 }
 
