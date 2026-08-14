@@ -1905,7 +1905,9 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
             angleBins, shortRangeFocus};
 }
 
-BeamEvent simulateBeamEvent(std::uint64_t seed, const BeamConfiguration& configuration) {
+BeamEvent simulateBeamEvent(
+    std::uint64_t seed,const BeamConfiguration& configuration,
+    ClassicalTrajectoryEngine::Accuracy accuracy) {
     std::mt19937_64 random(seed);
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
     const double impactParameter = configuration.impactParameterMaximum
@@ -1968,12 +1970,7 @@ BeamEvent simulateBeamEvent(std::uint64_t seed, const BeamConfiguration& configu
     state.positronVelocity = relativeVelocity * -0.5;
     state.electronDipole = randomDirection() * bohrMagneton;
     state.positronDipole = randomDirection() * bohrMagneton;
-    // Beam statistics need many independent trajectories. A 1e-3 local state
-    // tolerance is below the histogram/binomial uncertainty while the
-    // endpoint conservation diagnostics below still expose any accumulated
-    // drift. The visual single-trajectory path retains the stricter default.
-    ClassicalTrajectoryEngine trajectory(state,
-        {.relativeTolerance=1.0e-3,.maximumDepth=8});
+    ClassicalTrajectoryEngine trajectory(state,accuracy);
     const State initialState = state;
     const EndpointDiagnostics initialDiagnostics = endpointDiagnostics(state);
     std::uint64_t integrationSteps = 0;
@@ -2114,6 +2111,8 @@ std::vector<BeamEvent> runBeamExperiment(std::uint64_t masterSeed,
     std::vector<BeamEvent> events(static_cast<size_t>(runCount));
     std::atomic<int> nextIndex{0};
     std::atomic<int> completed{0};
+    std::atomic<int> retried{0};
+    std::atomic<int> recovered{0};
     std::mutex outputMutex;
     const int workerCount = std::min(runCount,
         static_cast<int>(std::max(1u, std::thread::hardware_concurrency())));
@@ -2123,8 +2122,18 @@ std::vector<BeamEvent> runBeamExperiment(std::uint64_t masterSeed,
         while (true) {
             const int index = nextIndex.fetch_add(1);
             if (index >= runCount) break;
-            events[static_cast<size_t>(index)] = simulateBeamEvent(
-                splitMix64(masterSeed + static_cast<std::uint64_t>(index)), configuration);
+            const std::uint64_t eventSeed=splitMix64(
+                masterSeed+static_cast<std::uint64_t>(index));
+            BeamEvent event=simulateBeamEvent(eventSeed,configuration,
+                {.relativeTolerance=1.0e-3,.maximumDepth=8});
+            if(event.outcome==BeamOutcome::NumericalFailure) {
+                retried.fetch_add(1);
+                event=simulateBeamEvent(eventSeed,configuration,
+                    {.relativeTolerance=1.0e-5,.maximumDepth=12});
+                if(event.outcome!=BeamOutcome::NumericalFailure)
+                    recovered.fetch_add(1);
+            }
+            events[static_cast<size_t>(index)]=std::move(event);
             const int done = completed.fetch_add(1) + 1;
             if (done % 10 == 0 || done == runCount) {
                 std::lock_guard<std::mutex> lock(outputMutex);
@@ -2134,6 +2143,12 @@ std::vector<BeamEvent> runBeamExperiment(std::uint64_t masterSeed,
     };
     for (int index = 0; index < workerCount; ++index) workers.emplace_back(worker);
     for (std::thread& workerThread : workers) workerThread.join();
+    if(retried.load()>0) {
+        const char* retryNoun=retried.load()==1?" trajectory":" trajectories";
+        const char* recoveredNoun=recovered.load()==1?" trajectory":" trajectories";
+        std::cout<<"Adaptive recovery: retried "<<retried.load()<<retryNoun
+                 <<", recovered "<<recovered.load()<<recoveredNoun<<".\n";
+    }
     return events;
 }
 
