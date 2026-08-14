@@ -296,6 +296,9 @@ struct SimulationOptions {
     bool collectFrames = true;
     int frameCount = 1200;
     double observationTime = 0.0; // zero selects the phenomenon's visual window
+    // Positive values override the visual point-particle cutoff. Statistical
+    // CREM lifetime studies use the agreed charge-cloud boundary 0.01*a0.
+    double terminalSeparation = 0.0;
     std::function<void(const Frame&)> frameReady;
     // Called after every accepted integration step.  Unlike frameReady this
     // is independent of physical-time sampling and is therefore suitable for
@@ -991,8 +994,9 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // The visual point-particle picture cannot resolve the interior of the
     // configured charge cloud. Stop a direct-collision animation at that
     // model boundary; beam statistics retain the smaller nuclear cutoff.
-    const double trajectoryCutoff=directCollision
-        ?chargeCloudRestRadius:nuclearCutoff;
+    const double trajectoryCutoff=options.terminalSeparation>0.0
+        ?options.terminalSeparation
+        :(directCollision?chargeCloudRestRadius:nuclearCutoff);
     if (options.collectFrames) {
         frames.push_back(makeFrame(s));
         if (options.frameReady) options.frameReady(frames.back());
@@ -1326,20 +1330,95 @@ bool reportArchiveOperation(const statistics_archive::OperationResult& result,
     return false;
 }
 
+struct CremCollapseEstimate {
+    double lifetimeSeconds=std::numeric_limits<double>::quiet_NaN();
+    double calibrationSeconds=0.0;
+    double meanRadiatedPowerWatts=std::numeric_limits<double>::quiet_NaN();
+    SimulationOutcome calibrationOutcome=SimulationOutcome::NumericalFailure;
+};
+
+CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
+                                           int selectedPhenomenon) {
+    // Several bound orbits are integrated with the complete CREM engine. The
+    // measured orbit-averaged radiated power then closes the secular Coulomb
+    // inspiral dE/dt=P, with E=-k e^2/(2a) and P proportional to a^-4.
+    constexpr double calibrationWindow=1.5e-15;
+    SimulationOptions options;
+    options.collectFrames=false;
+    options.frameCount=2;
+    options.observationTime=calibrationWindow;
+    options.terminalSeparation=chargeCloudRestRadius;
+    const SimulationResult calibration=simulate(seed,selectedPhenomenon,options);
+    CremCollapseEstimate result;
+    result.calibrationSeconds=calibration.elapsedTime;
+    result.calibrationOutcome=calibration.outcome;
+    if(calibration.outcome==SimulationOutcome::ReachedCutoff) {
+        result.lifetimeSeconds=calibration.elapsedTime;
+        result.meanRadiatedPowerWatts=calibration.finalRadiatedEnergy
+            /std::max(calibration.elapsedTime,1.0e-30);
+        return result;
+    }
+    if(calibration.outcome!=SimulationOutcome::ObservationLimit
+       ||!(calibration.elapsedTime>0.0)
+       ||!(calibration.finalRadiatedEnergy>0.0)
+       ||!(calibration.initial.relativeEnergy<0.0)) return result;
+    result.meanRadiatedPowerWatts=calibration.finalRadiatedEnergy
+        /calibration.elapsedTime;
+    const double coulombCoupling=coulomb*eCharge*eCharge;
+    const double semiMajorAxis=-coulombCoupling
+        /(2.0*calibration.initial.relativeEnergy);
+    if(!(semiMajorAxis>chargeCloudRestRadius)) return result;
+    const double cutoffRatio=chargeCloudRestRadius/semiMajorAxis;
+    result.lifetimeSeconds=(-calibration.initial.relativeEnergy)
+        /(3.0*result.meanRadiatedPowerWatts)
+        *(1.0-cutoffRatio*cutoffRatio*cutoffRatio);
+    if(!(result.lifetimeSeconds>0.0)||!std::isfinite(result.lifetimeSeconds))
+        result.lifetimeSeconds=std::numeric_limits<double>::quiet_NaN();
+    return result;
+}
+
+std::vector<CremCollapseEstimate> runCremCollapseExperiment(
+    std::uint64_t masterSeed,int selectedPhenomenon,int runCount) {
+    std::vector<CremCollapseEstimate> estimates(static_cast<size_t>(runCount));
+    std::atomic<int> nextIndex{0};
+    std::atomic<int> completed{0};
+    std::mutex outputMutex;
+    const int workerCount=std::min(runCount,
+        static_cast<int>(std::max(1u,std::thread::hardware_concurrency())));
+    std::cout<<"Running "<<runCount<<" CREM collapse calibrations on "
+             <<workerCount<<" worker"<<(workerCount==1?"":"s")<<".\n";
+    const auto worker=[&]() {
+        while(true) {
+            const int index=nextIndex.fetch_add(1);
+            if(index>=runCount) break;
+            estimates[static_cast<size_t>(index)]=estimateCremCollapse(
+                splitMix64(masterSeed+static_cast<std::uint64_t>(index)),
+                selectedPhenomenon);
+            const int done=completed.fetch_add(1)+1;
+            if(done%10==0||done==runCount) {
+                std::lock_guard<std::mutex> lock(outputMutex);
+                std::cout<<"CREM calibrations: "<<done<<"/"<<runCount<<'\n';
+            }
+        }
+    };
+    std::vector<std::thread> workers;
+    workers.reserve(static_cast<size_t>(workerCount));
+    for(int index=0;index<workerCount;++index) workers.emplace_back(worker);
+    for(std::thread& thread:workers) thread.join();
+    return estimates;
+}
+
 int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                              int runCount) {
     const bool isPara = selectedPhenomenon == 1;
     const bound_decay::PositroniumState state = isPara
         ? bound_decay::PositroniumState::Para
         : bound_decay::PositroniumState::Ortho;
-    const statistics_archive::ScientificValue& modelLifetimeReference =
-        statistics_archive::scientificValue(isPara
-            ? "pdg_para_lifetime_input" : "pdg_ortho_lifetime_input");
-    const double referenceLifetime = modelLifetimeReference.value
-        * (isPara ? 1.0e-12 : 1.0e-9);
     const double timeScale = isPara ? 1.0e12 : 1.0e9;
     const char* timeUnit = isPara ? "ps" : "ns";
 
+    const std::vector<CremCollapseEstimate> collapseEstimates=
+        runCremCollapseExperiment(seed,selectedPhenomenon,runCount);
     std::mt19937_64 random(seed);
     std::vector<bound_decay::DecayEvent> events;
     events.reserve(static_cast<size_t>(runCount));
@@ -1357,13 +1436,13 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     decayTimes.reserve(static_cast<size_t>(runCount));
     photonEnergies.reserve(static_cast<size_t>(runCount * (isPara ? 2 : 3)));
 
-    double lifetimeSum = 0.0;
     for (int index = 0; index < runCount; ++index) {
         events.push_back(bound_decay::generateDecay(state, random));
         const bound_decay::DecayEvent& event = events.back();
-        const double displayedTime = event.decayTimeSeconds * timeScale;
-        decayTimes.push_back(displayedTime);
-        lifetimeSum += event.decayTimeSeconds;
+        const double collapseTime=collapseEstimates[static_cast<size_t>(index)]
+            .lifetimeSeconds;
+        if(std::isfinite(collapseTime))
+            decayTimes.push_back(collapseTime*timeScale);
         double photonEnergySum = 0.0;
         bound_decay::Vec3 photonMomentumSum;
         for (size_t photon = 0; photon < event.photonCount; ++photon) {
@@ -1407,8 +1486,11 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         }
     }
 
-    const double estimatedLifetime = lifetimeSum / runCount;
-    const double estimatedError = estimatedLifetime / std::sqrt(static_cast<double>(runCount));
+    const GaussianFitSummary collapseMoments=gaussianMaximumLikelihood(decayTimes);
+    const double estimatedLifetime=collapseMoments.mean/timeScale;
+    const double estimatedError=collapseMoments.count>1
+        ?estimatedLifetime/std::sqrt(static_cast<double>(collapseMoments.count))
+        :std::numeric_limits<double>::quiet_NaN();
     const statistics_archive::ScientificValue& lifetimeReference =
         statistics_archive::scientificValue(isPara
             ? "para_lifetime_from_rate" : "ortho_lifetime_from_rate");
@@ -1419,13 +1501,16 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     const double experimentalLifetime = lifetimeReference.value;
     const double experimentalLifetimeError = lifetimeReference.totalUncertainty;
     std::cout << (isPara ? "Para-positronium" : "Ortho-positronium")
-              << " ideal-vacuum decay sample: " << runCount << " events\n"
-              << "Reference mean lifetime: " << referenceLifetime * timeScale << ' '
-              << timeUnit << "; sample mean: " << estimatedLifetime * timeScale
+              << " CREM collapse study: " << runCount << " trajectories; "
+              <<collapseMoments.count<<" valid extrapolations\n"
+              << "Mean extrapolated collapse time: " << estimatedLifetime * timeScale
               << " +/- " << estimatedError * timeScale << ' ' << timeUnit << "\n"
-              << "Model: phenomenological lifetime + leading-order "
-              << (isPara ? "2-gamma" : "Ore-Powell 3-gamma")
-              << " kinematics; no detector or material effects.\n";
+              << "Model: full CREM short-orbit calibration + orbit-averaged "
+                 "secular extrapolation to 0.01*a0; external lifetime is comparison only.\n";
+    if(collapseMoments.count==0) {
+        std::cerr<<"No finite CREM collapse-time estimates; no plots were produced.\n";
+        return 2;
+    }
     // Statistical rendering is a pure batch job.  Select the virtual ROOT
     // backend before constructing any canvas; creating TApplication first can
     // permanently bind ROOT 6.40 to an X11 painter in this process.
@@ -1456,35 +1541,38 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
     std::vector<std::unique_ptr<TF1>> analysisFunctions;
 
-    const double maximumObservedTime = *std::max_element(decayTimes.begin(), decayTimes.end());
-    const double lifetimeUpper = std::max(maximumObservedTime * 1.05,
-                                           referenceLifetime * timeScale * 5.0);
+    std::vector<double> sortedCollapseTimes=decayTimes;
+    std::sort(sortedCollapseTimes.begin(),sortedCollapseTimes.end());
+    std::vector<double> empiricalSurvival(sortedCollapseTimes.size());
+    for(size_t index=0;index<sortedCollapseTimes.size();++index)
+        empiricalSurvival[index]=static_cast<double>(sortedCollapseTimes.size()-index)
+            /static_cast<double>(sortedCollapseTimes.size());
+    const double lifetimeLower=std::max(1.0e-12,
+        0.5*sortedCollapseTimes.front());
+    const double lifetimeUpper=std::max(2.0*sortedCollapseTimes.back(),
+        5.0*experimentalLifetime);
+    TGraph lifetimeSurvival(static_cast<int>(sortedCollapseTimes.size()),
+        sortedCollapseTimes.data(),empiricalSurvival.data());
     std::ostringstream lifetimeTitle;
-    lifetimeTitle << "Annihilation-time spectrum;t [" << timeUnit << "];Events";
-    TH1D lifetimeHistogram("decay_time_histogram", lifetimeTitle.str().c_str(),
-        histogramBins(decayTimes.size()), 0.0, lifetimeUpper);
-    styleHistogram(lifetimeHistogram, kOrange + 7);
-    lifetimeHistogram.SetStats(false);
-    for (double value : decayTimes) lifetimeHistogram.Fill(value);
-    TF1 inputLifetime("input_lifetime_distribution", "[0]*exp(-x/[1])",
-                      0.0, lifetimeUpper);
-    inputLifetime.SetParameters(
-        runCount * lifetimeHistogram.GetBinWidth(1)/(referenceLifetime*timeScale),
-        referenceLifetime*timeScale);
-    inputLifetime.SetLineColor(kRed + 1);
-    inputLifetime.SetLineWidth(2);
-    TF1 fittedLifetime("fitted_lifetime_distribution", "[0]*exp(-x/[1])",
-                       0.0, lifetimeUpper);
+    lifetimeTitle<<"CREM collapse survival and experimental comparison;t ["
+                 <<timeUnit<<"];Survival fraction";
+    lifetimeSurvival.SetTitle(lifetimeTitle.str().c_str());
+    lifetimeSurvival.SetLineColor(kOrange+7);
+    lifetimeSurvival.SetMarkerColor(kOrange+7);
+    lifetimeSurvival.SetMarkerStyle(20);
+    lifetimeSurvival.SetMarkerSize(0.65);
+    TF1 experimentalCurve("experimental_lifetime_distribution", "exp(-x/[0])",
+                          lifetimeLower, lifetimeUpper);
+    experimentalCurve.SetParameter(0,experimentalLifetime);
+    experimentalCurve.SetLineColor(kRed + 1);
+    experimentalCurve.SetLineWidth(2);
+    TF1 fittedLifetime("fitted_lifetime_distribution", "exp(-x/[0])",
+                       lifetimeLower, lifetimeUpper);
     const double displayedFittedLifetime = estimatedLifetime*timeScale;
-    fittedLifetime.SetParameters(
-        runCount*lifetimeHistogram.GetBinWidth(1)/displayedFittedLifetime,
-        displayedFittedLifetime);
+    fittedLifetime.SetParameter(0,displayedFittedLifetime);
     fittedLifetime.SetLineColor(kBlue + 1);
     fittedLifetime.SetLineWidth(2);
     fittedLifetime.SetLineStyle(2);
-    lifetimeHistogram.SetMaximum(1.15 * std::max(
-        lifetimeHistogram.GetMaximum(),
-        std::max(inputLifetime.Eval(0.0), fittedLifetime.Eval(0.0))));
 
     const double photonEndpoint = 0.5 * bound_decay::energyKeV(
         bound_decay::positroniumRestEnergyJoules);
@@ -1517,20 +1605,22 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
 
     distributionsPage.cd(1);
     gPad->SetGrid();
-    lifetimeHistogram.Draw("HIST");
-    inputLifetime.Draw("SAME");
+    gPad->SetLogx();
+    lifetimeSurvival.Draw("ALP");
+    lifetimeSurvival.GetXaxis()->SetLimits(lifetimeLower,lifetimeUpper);
+    lifetimeSurvival.SetMinimum(0.0);
+    lifetimeSurvival.SetMaximum(1.08);
+    experimentalCurve.Draw("SAME");
     fittedLifetime.Draw("SAME");
     drawAnalysisBox(analysisBoxes, 0.43, 0.47, 0.94, 0.91, {
-        "MC events: N = " + std::to_string(runCount),
-        "Model input: #tau = "
-            + compactNumber(referenceLifetime*timeScale) + " " + timeUnit,
-        "Fit: N_{0} exp(-t/#tau), unbinned MLE",
-        "#tau_{fit} = " + compactNumber(displayedFittedLifetime)
+        "CREM trajectories: N = " + std::to_string(runCount)
+            + "; valid = " + std::to_string(collapseMoments.count),
+        "Full CREM calibration; secular P(a) #propto a^{-4}",
+        "cutoff: r = 0.01 a_{0}",
+        "Descriptive exponential fit: #tau = " + compactNumber(displayedFittedLifetime)
             + " #pm " + compactNumber(estimatedError*timeScale) + " " + timeUnit,
-        "uncertainty: asymptotic SE; N_{0} derived = "
-            + compactNumber(fittedLifetime.GetParameter(0)),
-        "red: model input; blue dashed: MC fit",
-        "Experimental:",
+        "blue dashed: CREM fit; red: experimental curve",
+        "External comparison only:",
         "#tau_{exp} = " + compactNumber(experimentalLifetime)
             + " #pm " + compactNumber(experimentalLifetimeError) + " " + timeUnit,
         isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
@@ -1780,7 +1870,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     canvas.Modified();
     canvas.Update();
     std::vector<root_export::NamedPad> plotsToSave{
-        {distributionsPage.GetPad(1), 1, 1, "annihilation_time"},
+        {distributionsPage.GetPad(1), 1, 1, "crem_collapse_time"},
         {distributionsPage.GetPad(2), 1, 2, "photon_energy"},
         {distributionsPage.GetPad(3), 1, 3, isPara ? "photon_polar_angle"
                                               : "three_photon_dalitz"},
@@ -2926,7 +3016,7 @@ int main(int argc, char** argv) {
     int selectedMode = 0;
     VisualStyle visualStyle = VisualStyle::Unselected;
     int selectedPhenomenon = 0;
-    int statisticalRuns = 1000000;
+    int statisticalRuns = 100;
     bool statisticalRunsExplicit = false;
     double beamEnergyEv = 20.0;
     double thetaMinimumDegrees = 5.0;
@@ -2960,8 +3050,8 @@ int main(int argc, char** argv) {
             } else if (argument == "--stat-window-ps") {
                 (void)requireValue(argument);
                 throw std::invalid_argument(
-                    "--stat-window-ps was removed: bound-state statistics now sample "
-                    "a phenomenological ideal-vacuum annihilation-time distribution");
+                    "--stat-window-ps was removed: the CREM calibration window is "
+                    "fixed by the orbit-averaged collapse estimator");
             } else if (argument == "--beam-energy-ev") {
                 beamEnergyEv = std::stod(requireValue(argument));
             } else if (argument == "--theta-min-deg") {
@@ -3024,8 +3114,8 @@ int main(int argc, char** argv) {
     if (selectedPhenomenon < 1 || selectedPhenomenon > 4) {
         if (selectedMode == 2) {
             std::cout << "Choose statistical experiment:\n"
-                      << "1 -> Para-positronium decay in vacuum (2 gamma)\n"
-                      << "2 -> Ortho-positronium decay in vacuum (3 gamma)\n"
+                      << "1 -> Para-positronium CREM collapse + 2 gamma kinematics\n"
+                      << "2 -> Ortho-positronium CREM collapse + 3 gamma kinematics\n"
                       << "3 -> e+e- beam: short-range/cutoff channel\n"
                       << "4 -> e+e- beam: elastic scattering\n";
         } else {
@@ -3048,7 +3138,7 @@ int main(int argc, char** argv) {
                      <<" trajectories; "
                        "override with --runs N.\n";
         }
-        const int maximumStatisticalRuns=selectedPhenomenon<=2?1000000:100000;
+        const int maximumStatisticalRuns=selectedPhenomenon<=2?100:100000;
         if (statisticalRuns < 1 || statisticalRuns > maximumStatisticalRuns) {
             std::cerr << "The number of statistical events/trials must be from 1 to "
                       <<maximumStatisticalRuns<<" for this experiment.\n";

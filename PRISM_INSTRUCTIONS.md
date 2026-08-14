@@ -52,6 +52,9 @@ PRISM ma zawsze:
 - rozróżniać tryby `Visual simulation` i `Statistical analysis`;
 - rozróżniać klasyczny model trajektorii od fenomenologicznego generatora
   rozpadów pozytonium;
+- opisywać wynik Statistical 1/2 jako ekstrapolowany czas kolapsu CREM do
+  `0.01*a0`, a nie jako kwantowy czas anihilacji; zewnętrzne czasy życia są
+  wyłącznie krzywymi porównawczymi i nie są wejściem obliczenia;
 - oddzielać założenia modelu, implementację numeryczną, wyniki symulacji,
   interpretację autora i wiedzę zaczerpniętą z literatury;
 - nie przedstawiać modelu CREM jako kompletnego opisu QED;

@@ -68,8 +68,8 @@ pm, ps/ns, eV/keV, barny i jednostki hbar.
 - `objects/state.hpp` — pełny stan dwóch cząstek i historia stanu.
 - `interactions/electrodynamics.hpp` — siły retardowane, precesja, reakcja
   promieniowania, strumienie pola i pojedynczy krok elektrodynamiczny.
-- `decays/bound_decay.hpp` — generator czasu rozpadu i produktów 2 gamma / 3
-  gamma w idealnej próżni, w tym rozkład Ore'a–Powella.
+- `decays/bound_decay.hpp` — generator kinematyki produktów 2 gamma / 3 gamma
+  w idealnej próżni, w tym rozkład Ore'a–Powella; nie generuje czasu życia.
 - `statistics/statistics_archive.hpp` — wartości referencyjne, źródła naukowe
   i zapis `ScientificalReferences.txt`.
 - `io/root_export.hpp` — atomowy eksport kanw/padów ROOT do PDF i implementacja
@@ -108,8 +108,9 @@ Numer ma to samo ogólne znaczenie w nazwach plików i menu:
 4. rozpraszanie / wiązkowy kanał elastyczny.
 
 Znaczenie fizyczne zależy jednak od trybu. Visual 1/2 pokazuje klasyczne
-związane trajektorie rozróżnione orientacją dipoli. Statistical 1/2 generuje
-kwantowe kanały zaniku w modelu idealnej próżni.
+związane trajektorie rozróżnione orientacją dipoli. Statistical 1/2 wyznacza
+ekstrapolowany klasyczny czas kolapsu CREM i osobno generuje kinematykę
+kwantowych kanałów 2 gamma / 3 gamma.
 
 ### 5.2 Visual simulation
 
@@ -145,24 +146,27 @@ potem kończy aplikację.
 ### 5.3 Statistical 1 — para-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 1 --runs 1000000 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 1 --runs 100 --seed 12345 --no-gui
 ```
 
-Losowany jest czas życia z rozkładu wykładniczego i rozpad 2 gamma w spoczynku.
-Model obejmuje idealną próżnię, bez materiału, detektora i poprawek
-radiacyjnych. Sprawdzane są domknięcia energii, pędu i powłoki masowej.
-Domyślna próbka obejmuje 1 000 000 zdarzeń.
+Każda realizacja całkuje kilka orbit pełnym modelem CREM, mierzy uśrednioną
+moc promieniowania i ekstrapoluje sekularną ewolucję do granicy `0.01*a0`.
+Rozkład tych czasów otrzymuje opisowe dopasowanie wykładnicze i jest
+porównywany z krzywą zbudowaną z opublikowanego czasu eksperymentalnego.
+Wartość eksperymentalna nie jest wejściem obliczenia CREM. Kinematyka 2 gamma
+jest generowana osobno. Domyślna i maksymalna próbka obejmuje 100 trajektorii.
 
 ### 5.4 Statistical 2 — orto-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 2 --runs 1000000 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 2 --runs 100 --seed 12345 --no-gui
 ```
 
-Losowany jest czas życia oraz rozpad 3 gamma z inkluzywnym widmem
-Ore'a–Powella. Zapisywane są energia fotonów, wykres Dalitza i kąt wiodących
-fotonów oraz diagnostyki zachowania czteropędu. Domyślna próbka obejmuje
-1 000 000 zdarzeń.
+Czas kolapsu jest wyznaczany tą samą metodą CREM co w eksperymencie 1, dla
+klasycznej konfiguracji ortho dipoli. Zewnętrzny czas o-Ps służy wyłącznie do
+porównania. Osobny generator Ore'a–Powella tworzy kinematykę 3 gamma: energię
+fotonów, wykres Dalitza i kąt wiodących fotonów oraz diagnostyki czteropędu.
+Domyślna i maksymalna próbka obejmuje 100 trajektorii.
 
 ### 5.5 Statistical 3 — kanał krótkiego zasięgu
 
@@ -205,7 +209,7 @@ bilans energii/pędu/momentu pędu, dryf norm dipoli i `PASS/FAIL`.
 - `--phenomenon 1|2|3|4` — numer eksperymentu;
 - `--visual-style line|dot` — styl Visual;
 - `--seed UINT64` — deterministyczne ziarno;
-- `--runs` — liczebność Statistical: maksymalnie 1 000 000 dla 1/2 i 100 000
+- `--runs` — liczebność Statistical: maksymalnie 100 dla 1/2 i 100 000
   dla kosztownych eksperymentów trajektorii 3/4;
 - `--beam-energy-ev VALUE` — energia kinetyczna CM dla 3/4;
 - `--theta-min-deg VALUE` — próg akceptacji kąta;
@@ -231,9 +235,13 @@ rezerwuar `boundField*`. Jest to księgowanie brakującej części bilansu, nie
 niezależne obliczenie pełnego pola bliskiego. Surowe residua i testy Maxwella
 są opisane w `README.md` oraz wypisywane przez walidator.
 
-Warstwa rozpadu 1/2 używa danych fenomenologicznych: około 125 ps dla p-Ps i
-142 ns dla o-Ps, kinematyki 2 gamma oraz wiodącego rozkładu 3 gamma. Nie ma
-odpowiedzi detektora, pick-off, quenchingu, materiału ani kompletnej QED.
+Warstwa czasowa 1/2 nie używa zewnętrznego czasu życia jako wejścia. Pełny CREM
+kalibruje średnią moc promieniowania na krótkim odcinku, a uśrednione po orbicie
+równanie `dE/dt=P`, przy `E=-k*e^2/(2a)` i `P(a)` proporcjonalnym do `a^-4`, jest
+całkowane do `0.01*a0`. Jest to ekstrapolowany klasyczny czas kolapsu, nie
+kwantowy czas anihilacji. Osobna warstwa generuje kinematykę 2 gamma i wiodący
+rozkład 3 gamma Ore'a–Powella. Kalibracja jednej realizacji obejmuje `1.5 fs`;
+pomiar referencyjny 100 realizacji trwał około 2,6 minuty na czterech wątkach.
 
 Nazwy `para` i `ortho` w Visual są klasyfikacją modelową klasycznych dipoli,
 nie kwantowymi singlet/triplet. Wykresów Visual nie wolno używać jako
@@ -275,7 +283,7 @@ distributions/<experiment>_<screen>_<pad>_<observable>.pdf
 Pełne mapowanie obsługiwanych nazw:
 
 ```text
-1_1_1_annihilation_time.pdf
+1_1_1_crem_collapse_time.pdf
 1_1_2_photon_energy.pdf
 1_1_3_photon_polar_angle.pdf
 1_2_1_diagnostic_energy_closure.pdf
@@ -283,7 +291,7 @@ Pełne mapowanie obsługiwanych nazw:
 1_2_3_diagnostic_photon_mass_shell.pdf
 1_2_4_diagnostic_parent_invariant_mass.pdf
 
-2_1_1_annihilation_time.pdf
+2_1_1_crem_collapse_time.pdf
 2_1_2_photon_energy.pdf
 2_1_3_three_photon_dalitz.pdf
 2_1_4_leading_photon_angle.pdf
@@ -324,7 +332,8 @@ przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
 
 ### 8.3 Znaczenie najważniejszych obserwabli
 
-- `annihilation_time` — próbka czasu zaniku z rozkładu wykładniczego;
+- `crem_collapse_time` — ekstrapolowany czas dojścia klasycznej trajektorii
+  CREM do `0.01*a0`, z opisowym fitem i zewnętrzną krzywą porównawczą;
 - `photon_energy` — energia fotonów 2 gamma albo inkluzywne widmo 3 gamma;
 - `photon_polar_angle` — rozkład kierunku fotonu p-Ps;
 - `three_photon_dalitz` — korelacja energii w rozpadzie 3 gamma;
@@ -340,7 +349,8 @@ przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
 
 Analizując repozytorium, PRISM powinien zawsze rozdzielać:
 
-- model klasycznej trajektorii od fenomenologicznego generatora zaniku;
+- klasyczny czas kolapsu CREM od kwantowego czasu anihilacji i od osobnego
+  generatora kinematyki fotonów;
 - obserwable fizyczne (`screen=1`) od diagnostyk numerycznych (`screen=2`);
 - referencję Rutherforda od wyniku modelu oraz od pełnego QED/Bhabhy;
 - `short-range` od anihilacji i `captured` od `failed`;

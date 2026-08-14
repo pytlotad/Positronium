@@ -75,42 +75,6 @@ doi=
 url=
 accessed=2026-08-11
 
-[value:pdg_para_lifetime_input]
-source=pdg_positronium_2025
-phenomenon_mask=1
-phenomena=1
-observable=annihilation_time
-role=generator_input
-quantity=mean p-Ps lifetime
-symbol=tau_p_input
-value=125
-unit=ps
-stat_uncertainty=n/a
-systematic_uncertainty=n/a
-total_uncertainty=n/a
-exact=false
-derived=false
-derivation=
-note=Rounded ideal-vacuum input used by the decay generator.
-
-[value:pdg_ortho_lifetime_input]
-source=pdg_positronium_2025
-phenomenon_mask=2
-phenomena=2
-observable=annihilation_time
-role=generator_input
-quantity=mean o-Ps lifetime
-symbol=tau_o_input
-value=142
-unit=ns
-stat_uncertainty=n/a
-systematic_uncertainty=n/a
-total_uncertainty=n/a
-exact=false
-derived=false
-derivation=
-note=Rounded ideal-vacuum input used by the decay generator.
-
 [value:para_decay_rate_measurement]
 source=al_ramadhan_gidley_1994
 phenomenon_mask=1
@@ -255,16 +219,16 @@ derived=false
 derivation=
 note=Exact only within the pure instantaneous Coulomb reference model; not experimental data.
 
-[model:exponential_lifetime]
+[model:crem_secular_collapse]
 source=internal_ideal_model
 phenomenon_mask=3
 phenomena=1,2
-observable=annihilation_time
-role=probability_model
-formula=f(t;tau)=exp(-t/tau)/tau, t>=0
-domain=t>=0
-assumptions=Ideal vacuum, constant decay rate.
-implementation=tau is estimated by the unbinned sample mean.
+observable=crem_collapse_time
+role=trajectory_extrapolation
+formula=dE/dt=P_CREM; E=-k*e^2/(2a); <P>(a) proportional to a^-4
+domain=bound CREM trajectory; terminal radius 0.01*a0
+assumptions=Short full-CREM calibration followed by orbit-averaged secular evolution.
+implementation=The descriptive exponential fit is not an annihilation law; published lifetimes are comparison curves only.
 
 [model:ore_powell_three_gamma]
 source=ore_powell_1949

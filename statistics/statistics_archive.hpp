@@ -146,16 +146,6 @@ inline const std::vector<ScientificSource>& scientificSources() {
 
 inline const std::vector<ScientificValue>& scientificValues() {
     static const std::vector<ScientificValue> values{
-        {"pdg_para_lifetime_input", "pdg_positronium_2025", 0x01U,
-         "annihilation_time", "generator_input", "mean p-Ps lifetime",
-         "tau_p_input", 125.0, "ps", true, 0.0, 0.0, 0.0,
-         false, false, false, false, false, "",
-         "Rounded ideal-vacuum input used by the decay generator."},
-        {"pdg_ortho_lifetime_input", "pdg_positronium_2025", 0x02U,
-         "annihilation_time", "generator_input", "mean o-Ps lifetime",
-         "tau_o_input", 142.0, "ns", true, 0.0, 0.0, 0.0,
-         false, false, false, false, false, "",
-         "Rounded ideal-vacuum input used by the decay generator."},
         {"para_decay_rate_measurement", "al_ramadhan_gidley_1994", 0x01U,
          "annihilation_time", "experimental_measurement",
          "singlet positronium decay rate", "lambda_p",
@@ -220,11 +210,12 @@ inline const std::vector<ScientificValue>& scientificValues() {
 
 inline const std::vector<ScientificModel>& scientificModels() {
     static const std::vector<ScientificModel> models{
-        {"exponential_lifetime", "internal_ideal_model", 0x03U,
-         "annihilation_time", "probability_model",
-         "f(t;tau)=exp(-t/tau)/tau, t>=0", "t>=0",
-         "Ideal vacuum, constant decay rate.",
-         "tau is estimated by the unbinned sample mean."},
+        {"crem_secular_collapse", "internal_ideal_model", 0x03U,
+         "crem_collapse_time", "trajectory_extrapolation",
+         "dE/dt=P_CREM; E=-k*e^2/(2a); <P>(a) proportional to a^-4",
+         "bound CREM trajectory; terminal radius 0.01*a0",
+         "Short full-CREM calibration followed by orbit-averaged secular evolution.",
+         "The descriptive exponential fit is not an annihilation law; published lifetimes are comparison curves only."},
         {"ore_powell_three_gamma", "ore_powell_1949", 0x02U,
          "photon_energy,three_photon_dalitz,leading_photon_angle",
          "theory_model",

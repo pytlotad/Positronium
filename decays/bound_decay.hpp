@@ -4,12 +4,12 @@
 // Ideal-vacuum annihilation generator for ground-state positronium.
 //
 // This module is deliberately independent of the classical orbital model in
-// positronium.cpp.  Positronium annihilation is a quantum process: its decay
-// time and photon final state cannot be obtained from a classical trajectory
-// reaching a short-distance cutoff.  The lifetimes below are phenomenological
-// vacuum inputs, while the photon kinematics use the leading 2-gamma channel
-// for para-positronium and the unpolarized Ore-Powell distribution for the
-// leading 3-gamma channel of ortho-positronium.
+// positronium.cpp. Positronium annihilation is a quantum process: its decay
+// time cannot be obtained from a classical trajectory reaching a short-distance
+// cutoff, and its photon final state needs a quantum prescription. This module
+// therefore supplies only the leading
+// 2-gamma / Ore-Powell 3-gamma kinematics.  Statistical collapse times are
+// calculated separately from the CREM trajectory and are never injected here.
 //
 // Detector resolution, material effects (pick-off/quenching), higher photon
 // multiplicities, radiative corrections and hyperfine mass splitting are not
@@ -42,9 +42,6 @@ inline constexpr double coulombConstant = 1.0 / (4.0 * pi * epsilon0);
 inline constexpr double fineStructureConstant =
     coulombConstant * elementaryCharge * elementaryCharge
     / (hbar * speedOfLight);
-
-inline constexpr double paraLifetimeSeconds = 125.0e-12;
-inline constexpr double orthoLifetimeSeconds = 142.0e-9;
 
 // Ground-state positronium has reduced mass m_e/2, hence one half of the
 // hydrogen binding energy.  The same spin-averaged mass is used for p-Ps and
@@ -107,7 +104,6 @@ struct Photon {
 
 struct DecayEvent {
     PositroniumState state = PositroniumState::Para;
-    double decayTimeSeconds = 0.0;
     std::array<Photon, 3> photons{};
     std::size_t photonCount = 0;
 
@@ -143,11 +139,6 @@ double uniformOpenUnit(RandomEngine& random) {
         value = uniformUnit(random);
     } while (!(value > 0.0));
     return value;
-}
-
-template <class RandomEngine>
-double exponentialTime(RandomEngine& random, double meanLifetime) {
-    return -meanLifetime * std::log(uniformOpenUnit(random));
 }
 
 template <class RandomEngine>
@@ -268,8 +259,6 @@ template <class RandomEngine>
 DecayEvent generateParaDecay(RandomEngine& random) {
     DecayEvent event;
     event.state = PositroniumState::Para;
-    event.decayTimeSeconds =
-        detail::exponentialTime(random, paraLifetimeSeconds);
     event.photonCount = 2;
 
     const Vec3 direction = detail::isotropicDirection(random);
@@ -284,8 +273,6 @@ template <class RandomEngine>
 DecayEvent generateOrthoDecay(RandomEngine& random) {
     DecayEvent event;
     event.state = PositroniumState::Ortho;
-    event.decayTimeSeconds =
-        detail::exponentialTime(random, orthoLifetimeSeconds);
     event.photonCount = 3;
 
     const detail::OrthoEnergyPoint point =

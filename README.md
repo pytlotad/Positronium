@@ -884,36 +884,55 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    animację 3D z liniami torów, cząstkami i momentami magnetycznymi. Wariant
    `Dot` pokazuje wyłącznie próbki położenia: ciemnoniebieskie dla elektronu
    i pomarańczowe dla pozytonu.
-2. `Statistical analysis` generuje domyślnie 1 000 000 rozpadów dla kanałów 1/2
+2. `Statistical analysis` wykonuje domyślnie 100 kalibracji CREM dla kanałów 1/2
    oraz szybki podgląd 20/100 trajektorii odpowiednio dla kanałów 3/4. Zestaw
    paneli zależy od wybranego eksperymentu; program nie wymusza tych samych
    czterech histogramów dla zjawisk o innej fizyce.
 
 ### Związane pozytonium
 
-Dla przygotowanego p-Ps lub o-Ps właściwą charakterystyką rozpadu jest
-\(\Gamma=1/\tau\), a nie przekrój czynny. Przekrój tworzenia pozytonium wymagałby
-podania konkretnej reakcji, energii wiązki i tarczy, których obecny program nie
-modeluje. Czas anihilacji jest losowany z prawa
+Dla przygotowanego p-Ps lub o-Ps eksperymentalną charakterystyką rozpadu jest
+\(\Gamma=1/\tau\), a nie przekrój czynny. Obecny CREM nie zawiera kwantowego
+operatora anihilacji. Statistical 1/2 oblicza zamiast tego operacyjny klasyczny
+czas kolapsu: dla każdej realizacji krótki odcinek wielu orbit jest całkowany
+pełnym modelem CREM, a zmierzona średnia moc promieniowania kalibruje równanie
 
 \[
-P(t)=\tau^{-1}e^{-t/\tau},
+\frac{dE}{dt}=P_{\rm CREM},\qquad
+E=-\frac{k e^2}{2a},\qquad P(a)\propto a^{-4}.
 \]
 
-z referencyjnymi czasami życia w próżni \(\tau_{p\text{-}Ps}=125\,\mathrm{ps}\)
-i \(\tau_{o\text{-}Ps}=142\,\mathrm{ns}\). Generator produktów zachowuje energię
-i pęd w układzie spoczynkowym pozytonium.
+Równanie sekularne jest całkowane do `0.01*a0`. Wynik nie jest kwantowym czasem
+anihilacji. Zewnętrzne pomiary nie są wejściem CREM; tworzą wyłącznie krzywe
+porównawcze
+
+\[
+t_{\rm collapse}=\frac{|E_0|}{3\langle P_{\rm CREM}\rangle}
+\left[1-\left(\frac{0.01a_0}{a}\right)^3\right].
+\]
+
+Jest to przybliżenie uśrednione po orbicie: pełna trajektoria kalibracyjna trwa
+`1.5 fs`, natomiast dalsze tysiące orbit nie są całkowane krok po kroku.
+Domyślne 100 trajektorii zajęło w pomiarze referencyjnym około 2,6 minuty na
+eksperyment przy czterech wątkach; czas zależy od procesora.
+
+\[
+P_{\rm exp}(t)=\tau_{\rm exp}^{-1}e^{-t/\tau_{\rm exp}},
+\]
+
+z parametrami pochodzącymi z cytowanych pomiarów. Osobny generator produktów
+zachowuje energię i pęd w układzie spoczynkowym pozytonium.
 
 Dla para-pozytonium wyświetlane są:
 
-- rozkład czasu anihilacji;
+- rozkład ekstrapolowanego czasu kolapsu CREM i krzywa eksperymentalna;
 - idealna linia energii dwóch fotonów około \(511\,\mathrm{keV}\);
 - rozkład \(\cos\theta_\gamma\) dla niepolaryzowanego źródła;
 - karta kinematyczna kanału \(2\gamma\), w którym fotony są przeciwbieżne.
 
 Dla orto-pozytonium wyświetlane są:
 
-- rozkład czasu anihilacji;
+- rozkład ekstrapolowanego czasu kolapsu CREM i krzywa eksperymentalna;
 - inkluzywne widmo energii fotonów w przybliżeniu Ore’a–Powella;
 - dwuwymiarowy wykres Dalitza \(E_{max}\)–\(E_{mid}\);
 - kąt między dwoma najbardziej energetycznymi fotonami kanału \(3\gamma\).
@@ -1019,13 +1038,13 @@ wynika bezpośrednio z pełnego pola drugiego źródła.
 
 ### Dopasowania i sekcja `Experimental`
 
-Adnotacje na wykresach rozdzielają trzy różne rzeczy: wejście modelu, fit lub
-test próbki Monte Carlo oraz niezależny wynik eksperymentalny. Fit próbki
-wygenerowanej przez program nie jest oznaczany jako pomiar natury.
+Adnotacje na wykresach rozdzielają trzy różne rzeczy: obliczenie CREM, opisowy
+fit jego wyników oraz niezależny wynik eksperymentalny. Generator kinematyki
+fotonów nadal korzysta z Monte Carlo, ale nie losuje czasu życia.
 
-- czas życia ma wykładniczą funkcję
-  \(N(t)=N_0\exp(-t/\tau)\); \(\hat\tau\) jest wyznaczane metodą największej
-  wiarygodności bez koszykowania. Do porównania podano
+- czasy kolapsu CREM otrzymują opisowe dopasowanie
+  \(N(t)=N_0\exp(-t/\tau_{\rm CREM})\). Nie jest ono prawem anihilacji.
+  Zewnętrzne krzywe porównawcze wykorzystują
   \(\tau_{p\text{-}Ps}=125.142(27)\,\mathrm{ps}\) oraz
   \(\tau_{o\text{-}Ps}=142.037(26)\,\mathrm{ns}\) z precyzyjnych
   pomiarów szybkości zaniku;
@@ -1104,7 +1123,7 @@ eksperymentu, numer ekranu, numer padu i opis, rozdzielone znakami `_`, na
 przykład:
 
 ```text
-distributions/1_1_1_annihilation_time.pdf
+distributions/1_1_1_crem_collapse_time.pdf
 distributions/2_1_3_three_photon_dalitz.pdf
 distributions/3_1_3_energy_loss_cross_section.pdf
 distributions/4_1_1_differential_cross_section.pdf
@@ -1202,8 +1221,9 @@ zjawisko:
 4 -> Scattering
 ```
 
-W trybie statystycznym te same numery wybierają odpowiednio zanik p-Ps,
-zanik o-Ps, wiązkowy kanał krótkiego zasięgu i elastyczne rozpraszanie
+W trybie statystycznym te same numery wybierają odpowiednio kolaps CREM dla
+konfiguracji p-Ps i o-Ps wraz z kinematyką fotonów, wiązkowy kanał krótkiego
+zasięgu i elastyczne rozpraszanie
 wiązki e⁺e⁻. Tryb, wybór eksperymentu i ziarno można podać bez interakcji:
 
 ```bash
@@ -1246,8 +1266,10 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
 
 - mechanika kwantowa w dynamice orbitalnej, funkcja falowa, zasada Pauliego,
   splątanie i dynamiczne tworzenie stanów para-/ortopozytonium;
-- wyprowadzenie czasu anihilacji z dynamiki: statystyczny moduł zaniku używa
-  referencyjnych czasów życia i wiodącej kinematyki 2γ/3γ;
+- kwantowy czas anihilacji nie jest wyprowadzany z dynamiki klasycznej;
+  Statistical 1/2 raportuje odrębny, operacyjny czas kolapsu CREM otrzymany
+  przez kalibrację pełnej trajektorii i ekstrapolację sekularną, natomiast
+  zewnętrzne czasy życia służą wyłącznie do porównania;
 - odpowiedź detektora, oddziaływania pozytonium w materiale, pick-off,
   quenching, poprawki radiacyjne i rzadsze kanały rozpadu;
 - relatywistyczne amplitudy QED niezwiązanej pary, w tym rozpraszanie Bhabhy
