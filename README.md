@@ -1,5 +1,18 @@
 # Klasyczny model układu elektron–pozyton
 
+## Użycie i wskazanie autorstwa modelu CREM
+
+Program może być używany przez każdego. Publikacja wyników uzyskanych za jego
+pomocą — również wyników opartych na zmodyfikowanym kodzie albo zmodyfikowanym
+modelu CREM — powinna wskazywać położenie katalogu projektu Positronium:
+
+```text
+https://github.com/pytlotad/Positronium
+```
+
+oraz autora modelu CREM: **Tadeusz Sławomir Pytlos**, dostępnego pod adresem
+`tadeusz.slawomir.pytlos@gmail.com`.
+
 ## Status i zakres modelu
 
 Program jest numeryczną wizualizacją **klasycznej, fenomenologicznej** dynamiki

@@ -1,6 +1,8 @@
 # Positronium — kontekst aplikacji dla PRISM
 
-CANONICAL_REPOSITORY: http://github.com/pytlotad/Positronium
+CANONICAL_REPOSITORY: https://github.com/pytlotad/Positronium
+CREM_MODEL_AUTHOR: Tadeusz Slawomir Pytlos
+CREM_MODEL_AUTHOR_CONTACT: tadeusz.slawomir.pytlos@gmail.com
 PRIMARY_LANGUAGE: C++20
 DOCUMENT_LANGUAGE: Polish
 ENTRY_POINT: positronium.cpp
@@ -28,6 +30,17 @@ powinien:
 W razie rozbieżności obowiązuje kolejność: kod źródłowy, `README.ap`,
 `README.md`, istniejące binaria, wygenerowane PDF-y. Binaria `positronium` i
 `positronium_validation` są artefaktami kompilacji, a nie źródłem programu.
+
+### Użycie i atrybucja CREM
+
+Program może być używany przez każdego. Każda publikacja wyników opartych na
+tym programie, także po zmianie kodu lub zmianie modelu CREM, powinna wskazać
+repozytorium `https://github.com/pytlotad/Positronium` oraz autora modelu CREM:
+Tadeusza Sławomira Pytlosa, kontakt
+`tadeusz.slawomir.pytlos@gmail.com`.
+
+PRISM powinien zachować tę informację przy opisywaniu, cytowaniu albo
+publikowaniu wyników pochodzących z repozytorium lub jego modyfikacji.
 
 ## 2. Opis programu
 

@@ -1,3 +1,11 @@
+// CREM attribution notice
+//
+// This program may be used by anyone. Publications based on results produced
+// with this code, including modified versions of the code or CREM model,
+// should identify the Positronium repository at
+// https://github.com/pytlotad/Positronium and credit the CREM model author,
+// Tadeusz Slawomir Pytlos (tadeusz.slawomir.pytlos@gmail.com).
+
 #include <TApplication.h>
 #include <TButton.h>
 #include <TCanvas.h>
@@ -2902,6 +2910,11 @@ int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
 } // namespace
 
 int main(int argc, char** argv) {
+    std::cout
+        << "CREM attribution: publications based on this program or modified "
+           "versions should cite https://github.com/pytlotad/Positronium and "
+           "credit Tadeusz Slawomir Pytlos "
+           "(tadeusz.slawomir.pytlos@gmail.com).\n";
 #ifdef POSITRONIUM_VALIDATION_EXECUTABLE
     (void)argc;
     (void)argv;
