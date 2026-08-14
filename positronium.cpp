@@ -43,12 +43,12 @@
 #include <utility>
 #include <vector>
 
-#include "bound_decay.hpp"
+#include "decays/bound_decay.hpp"
 #include "objects/vector3.hpp"
 #include "objects/state.hpp"
 #include "parameters/physical_constants.hpp"
-#include "root_export.hpp"
-#include "statistics_archive.hpp"
+#include "io/root_export.hpp"
+#include "statistics/statistics_archive.hpp"
 
 // These functions are intentionally global: ROOT's TButton invokes its action
 // through the interpreter while the animation loop observes these flags.
