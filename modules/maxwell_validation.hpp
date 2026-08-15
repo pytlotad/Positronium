@@ -651,9 +651,13 @@ int runMaxwellSelfTest() {
         /std::max(std::abs(sharedEngineVisualState.radiatedEnergy),1.0e-300);
     const MutualForces sharedFinalExternal=retardedExternalForces(
         sharedEngineVisualState,visualEngine.history());
+    // Ask for the automatic model explicitly: the blending gates reported
+    // below (smooth/kR/w) are only evaluated by that model, because under the
+    // default individual Landau-Lifshitz model they are unused and skipped.
     const ParticleMultipoleRadiation sharedFinalRadiation=
         particleMultipoleRadiation(sharedEngineVisualState,sharedFinalExternal,
-            visualEngine.history(),false);
+            visualEngine.history(),false,
+            ChargeRadiationReactionModel::automatic);
     const double llValidity=sharedFinalRadiation.landauLifshitzValidity;
 
     struct ReactionModelBenchmark {
@@ -1614,42 +1618,52 @@ int runMaxwellSelfTest() {
               << "validation wall:    " << benchmarkSeconds << " s\n"
               << "field-step rate:    " << fieldStepsPerSecond << " steps/s\n"
               << "steps per ps:       " << estimatedStepsPerPicosecond << '\n'
-              << "estimated s/ps:     " << estimatedSecondsPerPicosecond << '\n'
-              << "numerical regression:"
-              << (chargeOk && gaussOk && divergenceOk && energyOk && couplingOk
-                    && balanceFinite
-                    && boundaryOk
-                    && validationOk
-                    && movingAmrOk
-                    && covarianceOk
-                    && particleCovarianceOk
-                    && dipoleTensorCovarianceOk
-                    && massAndSelfForceOk
-                    && boundCurrentOk
-                    && retardedInitializationOk
-                    && convergenceAndBoostOk
-                    && productionGeometryOk
-                    && branchCouplingOk
-                    && yeeAndEsirkepovOk
-                    && sharedClassicalEngineOk
-                    && reactionModelsOk
-                    && farFieldConvergenceOk
-                    && trajectoryConvergenceOk
-                    && causalStartupOk
-                    && retardedInterpolationOk
-                    && shortRangeRegularizationOk
-                    ? "PASS" : "FAIL") << '\n';
-    return chargeOk && gaussOk && divergenceOk && energyOk && couplingOk
-        && balanceFinite
-        && boundaryOk && validationOk && movingAmrOk && covarianceOk
-        && particleCovarianceOk
-        && dipoleTensorCovarianceOk
-        && massAndSelfForceOk && boundCurrentOk
-        && retardedInitializationOk && convergenceAndBoostOk
-        && productionGeometryOk && branchCouplingOk
-        && yeeAndEsirkepovOk && sharedClassicalEngineOk
-        && reactionModelsOk
-        && farFieldConvergenceOk && trajectoryConvergenceOk
-        && causalStartupOk && retardedInterpolationOk
-        && shortRangeRegularizationOk ? 0 : 1;
+              << "estimated s/ps:     " << estimatedSecondsPerPicosecond << '\n';
+
+    // Single source of truth for the regression verdict.  This used to be one
+    // 26-term conjunction written out twice -- once for the printed verdict and
+    // once for the exit status -- so a check added to only one of them would
+    // have silently made the two disagree.  Listing the checks once also lets
+    // the harness name the ones that actually failed instead of collapsing
+    // everything into a single PASS/FAIL with sixty unlabelled numbers above it.
+    const std::array<std::pair<const char*,bool>,26> regressionChecks{{
+        {"charge",                     chargeOk},
+        {"gauss",                      gaussOk},
+        {"divergence",                 divergenceOk},
+        {"energy",                     energyOk},
+        {"coupling",                   couplingOk},
+        {"balance-finite",             balanceFinite},
+        {"boundary",                   boundaryOk},
+        {"validation",                 validationOk},
+        {"moving-amr",                 movingAmrOk},
+        {"covariance",                 covarianceOk},
+        {"particle-covariance",        particleCovarianceOk},
+        {"dipole-tensor-covariance",   dipoleTensorCovarianceOk},
+        {"mass-and-self-force",        massAndSelfForceOk},
+        {"bound-current",              boundCurrentOk},
+        {"retarded-initialization",    retardedInitializationOk},
+        {"convergence-and-boost",      convergenceAndBoostOk},
+        {"production-geometry",        productionGeometryOk},
+        {"branch-coupling",            branchCouplingOk},
+        {"yee-and-esirkepov",          yeeAndEsirkepovOk},
+        {"shared-classical-engine",    sharedClassicalEngineOk},
+        {"reaction-models",            reactionModelsOk},
+        {"far-field-convergence",      farFieldConvergenceOk},
+        {"trajectory-convergence",     trajectoryConvergenceOk},
+        {"causal-startup",             causalStartupOk},
+        {"retarded-interpolation",     retardedInterpolationOk},
+        {"short-range-regularization", shortRangeRegularizationOk}
+    }};
+    int failedChecks=0;
+    for(const auto& [name,ok]:regressionChecks) {
+        if(!ok) {
+            ++failedChecks;
+            std::cout<<"FAILED check:      "<<name<<'\n';
+        }
+    }
+    std::cout<<"checks passed:      "
+             <<(regressionChecks.size()-static_cast<std::size_t>(failedChecks))
+             <<"/"<<regressionChecks.size()<<'\n'
+             <<"numerical regression:"<<(failedChecks==0?"PASS":"FAIL")<<'\n';
+    return failedChecks==0?0:1;
 }

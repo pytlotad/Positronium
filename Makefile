@@ -5,10 +5,7 @@ LDFLAGS := $(shell root-config --libs)
 TARGET := positronium
 VALIDATION_TARGET := positronium_validation
 SRC := positronium.cpp
-HEADERS := decays/bound_decay.hpp io/root_export.hpp statistics/statistics_archive.hpp \
-	parameters/physical_constants.hpp objects/vector3.hpp objects/dipole_tensor.hpp objects/state.hpp \
-	interactions/electrodynamics.hpp fields/maxwell_validation_backend.hpp \
-	tests/maxwell_validation.hpp
+HEADERS := $(wildcard modules/*.hpp)
 
 .PHONY: all build validation run clean
 

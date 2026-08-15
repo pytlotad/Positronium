@@ -77,7 +77,13 @@ uzyskano między innymi:
 - dokładne numeryczne domknięcie raportowanego bilansu cząstki–promieniowanie–
   pole związane, ponieważ `boundField*` jest obliczane jako brakująca reszta
   bilansu po każdym kroku. Jest to księgowanie, a nie niezależne obliczenie
-  energii i pędu pola bliskiego.
+  energii i pędu pola bliskiego. To domknięcie jest **tożsamością algebraiczną**:
+  wykresy `diagnostic_*_balance` i pozycje `identity resid` / `identity |dP|` /
+  `identity |dJ|` w trybie diagnostycznym mierzą wyłącznie zaokrąglenia i błąd
+  interpolacji punktu końcowego, więc nie są testem zachowania. Niezależnymi
+  miarami są `|E_bound|/E_rad` (na orbitach związanych 1,2–1,4) oraz
+  `|dE_LL-vs-flux|/E_rad` (0,03–0,09); pierwsza z nich wyznacza faktyczną
+  granicę wiarygodności raportowanej energii wypromieniowanej.
 
 W konsekwencji ilościowo wiarygodne są testy jednostkowe danego operatora w
 podanym zakresie rozdzielczości. Długoczasowe trajektorie, promieniowanie,
@@ -1043,8 +1049,17 @@ fit jego wyników oraz niezależny wynik eksperymentalny. Generator kinematyki
 fotonów nadal korzysta z Monte Carlo, ale nie losuje czasu życia.
 
 - czasy kolapsu CREM otrzymują opisowe dopasowanie
-  \(N(t)=N_0\exp(-t/\tau_{\rm CREM})\). Nie jest ono prawem anihilacji.
-  Zewnętrzne krzywe porównawcze wykorzystują
+  \(N(t)=N_0\exp(-t/\tau_{\rm CREM})\). Nie jest ono prawem anihilacji i nie
+  opisuje kształtu próbki: wszystkie trajektorie startują z \(r=a_0\), losowana
+  jest wyłącznie prędkość początkowa, więc rozkład czasów kolapsu jest wąski i
+  jednomodalny, a nie wykładniczy. Raportowana niepewność jest błędem
+  standardowym średniej \(\sigma/\sqrt{N}\) z rzeczywistej próbki; panel podaje
+  obok iloraz \(\sigma/\langle t\rangle\), żeby widać było, jak dalece kształt
+  odbiega od wykładniczego. Krzywa wykładnicza jest rysowana wyłącznie
+  poglądowo. Oś czasu jest skalowana do danych, a nie do \(\tau_{\rm exp}\):
+  dla o-Ps obie skale dzieli około osiem rzędów wielkości i wymuszanie
+  \(\tau_{\rm exp}\) w zakresie osi sprowadzało całą próbkę CREM do jednego
+  piksela. Zewnętrzne krzywe porównawcze wykorzystują
   \(\tau_{p\text{-}Ps}=125.142(27)\,\mathrm{ps}\) oraz
   \(\tau_{o\text{-}Ps}=142.037(26)\,\mathrm{ns}\) z precyzyjnych
   pomiarów szybkości zaniku;

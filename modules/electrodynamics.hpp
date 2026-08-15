@@ -273,12 +273,47 @@ State historicalState(const StateHistory& history, const State& present,
         (time-older.time)/std::max(present.time-older.time,1.0e-300));
 }
 
+// Largest step a backward stencil may use if it must stay inside the retained
+// history.  historicalState() clamps to history.front() outside the retained
+// window, so a stencil reaching past it silently differentiates constant data:
+// the coefficients still sum to zero, but the result is no longer a derivative
+// and is inflated by the missing powers of h.  appendStateHistory() keeps only
+// 4*r/c, which at production step sizes is 3-6 nodes, while an unbounded
+// 5-point third-derivative stencil asks for 8x the last node spacing.
+// Measured on a bound para orbit, 99.9% of calls used to overrun the window.
+//
+// Returning zero means the requested derivative order is not resolvable from
+// the retained history at all; callers must then report zero rather than
+// noise, because the alternative is a plausible-looking wrong number.
+// evaluationTime is the centre of the stencil, which for retarded sources is
+// earlier than present.time; measuring the span from present.time instead
+// would still let a retarded stencil run off the front of the deque.
+double boundedDerivativeStep(const StateHistory& history,
+                             double evaluationTime,
+                             double requestedStep, int stencilReach) {
+    if(history.empty()||stencilReach<1) return 0.0;
+    const double span=evaluationTime-history.front().time;
+    if(!(span>0.0)||!std::isfinite(span)) return 0.0;
+    const double usable=std::min(requestedStep,
+        span/static_cast<double>(stencilReach));
+    return usable>0.0?usable:0.0;
+}
+
 RetardedDipoleKinematics historicalDipoleKinematics(
     const StateHistory& history, const State& present, bool sourceIsElectron,
     double time) {
     double derivativeStep=1.0e-24;
     if(history.size()>=2) derivativeStep=std::max(derivativeStep,
         2.0*(history.back().time-history[history.size()-2].time));
+    // The widest branch below samples middle .. middle-4h.
+    derivativeStep=boundedDerivativeStep(history,time,derivativeStep,4);
+    if(!(derivativeStep>0.0)) {
+        const State only=historicalState(history,present,time);
+        return {sourceIsElectron?only.electronPosition:only.positronPosition,
+                sourceIsElectron?only.electronVelocity:only.positronVelocity,
+                sourceIsElectron?only.electronDipole:only.positronDipole,
+                {},{},{}};
+    }
     const State middle=historicalState(history,present,time);
     const auto moment=[&](const State& state) -> const Vec3& {
         return sourceIsElectron?state.electronDipole:state.positronDipole;
@@ -344,12 +379,19 @@ RetardedElectricDipoleKinematics historicalElectricDipoleKinematics(
     double derivativeStep=1.0e-24;
     if(history.size()>=2) derivativeStep=std::max(derivativeStep,
         2.0*(history.back().time-history[history.size()-2].time));
+    // The widest branch below samples middle .. middle-2h.
+    derivativeStep=boundedDerivativeStep(history,time,derivativeStep,2);
     const auto sample=[&](double sampleTime) {
         const State state=historicalState(history,present,sampleTime);
         return sourceIsElectron?state.electronElectricDipole
                                :state.positronElectricDipole;
     };
     const State middle=historicalState(history,present,time);
+    if(!(derivativeStep>0.0)) {
+        return {sourceIsElectron?middle.electronPosition:middle.positronPosition,
+                sourceIsElectron?middle.electronVelocity:middle.positronVelocity,
+                sample(time),{},{}};
+    }
     const Vec3 moment=sample(time);
     Vec3 first,second;
     if(time+derivativeStep>present.time) {
@@ -435,6 +477,9 @@ ElectricQuadrupole electricQuadrupoleThirdDerivative(
     double derivativeStep=1.0e-24;
     if(history.size()>=2) derivativeStep=std::max(derivativeStep,
         8.0*(history.back().time-history[history.size()-2].time));
+    // Five-point backward stencil: samples state.time .. state.time-4h.
+    derivativeStep=boundedDerivativeStep(history,state.time,derivativeStep,4);
+    if(!(derivativeStep>0.0)) return {};
     const auto at=[&](double offset) {
         return electricQuadrupole(
             historicalState(history,state,state.time+offset));
@@ -454,6 +499,9 @@ Vec3 electricDipoleMoment(const State& state) {
 
 Vec3 electricDipoleThirdDerivativeAtStep(
     const State& state,const StateHistory& history,double derivativeStep) {
+    // Five-point backward stencil: samples state.time .. state.time-4h.
+    derivativeStep=boundedDerivativeStep(history,state.time,derivativeStep,4);
+    if(!(derivativeStep>0.0)) return {};
     const auto at=[&](double offset) {
         return electricDipoleMoment(
             historicalState(history,state,state.time+offset));
@@ -465,17 +513,22 @@ Vec3 electricDipoleThirdDerivativeAtStep(
         /(2.0*derivativeStep*derivativeStep*derivativeStep);
 }
 
-double electricDipoleDerivativeStep(const StateHistory& history) {
+// Base step for the fine/coarse convergence probe in particleMultipoleRadiation.
+// The coarse probe doubles it and its 5-point stencil then reaches 8h, so the
+// base must fit eight times into the retained history for the two probes to be
+// genuinely different rather than both saturating at the same clamped value.
+double electricDipoleDerivativeStep(const StateHistory& history,
+                                    const State& present) {
     double derivativeStep=1.0e-24;
     if(history.size()>=2) derivativeStep=std::max(derivativeStep,
         2.0*(history.back().time-history[history.size()-2].time));
-    return derivativeStep;
+    return boundedDerivativeStep(history,present.time,derivativeStep,8);
 }
 
 Vec3 electricDipoleThirdDerivative(const State& state,
                                    const StateHistory& history) {
     return electricDipoleThirdDerivativeAtStep(
-        state,history,electricDipoleDerivativeStep(history));
+        state,history,electricDipoleDerivativeStep(history,state));
 }
 
 MutualForces coherentElectricDipoleReaction(
@@ -555,6 +608,16 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
     ChargeRadiationReactionModel reactionModel=
         ChargeRadiationReactionModel::individualLandauLifshitz) {
     ParticleMultipoleRadiation result;
+    // Only the automatic model consults the blending gates, and only the two
+    // coherent models need the coherent reaction force itself.  Under the
+    // default individual Landau-Lifshitz model both used to be evaluated and
+    // thrown away, at a cost of four five-point history stencils per force
+    // evaluation -- and there are six force evaluations per integration step.
+    const bool needsCoherentReaction=
+        reactionModel==ChargeRadiationReactionModel::coherentElectricDipole
+        ||reactionModel==ChargeRadiationReactionModel::automatic;
+    const bool needsBlendingGates=
+        reactionModel==ChargeRadiationReactionModel::automatic;
     const MutualForces ll=individualLandauLifshitzSelfForces(
         state,externalForces,history);
     result.landauLifshitzValidity=std::max(
@@ -572,56 +635,66 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
     result.leadingElectricDipolePower =
         electricDipoleSecondDerivative.squaredNorm()
         / (6.0*pi*epsilon0*c*c*c);
-    result.electricQuadrupolePower =
-        electricQuadrupoleRadiatedPower(state,history);
+    if(needsBlendingGates) {
+        result.electricQuadrupolePower =
+            electricQuadrupoleRadiatedPower(state,history);
+    }
 
     const DipoleRadiationReaction magnetic =
         dipoleRadiationReaction(state, history);
     result.electronDipoleTorque = magnetic.electronTorque;
     result.positronDipoleTorque = magnetic.positronTorque;
     result.magneticDipolePower = magnetic.power;
-    const double derivativeStep=electricDipoleDerivativeStep(history);
-    const Vec3 dipoleThirdFine=electricDipoleThirdDerivativeAtStep(
-        state,history,derivativeStep);
-    const Vec3 dipoleThirdCoarse=electricDipoleThirdDerivativeAtStep(
-        state,history,2.0*derivativeStep);
-    result.coherentDerivativeConsistency=(dipoleThirdFine-dipoleThirdCoarse).norm()
-        /std::max(dipoleThirdFine.norm(),1.0e-300);
-    const double dipoleNorm=std::max(electricDipoleMoment(state).norm(),
-                                     eCharge*nuclearCutoff);
-    const double angularRate=std::sqrt(
-        electricDipoleSecondDerivative.norm()/dipoleNorm);
-    result.sourceCompactness=angularRate*separation(state)/c;
-    const double nonElectricPower=result.magneticDipolePower
-                                  +result.electricQuadrupolePower;
-    const auto decreasingGate=[](double value,double full,double zero) {
-        return std::clamp((zero-value)/(zero-full),0.0,1.0);
-    };
-    const double dominance=result.leadingElectricDipolePower
-        /std::max(nonElectricPower,1.0e-300);
-    const double smoothGate=decreasingGate(
-        result.coherentDerivativeConsistency,1.0e-2,5.0e-2);
-    const double compactGate=decreasingGate(
-        result.sourceCompactness,5.0e-2,1.0e-1);
-    const double llGate=decreasingGate(
-        result.landauLifshitzValidity,5.0e-3,1.0e-2);
-    const double dominanceGate=std::clamp((dominance-10.0)/10.0,0.0,1.0);
-    result.coherentWeight=smoothGate*compactGate*llGate*dominanceGate;
+    if(needsBlendingGates) {
+        const double derivativeStep=electricDipoleDerivativeStep(history,state);
+        const Vec3 dipoleThirdFine=electricDipoleThirdDerivativeAtStep(
+            state,history,derivativeStep);
+        const Vec3 dipoleThirdCoarse=electricDipoleThirdDerivativeAtStep(
+            state,history,2.0*derivativeStep);
+        result.coherentDerivativeConsistency=
+            (dipoleThirdFine-dipoleThirdCoarse).norm()
+            /std::max(dipoleThirdFine.norm(),1.0e-300);
+        const double dipoleNorm=std::max(electricDipoleMoment(state).norm(),
+                                         eCharge*nuclearCutoff);
+        const double angularRate=std::sqrt(
+            electricDipoleSecondDerivative.norm()/dipoleNorm);
+        result.sourceCompactness=angularRate*separation(state)/c;
+        const double nonElectricPower=result.magneticDipolePower
+                                      +result.electricQuadrupolePower;
+        const auto decreasingGate=[](double value,double full,double zero) {
+            return std::clamp((zero-value)/(zero-full),0.0,1.0);
+        };
+        const double dominance=result.leadingElectricDipolePower
+            /std::max(nonElectricPower,1.0e-300);
+        const double smoothGate=decreasingGate(
+            result.coherentDerivativeConsistency,1.0e-2,5.0e-2);
+        const double compactGate=decreasingGate(
+            result.sourceCompactness,5.0e-2,1.0e-1);
+        const double llGate=decreasingGate(
+            result.landauLifshitzValidity,5.0e-3,1.0e-2);
+        const double dominanceGate=std::clamp((dominance-10.0)/10.0,0.0,1.0);
+        result.coherentWeight=smoothGate*compactGate*llGate*dominanceGate;
+    }
     result.coherentSelected=
         reactionModel==ChargeRadiationReactionModel::coherentElectricDipole
         ||(reactionModel==ChargeRadiationReactionModel::automatic
            &&result.coherentWeight>0.0);
     if(reactionModel!=ChargeRadiationReactionModel::disabled) {
-        const MutualForces coherent=coherentElectricDipoleReaction(state,history);
-        if(reactionModel==ChargeRadiationReactionModel::coherentElectricDipole)
-            result.chargeReaction=coherent;
-        else if(reactionModel==ChargeRadiationReactionModel::automatic) {
-            result.chargeReaction={
-                ll.electron*(1.0-result.coherentWeight)
-                    +coherent.electron*result.coherentWeight,
-                ll.positron*(1.0-result.coherentWeight)
-                    +coherent.positron*result.coherentWeight};
-        } else result.chargeReaction=ll;
+        if(!needsCoherentReaction) result.chargeReaction=ll;
+        else {
+            const MutualForces coherent=
+                coherentElectricDipoleReaction(state,history);
+            if(reactionModel
+                ==ChargeRadiationReactionModel::coherentElectricDipole) {
+                result.chargeReaction=coherent;
+            } else {
+                result.chargeReaction={
+                    ll.electron*(1.0-result.coherentWeight)
+                        +coherent.electron*result.coherentWeight,
+                    ll.positron*(1.0-result.coherentWeight)
+                        +coherent.positron*result.coherentWeight};
+            }
+        }
     }
     if(computeOutwardFlux) {
         result.outwardFlux.energy += magnetic.power;

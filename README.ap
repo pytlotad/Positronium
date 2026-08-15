@@ -29,7 +29,9 @@ powinien:
 
 W razie rozbieżności obowiązuje kolejność: kod źródłowy, `README.ap`,
 `README.md`, istniejące binaria, wygenerowane PDF-y. Binaria `positronium` i
-`positronium_validation` są artefaktami kompilacji, a nie źródłem programu.
+`positronium_validation` są artefaktami kompilacji, a nie źródłem programu; nie
+są śledzone w repozytorium i trzeba je zbudować przez `make build` oraz
+`make validation`.
 
 ### Użycie i atrybucja CREM
 
@@ -62,20 +64,21 @@ pm, ps/ns, eV/keV, barny i jednostki hbar.
 
 - `positronium.cpp` — CLI, menu, warunki początkowe, integrator adaptacyjny,
   sterowanie Visual, eksperymenty Statistical, histogramy ROOT i raportowanie.
-- `parameters/physical_constants.hpp` — stałe fizyczne i granice numeryczne.
-- `objects/vector3.hpp` — wektor trójwymiarowy.
-- `objects/dipole_tensor.hpp` — tensor dipolowy.
-- `objects/state.hpp` — pełny stan dwóch cząstek i historia stanu.
-- `interactions/electrodynamics.hpp` — siły retardowane, precesja, reakcja
+- `modules/` — wszystkie nagłówki projektu; poniżej w kolejności zależności.
+- `modules/physical_constants.hpp` — stałe fizyczne i granice numeryczne.
+- `modules/vector3.hpp` — wektor trójwymiarowy.
+- `modules/dipole_tensor.hpp` — tensor dipolowy.
+- `modules/state.hpp` — pełny stan dwóch cząstek i historia stanu.
+- `modules/electrodynamics.hpp` — siły retardowane, precesja, reakcja
   promieniowania, strumienie pola i pojedynczy krok elektrodynamiczny.
-- `decays/bound_decay.hpp` — generator kinematyki produktów 2 gamma / 3 gamma
+- `modules/bound_decay.hpp` — generator kinematyki produktów 2 gamma / 3 gamma
   w idealnej próżni, w tym rozkład Ore'a–Powella; nie generuje czasu życia.
-- `statistics/statistics_archive.hpp` — wartości referencyjne, źródła naukowe
+- `modules/statistics_archive.hpp` — wartości referencyjne, źródła naukowe
   i zapis `ScientificalReferences.txt`.
-- `io/root_export.hpp` — atomowy eksport kanw/padów ROOT do PDF i implementacja
-  konwencji nazw.
-- `fields/maxwell_validation_backend.hpp` — backend walidacji pól Maxwella.
-- `tests/maxwell_validation.hpp` — testy fizyczne i numeryczne uruchamiane
+- `modules/root_export.hpp` — atomowy eksport kanw/padów ROOT do PDF i
+  implementacja konwencji nazw.
+- `modules/maxwell_validation_backend.hpp` — backend walidacji pól Maxwella.
+- `modules/maxwell_validation.hpp` — testy fizyczne i numeryczne uruchamiane
   przez `positronium_validation`.
 - `README.md` — obszerny opis równań, walidacji, ograniczeń i interpretacji.
 - `ScientificalReferences.txt` — generowany katalog wartości, modeli, DOI i
@@ -95,6 +98,15 @@ make run                   # uruchamia program interaktywnie
 ```
 
 `make` jest aliasem ścieżki `run`, więc po kompilacji uruchamia aplikację.
+
+Oba binaria są wymienione w `.gitignore` i **nie są śledzone w repozytorium** —
+trzeba je zbudować lokalnie. Wcześniej były commitowane, przez co każde
+przebudowanie dokładało do historii blob około 400 kB.
+
+`./positronium_validation` kończy się kodem `0` przy komplecie testów i `1`
+w przeciwnym razie. Przy niepowodzeniu wypisuje `FAILED check: <nazwa>` dla
+każdego testu, który nie przeszedł, oraz licznik `checks passed: k/26`, więc
+nie trzeba szukać rozbieżności wśród kilkudziesięciu liczb powyżej.
 
 ## 5. Interfejs i wszystkie ścieżki wykonania
 
@@ -168,6 +180,13 @@ porównania. Osobny generator Ore'a–Powella tworzy kinematykę 3 gamma: energi
 fotonów, wykres Dalitza i kąt wiodących fotonów oraz diagnostyki czteropędu.
 Domyślna i maksymalna próbka obejmuje 100 trajektorii.
 
+Eksperymenty 1 i 2 dają praktycznie **ten sam** rozkład czasu kolapsu: różnią
+się wyłącznie warunkiem dopasowania dipoli w losowaniu warunków początkowych, a
+sprzężenie dipol–dipol jest rzędu `1e-5` potencjału kulombowskiego. Zmierzone
+czasy anihilacji p-Ps i o-Ps różnią się natomiast około 1000 razy. Porównanie na
+wykresie jest odniesieniem skali, nie predykcją czasu życia — panel podaje to
+wprost razem ze stosunkiem `tau_exp/<t_collapse>`.
+
 ### 5.5 Statistical 3 — kanał krótkiego zasięgu
 
 ```text
@@ -203,6 +222,11 @@ podgląd ma 100 trajektorii.
 Ścieżka nie otwiera interaktywnej kanwy; wypisuje warunki, zakres promienia,
 bilans energii/pędu/momentu pędu, dryf norm dipoli i `PASS/FAIL`.
 
+Pozycje `identity resid`, `identity |dP|`, `identity |dJ|` są tożsamościami
+księgowymi i z definicji wychodzą zerowe — nie należy ich cytować jako testu
+zachowania. Fizyczną treść mają dwa ilorazy wypisywane przy `bound field E`
+i `LL/coherent dE`: `|E_bound|/E_rad` oraz `|dE|/E_rad`.
+
 ### 5.8 Argumenty CLI
 
 - `--mode visual|statistical` — wybór głównego trybu;
@@ -232,8 +256,14 @@ adaptacyjny.
 
 Bilans `particles + radiation + bound/interference field` jest domykany przez
 rezerwuar `boundField*`. Jest to księgowanie brakującej części bilansu, nie
-niezależne obliczenie pełnego pola bliskiego. Surowe residua i testy Maxwella
-są opisane w `README.md` oraz wypisywane przez walidator.
+niezależne obliczenie pełnego pola bliskiego. Ponieważ `boundField*` jest
+zdefiniowane jako reszta domykająca, domknięcie tego bilansu jest tożsamością
+algebraiczną i **nie jest testem zachowania**; program raportuje je pod nazwą
+`identity resid` / `identity |dP|` / `identity |dJ|` właśnie po to, żeby nie
+dało się go tak odczytać. Niezależnymi miarami są `|E_bound|/E_rad` oraz
+`|dE_LL-vs-flux|/E_rad`, wypisywane obok w trybie diagnostycznym i na wykresach
+`diagnostic_*_balance`. Surowe residua i testy Maxwella są opisane w `README.md`
+oraz wypisywane przez walidator.
 
 Warstwa czasowa 1/2 nie używa zewnętrznego czasu życia jako wejścia. Pełny CREM
 kalibruje średnią moc promieniowania na krótkim odcinku, a uśrednione po orbicie
@@ -341,8 +371,22 @@ przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
 - `differential_cross_section` — modelowe `d sigma/d Omega`;
 - `cumulative_cross_section` — `sigma(theta >= theta_min)`;
 - `energy_loss_cross_section` — modelowe `d sigma/d DeltaE`;
-- `diagnostic_*_closure` — residua zachowania w generatorze zaniku;
-- `diagnostic_*_balance` — residua bilansu trajektorii i strumienia pola;
+- `diagnostic_*_closure` — residua zachowania w generatorze zaniku. Uwaga: w
+  kanale 2 gamma (p-Ps) oba fotony mają dokładnie `E_Ps/2` i przeciwne
+  kierunki, więc residuum jest zerowe **z konstrukcji** i sprawdza tylko
+  dokładność arytmetyki. Realną treść ma dopiero kanał 3 gamma;
+- `diagnostic_*_balance` — **residuum tożsamości księgowej, nie test zachowania**.
+  `boundField*` jest zdefiniowane w `integrateElectrodynamicStep` jako dokładnie
+  ta reszta, która domyka sumę `particles + radiation + bound field`, więc suma
+  jest niezmiennicza algebraicznie i wykres pokazuje wyłącznie zaokrąglenia oraz
+  błąd interpolacji punktu końcowego. Nie wolno go cytować jako dowodu
+  zachowania energii, pędu ani momentu pędu. Niezależne residua fizyczne są
+  wypisywane obok w polu analizy i w panelu podsumowania:
+  `|dE_LL-vs-flux|/E_rad` (niezgodność siły Landaua–Lifshitza z koherentnym
+  strumieniem dalekiego pola) oraz `|E_bound|/E_rad` (wielkość rezerwuaru
+  względem raportowanej emisji). Zmierzone na orbitach związanych
+  `|E_bound|/E_rad` wynosi 1,2–1,4, a `|dE_LL-vs-flux|/E_rad` 0,03–0,09 — to jest
+  faktyczna granica rozdzielczości raportowanej energii wypromieniowanej;
 - `visual_simulation` — migawka interaktywnej symulacji.
 
 ## 9. Zasady odpowiedzi PRISM

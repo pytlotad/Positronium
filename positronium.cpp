@@ -51,12 +51,12 @@
 #include <utility>
 #include <vector>
 
-#include "decays/bound_decay.hpp"
-#include "objects/vector3.hpp"
-#include "objects/state.hpp"
-#include "parameters/physical_constants.hpp"
-#include "io/root_export.hpp"
-#include "statistics/statistics_archive.hpp"
+#include "modules/bound_decay.hpp"
+#include "modules/vector3.hpp"
+#include "modules/state.hpp"
+#include "modules/physical_constants.hpp"
+#include "modules/root_export.hpp"
+#include "modules/statistics_archive.hpp"
 
 // These functions are intentionally global: ROOT's TButton invokes its action
 // through the interpreter while the animation loop observes these flags.
@@ -146,7 +146,7 @@ double minkowskiDot(const FourVector& first,const FourVector& second) {
 }
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
-#include "fields/maxwell_validation_backend.hpp"
+#include "modules/maxwell_validation_backend.hpp"
 #endif
 
 bool isFinite(const Vec3& value) {
@@ -706,7 +706,7 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 }
 #endif
 
-#include "interactions/electrodynamics.hpp"
+#include "modules/electrodynamics.hpp"
 
 StateHistory causalInitialHistory(const State& initial,double spanFactor=8.0,
                                   int intervalCount=64) {
@@ -797,41 +797,38 @@ private:
 
     bool advanceAdaptive(State& state,double dt,int depth) {
         const State start=state;
-        const StateHistory startingHistory=history_;
 
+        // The coarse step is a pure error probe: it is discarded on every
+        // path, so it never needs the far-zone flux integration.
         State coarse=start;
-        integrateElectrodynamicStep(coarse,dt,startingHistory,false,
+        integrateElectrodynamicStep(coarse,dt,history_,false,
             accuracy_.reactionModel);
 
+        // The two half-steps are the path that *becomes* the trajectory when
+        // the step is accepted, so they carry the complete bookkeeping from
+        // the start and are committed instead of being recomputed.  The flux
+        // flag does not feed back into positions or velocities, so the local
+        // error estimate below is unchanged by enabling it here.
         State fine=start;
-        StateHistory fineHistory=startingHistory;
-        integrateElectrodynamicStep(fine,0.5*dt,fineHistory,false,
+        StateHistory fineHistory=history_;
+        integrateElectrodynamicStep(fine,0.5*dt,fineHistory,true,
             accuracy_.reactionModel);
-        if(isFinite(fine)) appendStateHistory(fineHistory,fine);
-        integrateElectrodynamicStep(fine,0.5*dt,fineHistory,false,
+        if(!isFinite(fine)) return false;
+        appendStateHistory(fineHistory,fine);
+        integrateElectrodynamicStep(fine,0.5*dt,fineHistory,true,
             accuracy_.reactionModel);
         if(!isFinite(coarse)||!isFinite(fine)) return false;
 
         const double error=normalizedStepError(coarse,fine);
+        if(!std::isfinite(error)) return false;
         if(error<=accuracy_.relativeTolerance||depth>=accuracy_.maximumDepth) {
-            if(!std::isfinite(error)) return false;
-            // Re-evaluate only the accepted two-half-step path with complete
-            // far-zone bookkeeping. Trial paths above affect the local error
-            // estimate but never become part of the physical history.
-            state=start;
-            history_=startingHistory;
-            integrateElectrodynamicStep(state,0.5*dt,history_,true,
-                accuracy_.reactionModel);
-            if(!isFinite(state)) return false;
-            appendStateHistory(history_,state);
-            integrateElectrodynamicStep(state,0.5*dt,history_,true,
-                accuracy_.reactionModel);
-            if(!isFinite(state)) return false;
-            appendStateHistory(history_,state);
+            appendStateHistory(fineHistory,fine);
+            history_=std::move(fineHistory);
+            state=fine;
             return true;
         }
-        state=start;
-        history_=startingHistory;
+        // Nothing above touched state or history_, so the subdivision below
+        // restarts from exactly the caller's state.
         return advanceAdaptive(state,0.5*dt,depth+1)
             &&advanceAdaptive(state,0.5*dt,depth+1);
     }
@@ -1488,8 +1485,17 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
 
     const GaussianFitSummary collapseMoments=gaussianMaximumLikelihood(decayTimes);
     const double estimatedLifetime=collapseMoments.mean/timeScale;
+    // Standard error of the sample mean.  The previous mean/sqrt(N) is the MLE
+    // error of an *exponential* sample, but these collapse times are not
+    // exponentially distributed: every trajectory starts at exactly r=a0 and
+    // only the initial velocity is randomized, so the sample is narrow and
+    // unimodal.  sigma/sqrt(N) is the estimator that matches the actual data.
     const double estimatedError=collapseMoments.count>1
-        ?estimatedLifetime/std::sqrt(static_cast<double>(collapseMoments.count))
+        ?collapseMoments.sigma/timeScale
+            /std::sqrt(static_cast<double>(collapseMoments.count))
+        :std::numeric_limits<double>::quiet_NaN();
+    const double relativeSpread=collapseMoments.mean>0.0
+        ?collapseMoments.sigma/collapseMoments.mean
         :std::numeric_limits<double>::quiet_NaN();
     const statistics_archive::ScientificValue& lifetimeReference =
         statistics_archive::scientificValue(isPara
@@ -1504,9 +1510,17 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
               << " CREM collapse study: " << runCount << " trajectories; "
               <<collapseMoments.count<<" valid extrapolations\n"
               << "Mean extrapolated collapse time: " << estimatedLifetime * timeScale
-              << " +/- " << estimatedError * timeScale << ' ' << timeUnit << "\n"
+              << " +/- " << estimatedError * timeScale << ' ' << timeUnit
+              << " (SE of the mean; sample sigma/mean = " << relativeSpread
+              << ")\n"
               << "Model: full CREM short-orbit calibration + orbit-averaged "
-                 "secular extrapolation to 0.01*a0; external lifetime is comparison only.\n";
+                 "secular extrapolation to 0.01*a0; external lifetime is comparison only.\n"
+              << "Caution: the CREM collapse time is a classical inspiral time."
+                 " Para and ortho differ here only through the initial dipole\n"
+                 "alignment, whose coupling is ~1e-5 of the Coulomb potential,"
+                 " so both channels yield the same collapse distribution while\n"
+                 "their measured annihilation lifetimes differ by ~1000x.  The"
+                 " comparison is a scale reference, not a prediction.\n";
     if(collapseMoments.count==0) {
         std::cerr<<"No finite CREM collapse-time estimates; no plots were produced.\n";
         return 2;
@@ -1547,10 +1561,21 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     for(size_t index=0;index<sortedCollapseTimes.size();++index)
         empiricalSurvival[index]=static_cast<double>(sortedCollapseTimes.size()-index)
             /static_cast<double>(sortedCollapseTimes.size());
-    const double lifetimeLower=std::max(1.0e-12,
-        0.5*sortedCollapseTimes.front());
+    // Scale the axis to the simulated data, not to the experimental lifetime.
+    // For o-Ps the two differ by ~8 orders of magnitude, and forcing tau_exp
+    // into the range collapsed the whole CREM sample onto a single pixel at
+    // the left edge.  The experimental curve is still drawn: staying pinned at
+    // survival=1 across this window is exactly the honest visual statement
+    // that the classical inspiral is far faster than the measured decay.
+    const double lifetimeLower=std::max(
+        0.5*sortedCollapseTimes.front(),
+        1.0e-6*std::max(sortedCollapseTimes.back(),1.0e-300));
     const double lifetimeUpper=std::max(2.0*sortedCollapseTimes.back(),
-        5.0*experimentalLifetime);
+        4.0*lifetimeLower);
+    // Both are already in plot units (ps for p-Ps, ns for o-Ps).
+    const double experimentalRatio=collapseMoments.mean>0.0
+        ?experimentalLifetime/collapseMoments.mean
+        :std::numeric_limits<double>::quiet_NaN();
     TGraph lifetimeSurvival(static_cast<int>(sortedCollapseTimes.size()),
         sortedCollapseTimes.data(),empiricalSurvival.data());
     std::ostringstream lifetimeTitle;
@@ -1612,20 +1637,30 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     lifetimeSurvival.SetMaximum(1.08);
     experimentalCurve.Draw("SAME");
     fittedLifetime.Draw("SAME");
-    drawAnalysisBox(analysisBoxes, 0.43, 0.47, 0.94, 0.91, {
+    drawAnalysisBox(analysisBoxes, 0.40, 0.40, 0.95, 0.91, {
         "CREM trajectories: N = " + std::to_string(runCount)
             + "; valid = " + std::to_string(collapseMoments.count),
         "Full CREM calibration; secular P(a) #propto a^{-4}",
-        "cutoff: r = 0.01 a_{0}",
-        "Descriptive exponential fit: #tau = " + compactNumber(displayedFittedLifetime)
-            + " #pm " + compactNumber(estimatedError*timeScale) + " " + timeUnit,
-        "blue dashed: CREM fit; red: experimental curve",
+        "cutoff: r = 0.01 a_{0}; all orbits start at r = a_{0}",
+        "#LTt_{collapse}#GT = " + compactNumber(collapseMoments.mean)
+            + " #pm " + compactNumber(estimatedError*timeScale) + " " + timeUnit
+            + " (SE of mean)",
+        "sample #sigma/#LTt#GT = " + compactNumber(relativeSpread)
+            + "  (narrow, NOT exponential)",
+        "blue dashed: descriptive exp() through #LTt#GT - shape",
+        "is illustrative only, the sample is not exponential.",
         "External comparison only:",
         "#tau_{exp} = " + compactNumber(experimentalLifetime)
-            + " #pm " + compactNumber(experimentalLifetimeError) + " " + timeUnit,
+            + " #pm " + compactNumber(experimentalLifetimeError) + " " + timeUnit
+            + "  (#tau_{exp}/#LTt#GT #approx " + compactNumber(experimentalRatio, 3)
+            + ")",
+        "p-Ps and o-Ps share this classical inspiral: they differ",
+        "only by initial dipole alignment (#approx10^{-5} of Coulomb),",
+        "while #tau_{exp} differs by #approx10^{3}. Scale reference,",
+        "not a prediction of the annihilation lifetime.",
         isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
                : "Vallery et al., PRL 90 (2003)"
-    }, 0.021);
+    }, 0.0165);
 
     distributionsPage.cd(2);
     gPad->SetGrid();
@@ -1831,6 +1866,12 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                             : "Fit: degenerate Gaussian (#sigma=0)",
             "#mu = " + compactNumber(fit.mean),
             "#sigma = " + compactNumber(fit.sigma),
+            isPara ? "p-Ps: both photons carry exactly E_{Ps}/2 with"
+                     " opposite directions,"
+                   : "o-Ps: sampled energies/directions are independent,",
+            isPara ? "so this residual is zero by construction (exactness check"
+                     " only)."
+                   : "so this genuinely tests the generator's closure.",
             "Experimental:",
             "n/a - numerical closure, expected center = 0"
         };
@@ -1923,6 +1964,13 @@ struct EndpointDiagnostics {
     double schottEnergy = 0.0;
     double time = 0.0;
     double radius = 0.0;
+    // Independent measurement of the mismatch between the individual
+    // Landau-Lifshitz reaction and the coherent far-field flux.  Unlike the
+    // bound-field reservoir above this is NOT constructed to close, so it is
+    // the only genuine test of the radiation sector in this program.
+    double reactionEnergyMismatch = 0.0;
+    Vec3 reactionMomentumMismatch;
+    Vec3 reactionAngularMomentumMismatch;
 };
 
 struct BeamEvent {
@@ -1963,7 +2011,9 @@ EndpointDiagnostics endpointDiagnostics(const State& state) {
             frame.boundFieldMomentum,frame.boundFieldAngularMomentum,
             frame.canonicalMomentumScale, frame.mechanicalEnergy,
             frame.radiatedEnergy,frame.boundFieldEnergy,frame.schottEnergy,
-            frame.time, frame.radius};
+            frame.time, frame.radius,
+            frame.reactionEnergyMismatch,frame.reactionMomentumMismatch,
+            frame.reactionAngularMomentumMismatch};
 }
 
 BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
@@ -2383,6 +2433,12 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     std::vector<double> relativeAngularMomentumClosures;
     std::vector<double> logMomentumClosures;
     std::vector<double> logAngularMomentumClosures;
+    // Independent physical residuals.  The three "closure" vectors above are
+    // exact identities of the discrete bookkeeping (boundField* is defined as
+    // the residual that closes them), so they only measure roundoff and the
+    // endpoint interpolation.  These two measure the model itself.
+    std::vector<double> reactionMismatchFractions;
+    std::vector<double> boundReservoirFractions;
     double maximumSchottFraction = 0.0;
     for (const BeamEvent& event : events) {
         if (event.outcome != BeamOutcome::Escaped || !event.diagnosticsValid) continue;
@@ -2425,6 +2481,23 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         maximumSchottFraction = std::max({maximumSchottFraction,
             std::abs(initial.schottEnergy)/energyScale,
             std::abs(final.schottEnergy)/energyScale});
+        // Scale both physical residuals by the energy the run claims to have
+        // radiated over the same interval: the question they answer is "how
+        // large is the unmodelled piece compared to the reported emission".
+        const double radiatedChange = final.radiatedEnergy
+                                    - initial.radiatedEnergy;
+        const double radiationScale = std::max(std::abs(radiatedChange),
+                                                energyFloor);
+        const double reactionFraction = std::abs(final.reactionEnergyMismatch
+            - initial.reactionEnergyMismatch)/radiationScale;
+        const double reservoirFraction = std::abs(final.boundFieldEnergy
+            - initial.boundFieldEnergy)/radiationScale;
+        if (std::isfinite(reactionFraction)) {
+            reactionMismatchFractions.push_back(reactionFraction);
+        }
+        if (std::isfinite(reservoirFraction)) {
+            boundReservoirFractions.push_back(reservoirFraction);
+        }
     }
     const double sampledArea = pi * configuration.impactParameterMaximum
                              * configuration.impactParameterMaximum;
@@ -2493,14 +2566,21 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                      "for a smoother differential cross section.\n";
     }
     if (!relativeEnergyClosures.empty()) {
-        std::cout << "Numerical closure on " << relativeEnergyClosures.size()
-                  << " escaped trajectories at R_match: median |deltaE|="
+        std::cout << "Bookkeeping identity residual on "
+                  << relativeEnergyClosures.size()
+                  << " escaped trajectories at R_match (roundoff/interpolation "
+                     "only, NOT a conservation test): median |deltaE|="
                   << sampleQuantile(absoluteEnergyClosures, 0.5)
                   << ", median delta(P_N+P_rad)="
                   << sampleQuantile(relativeMomentumClosures, 0.5)
                   << ", median delta(J_N+J_rad)="
                   << sampleQuantile(relativeAngularMomentumClosures, 0.5)
-                  << ".\n";
+                  << ".\n"
+                  << "Independent physical residuals (relative to the reported "
+                     "radiated energy): median |dE_reaction-vs-flux|/E_rad="
+                  << sampleQuantile(reactionMismatchFractions, 0.5)
+                  << ", median |E_bound|/E_rad="
+                  << sampleQuantile(boundReservoirFractions, 0.5) << ".\n";
     }
     gROOT->SetBatch(kTRUE);
     root_export::preparePdfExporter();
@@ -2846,14 +2926,17 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         angularMomentumLogUpper = std::max(angularMomentumLogUpper, value + 0.5);
     }
     TH1D energyBalanceHistogram("beam_energy_balance_closure",
-        "Energy-balance closure;#Delta(E_{N}+E_{rad}+E_{S})/E_{scale};Escaped trajectories",
+        "Energy bookkeeping IDENTITY residual (not a conservation test)"
+        ";#Delta(E_{N}+E_{rad}+E_{S})/E_{scale};Escaped trajectories",
         histogramBins(relativeEnergyClosures.size()),
         -energyClosureLimit, energyClosureLimit);
     TH1D momentumBalanceHistogram("beam_momentum_balance_closure",
-        "Particle-field momentum closure;log_{10}(|#Delta(P_{N}+P_{rad})|/P_{scale});Escaped trajectories",
+        "Momentum bookkeeping IDENTITY residual (not a conservation test)"
+        ";log_{10}(|#Delta(P_{N}+P_{rad})|/P_{scale});Escaped trajectories",
         histogramBins(logMomentumClosures.size()), -14.5, momentumLogUpper);
     TH1D angularMomentumBalanceHistogram("beam_angular_momentum_balance_closure",
-        "Particle-field angular momentum closure;log_{10}(|#Delta(J_{N}+J_{rad})|/J_{scale});Escaped trajectories",
+        "Angular momentum bookkeeping IDENTITY residual (not a conservation test)"
+        ";log_{10}(|#Delta(J_{N}+J_{rad})|/J_{scale});Escaped trajectories",
         histogramBins(logAngularMomentumClosures.size()), -14.5,
         angularMomentumLogUpper);
     styleHistogram(energyBalanceHistogram, kOrange + 7);
@@ -2896,6 +2979,25 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         schottDiagnosticLine << "max |E_{S}|/E_{scale} = "
                              << maximumSchottFraction;
         diagnosticSummary.AddText(schottDiagnosticLine.str().c_str());
+        diagnosticSummary.AddText(
+            "The three residuals above are ALGEBRAIC IDENTITIES: E_{bound},");
+        diagnosticSummary.AddText(
+            "P_{bound}, J_{bound} are defined as the residual that closes them.");
+        diagnosticSummary.AddText("Independent physical residuals:");
+        std::ostringstream reactionDiagnosticLine;
+        reactionDiagnosticLine << "  median / p95 |#deltaE_{LL-vs-flux}|/E_{rad} = "
+            << sampleQuantile(reactionMismatchFractions, 0.5) << " / "
+            << sampleQuantile(reactionMismatchFractions, 0.95);
+        diagnosticSummary.AddText(reactionDiagnosticLine.str().c_str());
+        std::ostringstream reservoirDiagnosticLine;
+        reservoirDiagnosticLine << "  median / p95 |E_{bound}|/E_{rad} = "
+            << sampleQuantile(boundReservoirFractions, 0.5) << " / "
+            << sampleQuantile(boundReservoirFractions, 0.95);
+        diagnosticSummary.AddText(reservoirDiagnosticLine.str().c_str());
+        diagnosticSummary.AddText(
+            "A reservoir comparable to E_{rad} means the reported radiated");
+        diagnosticSummary.AddText(
+            "energy is not resolved better than that fraction.");
     } else {
         diagnosticSummary.AddText("No escaped endpoint pair: closure histograms are empty");
     }
@@ -2912,9 +3014,16 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     diagnosticsPage.cd(1);
     gPad->SetGrid();
     energyBalanceHistogram.Draw("HIST");
+    // The plotted variable is an algebraic identity of the discrete update:
+    // boundField{Energy,Momentum,AngularMomentum} is defined in
+    // integrateElectrodynamicStep as exactly the residual that closes it.  The
+    // box therefore states that plainly and quotes the independent physical
+    // residual next to it, so the panel cannot be read as a conservation test.
     const auto drawBeamResidualFit = [&](TH1D& histogram,
                                          const std::vector<double>& values,
-                                         const std::string& functionName) {
+                                         const std::string& functionName,
+                                         const std::string& independentLabel,
+                                         const std::vector<double>& independent) {
         const GaussianFitSummary fit = gaussianMaximumLikelihood(values);
         std::unique_ptr<TF1> curve = gaussianMleOverlay(
             functionName, fit, histogram, kBlue + 1);
@@ -2924,7 +3033,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
             lines = {"Entries: N = 0",
                      "Fit: unavailable - no escaped endpoint pair",
                      "Experimental:",
-                     "n/a - numerical conservation diagnostic"};
+                     "n/a - numerical bookkeeping diagnostic"};
         } else {
             lines = {
                 "Entries: N = " + std::to_string(fit.count),
@@ -2932,26 +3041,37 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                                 : "Fit: degenerate Gaussian (#sigma=0)",
                 "#mu = " + compactNumber(fit.mean),
                 "#sigma = " + compactNumber(fit.sigma),
-                "Experimental:",
-                "n/a - numerical conservation diagnostic"
+                "IDENTITY by construction: E_{bound} is defined",
+                "as the residual that closes this sum;",
+                "this measures roundoff + endpoint interpolation.",
+                "Independent physical residual:",
+                independent.empty()
+                    ? independentLabel + " = n/a"
+                    : independentLabel + " median/p95 = "
+                        + compactNumber(sampleQuantile(independent, 0.5))
+                        + " / " + compactNumber(sampleQuantile(independent, 0.95))
             };
         }
-        drawAnalysisBox(beamAnalysisBoxes, 0.51, 0.62, 0.95, 0.91,
-                        lines, 0.023);
+        drawAnalysisBox(beamAnalysisBoxes, 0.44, 0.55, 0.96, 0.91,
+                        lines, 0.019);
     };
     drawBeamResidualFit(energyBalanceHistogram, relativeEnergyClosures,
-                        "beam_energy_balance_gaussian");
+                        "beam_energy_balance_gaussian",
+                        "|#deltaE_{LL-vs-flux}|/E_{rad}",
+                        reactionMismatchFractions);
     diagnosticsPage.cd(2);
     gPad->SetGrid();
     momentumBalanceHistogram.Draw("HIST");
     drawBeamResidualFit(momentumBalanceHistogram, logMomentumClosures,
-                        "beam_momentum_balance_gaussian");
+                        "beam_momentum_balance_gaussian",
+                        "|E_{bound}|/E_{rad}", boundReservoirFractions);
     diagnosticsPage.cd(3);
     gPad->SetGrid();
     angularMomentumBalanceHistogram.Draw("HIST");
     drawBeamResidualFit(angularMomentumBalanceHistogram,
                         logAngularMomentumClosures,
-                        "beam_angular_momentum_balance_gaussian");
+                        "beam_angular_momentum_balance_gaussian",
+                        "|E_{bound}|/E_{rad}", boundReservoirFractions);
     diagnosticsPage.cd(4);
     diagnosticSummary.Draw();
 
@@ -2995,7 +3115,7 @@ int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
 #endif
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
-#include "tests/maxwell_validation.hpp"
+#include "modules/maxwell_validation.hpp"
 #endif
 } // namespace
 
@@ -3238,22 +3358,32 @@ int main(int argc, char** argv) {
                   << "radiated:       " << frames.back().radiatedEnergy / eCharge << " eV\n"
                   << "Schott energy:  " << frames.back().schottEnergy / eCharge << " eV\n"
                   << "bound field E:  " << frames.back().boundFieldEnergy/eCharge
-                  << " eV\n"
+                  << " eV (residual reservoir; |E_bound|/E_rad = "
+                  << std::abs(frames.back().boundFieldEnergy)
+                     /std::max(std::abs(frames.back().radiatedEnergy),1.0e-300)
+                  << ")\n"
                   << "LL/coherent dE: " << frames.back().reactionEnergyMismatch/eCharge
-                  << " eV\n"
-                  << "energy drift:   " << energyDrift / eCharge << " eV ("
-                  << relativeEnergyDrift * 100.0 << "%)\n"
-                  << "energy balance: particles + bound/interference field"
-                     " + outward radiation\n"
+                  << " eV (|dE|/E_rad = "
+                  << std::abs(frames.back().reactionEnergyMismatch)
+                     /std::max(std::abs(frames.back().radiatedEnergy),1.0e-300)
+                  << ")\n"
+                  << "identity resid: " << energyDrift / eCharge << " eV ("
+                  << relativeEnergyDrift * 100.0 << "%) -- E_bound is DEFINED as\n"
+                  << "                the residual that closes this sum, so a"
+                     " zero here is\n"
+                  << "                roundoff only, NOT a conservation test."
+                     "  The two\n"
+                  << "                ratios above are the honest residuals.\n"
                   << "field |P_rad|:  " << frames.back().radiatedMomentum.norm()
                   << " kg m/s\n"
                   << "field |J_rad|:  " << frames.back().radiatedAngularMomentum.norm()/hbar
                   << " hbar\n"
-                  << "total |dP|:     " << momentumDrift.norm() << " kg m/s ("
+                  << "identity |dP|:  " << momentumDrift.norm() << " kg m/s ("
                   << relativeMomentumDrift * 100.0 << "% of characteristic p)\n"
-                  << "total |dJ|:     " << angularMomentumDrift.norm() / hbar << " hbar ("
+                  << "identity |dJ|:  " << angularMomentumDrift.norm() / hbar << " hbar ("
                   << relativeAngularMomentumDrift * 100.0
                   << "% of characteristic J)\n"
+                  << "                (both identities, as for the energy above)\n"
                   << "max |mu| drift: " << maximumRelativeDipoleNormDrift * 100.0
                   << "%\n"
                   << "trajectory:     " << (trajectoryValid ? "PASS" : "FAIL") << '\n';

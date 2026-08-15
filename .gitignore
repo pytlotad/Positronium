@@ -1,0 +1,17 @@
+# Build artifacts.  Both executables are produced by `make` and must not be
+# tracked: every rebuild would otherwise add a ~400 kB blob to the history.
+/positronium
+/positronium_validation
+*.o
+*.d
+
+# Editor and OS noise
+*~
+*.swp
+.DS_Store
+
+# Temporary files written by the PDF exporter and the reference archive.
+# They are normally renamed over their destination, but a crashed run can
+# leave one behind.
+.*.tmp_*
+distributions/.*.tmp_*.pdf
