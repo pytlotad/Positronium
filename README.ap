@@ -158,7 +158,8 @@ potem kończy aplikację.
 ### 5.3 Statistical 1 — para-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 1 --runs 100 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 1 --runs 100 \
+    --decay-events 1000000 --seed 12345 --no-gui
 ```
 
 Każda realizacja całkuje kilka orbit pełnym modelem CREM, mierzy uśrednioną
@@ -166,12 +167,14 @@ moc promieniowania i ekstrapoluje sekularną ewolucję do granicy `0.01*a0`.
 Rozkład tych czasów otrzymuje opisowe dopasowanie wykładnicze i jest
 porównywany z krzywą zbudowaną z opublikowanego czasu eksperymentalnego.
 Wartość eksperymentalna nie jest wejściem obliczenia CREM. Kinematyka 2 gamma
-jest generowana osobno. Domyślna i maksymalna próbka obejmuje 100 trajektorii.
+jest generowana osobno. Domyślna i maksymalna próbka trajektorii CREM
+obejmuje 100 przebiegów; kinematyka fotonów ma domyślnie 1 000 000 zdarzeń.
 
 ### 5.4 Statistical 2 — orto-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 2 --runs 100 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 2 --runs 100 \
+    --decay-events 1000000 --seed 12345 --no-gui
 ```
 
 Czas kolapsu jest wyznaczany tą samą metodą CREM co w eksperymencie 1, dla
@@ -179,6 +182,15 @@ klasycznej konfiguracji ortho dipoli. Zewnętrzny czas o-Ps służy wyłącznie 
 porównania. Osobny generator Ore'a–Powella tworzy kinematykę 3 gamma: energię
 fotonów, wykres Dalitza i kąt wiodących fotonów oraz diagnostyki czteropędu.
 Domyślna i maksymalna próbka obejmuje 100 trajektorii.
+
+Rozmiary obu prób są niezależne. `--runs` steruje liczbą trajektorii CREM
+(kosztowne, sekundy każda, limit 100) i dotyczy wyłącznie panelu czasu kolapsu.
+`--decay-events` steruje liczbą zdarzeń generatora anihilacji (mikrosekundy
+każde, domyślnie 1000000, limit 5000000) i dotyczy wyłącznie paneli kinematyki
+fotonów oraz ich diagnostyk czteropędu. Wcześniej była to jedna liczba, więc
+darmowe histogramy fotonowe dziedziczyły budżet trajektorii i miały po 100
+wpisów. Strumienie losowe obu prób są rozdzielone, więc zmiana jednej liczby nie
+przetasowuje drugiej próby.
 
 Eksperymenty 1 i 2 dają praktycznie **ten sam** rozkład czasu kolapsu: różnią
 się wyłącznie warunkiem dopasowania dipoli w losowaniu warunków początkowych, a
@@ -233,8 +245,11 @@ i `LL/coherent dE`: `|E_bound|/E_rad` oraz `|dE|/E_rad`.
 - `--phenomenon 1|2|3|4` — numer eksperymentu;
 - `--visual-style line|dot` — styl Visual;
 - `--seed UINT64` — deterministyczne ziarno;
-- `--runs` — liczebność Statistical: maksymalnie 100 dla 1/2 i 100 000
-  dla kosztownych eksperymentów trajektorii 3/4;
+- `--runs` — liczba trajektorii: maksymalnie 100 dla kalibracji CREM w 1/2
+  i 100 000 dla trajektorii wiązki w 3/4;
+- `--decay-events N` — liczba zdarzeń generatora anihilacji w 1/2, domyślnie
+  1 000 000, maksymalnie 5 000 000; ignorowane w 3/4. Nie ma wpływu na czas
+  kolapsu CREM, a czas kolapsu nie ma wpływu na kinematykę fotonów;
 - `--beam-energy-ev VALUE` — energia kinetyczna CM dla 3/4;
 - `--theta-min-deg VALUE` — próg akceptacji kąta;
 - `--angle-bins 4..90` — liczba koszyków kąta;

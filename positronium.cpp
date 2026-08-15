@@ -1141,8 +1141,13 @@ std::uint64_t splitMix64(std::uint64_t value) {
     return value ^ (value >> 31);
 }
 
-int histogramBins(size_t count) {
-    return std::clamp(static_cast<int>(std::lround(2.0 * std::sqrt(count))), 6, 30);
+// The default ceiling of 30 suits the trajectory experiments, whose sample
+// sizes are limited by integration cost.  The annihilation generator is cheap
+// enough to run millions of events, so its kinematics histograms pass a larger
+// ceiling instead of throwing that resolution away.
+int histogramBins(size_t count, int maximumBins = 30) {
+    return std::clamp(static_cast<int>(std::lround(2.0 * std::sqrt(count))),
+                      6, maximumBins);
 }
 
 void styleHistogram(TH1D& histogram, int color) {
@@ -1405,20 +1410,28 @@ std::vector<CremCollapseEstimate> runCremCollapseExperiment(
     return estimates;
 }
 
+// runCount counts full CREM trajectories, which cost seconds each and set the
+// collapse-time panel's statistics.  decayEventCount counts events of the
+// independent ideal-vacuum annihilation generator, which costs microseconds and
+// sets the photon-kinematics panels.  These used to be the same number, so the
+// cheap photon histograms inherited the expensive trajectory budget and were
+// capped at 100 entries for no physical reason.
 int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
-                             int runCount) {
+                             int runCount, int decayEventCount) {
     const bool isPara = selectedPhenomenon == 1;
     const bound_decay::PositroniumState state = isPara
         ? bound_decay::PositroniumState::Para
         : bound_decay::PositroniumState::Ortho;
     const double timeScale = isPara ? 1.0e12 : 1.0e9;
     const char* timeUnit = isPara ? "ps" : "ns";
+    const std::size_t decayEvents = static_cast<std::size_t>(decayEventCount);
+    const std::size_t photonsPerEvent = isPara ? 2 : 3;
 
     const std::vector<CremCollapseEstimate> collapseEstimates=
         runCremCollapseExperiment(seed,selectedPhenomenon,runCount);
-    std::mt19937_64 random(seed);
-    std::vector<bound_decay::DecayEvent> events;
-    events.reserve(static_cast<size_t>(runCount));
+    // Decorrelate the generator stream from the trajectory seeds so that
+    // changing --runs does not reshuffle the photon sample and vice versa.
+    std::mt19937_64 random(splitMix64(seed^0x9e3779b97f4a7c15ULL));
     std::vector<double> decayTimes;
     std::vector<double> photonEnergies;
     std::vector<double> paraCosines;
@@ -1431,15 +1444,33 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     std::vector<double> photonMassShellEpsilon;
     std::vector<double> parentInvariantEpsilon;
     decayTimes.reserve(static_cast<size_t>(runCount));
-    photonEnergies.reserve(static_cast<size_t>(runCount * (isPara ? 2 : 3)));
+    photonEnergies.reserve(decayEvents*photonsPerEvent);
+    photonMassShellEpsilon.reserve(decayEvents*photonsPerEvent);
+    energyClosureEpsilon.reserve(decayEvents);
+    momentumClosureEpsilon.reserve(decayEvents);
+    parentInvariantEpsilon.reserve(decayEvents);
+    if (isPara) {
+        paraCosines.reserve(2*decayEvents);
+        paraIndependentCosines.reserve(decayEvents);
+    } else {
+        orthoMaximumEnergies.reserve(decayEvents);
+        orthoMiddleEnergies.reserve(decayEvents);
+        orthoLeadingAngles.reserve(decayEvents);
+    }
 
     for (int index = 0; index < runCount; ++index) {
-        events.push_back(bound_decay::generateDecay(state, random));
-        const bound_decay::DecayEvent& event = events.back();
         const double collapseTime=collapseEstimates[static_cast<size_t>(index)]
             .lifetimeSeconds;
         if(std::isfinite(collapseTime))
             decayTimes.push_back(collapseTime*timeScale);
+    }
+
+    // Events are consumed one at a time rather than stored: at a million
+    // events the retained array would cost well over a hundred megabytes and
+    // nothing downstream needs an individual event again.
+    for (std::size_t index = 0; index < decayEvents; ++index) {
+        const bound_decay::DecayEvent event =
+            bound_decay::generateDecay(state, random);
         double photonEnergySum = 0.0;
         bound_decay::Vec3 photonMomentumSum;
         for (size_t photon = 0; photon < event.photonCount; ++photon) {
@@ -1507,8 +1538,13 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     const double experimentalLifetime = lifetimeReference.value;
     const double experimentalLifetimeError = lifetimeReference.totalUncertainty;
     std::cout << (isPara ? "Para-positronium" : "Ortho-positronium")
-              << " CREM collapse study: " << runCount << " trajectories; "
-              <<collapseMoments.count<<" valid extrapolations\n"
+              << " study: " << runCount << " CREM trajectories ("
+              << collapseMoments.count << " valid extrapolations) and "
+              << decayEventCount << " independent annihilation events for the "
+              << "photon kinematics.\n"
+              << "The two samples are unrelated: the collapse time is a "
+                 "classical trajectory result, the photon panels come from the "
+                 "ideal-vacuum generator.\n"
               << "Mean extrapolated collapse time: " << estimatedLifetime * timeScale
               << " +/- " << estimatedError * timeScale << ' ' << timeUnit
               << " (SE of the mean; sample sigma/mean = " << relativeSpread
@@ -1604,7 +1640,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     TH1D photonHistogram("decay_photon_energy_histogram",
         isPara ? "Ideal 2#gamma energy line;E_{#gamma} [keV];Photons"
                : "Ore-Powell inclusive 3#gamma spectrum;E_{#gamma} [keV];Photons",
-        isPara ? 40 : histogramBins(photonEnergies.size()),
+        isPara ? 40 : histogramBins(photonEnergies.size(),200),
         isPara ? photonEndpoint - 0.02 : 0.0,
         isPara ? photonEndpoint + 0.02 : photonEndpoint);
     styleHistogram(photonHistogram, kAzure + 1);
@@ -1616,7 +1652,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         orePowellTemplate = std::make_unique<TF1>(
             "ore_powell_spectrum_template", orePowellSpectrum,
             std::max(1.0e-6, photonEndpoint*1.0e-6), photonEndpoint, 2);
-        const double expectedAmplitude = 3.0*runCount*photonHistogram.GetBinWidth(1)
+        const double expectedAmplitude = 3.0*decayEventCount*photonHistogram.GetBinWidth(1)
             * 2.0/((pi*pi - 9.0)*photonEndpoint);
         orePowellTemplate->SetParameters(expectedAmplitude, photonEndpoint);
         orePowellTemplate->SetParName(0, "normalization");
@@ -1684,7 +1720,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         experimentalPhotonLine->SetLineStyle(3);
         experimentalPhotonLine->Draw();
         drawAnalysisBox(analysisBoxes, 0.42, 0.57, 0.94, 0.91, {
-            "MC events: N = " + std::to_string(runCount)
+            "MC events: N = " + std::to_string(decayEventCount)
                 + "; photons = " + std::to_string(photonEnergies.size()),
             "Fit: monoenergetic #delta(E-#mu)",
             "#mu_{fit} = " + compactNumber(photonMoments.mean, 9) + " keV",
@@ -1699,7 +1735,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         }, 0.023);
     } else {
         drawAnalysisBox(analysisBoxes, 0.08, 0.51, 0.60, 0.91, {
-            "MC events: N = " + std::to_string(runCount)
+            "MC events: N = " + std::to_string(decayEventCount)
                 + "; photons = " + std::to_string(photonEnergies.size()),
             "Reference: LO Ore-Powell F(E/E_{max})",
             "A fixed by 3N = "
@@ -1723,7 +1759,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     if (isPara) {
         angularHistogram = std::make_unique<TH1D>("para_polar_histogram",
             "Photon polar angle (unpolarized p-Ps);cos(#theta_{#gamma});Photons",
-            histogramBins(paraCosines.size()), -1.0, 1.0);
+            histogramBins(paraCosines.size(),200), -1.0, 1.0);
         styleHistogram(*angularHistogram, kGreen + 2);
         angularHistogram->SetStats(false);
         for (double value : paraCosines) angularHistogram->Fill(value);
@@ -1744,7 +1780,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         angularHistogram->Draw("HIST");
         paraAngularFit->Draw("SAME");
         std::vector<std::string> angularAnalysis{
-            "MC events: N = " + std::to_string(runCount)
+            "MC events: N = " + std::to_string(decayEventCount)
                 + "; photons = " + std::to_string(paraCosines.size()),
             "Fit: C[1+a_{2}P_{2}(cos#theta)]",
             "constrained unbinned event-level MLE",
@@ -1765,7 +1801,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         channelInformation.SetTextFont(42);
         channelInformation.AddText("Ideal vacuum, truth level");
         channelInformation.AddText(
-            ("MC events: N = " + std::to_string(runCount)).c_str());
+            ("MC events: N = " + std::to_string(decayEventCount)).c_str());
         channelInformation.AddText("Dominant channel: p-Ps #rightarrow 2#gamma");
         channelInformation.AddText("Photon multiplicity: 2");
         channelInformation.AddText("Opening angle in CM: 180 degrees");
@@ -1776,8 +1812,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         channelInformation.Draw();
     } else {
         const int dalitzBins = std::clamp(static_cast<int>(std::lround(
-            2.0*std::sqrt(std::sqrt(static_cast<double>(events.size()))))),
-            6, 20);
+            2.0*std::sqrt(std::sqrt(static_cast<double>(decayEvents))))),
+            6, 80);
         dalitzHistogram = std::make_unique<TH2D>("ortho_dalitz_histogram",
             "Three-photon Dalitz distribution;E_{max} [keV];E_{mid} [keV]",
             dalitzBins, (2.0/3.0)*photonEndpoint, photonEndpoint,
@@ -1789,7 +1825,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         }
         angularHistogram = std::make_unique<TH1D>("ortho_leading_angle_histogram",
             "Angle between two leading photons;#theta_{12} [deg];Events",
-            histogramBins(orthoLeadingAngles.size()), 120.0, 180.0);
+            histogramBins(orthoLeadingAngles.size(),200), 120.0, 180.0);
         styleHistogram(*angularHistogram, kMagenta + 1);
         angularHistogram->SetStats(false);
         for (double value : orthoLeadingAngles) angularHistogram->Fill(value);
@@ -1797,7 +1833,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         gPad->SetRightMargin(0.14);
         dalitzHistogram->Draw("COLZ");
         drawAnalysisBox(analysisBoxes, 0.08, 0.64, 0.56, 0.91, {
-            "MC events: N = " + std::to_string(runCount),
+            "MC events: N = " + std::to_string(decayEventCount),
             "Generator/reference: Ore-Powell 2D template",
             "P=A #Sigma_{ij}(1-cos#theta_{ij})^{2}",
             "free shape parameters: 0",
@@ -1808,7 +1844,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         gPad->SetGrid();
         angularHistogram->Draw("HIST");
         drawAnalysisBox(analysisBoxes, 0.08, 0.61, 0.58, 0.91, {
-            "MC events: N = " + std::to_string(runCount),
+            "MC events: N = " + std::to_string(decayEventCount),
             "Generator/reference: Ore-Powell angular projection",
             "free shape parameters: 0",
             "range: 120 deg #leq #theta_{12} #leq 180 deg",
@@ -3101,12 +3137,13 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
 }
 
 int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
-                            int runCount,
+                            int runCount, int decayEventCount,
                             double beamEnergyEv,
                             double thetaMinimumDegrees, int angleBins,
                             double impactMaximumPm, double matchingRadiusPm) {
     if (selectedPhenomenon == 1 || selectedPhenomenon == 2) {
-        return showBoundDecayStatistics(seed, selectedPhenomenon, runCount);
+        return showBoundDecayStatistics(seed, selectedPhenomenon, runCount,
+                                        decayEventCount);
     }
     return showBeamStatistics(seed, selectedPhenomenon, runCount,
                               beamEnergyEv, thetaMinimumDegrees,
@@ -3138,6 +3175,10 @@ int main(int argc, char** argv) {
     int selectedPhenomenon = 0;
     int statisticalRuns = 100;
     bool statisticalRunsExplicit = false;
+    // Photon kinematics come from the standalone annihilation generator, which
+    // costs microseconds per event, so its default sample is not tied to the
+    // trajectory budget in --runs.
+    int decayEventCount = 1000000;
     double beamEnergyEv = 20.0;
     double thetaMinimumDegrees = 5.0;
     int angleBins = 10;
@@ -3167,6 +3208,8 @@ int main(int argc, char** argv) {
             } else if (argument == "--runs") {
                 statisticalRuns = std::stoi(requireValue(argument));
                 statisticalRunsExplicit = true;
+            } else if (argument == "--decay-events") {
+                decayEventCount = std::stoi(requireValue(argument));
             } else if (argument == "--stat-window-ps") {
                 (void)requireValue(argument);
                 throw std::invalid_argument(
@@ -3260,13 +3303,31 @@ int main(int argc, char** argv) {
         }
         const int maximumStatisticalRuns=selectedPhenomenon<=2?100:100000;
         if (statisticalRuns < 1 || statisticalRuns > maximumStatisticalRuns) {
-            std::cerr << "The number of statistical events/trials must be from 1 to "
+            std::cerr << "The number of CREM trajectories/beam trials must be from 1 to "
                       <<maximumStatisticalRuns<<" for this experiment.\n";
             return 1;
         }
+        // Per-event observables are retained for the histograms and the
+        // unbinned Legendre fit, which costs a measured ~93 MB per million
+        // events on top of ROOT's own footprint.  The ceiling keeps the peak
+        // under roughly half a gigabyte of sample storage.
+        constexpr int maximumDecayEvents = 5000000;
+        if (selectedPhenomenon <= 2
+            && (decayEventCount < 1 || decayEventCount > maximumDecayEvents)) {
+            std::cerr << "--decay-events must be from 1 to " << maximumDecayEvents
+                      << ".\n";
+            return 1;
+        }
+        if (selectedPhenomenon <= 2 && decayEventCount > 2000000) {
+            std::cout << "Note: " << decayEventCount
+                      << " decay events retain about "
+                      << (static_cast<double>(decayEventCount)*93.0e-6)
+                      << " GB of per-event observables.\n";
+        }
         try {
             return showStatisticalAnalysis(seed, selectedPhenomenon,
-                                           statisticalRuns, beamEnergyEv,
+                                           statisticalRuns, decayEventCount,
+                                           beamEnergyEv,
                                            thetaMinimumDegrees,
                                            angleBins, impactParameterMaximumPm,
                                            matchingRadiusPm);

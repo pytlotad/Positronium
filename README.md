@@ -891,7 +891,12 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    `Dot` pokazuje wyłącznie próbki położenia: ciemnoniebieskie dla elektronu
    i pomarańczowe dla pozytonu.
 2. `Statistical analysis` wykonuje domyślnie 100 kalibracji CREM dla kanałów 1/2
-   oraz szybki podgląd 20/100 trajektorii odpowiednio dla kanałów 3/4. Zestaw
+   oraz szybki podgląd 20/100 trajektorii odpowiednio dla kanałów 3/4.
+   Liczebność kinematyki fotonów jest niezależna od liczby trajektorii i wynosi
+   domyślnie 1 000 000 zdarzeń (`--decay-events`, maksymalnie 5 000 000).
+   Kalibracje CREM kosztują sekundy każda, a zdarzenia generatora anihilacji
+   mikrosekundy, więc wiązanie obu liczb ograniczało histogramy fotonowe do
+   stu wpisów bez żadnego powodu fizycznego. Zestaw
    paneli zależy od wybranego eksperymentu; program nie wymusza tych samych
    czterech histogramów dla zjawisk o innej fizyce.
 
@@ -1244,7 +1249,8 @@ wiązki e⁺e⁻. Tryb, wybór eksperymentu i ziarno można podać bez interakcj
 ```bash
 ./positronium --mode visual --visual-style line --phenomenon 2 --seed 42
 ./positronium --mode visual --visual-style dot --phenomenon 2 --seed 42
-./positronium --mode statistical --phenomenon 1 --runs 100 --seed 42
+./positronium --mode statistical --phenomenon 1 --runs 100 \
+    --decay-events 1000000 --seed 42
 ./positronium --mode statistical --phenomenon 4 --runs 100 --seed 42 \
     --beam-energy-ev 20 --theta-min-deg 5 --angle-bins 10
 ```
@@ -1257,7 +1263,7 @@ przydatne w obliczeniach wsadowych:
 
 ```bash
 ./positronium --mode statistical --phenomenon 2 --runs 100 \
-    --seed 42 --no-gui
+    --decay-events 1000000 --seed 42 --no-gui
 ```
 
 Tryb diagnostyczny nie otwiera okna i wypisuje zakres odległości, bilans
