@@ -2310,6 +2310,375 @@ BeamEvent simulateBeamEvent(
         std::numeric_limits<double>::quiet_NaN(), state.radiatedEnergy, &state);
 }
 
+// ---------------------------------------------------------------------------
+// Experiment 5 "Interactions": an electron and a positron are fired at each
+// other with a Gaussian centre-of-mass energy and a Gaussian impact parameter
+// centred on a head-on collision, both dipoles randomly oriented in space.
+// Every trajectory is classified by what actually happens to it.
+// ---------------------------------------------------------------------------
+
+enum class InteractionOutcome {
+    Collision, Scattering, ParaPositronium, OrthoPositronium,
+    Unresolved, NumericalFailure
+};
+
+const char* interactionOutcomeName(InteractionOutcome outcome) {
+    switch (outcome) {
+        case InteractionOutcome::Collision:        return "Collision";
+        case InteractionOutcome::Scattering:       return "Scattering";
+        case InteractionOutcome::ParaPositronium:  return "Para-Positronium";
+        case InteractionOutcome::OrthoPositronium: return "Ortho-Positronium";
+        case InteractionOutcome::Unresolved:       return "Unresolved";
+        case InteractionOutcome::NumericalFailure: return "NumericalFailure";
+    }
+    return "Unknown";
+}
+
+struct InteractionConfiguration {
+    double meanKineticEnergy = 0.0;      // centre-of-mass kinetic energy [J]
+    double kineticEnergySigma = 0.0;     // [J]
+    double minimumKineticEnergy = 0.0;   // truncation of the Gaussian [J]
+    double impactParameterSigma = 0.0;   // [m], distribution centred on b=0
+    double matchingRadius = 0.0;         // [m], initial and escape separation
+    double maximumFlightTime = 0.0;      // [s]
+    // The bound phase is measured in orbits, not in absolute time: the orbital
+    // period scales as a^{3/2} and the adaptive step scales with it, so a fixed
+    // time window costs a bounded number of steps for a loose capture and tens
+    // of thousands for a tight one.  Orbits keep the cost per event flat.
+    double boundObservationOrbits = 0.0;
+    double boundObservationTimeCap = 0.0; // [s] guard for very loose captures
+};
+
+struct InteractionEvent {
+    InteractionOutcome outcome = InteractionOutcome::NumericalFailure;
+    std::uint64_t eventSeed = 0;
+    double kineticEnergyEv = std::numeric_limits<double>::quiet_NaN();
+    double impactParameter = std::numeric_limits<double>::quiet_NaN();
+    double minimumSeparation = std::numeric_limits<double>::quiet_NaN();
+    // Mean and spread of cos(mu_e, mu_p) sampled over the bound phase.
+    double dipoleAlignment = std::numeric_limits<double>::quiet_NaN();
+    double dipoleAlignmentSpread = std::numeric_limits<double>::quiet_NaN();
+    double radiatedEnergyEv = std::numeric_limits<double>::quiet_NaN();
+    double finalRelativeEnergyEv = std::numeric_limits<double>::quiet_NaN();
+    double scatteringAngleDegrees = std::numeric_limits<double>::quiet_NaN();
+    double elapsedTime = std::numeric_limits<double>::quiet_NaN();
+    EndpointDiagnostics initialDiagnostics;
+    EndpointDiagnostics finalDiagnostics;
+    bool diagnosticsValid = false;
+};
+
+double dipoleAlignmentOf(const State& state) {
+    const double electronNorm = state.electronDipole.norm();
+    const double positronNorm = state.positronDipole.norm();
+    if (!(electronNorm > 0.0) || !(positronNorm > 0.0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return std::clamp(dot(state.electronDipole, state.positronDipole)
+                      / (electronNorm*positronNorm), -1.0, 1.0);
+}
+
+InteractionConfiguration makeInteractionConfiguration(
+    double meanEnergyEv, double energySigmaEv, double impactSigmaPm) {
+    if (!(meanEnergyEv > 0.0) || !std::isfinite(meanEnergyEv)) {
+        throw std::invalid_argument(
+            "interaction mean energy must be finite and positive");
+    }
+    if (!(energySigmaEv >= 0.0) || !std::isfinite(energySigmaEv)) {
+        throw std::invalid_argument(
+            "interaction energy sigma must be finite and non-negative");
+    }
+    if (!(impactSigmaPm >= 0.0) || !std::isfinite(impactSigmaPm)) {
+        throw std::invalid_argument(
+            "interaction impact-parameter sigma must be finite and non-negative"
+            " (zero selects the automatic Coulomb length)");
+    }
+    InteractionConfiguration configuration;
+    configuration.meanKineticEnergy = meanEnergyEv*eCharge;
+    configuration.kineticEnergySigma = energySigmaEv*eCharge;
+    // Truncate well below the mean but strictly positive: a non-positive
+    // centre-of-mass energy has no incoming asymptote to start from.
+    configuration.minimumKineticEnergy = std::max(
+        0.02*configuration.meanKineticEnergy,
+        1.0e-3*eCharge);
+    // The scale that decides capture versus fly-past is the Coulomb length
+    // l_C = k e^2 / (2 K_CM), which is 72 pm at 10 eV.  A sigma far below it
+    // makes every trajectory plunge and be captured, so the automatic default
+    // sets sigma = l_C and the ensemble then spans both regimes.
+    const double coulombLength = coulomb*eCharge*eCharge
+                               / (2.0*configuration.meanKineticEnergy);
+    configuration.impactParameterSigma = impactSigmaPm > 0.0
+        ? impactSigmaPm*1.0e-12 : coulombLength;
+    // Start far enough out that the Coulomb potential is a small correction to
+    // the sampled kinetic energy, but close enough that the approach phase does
+    // not dominate the run time.
+    configuration.matchingRadius = 50.0*bohrRadius;
+    const double slowestEnergy = configuration.minimumKineticEnergy;
+    const double slowestGamma = 1.0 + slowestEnergy/(2.0*electronMass*c*c);
+    const double slowestSpeed = c*std::sqrt(
+        1.0 - 1.0/(slowestGamma*slowestGamma));
+    configuration.maximumFlightTime = 6.0*configuration.matchingRadius
+                                    / (2.0*slowestSpeed);
+    // Long enough to average the dipole orientation over several bound orbits.
+    configuration.boundObservationOrbits = 8.0;
+    configuration.boundObservationTimeCap = 2.0e-16;
+    return configuration;
+}
+
+InteractionEvent simulateInteractionEvent(
+    std::uint64_t seed, const InteractionConfiguration& configuration,
+    ClassicalTrajectoryEngine::Accuracy accuracy) {
+    std::mt19937_64 random(seed);
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    std::normal_distribution<double> energyGaussian(
+        configuration.meanKineticEnergy, configuration.kineticEnergySigma);
+    std::normal_distribution<double> impactGaussian(
+        0.0, configuration.impactParameterSigma);
+
+    InteractionEvent result;
+    result.eventSeed = seed;
+    double kineticEnergy = configuration.meanKineticEnergy;
+    if (configuration.kineticEnergySigma > 0.0) {
+        for (int attempt = 0; attempt < 1000; ++attempt) {
+            kineticEnergy = energyGaussian(random);
+            if (kineticEnergy >= configuration.minimumKineticEnergy) break;
+            kineticEnergy = configuration.minimumKineticEnergy;
+        }
+    }
+    // Gaussian around a head-on collision: the signed sample is folded, which
+    // is the half-normal radial profile of a beam centred on b=0.
+    const double impactParameter = std::min(
+        std::abs(impactGaussian(random)), 0.5*configuration.matchingRadius);
+    result.kineticEnergyEv = kineticEnergy/eCharge;
+    result.impactParameter = impactParameter;
+
+    const double azimuth = 2.0*pi*uniform(random);
+    const Vec3 impactDirection{0.0, std::cos(azimuth), std::sin(azimuth)};
+    const Vec3 beamDirection{1.0, 0.0, 0.0};
+    const double longitudinalDistance = std::sqrt(
+        configuration.matchingRadius*configuration.matchingRadius
+        - impactParameter*impactParameter);
+    const Vec3 relativePosition = beamDirection*(-longitudinalDistance)
+                                + impactDirection*impactParameter;
+    const Vec3 radialDirection = relativePosition/configuration.matchingRadius;
+    const Vec3 tangentDirection = beamDirection
+            *(impactParameter/configuration.matchingRadius)
+        + impactDirection*(longitudinalDistance/configuration.matchingRadius);
+
+    // Same construction as the beam experiment: the speed at the starting
+    // sphere carries the Coulomb attraction already gained, while the angular
+    // momentum is fixed by the asymptotic momentum and the impact parameter.
+    const double coulombStrength = coulomb*eCharge*eCharge;
+    const double finiteKineticEnergy = kineticEnergy
+        + coulombStrength/configuration.matchingRadius;
+    const double finiteGamma = 1.0
+        + finiteKineticEnergy/(2.0*electronMass*c*c);
+    const double finiteParticleSpeed = c*std::sqrt(
+        1.0 - 1.0/(finiteGamma*finiteGamma));
+    const double finiteRelativeSpeed = 2.0*finiteParticleSpeed;
+    const double asymptoticGamma = 1.0 + kineticEnergy/(2.0*electronMass*c*c);
+    const double asymptoticSpeed = c*std::sqrt(
+        1.0 - 1.0/(asymptoticGamma*asymptoticGamma));
+    const double asymptoticMomentum = asymptoticGamma*electronMass
+                                    * asymptoticSpeed;
+    const double finiteMomentum = finiteGamma*electronMass*finiteParticleSpeed;
+    const double tangentialFraction = impactParameter*asymptoticMomentum
+        / (configuration.matchingRadius*finiteMomentum);
+    if (!(tangentialFraction >= 0.0 && tangentialFraction < 1.0)) return result;
+    const double tangentialSpeed = finiteRelativeSpeed*tangentialFraction;
+    const double radialSpeedSquared = finiteRelativeSpeed*finiteRelativeSpeed
+                                    - tangentialSpeed*tangentialSpeed;
+    if (!(radialSpeedSquared > 0.0)) return result;
+    const Vec3 relativeVelocity = radialDirection*(-std::sqrt(radialSpeedSquared))
+                                + tangentDirection*tangentialSpeed;
+
+    const auto randomDirection = [&]() {
+        const double cosine = 2.0*uniform(random) - 1.0;
+        const double phi = 2.0*pi*uniform(random);
+        const double transverse = std::sqrt(std::max(0.0, 1.0 - cosine*cosine));
+        return Vec3{transverse*std::cos(phi), transverse*std::sin(phi), cosine};
+    };
+    State state;
+    state.electronPosition = relativePosition*0.5;
+    state.positronPosition = relativePosition*-0.5;
+    state.electronVelocity = relativeVelocity*0.5;
+    state.positronVelocity = relativeVelocity*-0.5;
+    state.electronDipole = randomDirection()*bohrMagneton;
+    state.positronDipole = randomDirection()*bohrMagneton;
+
+    ClassicalTrajectoryEngine trajectory(state, accuracy);
+    result.initialDiagnostics = endpointDiagnostics(state);
+    double minimumSeparation = separation(state);
+    bool passedClosestApproach = false;
+    bool bound = false;
+    double boundStartTime = 0.0;
+    double boundObservationTime = configuration.boundObservationTimeCap;
+    // Welford accumulation of cos(mu_e, mu_p) over the bound phase.
+    std::size_t alignmentCount = 0;
+    double alignmentMean = 0.0;
+    double alignmentSecondMoment = 0.0;
+
+    constexpr double reducedMass = electronMass*positronMass
+                                 / (electronMass + positronMass);
+    const auto finish = [&](InteractionOutcome outcome, const State& endpoint) {
+        result.outcome = outcome;
+        result.minimumSeparation = minimumSeparation;
+        result.radiatedEnergyEv = endpoint.radiatedEnergy/eCharge;
+        result.finalRelativeEnergyEv =
+            conservativeParticleEnergy(endpoint)/eCharge;
+        result.elapsedTime = endpoint.time;
+        if (alignmentCount > 0) {
+            result.dipoleAlignment = alignmentMean;
+            result.dipoleAlignmentSpread = alignmentCount > 1
+                ? std::sqrt(std::max(0.0, alignmentSecondMoment)
+                            / static_cast<double>(alignmentCount))
+                : 0.0;
+        }
+        if (isFinite(endpoint)) {
+            result.finalDiagnostics = endpointDiagnostics(endpoint);
+            result.diagnosticsValid = true;
+        }
+        return result;
+    };
+
+    while (state.time < configuration.maximumFlightTime) {
+        const double radius = separation(state);
+        const double relativeSpeed =
+            (state.electronVelocity - state.positronVelocity).norm();
+        const double omega = std::sqrt(coulombStrength
+                                       / (reducedMass*radius*radius*radius));
+        const double transitStep = 0.02*radius/std::max(relativeSpeed, 1.0);
+        double dt = std::min({1.0e-15, 2.0*pi/(320.0*omega), transitStep,
+                              configuration.maximumFlightTime - state.time});
+        if (bound) {
+            dt = std::min(dt, boundStartTime + boundObservationTime
+                              - state.time);
+        }
+        if (!(dt > 0.0) || !std::isfinite(dt)) return finish(
+            InteractionOutcome::NumericalFailure, state);
+        const State beforeStep = state;
+        if (!trajectory.advance(state, dt)) return finish(
+            InteractionOutcome::NumericalFailure, beforeStep);
+
+        const Vec3 relative = state.electronPosition - state.positronPosition;
+        const double currentRadius = relative.norm();
+        if (!(currentRadius > 0.0) || !std::isfinite(currentRadius)) {
+            return finish(InteractionOutcome::NumericalFailure, beforeStep);
+        }
+        minimumSeparation = std::min(minimumSeparation, currentRadius);
+
+        // A trajectory that reaches the point-particle boundary has collided,
+        // whether or not it had already been captured.
+        if (currentRadius <= nuclearCutoff) {
+            const double crossingFraction = separationCrossingFraction(
+                beforeStep, state, nuclearCutoff);
+            const State cutoffState = interpolateState(
+                beforeStep, state, crossingFraction);
+            minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
+            return finish(InteractionOutcome::Collision, cutoffState);
+        }
+
+        if (dot(relative, state.electronVelocity - state.positronVelocity) > 0.0) {
+            passedClosestApproach = true;
+        }
+        if (!bound && passedClosestApproach) {
+            const double boundEnergy = conservativeParticleEnergy(state);
+            if (boundEnergy < 0.0) {
+                bound = true;
+                boundStartTime = state.time;
+                // Kepler period of the captured orbit, from its semi-major
+                // axis a = -k/(2E).  Averaging over a fixed number of orbits
+                // costs a fixed number of adaptive steps at any binding energy.
+                const double semiMajorAxis = -coulombStrength/(2.0*boundEnergy);
+                const double orbitalPeriod = 2.0*pi*std::sqrt(
+                    reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis
+                    / coulombStrength);
+                boundObservationTime = std::isfinite(orbitalPeriod)
+                        && orbitalPeriod > 0.0
+                    ? std::min(configuration.boundObservationOrbits
+                                   *orbitalPeriod,
+                               configuration.boundObservationTimeCap)
+                    : configuration.boundObservationTimeCap;
+            }
+        }
+        if (bound) {
+            const double alignment = dipoleAlignmentOf(state);
+            if (std::isfinite(alignment)) {
+                ++alignmentCount;
+                const double delta = alignment - alignmentMean;
+                alignmentMean += delta/static_cast<double>(alignmentCount);
+                alignmentSecondMoment += delta*(alignment - alignmentMean);
+            }
+            if (state.time >= boundStartTime + boundObservationTime) {
+                // Parallel magnetic moments correspond to antiparallel spins,
+                // i.e. the singlet.  The 0.5 threshold on an initially isotropic
+                // relative orientation also reproduces the 1:3 para:ortho
+                // statistical weight, which is a useful consistency check.
+                const bool parallelMoments = alignmentMean >= 0.5;
+                return finish(parallelMoments
+                    ? InteractionOutcome::ParaPositronium
+                    : InteractionOutcome::OrthoPositronium, state);
+            }
+            continue;
+        }
+        if (passedClosestApproach
+            && currentRadius >= configuration.matchingRadius) {
+            const Vec3 outgoing = state.electronVelocity - state.positronVelocity;
+            result.scatteringAngleDegrees = std::acos(std::clamp(
+                dot(beamDirection, outgoing)/outgoing.norm(), -1.0, 1.0))
+                * 180.0/pi;
+            return finish(InteractionOutcome::Scattering, state);
+        }
+    }
+    return finish(InteractionOutcome::Unresolved, state);
+}
+
+std::vector<InteractionEvent> runInteractionExperiment(
+    std::uint64_t masterSeed, const InteractionConfiguration& configuration,
+    int runCount) {
+    std::vector<InteractionEvent> events(static_cast<size_t>(runCount));
+    std::atomic<int> nextIndex{0};
+    std::atomic<int> completed{0};
+    std::mutex outputMutex;
+    const int workerCount = std::min(runCount,
+        static_cast<int>(std::max(1u, std::thread::hardware_concurrency())));
+    std::cout << "Running " << runCount << " interaction trajectories on "
+              << workerCount << " worker" << (workerCount == 1 ? "" : "s")
+              << ".\n";
+    const auto worker = [&]() {
+        while (true) {
+            const int index = nextIndex.fetch_add(1);
+            if (index >= runCount) break;
+            const std::uint64_t eventSeed = splitMix64(
+                masterSeed + 0x5bf03635ULL
+                + static_cast<std::uint64_t>(index));
+            // Same accuracy ladder as the beam experiment.  A tighter setting
+            // is unaffordable here: the final plunge toward the collision
+            // boundary is stiff, and every extra subdivision level doubles the
+            // work in exactly the region where the step is already smallest.
+            InteractionEvent event = simulateInteractionEvent(
+                eventSeed, configuration, {.relativeTolerance=1.0e-3,
+                                           .maximumDepth=8});
+            if (event.outcome == InteractionOutcome::NumericalFailure) {
+                event = simulateInteractionEvent(
+                    eventSeed, configuration, {.relativeTolerance=1.0e-5,
+                                               .maximumDepth=12});
+            }
+            events[static_cast<size_t>(index)] = std::move(event);
+            const int done = completed.fetch_add(1) + 1;
+            if (done % 10 == 0 || done == runCount) {
+                std::lock_guard<std::mutex> lock(outputMutex);
+                std::cout << "Interaction trajectories: " << done << "/"
+                          << runCount << '\n';
+            }
+        }
+    };
+    std::vector<std::thread> workers;
+    workers.reserve(static_cast<size_t>(workerCount));
+    for (int index = 0; index < workerCount; ++index) workers.emplace_back(worker);
+    for (std::thread& thread : workers) thread.join();
+    return events;
+}
+
 std::vector<BeamEvent> runBeamExperiment(std::uint64_t masterSeed,
                                          const BeamConfiguration& configuration,
                                          int runCount) {
@@ -3136,11 +3505,333 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     return persistenceOk ? 0 : 3;
 }
 
+int showInteractionStatistics(std::uint64_t seed, int runCount,
+                              double meanEnergyEv, double energySigmaEv,
+                              double impactSigmaPm) {
+    const InteractionConfiguration configuration = makeInteractionConfiguration(
+        meanEnergyEv, energySigmaEv, impactSigmaPm);
+    std::cout << "Interaction experiment: K_CM ~ N(" << meanEnergyEv << ", "
+              << energySigmaEv << ") eV truncated at "
+              << configuration.minimumKineticEnergy/eCharge << " eV; b ~ |N(0, "
+              << configuration.impactParameterSigma*1.0e12
+              << " pm)|; both dipoles isotropic.\n"
+              << "Start/escape separation " << configuration.matchingRadius*1.0e12
+              << " pm; collision boundary " << nuclearCutoff*1.0e12
+              << " pm; bound states observed for "
+              << configuration.boundObservationOrbits << " orbits (capped at "
+              << configuration.boundObservationTimeCap*1.0e15 << " fs).\n";
+    const std::vector<InteractionEvent> events =
+        runInteractionExperiment(seed, configuration, runCount);
+
+    constexpr std::array<InteractionOutcome,6> outcomeOrder{
+        InteractionOutcome::Collision, InteractionOutcome::Scattering,
+        InteractionOutcome::ParaPositronium,
+        InteractionOutcome::OrthoPositronium,
+        InteractionOutcome::Unresolved, InteractionOutcome::NumericalFailure};
+    std::array<int,6> outcomeCounts{};
+    std::vector<double> allEnergies, allImpacts;
+    std::vector<double> boundEnergies, boundImpacts, boundAlignments;
+    std::vector<double> boundAlignmentSpreads;
+    std::vector<double> identityResiduals, reactionFractions;
+    for (const InteractionEvent& event : events) {
+        for (std::size_t slot = 0; slot < outcomeOrder.size(); ++slot) {
+            if (event.outcome == outcomeOrder[slot]) ++outcomeCounts[slot];
+        }
+        if (std::isfinite(event.kineticEnergyEv)) {
+            allEnergies.push_back(event.kineticEnergyEv);
+        }
+        if (std::isfinite(event.impactParameter)) {
+            allImpacts.push_back(event.impactParameter*1.0e12);
+        }
+        const bool isBound =
+            event.outcome == InteractionOutcome::ParaPositronium
+         || event.outcome == InteractionOutcome::OrthoPositronium;
+        if (isBound) {
+            boundEnergies.push_back(event.kineticEnergyEv);
+            boundImpacts.push_back(event.impactParameter*1.0e12);
+            boundAlignments.push_back(event.dipoleAlignment);
+            if (std::isfinite(event.dipoleAlignmentSpread)) {
+                boundAlignmentSpreads.push_back(event.dipoleAlignmentSpread);
+            }
+        }
+        if (!event.diagnosticsValid) continue;
+        const EndpointDiagnostics& initial = event.initialDiagnostics;
+        const EndpointDiagnostics& final = event.finalDiagnostics;
+        const double initialBalance = initial.mechanicalEnergy
+            + initial.radiatedEnergy + initial.boundFieldEnergy;
+        const double finalBalance = final.mechanicalEnergy
+            + final.radiatedEnergy + final.boundFieldEnergy;
+        const double energyScale = std::max({std::abs(initial.mechanicalEnergy),
+            std::abs(initialBalance), 64.0*std::numeric_limits<double>::epsilon()
+                *2.0*electronMass*c*c});
+        const double identity = (finalBalance - initialBalance)/energyScale;
+        const double radiated = std::abs(final.radiatedEnergy
+                                          - initial.radiatedEnergy);
+        const double reaction = std::abs(final.reactionEnergyMismatch
+            - initial.reactionEnergyMismatch)
+            / std::max(radiated, 1.0e-300);
+        if (std::isfinite(identity)) identityResiduals.push_back(identity);
+        if (std::isfinite(reaction) && radiated > 0.0) {
+            reactionFractions.push_back(reaction);
+        }
+    }
+
+    // The summary the experiment exists to produce.
+    std::cout << "\nInteraction outcome summary (" << runCount
+              << " trajectories):\n";
+    for (std::size_t slot = 0; slot < outcomeOrder.size(); ++slot) {
+        if (outcomeCounts[slot] == 0
+            && (outcomeOrder[slot] == InteractionOutcome::Unresolved
+             || outcomeOrder[slot] == InteractionOutcome::NumericalFailure)) {
+            continue;
+        }
+        std::ostringstream line;
+        line << "  " << std::left << std::setw(18)
+             << interactionOutcomeName(outcomeOrder[slot]) << std::right
+             << std::setw(6) << outcomeCounts[slot] << "  ("
+             << std::fixed << std::setprecision(1)
+             << 100.0*outcomeCounts[slot]/runCount << "%)";
+        std::cout << line.str() << '\n';
+    }
+    const int boundTotal = outcomeCounts[2] + outcomeCounts[3];
+    if (boundTotal > 0) {
+        std::cout << "  bound total       " << std::setw(6) << boundTotal
+                  << "; para:ortho = " << outcomeCounts[2] << ":"
+                  << outcomeCounts[3]
+                  << " (isotropic expectation 1:3)\n";
+    }
+    std::cout << "Para = parallel magnetic moments (antiparallel spins, S=0); "
+                 "ortho = antiparallel moments (S=1).\n";
+    if (outcomeCounts[4] > 0 || outcomeCounts[5] > 0) {
+        std::cerr << "Warning: " << outcomeCounts[4] << " unresolved and "
+                  << outcomeCounts[5] << " failed trajectories are excluded "
+                     "from the physical classes.\n";
+    }
+    if (!identityResiduals.empty()) {
+        std::cout << "Bookkeeping identity residual (not a conservation test): "
+                     "median " << sampleQuantile(identityResiduals, 0.5)
+                  << "; independent |dE_LL-vs-flux|/E_rad median "
+                  << sampleQuantile(reactionFractions, 0.5) << ".\n";
+    }
+
+    gROOT->SetBatch(kTRUE);
+    root_export::preparePdfExporter();
+    gStyle->SetOptStat(0);
+    gStyle->SetCanvasColor(kWhite);
+    gStyle->SetPadColor(kWhite);
+    TCanvas canvas("interaction_statistics",
+                   "e+e- interaction classification", 1280, 900);
+    canvas.SetFillColor(kWhite);
+    TPad distributionsPage("interaction_distributions_page",
+                           "Interaction distributions", 0.0, 0.0, 1.0, 1.0);
+    TPad diagnosticsPage("interaction_diagnostics_page",
+                         "Numerical diagnostics", 0.0, 0.0, 1.0, 1.0);
+    for (TPad* page : {&distributionsPage, &diagnosticsPage}) {
+        page->SetFillColor(kWhite);
+        page->SetFillStyle(1001);
+    }
+    canvas.cd();
+    distributionsPage.Draw();
+    diagnosticsPage.Draw();
+    distributionsPage.cd();
+    distributionsPage.Divide(2, 2, 0.006, 0.006);
+    diagnosticsPage.cd();
+    diagnosticsPage.Divide(1, 1, 0.006, 0.006);
+    std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
+    std::vector<std::unique_ptr<TF1>> analysisFunctions;
+
+    TH1D outcomeHistogram("interaction_outcome_summary",
+        "Interaction outcome classification;;Trajectories", 4, 0.0, 4.0);
+    for (int slot = 0; slot < 4; ++slot) {
+        outcomeHistogram.GetXaxis()->SetBinLabel(slot + 1,
+            interactionOutcomeName(outcomeOrder[static_cast<std::size_t>(slot)]));
+        outcomeHistogram.SetBinContent(slot + 1,
+            outcomeCounts[static_cast<std::size_t>(slot)]);
+        outcomeHistogram.SetBinError(slot + 1,
+            std::sqrt(static_cast<double>(
+                outcomeCounts[static_cast<std::size_t>(slot)])));
+    }
+    styleHistogram(outcomeHistogram, kAzure + 1);
+    outcomeHistogram.SetStats(false);
+    outcomeHistogram.GetXaxis()->SetLabelSize(0.045);
+    outcomeHistogram.SetMinimum(0.0);
+    distributionsPage.cd(1);
+    gPad->SetGrid();
+    gPad->SetBottomMargin(0.16);
+    outcomeHistogram.Draw("HIST");
+    std::vector<std::string> summaryLines{
+        "Trajectories: N = " + std::to_string(runCount)};
+    for (std::size_t slot = 0; slot < 4; ++slot) {
+        summaryLines.push_back(std::string(
+            interactionOutcomeName(outcomeOrder[slot])) + ": "
+            + std::to_string(outcomeCounts[slot]) + " ("
+            + compactNumber(100.0*outcomeCounts[slot]/runCount, 3) + "%)");
+    }
+    if (outcomeCounts[4] + outcomeCounts[5] > 0) {
+        summaryLines.push_back("gated/failed: "
+            + std::to_string(outcomeCounts[4] + outcomeCounts[5]));
+    }
+    summaryLines.push_back("Collision: r reached "
+        + compactNumber(nuclearCutoff*1.0e12, 3) + " pm");
+    summaryLines.push_back("Para: parallel #mu (S=0); Ortho: antiparallel #mu");
+    drawAnalysisBox(analysisBoxes, 0.45, 0.52, 0.95, 0.91, summaryLines, 0.021);
+
+    const double energyLower = std::max(0.0,
+        configuration.meanKineticEnergy/eCharge - 4.0*energySigmaEv);
+    const double energyUpper = configuration.meanKineticEnergy/eCharge
+                             + 4.0*energySigmaEv;
+    TH1D energyHistogram("interaction_collision_energy",
+        "Sampled centre-of-mass energy;K_{CM} [eV];Trajectories",
+        histogramBins(allEnergies.size()), energyLower, energyUpper);
+    TH1D boundEnergyHistogram("interaction_collision_energy_bound",
+        "bound subset", histogramBins(allEnergies.size()),
+        energyLower, energyUpper);
+    styleHistogram(energyHistogram, kAzure + 1);
+    styleHistogram(boundEnergyHistogram, kGreen + 2);
+    energyHistogram.SetStats(false);
+    boundEnergyHistogram.SetStats(false);
+    for (double value : allEnergies) energyHistogram.Fill(value);
+    for (double value : boundEnergies) boundEnergyHistogram.Fill(value);
+    distributionsPage.cd(2);
+    gPad->SetGrid();
+    energyHistogram.Draw("HIST");
+    boundEnergyHistogram.Draw("HIST SAME");
+    const GaussianFitSummary energyMoments =
+        gaussianMaximumLikelihood(allEnergies);
+    drawAnalysisBox(analysisBoxes, 0.52, 0.60, 0.95, 0.91, {
+        "Sampled: N = " + std::to_string(allEnergies.size()),
+        "requested #mu / #sigma = " + compactNumber(meanEnergyEv, 4)
+            + " / " + compactNumber(energySigmaEv, 4) + " eV",
+        "sample #mu / #sigma = " + compactNumber(energyMoments.mean, 4)
+            + " / " + compactNumber(energyMoments.sigma, 4) + " eV",
+        "green: subset that formed positronium",
+        "bound fraction = " + compactNumber(
+            100.0*boundTotal/std::max(runCount, 1), 3) + "%"
+    }, 0.022);
+
+    const double impactUpper = std::max(1.0e-3,
+        4.0*configuration.impactParameterSigma*1.0e12);
+    TH1D impactHistogram("interaction_impact_parameter",
+        "Sampled impact parameter;b [pm];Trajectories",
+        histogramBins(allImpacts.size()), 0.0, impactUpper);
+    TH1D boundImpactHistogram("interaction_impact_parameter_bound",
+        "bound subset", histogramBins(allImpacts.size()), 0.0, impactUpper);
+    styleHistogram(impactHistogram, kOrange + 7);
+    styleHistogram(boundImpactHistogram, kGreen + 2);
+    impactHistogram.SetStats(false);
+    boundImpactHistogram.SetStats(false);
+    for (double value : allImpacts) impactHistogram.Fill(value);
+    for (double value : boundImpacts) boundImpactHistogram.Fill(value);
+    distributionsPage.cd(3);
+    gPad->SetGrid();
+    impactHistogram.Draw("HIST");
+    boundImpactHistogram.Draw("HIST SAME");
+    drawAnalysisBox(analysisBoxes, 0.48, 0.58, 0.95, 0.91, {
+        "Sampled: N = " + std::to_string(allImpacts.size()),
+        "b #approx |N(0, " + compactNumber(
+            configuration.impactParameterSigma*1.0e12, 4) + " pm)|"
+            + (impactSigmaPm > 0.0 ? "" : " (auto = l_{C})"),
+        "half-normal, centred on a head-on collision",
+        "median b = " + compactNumber(sampleQuantile(allImpacts, 0.5), 4)
+            + " pm",
+        "green: subset that formed positronium"
+    }, 0.022);
+
+    TH1D alignmentHistogram("interaction_dipole_alignment",
+        "Dipole alignment of bound states;"
+        "#LTcos(#mu_{e},#mu_{p})#GT over the bound phase;Events",
+        histogramBins(boundAlignments.size()), -1.0, 1.0);
+    styleHistogram(alignmentHistogram, kMagenta + 1);
+    alignmentHistogram.SetStats(false);
+    for (double value : boundAlignments) alignmentHistogram.Fill(value);
+    distributionsPage.cd(4);
+    gPad->SetGrid();
+    alignmentHistogram.Draw("HIST");
+    std::unique_ptr<TLine> thresholdLine;
+    if (!boundAlignments.empty()) {
+        const double lineHeight = std::max(1.0,
+            1.05*alignmentHistogram.GetMaximum());
+        thresholdLine = std::make_unique<TLine>(0.5, 0.0, 0.5, lineHeight);
+        thresholdLine->SetLineColor(kRed + 1);
+        thresholdLine->SetLineWidth(2);
+        thresholdLine->SetLineStyle(2);
+        thresholdLine->Draw();
+    }
+    const double medianSpread = boundAlignmentSpreads.empty()
+        ? std::numeric_limits<double>::quiet_NaN()
+        : sampleQuantile(boundAlignmentSpreads, 0.5);
+    drawAnalysisBox(analysisBoxes, 0.13, 0.55, 0.62, 0.91, {
+        "Bound events: N = " + std::to_string(boundAlignments.size()),
+        "red dashed: para/ortho threshold at +0.5",
+        "para (#geq0.5) : ortho = " + std::to_string(outcomeCounts[2]) + " : "
+            + std::to_string(outcomeCounts[3]),
+        "isotropic expectation 1 : 3",
+        "median drift within an event = " + compactNumber(medianSpread, 3),
+        "Orientation is set at capture: this classical",
+        "model has no spin-relaxation channel, so the",
+        "label reflects the initial random orientation."
+    }, 0.019);
+
+    TPaveText diagnosticSummary(0.07, 0.20, 0.93, 0.80, "NDC");
+    diagnosticSummary.SetFillColorAlpha(kWhite, 0.95);
+    diagnosticSummary.SetTextAlign(12);
+    diagnosticSummary.SetTextFont(42);
+    diagnosticSummary.AddText("Numerical diagnostics, interaction experiment");
+    std::ostringstream diagnosticCount;
+    diagnosticCount << "endpoints with diagnostics: "
+                    << identityResiduals.size() << '/' << runCount;
+    diagnosticSummary.AddText(diagnosticCount.str().c_str());
+    if (!identityResiduals.empty()) {
+        std::ostringstream identityLine;
+        identityLine << "median bookkeeping IDENTITY residual = "
+                     << sampleQuantile(identityResiduals, 0.5)
+                     << " (roundoff only, NOT a conservation test)";
+        diagnosticSummary.AddText(identityLine.str().c_str());
+        std::ostringstream reactionLine;
+        reactionLine << "median |#deltaE_{LL-vs-flux}|/E_{rad} = "
+                     << sampleQuantile(reactionFractions, 0.5)
+                     << "  (independent physical residual)";
+        diagnosticSummary.AddText(reactionLine.str().c_str());
+    }
+    diagnosticSummary.AddText(
+        "E_{bound} is defined as the residual that closes the balance, so the");
+    diagnosticSummary.AddText(
+        "identity above cannot be quoted as evidence of energy conservation.");
+    diagnosticSummary.AddText("Classical low-velocity model; not QED.");
+    diagnosticsPage.cd(1);
+    diagnosticSummary.Draw();
+
+    canvas.cd();
+    distributionsPage.Pop();
+    canvas.Modified();
+    canvas.Update();
+    reportExports(root_export::saveStatisticalPlots(5, {
+        {distributionsPage.GetPad(1), 1, 1, "outcome_summary"},
+        {distributionsPage.GetPad(2), 1, 2, "collision_energy"},
+        {distributionsPage.GetPad(3), 1, 3, "impact_parameter"},
+        {distributionsPage.GetPad(4), 1, 4, "dipole_alignment"},
+        {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_summary"}
+    }));
+    bool persistenceOk = reportArchiveOperation(
+        statistics_archive::writeScientificReferencesText(),
+        "scientific-reference catalogue");
+    if (outcomeCounts[5] != 0) return 2;
+    return persistenceOk ? 0 : 3;
+}
+
 int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
                             int runCount, int decayEventCount,
                             double beamEnergyEv,
                             double thetaMinimumDegrees, int angleBins,
-                            double impactMaximumPm, double matchingRadiusPm) {
+                            double impactMaximumPm, double matchingRadiusPm,
+                            double interactionEnergyEv,
+                            double interactionEnergySigmaEv,
+                            double interactionImpactSigmaPm) {
+    if (selectedPhenomenon == 5) {
+        return showInteractionStatistics(seed, runCount, interactionEnergyEv,
+                                         interactionEnergySigmaEv,
+                                         interactionImpactSigmaPm);
+    }
     if (selectedPhenomenon == 1 || selectedPhenomenon == 2) {
         return showBoundDecayStatistics(seed, selectedPhenomenon, runCount,
                                         decayEventCount);
@@ -3184,6 +3875,12 @@ int main(int argc, char** argv) {
     int angleBins = 10;
     double impactParameterMaximumPm = 0.0;
     double matchingRadiusPm = 0.0;
+    // Experiment 5. The defaults put the sampled energy in the range where
+    // radiative capture into a bound pair actually happens in this model, and
+    // the impact parameter close enough to head-on to reach it.
+    double interactionEnergyEv = 10.0;
+    double interactionEnergySigmaEv = 4.0;
+    double interactionImpactSigmaPm = 0.0;  // zero selects sigma = l_C
     try {
         for (int i = 1; i < argc; ++i) {
             const std::string argument = argv[i];
@@ -3225,6 +3922,12 @@ int main(int argc, char** argv) {
                 impactParameterMaximumPm = std::stod(requireValue(argument));
             } else if (argument == "--matching-radius-pm") {
                 matchingRadiusPm = std::stod(requireValue(argument));
+            } else if (argument == "--interaction-energy-ev") {
+                interactionEnergyEv = std::stod(requireValue(argument));
+            } else if (argument == "--interaction-energy-sigma-ev") {
+                interactionEnergySigmaEv = std::stod(requireValue(argument));
+            } else if (argument == "--interaction-bsigma-pm") {
+                interactionImpactSigmaPm = std::stod(requireValue(argument));
             } else if (argument == "--mode") {
                 const std::string mode = requireValue(argument);
                 if (mode == "visual" || mode == "1") selectedMode = 1;
@@ -3274,13 +3977,22 @@ int main(int argc, char** argv) {
         visualStyle = selectedVisualStyle == 1 ? VisualStyle::Line : VisualStyle::Dot;
     }
     if (visualStyle == VisualStyle::Unselected) visualStyle = VisualStyle::Line;
-    if (selectedPhenomenon < 1 || selectedPhenomenon > 4) {
+    // Experiment 5 exists only in Statistical: Visual integrates one prepared
+    // trajectory, whereas 5 classifies an ensemble of collision outcomes.
+    const int maximumPhenomenon = selectedMode == 2 ? 5 : 4;
+    if (selectedPhenomenon == 5 && selectedMode != 2) {
+        std::cerr << "Experiment 5 (Interactions) exists only in statistical "
+                     "mode; use --mode statistical.\n";
+        return 1;
+    }
+    if (selectedPhenomenon < 1 || selectedPhenomenon > maximumPhenomenon) {
         if (selectedMode == 2) {
             std::cout << "Choose statistical experiment:\n"
                       << "1 -> Para-positronium CREM collapse + 2 gamma kinematics\n"
                       << "2 -> Ortho-positronium CREM collapse + 3 gamma kinematics\n"
                       << "3 -> e+e- beam: short-range/cutoff channel\n"
-                      << "4 -> e+e- beam: elastic scattering\n";
+                      << "4 -> e+e- beam: elastic scattering\n"
+                      << "5 -> Interactions: classify collision outcomes\n";
         } else {
             std::cout << "Choose phenomenon to simulate:\n"
                       << "1 -> Para-positronium\n"
@@ -3288,20 +4000,24 @@ int main(int argc, char** argv) {
                       << "3 -> Direct collision\n"
                       << "4 -> Scattering\n";
         }
-        std::cout << "Selection [1-4]: " << std::flush;
-        if (!(std::cin >> selectedPhenomenon) || selectedPhenomenon < 1 || selectedPhenomenon > 4) {
-            std::cerr << "Invalid selection. Enter a number from 1 to 4.\n";
+        std::cout << "Selection [1-" << maximumPhenomenon << "]: " << std::flush;
+        if (!(std::cin >> selectedPhenomenon) || selectedPhenomenon < 1
+            || selectedPhenomenon > maximumPhenomenon) {
+            std::cerr << "Invalid selection. Enter a number from 1 to "
+                      << maximumPhenomenon << ".\n";
             return 1;
         }
     }
     if (selectedMode == 2) {
-        if(!statisticalRunsExplicit&&selectedPhenomenon>=3) {
+        if(!statisticalRunsExplicit&&selectedPhenomenon>=3
+           &&selectedPhenomenon<=4) {
             statisticalRuns=selectedPhenomenon==3?20:100;
             std::cout<<"Beam-statistics preview: using "<<statisticalRuns
                      <<" trajectories; "
                        "override with --runs N.\n";
         }
-        const int maximumStatisticalRuns=selectedPhenomenon<=2?100:100000;
+        const int maximumStatisticalRuns=selectedPhenomenon<=2?100
+            :(selectedPhenomenon==5?10000:100000);
         if (statisticalRuns < 1 || statisticalRuns > maximumStatisticalRuns) {
             std::cerr << "The number of CREM trajectories/beam trials must be from 1 to "
                       <<maximumStatisticalRuns<<" for this experiment.\n";
@@ -3330,7 +4046,10 @@ int main(int argc, char** argv) {
                                            beamEnergyEv,
                                            thetaMinimumDegrees,
                                            angleBins, impactParameterMaximumPm,
-                                           matchingRadiusPm);
+                                           matchingRadiusPm,
+                                           interactionEnergyEv,
+                                           interactionEnergySigmaEv,
+                                           interactionImpactSigmaPm);
         } catch (const std::exception& error) {
             std::cerr << "Invalid statistical experiment: " << error.what() << '\n';
             return 1;

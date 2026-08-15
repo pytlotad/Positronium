@@ -892,6 +892,13 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    i pomarańczowe dla pozytonu.
 2. `Statistical analysis` wykonuje domyślnie 100 kalibracji CREM dla kanałów 1/2
    oraz szybki podgląd 20/100 trajektorii odpowiednio dla kanałów 3/4.
+   Eksperyment 5 (`Interactions`) wystrzeliwuje 100 par naprzeciw siebie z
+   gaussowsko losowaną energią i półgaussowskim parametrem zderzenia, po czym
+   klasyfikuje każdą trajektorię jako `Collision`, `Scattering`,
+   `Para-Positronium` albo `Orto-Positronium` i podaje zestawienie liczności.
+   Klasa `Collision` przy progu `1e-14 m` wychodzi pusta, ponieważ klasyczna
+   bariera dipol-dipol rośnie jak \(1/r^3\) i na tym progu odpowiada energii
+   rzędu \(10^{11}\,\mathrm{eV}\); szczegóły w `README.ap`, sekcja 5.4a.
    Liczebność kinematyki fotonów jest niezależna od liczby trajektorii i wynosi
    domyślnie 1 000 000 zdarzeń (`--decay-events`, maksymalnie 5 000 000).
    Kalibracje CREM kosztują sekundy każda, a zdarzenia generatora anihilacji

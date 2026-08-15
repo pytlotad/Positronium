@@ -53,6 +53,7 @@ inline std::string_view phenomenonNameAscii(int selectedPhenomenon) noexcept {
         case 2: return "ortho_positronium";
         case 3: return "direct_collision";
         case 4: return "scattering";
+        case 5: return "interactions";
         default: return {};
     }
 }

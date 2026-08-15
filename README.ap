@@ -117,7 +117,9 @@ Numer ma to samo ogólne znaczenie w nazwach plików i menu:
 1. para-pozytonium;
 2. orto-pozytonium;
 3. zderzenie bezpośrednie / wiązkowy kanał krótkiego zasięgu;
-4. rozpraszanie / wiązkowy kanał elastyczny.
+4. rozpraszanie / wiązkowy kanał elastyczny;
+5. Interactions — klasyfikacja wyniku zderzenia; wyłącznie w trybie
+   Statistical, tryb Visual przyjmuje tylko 1-4.
 
 Znaczenie fizyczne zależy jednak od trybu. Visual 1/2 pokazuje klasyczne
 związane trajektorie rozróżnione orientacją dipoli. Statistical 1/2 wyznacza
@@ -199,6 +201,55 @@ czasy anihilacji p-Ps i o-Ps różnią się natomiast około 1000 razy. Porówna
 wykresie jest odniesieniem skali, nie predykcją czasu życia — panel podaje to
 wprost razem ze stosunkiem `tau_exp/<t_collapse>`.
 
+### 5.4a Statistical 5 — Interactions
+
+```text
+./positronium --mode statistical --phenomenon 5 --runs 100 --seed 42 --no-gui
+```
+
+Elektron i pozyton są wystrzeliwane naprzeciw siebie z odległości `50*a0`.
+Energia środka masy jest losowana gaussowsko `K_CM ~ N(mu, sigma)` i ucinana od
+dołu, parametr zderzenia półgaussowsko `b ~ |N(0, sigma_b)|` wokół zderzenia
+centralnego, a oba momenty dipolowe mają losową orientację izotropową.
+Domyślnie `mu=10 eV`, `sigma=4 eV`, a `sigma_b` jest dobierane automatycznie
+jako długość Coulomba `l_C = k*e^2/(2*K_CM)`, czyli 72 pm przy 10 eV. To jest
+skala rozdzielająca wychwyt od przelotu: `sigma_b` znacznie mniejsze powoduje,
+że każda trajektoria nurkuje i zostaje wychwycona.
+
+Każda trajektoria jest klasyfikowana do jednej z czterech klas:
+
+- `Collision` — separacja osiągnęła granicę modelu punktowego `1e-14 m`;
+- `Scattering` — para minęła się i wróciła na sferę startową z energią dodatnią;
+- `Para-Positronium` — para została wychwycona, a uśredniony po orbitach
+  `cos(mu_e, mu_p)` wyszedł `>= 0.5`, czyli momenty magnetyczne są RÓWNOLEGŁE,
+  co odpowiada antyrównoległym spinom i stanowi singletowemu `S=0`;
+- `Orto-Positronium` — para została wychwycona, a momenty są antyrównoległe
+  (`cos < 0.5`), co odpowiada `S=1`.
+
+Klasy `Unresolved` i `NumericalFailure` są raportowane osobno i nie wchodzą do
+klas fizycznych.
+
+Trzy uwagi konieczne przy interpretacji wyników:
+
+1. **Klasa `Collision` jest przy progu `1e-14 m` strukturalnie pusta.**
+   Klasyczne oddziaływanie dipol-dipol rośnie jak `1/r^3` i przy `r = 0.2 pm`
+   daje energię
+   `mu*B` rzędu 13 keV wobec kulombowskich -7,2 keV, a na samym progu `1e-14 m`
+   rzędu `1e11 eV`. Zmierzone `r_min` wynosi 0,17-0,45 pm niezależnie od `b`, co
+   jest sygnaturą bariery. Sprawdzono, że nawet przy `K_CM = 40 keV` i
+   `b = 0,05 pm` liczba zderzeń pozostaje zerowa. Ten sam efekt widać w
+   eksperymencie 3, gdzie kanał `short-range` również wychodzi pusty.
+2. Etykieta para/orto odzwierciedla orientację dipoli w chwili wychwytu.
+   Model klasyczny nie ma kanału relaksacji spinu na skali czasu całkowania,
+   więc „ustabilizowanie się" oznacza tu uśrednienie po `8` orbitach Keplera, a
+   nie dynamiczne dochodzenie do stanu własnego.
+3. Próg `0.5` na izotropowo rozłożonym `cos` odtwarza statystyczną wagę
+   para:orto = 1:3, co jest użytecznym testem spójności próbki wychwyconej.
+
+Rozmiar okna obserwacji jest liczony w orbitach, nie w czasie bezwzględnym:
+okres Keplera skaluje się jak `a^{3/2}` razem z krokiem adaptacyjnym, więc stałe
+okno czasowe kosztowałoby dziesiątki tysięcy kroków dla ciasnego wychwytu.
+
 ### 5.5 Statistical 3 — kanał krótkiego zasięgu
 
 ```text
@@ -250,6 +301,11 @@ i `LL/coherent dE`: `|E_bound|/E_rad` oraz `|dE|/E_rad`.
 - `--decay-events N` — liczba zdarzeń generatora anihilacji w 1/2, domyślnie
   1 000 000, maksymalnie 5 000 000; ignorowane w 3/4. Nie ma wpływu na czas
   kolapsu CREM, a czas kolapsu nie ma wpływu na kinematykę fotonów;
+- `--interaction-energy-ev VALUE` — średnia `K_CM` w eksperymencie 5,
+  domyślnie 10;
+- `--interaction-energy-sigma-ev VALUE` — sigma rozkładu energii, domyślnie 4;
+- `--interaction-bsigma-pm VALUE` — sigma półgaussowskiego `b`, zero wybiera
+  automatyczne `l_C`;
 - `--beam-energy-ev VALUE` — energia kinetyczna CM dla 3/4;
 - `--theta-min-deg VALUE` — próg akceptacji kąta;
 - `--angle-bins 4..90` — liczba koszyków kąta;
@@ -402,6 +458,13 @@ przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
   względem raportowanej emisji). Zmierzone na orbitach związanych
   `|E_bound|/E_rad` wynosi 1,2–1,4, a `|dE_LL-vs-flux|/E_rad` 0,03–0,09 — to jest
   faktyczna granica rozdzielczości raportowanej energii wypromieniowanej;
+- `outcome_summary` — histogram liczby zdarzeń w klasach Collision /
+  Scattering / Para / Orto w eksperymencie 5;
+- `collision_energy` — wylosowana `K_CM` z zaznaczonym podzbiorem, który
+  utworzył pozytonium;
+- `impact_parameter` — wylosowane `b` z tym samym podzbiorem;
+- `dipole_alignment` — uśredniony po orbitach `cos(mu_e, mu_p)` stanów
+  związanych z progiem para/orto w `+0.5`;
 - `visual_simulation` — migawka interaktywnej symulacji.
 
 ## 9. Zasady odpowiedzi PRISM
