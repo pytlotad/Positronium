@@ -211,10 +211,16 @@ Elektron i pozyton są wystrzeliwane naprzeciw siebie z odległości `50*a0`.
 Energia środka masy jest losowana gaussowsko `K_CM ~ N(mu, sigma)` i ucinana od
 dołu, parametr zderzenia półgaussowsko `b ~ |N(0, sigma_b)|` wokół zderzenia
 centralnego, a oba momenty dipolowe mają losową orientację izotropową.
-Domyślnie `mu=10 eV`, `sigma=4 eV`, a `sigma_b` jest dobierane automatycznie
-jako długość Coulomba `l_C = k*e^2/(2*K_CM)`, czyli 72 pm przy 10 eV. To jest
-skala rozdzielająca wychwyt od przelotu: `sigma_b` znacznie mniejsze powoduje,
-że każda trajektoria nurkuje i zostaje wychwycona.
+Domyślnie `mu=1 eV`, `sigma=0.4 eV`, `sigma_b=72 pm`. `sigma_b` jest podawane
+w wartościach bezwzględnych, a nie wiązane z długością Coulomba: `l_C` skaluje
+się jak `1/K_CM`, więc automatyczna szerokość rosłaby szybciej niż próg
+wychwytu i obniżenie energii dawałoby MNIEJ stanów związanych, nie więcej.
+Wartość `0` nadal wybiera regułę `sigma_b = l_C` dla kogoś, kto chce tego
+skalowania.
+
+Zmierzona zależność przy stałym `sigma_b = 72 pm`: przy `K_CM = 10 eV`
+wszystkie trajektorie się rozpraszają, przy `K_CM = 1 eV` znaczna część jest
+wychwytywana. Obniżenie energii faktycznie zwiększa liczbę stanów związanych.
 
 Każda trajektoria jest klasyfikowana do jednej z czterech klas:
 
@@ -249,6 +255,26 @@ Trzy uwagi konieczne przy interpretacji wyników:
 Rozmiar okna obserwacji jest liczony w orbitach, nie w czasie bezwzględnym:
 okres Keplera skaluje się jak `a^{3/2}` razem z krokiem adaptacyjnym, więc stałe
 okno czasowe kosztowałoby dziesiątki tysięcy kroków dla ciasnego wychwytu.
+
+Dla każdego stanu związanego liczony jest ekstrapolowany czas kolapsu CREM tym
+samym modelem sekularnym co w eksperymentach 1 i 2, a raport podaje jego
+minimum, średnią i maksimum. Test związania oraz relacje Keplera używają
+energii kinetyczna+Coulomb, NIE `conservativeParticleEnergy`: przy
+podpikometrowych punktach zwrotnych klasyczny człon dipol-dipol sięga `1e15 eV`
+i całkowicie zdominowałby wiązanie kulombowskie, dając `a = -k/2E` rzędu
+`1e-25 m` i bezsensowny okres orbitalny.
+
+Raport podaje też średnią `K_CM` i średnie `b` dla wszystkich trajektorii oraz
+osobno dla każdej klasy. Rozbicie na klasy jest istotne: wychwyt selekcjonuje
+małe parametry zderzenia, więc pojedyncza średnia zbiorcza ukrywałaby mechanizm.
+
+**Koszt obliczeniowy jest silnie niesymetryczny.** Trajektoria, która zawraca
+wewnątrz bariery dipolowej przy `r ~ 0,2 pm`, wchodzi w obszar sztywny, gdzie
+pojedynczy krok adaptacyjny kosztuje około sekundy; rozkład kosztu na zdarzenie
+ma bardzo ciężki ogon. Dlatego każde zdarzenie ma budżet czasu rzeczywistego
+(domyślnie 20 s, kontrolowany co 8 kroków); po jego przekroczeniu zdarzenie jest
+cenzurowane jako `Unresolved`, zgodnie z tą samą konwencją co bramka czasu lotu
+w eksperymentach wiązkowych. Liczba ocenzurowanych zdarzeń jest raportowana.
 
 ### 5.5 Statistical 3 — kanał krótkiego zasięgu
 
@@ -302,10 +328,10 @@ i `LL/coherent dE`: `|E_bound|/E_rad` oraz `|dE|/E_rad`.
   1 000 000, maksymalnie 5 000 000; ignorowane w 3/4. Nie ma wpływu na czas
   kolapsu CREM, a czas kolapsu nie ma wpływu na kinematykę fotonów;
 - `--interaction-energy-ev VALUE` — średnia `K_CM` w eksperymencie 5,
-  domyślnie 10;
-- `--interaction-energy-sigma-ev VALUE` — sigma rozkładu energii, domyślnie 4;
-- `--interaction-bsigma-pm VALUE` — sigma półgaussowskiego `b`, zero wybiera
-  automatyczne `l_C`;
+  domyślnie 1;
+- `--interaction-energy-sigma-ev VALUE` — sigma rozkładu energii, domyślnie 0,4;
+- `--interaction-bsigma-pm VALUE` — sigma półgaussowskiego `b`, domyślnie 72;
+  zero wybiera automatyczne `l_C`;
 - `--beam-energy-ev VALUE` — energia kinetyczna CM dla 3/4;
 - `--theta-min-deg VALUE` — próg akceptacji kąta;
 - `--angle-bins 4..90` — liczba koszyków kąta;

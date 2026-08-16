@@ -2347,6 +2347,13 @@ struct InteractionConfiguration {
     // of thousands for a tight one.  Orbits keep the cost per event flat.
     double boundObservationOrbits = 0.0;
     double boundObservationTimeCap = 0.0; // [s] guard for very loose captures
+    // Wall-clock budget per trajectory.  The per-event cost is extremely
+    // heavy-tailed: a trajectory that turns around inside the classical
+    // dipole barrier near 0.2 pm hits a stiff region where single adaptive
+    // steps cost about a second, so a handful of events would otherwise run
+    // for hours.  Exceeding the budget censors the event as Unresolved, the
+    // same censoring convention the beam experiments use for their flight gate.
+    double eventWallClockBudgetSeconds = 0.0;
 };
 
 struct InteractionEvent {
@@ -2362,10 +2369,31 @@ struct InteractionEvent {
     double finalRelativeEnergyEv = std::numeric_limits<double>::quiet_NaN();
     double scatteringAngleDegrees = std::numeric_limits<double>::quiet_NaN();
     double elapsedTime = std::numeric_limits<double>::quiet_NaN();
+    // Extrapolated CREM collapse time of a captured pair, using the same
+    // secular model as experiments 1 and 2 so the numbers are comparable:
+    // dE/dt = P with E = -k e^2/(2a) and P proportional to a^-4.  It is a
+    // classical inspiral time, not a quantum annihilation lifetime.
+    double collapseTimeSeconds = std::numeric_limits<double>::quiet_NaN();
+    double boundRadiatedPowerWatts = std::numeric_limits<double>::quiet_NaN();
     EndpointDiagnostics initialDiagnostics;
     EndpointDiagnostics finalDiagnostics;
     bool diagnosticsValid = false;
 };
+
+// Kinetic plus Coulomb energy of the pair, deliberately excluding the
+// short-range dipole-dipole term.  conservativeParticleEnergy() cannot be used
+// to decide capture here: at the sub-picometre turning points the classical
+// dipole interaction reaches 1e15 eV and swamps the Coulomb binding, so it
+// reports "bound" with an energy that makes the Kepler relations meaningless
+// (a = -k/2E collapses to 1e-25 m).  The secular collapse model is a Coulomb
+// model, and experiments 1 and 2 calibrate it on exactly this energy.
+double coulombPairEnergy(const State& state) {
+    const PairGeometry geometry = pairGeometry(state);
+    const double kinetic =
+        (gamma(state.electronVelocity) - 1.0)*electronMass*c*c
+      + (gamma(state.positronVelocity) - 1.0)*positronMass*c*c;
+    return kinetic - coulomb*eCharge*eCharge*geometry.inverseDistance;
+}
 
 double dipoleAlignmentOf(const State& state) {
     const double electronNorm = state.electronDipole.norm();
@@ -2421,6 +2449,7 @@ InteractionConfiguration makeInteractionConfiguration(
     // Long enough to average the dipole orientation over several bound orbits.
     configuration.boundObservationOrbits = 8.0;
     configuration.boundObservationTimeCap = 2.0e-16;
+    configuration.eventWallClockBudgetSeconds = 20.0;
     return configuration;
 }
 
@@ -2510,7 +2539,10 @@ InteractionEvent simulateInteractionEvent(
     double minimumSeparation = separation(state);
     bool passedClosestApproach = false;
     bool bound = false;
+    int captureAttempts = 0;
+    const double captureMargin = 0.05*configuration.meanKineticEnergy;
     double boundStartTime = 0.0;
+    double boundStartRadiatedEnergy = 0.0;
     double boundObservationTime = configuration.boundObservationTimeCap;
     // Welford accumulation of cos(mu_e, mu_p) over the bound phase.
     std::size_t alignmentCount = 0;
@@ -2519,6 +2551,8 @@ InteractionEvent simulateInteractionEvent(
 
     constexpr double reducedMass = electronMass*positronMass
                                  / (electronMass + positronMass);
+    const auto wallClockStart = std::chrono::steady_clock::now();
+    long stepCounter = 0;
     const auto finish = [&](InteractionOutcome outcome, const State& endpoint) {
         result.outcome = outcome;
         result.minimumSeparation = minimumSeparation;
@@ -2555,6 +2589,17 @@ InteractionEvent simulateInteractionEvent(
         }
         if (!(dt > 0.0) || !std::isfinite(dt)) return finish(
             InteractionOutcome::NumericalFailure, state);
+        // Checked every 8 steps: inside the dipole barrier a single adaptive
+        // step costs about a second, so a coarser interval would let an event
+        // overshoot its budget by a minute before the gate noticed.
+        if ((++stepCounter & 0x7) == 0
+            && configuration.eventWallClockBudgetSeconds > 0.0) {
+            const double spent = std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - wallClockStart).count();
+            if (spent > configuration.eventWallClockBudgetSeconds) {
+                return finish(InteractionOutcome::Unresolved, state);
+            }
+        }
         const State beforeStep = state;
         if (!trajectory.advance(state, dt)) return finish(
             InteractionOutcome::NumericalFailure, beforeStep);
@@ -2580,11 +2625,18 @@ InteractionEvent simulateInteractionEvent(
         if (dot(relative, state.electronVelocity - state.positronVelocity) > 0.0) {
             passedClosestApproach = true;
         }
-        if (!bound && passedClosestApproach) {
-            const double boundEnergy = conservativeParticleEnergy(state);
-            if (boundEnergy < 0.0) {
+        // Require the pair to be bound by a finite margin, not merely to have
+        // crossed zero.  Near the turning point the Coulomb energy hovers
+        // around zero, and a bare "< 0" test lets a marginal pair enter and
+        // leave the bound branch hundreds of times, each cycle paying for a
+        // full observation window.  The retry limit is a second backstop.
+        if (!bound && passedClosestApproach && captureAttempts < 3) {
+            const double boundEnergy = coulombPairEnergy(state);
+            if (boundEnergy < -captureMargin) {
+                ++captureAttempts;
                 bound = true;
                 boundStartTime = state.time;
+                boundStartRadiatedEnergy = state.radiatedEnergy;
                 // Kepler period of the captured orbit, from its semi-major
                 // axis a = -k/(2E).  Averaging over a fixed number of orbits
                 // costs a fixed number of adaptive steps at any binding energy.
@@ -2609,6 +2661,37 @@ InteractionEvent simulateInteractionEvent(
                 alignmentSecondMoment += delta*(alignment - alignmentMean);
             }
             if (state.time >= boundStartTime + boundObservationTime) {
+                // Orbit-averaged radiated power measured over the observation
+                // window closes the secular Coulomb inspiral to 0.01*a0.
+                const double observed = state.time - boundStartTime;
+                const double radiated = state.radiatedEnergy
+                                      - boundStartRadiatedEnergy;
+                const double finalEnergy = coulombPairEnergy(state);
+                if (!(finalEnergy < 0.0)) {
+                    // Marginal capture that drifted back above threshold: the
+                    // pair was never really bound, so let it run on and be
+                    // classified by whatever it does next.
+                    bound = false;
+                    alignmentCount = 0;
+                    alignmentMean = 0.0;
+                    alignmentSecondMoment = 0.0;
+                    continue;
+                }
+                if (observed > 0.0 && radiated > 0.0) {
+                    const double power = radiated/observed;
+                    const double semiMajorAxis =
+                        -coulombStrength/(2.0*finalEnergy);
+                    result.boundRadiatedPowerWatts = power;
+                    if (semiMajorAxis > chargeCloudRestRadius) {
+                        const double ratio =
+                            chargeCloudRestRadius/semiMajorAxis;
+                        const double collapse = (-finalEnergy)/(3.0*power)
+                            *(1.0 - ratio*ratio*ratio);
+                        if (collapse > 0.0 && std::isfinite(collapse)) {
+                            result.collapseTimeSeconds = collapse;
+                        }
+                    }
+                }
                 // Parallel magnetic moments correspond to antiparallel spins,
                 // i.e. the singlet.  The 0.5 threshold on an initially isotropic
                 // relative orientation also reproduces the 1:3 para:ortho
@@ -3533,9 +3616,22 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     std::vector<double> boundEnergies, boundImpacts, boundAlignments;
     std::vector<double> boundAlignmentSpreads;
     std::vector<double> identityResiduals, reactionFractions;
+    std::vector<double> collapseTimesPs;
+    // Per-class means of the sampled beam parameters.  The contrast between
+    // classes is the point: capture selects small impact parameters, so a
+    // single overall mean would hide the mechanism.
+    std::array<double,6> energySums{}, impactSums{};
+    std::array<int,6> classSamples{};
     for (const InteractionEvent& event : events) {
         for (std::size_t slot = 0; slot < outcomeOrder.size(); ++slot) {
-            if (event.outcome == outcomeOrder[slot]) ++outcomeCounts[slot];
+            if (event.outcome != outcomeOrder[slot]) continue;
+            ++outcomeCounts[slot];
+            if (std::isfinite(event.kineticEnergyEv)
+                && std::isfinite(event.impactParameter)) {
+                energySums[slot] += event.kineticEnergyEv;
+                impactSums[slot] += event.impactParameter*1.0e12;
+                ++classSamples[slot];
+            }
         }
         if (std::isfinite(event.kineticEnergyEv)) {
             allEnergies.push_back(event.kineticEnergyEv);
@@ -3552,6 +3648,9 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             boundAlignments.push_back(event.dipoleAlignment);
             if (std::isfinite(event.dipoleAlignmentSpread)) {
                 boundAlignmentSpreads.push_back(event.dipoleAlignmentSpread);
+            }
+            if (std::isfinite(event.collapseTimeSeconds)) {
+                collapseTimesPs.push_back(event.collapseTimeSeconds*1.0e12);
             }
         }
         if (!event.diagnosticsValid) continue;
@@ -3602,6 +3701,41 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     }
     std::cout << "Para = parallel magnetic moments (antiparallel spins, S=0); "
                  "ortho = antiparallel moments (S=1).\n";
+
+    const auto mean = [](const std::vector<double>& values) {
+        if (values.empty()) return std::numeric_limits<double>::quiet_NaN();
+        return std::accumulate(values.begin(), values.end(), 0.0)
+             / static_cast<double>(values.size());
+    };
+    std::cout << "\nSampled beam parameters:\n"
+              << "  all trajectories   <K_CM> = " << mean(allEnergies)
+              << " eV,  <b> = " << mean(allImpacts) << " pm\n";
+    for (std::size_t slot = 0; slot < 4; ++slot) {
+        if (classSamples[slot] == 0) continue;
+        std::ostringstream line;
+        line << "  " << std::left << std::setw(18)
+             << interactionOutcomeName(outcomeOrder[slot]) << std::right
+             << "<K_CM> = " << energySums[slot]/classSamples[slot]
+             << " eV,  <b> = " << impactSums[slot]/classSamples[slot] << " pm";
+        std::cout << line.str() << '\n';
+    }
+
+    if (!collapseTimesPs.empty()) {
+        const auto extremes = std::minmax_element(
+            collapseTimesPs.begin(), collapseTimesPs.end());
+        std::cout << "\nBound-state CREM collapse time (" << collapseTimesPs.size()
+                  << " of " << boundTotal << " bound events):\n"
+                  << "  minimum " << *extremes.first << " ps\n"
+                  << "  mean    " << mean(collapseTimesPs) << " ps\n"
+                  << "  maximum " << *extremes.second << " ps\n"
+                  << "This is the extrapolated classical inspiral time to "
+                     "0.01*a0 from the orbit-averaged radiated power, the same\n"
+                     "secular model as experiments 1 and 2.  It is NOT a "
+                     "quantum annihilation lifetime.\n";
+    } else if (boundTotal > 0) {
+        std::cout << "\nNo bound event yielded a finite collapse time "
+                     "(needs negative energy and positive radiated power).\n";
+    }
     if (outcomeCounts[4] > 0 || outcomeCounts[5] > 0) {
         std::cerr << "Warning: " << outcomeCounts[4] << " unresolved and "
                   << outcomeCounts[5] << " failed trajectories are excluded "
@@ -3674,7 +3808,20 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     summaryLines.push_back("Collision: r reached "
         + compactNumber(nuclearCutoff*1.0e12, 3) + " pm");
     summaryLines.push_back("Para: parallel #mu (S=0); Ortho: antiparallel #mu");
-    drawAnalysisBox(analysisBoxes, 0.45, 0.52, 0.95, 0.91, summaryLines, 0.021);
+    summaryLines.push_back("all: #LTK_{CM}#GT = "
+        + compactNumber(mean(allEnergies), 4) + " eV, #LTb#GT = "
+        + compactNumber(mean(allImpacts), 4) + " pm");
+    if (!collapseTimesPs.empty()) {
+        const auto extremes = std::minmax_element(
+            collapseTimesPs.begin(), collapseTimesPs.end());
+        summaryLines.push_back("bound CREM collapse time [ps]:");
+        summaryLines.push_back("  min / mean / max = "
+            + compactNumber(*extremes.first, 3) + " / "
+            + compactNumber(mean(collapseTimesPs), 3) + " / "
+            + compactNumber(*extremes.second, 3));
+        summaryLines.push_back("  classical inspiral, not annihilation");
+    }
+    drawAnalysisBox(analysisBoxes, 0.42, 0.42, 0.96, 0.91, summaryLines, 0.019);
 
     const double energyLower = std::max(0.0,
         configuration.meanKineticEnergy/eCharge - 4.0*energySigmaEv);
@@ -3706,7 +3853,9 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             + " / " + compactNumber(energyMoments.sigma, 4) + " eV",
         "green: subset that formed positronium",
         "bound fraction = " + compactNumber(
-            100.0*boundTotal/std::max(runCount, 1), 3) + "%"
+            100.0*boundTotal/std::max(runCount, 1), 3) + "%",
+        "#LTK_{CM}#GT bound = " + compactNumber(mean(boundEnergies), 4)
+            + " eV vs all = " + compactNumber(mean(allEnergies), 4) + " eV"
     }, 0.022);
 
     const double impactUpper = std::max(1.0e-3,
@@ -3732,9 +3881,11 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             configuration.impactParameterSigma*1.0e12, 4) + " pm)|"
             + (impactSigmaPm > 0.0 ? "" : " (auto = l_{C})"),
         "half-normal, centred on a head-on collision",
-        "median b = " + compactNumber(sampleQuantile(allImpacts, 0.5), 4)
-            + " pm",
-        "green: subset that formed positronium"
+        "#LTb#GT = " + compactNumber(mean(allImpacts), 4)
+            + " pm, median = " + compactNumber(
+                sampleQuantile(allImpacts, 0.5), 4) + " pm",
+        "green: subset that formed positronium",
+        "#LTb#GT bound = " + compactNumber(mean(boundImpacts), 4) + " pm"
     }, 0.022);
 
     TH1D alignmentHistogram("interaction_dipole_alignment",
@@ -3875,12 +4026,17 @@ int main(int argc, char** argv) {
     int angleBins = 10;
     double impactParameterMaximumPm = 0.0;
     double matchingRadiusPm = 0.0;
-    // Experiment 5. The defaults put the sampled energy in the range where
-    // radiative capture into a bound pair actually happens in this model, and
-    // the impact parameter close enough to head-on to reach it.
-    double interactionEnergyEv = 10.0;
-    double interactionEnergySigmaEv = 4.0;
-    double interactionImpactSigmaPm = 0.0;  // zero selects sigma = l_C
+    // Experiment 5.  A mean of 1 eV sits well below the 6.8 eV Ps binding
+    // energy, so the pair has to shed correspondingly less energy to bind and
+    // the captured fraction rises.  The impact-parameter width follows the
+    // Coulomb length automatically, which scales as 1/K_CM.
+    double interactionEnergyEv = 1.0;
+    double interactionEnergySigmaEv = 0.4;
+    // Fixed in absolute terms, NOT tied to the Coulomb length: l_C scales as
+    // 1/K_CM, so an auto width would widen faster than the capture threshold
+    // and lowering the energy would produce fewer bound states, not more.
+    // Zero still selects the l_C rule for anyone who wants that scaling.
+    double interactionImpactSigmaPm = 72.0;
     try {
         for (int i = 1; i < argc; ++i) {
             const std::string argument = argv[i];
