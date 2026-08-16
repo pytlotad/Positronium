@@ -3938,7 +3938,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     distributionsPage.Draw();
     diagnosticsPage.Draw();
     distributionsPage.cd();
-    distributionsPage.Divide(2, 2, 0.006, 0.006);
+    distributionsPage.Divide(2, 3, 0.006, 0.006);
     diagnosticsPage.cd();
     diagnosticsPage.Divide(1, 1, 0.006, 0.006);
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
@@ -4182,6 +4182,94 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         "label reflects the initial random orientation."
     }, 0.019);
 
+    // Annihilation-time spectrum for each bound classification, drawn from the
+    // MEASURED decay rate of that state.  Experiment 5 decides which of the two
+    // a captured pair is, so each class gets the spectrum that actually applies
+    // to it.  The two lifetimes differ by a factor of about 1135, which is why
+    // they cannot share one axis and get a panel each.
+    std::vector<std::unique_ptr<TF1>> boundSpectra;
+    std::vector<std::unique_ptr<TLine>> boundCollapseMarkers;
+    const std::array<std::size_t,2> boundSlots{2, 3};
+    const std::array<const char*,2> boundValueIds{
+        "para_lifetime_from_rate", "ortho_lifetime_from_rate"};
+    const std::array<const char*,2> boundRateIds{
+        "para_decay_rate_measurement", "ortho_decay_rate_measurement"};
+    const std::array<const char*,2> boundUnits{"ps", "ns"};
+    const std::array<const char*,2> boundSources{
+        "Al-Ramadhan & Gidley, PRL 72 (1994)",
+        "Vallery et al., PRL 90 (2003)"};
+    const std::array<double,2> boundToPlotUnit{1.0, 1.0e-3};
+    for (std::size_t index = 0; index < boundSlots.size(); ++index) {
+        const std::size_t slot = boundSlots[index];
+        const statistics_archive::ScientificValue& lifetime =
+            statistics_archive::scientificValue(boundValueIds[index]);
+        const statistics_archive::ScientificValue& rate =
+            statistics_archive::scientificValue(boundRateIds[index]);
+        const double upper = 6.0*lifetime.value;
+        auto spectrum = std::make_unique<TF1>(
+            ("interaction_annihilation_" + std::to_string(index)).c_str(),
+            "exp(-x/[0])/[0]", 0.0, upper);
+        spectrum->SetParameter(0, lifetime.value);
+        spectrum->SetLineColor(plot_style::experimental());
+        spectrum->SetLineWidth(3);
+        spectrum->SetNpx(600);
+        std::ostringstream title;
+        title << interactionOutcomeName(outcomeOrder[slot])
+              << " annihilation-time spectrum from the measured rate;t ["
+              << boundUnits[index] << "];(1/N) dN/dt ["
+              << boundUnits[index] << "^{-1}]";
+        spectrum->SetTitle(title.str().c_str());
+        distributionsPage.cd(static_cast<int>(5 + index));
+        gPad->SetGrid();
+        spectrum->Draw("L");
+        // Mean CREM collapse time of the events actually classified into this
+        // class, converted into the panel's time unit.
+        double classCollapseMean = std::numeric_limits<double>::quiet_NaN();
+        std::vector<double> classCollapse;
+        for (const InteractionEvent& event : events) {
+            if (event.outcome != outcomeOrder[slot]) continue;
+            if (std::isfinite(event.collapseTimeSeconds)) {
+                classCollapse.push_back(event.collapseTimeSeconds*1.0e12
+                                        *boundToPlotUnit[index]);
+            }
+        }
+        if (!classCollapse.empty()) {
+            classCollapseMean = std::accumulate(classCollapse.begin(),
+                classCollapse.end(), 0.0)/classCollapse.size();
+            if (classCollapseMean > 0.0 && classCollapseMean < upper) {
+                auto marker = std::make_unique<TLine>(classCollapseMean, 0.0,
+                    classCollapseMean, 1.0/lifetime.value);
+                marker->SetLineColor(plot_style::crem());
+                marker->SetLineWidth(2);
+                marker->SetLineStyle(2);
+                marker->Draw();
+                boundCollapseMarkers.push_back(std::move(marker));
+            }
+        }
+        drawAnalysisBox(analysisBoxes, 0.38, 0.50, 0.95, 0.91, {
+            plot_style::key(true, false, true, false),
+            "Measured data, drawn analytically - no Monte Carlo.",
+            std::string("Applies to the ")
+                + interactionOutcomeName(outcomeOrder[slot]) + " class:",
+            "events classified here = "
+                + std::to_string(outcomeCounts[slot]),
+            "#lambda = " + compactNumber(rate.value, 6) + " #pm "
+                + compactNumber(rate.totalUncertainty, 2) + " " + rate.unit,
+            "#tau_{exp} = " + compactNumber(lifetime.value) + " #pm "
+                + compactNumber(lifetime.totalUncertainty) + " "
+                + boundUnits[index],
+            boundSources[index],
+            classCollapse.empty()
+                ? std::string("no CREM collapse time in this class")
+                : "blue dashed: CREM collapse #LTt#GT = "
+                    + compactNumber(classCollapseMean, 3) + " "
+                    + boundUnits[index],
+            "Classical inspiral and quantum annihilation are",
+            "different processes; this sets the scale."
+        }, 0.0185);
+        boundSpectra.push_back(std::move(spectrum));
+    }
+
     TPaveText diagnosticSummary(0.07, 0.20, 0.93, 0.80, "NDC");
     diagnosticSummary.SetFillColorAlpha(kWhite, 0.95);
     diagnosticSummary.SetTextAlign(12);
@@ -4220,6 +4308,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         {distributionsPage.GetPad(2), 1, 2, "collision_energy"},
         {distributionsPage.GetPad(3), 1, 3, "impact_parameter"},
         {distributionsPage.GetPad(4), 1, 4, "dipole_alignment"},
+        {distributionsPage.GetPad(5), 1, 5, "annihilation_time_para"},
+        {distributionsPage.GetPad(6), 1, 6, "annihilation_time_ortho"},
         {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_summary"}
     }));
     bool persistenceOk = reportArchiveOperation(
@@ -4273,8 +4363,11 @@ int main(int argc, char** argv) {
     int selectedMode = 0;
     VisualStyle visualStyle = VisualStyle::Unselected;
     int selectedPhenomenon = 0;
-    int statisticalRuns = 100;
-    bool statisticalRunsExplicit = false;
+    // One sample size for every statistical experiment.  The per-experiment
+    // preview overrides that used to sit below made the default depend on which
+    // channel was selected, which is a poor property for a number that appears
+    // on every plot as "N =".
+    int statisticalRuns = 1000;
     double beamEnergyEv = 20.0;
     double thetaMinimumDegrees = 5.0;
     int angleBins = 10;
@@ -4314,7 +4407,6 @@ int main(int argc, char** argv) {
                 selectedPhenomenon = std::stoi(requireValue(argument));
             } else if (argument == "--runs") {
                 statisticalRuns = std::stoi(requireValue(argument));
-                statisticalRunsExplicit = true;
             } else if (argument == "--decay-events") {
                 (void)requireValue(argument);
                 throw std::invalid_argument(
@@ -4422,15 +4514,8 @@ int main(int argc, char** argv) {
         }
     }
     if (selectedMode == 2) {
-        if(!statisticalRunsExplicit&&selectedPhenomenon>=3
-           &&selectedPhenomenon<=4) {
-            statisticalRuns=selectedPhenomenon==3?20:100;
-            std::cout<<"Beam-statistics preview: using "<<statisticalRuns
-                     <<" trajectories; "
-                       "override with --runs N.\n";
-        }
-        const int maximumStatisticalRuns=selectedPhenomenon<=2?100
-            :(selectedPhenomenon==5?10000:100000);
+        const int maximumStatisticalRuns=selectedPhenomenon<=2?10000
+            :(selectedPhenomenon==5?100000:100000);
         if (statisticalRuns < 1 || statisticalRuns > maximumStatisticalRuns) {
             std::cerr << "The number of CREM trajectories/beam trials must be from 1 to "
                       <<maximumStatisticalRuns<<" for this experiment.\n";

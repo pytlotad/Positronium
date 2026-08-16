@@ -920,8 +920,8 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    animację 3D z liniami torów, cząstkami i momentami magnetycznymi. Wariant
    `Dot` pokazuje wyłącznie próbki położenia: ciemnoniebieskie dla elektronu
    i pomarańczowe dla pozytonu.
-2. `Statistical analysis` wykonuje domyślnie 100 kalibracji CREM dla kanałów 1/2
-   oraz szybki podgląd 20/100 trajektorii odpowiednio dla kanałów 3/4.
+2. `Statistical analysis` wykonuje domyślnie **1000 trajektorii w każdym
+   eksperymencie statystycznym**.
    Eksperyment 5 (`Interactions`) wystrzeliwuje 100 par naprzeciw siebie z
    gaussowsko losowaną energią i półgaussowskim parametrem zderzenia, po czym
    klasyfikuje każdą trajektorię jako `Collision`, `Scattering`,
@@ -1288,8 +1288,8 @@ wiązki e⁺e⁻. Tryb, wybór eksperymentu i ziarno można podać bez interakcj
 ```bash
 ./positronium --mode visual --visual-style line --phenomenon 2 --seed 42
 ./positronium --mode visual --visual-style dot --phenomenon 2 --seed 42
-./positronium --mode statistical --phenomenon 1 --runs 100 --seed 42
-./positronium --mode statistical --phenomenon 4 --runs 100 --seed 42 \
+./positronium --mode statistical --phenomenon 1 --runs 1000 --seed 42
+./positronium --mode statistical --phenomenon 4 --runs 1000 --seed 42 \
     --beam-energy-ev 20 --theta-min-deg 5 --angle-bins 10
 ```
 
@@ -1300,7 +1300,7 @@ otwierania okna ROOT, ale nadal renderuje i zapisuje pliki PDF, co jest
 przydatne w obliczeniach wsadowych:
 
 ```bash
-./positronium --mode statistical --phenomenon 2 --runs 100 \
+./positronium --mode statistical --phenomenon 2 --runs 1000 \
     --seed 42 --no-gui
 ```
 

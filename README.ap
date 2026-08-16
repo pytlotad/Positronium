@@ -161,7 +161,8 @@ potem kończy aplikację.
 ### 5.3 Statistical 1 — para-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 1 --runs 100 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 1 --runs 1000 \
+    --seed 12345 --no-gui
 ```
 
 Każda realizacja całkuje kilka orbit pełnym modelem CREM, mierzy uśrednioną
@@ -175,7 +176,8 @@ maksymalna próbka trajektorii CREM obejmuje 100 przebiegów.
 ### 5.4 Statistical 2 — orto-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 2 --runs 100 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 2 --runs 1000 \
+    --seed 12345 --no-gui
 ```
 
 Czas kolapsu jest wyznaczany tą samą metodą CREM co w eksperymencie 1, dla
@@ -213,7 +215,7 @@ wprost razem ze stosunkiem `tau_exp/<t_collapse>`.
 ### 5.4a Statistical 5 — Interactions
 
 ```text
-./positronium --mode statistical --phenomenon 5 --runs 100 --seed 42 --no-gui
+./positronium --mode statistical --phenomenon 5 --runs 1000 --seed 42 --no-gui
 ```
 
 Elektron i pozyton są wystrzeliwane naprzeciw siebie z odległości `50*a0`.
@@ -313,7 +315,8 @@ limit tam nie działa i ich wyniki są bit-identyczne.
 ### 5.5 Statistical 3 — kanał krótkiego zasięgu
 
 ```text
-./positronium --mode statistical --phenomenon 3 --runs 20 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 3 --runs 1000 \
+    --seed 12345 --no-gui
 ```
 
 Program losuje parametr zderzenia równomiernie po powierzchni i całkuje każdą
@@ -329,7 +332,8 @@ statystyczną i czas obliczeń.
 ### 5.6 Statistical 4 — rozpraszanie elastyczne
 
 ```text
-./positronium --mode statistical --phenomenon 4 --runs 100 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 4 --runs 1000 \
+    --seed 12345 --no-gui
 ```
 
 Program estymuje różniczkowy i skumulowany przekrój elastyczny oraz porównuje
@@ -356,8 +360,11 @@ i `LL/coherent dE`: `|E_bound|/E_rad` oraz `|dE|/E_rad`.
 - `--phenomenon 1|2|3|4` — numer eksperymentu;
 - `--visual-style line|dot` — styl Visual;
 - `--seed UINT64` — deterministyczne ziarno;
-- `--runs` — liczba trajektorii: maksymalnie 100 dla kalibracji CREM w 1/2
-  i 100 000 dla trajektorii wiązki w 3/4;
+- `--runs N` — liczba trajektorii, domyślnie **1000 dla każdego eksperymentu
+  statystycznego**. Maksimum to 10 000 dla kalibracji CREM w 1/2 i 100 000 dla
+  eksperymentów wiązkowych 3/4/5. Wcześniej domyślna wartość zależała od
+  wybranego kanału (20 albo 100), co jest złą własnością liczby, która trafia na
+  każdy wykres jako `N =`;
 - `--interaction-energy-ev VALUE` — średnia `K_CM` w eksperymencie 5,
   domyślnie 1;
 - `--interaction-energy-sigma-ev VALUE` — sigma rozkładu energii, domyślnie 0,4;
@@ -566,6 +573,14 @@ tam kolory rozróżniają elektron i pozyton.
 - `impact_parameter` — wylosowane `b` z tym samym podzbiorem;
 - `dipole_alignment` — uśredniony po orbitach `cos(mu_e, mu_p)` stanów
   związanych z progiem para/orto w `+0.5`;
+- `annihilation_time_para`, `annihilation_time_ortho` — widmo czasu anihilacji
+  osobno dla każdej z dwóch klas związanych eksperymentu 5, zbudowane z
+  **zmierzonej szybkości zaniku tego właśnie stanu** i rysowane analitycznie.
+  Eksperyment 5 rozstrzyga, którą z klas jest wychwycona para, więc każda
+  dostaje widmo, które faktycznie jej dotyczy. Oba czasy życia różnią się około
+  1135 razy, dlatego nie mieszczą się na jednej osi i mają panel każdy. Panel
+  podaje liczbę zdarzeń przypisanych do klasy i średni czas kolapsu CREM
+  wyłącznie tych zdarzeń;
 
 Wykresy eksperymentu 5 używają jednej palety we wszystkich panelach, po jednym
 kolorze na klasyfikację: czerwony `Collision`, niebieski `Scattering`, zielony
