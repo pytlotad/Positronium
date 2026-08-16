@@ -506,8 +506,8 @@ przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
   faktyczna granica rozdzielczości raportowanej energii wypromieniowanej;
 - `outcome_summary` — histogram liczności wszystkich sześciu klasyfikacji
   eksperymentu 5, łącznie z `Unresolved` i `NumericalFailure`. Klasy
-  ocenzurowane są pokazywane celowo: przy dużym udziale `Unresolved` wykres z samymi czterema
-  klasami fizycznymi sugerowałby, że dzielą one 100% próbki;
+  ocenzurowane są pokazywane celowo: przy dużym udziale `Unresolved` wykres
+  z samymi klasami fizycznymi sugerowałby, że dzielą one 100% próbki;
 - `collision_energy` — wylosowana `K_CM` z zaznaczonym podzbiorem, który
   utworzył pozytonium;
 - `impact_parameter` — wylosowane `b` z tym samym podzbiorem;
