@@ -11,6 +11,7 @@
 #include <THStack.h>
 #include <TButton.h>
 #include <TCanvas.h>
+#include <TColor.h>
 #include <TF1.h>
 #include <TGraph.h>
 #include <TGraphErrors.h>
@@ -1256,6 +1257,65 @@ int histogramBins(size_t count, int maximumBins = 30) {
                       6, maximumBins);
 }
 
+// ---------------------------------------------------------------------------
+// Plot colour convention.
+//
+// Every line, marker set and legend entry is coloured by WHERE ITS NUMBERS COME
+// FROM, so one glance at any panel says what kind of statement it makes:
+//
+//   CREM simulation     blue         trajectories integrated by this program
+//   sampled input       orange       quantities drawn from a random distribution
+//   experimental        bluish green published measurements
+//   theory / analytic   vermillion   closed-form reference curves
+//
+// The hues are the Okabe-Ito colour-vision-deficiency-safe palette rather than
+// plain red/green/blue.  Plain red and green are precisely the pair that the
+// roughly 8% of men with deuteranopia cannot separate, and here they would have
+// carried the two most important comparisons.  Line and marker STYLE repeats
+// the same information, so the panels survive greyscale printing too.
+//
+// Fill colour is reserved for classification (experiment 5) and uses pale tints
+// that cannot be mistaken for the saturated provenance outlines.
+namespace plot_style {
+
+int crem()         { return TColor::GetColor("#0072B2"); }
+int sampled()      { return TColor::GetColor("#E69F00"); }
+int experimental() { return TColor::GetColor("#009E73"); }
+int theory()       { return TColor::GetColor("#D55E00"); }
+
+// Pale classification fills, in the order of InteractionOutcome.
+int classificationFill(std::size_t slot) {
+    static const std::array<const char*,6> tints{
+        "#E8A0A0",  // Collision
+        "#8FC3E8",  // Scattering
+        "#8FD1B0",  // Para-Positronium
+        "#C9A0DC",  // Ortho-Positronium
+        "#BEBEBE",  // Unresolved
+        "#EBC17A"}; // NumericalFailure
+    return TColor::GetColor(tints[std::min(slot, tints.size() - 1)]);
+}
+
+// Legend text naming only the provenances a given panel actually contains, so
+// the key stays short and never claims something the panel does not show.
+std::string key(bool hasCrem, bool hasSampled, bool hasExperimental,
+                bool hasTheory) {
+    std::string result = "colours: ";
+    bool first = true;
+    const auto add = [&](bool present, const char* text) {
+        if (!present) return;
+        if (!first) result += ", ";
+        result += text;
+        first = false;
+    };
+    add(hasCrem, "blue CREM");
+    add(hasSampled, "orange sampled");
+    add(hasExperimental, "green measured");
+    add(hasTheory, "vermillion theory");
+    return result;
+}
+
+} // namespace plot_style
+
 void styleHistogram(TH1D& histogram, int color) {
     histogram.SetDirectory(nullptr);
     histogram.SetLineColor(color);
@@ -1591,20 +1651,21 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     lifetimeTitle<<"CREM collapse survival and experimental comparison;t ["
                  <<timeUnit<<"];Survival fraction";
     lifetimeSurvival.SetTitle(lifetimeTitle.str().c_str());
-    lifetimeSurvival.SetLineColor(kOrange+7);
-    lifetimeSurvival.SetMarkerColor(kOrange+7);
+    lifetimeSurvival.SetLineColor(plot_style::crem());
+    lifetimeSurvival.SetMarkerColor(plot_style::crem());
     lifetimeSurvival.SetMarkerStyle(20);
     lifetimeSurvival.SetMarkerSize(0.65);
     TF1 experimentalCurve("experimental_lifetime_distribution", "exp(-x/[0])",
                           lifetimeLower, lifetimeUpper);
     experimentalCurve.SetParameter(0,experimentalLifetime);
-    experimentalCurve.SetLineColor(kRed + 1);
-    experimentalCurve.SetLineWidth(2);
+    experimentalCurve.SetLineColor(plot_style::experimental());
+    experimentalCurve.SetLineWidth(3);
+    experimentalCurve.SetLineStyle(3);
     TF1 fittedLifetime("fitted_lifetime_distribution", "exp(-x/[0])",
                        lifetimeLower, lifetimeUpper);
     const double displayedFittedLifetime = estimatedLifetime*timeScale;
     fittedLifetime.SetParameter(0,displayedFittedLifetime);
-    fittedLifetime.SetLineColor(kBlue + 1);
+    fittedLifetime.SetLineColor(plot_style::crem());
     fittedLifetime.SetLineWidth(2);
     fittedLifetime.SetLineStyle(2);
 
@@ -1621,8 +1682,9 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             2.0/((pi*pi - 9.0)*photonEndpoint), photonEndpoint);
         orePowellTemplate->SetParName(0, "normalization");
         orePowellTemplate->SetParName(1, "endpoint_keV");
-        orePowellTemplate->SetLineColor(kBlue + 1);
+        orePowellTemplate->SetLineColor(plot_style::theory());
         orePowellTemplate->SetLineWidth(3);
+        orePowellTemplate->SetLineStyle(2);
         orePowellTemplate->SetNpx(600);
         orePowellTemplate->SetTitle(
             "Ore-Powell inclusive 3#gamma spectrum (exact);"
@@ -1648,6 +1710,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             + " (SE of mean)",
         "sample #sigma/#LTt#GT = " + compactNumber(relativeSpread)
             + "  (narrow, NOT exponential)",
+        plot_style::key(true, false, true, false),
         "blue dashed: descriptive exp() through #LTt#GT - shape",
         "is illustrative only, the sample is not exponential.",
         "External comparison only:",
@@ -1673,7 +1736,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                              "exp(-x/[0])/[0]", 0.0, annihilationUpper);
     annihilationSpectrum.SetParameter(0, experimentalLifetime);
     annihilationSpectrum.SetParName(0, "tau");
-    annihilationSpectrum.SetLineColor(kRed + 1);
+    annihilationSpectrum.SetLineColor(plot_style::experimental());
     annihilationSpectrum.SetLineWidth(3);
     annihilationSpectrum.SetNpx(600);
     std::ostringstream annihilationTitle;
@@ -1692,12 +1755,13 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         collapseMarker = std::make_unique<TLine>(
             collapseMoments.mean, 0.0,
             collapseMoments.mean, 1.0/experimentalLifetime);
-        collapseMarker->SetLineColor(kBlue + 1);
+        collapseMarker->SetLineColor(plot_style::crem());
         collapseMarker->SetLineWidth(2);
         collapseMarker->SetLineStyle(2);
         collapseMarker->Draw();
     }
     drawAnalysisBox(analysisBoxes, 0.40, 0.50, 0.95, 0.91, {
+        plot_style::key(true, false, true, false),
         "Measured data, drawn analytically - no Monte Carlo.",
         "Decay law N(t) #propto exp(-t/#tau) with the published",
         "rate; the spectrum follows in closed form.",
@@ -1735,17 +1799,18 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         photonAxisFrame->Draw();
         idealPhotonLine = std::make_unique<TLine>(
             photonEndpoint, 0.0, photonEndpoint, 1.0);
-        idealPhotonLine->SetLineColor(kBlue + 1);
+        idealPhotonLine->SetLineColor(plot_style::theory());
         idealPhotonLine->SetLineWidth(3);
         idealPhotonLine->Draw();
         experimentalPhotonLine = std::make_unique<TLine>(
             photonEnergyReference.value, 0.0,
             photonEnergyReference.value, 1.0);
-        experimentalPhotonLine->SetLineColor(kRed + 1);
-        experimentalPhotonLine->SetLineWidth(2);
+        experimentalPhotonLine->SetLineColor(plot_style::experimental());
+        experimentalPhotonLine->SetLineWidth(3);
         experimentalPhotonLine->SetLineStyle(3);
         experimentalPhotonLine->Draw();
         drawAnalysisBox(analysisBoxes, 0.13, 0.55, 0.68, 0.91, {
+            plot_style::key(false, false, true, true),
             "Exact reference curve, no Monte Carlo.",
             "Two-body at-rest kinematics fixes both photons",
             "at E_{Ps}/2; there is nothing to sample.",
@@ -1761,6 +1826,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     } else {
         orePowellTemplate->Draw("L");
         drawAnalysisBox(analysisBoxes, 0.30, 0.55, 0.94, 0.91, {
+            plot_style::key(false, false, true, true),
             "Exact reference curve, no Monte Carlo.",
             "LO Ore-Powell F(E/E_{max}), normalized so that",
             "#int F dE = 1 per photon; free parameters: 0.",
@@ -1785,8 +1851,9 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             "para_angular_reference", "0.5*(1+[0]*0.5*(3*x*x-1))", -1.0, 1.0);
         paraAngularReference->SetParameter(0, anisotropyReference.value);
         paraAngularReference->SetParName(0, "a2");
-        paraAngularReference->SetLineColor(kGreen + 2);
+        paraAngularReference->SetLineColor(plot_style::theory());
         paraAngularReference->SetLineWidth(3);
+        paraAngularReference->SetLineStyle(2);
         paraAngularReference->SetMinimum(0.0);
         paraAngularReference->SetMaximum(1.0);
         paraAngularReference->SetTitle(
@@ -1796,6 +1863,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         gPad->SetGrid();
         paraAngularReference->Draw("L");
         drawAnalysisBox(analysisBoxes, 0.26, 0.58, 0.94, 0.91, {
+            plot_style::key(false, false, false, true),
             "Exact reference curve, no Monte Carlo.",
             "Unpolarized p-Ps has no preferred axis, so the",
             "density is flat in cos#theta: C[1+a_{2}P_{2}(cos#theta)]",
@@ -1836,7 +1904,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             "Angle between the two leading photons (exact);"
             "#theta_{12} [deg];(1/N) dN/d#theta_{12} [deg^{-1}]",
             120, 120.0, 180.0);
-        styleHistogram(*angularHistogram, kMagenta + 1);
+        styleHistogram(*angularHistogram, plot_style::theory());
+        angularHistogram->SetLineStyle(2);
         angularHistogram->SetStats(false);
         double quadratureNorm = 0.0;
         for (int i = 0; i < quadratureSteps; ++i) {
@@ -1875,6 +1944,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         gPad->SetRightMargin(0.14);
         dalitzHistogram->Draw("COLZ");
         drawAnalysisBox(analysisBoxes, 0.08, 0.66, 0.56, 0.91, {
+            plot_style::key(false, false, false, true),
             "Exact reference, no Monte Carlo.",
             "Ore-Powell density P #propto #Sigma_{ij}(1-cos#theta_{ij})^{2}",
             "integrated by deterministic quadrature",
@@ -1886,6 +1956,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         gPad->SetGrid();
         angularHistogram->Draw("HIST");
         drawAnalysisBox(analysisBoxes, 0.14, 0.62, 0.62, 0.91, {
+            plot_style::key(false, false, false, true),
             "Exact reference, no Monte Carlo.",
             "Ore-Powell density projected onto the angle",
             "between the two most energetic photons",
@@ -1918,7 +1989,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         "#LTP#GT [W];Trajectories",
         histogramBins(calibrationPowers.size()),
         powerLower - powerPadding, powerUpper + powerPadding);
-    styleHistogram(calibrationPowerHistogram, kOrange + 7);
+    styleHistogram(calibrationPowerHistogram, plot_style::crem());
     calibrationPowerHistogram.SetStats(false);
     for (double value : calibrationPowers) calibrationPowerHistogram.Fill(value);
     const GaussianFitSummary powerMoments =
@@ -3146,8 +3217,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         "Differential elastic cross section;#theta_{CM} [deg];d#sigma/d#Omega [barn/sr]",
         configuration.angleBins, angularEdges.data());
     angularCrossSection.SetDirectory(nullptr);
-    angularCrossSection.SetLineColor(kAzure + 1);
-    angularCrossSection.SetMarkerColor(kAzure + 1);
+    angularCrossSection.SetLineColor(plot_style::crem());
+    angularCrossSection.SetMarkerColor(plot_style::crem());
     angularCrossSection.SetMarkerStyle(20);
     for (const BeamEvent& event : events) {
         if (event.outcome == BeamOutcome::Escaped
@@ -3169,8 +3240,9 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     TH1D rutherfordHistogram("rutherford_bin_average",
         "Rutherford bin average", configuration.angleBins, angularEdges.data());
     rutherfordHistogram.SetDirectory(nullptr);
-    rutherfordHistogram.SetLineColor(kRed + 1);
-    rutherfordHistogram.SetLineWidth(2);
+    rutherfordHistogram.SetLineColor(plot_style::theory());
+    rutherfordHistogram.SetLineWidth(3);
+    rutherfordHistogram.SetLineStyle(2);
     rutherfordHistogram.SetFillStyle(0);
     double referenceMinimum = std::numeric_limits<double>::infinity();
     for (int bin = 1; bin <= angularCrossSection.GetNbinsX(); ++bin) {
@@ -3189,8 +3261,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     fittedRutherfordHistogram.SetName("rutherford_normalization_fit");
     fittedRutherfordHistogram.SetTitle("Fitted Rutherford-shape normalization");
     fittedRutherfordHistogram.Scale(rutherfordNormalization);
-    fittedRutherfordHistogram.SetLineColor(kBlue + 2);
-    fittedRutherfordHistogram.SetLineStyle(2);
+    fittedRutherfordHistogram.SetLineColor(plot_style::crem());
+    fittedRutherfordHistogram.SetLineStyle(7);
     fittedRutherfordHistogram.SetLineWidth(3);
 
     constexpr size_t cumulativePointCount = 100;
@@ -3229,18 +3301,19 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         cumulativeErrors.data());
     cumulativeGraph.SetTitle(
         "Cumulative elastic cross section (correlated thresholds);minimum #theta_{CM} [deg];#sigma(#theta #geq #theta_{min}) [barn]");
-    cumulativeGraph.SetLineColor(kGreen + 3);
-    cumulativeGraph.SetMarkerColor(kGreen + 3);
+    cumulativeGraph.SetLineColor(plot_style::crem());
+    cumulativeGraph.SetMarkerColor(plot_style::crem());
     cumulativeGraph.SetMarkerStyle(20);
     cumulativeGraph.SetMarkerSize(0.55);
     TGraph cumulativeRutherford(static_cast<int>(cumulativePointCount),
         cumulativeAngles.data(), cumulativeReference.data());
-    cumulativeRutherford.SetLineColor(kRed + 1);
-    cumulativeRutherford.SetLineWidth(2);
+    cumulativeRutherford.SetLineColor(plot_style::theory());
+    cumulativeRutherford.SetLineWidth(3);
+    cumulativeRutherford.SetLineStyle(2);
     TGraph cumulativeFit(static_cast<int>(cumulativePointCount),
         cumulativeAngles.data(), cumulativeFitted.data());
-    cumulativeFit.SetLineColor(kBlue + 2);
-    cumulativeFit.SetLineStyle(2);
+    cumulativeFit.SetLineColor(plot_style::crem());
+    cumulativeFit.SetLineStyle(7);
     cumulativeFit.SetLineWidth(3);
 
     std::unique_ptr<TH1D> energyLossSpectrum;
@@ -3259,8 +3332,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
             histogramBins(fiducialEnergyLossesEv.size()),
             energyLower, energyUpper);
         energyLossSpectrum->SetDirectory(nullptr);
-        energyLossSpectrum->SetLineColor(kMagenta + 1);
-        energyLossSpectrum->SetFillColorAlpha(kMagenta + 1, 0.45);
+        energyLossSpectrum->SetLineColor(plot_style::crem());
+        energyLossSpectrum->SetFillColorAlpha(plot_style::crem(), 0.35);
         energyLossSpectrum->Sumw2();
         const double energyWeight = sampledArea
             / (runCount * barn * energyLossSpectrum->GetBinWidth(1));
@@ -3293,6 +3366,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
             + compactNumber(rutherfordNormalizationError);
     }
     drawAnalysisBox(beamAnalysisBoxes, 0.12, 0.10, 0.57, 0.34, {
+        plot_style::key(true, false, false, true),
         "MC trajectories: N = " + std::to_string(runCount),
         "Fit: C_{R} d#sigma_{R}/d#Omega (binomial MLE)",
         normalizationEstimate,
@@ -3323,6 +3397,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                               "projection of panel-1 fit", "l");
     cumulativeLegend.Draw();
     drawAnalysisBox(beamAnalysisBoxes, 0.12, 0.10, 0.58, 0.32, {
+        plot_style::key(true, false, false, true),
         "MC trajectories: N = " + std::to_string(runCount),
         "Model: C_{R} #pi l_{C}^{2} cot^{2}(#theta/2)",
         "C_{R} from differential-panel fit = "
@@ -3458,9 +3533,9 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         ";log_{10}(|#Delta(J_{N}+J_{rad})|/J_{scale});Escaped trajectories",
         histogramBins(logAngularMomentumClosures.size()), -14.5,
         angularMomentumLogUpper);
-    styleHistogram(energyBalanceHistogram, kOrange + 7);
-    styleHistogram(momentumBalanceHistogram, kAzure + 1);
-    styleHistogram(angularMomentumBalanceHistogram, kMagenta + 1);
+    styleHistogram(energyBalanceHistogram, plot_style::crem());
+    styleHistogram(momentumBalanceHistogram, plot_style::crem());
+    styleHistogram(angularMomentumBalanceHistogram, plot_style::crem());
     energyBalanceHistogram.SetStats(false);
     momentumBalanceHistogram.SetStats(false);
     angularMomentumBalanceHistogram.SetStats(false);
@@ -3545,7 +3620,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                                          const std::vector<double>& independent) {
         const GaussianFitSummary fit = gaussianMaximumLikelihood(values);
         std::unique_ptr<TF1> curve = gaussianMleOverlay(
-            functionName, fit, histogram, kBlue + 1);
+            functionName, fit, histogram, plot_style::crem());
         if (curve) beamAnalysisFunctions.push_back(std::move(curve));
         std::vector<std::string> lines;
         if (fit.count == 0) {
@@ -3639,13 +3714,13 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
 
         // One colour per classification, used consistently in every panel so a
     // class can be recognised across the whole page without a second legend.
-    const std::array<int,6> outcomeColours{
-        kRed + 1,      // Collision
-        kAzure + 1,    // Scattering
-        kGreen + 2,    // Para-Positronium
-        kMagenta + 1,  // Ortho-Positronium
-        kGray + 2,     // Unresolved
-        kOrange + 7};  // NumericalFailure
+    // Classification lives in the FILL, in pale tints; the outline carries the
+    // provenance colour, so a panel says both "where these numbers came from"
+    // and "which class each part is" without the two competing.
+    std::array<int,6> outcomeColours{};
+    for (std::size_t slot = 0; slot < outcomeColours.size(); ++slot) {
+        outcomeColours[slot] = plot_style::classificationFill(slot);
+    }
     constexpr std::array<InteractionOutcome,6> outcomeOrder{
         InteractionOutcome::Collision, InteractionOutcome::Scattering,
         InteractionOutcome::ParaPositronium,
@@ -3832,7 +3907,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
                 outcomeCounts[static_cast<std::size_t>(slot)])));
     }
     outcomeHistogram.SetStats(false);
-    outcomeHistogram.SetLineColor(kGray + 3);
+    outcomeHistogram.SetLineColor(plot_style::crem());
     outcomeHistogram.SetLineWidth(2);
     outcomeHistogram.GetXaxis()->SetLabelSize(0.035);
     outcomeHistogram.SetMinimum(0.0);
@@ -3852,8 +3927,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         if (!(height > 0.0)) continue;
         auto bar = std::make_unique<TBox>(
             slot + 0.02, 0.0, slot + 0.98, height);
-        bar->SetFillColorAlpha(outcomeColours[slot], 0.80);
-        bar->SetLineColor(outcomeColours[slot]);
+        bar->SetFillColorAlpha(outcomeColours[slot], 0.95);
+        bar->SetLineColor(plot_style::crem());
         bar->SetLineWidth(2);
         bar->Draw("l");
         outcomeBars.push_back(std::move(bar));
@@ -3873,9 +3948,10 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     summaryLines.push_back("Collision: r reached "
         + compactNumber(nuclearCutoff*1.0e12, 3) + " pm");
     summaryLines.push_back("Para: parallel #mu (S=0); Ortho: antiparallel #mu");
-    summaryLines.push_back("colours (all panels): red Collision, blue");
-    summaryLines.push_back("Scattering, green Para, magenta Ortho,");
-    summaryLines.push_back("grey Unresolved, orange NumericalFailure");
+    summaryLines.push_back(plot_style::key(true, false, false, false));
+    summaryLines.push_back("outline = provenance, fill = class:");
+    summaryLines.push_back("Collision, Scattering, Para, Ortho,");
+    summaryLines.push_back("Unresolved, NumericalFailure (left to right)");
     summaryLines.push_back("all: #LTK_{CM}#GT = "
         + compactNumber(mean(allEnergies), 4) + " eV, #LTb#GT = "
         + compactNumber(mean(allImpacts), 4) + " pm");
@@ -3899,8 +3975,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         "Sampled centre-of-mass energy;K_{CM} [eV];Trajectories",
         histogramBins(allEnergies.size()), energyLower, energyUpper);
     energyHistogram.SetStats(false);
-    energyHistogram.SetLineColor(kGray + 3);
-    energyHistogram.SetLineWidth(2);
+    energyHistogram.SetLineColor(plot_style::sampled());
+    energyHistogram.SetLineWidth(3);
     energyHistogram.SetFillStyle(0);
     for (double value : allEnergies) energyHistogram.Fill(value);
     distributionsPage.cd(2);
@@ -3918,9 +3994,9 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             histogramBins(allEnergies.size()), energyLower, energyUpper);
         part->SetDirectory(nullptr);
         part->SetStats(false);
-        part->SetLineColor(outcomeColours[slot]);
-        part->SetLineWidth(2);
-        part->SetFillColorAlpha(outcomeColours[slot], 0.75);
+        part->SetLineColor(plot_style::crem());
+        part->SetLineWidth(1);
+        part->SetFillColorAlpha(outcomeColours[slot], 0.95);
         for (double value : classEnergies[slot]) part->Fill(value);
         energyStack.Add(part.get());
         energyByClass.push_back(std::move(part));
@@ -3935,7 +4011,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             + " / " + compactNumber(energySigmaEv, 4) + " eV",
         "sample #mu / #sigma = " + compactNumber(energyMoments.mean, 4)
             + " / " + compactNumber(energyMoments.sigma, 4) + " eV",
-        "stacked by class, outline = all trajectories",
+        plot_style::key(false, true, false, false),
+        "orange outline = sampled input, fill = class",
         "bound fraction = " + compactNumber(
             100.0*boundTotal/std::max(runCount, 1), 3) + "%",
         "#LTK_{CM}#GT bound = " + compactNumber(mean(boundEnergies), 4)
@@ -3948,8 +4025,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         "Sampled impact parameter;b [pm];Trajectories",
         histogramBins(allImpacts.size()), 0.0, impactUpper);
     impactHistogram.SetStats(false);
-    impactHistogram.SetLineColor(kGray + 3);
-    impactHistogram.SetLineWidth(2);
+    impactHistogram.SetLineColor(plot_style::sampled());
+    impactHistogram.SetLineWidth(3);
     impactHistogram.SetFillStyle(0);
     for (double value : allImpacts) impactHistogram.Fill(value);
     distributionsPage.cd(3);
@@ -3964,9 +4041,9 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             histogramBins(allImpacts.size()), 0.0, impactUpper);
         part->SetDirectory(nullptr);
         part->SetStats(false);
-        part->SetLineColor(outcomeColours[slot]);
-        part->SetLineWidth(2);
-        part->SetFillColorAlpha(outcomeColours[slot], 0.75);
+        part->SetLineColor(plot_style::crem());
+        part->SetLineWidth(1);
+        part->SetFillColorAlpha(outcomeColours[slot], 0.95);
         for (double value : classImpacts[slot]) part->Fill(value);
         impactStack.Add(part.get());
         impactByClass.push_back(std::move(part));
@@ -3982,7 +4059,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         "#LTb#GT = " + compactNumber(mean(allImpacts), 4)
             + " pm, median = " + compactNumber(
                 sampleQuantile(allImpacts, 0.5), 4) + " pm",
-        "stacked by class, outline = all trajectories",
+        plot_style::key(false, true, false, false),
+        "orange outline = sampled input, fill = class",
         "#LTb#GT bound = " + compactNumber(mean(boundImpacts), 4) + " pm"
     }, 0.022);
 
@@ -3991,7 +4069,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         "#LTcos(#mu_{e},#mu_{p})#GT over the bound phase;Events",
         histogramBins(boundAlignments.size()), -1.0, 1.0);
     alignmentHistogram.SetStats(false);
-    alignmentHistogram.SetLineColor(kGray + 3);
+    alignmentHistogram.SetLineColor(plot_style::crem());
     alignmentHistogram.SetLineWidth(2);
     alignmentHistogram.SetFillStyle(0);
     for (double value : boundAlignments) alignmentHistogram.Fill(value);
@@ -4012,12 +4090,12 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     }
     // The copies inherit the hollow fill style of the outline histogram, so
     // the solid style has to be restored or the class colours never show.
-    paraAlignmentPart.SetLineColor(outcomeColours[2]);
-    paraAlignmentPart.SetFillColorAlpha(outcomeColours[2], 0.75);
+    paraAlignmentPart.SetLineColor(plot_style::crem());
+    paraAlignmentPart.SetFillColorAlpha(outcomeColours[2], 0.95);
     paraAlignmentPart.SetFillStyle(1001);
     paraAlignmentPart.SetLineWidth(2);
-    orthoAlignmentPart.SetLineColor(outcomeColours[3]);
-    orthoAlignmentPart.SetFillColorAlpha(outcomeColours[3], 0.75);
+    orthoAlignmentPart.SetLineColor(plot_style::crem());
+    orthoAlignmentPart.SetFillColorAlpha(outcomeColours[3], 0.95);
     orthoAlignmentPart.SetFillStyle(1001);
     orthoAlignmentPart.SetLineWidth(2);
     THStack alignmentStack("interaction_alignment_stack", "");
@@ -4030,8 +4108,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         const double lineHeight = std::max(1.0,
             1.05*alignmentHistogram.GetMaximum());
         thresholdLine = std::make_unique<TLine>(0.5, 0.0, 0.5, lineHeight);
-        thresholdLine->SetLineColor(kRed + 1);
-        thresholdLine->SetLineWidth(2);
+        thresholdLine->SetLineColor(plot_style::theory());
+        thresholdLine->SetLineWidth(3);
         thresholdLine->SetLineStyle(2);
         thresholdLine->Draw();
     }
@@ -4040,8 +4118,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         : sampleQuantile(boundAlignmentSpreads, 0.5);
     drawAnalysisBox(analysisBoxes, 0.13, 0.55, 0.62, 0.91, {
         "Bound events: N = " + std::to_string(boundAlignments.size()),
-        "red dashed: para/ortho threshold at +0.5",
-        "green = Para (#geq0.5), magenta = Ortho (<0.5)",
+        plot_style::key(true, false, false, true),
+        "vermillion dashed: para/ortho threshold at +0.5",
         "para (#geq0.5) : ortho = " + std::to_string(outcomeCounts[2]) + " : "
             + std::to_string(outcomeCounts[3]),
         "isotropic expectation 1 : 3",

@@ -469,6 +469,40 @@ distributions/<experiment>_1_1_visual_simulation.pdf
 Jest to cała kanwa, nie pojedynczy histogram: scena, tabela, adnotacje i
 przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
 
+### 8.2a Konwencja kolorystyczna wykresów
+
+Każda linia, zbiór punktów i pozycja legendy jest kolorowana według
+**pochodzenia liczb**, żeby jedno spojrzenie na panel mówiło, jakiego rodzaju
+to twierdzenie:
+
+| kategoria | odcień | hex | styl |
+|---|---|---|---|
+| symulacja CREM | niebieski | `#0072B2` | linia ciągła, pełne markery |
+| dane losowane | pomarańczowy | `#E69F00` | obrys histogramu |
+| dane eksperymentalne | zielononiebieski | `#009E73` | markery, kropkowana |
+| dane teoretyczne / analityczne | cynobrowy | `#D55E00` | linia przerywana |
+
+Odcienie pochodzą z palety **Okabe–Ito (2008)**, standardowej palety bezpiecznej
+dla zaburzeń widzenia barw, a nie ze zwykłego czerwony/zielony/niebieski. Zwykła
+czerwień i zieleń to dokładnie ta para, której nie rozróżnia około 8% mężczyzn
+(deuteranopia), a niosłyby tu dwa najważniejsze porównania: teorię i pomiar.
+Styl linii i markera powtarza tę samą informację, więc panele działają również
+w druku odcieniami szarości.
+
+Wypełnienie jest zarezerwowane dla **klasyfikacji** (eksperyment 5) i używa
+bladych odcieni, których nie da się pomylić z nasyconymi obrysami pochodzenia.
+Dzięki temu jeden panel mówi równocześnie „skąd są te liczby" (obrys) i „która
+to klasa" (wnętrze). W eksperymencie 5 obrys rozkładów `K_CM` i `b` jest
+pomarańczowy, bo to wielkości losowane, a obrys `outcome_summary` i
+`dipole_alignment` niebieski, bo klasyfikacja jest wynikiem trajektorii CREM.
+
+Każde pole analizy zaczyna się linią `colours:` wymieniającą wyłącznie te
+kategorie, które faktycznie występują na danym panelu.
+
+Mapa kolorów `COLZ` na wykresie Dalitza jest skalą gęstości, a nie kategorią
+pochodzenia, i nie podlega tej konwencji. Scena 3D trybu Visual także nie —
+tam kolory rozróżniają elektron i pozyton.
+
 ### 8.3 Znaczenie najważniejszych obserwabli
 
 - `crem_collapse_time` — ekstrapolowany czas dojścia klasycznej trajektorii
