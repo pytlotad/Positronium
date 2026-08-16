@@ -7,6 +7,8 @@
 // Tadeusz Slawomir Pytlos (tadeusz.slawomir.pytlos@gmail.com).
 
 #include <TApplication.h>
+#include <TBox.h>
+#include <THStack.h>
 #include <TButton.h>
 #include <TCanvas.h>
 #include <TF1.h>
@@ -1497,6 +1499,12 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     const statistics_archive::ScientificValue& lifetimeReference =
         statistics_archive::scientificValue(isPara
             ? "para_lifetime_from_rate" : "ortho_lifetime_from_rate");
+    // The primary measured quantity is the decay rate; the lifetime above is
+    // its derived reciprocal.  Quote the rate too, since that is what was
+    // actually measured.
+    const statistics_archive::ScientificValue& rateReference =
+        statistics_archive::scientificValue(isPara
+            ? "para_decay_rate_measurement" : "ortho_decay_rate_measurement");
     const statistics_archive::ScientificValue& photonEnergyReference =
         statistics_archive::scientificValue("pdg_two_photon_energy");
     const statistics_archive::ScientificValue& anisotropyReference =
@@ -1550,7 +1558,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     distributionsPage.Draw();
     diagnosticsPage.Draw();
     distributionsPage.cd();
-    distributionsPage.Divide(2, 2, 0.006, 0.006);
+    distributionsPage.Divide(2, 3, 0.006, 0.006);
     diagnosticsPage.cd();
     diagnosticsPage.Divide(1, 2, 0.006, 0.006);
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
@@ -1655,7 +1663,60 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                : "Vallery et al., PRL 90 (2003)"
     }, 0.0165);
 
+    // Annihilation-time spectrum built from the MEASURED decay rate, drawn
+    // analytically.  The published rate is real data; turning it into a
+    // spectrum needs no Monte Carlo, because N(t) = exp(-t/tau)/tau is exactly
+    // what an exponential decay law with that rate implies.  Sampling it would
+    // only have added noise to a curve we already know in closed form.
+    const double annihilationUpper = 6.0*experimentalLifetime;
+    TF1 annihilationSpectrum("annihilation_time_spectrum",
+                             "exp(-x/[0])/[0]", 0.0, annihilationUpper);
+    annihilationSpectrum.SetParameter(0, experimentalLifetime);
+    annihilationSpectrum.SetParName(0, "tau");
+    annihilationSpectrum.SetLineColor(kRed + 1);
+    annihilationSpectrum.SetLineWidth(3);
+    annihilationSpectrum.SetNpx(600);
+    std::ostringstream annihilationTitle;
+    annihilationTitle << "Annihilation-time spectrum from the measured rate;t ["
+                      << timeUnit << "];(1/N) dN/dt [" << timeUnit << "^{-1}]";
+    annihilationSpectrum.SetTitle(annihilationTitle.str().c_str());
     distributionsPage.cd(2);
+    gPad->SetGrid();
+    annihilationSpectrum.Draw("L");
+    // The classical collapse time is orders of magnitude shorter, so the marker
+    // sits hard against the left edge.  That is the honest picture and the box
+    // gives the ratio in numbers.
+    std::unique_ptr<TLine> collapseMarker;
+    if (collapseMoments.mean > 0.0
+        && collapseMoments.mean < annihilationUpper) {
+        collapseMarker = std::make_unique<TLine>(
+            collapseMoments.mean, 0.0,
+            collapseMoments.mean, 1.0/experimentalLifetime);
+        collapseMarker->SetLineColor(kBlue + 1);
+        collapseMarker->SetLineWidth(2);
+        collapseMarker->SetLineStyle(2);
+        collapseMarker->Draw();
+    }
+    drawAnalysisBox(analysisBoxes, 0.40, 0.50, 0.95, 0.91, {
+        "Measured data, drawn analytically - no Monte Carlo.",
+        "Decay law N(t) #propto exp(-t/#tau) with the published",
+        "rate; the spectrum follows in closed form.",
+        "#lambda = " + compactNumber(rateReference.value, 6) + " #pm "
+            + compactNumber(rateReference.totalUncertainty, 2) + " "
+            + rateReference.unit,
+        "#tau_{exp} = " + compactNumber(experimentalLifetime) + " #pm "
+            + compactNumber(experimentalLifetimeError) + " " + timeUnit,
+        isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
+               : "Vallery et al., PRL 90 (2003)",
+        "blue dashed: CREM collapse #LTt#GT = "
+            + compactNumber(collapseMoments.mean, 4) + " " + timeUnit,
+        "#tau_{exp}/#LTt#GT #approx " + compactNumber(experimentalRatio, 3)
+            + ": the classical inspiral is far faster.",
+        "The two are different processes and are not",
+        "expected to agree; this panel sets the scale."
+    }, 0.0185);
+
+    distributionsPage.cd(3);
     gPad->SetGrid();
     std::unique_ptr<TLine> idealPhotonLine;
     std::unique_ptr<TLine> experimentalPhotonLine;
@@ -1731,7 +1792,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         paraAngularReference->SetTitle(
             "Photon polar angle, unpolarized p-Ps (exact);"
             "cos(#theta_{#gamma});(1/N) dN/dcos#theta");
-        distributionsPage.cd(3);
+        distributionsPage.cd(4);
         gPad->SetGrid();
         paraAngularReference->Draw("L");
         drawAnalysisBox(analysisBoxes, 0.26, 0.58, 0.94, 0.91, {
@@ -1742,7 +1803,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             "Experimental:",
             "no apparatus-independent a_{2} is available"
         }, 0.022);
-        distributionsPage.cd(4);
+        distributionsPage.cd(6);
         channelInformation.SetFillColorAlpha(kWhite, 0.92);
         channelInformation.SetTextAlign(12);
         channelInformation.SetTextFont(42);
@@ -1810,7 +1871,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             angularHistogram->Scale(
                 1.0/(quadratureNorm*angularHistogram->GetBinWidth(1)));
         }
-        distributionsPage.cd(3);
+        distributionsPage.cd(4);
         gPad->SetRightMargin(0.14);
         dalitzHistogram->Draw("COLZ");
         drawAnalysisBox(analysisBoxes, 0.08, 0.66, 0.56, 0.91, {
@@ -1821,7 +1882,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             "Experimental:",
             "no matching acceptance-corrected dataset loaded"
         }, 0.022);
-        distributionsPage.cd(4);
+        distributionsPage.cd(5);
         gPad->SetGrid();
         angularHistogram->Draw("HIST");
         drawAnalysisBox(analysisBoxes, 0.14, 0.62, 0.62, 0.91, {
@@ -1919,15 +1980,16 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     canvas.Update();
     std::vector<root_export::NamedPad> plotsToSave{
         {distributionsPage.GetPad(1), 1, 1, "crem_collapse_time"},
-        {distributionsPage.GetPad(2), 1, 2, "photon_energy"},
-        {distributionsPage.GetPad(3), 1, 3, isPara ? "photon_polar_angle"
+        {distributionsPage.GetPad(2), 1, 2, "annihilation_time"},
+        {distributionsPage.GetPad(3), 1, 3, "photon_energy"},
+        {distributionsPage.GetPad(4), 1, 4, isPara ? "photon_polar_angle"
                                               : "three_photon_dalitz"},
         {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_calibration_power"},
         {diagnosticsPage.GetPad(2), 2, 2, "diagnostic_calibration_summary"}
     };
     if (!isPara) {
         plotsToSave.push_back(
-            {distributionsPage.GetPad(4), 1, 4, "leading_photon_angle"});
+            {distributionsPage.GetPad(5), 1, 5, "leading_photon_angle"});
     }
     reportExports(root_export::saveStatisticalPlots(
         selectedPhenomenon, plotsToSave));
@@ -3575,6 +3637,15 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     const std::vector<InteractionEvent> events =
         runInteractionExperiment(seed, configuration, runCount);
 
+        // One colour per classification, used consistently in every panel so a
+    // class can be recognised across the whole page without a second legend.
+    const std::array<int,6> outcomeColours{
+        kRed + 1,      // Collision
+        kAzure + 1,    // Scattering
+        kGreen + 2,    // Para-Positronium
+        kMagenta + 1,  // Ortho-Positronium
+        kGray + 2,     // Unresolved
+        kOrange + 7};  // NumericalFailure
     constexpr std::array<InteractionOutcome,6> outcomeOrder{
         InteractionOutcome::Collision, InteractionOutcome::Scattering,
         InteractionOutcome::ParaPositronium,
@@ -3591,6 +3662,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     // single overall mean would hide the mechanism.
     std::array<double,6> energySums{}, impactSums{};
     std::array<int,6> classSamples{};
+    std::array<std::vector<double>,6> classEnergies, classImpacts;
     for (const InteractionEvent& event : events) {
         for (std::size_t slot = 0; slot < outcomeOrder.size(); ++slot) {
             if (event.outcome != outcomeOrder[slot]) continue;
@@ -3600,6 +3672,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
                 energySums[slot] += event.kineticEnergyEv;
                 impactSums[slot] += event.impactParameter*1.0e12;
                 ++classSamples[slot];
+                classEnergies[slot].push_back(event.kineticEnergyEv);
+                classImpacts[slot].push_back(event.impactParameter*1.0e12);
             }
         }
         if (std::isfinite(event.kineticEnergyEv)) {
@@ -3743,9 +3817,12 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
     std::vector<std::unique_ptr<TF1>> analysisFunctions;
 
+    // All six classifications, including the censored ones: with a large
+    // Unresolved fraction a four-bin chart would imply the physical classes
+    // share 100% of the sample when they do not.
     TH1D outcomeHistogram("interaction_outcome_summary",
-        "Interaction outcome classification;;Trajectories", 4, 0.0, 4.0);
-    for (int slot = 0; slot < 4; ++slot) {
+        "Interaction outcome classification;;Trajectories", 6, 0.0, 6.0);
+    for (int slot = 0; slot < 6; ++slot) {
         outcomeHistogram.GetXaxis()->SetBinLabel(slot + 1,
             interactionOutcomeName(outcomeOrder[static_cast<std::size_t>(slot)]));
         outcomeHistogram.SetBinContent(slot + 1,
@@ -3754,14 +3831,33 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             std::sqrt(static_cast<double>(
                 outcomeCounts[static_cast<std::size_t>(slot)])));
     }
-    styleHistogram(outcomeHistogram, kAzure + 1);
     outcomeHistogram.SetStats(false);
-    outcomeHistogram.GetXaxis()->SetLabelSize(0.045);
+    outcomeHistogram.SetLineColor(kGray + 3);
+    outcomeHistogram.SetLineWidth(2);
+    outcomeHistogram.GetXaxis()->SetLabelSize(0.035);
     outcomeHistogram.SetMinimum(0.0);
+    // Headroom so the analysis box does not sit on top of the tallest bar.
+    outcomeHistogram.SetMaximum(1.75*std::max(1,
+        *std::max_element(outcomeCounts.begin(), outcomeCounts.end())));
     distributionsPage.cd(1);
     gPad->SetGrid();
     gPad->SetBottomMargin(0.16);
     outcomeHistogram.Draw("HIST");
+    // ROOT fills a whole TH1 with a single colour, and a per-class overlay
+    // histogram would draw its empty bins as a coloured line along the axis.
+    // Plain boxes give one colour per class with no such artefact.
+    std::vector<std::unique_ptr<TBox>> outcomeBars;
+    for (std::size_t slot = 0; slot < 6; ++slot) {
+        const double height = outcomeCounts[slot];
+        if (!(height > 0.0)) continue;
+        auto bar = std::make_unique<TBox>(
+            slot + 0.02, 0.0, slot + 0.98, height);
+        bar->SetFillColorAlpha(outcomeColours[slot], 0.80);
+        bar->SetLineColor(outcomeColours[slot]);
+        bar->SetLineWidth(2);
+        bar->Draw("l");
+        outcomeBars.push_back(std::move(bar));
+    }
     std::vector<std::string> summaryLines{
         "Trajectories: N = " + std::to_string(runCount)};
     for (std::size_t slot = 0; slot < 4; ++slot) {
@@ -3777,6 +3873,9 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     summaryLines.push_back("Collision: r reached "
         + compactNumber(nuclearCutoff*1.0e12, 3) + " pm");
     summaryLines.push_back("Para: parallel #mu (S=0); Ortho: antiparallel #mu");
+    summaryLines.push_back("colours (all panels): red Collision, blue");
+    summaryLines.push_back("Scattering, green Para, magenta Ortho,");
+    summaryLines.push_back("grey Unresolved, orange NumericalFailure");
     summaryLines.push_back("all: #LTK_{CM}#GT = "
         + compactNumber(mean(allEnergies), 4) + " eV, #LTb#GT = "
         + compactNumber(mean(allImpacts), 4) + " pm");
@@ -3799,19 +3898,35 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     TH1D energyHistogram("interaction_collision_energy",
         "Sampled centre-of-mass energy;K_{CM} [eV];Trajectories",
         histogramBins(allEnergies.size()), energyLower, energyUpper);
-    TH1D boundEnergyHistogram("interaction_collision_energy_bound",
-        "bound subset", histogramBins(allEnergies.size()),
-        energyLower, energyUpper);
-    styleHistogram(energyHistogram, kAzure + 1);
-    styleHistogram(boundEnergyHistogram, kGreen + 2);
     energyHistogram.SetStats(false);
-    boundEnergyHistogram.SetStats(false);
+    energyHistogram.SetLineColor(kGray + 3);
+    energyHistogram.SetLineWidth(2);
+    energyHistogram.SetFillStyle(0);
     for (double value : allEnergies) energyHistogram.Fill(value);
-    for (double value : boundEnergies) boundEnergyHistogram.Fill(value);
     distributionsPage.cd(2);
     gPad->SetGrid();
     energyHistogram.Draw("HIST");
-    boundEnergyHistogram.Draw("HIST SAME");
+    // Stacked rather than overlaid: overlaid components draw their empty bins
+    // as a coloured line along the axis, and stacking also makes the classes
+    // visibly sum to the grey total.
+    THStack energyStack("interaction_energy_stack", "");
+    std::vector<std::unique_ptr<TH1D>> energyByClass;
+    for (std::size_t slot = 0; slot < 6; ++slot) {
+        if (classEnergies[slot].empty()) continue;
+        auto part = std::make_unique<TH1D>(
+            ("interaction_energy_class_" + std::to_string(slot)).c_str(), "",
+            histogramBins(allEnergies.size()), energyLower, energyUpper);
+        part->SetDirectory(nullptr);
+        part->SetStats(false);
+        part->SetLineColor(outcomeColours[slot]);
+        part->SetLineWidth(2);
+        part->SetFillColorAlpha(outcomeColours[slot], 0.75);
+        for (double value : classEnergies[slot]) part->Fill(value);
+        energyStack.Add(part.get());
+        energyByClass.push_back(std::move(part));
+    }
+    if (!energyByClass.empty()) energyStack.Draw("HIST SAME");
+    energyHistogram.Draw("HIST SAME");
     const GaussianFitSummary energyMoments =
         gaussianMaximumLikelihood(allEnergies);
     drawAnalysisBox(analysisBoxes, 0.52, 0.60, 0.95, 0.91, {
@@ -3820,7 +3935,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             + " / " + compactNumber(energySigmaEv, 4) + " eV",
         "sample #mu / #sigma = " + compactNumber(energyMoments.mean, 4)
             + " / " + compactNumber(energyMoments.sigma, 4) + " eV",
-        "green: subset that formed positronium",
+        "stacked by class, outline = all trajectories",
         "bound fraction = " + compactNumber(
             100.0*boundTotal/std::max(runCount, 1), 3) + "%",
         "#LTK_{CM}#GT bound = " + compactNumber(mean(boundEnergies), 4)
@@ -3832,18 +3947,32 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     TH1D impactHistogram("interaction_impact_parameter",
         "Sampled impact parameter;b [pm];Trajectories",
         histogramBins(allImpacts.size()), 0.0, impactUpper);
-    TH1D boundImpactHistogram("interaction_impact_parameter_bound",
-        "bound subset", histogramBins(allImpacts.size()), 0.0, impactUpper);
-    styleHistogram(impactHistogram, kOrange + 7);
-    styleHistogram(boundImpactHistogram, kGreen + 2);
     impactHistogram.SetStats(false);
-    boundImpactHistogram.SetStats(false);
+    impactHistogram.SetLineColor(kGray + 3);
+    impactHistogram.SetLineWidth(2);
+    impactHistogram.SetFillStyle(0);
     for (double value : allImpacts) impactHistogram.Fill(value);
-    for (double value : boundImpacts) boundImpactHistogram.Fill(value);
     distributionsPage.cd(3);
     gPad->SetGrid();
     impactHistogram.Draw("HIST");
-    boundImpactHistogram.Draw("HIST SAME");
+    THStack impactStack("interaction_impact_stack", "");
+    std::vector<std::unique_ptr<TH1D>> impactByClass;
+    for (std::size_t slot = 0; slot < 6; ++slot) {
+        if (classImpacts[slot].empty()) continue;
+        auto part = std::make_unique<TH1D>(
+            ("interaction_impact_class_" + std::to_string(slot)).c_str(), "",
+            histogramBins(allImpacts.size()), 0.0, impactUpper);
+        part->SetDirectory(nullptr);
+        part->SetStats(false);
+        part->SetLineColor(outcomeColours[slot]);
+        part->SetLineWidth(2);
+        part->SetFillColorAlpha(outcomeColours[slot], 0.75);
+        for (double value : classImpacts[slot]) part->Fill(value);
+        impactStack.Add(part.get());
+        impactByClass.push_back(std::move(part));
+    }
+    if (!impactByClass.empty()) impactStack.Draw("HIST SAME");
+    impactHistogram.Draw("HIST SAME");
     drawAnalysisBox(analysisBoxes, 0.48, 0.58, 0.95, 0.91, {
         "Sampled: N = " + std::to_string(allImpacts.size()),
         "b #approx |N(0, " + compactNumber(
@@ -3853,7 +3982,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         "#LTb#GT = " + compactNumber(mean(allImpacts), 4)
             + " pm, median = " + compactNumber(
                 sampleQuantile(allImpacts, 0.5), 4) + " pm",
-        "green: subset that formed positronium",
+        "stacked by class, outline = all trajectories",
         "#LTb#GT bound = " + compactNumber(mean(boundImpacts), 4) + " pm"
     }, 0.022);
 
@@ -3861,12 +3990,41 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         "Dipole alignment of bound states;"
         "#LTcos(#mu_{e},#mu_{p})#GT over the bound phase;Events",
         histogramBins(boundAlignments.size()), -1.0, 1.0);
-    styleHistogram(alignmentHistogram, kMagenta + 1);
     alignmentHistogram.SetStats(false);
+    alignmentHistogram.SetLineColor(kGray + 3);
+    alignmentHistogram.SetLineWidth(2);
+    alignmentHistogram.SetFillStyle(0);
     for (double value : boundAlignments) alignmentHistogram.Fill(value);
     distributionsPage.cd(4);
     gPad->SetGrid();
     alignmentHistogram.Draw("HIST");
+    // The para/ortho threshold is exactly the classification boundary, so the
+    // two coloured parts of this histogram are the two bound classes.
+    TH1D paraAlignmentPart(alignmentHistogram);
+    TH1D orthoAlignmentPart(alignmentHistogram);
+    paraAlignmentPart.SetName("interaction_alignment_para");
+    orthoAlignmentPart.SetName("interaction_alignment_ortho");
+    for (int bin = 1; bin <= alignmentHistogram.GetNbinsX(); ++bin) {
+        const bool paraSide =
+            alignmentHistogram.GetXaxis()->GetBinCenter(bin) >= 0.5;
+        if (paraSide) orthoAlignmentPart.SetBinContent(bin, 0.0);
+        else paraAlignmentPart.SetBinContent(bin, 0.0);
+    }
+    // The copies inherit the hollow fill style of the outline histogram, so
+    // the solid style has to be restored or the class colours never show.
+    paraAlignmentPart.SetLineColor(outcomeColours[2]);
+    paraAlignmentPart.SetFillColorAlpha(outcomeColours[2], 0.75);
+    paraAlignmentPart.SetFillStyle(1001);
+    paraAlignmentPart.SetLineWidth(2);
+    orthoAlignmentPart.SetLineColor(outcomeColours[3]);
+    orthoAlignmentPart.SetFillColorAlpha(outcomeColours[3], 0.75);
+    orthoAlignmentPart.SetFillStyle(1001);
+    orthoAlignmentPart.SetLineWidth(2);
+    THStack alignmentStack("interaction_alignment_stack", "");
+    alignmentStack.Add(&orthoAlignmentPart);
+    alignmentStack.Add(&paraAlignmentPart);
+    alignmentStack.Draw("HIST SAME");
+    alignmentHistogram.Draw("HIST SAME");
     std::unique_ptr<TLine> thresholdLine;
     if (!boundAlignments.empty()) {
         const double lineHeight = std::max(1.0,
@@ -3883,6 +4041,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     drawAnalysisBox(analysisBoxes, 0.13, 0.55, 0.62, 0.91, {
         "Bound events: N = " + std::to_string(boundAlignments.size()),
         "red dashed: para/ortho threshold at +0.5",
+        "green = Para (#geq0.5), magenta = Ortho (<0.5)",
         "para (#geq0.5) : ortho = " + std::to_string(outcomeCounts[2]) + " : "
             + std::to_string(outcomeCounts[3]),
         "isotropic expectation 1 : 3",

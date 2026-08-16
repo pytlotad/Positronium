@@ -473,6 +473,14 @@ przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
 
 - `crem_collapse_time` — ekstrapolowany czas dojścia klasycznej trajektorii
   CREM do `0.01*a0`, z opisowym fitem i zewnętrzną krzywą porównawczą;
+- `annihilation_time` — widmo czasu anihilacji `N(t) ∝ exp(-t/tau)` zbudowane z
+  **rzeczywistej zmierzonej szybkości zaniku** z katalogu referencji i rysowane
+  analitycznie. Publikowana szybkość to dane pomiarowe, a przejście od niej do
+  widma jest zamkniętym wzorem, więc losowanie niczego by nie wniosło poza
+  szumem. Panel podaje zmierzoną `lambda`, wyprowadzone `tau_exp` z niepewnością
+  i źródło, a niebieską przerywaną linią zaznacza średni czas kolapsu CREM.
+  Obie wielkości opisują różne procesy i nie mają się zgadzać — panel ustala
+  skalę porównania;
 - `photon_energy` — energia fotonów 2 gamma albo inkluzywne widmo 3 gamma;
 - `photon_polar_angle` — rozkład kierunku fotonu p-Ps;
 - `three_photon_dalitz` — korelacja energii w rozpadzie 3 gamma;
@@ -496,13 +504,22 @@ przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
   względem raportowanej emisji). Zmierzone na orbitach związanych
   `|E_bound|/E_rad` wynosi 1,2–1,4, a `|dE_LL-vs-flux|/E_rad` 0,03–0,09 — to jest
   faktyczna granica rozdzielczości raportowanej energii wypromieniowanej;
-- `outcome_summary` — histogram liczby zdarzeń w klasach Collision /
-  Scattering / Para / Orto w eksperymencie 5;
+- `outcome_summary` — histogram liczności wszystkich sześciu klasyfikacji
+  eksperymentu 5, łącznie z `Unresolved` i `NumericalFailure`. Klasy
+  ocenzurowane są pokazywane celowo: przy dużym udziale `Unresolved` wykres z samymi czterema
+  klasami fizycznymi sugerowałby, że dzielą one 100% próbki;
 - `collision_energy` — wylosowana `K_CM` z zaznaczonym podzbiorem, który
   utworzył pozytonium;
 - `impact_parameter` — wylosowane `b` z tym samym podzbiorem;
 - `dipole_alignment` — uśredniony po orbitach `cos(mu_e, mu_p)` stanów
   związanych z progiem para/orto w `+0.5`;
+
+Wykresy eksperymentu 5 używają jednej palety we wszystkich panelach, po jednym
+kolorze na klasyfikację: czerwony `Collision`, niebieski `Scattering`, zielony
+`Para-Positronium`, magenta `Orto-Positronium`, szary `Unresolved`,
+pomarańczowy `NumericalFailure`. Rozkłady energii i parametru zderzenia są
+składane w stos, więc suma kolorowych składowych odtwarza szary obrys całości, a
+odstęp między nimi jest udziałem klas ocenzurowanych.
 - `visual_simulation` — migawka interaktywnej symulacji.
 
 ## 9. Zasady odpowiedzi PRISM
