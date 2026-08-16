@@ -1495,6 +1495,106 @@ int runMaxwellSelfTest() {
         &&regulatorFarAlignment>0.0
         &&isFinite(cutoffDipoleForce)
         &&cutoffSurfaceResidual<1.0e-14;
+
+    // ---------------------------------------------------------------------
+    // Annihilation-generator unit test.  This used to be a million-event Monte
+    // Carlo inside the statistical experiments, where it produced four
+    // "closure" panels that only measured the generator's own arithmetic and
+    // three kinematics panels that reproduced the distribution the sampler
+    // draws from.  None of it tested the classical model.  A generator
+    // self-consistency check is a unit test, so it lives here, with explicit
+    // thresholds and a modest fixed sample.
+    // ---------------------------------------------------------------------
+    constexpr int generatorEvents=200000;
+    std::mt19937_64 generatorRandom(0x9e3779b97f4a7c15ULL);
+    double maximumEnergyClosure=0.0,maximumMomentumClosure=0.0;
+    double maximumShellClosure=0.0,maximumParentClosure=0.0;
+    std::vector<double> paraPolarCosines;
+    paraPolarCosines.reserve(generatorEvents);
+    std::array<double,12> orePowellBins{};
+    double orePowellTotal=0.0;
+    const double parentEnergy=bound_decay::positroniumRestEnergyJoules;
+    constexpr double machineEpsilon=std::numeric_limits<double>::epsilon();
+    for(int channel=0;channel<2;++channel) {
+        const bound_decay::PositroniumState decayState=channel==0
+            ?bound_decay::PositroniumState::Para
+            :bound_decay::PositroniumState::Ortho;
+        for(int index=0;index<generatorEvents;++index) {
+            const bound_decay::DecayEvent event=
+                bound_decay::generateDecay(decayState,generatorRandom);
+            double energySum=0.0;
+            bound_decay::Vec3 momentumSum;
+            for(std::size_t photon=0;photon<event.photonCount;++photon) {
+                const bound_decay::Photon& current=event.photons[photon];
+                energySum+=current.energyJoules;
+                const bound_decay::Vec3 photonMomentum=current.momentum();
+                momentumSum=momentumSum+photonMomentum;
+                const double energySquared=current.energyJoules
+                                          *current.energyJoules;
+                maximumShellClosure=std::max(maximumShellClosure,std::abs(
+                    (energySquared-bound_decay::speedOfLight
+                        *bound_decay::speedOfLight
+                        *bound_decay::dot(photonMomentum,photonMomentum))
+                    /(energySquared*machineEpsilon)));
+                if(channel==1) {
+                    const double fraction=current.energyJoules
+                        /(0.5*parentEnergy);
+                    const int bin=std::clamp(static_cast<int>(
+                        fraction*orePowellBins.size()),0,
+                        static_cast<int>(orePowellBins.size())-1);
+                    orePowellBins[static_cast<std::size_t>(bin)]+=1.0;
+                    orePowellTotal+=1.0;
+                }
+            }
+            maximumEnergyClosure=std::max(maximumEnergyClosure,
+                std::abs((energySum-parentEnergy)/(parentEnergy*machineEpsilon)));
+            maximumMomentumClosure=std::max(maximumMomentumClosure,
+                bound_decay::speedOfLight*bound_decay::norm(momentumSum)
+                /(parentEnergy*machineEpsilon));
+            maximumParentClosure=std::max(maximumParentClosure,std::abs(
+                (energySum*energySum-bound_decay::speedOfLight
+                    *bound_decay::speedOfLight
+                    *bound_decay::dot(momentumSum,momentumSum)
+                 -parentEnergy*parentEnergy)
+                /(parentEnergy*parentEnergy*machineEpsilon)));
+            if(channel==0) paraPolarCosines.push_back(event.paraPhotonCosPolar);
+        }
+    }
+    const LegendreFitSummary generatorAnisotropy=
+        fitSecondLegendreAnisotropy(paraPolarCosines);
+    // The sampled inclusive spectrum must reproduce the analytic Ore-Powell
+    // shape it targets.  Compare binned fractions against the exact integral.
+    double maximumSpectrumDeviation=0.0;
+    if(orePowellTotal>0.0) {
+        const double endpointKeV=0.5*bound_decay::energyKeV(parentEnergy);
+        double shapeParameters[2]={2.0/((pi*pi-9.0)*endpointKeV),endpointKeV};
+        for(std::size_t bin=0;bin<orePowellBins.size();++bin) {
+            const double lower=endpointKeV*bin/orePowellBins.size();
+            const double upper=endpointKeV*(bin+1)/orePowellBins.size();
+            double integral=0.0;
+            constexpr int steps=400;
+            for(int step=0;step<steps;++step) {
+                double point=lower+(upper-lower)*(step+0.5)/steps;
+                integral+=orePowellSpectrum(&point,shapeParameters)
+                    *(upper-lower)/steps;
+            }
+            const double sampled=orePowellBins[bin]/orePowellTotal;
+            maximumSpectrumDeviation=std::max(maximumSpectrumDeviation,
+                std::abs(sampled-integral));
+        }
+    }
+    const bool annihilationGeneratorOk=
+        maximumEnergyClosure<64.0
+        &&maximumMomentumClosure<64.0
+        &&maximumShellClosure<64.0
+        &&maximumParentClosure<64.0
+        &&std::isfinite(generatorAnisotropy.anisotropy)
+        &&std::isfinite(generatorAnisotropy.standardError)
+        // Isotropic by construction: a2 must sit on zero within 5 sigma.
+        &&std::abs(generatorAnisotropy.anisotropy)
+            <5.0*generatorAnisotropy.standardError
+        &&maximumSpectrumDeviation<5.0e-3;
+
     const double benchmarkSeconds=std::chrono::duration<double>(
         std::chrono::steady_clock::now()-benchmarkStart).count();
     std::size_t hierarchyBytes=0;
@@ -1658,6 +1758,12 @@ int runMaxwellSelfTest() {
               << "reg core suppress: " << regulatorCoreSuppression << '\n'
               << "reg peak U/m_e c2: " << peakDipoleEnergyOverRestEnergy << '\n'
               << "cutoff surface:     " << cutoffSurfaceResidual << '\n'
+              << "gen closure E/p/m/M:" << maximumEnergyClosure << " / "
+              << maximumMomentumClosure << " / " << maximumShellClosure
+              << " / " << maximumParentClosure << " eps\n"
+              << "gen a2 +/- SE:      " << generatorAnisotropy.anisotropy
+              << " +/- " << generatorAnisotropy.standardError << '\n'
+              << "gen spectrum dev:   " << maximumSpectrumDeviation << '\n'
               << "CFL dt:             " << cflStep << " s\n"
               << "field storage:      "
               << static_cast<double>(hierarchyBytes)/(1024.0*1024.0) << " MiB\n"
@@ -1672,7 +1778,7 @@ int runMaxwellSelfTest() {
     // have silently made the two disagree.  Listing the checks once also lets
     // the harness name the ones that actually failed instead of collapsing
     // everything into a single PASS/FAIL with sixty unlabelled numbers above it.
-    const std::array<std::pair<const char*,bool>,26> regressionChecks{{
+    const std::array<std::pair<const char*,bool>,27> regressionChecks{{
         {"charge",                     chargeOk},
         {"gauss",                      gaussOk},
         {"divergence",                 divergenceOk},
@@ -1698,7 +1804,8 @@ int runMaxwellSelfTest() {
         {"trajectory-convergence",     trajectoryConvergenceOk},
         {"causal-startup",             causalStartupOk},
         {"retarded-interpolation",     retardedInterpolationOk},
-        {"short-range-regularization", shortRangeRegularizationOk}
+        {"short-range-regularization", shortRangeRegularizationOk},
+        {"annihilation-generator",     annihilationGeneratorOk}
     }};
     int failedChecks=0;
     for(const auto& [name,ok]:regressionChecks) {

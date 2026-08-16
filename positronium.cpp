@@ -836,6 +836,97 @@ private:
     Accuracy accuracy_;
 };
 
+// Shared by the production reference panels and by the annihilation
+// generator unit test in the validation build, so it must sit outside
+// the block that the validation executable compiles out.
+double orePowellSpectrum(double* coordinate, double* parameters) {
+    const double endpoint = parameters[1];
+    if (!(endpoint > 0.0)) return 0.0;
+    const double x = coordinate[0]/endpoint;
+    if (!(x > 0.0) || x > 1.0) return 0.0;
+    if (x >= 1.0 - 1.0e-12) return parameters[0];
+    if (x < 1.0e-4) {
+        return parameters[0] * (5.0*x/6.0 + x*x/6.0);
+    }
+    const double logarithm = std::log1p(-x);
+    const double oneMinus = 1.0 - x;
+    const double twoMinus = 2.0 - x;
+    const double shape = x*oneMinus/(twoMinus*twoMinus)
+        - 2.0*oneMinus*oneMinus*logarithm
+            /(twoMinus*twoMinus*twoMinus)
+        + twoMinus/x + 2.0*oneMinus*logarithm/(x*x);
+    return parameters[0]*shape;
+}
+
+#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
+// Used only by the annihilation-generator unit test in the validation build:
+// the production panels now plot the exact isotropic reference instead of
+// fitting a sampled one.
+struct LegendreFitSummary {
+    double anisotropy = std::numeric_limits<double>::quiet_NaN();
+    double standardError = std::numeric_limits<double>::quiet_NaN();
+    std::size_t count = 0;
+    bool atBoundary = false;
+};
+
+LegendreFitSummary fitSecondLegendreAnisotropy(
+    const std::vector<double>& cosines) {
+    LegendreFitSummary result;
+    std::vector<double> secondLegendre;
+    secondLegendre.reserve(cosines.size());
+    for (double cosine : cosines) {
+        if (!std::isfinite(cosine)) continue;
+        secondLegendre.push_back(0.5*(3.0*cosine*cosine - 1.0));
+    }
+    result.count = secondLegendre.size();
+    if (result.count == 0) return result;
+
+    // The event-level likelihood is proportional to
+    // product_i [1 + a2 P2(cos(theta_i))], with the physical range
+    // -1 <= a2 <= 2.  Its derivative is monotone, so bisection gives the
+    // constrained unbinned MLE without treating the two back-to-back photons
+    // as independent observations.
+    constexpr double lower = -1.0;
+    constexpr double upper = 2.0;
+    constexpr double guard = 64.0*std::numeric_limits<double>::epsilon();
+    const auto derivative = [&](double anisotropy) {
+        double value = 0.0;
+        for (double legendre : secondLegendre) {
+            value += legendre/(1.0 + anisotropy*legendre);
+        }
+        return value;
+    };
+    const double safeLower = lower + guard;
+    const double safeUpper = upper - guard;
+    if (derivative(safeLower) <= 0.0) {
+        result.anisotropy = lower;
+        result.atBoundary = true;
+    } else if (derivative(safeUpper) >= 0.0) {
+        result.anisotropy = upper;
+        result.atBoundary = true;
+    } else {
+        double left = safeLower;
+        double right = safeUpper;
+        for (int iteration = 0; iteration < 100; ++iteration) {
+            const double middle = 0.5*(left + right);
+            if (derivative(middle) > 0.0) left = middle;
+            else right = middle;
+        }
+        result.anisotropy = 0.5*(left + right);
+        double information = 0.0;
+        for (double legendre : secondLegendre) {
+            const double scaled = legendre
+                /(1.0 + result.anisotropy*legendre);
+            information += scaled*scaled;
+        }
+        if (result.count >= 2 && information > 0.0) {
+            result.standardError = 1.0/std::sqrt(information);
+        }
+    }
+    return result;
+}
+#endif
+
 #ifndef POSITRONIUM_VALIDATION_EXECUTABLE
 Frame makeFrame(const State& s) {
     const PairGeometry geometry = pairGeometry(s);
@@ -1184,70 +1275,6 @@ GaussianFitSummary gaussianMaximumLikelihood(const std::vector<double>& values) 
     return result;
 }
 
-struct LegendreFitSummary {
-    double anisotropy = std::numeric_limits<double>::quiet_NaN();
-    double standardError = std::numeric_limits<double>::quiet_NaN();
-    std::size_t count = 0;
-    bool atBoundary = false;
-};
-
-LegendreFitSummary fitSecondLegendreAnisotropy(
-    const std::vector<double>& cosines) {
-    LegendreFitSummary result;
-    std::vector<double> secondLegendre;
-    secondLegendre.reserve(cosines.size());
-    for (double cosine : cosines) {
-        if (!std::isfinite(cosine)) continue;
-        secondLegendre.push_back(0.5*(3.0*cosine*cosine - 1.0));
-    }
-    result.count = secondLegendre.size();
-    if (result.count == 0) return result;
-
-    // The event-level likelihood is proportional to
-    // product_i [1 + a2 P2(cos(theta_i))], with the physical range
-    // -1 <= a2 <= 2.  Its derivative is monotone, so bisection gives the
-    // constrained unbinned MLE without treating the two back-to-back photons
-    // as independent observations.
-    constexpr double lower = -1.0;
-    constexpr double upper = 2.0;
-    constexpr double guard = 64.0*std::numeric_limits<double>::epsilon();
-    const auto derivative = [&](double anisotropy) {
-        double value = 0.0;
-        for (double legendre : secondLegendre) {
-            value += legendre/(1.0 + anisotropy*legendre);
-        }
-        return value;
-    };
-    const double safeLower = lower + guard;
-    const double safeUpper = upper - guard;
-    if (derivative(safeLower) <= 0.0) {
-        result.anisotropy = lower;
-        result.atBoundary = true;
-    } else if (derivative(safeUpper) >= 0.0) {
-        result.anisotropy = upper;
-        result.atBoundary = true;
-    } else {
-        double left = safeLower;
-        double right = safeUpper;
-        for (int iteration = 0; iteration < 100; ++iteration) {
-            const double middle = 0.5*(left + right);
-            if (derivative(middle) > 0.0) left = middle;
-            else right = middle;
-        }
-        result.anisotropy = 0.5*(left + right);
-        double information = 0.0;
-        for (double legendre : secondLegendre) {
-            const double scaled = legendre
-                /(1.0 + result.anisotropy*legendre);
-            information += scaled*scaled;
-        }
-        if (result.count >= 2 && information > 0.0) {
-            result.standardError = 1.0/std::sqrt(information);
-        }
-    }
-    return result;
-}
-
 std::string compactNumber(double value, int precision = 5) {
     std::ostringstream output;
     output << std::setprecision(precision) << value;
@@ -1288,25 +1315,6 @@ std::unique_ptr<TF1> gaussianMleOverlay(const std::string& name,
     function->SetLineStyle(2);
     function->Draw("SAME");
     return function;
-}
-
-double orePowellSpectrum(double* coordinate, double* parameters) {
-    const double endpoint = parameters[1];
-    if (!(endpoint > 0.0)) return 0.0;
-    const double x = coordinate[0]/endpoint;
-    if (!(x > 0.0) || x > 1.0) return 0.0;
-    if (x >= 1.0 - 1.0e-12) return parameters[0];
-    if (x < 1.0e-4) {
-        return parameters[0] * (5.0*x/6.0 + x*x/6.0);
-    }
-    const double logarithm = std::log1p(-x);
-    const double oneMinus = 1.0 - x;
-    const double twoMinus = 2.0 - x;
-    const double shape = x*oneMinus/(twoMinus*twoMinus)
-        - 2.0*oneMinus*oneMinus*logarithm
-            /(twoMinus*twoMinus*twoMinus)
-        + twoMinus/x + 2.0*oneMinus*logarithm/(x*x);
-    return parameters[0]*shape;
 }
 
 void reportExports(const std::vector<root_export::ExportResult>& results) {
@@ -1416,103 +1424,48 @@ std::vector<CremCollapseEstimate> runCremCollapseExperiment(
 // sets the photon-kinematics panels.  These used to be the same number, so the
 // cheap photon histograms inherited the expensive trajectory budget and were
 // capped at 100 entries for no physical reason.
+// The photon panels are ANALYTIC reference curves, not Monte Carlo output.
+// The annihilation generator is a quantum prescription that is deliberately
+// independent of the classical model, and sampling it here only reproduced the
+// very distribution it draws from: the 2-gamma line is a compile-time constant,
+// the polar distribution is isotropic by construction, and the 3-gamma spectrum
+// is the same Ore-Powell density that the reference curve already plots.  The
+// sampler is exercised where a self-consistency check belongs, in
+// positronium_validation.  What is drawn here is the exact reference.
 int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
-                             int runCount, int decayEventCount) {
+                             int runCount) {
     const bool isPara = selectedPhenomenon == 1;
-    const bound_decay::PositroniumState state = isPara
-        ? bound_decay::PositroniumState::Para
-        : bound_decay::PositroniumState::Ortho;
     const double timeScale = isPara ? 1.0e12 : 1.0e9;
     const char* timeUnit = isPara ? "ps" : "ns";
-    const std::size_t decayEvents = static_cast<std::size_t>(decayEventCount);
-    const std::size_t photonsPerEvent = isPara ? 2 : 3;
 
     const std::vector<CremCollapseEstimate> collapseEstimates=
         runCremCollapseExperiment(seed,selectedPhenomenon,runCount);
-    // Decorrelate the generator stream from the trajectory seeds so that
-    // changing --runs does not reshuffle the photon sample and vice versa.
-    std::mt19937_64 random(splitMix64(seed^0x9e3779b97f4a7c15ULL));
     std::vector<double> decayTimes;
-    std::vector<double> photonEnergies;
-    std::vector<double> paraCosines;
-    std::vector<double> paraIndependentCosines;
-    std::vector<double> orthoMaximumEnergies;
-    std::vector<double> orthoMiddleEnergies;
-    std::vector<double> orthoLeadingAngles;
-    std::vector<double> energyClosureEpsilon;
-    std::vector<double> momentumClosureEpsilon;
-    std::vector<double> photonMassShellEpsilon;
-    std::vector<double> parentInvariantEpsilon;
+    std::vector<double> calibrationPowers;
+    int reachedCutoffCount = 0;
+    int observationLimitCount = 0;
+    int calibrationFailureCount = 0;
     decayTimes.reserve(static_cast<size_t>(runCount));
-    photonEnergies.reserve(decayEvents*photonsPerEvent);
-    photonMassShellEpsilon.reserve(decayEvents*photonsPerEvent);
-    energyClosureEpsilon.reserve(decayEvents);
-    momentumClosureEpsilon.reserve(decayEvents);
-    parentInvariantEpsilon.reserve(decayEvents);
-    if (isPara) {
-        paraCosines.reserve(2*decayEvents);
-        paraIndependentCosines.reserve(decayEvents);
-    } else {
-        orthoMaximumEnergies.reserve(decayEvents);
-        orthoMiddleEnergies.reserve(decayEvents);
-        orthoLeadingAngles.reserve(decayEvents);
-    }
+    calibrationPowers.reserve(static_cast<size_t>(runCount));
 
     for (int index = 0; index < runCount; ++index) {
-        const double collapseTime=collapseEstimates[static_cast<size_t>(index)]
-            .lifetimeSeconds;
-        if(std::isfinite(collapseTime))
-            decayTimes.push_back(collapseTime*timeScale);
+        const CremCollapseEstimate& estimate =
+            collapseEstimates[static_cast<size_t>(index)];
+        if(std::isfinite(estimate.lifetimeSeconds))
+            decayTimes.push_back(estimate.lifetimeSeconds*timeScale);
+        if(std::isfinite(estimate.meanRadiatedPowerWatts)
+           && estimate.meanRadiatedPowerWatts > 0.0) {
+            calibrationPowers.push_back(estimate.meanRadiatedPowerWatts);
+        }
+        switch(estimate.calibrationOutcome) {
+            case SimulationOutcome::ReachedCutoff: ++reachedCutoffCount; break;
+            case SimulationOutcome::ObservationLimit:
+                ++observationLimitCount; break;
+            case SimulationOutcome::NumericalFailure:
+                ++calibrationFailureCount; break;
+        }
     }
 
-    // Events are consumed one at a time rather than stored: at a million
-    // events the retained array would cost well over a hundred megabytes and
-    // nothing downstream needs an individual event again.
-    for (std::size_t index = 0; index < decayEvents; ++index) {
-        const bound_decay::DecayEvent event =
-            bound_decay::generateDecay(state, random);
-        double photonEnergySum = 0.0;
-        bound_decay::Vec3 photonMomentumSum;
-        for (size_t photon = 0; photon < event.photonCount; ++photon) {
-            const bound_decay::Photon& currentPhoton = event.photons[photon];
-            photonEnergies.push_back(
-                bound_decay::energyKeV(currentPhoton.energyJoules));
-            photonEnergySum += currentPhoton.energyJoules;
-            const bound_decay::Vec3 photonMomentum = currentPhoton.momentum();
-            photonMomentumSum = photonMomentumSum + photonMomentum;
-            const double energySquared = currentPhoton.energyJoules
-                                       * currentPhoton.energyJoules;
-            const double shellResidual = (energySquared
-                - bound_decay::speedOfLight*bound_decay::speedOfLight
-                    * bound_decay::dot(photonMomentum, photonMomentum))
-                / (energySquared * std::numeric_limits<double>::epsilon());
-            photonMassShellEpsilon.push_back(shellResidual);
-        }
-        const double parentEnergy = bound_decay::positroniumRestEnergyJoules;
-        const double machineEpsilon = std::numeric_limits<double>::epsilon();
-        energyClosureEpsilon.push_back(
-            (photonEnergySum - parentEnergy)/(parentEnergy*machineEpsilon));
-        momentumClosureEpsilon.push_back(bound_decay::speedOfLight
-            * bound_decay::norm(photonMomentumSum)/(parentEnergy*machineEpsilon));
-        parentInvariantEpsilon.push_back(
-            (photonEnergySum*photonEnergySum
-             - bound_decay::speedOfLight*bound_decay::speedOfLight
-                 * bound_decay::dot(photonMomentumSum, photonMomentumSum)
-             - parentEnergy*parentEnergy)
-            / (parentEnergy*parentEnergy*machineEpsilon));
-        if (isPara) {
-            paraIndependentCosines.push_back(event.paraPhotonCosPolar);
-            paraCosines.push_back(event.paraPhotonCosPolar);
-            paraCosines.push_back(-event.paraPhotonCosPolar);
-        } else {
-            orthoMaximumEnergies.push_back(
-                bound_decay::energyKeV(event.orthoMaximumEnergyJoules));
-            orthoMiddleEnergies.push_back(
-                bound_decay::energyKeV(event.orthoMiddleEnergyJoules));
-            orthoLeadingAngles.push_back(
-                event.orthoLeadingPairAngleRadians * 180.0 / pi);
-        }
-    }
 
     const GaussianFitSummary collapseMoments=gaussianMaximumLikelihood(decayTimes);
     const double estimatedLifetime=collapseMoments.mean/timeScale;
@@ -1539,12 +1492,11 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     const double experimentalLifetimeError = lifetimeReference.totalUncertainty;
     std::cout << (isPara ? "Para-positronium" : "Ortho-positronium")
               << " study: " << runCount << " CREM trajectories ("
-              << collapseMoments.count << " valid extrapolations) and "
-              << decayEventCount << " independent annihilation events for the "
-              << "photon kinematics.\n"
-              << "The two samples are unrelated: the collapse time is a "
-                 "classical trajectory result, the photon panels come from the "
-                 "ideal-vacuum generator.\n"
+              << collapseMoments.count << " valid extrapolations).\n"
+              << "Photon panels are exact reference curves, not samples: the "
+                 "annihilation generator is a quantum prescription independent\n"
+                 "of the classical model, and its self-consistency is checked "
+                 "in positronium_validation.\n"
               << "Mean extrapolated collapse time: " << estimatedLifetime * timeScale
               << " +/- " << estimatedError * timeScale << ' ' << timeUnit
               << " (SE of the mean; sample sigma/mean = " << relativeSpread
@@ -1587,7 +1539,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     distributionsPage.cd();
     distributionsPage.Divide(2, 2, 0.006, 0.006);
     diagnosticsPage.cd();
-    diagnosticsPage.Divide(2, 2, 0.006, 0.006);
+    diagnosticsPage.Divide(1, 2, 0.006, 0.006);
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
     std::vector<std::unique_ptr<TF1>> analysisFunctions;
 
@@ -1637,31 +1589,23 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
 
     const double photonEndpoint = 0.5 * bound_decay::energyKeV(
         bound_decay::positroniumRestEnergyJoules);
-    TH1D photonHistogram("decay_photon_energy_histogram",
-        isPara ? "Ideal 2#gamma energy line;E_{#gamma} [keV];Photons"
-               : "Ore-Powell inclusive 3#gamma spectrum;E_{#gamma} [keV];Photons",
-        isPara ? 40 : histogramBins(photonEnergies.size(),200),
-        isPara ? photonEndpoint - 0.02 : 0.0,
-        isPara ? photonEndpoint + 0.02 : photonEndpoint);
-    styleHistogram(photonHistogram, kAzure + 1);
-    photonHistogram.SetStats(false);
-    for (double value : photonEnergies) photonHistogram.Fill(value);
-    const GaussianFitSummary photonMoments = gaussianMaximumLikelihood(photonEnergies);
+    // Exact inclusive spectrum, normalized as a probability density in x=E/Emax
+    // so that its integral is one photon per unit x.  No sampling is involved.
     std::unique_ptr<TF1> orePowellTemplate;
     if (!isPara) {
         orePowellTemplate = std::make_unique<TF1>(
             "ore_powell_spectrum_template", orePowellSpectrum,
             std::max(1.0e-6, photonEndpoint*1.0e-6), photonEndpoint, 2);
-        const double expectedAmplitude = 3.0*decayEventCount*photonHistogram.GetBinWidth(1)
-            * 2.0/((pi*pi - 9.0)*photonEndpoint);
-        orePowellTemplate->SetParameters(expectedAmplitude, photonEndpoint);
+        orePowellTemplate->SetParameters(
+            2.0/((pi*pi - 9.0)*photonEndpoint), photonEndpoint);
         orePowellTemplate->SetParName(0, "normalization");
         orePowellTemplate->SetParName(1, "endpoint_keV");
-        orePowellTemplate->FixParameter(0, expectedAmplitude);
-        orePowellTemplate->FixParameter(1, photonEndpoint);
         orePowellTemplate->SetLineColor(kBlue + 1);
-        orePowellTemplate->SetLineWidth(2);
-        orePowellTemplate->SetLineStyle(2);
+        orePowellTemplate->SetLineWidth(3);
+        orePowellTemplate->SetNpx(600);
+        orePowellTemplate->SetTitle(
+            "Ore-Powell inclusive 3#gamma spectrum (exact);"
+            "E_{#gamma} [keV];(1/N_{#gamma}) dN/dE [keV^{-1}]");
     }
 
     distributionsPage.cd(1);
@@ -1700,48 +1644,53 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
 
     distributionsPage.cd(2);
     gPad->SetGrid();
-    photonHistogram.Draw("HIST");
-    if (orePowellTemplate) orePowellTemplate->Draw("SAME");
-    std::unique_ptr<TLine> simulatedPhotonLine;
+    std::unique_ptr<TLine> idealPhotonLine;
     std::unique_ptr<TLine> experimentalPhotonLine;
+    std::unique_ptr<TH1D> photonAxisFrame;
     if (isPara) {
-        const double lineHeight = std::max(1.0, 1.05*photonHistogram.GetMaximum());
-        simulatedPhotonLine = std::make_unique<TLine>(
-            photonMoments.mean, 0.0, photonMoments.mean, lineHeight);
-        simulatedPhotonLine->SetLineColor(kBlue + 1);
-        simulatedPhotonLine->SetLineWidth(2);
-        simulatedPhotonLine->SetLineStyle(2);
-        simulatedPhotonLine->Draw();
+        // Exact two-body split: both photons carry E_Ps/2 by kinematics, so the
+        // "spectrum" is a single line and nothing about it is statistical.
+        photonAxisFrame = std::make_unique<TH1D>("decay_photon_energy_axis",
+            "Ideal 2#gamma energy line (exact);E_{#gamma} [keV];"
+            "Relative intensity",
+            100, photonEndpoint - 0.02, photonEndpoint + 0.02);
+        photonAxisFrame->SetDirectory(nullptr);
+        photonAxisFrame->SetStats(false);
+        photonAxisFrame->SetMinimum(0.0);
+        photonAxisFrame->SetMaximum(1.15);
+        photonAxisFrame->Draw();
+        idealPhotonLine = std::make_unique<TLine>(
+            photonEndpoint, 0.0, photonEndpoint, 1.0);
+        idealPhotonLine->SetLineColor(kBlue + 1);
+        idealPhotonLine->SetLineWidth(3);
+        idealPhotonLine->Draw();
         experimentalPhotonLine = std::make_unique<TLine>(
             photonEnergyReference.value, 0.0,
-            photonEnergyReference.value, lineHeight);
+            photonEnergyReference.value, 1.0);
         experimentalPhotonLine->SetLineColor(kRed + 1);
         experimentalPhotonLine->SetLineWidth(2);
         experimentalPhotonLine->SetLineStyle(3);
         experimentalPhotonLine->Draw();
-        drawAnalysisBox(analysisBoxes, 0.42, 0.57, 0.94, 0.91, {
-            "MC events: N = " + std::to_string(decayEventCount)
-                + "; photons = " + std::to_string(photonEnergies.size()),
-            "Fit: monoenergetic #delta(E-#mu)",
-            "#mu_{fit} = " + compactNumber(photonMoments.mean, 9) + " keV",
-            "#sigma_{truth} = " + compactNumber(photonMoments.sigma) + " keV",
-            "blue: MC line; red: accepted-energy line",
+        drawAnalysisBox(analysisBoxes, 0.13, 0.55, 0.68, 0.91, {
+            "Exact reference curve, no Monte Carlo.",
+            "Two-body at-rest kinematics fixes both photons",
+            "at E_{Ps}/2; there is nothing to sample.",
+            "E_{#gamma} = " + compactNumber(photonEndpoint, 10) + " keV",
+            "blue: model kinematics; red: accepted mass",
             "Experimental / accepted mass:",
             "#mu_{exp} = " + compactNumber(photonEnergyReference.value, 10)
                 + " #pm " + compactNumber(
                     photonEnergyReference.totalUncertainty, 2)
                 + " keV",
             "PDG 2025 positronium mass"
-        }, 0.023);
+        }, 0.021);
     } else {
-        drawAnalysisBox(analysisBoxes, 0.08, 0.51, 0.60, 0.91, {
-            "MC events: N = " + std::to_string(decayEventCount)
-                + "; photons = " + std::to_string(photonEnergies.size()),
-            "Reference: LO Ore-Powell F(E/E_{max})",
-            "A fixed by 3N = "
-                + compactNumber(orePowellTemplate->GetParameter(0)),
-            "E_{max} fixed = " + compactNumber(photonEndpoint, 9) + " keV",
-            "free fit parameters: 0; LO truth-level shape",
+        orePowellTemplate->Draw("L");
+        drawAnalysisBox(analysisBoxes, 0.30, 0.55, 0.94, 0.91, {
+            "Exact reference curve, no Monte Carlo.",
+            "LO Ore-Powell F(E/E_{max}), normalized so that",
+            "#int F dE = 1 per photon; free parameters: 0.",
+            "E_{max} = " + compactNumber(photonEndpoint, 9) + " keV",
             "Experimental / accepted endpoint:",
             "E_{max} = " + compactNumber(photonEnergyReference.value, 10)
                 + " #pm " + compactNumber(
@@ -1753,55 +1702,38 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
 
     std::unique_ptr<TH1D> angularHistogram;
     std::unique_ptr<TH2D> dalitzHistogram;
-    std::unique_ptr<TF1> paraAngularFit;
-    LegendreFitSummary anisotropyFit;
+    std::unique_ptr<TF1> paraAngularReference;
     TPaveText channelInformation(0.10, 0.16, 0.90, 0.84, "NDC");
     if (isPara) {
-        angularHistogram = std::make_unique<TH1D>("para_polar_histogram",
-            "Photon polar angle (unpolarized p-Ps);cos(#theta_{#gamma});Photons",
-            histogramBins(paraCosines.size(),200), -1.0, 1.0);
-        styleHistogram(*angularHistogram, kGreen + 2);
-        angularHistogram->SetStats(false);
-        for (double value : paraCosines) angularHistogram->Fill(value);
-        paraAngularFit = std::make_unique<TF1>(
-            "para_angular_legendre_fit",
-            "[0]*(1+[1]*0.5*(3*x*x-1))", -1.0, 1.0);
-        anisotropyFit = fitSecondLegendreAnisotropy(paraIndependentCosines);
-        paraAngularFit->SetParameters(
-            static_cast<double>(paraCosines.size())/angularHistogram->GetNbinsX(),
-            anisotropyFit.anisotropy);
-        paraAngularFit->SetParName(0, "normalization");
-        paraAngularFit->SetParName(1, "a2");
-        paraAngularFit->SetLineColor(kBlue + 1);
-        paraAngularFit->SetLineWidth(2);
-        paraAngularFit->SetLineStyle(2);
+        // Unpolarized p-Ps is isotropic: the exact density is flat in
+        // cos(theta) and the ideal Legendre anisotropy is a2 = 0.
+        paraAngularReference = std::make_unique<TF1>(
+            "para_angular_reference", "0.5*(1+[0]*0.5*(3*x*x-1))", -1.0, 1.0);
+        paraAngularReference->SetParameter(0, anisotropyReference.value);
+        paraAngularReference->SetParName(0, "a2");
+        paraAngularReference->SetLineColor(kGreen + 2);
+        paraAngularReference->SetLineWidth(3);
+        paraAngularReference->SetMinimum(0.0);
+        paraAngularReference->SetMaximum(1.0);
+        paraAngularReference->SetTitle(
+            "Photon polar angle, unpolarized p-Ps (exact);"
+            "cos(#theta_{#gamma});(1/N) dN/dcos#theta");
         distributionsPage.cd(3);
         gPad->SetGrid();
-        angularHistogram->Draw("HIST");
-        paraAngularFit->Draw("SAME");
-        std::vector<std::string> angularAnalysis{
-            "MC events: N = " + std::to_string(decayEventCount)
-                + "; photons = " + std::to_string(paraCosines.size()),
-            "Fit: C[1+a_{2}P_{2}(cos#theta)]",
-            "constrained unbinned event-level MLE",
-            "C = " + compactNumber(paraAngularFit->GetParameter(0)),
-            "a_{2} = " + compactNumber(anisotropyFit.anisotropy),
-            anisotropyFit.atBoundary
-                ? "boundary solution; uncertainty unavailable"
-                : "SE(a_{2}) = " + compactNumber(anisotropyFit.standardError),
+        paraAngularReference->Draw("L");
+        drawAnalysisBox(analysisBoxes, 0.26, 0.58, 0.94, 0.91, {
+            "Exact reference curve, no Monte Carlo.",
+            "Unpolarized p-Ps has no preferred axis, so the",
+            "density is flat in cos#theta: C[1+a_{2}P_{2}(cos#theta)]",
+            "with a_{2} = " + compactNumber(anisotropyReference.value) + ".",
             "Experimental:",
-            "no apparatus-independent a_{2}; ideal unpolarized a_{2}="
-                + compactNumber(anisotropyReference.value)
-        };
-        drawAnalysisBox(analysisBoxes, 0.43, 0.55, 0.94, 0.91,
-                        angularAnalysis, 0.022);
+            "no apparatus-independent a_{2} is available"
+        }, 0.022);
         distributionsPage.cd(4);
         channelInformation.SetFillColorAlpha(kWhite, 0.92);
         channelInformation.SetTextAlign(12);
         channelInformation.SetTextFont(42);
         channelInformation.AddText("Ideal vacuum, truth level");
-        channelInformation.AddText(
-            ("MC events: N = " + std::to_string(decayEventCount)).c_str());
         channelInformation.AddText("Dominant channel: p-Ps #rightarrow 2#gamma");
         channelInformation.AddText("Photon multiplicity: 2");
         channelInformation.AddText("Opening angle in CM: 180 degrees");
@@ -1809,138 +1741,164 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         energyText << "E_{#gamma} = " << photonEndpoint << " keV";
         channelInformation.AddText(energyText.str().c_str());
         channelInformation.AddText("No detector broadening or material effects");
+        channelInformation.AddText("Panels are exact kinematics, not sampled;");
+        channelInformation.AddText(
+            "the generator is unit-tested in positronium_validation");
         channelInformation.Draw();
     } else {
-        const int dalitzBins = std::clamp(static_cast<int>(std::lround(
-            2.0*std::sqrt(std::sqrt(static_cast<double>(decayEvents))))),
-            6, 80);
+        // Deterministic quadrature over the Dalitz triangle.  The integrand is
+        // the same Ore-Powell weight the generator targets, so this is the
+        // exact reference rather than a sample of it: no RNG, reproducible
+        // bit-for-bit, and free of statistical noise.
+        constexpr int quadratureSteps = 1400;
+        constexpr int dalitzBins = 70;
         dalitzHistogram = std::make_unique<TH2D>("ortho_dalitz_histogram",
-            "Three-photon Dalitz distribution;E_{max} [keV];E_{mid} [keV]",
+            "Three-photon Dalitz density (exact);E_{max} [keV];E_{mid} [keV]",
             dalitzBins, (2.0/3.0)*photonEndpoint, photonEndpoint,
             dalitzBins, 0.5*photonEndpoint, photonEndpoint);
         dalitzHistogram->SetDirectory(nullptr);
         dalitzHistogram->SetStats(false);
-        for (size_t index = 0; index < orthoMaximumEnergies.size(); ++index) {
-            dalitzHistogram->Fill(orthoMaximumEnergies[index], orthoMiddleEnergies[index]);
-        }
         angularHistogram = std::make_unique<TH1D>("ortho_leading_angle_histogram",
-            "Angle between two leading photons;#theta_{12} [deg];Events",
-            histogramBins(orthoLeadingAngles.size(),200), 120.0, 180.0);
+            "Angle between the two leading photons (exact);"
+            "#theta_{12} [deg];(1/N) dN/d#theta_{12} [deg^{-1}]",
+            120, 120.0, 180.0);
         styleHistogram(*angularHistogram, kMagenta + 1);
         angularHistogram->SetStats(false);
-        for (double value : orthoLeadingAngles) angularHistogram->Fill(value);
+        double quadratureNorm = 0.0;
+        for (int i = 0; i < quadratureSteps; ++i) {
+            const double first = (i + 0.5)/quadratureSteps;
+            for (int j = 0; j < quadratureSteps; ++j) {
+                const double second = (j + 0.5)/quadratureSteps;
+                const double third = 2.0 - first - second;
+                if (!(third > 0.0 && third <= 1.0)) continue;
+                const bound_decay::detail::OrthoEnergyPoint point =
+                    bound_decay::detail::makeOrthoEnergyPoint(first, second);
+                const double weight =
+                    bound_decay::detail::orePowellWeight(point);
+                if (!(weight > 0.0) || !std::isfinite(weight)) continue;
+                std::array<std::size_t,3> order{0, 1, 2};
+                std::sort(order.begin(), order.end(),
+                    [&](std::size_t a, std::size_t b) {
+                        return point.fractions[a] > point.fractions[b];
+                    });
+                const double leadingCosine = bound_decay::detail::pairCosine(
+                    point, order[0], order[1]);
+                dalitzHistogram->Fill(photonEndpoint*point.fractions[order[0]],
+                                      photonEndpoint*point.fractions[order[1]],
+                                      weight);
+                angularHistogram->Fill(
+                    std::acos(bound_decay::detail::clampCosine(leadingCosine))
+                        *180.0/pi, weight);
+                quadratureNorm += weight;
+            }
+        }
+        if (quadratureNorm > 0.0) {
+            dalitzHistogram->Scale(1.0/quadratureNorm);
+            angularHistogram->Scale(
+                1.0/(quadratureNorm*angularHistogram->GetBinWidth(1)));
+        }
         distributionsPage.cd(3);
         gPad->SetRightMargin(0.14);
         dalitzHistogram->Draw("COLZ");
-        drawAnalysisBox(analysisBoxes, 0.08, 0.64, 0.56, 0.91, {
-            "MC events: N = " + std::to_string(decayEventCount),
-            "Generator/reference: Ore-Powell 2D template",
-            "P=A #Sigma_{ij}(1-cos#theta_{ij})^{2}",
+        drawAnalysisBox(analysisBoxes, 0.08, 0.66, 0.56, 0.91, {
+            "Exact reference, no Monte Carlo.",
+            "Ore-Powell density P #propto #Sigma_{ij}(1-cos#theta_{ij})^{2}",
+            "integrated by deterministic quadrature",
             "free shape parameters: 0",
             "Experimental:",
             "no matching acceptance-corrected dataset loaded"
-        }, 0.023);
+        }, 0.022);
         distributionsPage.cd(4);
         gPad->SetGrid();
         angularHistogram->Draw("HIST");
-        drawAnalysisBox(analysisBoxes, 0.08, 0.61, 0.58, 0.91, {
-            "MC events: N = " + std::to_string(decayEventCount),
-            "Generator/reference: Ore-Powell angular projection",
+        drawAnalysisBox(analysisBoxes, 0.14, 0.62, 0.62, 0.91, {
+            "Exact reference, no Monte Carlo.",
+            "Ore-Powell density projected onto the angle",
+            "between the two most energetic photons",
             "free shape parameters: 0",
             "range: 120 deg #leq #theta_{12} #leq 180 deg",
             "Experimental:",
             "no matching detector-independent parameter loaded"
-        }, 0.024);
+        }, 0.022);
     }
 
-    TH1D energyClosureHistogram("decay_energy_closure",
-        "Energy-conservation closure;(#SigmaE_{#gamma}-E_{Ps})/(E_{Ps}#epsilon);Events",
-        129, -64.5, 64.5);
-    TH1D momentumClosureHistogram("decay_momentum_closure",
-        "Momentum-conservation closure;c|#Sigmap_{#gamma}|/(E_{Ps}#epsilon);Events",
-        64, 0.0, 64.0);
-    TH1D photonShellHistogram("decay_photon_mass_shell",
-        "Photon mass-shell closure;(E_{#gamma}^{2}-c^{2}p_{#gamma}^{2})/(E_{#gamma}^{2}#epsilon);Photons",
-        129, -64.5, 64.5);
-    TH1D parentInvariantHistogram("decay_parent_invariant",
-        "Parent invariant-mass-squared closure;(E_{sum}^{2}-c^{2}|p_{sum}|^{2}-E_{Ps}^{2})/(E_{Ps}^{2}#epsilon);Events",
-        129, -64.5, 64.5);
-    styleHistogram(energyClosureHistogram, kOrange + 7);
-    styleHistogram(momentumClosureHistogram, kAzure + 1);
-    styleHistogram(photonShellHistogram, kGreen + 2);
-    styleHistogram(parentInvariantHistogram, kMagenta + 1);
-    for (TH1D* histogram : {&energyClosureHistogram, &momentumClosureHistogram,
-                            &photonShellHistogram, &parentInvariantHistogram}) {
-        histogram->SetStats(false);
+    // The diagnostics page used to hold four closure histograms of the photon
+    // generator.  Those measured the generator's own arithmetic, not the
+    // classical model, and for the 2-gamma channel they were identically zero
+    // by construction; they now live in positronium_validation.  What belongs
+    // here is the calibration behaviour of the CREM trajectories that actually
+    // produce the collapse time on the facing page.
+    double powerLower = std::numeric_limits<double>::infinity();
+    double powerUpper = 0.0;
+    for (double value : calibrationPowers) {
+        powerLower = std::min(powerLower, value);
+        powerUpper = std::max(powerUpper, value);
     }
-    for (double value : energyClosureEpsilon) energyClosureHistogram.Fill(value);
-    for (double value : momentumClosureEpsilon) momentumClosureHistogram.Fill(value);
-    for (double value : photonMassShellEpsilon) photonShellHistogram.Fill(value);
-    for (double value : parentInvariantEpsilon) parentInvariantHistogram.Fill(value);
-
-    const auto maximumAbsolute = [](const std::vector<double>& values) {
-        double maximum = 0.0;
-        for (double value : values) maximum = std::max(maximum, std::abs(value));
-        return maximum;
-    };
-    const double maximumClosure = std::max({
-        maximumAbsolute(energyClosureEpsilon),
-        maximumAbsolute(momentumClosureEpsilon),
-        maximumAbsolute(photonMassShellEpsilon),
-        maximumAbsolute(parentInvariantEpsilon)});
-    const auto drawClosureAnalysis = [&](TH1D& histogram,
-                                         const std::vector<double>& values,
-                                         const std::string& functionName,
-                                         bool includeGlobalNotes) {
-        const GaussianFitSummary fit = gaussianMaximumLikelihood(values);
-        std::unique_ptr<TF1> curve = gaussianMleOverlay(
-            functionName, fit, histogram, kBlue + 1);
-        if (curve) analysisFunctions.push_back(std::move(curve));
-        std::vector<std::string> lines{
-            "Entries: N = " + std::to_string(fit.count),
-            fit.sigma > 0.0 ? "Fit: Gaussian MLE in plotted residual"
-                            : "Fit: degenerate Gaussian (#sigma=0)",
-            "#mu = " + compactNumber(fit.mean),
-            "#sigma = " + compactNumber(fit.sigma),
-            isPara ? "p-Ps: both photons carry exactly E_{Ps}/2 with"
-                     " opposite directions,"
-                   : "o-Ps: sampled energies/directions are independent,",
-            isPara ? "so this residual is zero by construction (exactness check"
-                     " only)."
-                   : "so this genuinely tests the generator's closure.",
-            "Experimental:",
-            "n/a - numerical closure, expected center = 0"
-        };
-        if (includeGlobalNotes) {
-            lines.push_back("max all closures = "
-                + compactNumber(maximumClosure) + " #epsilon");
-            lines.push_back("J not tested: photon helicities absent");
-        }
-        drawAnalysisBox(analysisBoxes, includeGlobalNotes ? 0.58 : 0.52,
-                        includeGlobalNotes ? 0.49 : 0.61,
-                        0.97, 0.91, lines, includeGlobalNotes ? 0.020 : 0.024);
-    };
+    if (!(powerLower < powerUpper)) {
+        powerLower = 0.0;
+        powerUpper = 1.0;
+    }
+    const double powerPadding = 0.05*(powerUpper - powerLower);
+    TH1D calibrationPowerHistogram("crem_calibration_power",
+        "Orbit-averaged radiated power of the CREM calibration;"
+        "#LTP#GT [W];Trajectories",
+        histogramBins(calibrationPowers.size()),
+        powerLower - powerPadding, powerUpper + powerPadding);
+    styleHistogram(calibrationPowerHistogram, kOrange + 7);
+    calibrationPowerHistogram.SetStats(false);
+    for (double value : calibrationPowers) calibrationPowerHistogram.Fill(value);
+    const GaussianFitSummary powerMoments =
+        gaussianMaximumLikelihood(calibrationPowers);
 
     diagnosticsPage.cd(1);
     gPad->SetGrid();
-    energyClosureHistogram.Draw("HIST");
-    drawClosureAnalysis(energyClosureHistogram, energyClosureEpsilon,
-                        "decay_energy_closure_gaussian", false);
+    calibrationPowerHistogram.Draw("HIST");
+    drawAnalysisBox(analysisBoxes, 0.50, 0.58, 0.95, 0.91, {
+        "Trajectories with a finite power: N = "
+            + std::to_string(calibrationPowers.size()),
+        "#LTP#GT = " + compactNumber(powerMoments.mean) + " W",
+        "#sigma(P) = " + compactNumber(powerMoments.sigma) + " W",
+        "This is the quantity the secular extrapolation",
+        "dE/dt = P is calibrated on; its spread propagates",
+        "directly into the collapse-time spread opposite."
+    }, 0.021);
+
+    TPaveText calibrationSummary(0.06, 0.10, 0.94, 0.90, "NDC");
+    calibrationSummary.SetFillColorAlpha(kWhite, 0.95);
+    calibrationSummary.SetTextAlign(12);
+    calibrationSummary.SetTextFont(42);
+    calibrationSummary.AddText("CREM calibration diagnostics");
+    std::ostringstream calibrationCountLine;
+    calibrationCountLine << "trajectories: " << runCount
+                         << ";  valid collapse extrapolations: "
+                         << collapseMoments.count;
+    calibrationSummary.AddText(calibrationCountLine.str().c_str());
+    std::ostringstream calibrationOutcomeLine;
+    calibrationOutcomeLine << "calibration outcome  reached-cutoff / "
+                              "observation-limit / failed = "
+                           << reachedCutoffCount << " / "
+                           << observationLimitCount << " / "
+                           << calibrationFailureCount;
+    calibrationSummary.AddText(calibrationOutcomeLine.str().c_str());
+    calibrationSummary.AddText(
+        "reached-cutoff entries use the integrated time directly;");
+    calibrationSummary.AddText(
+        "observation-limit entries use the secular extrapolation.");
+    calibrationSummary.AddText("");
+    calibrationSummary.AddText(
+        "The photon panels opposite are EXACT reference curves, not samples.");
+    calibrationSummary.AddText(
+        "The annihilation generator is a quantum prescription independent of");
+    calibrationSummary.AddText(
+        "the classical model; sampling it here would only have reproduced the");
+    calibrationSummary.AddText(
+        "distribution it draws from.  Its self-consistency (energy, momentum,");
+    calibrationSummary.AddText(
+        "mass-shell and parent-invariant closure, isotropy, Ore-Powell shape)");
+    calibrationSummary.AddText(
+        "is checked in positronium_validation, where a unit test belongs.");
     diagnosticsPage.cd(2);
-    gPad->SetGrid();
-    momentumClosureHistogram.Draw("HIST");
-    drawClosureAnalysis(momentumClosureHistogram, momentumClosureEpsilon,
-                        "decay_momentum_closure_gaussian", false);
-    diagnosticsPage.cd(3);
-    gPad->SetGrid();
-    photonShellHistogram.Draw("HIST");
-    drawClosureAnalysis(photonShellHistogram, photonMassShellEpsilon,
-                        "decay_photon_shell_gaussian", false);
-    diagnosticsPage.cd(4);
-    gPad->SetGrid();
-    parentInvariantHistogram.Draw("HIST");
-    drawClosureAnalysis(parentInvariantHistogram, parentInvariantEpsilon,
-                        "decay_parent_invariant_gaussian", true);
+    calibrationSummary.Draw();
 
     canvas.cd();
     distributionsPage.Pop();
@@ -1951,10 +1909,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         {distributionsPage.GetPad(2), 1, 2, "photon_energy"},
         {distributionsPage.GetPad(3), 1, 3, isPara ? "photon_polar_angle"
                                               : "three_photon_dalitz"},
-        {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_energy_closure"},
-        {diagnosticsPage.GetPad(2), 2, 2, "diagnostic_momentum_closure"},
-        {diagnosticsPage.GetPad(3), 2, 3, "diagnostic_photon_mass_shell"},
-        {diagnosticsPage.GetPad(4), 2, 4, "diagnostic_parent_invariant_mass"}
+        {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_calibration_power"},
+        {diagnosticsPage.GetPad(2), 2, 2, "diagnostic_calibration_summary"}
     };
     if (!isPara) {
         plotsToSave.push_back(
@@ -3971,7 +3927,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
 }
 
 int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
-                            int runCount, int decayEventCount,
+                            int runCount,
                             double beamEnergyEv,
                             double thetaMinimumDegrees, int angleBins,
                             double impactMaximumPm, double matchingRadiusPm,
@@ -3984,8 +3940,7 @@ int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
                                          interactionImpactSigmaPm);
     }
     if (selectedPhenomenon == 1 || selectedPhenomenon == 2) {
-        return showBoundDecayStatistics(seed, selectedPhenomenon, runCount,
-                                        decayEventCount);
+        return showBoundDecayStatistics(seed, selectedPhenomenon, runCount);
     }
     return showBeamStatistics(seed, selectedPhenomenon, runCount,
                               beamEnergyEv, thetaMinimumDegrees,
@@ -4017,10 +3972,6 @@ int main(int argc, char** argv) {
     int selectedPhenomenon = 0;
     int statisticalRuns = 100;
     bool statisticalRunsExplicit = false;
-    // Photon kinematics come from the standalone annihilation generator, which
-    // costs microseconds per event, so its default sample is not tied to the
-    // trajectory budget in --runs.
-    int decayEventCount = 1000000;
     double beamEnergyEv = 20.0;
     double thetaMinimumDegrees = 5.0;
     int angleBins = 10;
@@ -4062,7 +4013,10 @@ int main(int argc, char** argv) {
                 statisticalRuns = std::stoi(requireValue(argument));
                 statisticalRunsExplicit = true;
             } else if (argument == "--decay-events") {
-                decayEventCount = std::stoi(requireValue(argument));
+                (void)requireValue(argument);
+                throw std::invalid_argument(
+                    "--decay-events was removed: the photon panels are exact "
+                    "reference curves and no longer sample the generator");
             } else if (argument == "--stat-window-ps") {
                 (void)requireValue(argument);
                 throw std::invalid_argument(
@@ -4179,26 +4133,9 @@ int main(int argc, char** argv) {
                       <<maximumStatisticalRuns<<" for this experiment.\n";
             return 1;
         }
-        // Per-event observables are retained for the histograms and the
-        // unbinned Legendre fit, which costs a measured ~93 MB per million
-        // events on top of ROOT's own footprint.  The ceiling keeps the peak
-        // under roughly half a gigabyte of sample storage.
-        constexpr int maximumDecayEvents = 5000000;
-        if (selectedPhenomenon <= 2
-            && (decayEventCount < 1 || decayEventCount > maximumDecayEvents)) {
-            std::cerr << "--decay-events must be from 1 to " << maximumDecayEvents
-                      << ".\n";
-            return 1;
-        }
-        if (selectedPhenomenon <= 2 && decayEventCount > 2000000) {
-            std::cout << "Note: " << decayEventCount
-                      << " decay events retain about "
-                      << (static_cast<double>(decayEventCount)*93.0e-6)
-                      << " GB of per-event observables.\n";
-        }
         try {
             return showStatisticalAnalysis(seed, selectedPhenomenon,
-                                           statisticalRuns, decayEventCount,
+                                           statisticalRuns,
                                            beamEnergyEv,
                                            thetaMinimumDegrees,
                                            angleBins, impactParameterMaximumPm,

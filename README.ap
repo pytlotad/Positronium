@@ -50,12 +50,13 @@ Program bada układ elektron–pozyton dwiema różnymi ścieżkami:
 
 - `Visual simulation` całkuje jedną klasyczną trajektorię i pokazuje ją na
   interaktywnej kanwie ROOT;
-- `Statistical analysis` generuje próbkę rozpadów pozytonium albo próbkę
-  klasycznych trajektorii wiązkowych i zapisuje osobne wykresy PDF.
+- `Statistical analysis` generuje próbkę klasycznych trajektorii i zapisuje
+  osobne wykresy PDF; krzywe kinematyki fotonów są dokładnymi referencjami.
 
 To rozróżnienie jest fundamentalne. Statystyczne rozpady p-Ps i o-Ps nie są
-otrzymywane przez całkowanie klasycznej orbity do małej odległości. Korzystają
-z osobnego generatora fenomenologicznego i kinematyki 2 gamma / 3 gamma.
+otrzymywane przez całkowanie klasycznej orbity do małej odległości. Kinematyka
+2 gamma / 3 gamma pochodzi z osobnej, kwantowej recepty i jest przedstawiana
+jako dokładna krzywa referencyjna, a nie jako wynik symulacji klasycznej.
 
 Program pracuje w SI. Prezentacja i wykresy przeliczają wybrane wielkości na
 pm, ps/ns, eV/keV, barny i jednostki hbar.
@@ -105,7 +106,7 @@ przebudowanie dokładało do historii blob około 400 kB.
 
 `./positronium_validation` kończy się kodem `0` przy komplecie testów i `1`
 w przeciwnym razie. Przy niepowodzeniu wypisuje `FAILED check: <nazwa>` dla
-każdego testu, który nie przeszedł, oraz licznik `checks passed: k/26`, więc
+każdego testu, który nie przeszedł, oraz licznik `checks passed: k/27`, więc
 nie trzeba szukać rozbieżności wśród kilkudziesięciu liczb powyżej.
 
 ## 5. Interfejs i wszystkie ścieżki wykonania
@@ -123,8 +124,8 @@ Numer ma to samo ogólne znaczenie w nazwach plików i menu:
 
 Znaczenie fizyczne zależy jednak od trybu. Visual 1/2 pokazuje klasyczne
 związane trajektorie rozróżnione orientacją dipoli. Statistical 1/2 wyznacza
-ekstrapolowany klasyczny czas kolapsu CREM i osobno generuje kinematykę
-kwantowych kanałów 2 gamma / 3 gamma.
+ekstrapolowany klasyczny czas kolapsu CREM i osobno rysuje dokładne krzywe
+referencyjne kinematyki kwantowych kanałów 2 gamma / 3 gamma.
 
 ### 5.2 Visual simulation
 
@@ -160,8 +161,7 @@ potem kończy aplikację.
 ### 5.3 Statistical 1 — para-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 1 --runs 100 \
-    --decay-events 1000000 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 1 --runs 100 --seed 12345 --no-gui
 ```
 
 Każda realizacja całkuje kilka orbit pełnym modelem CREM, mierzy uśrednioną
@@ -169,14 +169,13 @@ moc promieniowania i ekstrapoluje sekularną ewolucję do granicy `0.01*a0`.
 Rozkład tych czasów otrzymuje opisowe dopasowanie wykładnicze i jest
 porównywany z krzywą zbudowaną z opublikowanego czasu eksperymentalnego.
 Wartość eksperymentalna nie jest wejściem obliczenia CREM. Kinematyka 2 gamma
-jest generowana osobno. Domyślna i maksymalna próbka trajektorii CREM
-obejmuje 100 przebiegów; kinematyka fotonów ma domyślnie 1 000 000 zdarzeń.
+jest rysowana jako dokładna krzywa referencyjna, bez losowania. Domyślna i
+maksymalna próbka trajektorii CREM obejmuje 100 przebiegów.
 
 ### 5.4 Statistical 2 — orto-pozytonium
 
 ```text
-./positronium --mode statistical --phenomenon 2 --runs 100 \
-    --decay-events 1000000 --seed 12345 --no-gui
+./positronium --mode statistical --phenomenon 2 --runs 100 --seed 12345 --no-gui
 ```
 
 Czas kolapsu jest wyznaczany tą samą metodą CREM co w eksperymencie 1, dla
@@ -185,14 +184,24 @@ porównania. Osobny generator Ore'a–Powella tworzy kinematykę 3 gamma: energi
 fotonów, wykres Dalitza i kąt wiodących fotonów oraz diagnostyki czteropędu.
 Domyślna i maksymalna próbka obejmuje 100 trajektorii.
 
-Rozmiary obu prób są niezależne. `--runs` steruje liczbą trajektorii CREM
-(kosztowne, sekundy każda, limit 100) i dotyczy wyłącznie panelu czasu kolapsu.
-`--decay-events` steruje liczbą zdarzeń generatora anihilacji (mikrosekundy
-każde, domyślnie 1000000, limit 5000000) i dotyczy wyłącznie paneli kinematyki
-fotonów oraz ich diagnostyk czteropędu. Wcześniej była to jedna liczba, więc
-darmowe histogramy fotonowe dziedziczyły budżet trajektorii i miały po 100
-wpisów. Strumienie losowe obu prób są rozdzielone, więc zmiana jednej liczby nie
-przetasowuje drugiej próby.
+Panele fotonowe są **dokładnymi krzywymi referencyjnymi, nie wynikiem Monte
+Carlo**. Generator anihilacji jest kwantową receptą, celowo niezależną od modelu
+klasycznego, a próbkowanie go w tym miejscu odtwarzało jedynie ten sam rozkład,
+z którego losuje: linia 2 gamma jest stałą kinematyczną, rozkład kątowy jest
+izotropowy z konstrukcji, a widmo 3 gamma to ta sama gęstość Ore'a-Powella,
+którą rysuje krzywa referencyjna. Rysowane są teraz:
+
+- linia `E_Ps/2` dla kanału 2 gamma (dokładna kinematyka dwuciałowa);
+- płaski rozkład `cos(theta)` dla nieupolaryzowanego p-Ps, z `a2 = 0`;
+- dokładne widmo inkluzywne `F(E/E_max)` Ore'a-Powella;
+- gęstość Dalitza i rzut na kąt między wiodącymi fotonami, liczone
+  **deterministyczną kwadraturą** po trójkącie Dalitza z tej samej wagi
+  `sum_ij (1-cos theta_ij)^2`, bez generatora liczb losowych.
+
+Spójność samego generatora (domknięcia energii, pędu, warunku bezmasowego i
+niezmiennika masy rodzica, izotropia, kształt widma) jest sprawdzana w
+`positronium_validation` jako test `annihilation-generator`, czyli tam gdzie
+należy test jednostkowy. `--runs` steruje wyłącznie liczbą trajektorii CREM.
 
 Eksperymenty 1 i 2 dają praktycznie **ten sam** rozkład czasu kolapsu: różnią
 się wyłącznie warunkiem dopasowania dipoli w losowaniu warunków początkowych, a
@@ -330,9 +339,6 @@ i `LL/coherent dE`: `|E_bound|/E_rad` oraz `|dE|/E_rad`.
 - `--seed UINT64` — deterministyczne ziarno;
 - `--runs` — liczba trajektorii: maksymalnie 100 dla kalibracji CREM w 1/2
   i 100 000 dla trajektorii wiązki w 3/4;
-- `--decay-events N` — liczba zdarzeń generatora anihilacji w 1/2, domyślnie
-  1 000 000, maksymalnie 5 000 000; ignorowane w 3/4. Nie ma wpływu na czas
-  kolapsu CREM, a czas kolapsu nie ma wpływu na kinematykę fotonów;
 - `--interaction-energy-ev VALUE` — średnia `K_CM` w eksperymencie 5,
   domyślnie 1;
 - `--interaction-energy-sigma-ev VALUE` — sigma rozkładu energii, domyślnie 0,4;
@@ -474,10 +480,10 @@ przyciski. Plik powstaje po zakończeniu animacji lub po kliknięciu `EXIT`.
 - `differential_cross_section` — modelowe `d sigma/d Omega`;
 - `cumulative_cross_section` — `sigma(theta >= theta_min)`;
 - `energy_loss_cross_section` — modelowe `d sigma/d DeltaE`;
-- `diagnostic_*_closure` — residua zachowania w generatorze zaniku. Uwaga: w
-  kanale 2 gamma (p-Ps) oba fotony mają dokładnie `E_Ps/2` i przeciwne
-  kierunki, więc residuum jest zerowe **z konstrukcji** i sprawdza tylko
-  dokładność arytmetyki. Realną treść ma dopiero kanał 3 gamma;
+- `diagnostic_calibration_power` — rozkład uśrednionej po orbitach mocy
+  promieniowania, na której kalibrowana jest ekstrapolacja sekularna;
+- `diagnostic_calibration_summary` — liczności wyników kalibracji CREM oraz
+  informacja, że panele fotonowe są dokładnymi krzywymi, a nie próbką;
 - `diagnostic_*_balance` — **residuum tożsamości księgowej, nie test zachowania**.
   `boundField*` jest zdefiniowane w `integrateElectrodynamicStep` jako dokładnie
   ta reszta, która domyka sumę `particles + radiation + bound field`, więc suma
