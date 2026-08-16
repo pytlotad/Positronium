@@ -926,9 +926,11 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    gaussowsko losowaną energią i półgaussowskim parametrem zderzenia, po czym
    klasyfikuje każdą trajektorię jako `Collision`, `Scattering`,
    `Para-Positronium` albo `Orto-Positronium` i podaje zestawienie liczności.
-   Klasa `Collision` przy progu `1e-14 m` wychodzi pusta, ponieważ klasyczna
-   bariera dipol-dipol rośnie jak \(1/r^3\) i na tym progu odpowiada energii
-   rzędu \(10^{11}\,\mathrm{eV}\); szczegóły w `README.ap`, sekcja 5.4a.
+   Próg zderzenia to granica rozdzielczości modelu
+   \(0{,}01\,a_0=529\,\mathrm{fm}\), a nie granica punktowa
+   \(10\,\mathrm{fm}\): ta ostatnia leży poniżej klasycznej bariery
+   dipol-dipol przy \(193\,\mathrm{fm}\), więc była nieosiągalna;
+   szczegóły w `README.ap`, sekcja 5.4a.
    Panele kinematyki fotonów są dokładnymi krzywymi referencyjnymi, a nie
    wynikiem Monte Carlo: generator anihilacji jest kwantową receptą niezależną
    od modelu klasycznego, a próbkowanie go odtwarzało jedynie rozkład, z

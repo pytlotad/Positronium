@@ -413,15 +413,27 @@ ChargeKinematics historicalCharge(const StateHistory& history,
                 velocity + acceleration * delta, acceleration};
     }
 
-    const State* older = &earliest;
-    for (const State& state : history) {
-        if (state.time >= time) return interpolatedCharge(*older, state, electron, time);
-        older = &state;
+    // Binary search, not a linear scan.  This lookup runs inside the Newton
+    // iteration of every retarded-field evaluation, and the history reaches
+    // thousands of entries when a trajectory turns around at short range: the
+    // retention window shrinks like r while the step shrinks like r^{3/2}, so
+    // the node count grows as the pair approaches.  historicalState() already
+    // searched this way; this was the one place that did not.
+    const auto newer = std::lower_bound(history.begin(), history.end(), time,
+        [](const State& sample, double requested) {
+            return sample.time < requested;
+        });
+    if (newer == history.end()) {
+        const State& latest = history.back();
+        if (present.time > latest.time) {
+            return interpolatedCharge(latest, present, electron, time);
+        }
+        return interpolatedCharge(latest, latest, electron, time);
     }
-    if (present.time > older->time) {
-        return interpolatedCharge(*older, present, electron, time);
+    if (newer == history.begin()) {
+        return interpolatedCharge(*newer, *newer, electron, time);
     }
-    return interpolatedCharge(*older, *older, electron, time);
+    return interpolatedCharge(*std::prev(newer), *newer, electron, time);
 }
 
 // Mutual, retarded Lienard-Wiechert field of a moving point charge.
@@ -2456,6 +2468,20 @@ struct InteractionConfiguration {
     // for hours.  Exceeding the budget censors the event as Unresolved, the
     // same censoring convention the beam experiments use for their flight gate.
     double eventWallClockBudgetSeconds = 0.0;
+    // Separation at which the trajectory is declared to have collided.  This is
+    // the model's own resolution limit, chargeCloudRestRadius = 0.01*a0 =
+    // 529 fm, not the point-particle boundary nuclearCutoff = 10 fm.
+    //
+    // The point-particle boundary sits BELOW the classical dipole barrier at
+    // r* = 193 fm, where the dipole and Coulomb energies cross, so no
+    // trajectory could ever reach it: they turned around at 170-450 fm and
+    // ground away there, needing steps a thousand times shorter than normal
+    // until the wall-clock budget censored them.  The program was spending its
+    // whole budget resolving a regime the model cannot describe anyway, since
+    // 193 fm is half the reduced Compton wavelength and the charge sector
+    // already assumes a source of radius 529 fm.  Terminating at the model's
+    // own limit ends those trajectories promptly with a meaningful label.
+    double collisionRadius = 0.0;
 };
 
 struct InteractionEvent {
@@ -2552,6 +2578,7 @@ InteractionConfiguration makeInteractionConfiguration(
     configuration.boundObservationOrbits = 8.0;
     configuration.boundObservationTimeCap = 2.0e-16;
     configuration.eventWallClockBudgetSeconds = 20.0;
+    configuration.collisionRadius = chargeCloudRestRadius;
     return configuration;
 }
 
@@ -2685,9 +2712,26 @@ InteractionEvent simulateInteractionEvent(
         const double transitStep = 0.02*radius/std::max(relativeSpeed, 1.0);
         double dt = std::min({1.0e-15, 2.0*pi/(320.0*omega), transitStep,
                               configuration.maximumFlightTime - state.time});
+        // A step clamped to the end of a window can fall below the floating
+        // point resolution of state.time, after which state.time += dt is a
+        // no-op: the clock freezes and the event spins until the wall-clock
+        // budget censors it as Unresolved.  Measured on captured pairs with
+        // E_Coulomb = -17 eV, so those were successful captures being thrown
+        // away by a rounding artefact rather than trajectories needing work.
+        const double clockResolution = std::max(std::abs(state.time),
+            configuration.boundObservationTimeCap)
+            * std::numeric_limits<double>::epsilon() * 8.0;
         if (bound) {
-            dt = std::min(dt, boundStartTime + boundObservationTime
-                              - state.time);
+            const double remaining =
+                boundStartTime + boundObservationTime - state.time;
+            if (remaining <= clockResolution) {
+                boundObservationTime = state.time - boundStartTime;
+            } else {
+                dt = std::min(dt, remaining);
+            }
+        }
+        if (configuration.maximumFlightTime - state.time <= clockResolution) {
+            return finish(InteractionOutcome::Unresolved, state);
         }
         if (!(dt > 0.0) || !std::isfinite(dt)) return finish(
             InteractionOutcome::NumericalFailure, state);
@@ -2705,6 +2749,12 @@ InteractionEvent simulateInteractionEvent(
         const State beforeStep = state;
         if (!trajectory.advance(state, dt)) return finish(
             InteractionOutcome::NumericalFailure, beforeStep);
+        // Belt and braces: any path that fails to advance the clock would
+        // otherwise loop until the budget runs out.
+        if (!(state.time > beforeStep.time)) {
+            if (bound) boundObservationTime = state.time - boundStartTime;
+            else return finish(InteractionOutcome::Unresolved, state);
+        }
 
         const Vec3 relative = state.electronPosition - state.positronPosition;
         const double currentRadius = relative.norm();
@@ -2715,12 +2765,13 @@ InteractionEvent simulateInteractionEvent(
 
         // A trajectory that reaches the point-particle boundary has collided,
         // whether or not it had already been captured.
-        if (currentRadius <= nuclearCutoff) {
+        if (currentRadius <= configuration.collisionRadius) {
             const double crossingFraction = separationCrossingFraction(
-                beforeStep, state, nuclearCutoff);
+                beforeStep, state, configuration.collisionRadius);
             const State cutoffState = interpolateState(
                 beforeStep, state, crossingFraction);
-            minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
+            minimumSeparation = std::min(minimumSeparation,
+                                          configuration.collisionRadius);
             return finish(InteractionOutcome::Collision, cutoffState);
         }
 
@@ -3705,7 +3756,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
               << configuration.impactParameterSigma*1.0e12
               << " pm)|; both dipoles isotropic.\n"
               << "Start/escape separation " << configuration.matchingRadius*1.0e12
-              << " pm; collision boundary " << nuclearCutoff*1.0e12
+              << " pm; collision boundary "
+              << configuration.collisionRadius*1.0e12
               << " pm; bound states observed for "
               << configuration.boundObservationOrbits << " orbits (capped at "
               << configuration.boundObservationTimeCap*1.0e15 << " fs).\n";
@@ -3946,7 +3998,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             + std::to_string(outcomeCounts[4] + outcomeCounts[5]));
     }
     summaryLines.push_back("Collision: r reached "
-        + compactNumber(nuclearCutoff*1.0e12, 3) + " pm");
+        + compactNumber(configuration.collisionRadius*1.0e12, 3)
+        + " pm (model resolution limit 0.01a_{0})");
     summaryLines.push_back("Para: parallel #mu (S=0); Ortho: antiparallel #mu");
     summaryLines.push_back(plot_style::key(true, false, false, false));
     summaryLines.push_back("outline = provenance, fill = class:");

@@ -1562,6 +1562,26 @@ void appendStateHistory(StateHistory& history, const State& state) {
     while (history.size() > 2 && history[1].time < earliestNeeded) {
         history.pop_front();
     }
+    // Cap the sample count inside the retarded window.  The window length is
+    // set by the light-crossing time of the pair, but the number of samples
+    // needed inside it is set by how fast the source moves, not by the
+    // integration step.  Without a cap the count is window/step, which grows
+    // like r^{-1/2} and reached ten thousand entries at short range.  Ordinary
+    // orbits hold three to six nodes, so this never triggers there and their
+    // results are bit-identical.
+    constexpr std::size_t maximumHistoryNodes = 128;
+    if (history.size() > maximumHistoryNodes) {
+        StateHistory thinned;
+        const std::size_t keepRecent = maximumHistoryNodes/2;
+        const std::size_t oldCount = history.size() - keepRecent;
+        for (std::size_t index = 0; index < oldCount; index += 2) {
+            thinned.push_back(history[index]);
+        }
+        for (std::size_t index = oldCount; index < history.size(); ++index) {
+            thinned.push_back(history[index]);
+        }
+        history = std::move(thinned);
+    }
 }
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION

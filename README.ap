@@ -233,7 +233,9 @@ wychwytywana. Obniżenie energii faktycznie zwiększa liczbę stanów związanyc
 
 Każda trajektoria jest klasyfikowana do jednej z czterech klas:
 
-- `Collision` — separacja osiągnęła granicę modelu punktowego `1e-14 m`;
+- `Collision` — separacja osiągnęła **granicę rozdzielczości modelu**,
+  `chargeCloudRestRadius = 0.01*a0 = 529 fm`, czyli tę samą, której używa tryb
+  Visual dla zderzenia bezpośredniego i ekstrapolacja kolapsu CREM;
 - `Scattering` — para minęła się i wróciła na sferę startową z energią dodatnią;
 - `Para-Positronium` — para została wychwycona, a uśredniony po orbitach
   `cos(mu_e, mu_p)` wyszedł `>= 0.5`, czyli momenty magnetyczne są RÓWNOLEGŁE,
@@ -246,20 +248,29 @@ klas fizycznych.
 
 Trzy uwagi konieczne przy interpretacji wyników:
 
-1. **Klasa `Collision` jest przy progu `1e-14 m` strukturalnie pusta.**
+1. **Próg zderzenia jest granicą stosowalności modelu, nie rozmiarem cząstki.**
    Klasyczne oddziaływanie dipol-dipol rośnie jak `1/r^3`, a kulombowskie jak
    `1/r`, więc obie energie zrównują się przy
    `r* = sqrt((mu0/4pi)*mu_B^2/(k*e^2)) = 193 fm`. Poniżej `r*` człon dipolowy
-   dominuje i tworzy barierę, której energia rzędu keV jest o trzy rzędy
-   wielkości większa niż energia wlotowa rzędu eV. Na samym progu `1e-14 m`
-   energia dipolowa wynosi `5,4e7 eV` w konfiguracji równikowej i `1,1e8 eV`
-   osiowej. Zmierzone `r_min` wynosi 0,17-0,45 pm niezależnie od `b`, co jest
-   sygnaturą bariery, a `r*` zgadza się z tym pomiarem. Sprawdzono, że nawet
-   przy `K_CM = 40 keV` i `b = 0,05 pm` liczba zderzeń pozostaje zerowa. Ten sam
-   efekt widać w eksperymencie 3, gdzie kanał `short-range` również wychodzi
-   pusty. Uwaga: `r*` to dokładnie połowa zredukowanej długości Comptona
-   `hbar/(m_e c) = 386 fm`, czyli bariera leży w obszarze, w którym klasyczny
-   opis punktowego momentu magnetycznego nie ma podstaw fizycznych.
+   tworzy barierę o energii rzędu keV, nieprzekraczalną przy energiach wlotowych
+   rzędu eV. `r*` to dokładnie połowa zredukowanej długości Comptona
+   `hbar/(m_e c) = 386 fm`, czyli bariera leży tam, gdzie klasyczny opis
+   punktowego momentu magnetycznego nie ma już podstaw fizycznych.
+
+   Wcześniej progiem był `nuclearCutoff = 10 fm`, czyli wartość **poniżej**
+   bariery. Żadna trajektoria nie mogła go osiągnąć: zawracały przy 170-450 fm
+   i mieliły w punkcie zwrotnym, gdzie krok całkowania jest tysiąc razy mniejszy
+   niż zwykle, aż budżet czasu rzeczywistego cenzurował je jako `Unresolved`.
+   Program zużywał więc cały budżet na rozdzielanie obszaru, którego model i tak
+   nie opisuje, a klasa `Collision` pozostawała pusta.
+
+   Po podniesieniu progu do `529 fm` klasa `Collision` jest zapełniona,
+   cenzura zniknęła, a przebieg 100 trajektorii skrócił się z około 12 minut do
+   36 sekund. Wynik odniesienia (seed 42): Collision 32, Scattering 60, Para 4,
+   Orto 4, Unresolved 0. Średnie parametry zderzenia układają się monotonicznie
+   -- 15 pm dla zderzeń, 37/55 pm dla stanów związanych, 83 pm dla rozproszeń --
+   co jest niezależnym sprawdzianem, że klasyfikacja odpowiada geometrii.
+
 2. Etykieta para/orto odzwierciedla orientację dipoli w chwili wychwytu.
    Model klasyczny nie ma kanału relaksacji spinu na skali czasu całkowania,
    więc „ustabilizowanie się" oznacza tu uśrednienie po `8` orbitach Keplera, a
@@ -283,13 +294,21 @@ Raport podaje też średnią `K_CM` i średnie `b` dla wszystkich trajektorii or
 osobno dla każdej klasy. Rozbicie na klasy jest istotne: wychwyt selekcjonuje
 małe parametry zderzenia, więc pojedyncza średnia zbiorcza ukrywałaby mechanizm.
 
-**Koszt obliczeniowy jest silnie niesymetryczny.** Trajektoria, która zawraca
-wewnątrz bariery dipolowej przy `r ~ 0,2 pm`, wchodzi w obszar sztywny, gdzie
-pojedynczy krok adaptacyjny kosztuje około sekundy; rozkład kosztu na zdarzenie
-ma bardzo ciężki ogon. Dlatego każde zdarzenie ma budżet czasu rzeczywistego
-(domyślnie 20 s, kontrolowany co 8 kroków); po jego przekroczeniu zdarzenie jest
-cenzurowane jako `Unresolved`, zgodnie z tą samą konwencją co bramka czasu lotu
-w eksperymentach wiązkowych. Liczba ocenzurowanych zdarzeń jest raportowana.
+Każde zdarzenie ma budżet czasu rzeczywistego (domyślnie 20 s, kontrolowany co
+8 kroków); po jego przekroczeniu jest cenzurowane jako `Unresolved`, zgodnie
+z tą samą konwencją co bramka czasu lotu w eksperymentach wiązkowych. Liczba
+ocenzurowanych zdarzeń jest raportowana. Po podniesieniu progu zderzenia budżet
+w praktyce nie jest już wykorzystywany.
+
+Wcześniejsza cenzura na poziomie 29% miała trzy niezależne przyczyny, wszystkie
+usunięte: krok przycięty do końca okna obserwacji spadał poniżej rozdzielczości
+zmiennoprzecinkowej `state.time`, przez co zegar zamarzał i udane wychwyty
+(zmierzone `E_Coulomb = -17 eV`) były raportowane jako `Unresolved`;
+`historicalCharge` przeszukiwał historię liniowo, choć `historicalState` już
+używał wyszukiwania binarnego; liczba węzłów historii, równa `okno/krok`, rosła
+jak `r^-1/2` i sięgała dziesięciu tysięcy, więc jest teraz ograniczona do 128
+przez przerzedzanie starszej połowy. Zwykłe orbity trzymają 3-6 węzłów, więc
+limit tam nie działa i ich wyniki są bit-identyczne.
 
 ### 5.5 Statistical 3 — kanał krótkiego zasięgu
 
