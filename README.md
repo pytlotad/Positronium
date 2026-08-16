@@ -30,6 +30,36 @@ pozytonium. Tryb statystyczny stanów związanych korzysta z osobnego, jawnie
 oznaczonego generatora zaniku w idealnej próżni; nie udaje, że anihilacja
 wynika z dojścia klasycznej trajektorii do małej odległości.
 
+### Promień regularyzacji dipola magnetycznego
+
+Pole dipola magnetycznego jest wygładzane wagą \(w(r)=1/(1+(a/r)^p)\) z
+\(p=6\) i
+
+\[a=\sqrt[3]{\frac{\mu_0}{4\pi}\frac{\mu_B^2}{m_e c^2}}=47{,}18\,\mathrm{fm},\]
+
+czyli separacją, przy której klasyczna energia oddziaływania dipol-dipol
+osiąga energię spoczynkową elektronu. Profil \(w(r)/r^3=r^3/(r^6+a^6)\) ma
+maksimum dokładnie w \(r=a\), więc ten wybór ogranicza klasyczną energię
+dipolową do \(m_ec^2/2\) w całej dziedzinie. Model klasyczny nie powinien
+generować energii oddziaływania powyżej progu kreacji par.
+
+Poprzednia wartość \(0{,}5\cdot\)`nuclearCutoff` \(=5\,\mathrm{fm}\) była
+dobrana wyłącznie tak, aby wygładzanie pozostało wewnątrz raportowanej
+dziedziny. Dopuszczała energię dipolową \(2{,}1\cdot10^8\,\mathrm{eV}\),
+czyli 420 mas spoczynkowych elektronu, i czyniła sektor magnetyczny 106 razy
+bardziej punktowym niż sektor ładunkowy, który już zakłada źródło o skończonym
+promieniu `chargeCloudRestRadius`. Podniesienie promienia do 47 fm pozostawia
+każdą raportowaną orbitę bit-identyczną: przy dziesiątkach pikometrów waga
+różni się od jedności o mniej niż \(10^{-19}\); sprawdzono to na trybie
+diagnostycznym oraz na eksperymencie 3.
+
+To **nie** usuwa krótkozasięgowej bariery dipolowej. Bariera leży tam, gdzie
+nieregularyzowane energie dipolowa i kulombowska się zrównują,
+\(r^\*=\sqrt{(\mu_0/4\pi)\mu_B^2/(ke^2)}=193\,\mathrm{fm}\), czyli w
+połowie zredukowanej długości Comptona — daleko poza jakimkolwiek promieniem
+wygładzania, który nie rusza raportowanych orbit. Poniżej tej skali klasyczny
+opis punktowego momentu magnetycznego nie ma podstaw fizycznych.
+
 Wszystkie obliczenia wykonywane są w jednostkach SI. Elektron i pozyton mają tę
 samą masę \(m_e\), przeciwne ładunki \(-e\) i \(+e\) oraz momenty magnetyczne o
 stałej wartości magnetonu Bohra \(\mu_B\). Początkowa odległość wynosi jeden

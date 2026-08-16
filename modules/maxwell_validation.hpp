@@ -1219,14 +1219,52 @@ int runMaxwellSelfTest() {
         regulatorFieldResiduals[index]=(field-equatorialPointField).norm()
             /equatorialPointField.norm();
     }
+    // Probe the regulator on its own terms instead of at a fixed absolute
+    // radius.  The previous version evaluated it at nuclearCutoff and required
+    // the residual to stay small, which only held while the smoothing radius
+    // was deliberately kept below the reported boundary; it therefore encoded
+    // that choice rather than testing the operator.  What the regulator must
+    // actually do is (a) converge to the point dipole well outside a, faster
+    // for a steeper exponent, and (b) stay bounded as r goes to zero.
     const std::array<double,3> regulatorExponents{4.0,6.0,8.0};
+    const double regulatorFarRadius=10.0*magneticRegularizationRadius;
+    const Vec3 farPointField=regularizedDipoleField(
+        {regulatorFarRadius,0,0},staticDipoleState.positronDipole,0.0);
     std::array<double,3> regulatorProfileResiduals{};
     for(std::size_t index=0;index<regulatorExponents.size();++index) {
-        const Vec3 field=regularizedDipoleField({nuclearCutoff,0,0},
+        const Vec3 field=regularizedDipoleField({regulatorFarRadius,0,0},
             staticDipoleState.positronDipole,magneticRegularizationRadius,
             regulatorExponents[index]);
-        regulatorProfileResiduals[index]=(field-equatorialPointField).norm()
-            /equatorialPointField.norm();
+        regulatorProfileResiduals[index]=(field-farPointField).norm()
+            /farPointField.norm();
+    }
+    // Outside the smoothing core the regularized field must agree with the
+    // point dipole in direction.  Inside the core it legitimately reverses,
+    // exactly as the field inside a uniformly magnetized sphere is parallel to
+    // M rather than antiparallel as on the equator of a point dipole, so the
+    // direction check has to be made where the two are supposed to agree.
+    const Vec3 farRegularizedField=regularizedDipoleField(
+        {regulatorFarRadius,0,0},staticDipoleState.positronDipole);
+    const double regulatorFarAlignment=dot(farRegularizedField,farPointField);
+    // Deep inside the core the regularized field must be strongly suppressed
+    // relative to the point dipole, which is what removes the singularity.
+    const double regulatorCoreRadius=0.01*magneticRegularizationRadius;
+    const double regulatorCoreSuppression=
+        regularizedDipoleField({regulatorCoreRadius,0,0},
+            staticDipoleState.positronDipole).norm()
+        /regularizedDipoleField({regulatorCoreRadius,0,0},
+            staticDipoleState.positronDipole,0.0).norm();
+    // The physical ceiling the radius is chosen for: the classical dipole
+    // interaction energy must stay below the electron rest energy everywhere.
+    // w(r)/r^3 peaks at r=a, so the maximum is (mu0/4pi)mu^2/(2a^3).
+    double peakDipoleEnergyOverRestEnergy=0.0;
+    for(int sample=0;sample<4000;++sample) {
+        const double radius=magneticRegularizationRadius
+            *std::pow(10.0,-3.0+6.0*sample/3999.0);
+        const double energy=shortRangeFieldWeight(radius)
+            *(mu0/(4.0*pi))*bohrMagneton*bohrMagneton/(radius*radius*radius);
+        peakDipoleEnergyOverRestEnergy=std::max(
+            peakDipoleEnergyOverRestEnergy,energy/(electronMass*c*c));
     }
     const Vec3 cutoffDipoleForce=regularizedDipoleForce(
         {nuclearCutoff,0,0},{bohrMagneton,0,0},
@@ -1447,8 +1485,14 @@ int runMaxwellSelfTest() {
         &&regulatorFieldResiduals[1]<regulatorFieldResiduals[0]
         &&regulatorFieldResiduals[1]<0.2
         &&std::ranges::all_of(regulatorProfileResiduals,
-            [](double value){return std::isfinite(value)&&value<0.3;})
-        &&dot(directStaticDipole,equatorialPointField)>0.0
+            [](double value){return std::isfinite(value)&&value<1.0e-3;})
+        // A steeper exponent must converge faster at the same radius.
+        &&regulatorProfileResiduals[1]<regulatorProfileResiduals[0]
+        &&regulatorProfileResiduals[2]<regulatorProfileResiduals[1]
+        &&std::isfinite(regulatorCoreSuppression)
+        &&regulatorCoreSuppression<1.0e-9
+        &&peakDipoleEnergyOverRestEnergy<1.0
+        &&regulatorFarAlignment>0.0
         &&isFinite(cutoffDipoleForce)
         &&cutoffSurfaceResidual<1.0e-14;
     const double benchmarkSeconds=std::chrono::duration<double>(
@@ -1608,9 +1652,11 @@ int runMaxwellSelfTest() {
               << "reg a=.75/.5/.25 rc:" << regulatorFieldResiduals[0] << " / "
               << regulatorFieldResiduals[1] << " / "
               << regulatorFieldResiduals[2] << '\n'
-              << "reg p=4/6/8:       " << regulatorProfileResiduals[0] << " / "
+              << "reg p=4/6/8 @10a:  " << regulatorProfileResiduals[0] << " / "
               << regulatorProfileResiduals[1] << " / "
               << regulatorProfileResiduals[2] << '\n'
+              << "reg core suppress: " << regulatorCoreSuppression << '\n'
+              << "reg peak U/m_e c2: " << peakDipoleEnergyOverRestEnergy << '\n'
               << "cutoff surface:     " << cutoffSurfaceResidual << '\n'
               << "CFL dt:             " << cflStep << " s\n"
               << "field storage:      "
