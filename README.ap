@@ -238,13 +238,19 @@ klas fizycznych.
 Trzy uwagi konieczne przy interpretacji wyników:
 
 1. **Klasa `Collision` jest przy progu `1e-14 m` strukturalnie pusta.**
-   Klasyczne oddziaływanie dipol-dipol rośnie jak `1/r^3` i przy `r = 0.2 pm`
-   daje energię
-   `mu*B` rzędu 13 keV wobec kulombowskich -7,2 keV, a na samym progu `1e-14 m`
-   rzędu `1e11 eV`. Zmierzone `r_min` wynosi 0,17-0,45 pm niezależnie od `b`, co
-   jest sygnaturą bariery. Sprawdzono, że nawet przy `K_CM = 40 keV` i
-   `b = 0,05 pm` liczba zderzeń pozostaje zerowa. Ten sam efekt widać w
-   eksperymencie 3, gdzie kanał `short-range` również wychodzi pusty.
+   Klasyczne oddziaływanie dipol-dipol rośnie jak `1/r^3`, a kulombowskie jak
+   `1/r`, więc obie energie zrównują się przy
+   `r* = sqrt((mu0/4pi)*mu_B^2/(k*e^2)) = 193 fm`. Poniżej `r*` człon dipolowy
+   dominuje i tworzy barierę, której energia rzędu keV jest o trzy rzędy
+   wielkości większa niż energia wlotowa rzędu eV. Na samym progu `1e-14 m`
+   energia dipolowa wynosi `5,4e7 eV` w konfiguracji równikowej i `1,1e8 eV`
+   osiowej. Zmierzone `r_min` wynosi 0,17-0,45 pm niezależnie od `b`, co jest
+   sygnaturą bariery, a `r*` zgadza się z tym pomiarem. Sprawdzono, że nawet
+   przy `K_CM = 40 keV` i `b = 0,05 pm` liczba zderzeń pozostaje zerowa. Ten sam
+   efekt widać w eksperymencie 3, gdzie kanał `short-range` również wychodzi
+   pusty. Uwaga: `r*` to dokładnie połowa zredukowanej długości Comptona
+   `hbar/(m_e c) = 386 fm`, czyli bariera leży w obszarze, w którym klasyczny
+   opis punktowego momentu magnetycznego nie ma podstaw fizycznych.
 2. Etykieta para/orto odzwierciedla orientację dipoli w chwili wychwytu.
    Model klasyczny nie ma kanału relaksacji spinu na skali czasu całkowania,
    więc „ustabilizowanie się" oznacza tu uśrednienie po `8` orbitach Keplera, a
