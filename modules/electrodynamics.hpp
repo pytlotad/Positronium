@@ -1158,21 +1158,6 @@ MutualForces chargeDipoleForces(const State& s, const StateHistory& history) {
             positronChargeElectronDipole.onCharge + electronChargePositronDipole.onDipole};
 }
 
-[[maybe_unused]] MutualForces chargeOnDipoleCarrierForces(
-    const State& s,const StateHistory& history) {
-    const DipoleDerivatives derivatives=thomasBmtDipoleDerivatives(s,history);
-    const Vec3 separationVector=s.electronPosition-s.positronPosition;
-    const Vec3 relativeVelocity=s.electronVelocity-s.positronVelocity;
-    const ChargeDipolePairForces electronChargePositronDipole=
-        chargeDipolePairForces(relativeVelocity,-eCharge,s.positronDipole,
-            derivatives.positron,separationVector);
-    const ChargeDipolePairForces positronChargeElectronDipole=
-        chargeDipolePairForces(relativeVelocity*-1.0,eCharge,s.electronDipole,
-            derivatives.electron,separationVector*-1.0);
-    return {positronChargeElectronDipole.onDipole,
-            electronChargePositronDipole.onDipole};
-}
-
 MutualForces allExternalForces(const State& s) {
     const MutualForces positionForces = mutualForces(s);
     const MutualForces velocityForces = darwinForces(s);
@@ -1307,25 +1292,44 @@ CanonicalMomenta canonicalMomenta(const State& s) {
     return {electron, positron};
 }
 
-Vec3 noetherMomentum(const State& s) {
-    const CanonicalMomenta canonical = canonicalMomenta(s);
+// Overloads taking an already-computed CanonicalMomenta.  Callers that need
+// more than one of these quantities for the same state used to recompute the
+// canonical momenta once per call: three times per frame and four times per
+// accepted integration step, each redoing the pair geometry, the relativistic
+// momenta and two regularized dipole vector potentials.
+Vec3 noetherMomentum(const CanonicalMomenta& canonical) {
     return canonical.electron + canonical.positron;
 }
 
-double canonicalMomentumScale(const State& s) {
-    const CanonicalMomenta canonical = canonicalMomenta(s);
+Vec3 noetherMomentum(const State& s) {
+    return noetherMomentum(canonicalMomenta(s));
+}
+
+double canonicalMomentumScale(const CanonicalMomenta& canonical) {
     return canonical.electron.norm() + canonical.positron.norm();
 }
 
-Vec3 noetherAngularMomentum(const State& s) {
+#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
+// Production callers already hold the canonical momenta and use the overload
+// above; only the Yee-coupling tests start from a bare state.
+double canonicalMomentumScale(const State& s) {
+    return canonicalMomentumScale(canonicalMomenta(s));
+}
+#endif
+
+Vec3 noetherAngularMomentum(const State& s,
+                            const CanonicalMomenta& canonical) {
     constexpr double electronGyromagneticRatio = -eCharge / (2.0 * electronMass);
     constexpr double positronGyromagneticRatio = eCharge / (2.0 * positronMass);
-    const CanonicalMomenta canonical = canonicalMomenta(s);
     const Vec3 orbital = cross(s.electronPosition, canonical.electron)
                        + cross(s.positronPosition, canonical.positron);
     const Vec3 intrinsic = s.electronDipole / electronGyromagneticRatio
                          + s.positronDipole / positronGyromagneticRatio;
     return orbital + intrinsic;
+}
+
+Vec3 noetherAngularMomentum(const State& s) {
+    return noetherAngularMomentum(s, canonicalMomenta(s));
 }
 
 double conservativeParticleEnergy(const State& state) {
@@ -1434,8 +1438,10 @@ void integrateElectrodynamicStep(State& s, double dt,
                                     ChargeRadiationReactionModel::individualLandauLifshitz) {
     const State balanceStart=s;
     const double initialMechanicalEnergy=conservativeParticleEnergy(balanceStart);
-    const Vec3 initialMechanicalMomentum=noetherMomentum(balanceStart);
-    const Vec3 initialMechanicalAngularMomentum=noetherAngularMomentum(balanceStart);
+    const CanonicalMomenta initialCanonical=canonicalMomenta(balanceStart);
+    const Vec3 initialMechanicalMomentum=noetherMomentum(initialCanonical);
+    const Vec3 initialMechanicalAngularMomentum=
+        noetherAngularMomentum(balanceStart,initialCanonical);
     applyDipolePrecession(s, 0.5 * dt, history);
     MutualForces forces = retardedExternalForces(s, history);
     const ParticleMultipoleRadiation radiation =
@@ -1501,10 +1507,12 @@ void integrateElectrodynamicStep(State& s, double dt,
         // mismatch of the LL force and coherent far radiation below.
         const double mechanicalEnergyChange=
             conservativeParticleEnergy(trial)-initialMechanicalEnergy;
+        const CanonicalMomenta trialCanonical=canonicalMomenta(trial);
         const Vec3 mechanicalMomentumChange=
-            noetherMomentum(trial)-initialMechanicalMomentum;
+            noetherMomentum(trialCanonical)-initialMechanicalMomentum;
         const Vec3 mechanicalAngularChange=
-            noetherAngularMomentum(trial)-initialMechanicalAngularMomentum;
+            noetherAngularMomentum(trial,trialCanonical)
+            -initialMechanicalAngularMomentum;
         trial.boundFieldEnergy=balanceStart.boundFieldEnergy
             -mechanicalEnergyChange-radiatedEnergyIncrement;
         trial.boundFieldMomentum=balanceStart.boundFieldMomentum
@@ -1556,10 +1564,12 @@ void appendStateHistory(StateHistory& history, const State& state) {
     }
 }
 
+#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 // Self-adjoint reference map for the instantaneous conservative model.  It is
 // deliberately separate from the causal retarded/radiating engine: applying
 // the same converged midpoint solve with -dt must recover the initial state.
-[[maybe_unused]] void integrateConservativeMidpoint(
+// Only the time-reversibility test uses it, so it stays out of production.
+void integrateConservativeMidpoint(
     State& state,double dt,int iterations=8) {
     if(dt==0.0||!std::isfinite(dt)) return;
     const State start=state;
@@ -1606,6 +1616,7 @@ void appendStateHistory(StateHistory& history, const State& state) {
                                   -start.positronVelocity)/dt;
     state=endpoint;
 }
+#endif
 
 // The single classical trajectory engine shared by Visual and Statistical.
 // Sampling policies and stopping conditions belong to their callers; the

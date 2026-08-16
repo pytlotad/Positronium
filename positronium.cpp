@@ -113,7 +113,7 @@ Vec3 cross(const Vec3& a, const Vec3& b) {
     return {a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x};
 }
 
-[[maybe_unused]] DipoleTensor lorentzBoostDipole(const DipoleTensor& dipole,
+DipoleTensor lorentzBoostDipole(const DipoleTensor& dipole,
                                 const Vec3& frameVelocity) {
     const double speedSquared=frameVelocity.squaredNorm();
     if(speedSquared==0.0) return dipole;
@@ -130,14 +130,19 @@ Vec3 cross(const Vec3& a, const Vec3& b) {
                 *dot(frameVelocity,dipole.magnetic))};
 }
 
-[[maybe_unused]] double dipoleFirstInvariant(const DipoleTensor& dipole) {
+#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
+// Lorentz invariants of the polarization-magnetization tensor.  Only the
+// covariance tests consume them, so they are not compiled into the production
+// binary at all.
+double dipoleFirstInvariant(const DipoleTensor& dipole) {
     return dipole.magnetic.squaredNorm()
         -c*c*dipole.electric.squaredNorm();
 }
 
-[[maybe_unused]] double dipoleSecondInvariant(const DipoleTensor& dipole) {
+double dipoleSecondInvariant(const DipoleTensor& dipole) {
     return c*dot(dipole.electric,dipole.magnetic);
 }
+#endif
 Vec3 unit(const Vec3& v) { return v / v.norm(); }
 struct FourVector { double time=0.0; Vec3 space; }; // x^0=ct convention
 struct ElectromagneticField { Vec3 electric, magnetic; };
@@ -530,8 +535,12 @@ void initializeRetardedPairFields(MaxwellBlock& block,const State& state,
 }
 #endif
 
-[[maybe_unused]] void precessDipole(Vec3& dipole,const Vec3& field,
-                                    double gyromagneticRatio,double dt) {
+#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
+// Rodrigues precession used only by the grid-coupled pusher in the field
+// validation build; production dipole transport goes through the covariant
+// BMT integrator in advanceCovariantBmt().
+void precessDipole(Vec3& dipole,const Vec3& field,
+                   double gyromagneticRatio,double dt) {
     const double dipoleMagnitude=dipole.norm();
     if(dipoleMagnitude==0.0) return;
     const double fieldMagnitude = field.norm();
@@ -545,6 +554,7 @@ void initializeRetardedPairFields(MaxwellBlock& block,const State& state,
                        + axis * ((axis.x*dipole.x + axis.y*dipole.y + axis.z*dipole.z) * (1.0 - std::cos(angle)));
     dipole=rotated*(dipoleMagnitude/rotated.norm());
 }
+#endif
 
 double gamma(const Vec3& velocity) {
     return 1.0 / std::sqrt(std::max(1.0e-15, 1.0 - velocity.squaredNorm() / (c*c)));
@@ -950,14 +960,17 @@ Frame makeFrame(const State& s) {
     // is homogeneous of degree one in both velocities and therefore cancels
     // in the Legendre transform.
     const double conservativeNoetherEnergy=conservativeParticleEnergy(s);
+    // One evaluation feeds all three Noether quantities below.
+    const CanonicalMomenta canonical = canonicalMomenta(s);
     return {s.electronPosition,s.positronPosition,
             s.electronProperDipole.squaredNorm()>0.0
                 ?s.electronProperDipole:s.electronDipole,
             s.positronProperDipole.squaredNorm()>0.0
                 ?s.positronProperDipole:s.positronDipole,
-            noetherMomentum(s), noetherAngularMomentum(s),
+            noetherMomentum(canonical),
+            noetherAngularMomentum(s, canonical),
             s.radiatedMomentum, s.radiatedAngularMomentum,
-            canonicalMomentumScale(s),
+            canonicalMomentumScale(canonical),
             s.time, geometry.distance, s.radiatedEnergy,
             conservativeNoetherEnergy,
             schottEnergy,
