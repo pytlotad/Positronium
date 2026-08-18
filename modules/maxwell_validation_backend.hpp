@@ -7,7 +7,7 @@
 // is spherical in the instantaneous rest frame.  In the laboratory it is
 // Lorentz-contracted along the velocity and multiplied by gamma, so its
 // spatial integral remains exactly q.  The radius is a numerical UV cutoff,
-// not a claim about the physical size of an electron.
+// not a claim about the physical size of an first.
 struct RelativisticChargeCloud {
     double charge = 0.0;
     double restRadius = chargeCloudRestRadius;
@@ -1578,17 +1578,17 @@ public:
     MaxwellBoundaryFlux farFieldBoundaryFlux() const {
         return levels_.front().boundaryFlux();
     }
-    void depositPair(const Vec3& electronPosition, const Vec3& electronVelocity,
-                     const Vec3& positronPosition, const Vec3& positronVelocity,
-                     const Vec3& electronDipole={},const Vec3& positronDipole={}) {
-        const RelativisticChargeCloud electron{-eCharge, chargeCloudRestRadius};
-        const RelativisticChargeCloud positron{eCharge, chargeCloudRestRadius};
+    void depositPair(const Vec3& firstPosition, const Vec3& firstVelocity,
+                     const Vec3& secondPosition, const Vec3& secondVelocity,
+                     const Vec3& firstDipole={},const Vec3& secondDipole={}) {
+        const RelativisticChargeCloud first{-eCharge, chargeCloudRestRadius};
+        const RelativisticChargeCloud second{eCharge, chargeCloudRestRadius};
         for (MaxwellBlock& level : levels_) {
             level.clearSources();
-            level.depositCloud(electron, electronPosition, electronVelocity);
-            level.depositCloud(positron, positronPosition, positronVelocity);
-            level.depositMagneticDipole(electronPosition,electronDipole);
-            level.depositMagneticDipole(positronPosition,positronDipole);
+            level.depositCloud(first, firstPosition, firstVelocity);
+            level.depositCloud(second, secondPosition, secondVelocity);
+            level.depositMagneticDipole(firstPosition,firstDipole);
+            level.depositMagneticDipole(secondPosition,secondDipole);
             level.finalizeMagnetizationCurrent();
         }
     }
@@ -1668,41 +1668,41 @@ private:
 // electromagnetic domains.
 class MaxwellPairPatchHierarchy {
 public:
-    MaxwellPairPatchHierarchy(const Vec3& electronPosition,
-                              const Vec3& positronPosition)
+    MaxwellPairPatchHierarchy(const Vec3& firstPosition,
+                              const Vec3& secondPosition)
         : farField_(32,4.0*chargeCloudRestRadius,
-                    (electronPosition+positronPosition)*0.5),
-          electronPatch_(24,0.5*chargeCloudRestRadius,electronPosition),
-          positronPatch_(24,0.5*chargeCloudRestRadius,positronPosition) {}
+                    (firstPosition+secondPosition)*0.5),
+          firstPatch_(24,0.5*chargeCloudRestRadius,firstPosition),
+          secondPatch_(24,0.5*chargeCloudRestRadius,secondPosition) {}
     MaxwellBlock& farField() { return farField_; }
-    MaxwellBlock& electronPatch() { return electronPatch_; }
-    MaxwellBlock& positronPatch() { return positronPatch_; }
+    MaxwellBlock& firstPatch() { return firstPatch_; }
+    MaxwellBlock& secondPatch() { return secondPatch_; }
     const MaxwellBlock& farField() const { return farField_; }
-    const MaxwellBlock& electronPatch() const { return electronPatch_; }
-    const MaxwellBlock& positronPatch() const { return positronPatch_; }
-    bool coversPair(const Vec3& electronPosition,
-                    const Vec3& positronPosition) const {
+    const MaxwellBlock& firstPatch() const { return firstPatch_; }
+    const MaxwellBlock& secondPatch() const { return secondPatch_; }
+    bool coversPair(const Vec3& firstPosition,
+                    const Vec3& secondPosition) const {
         const double fineGuard=4.5*chargeCloudRestRadius;
         const double coarseGuard=8.0*chargeCloudRestRadius;
-        return electronPatch_.contains(electronPosition,fineGuard)
-            &&positronPatch_.contains(positronPosition,fineGuard)
-            &&farField_.contains(electronPosition,coarseGuard)
-            &&farField_.contains(positronPosition,coarseGuard);
+        return firstPatch_.contains(firstPosition,fineGuard)
+            &&secondPatch_.contains(secondPosition,fineGuard)
+            &&farField_.contains(firstPosition,coarseGuard)
+            &&farField_.contains(secondPosition,coarseGuard);
     }
-    std::size_t follow(const Vec3& electronPosition,
-                       const Vec3& positronPosition) {
+    std::size_t follow(const Vec3& firstPosition,
+                       const Vec3& secondPosition) {
         std::size_t moved=0;
-        if(electronPatch_.recenterIfNeeded(electronPosition)) ++moved;
-        if(positronPatch_.recenterIfNeeded(positronPosition)) ++moved;
-        const Vec3 midpoint=(electronPosition+positronPosition)*0.5;
+        if(firstPatch_.recenterIfNeeded(firstPosition)) ++moved;
+        if(secondPatch_.recenterIfNeeded(secondPosition)) ++moved;
+        const Vec3 midpoint=(firstPosition+secondPosition)*0.5;
         if(farField_.recenterIfNeeded(midpoint,0.3)) ++moved;
         return moved;
     }
     std::pair<Vec3,Vec3> fieldAt(const Vec3& position) const {
-        if(electronPatch_.contains(position,electronPatch_.cellSize()))
-            return electronPatch_.interpolateField(position);
-        if(positronPatch_.contains(position,positronPatch_.cellSize()))
-            return positronPatch_.interpolateField(position);
+        if(firstPatch_.contains(position,firstPatch_.cellSize()))
+            return firstPatch_.interpolateField(position);
+        if(secondPatch_.contains(position,secondPatch_.cellSize()))
+            return secondPatch_.interpolateField(position);
         return farField_.interpolateField(position);
     }
     void enableFarFieldCpml(int cells=8) {
@@ -1710,19 +1710,19 @@ public:
     }
     MaxwellVolumeIntegrals compositeVolumeIntegrals() const {
         const MaxwellVolumeIntegrals far=farField_.volumeIntegrals();
-        const MaxwellVolumeIntegrals coveredElectron=
-            farField_.volumeIntegralsInside(electronPatch_);
-        const MaxwellVolumeIntegrals coveredPositron=
-            farField_.volumeIntegralsInside(positronPatch_);
-        const MaxwellVolumeIntegrals electron=electronPatch_.volumeIntegrals();
-        const MaxwellVolumeIntegrals positron=positronPatch_.volumeIntegrals();
-        return {far.energy-coveredElectron.energy-coveredPositron.energy
-                    +electron.energy+positron.energy,
-                far.momentum-coveredElectron.momentum-coveredPositron.momentum
-                    +electron.momentum+positron.momentum,
-                far.angularMomentum-coveredElectron.angularMomentum
-                    -coveredPositron.angularMomentum+electron.angularMomentum
-                    +positron.angularMomentum};
+        const MaxwellVolumeIntegrals coveredFirst=
+            farField_.volumeIntegralsInside(firstPatch_);
+        const MaxwellVolumeIntegrals coveredSecond=
+            farField_.volumeIntegralsInside(secondPatch_);
+        const MaxwellVolumeIntegrals first=firstPatch_.volumeIntegrals();
+        const MaxwellVolumeIntegrals second=secondPatch_.volumeIntegrals();
+        return {far.energy-coveredFirst.energy-coveredSecond.energy
+                    +first.energy+second.energy,
+                far.momentum-coveredFirst.momentum-coveredSecond.momentum
+                    +first.momentum+second.momentum,
+                far.angularMomentum-coveredFirst.angularMomentum
+                    -coveredSecond.angularMomentum+first.angularMomentum
+                    +second.angularMomentum};
     }
     struct CouplingStep {
         std::size_t restrictedCells=0;
@@ -1732,15 +1732,15 @@ public:
     CouplingStep advanceSubcycled(double farTimeStep,bool parallelBranches=true) {
         if(!(farTimeStep>0.0)||farTimeStep>farField_.courantTimeStep())
             throw std::invalid_argument("pair hierarchy violates far-field CFL");
-        if((electronPatch_.centre()-positronPatch_.centre()).norm()
-            <0.5*(electronPatch_.extent()+positronPatch_.extent()))
+        if((firstPatch_.centre()-secondPatch_.centre()).norm()
+            <0.5*(firstPatch_.extent()+secondPatch_.extent()))
             throw std::runtime_error(
                 "particle patches overlap; a merged near-field patch is required");
         const MaxwellVolumeIntegrals beforeTotal=compositeVolumeIntegrals();
         const MaxwellBlock farBefore=farField_;
         farField_.advance(farTimeStep);
         const int ratio=static_cast<int>(std::lround(
-            farField_.cellSize()/electronPatch_.cellSize()));
+            farField_.cellSize()/firstPatch_.cellSize()));
         const auto advancePatch=[&](MaxwellBlock& patch) {
             for(int substep=0;substep<ratio;++substep) {
                 const double fraction=(substep+0.5)/ratio;
@@ -1752,21 +1752,21 @@ public:
                 farBefore,farField_,1.0);
         };
         if(parallelBranches) {
-            auto electronTask=std::async(std::launch::async,[&] {
-                advancePatch(electronPatch_);
+            auto firstTask=std::async(std::launch::async,[&] {
+                advancePatch(firstPatch_);
             });
-            advancePatch(positronPatch_);
-            electronTask.get();
+            advancePatch(secondPatch_);
+            firstTask.get();
         } else {
-            advancePatch(electronPatch_);
-            advancePatch(positronPatch_);
+            advancePatch(firstPatch_);
+            advancePatch(secondPatch_);
         }
         CouplingStep result;
-        result.restrictedCells+=farField_.restrictFieldFrom(electronPatch_);
-        result.restrictedCells+=farField_.restrictFieldFrom(positronPatch_);
-        electronPatch_.fillBoundaryFromTemporalInterpolation(
+        result.restrictedCells+=farField_.restrictFieldFrom(firstPatch_);
+        result.restrictedCells+=farField_.restrictFieldFrom(secondPatch_);
+        firstPatch_.fillBoundaryFromTemporalInterpolation(
             farField_,farField_,1.0);
-        positronPatch_.fillBoundaryFromTemporalInterpolation(
+        secondPatch_.fillBoundaryFromTemporalInterpolation(
             farField_,farField_,1.0);
         const MaxwellVolumeIntegrals afterTotal=compositeVolumeIntegrals();
         result.energyDefect=afterTotal.energy-beforeTotal.energy;
@@ -1776,7 +1776,7 @@ public:
         return result;
     }
 private:
-    MaxwellBlock farField_,electronPatch_,positronPatch_;
+    MaxwellBlock farField_,firstPatch_,secondPatch_;
 };
 
 class DynamicSelfFieldCalibration {

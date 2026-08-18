@@ -36,6 +36,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <deque>
 #include <exception>
 #include <future>
@@ -54,10 +55,10 @@
 #include <utility>
 #include <vector>
 
-#include "modules/bound_decay.hpp"
 #include "modules/vector3.hpp"
 #include "modules/state.hpp"
 #include "modules/physical_constants.hpp"
+#include "modules/particle_species.hpp"
 #include "modules/root_export.hpp"
 #include "modules/statistics_archive.hpp"
 
@@ -109,6 +110,52 @@ using namespace positronium::parameters;
 constexpr double c=speedOfLight;
 constexpr double eCharge=elementaryCharge;
 constexpr double coulomb=coulombConstant;
+
+// The two ROLES the dynamics integrates, as opposed to the species that fill
+// them.  Every force law below refers to "first" and "second"; which particles
+// those are is decided here and nowhere else.  Naming them electron/positron
+// was accurate only for the default pair and actively misleading for any
+// other, since the state fields are role slots, not species.
+constexpr ParticleSpecies firstSpecies=defaultPair.first;
+constexpr ParticleSpecies secondSpecies=defaultPair.second;
+constexpr double firstMass=firstSpecies.mass;
+constexpr double secondMass=secondSpecies.mass;
+constexpr double firstCharge=firstSpecies.charge;
+constexpr double secondCharge=secondSpecies.charge;
+constexpr double firstGFactor=firstSpecies.gFactor;
+constexpr double secondGFactor=secondSpecies.gFactor;
+// Magnitudes differ between roles for every pair except a particle and its
+// own antiparticle: the proton carries 1.41e-26 J/T against the electron's
+// 9.28e-24, four hundred times smaller.  Code that reached for one role's
+// moment while dressing the other was correct only by that accident.
+constexpr double firstMagneticMoment=magneticMoment(firstSpecies);
+constexpr double secondMagneticMoment=magneticMoment(secondSpecies);
+
+// Pair-level quantities.  These three replace the e^2 that used to be written
+// out wherever two charges met, and they are NOT interchangeable:
+//
+//   pairChargeProduct   q1 q2, SIGNED.  Negative for an attracting pair, which
+//                       is the only case with bound states.  Belongs in the
+//                       Coulomb potential and force, where the sign is the
+//                       physics.
+//   pairCoulombStrength k|q1 q2|, a magnitude.  Belongs in the Kepler
+//                       relations (period, semi-major axis, attraction
+//                       parameter), which presuppose attraction.
+//   pairDipoleCharge    the effective charge of the pair's electric dipole.
+//                       With the centre of mass at rest, m1 r1 + m2 r2 = 0, so
+//                       d = q1 r1 + q2 r2 = [(q1 m2 - q2 m1)/(m1+m2)] r.  For
+//                       e+e- that collapses to -e and |d| = e|r|, which is why
+//                       the old code could write e and be right; for a pair
+//                       with unequal masses it does not.
+constexpr double pairChargeProduct=firstCharge*secondCharge;
+constexpr double pairCoulombStrength=coulomb*magnitude(pairChargeProduct);
+constexpr double pairDipoleCharge=
+    (firstCharge*secondMass-secondCharge*firstMass)/(firstMass+secondMass);
+constexpr double pairReducedMass=firstMass*secondMass/(firstMass+secondMass);
+static_assert(magnitude(pairChargeProduct-(-eCharge*eCharge))
+              <=1.0e-12*eCharge*eCharge);
+static_assert(magnitude(magnitude(pairDipoleCharge)-eCharge)
+              <=1.0e-12*eCharge);
 double dot(const Vec3& a,const Vec3& b);
 double gamma(const Vec3& velocity);
 
@@ -162,14 +209,14 @@ bool isFinite(const Vec3& value) {
 }
 
 bool isFinite(const State& state) {
-    return isFinite(state.electronPosition) && isFinite(state.positronPosition)
-        && isFinite(state.electronVelocity) && isFinite(state.positronVelocity)
-        && isFinite(state.electronAcceleration) && isFinite(state.positronAcceleration)
-        && isFinite(state.electronDipole) && isFinite(state.positronDipole)
-        &&isFinite(state.electronElectricDipole)
-        &&isFinite(state.positronElectricDipole)
-        &&isFinite(state.electronProperDipole)
-        &&isFinite(state.positronProperDipole)
+    return isFinite(state.firstPosition) && isFinite(state.secondPosition)
+        && isFinite(state.firstVelocity) && isFinite(state.secondVelocity)
+        && isFinite(state.firstAcceleration) && isFinite(state.secondAcceleration)
+        && isFinite(state.firstDipole) && isFinite(state.secondDipole)
+        &&isFinite(state.firstElectricDipole)
+        &&isFinite(state.secondElectricDipole)
+        &&isFinite(state.firstProperDipole)
+        &&isFinite(state.secondProperDipole)
         && isFinite(state.radiatedMomentum)
         && isFinite(state.radiatedAngularMomentum)
         && isFinite(state.boundFieldMomentum)
@@ -196,30 +243,30 @@ Vec3 interpolateDipole(const Vec3& before, const Vec3& after, double fraction) {
 
 State interpolateState(const State& before, const State& after, double fraction) {
     State result;
-    result.electronPosition = interpolateVector(
-        before.electronPosition, after.electronPosition, fraction);
-    result.positronPosition = interpolateVector(
-        before.positronPosition, after.positronPosition, fraction);
-    result.electronVelocity = interpolateVector(
-        before.electronVelocity, after.electronVelocity, fraction);
-    result.positronVelocity = interpolateVector(
-        before.positronVelocity, after.positronVelocity, fraction);
-    result.electronAcceleration = interpolateVector(
-        before.electronAcceleration, after.electronAcceleration, fraction);
-    result.positronAcceleration = interpolateVector(
-        before.positronAcceleration, after.positronAcceleration, fraction);
-    result.electronDipole = interpolateDipole(
-        before.electronDipole, after.electronDipole, fraction);
-    result.positronDipole = interpolateDipole(
-        before.positronDipole, after.positronDipole, fraction);
-    result.electronElectricDipole=interpolateVector(
-        before.electronElectricDipole,after.electronElectricDipole,fraction);
-    result.positronElectricDipole=interpolateVector(
-        before.positronElectricDipole,after.positronElectricDipole,fraction);
-    result.electronProperDipole=interpolateDipole(
-        before.electronProperDipole,after.electronProperDipole,fraction);
-    result.positronProperDipole=interpolateDipole(
-        before.positronProperDipole,after.positronProperDipole,fraction);
+    result.firstPosition = interpolateVector(
+        before.firstPosition, after.firstPosition, fraction);
+    result.secondPosition = interpolateVector(
+        before.secondPosition, after.secondPosition, fraction);
+    result.firstVelocity = interpolateVector(
+        before.firstVelocity, after.firstVelocity, fraction);
+    result.secondVelocity = interpolateVector(
+        before.secondVelocity, after.secondVelocity, fraction);
+    result.firstAcceleration = interpolateVector(
+        before.firstAcceleration, after.firstAcceleration, fraction);
+    result.secondAcceleration = interpolateVector(
+        before.secondAcceleration, after.secondAcceleration, fraction);
+    result.firstDipole = interpolateDipole(
+        before.firstDipole, after.firstDipole, fraction);
+    result.secondDipole = interpolateDipole(
+        before.secondDipole, after.secondDipole, fraction);
+    result.firstElectricDipole=interpolateVector(
+        before.firstElectricDipole,after.firstElectricDipole,fraction);
+    result.secondElectricDipole=interpolateVector(
+        before.secondElectricDipole,after.secondElectricDipole,fraction);
+    result.firstProperDipole=interpolateDipole(
+        before.firstProperDipole,after.firstProperDipole,fraction);
+    result.secondProperDipole=interpolateDipole(
+        before.secondProperDipole,after.secondProperDipole,fraction);
     result.time = before.time + (after.time - before.time) * fraction;
     result.radiatedEnergy = before.radiatedEnergy
         + (after.radiatedEnergy - before.radiatedEnergy) * fraction;
@@ -247,8 +294,8 @@ State interpolateState(const State& before, const State& after, double fraction)
 
 double separationCrossingFraction(const State& before,const State& after,
                                   double targetSeparation) {
-    const Vec3 initial=before.electronPosition-before.positronPosition;
-    const Vec3 change=(after.electronPosition-after.positronPosition)-initial;
+    const Vec3 initial=before.firstPosition-before.secondPosition;
+    const Vec3 change=(after.firstPosition-after.secondPosition)-initial;
     const double quadratic=dot(change,change);
     const double linear=2.0*dot(initial,change);
     const double constant=dot(initial,initial)-targetSeparation*targetSeparation;
@@ -265,12 +312,12 @@ double separationCrossingFraction(const State& before,const State& after,
 }
 
 struct Frame {
-    Vec3 electron, positron, electronDipole, positronDipole;
+    Vec3 first, second, firstDipole, secondDipole;
     Vec3 noetherMomentum, noetherAngularMomentum;
     Vec3 radiatedMomentum, radiatedAngularMomentum;
     double canonicalMomentumScale;
     double time, radius, radiatedEnergy, mechanicalEnergy, schottEnergy;
-    double electronMechanicalEnergy, positronMechanicalEnergy;
+    double firstMechanicalEnergy, secondMechanicalEnergy;
     double boundFieldEnergy=0.0,reactionEnergyMismatch=0.0;
     Vec3 boundFieldMomentum,boundFieldAngularMomentum;
     Vec3 reactionMomentumMismatch,reactionAngularMomentumMismatch;
@@ -313,10 +360,16 @@ struct SimulationOptions {
     // keeping an interactive visualization responsive.
     std::function<void(const State&)> stepReady;
     std::function<bool()> stopRequested;
+    // Set false by callers that never read radiatedEnergy / radiatedMomentum /
+    // radiatedAngularMomentum / boundField* from the result.  It switches off
+    // the far-zone Poynting quadrature, which is the dominant per-step cost
+    // and does not influence the trajectory (see
+    // ClassicalTrajectoryEngine::Accuracy::computeOutwardFlux).
+    bool radiatedEnergyBookkeeping = true;
 };
 
 struct PairGeometry {
-    Vec3 electronMinusPositron;
+    Vec3 firstMinusSecond;
     double distance;
     double inverseDistance;
     double inverseDistanceCubed;
@@ -324,12 +377,12 @@ struct PairGeometry {
 };
 
 PairGeometry pairGeometry(const State& s) {
-    const Vec3 electronMinusPositron = s.electronPosition - s.positronPosition;
-    const double distanceSquared = electronMinusPositron.squaredNorm();
+    const Vec3 firstMinusSecond = s.firstPosition - s.secondPosition;
+    const double distanceSquared = firstMinusSecond.squaredNorm();
     const double distance = std::sqrt(distanceSquared);
     const double inverseDistance = 1.0 / distance;
     const double inverseDistanceSquared = inverseDistance * inverseDistance;
-    return {electronMinusPositron, distance, inverseDistance,
+    return {firstMinusSecond, distance, inverseDistance,
             inverseDistanceSquared * inverseDistance,
             inverseDistanceSquared * inverseDistanceSquared};
 }
@@ -346,18 +399,18 @@ Vec3 lerp(const Vec3& first,const Vec3& second,double fraction) {
 }
 #endif
 
-ChargeKinematics interpolatedCharge(const State& older, const State& newer, bool electron, double time) {
+ChargeKinematics interpolatedCharge(const State& older, const State& newer, bool first, double time) {
     const double span = newer.time - older.time;
     if(!(span>0.0)) {
-        return {electron?newer.electronPosition:newer.positronPosition,
-                electron?newer.electronVelocity:newer.positronVelocity,
-                electron?newer.electronAcceleration:newer.positronAcceleration};
+        return {first?newer.firstPosition:newer.secondPosition,
+                first?newer.firstVelocity:newer.secondVelocity,
+                first?newer.firstAcceleration:newer.secondAcceleration};
     }
     const double fraction=std::clamp((time-older.time)/span,0.0,1.0);
-    const Vec3 oldPosition = electron ? older.electronPosition : older.positronPosition;
-    const Vec3 newPosition = electron ? newer.electronPosition : newer.positronPosition;
-    const Vec3 oldVelocity = electron ? older.electronVelocity : older.positronVelocity;
-    const Vec3 newVelocity = electron ? newer.electronVelocity : newer.positronVelocity;
+    const Vec3 oldPosition = first ? older.firstPosition : older.secondPosition;
+    const Vec3 newPosition = first ? newer.firstPosition : newer.secondPosition;
+    const Vec3 oldVelocity = first ? older.firstVelocity : older.secondVelocity;
+    const Vec3 newVelocity = first ? newer.firstVelocity : newer.secondVelocity;
     const double s2=fraction*fraction;
     const double s3=s2*fraction;
     const double h00=2.0*s3-3.0*s2+1.0;
@@ -385,30 +438,30 @@ ChargeKinematics interpolatedCharge(const State& older, const State& newer, bool
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 ChargeKinematics linearlyInterpolatedCharge(const State& older,
-    const State& newer,bool electron,double time) {
+    const State& newer,bool first,double time) {
     const double span=newer.time-older.time;
     const double fraction=span>0.0
         ?std::clamp((time-older.time)/span,0.0,1.0):1.0;
-    return {lerp(electron?older.electronPosition:older.positronPosition,
-                 electron?newer.electronPosition:newer.positronPosition,fraction),
-            lerp(electron?older.electronVelocity:older.positronVelocity,
-                 electron?newer.electronVelocity:newer.positronVelocity,fraction),
-            lerp(electron?older.electronAcceleration:older.positronAcceleration,
-                 electron?newer.electronAcceleration:newer.positronAcceleration,
+    return {lerp(first?older.firstPosition:older.secondPosition,
+                 first?newer.firstPosition:newer.secondPosition,fraction),
+            lerp(first?older.firstVelocity:older.secondVelocity,
+                 first?newer.firstVelocity:newer.secondVelocity,fraction),
+            lerp(first?older.firstAcceleration:older.secondAcceleration,
+                 first?newer.firstAcceleration:newer.secondAcceleration,
                  fraction)};
 }
 #endif
 
 ChargeKinematics historicalCharge(const StateHistory& history,
-                                   const State& present, bool electron,
+                                   const State& present, bool first,
                                    double time) {
     const State& earliest = history.empty() ? present : history.front();
     if (time <= earliest.time) {
         const double delta = time - earliest.time;
-        const Vec3 position = electron ? earliest.electronPosition : earliest.positronPosition;
-        const Vec3 velocity = electron ? earliest.electronVelocity : earliest.positronVelocity;
-        const Vec3 acceleration = electron ? earliest.electronAcceleration
-                                           : earliest.positronAcceleration;
+        const Vec3 position = first ? earliest.firstPosition : earliest.secondPosition;
+        const Vec3 velocity = first ? earliest.firstVelocity : earliest.secondVelocity;
+        const Vec3 acceleration = first ? earliest.firstAcceleration
+                                           : earliest.secondAcceleration;
         return {position + velocity * delta + acceleration * (0.5 * delta * delta),
                 velocity + acceleration * delta, acceleration};
     }
@@ -426,14 +479,14 @@ ChargeKinematics historicalCharge(const StateHistory& history,
     if (newer == history.end()) {
         const State& latest = history.back();
         if (present.time > latest.time) {
-            return interpolatedCharge(latest, present, electron, time);
+            return interpolatedCharge(latest, present, first, time);
         }
-        return interpolatedCharge(latest, latest, electron, time);
+        return interpolatedCharge(latest, latest, first, time);
     }
     if (newer == history.begin()) {
-        return interpolatedCharge(*newer, *newer, electron, time);
+        return interpolatedCharge(*newer, *newer, first, time);
     }
-    return interpolatedCharge(*std::prev(newer), *newer, electron, time);
+    return interpolatedCharge(*std::prev(newer), *newer, first, time);
 }
 
 // Mutual, retarded Lienard-Wiechert field of a moving point charge.
@@ -441,16 +494,16 @@ ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
                                           double observationTime,
                                           const StateHistory& history,
                                           const State& presentState,
-                                          bool sourceIsElectron,
+                                          bool sourceIsFirst,
                                           double sourceCharge,
                                           double regularizationRadius=0.0) {
     ChargeKinematics source = historicalCharge(
-        history, presentState, sourceIsElectron, observationTime);
+        history, presentState, sourceIsFirst, observationTime);
     double retardedTime = observationTime
                         - (observationPosition - source.position).norm() / c;
     for (int iteration = 0; iteration < 16; ++iteration) {
         source = historicalCharge(
-            history, presentState, sourceIsElectron, retardedTime);
+            history, presentState, sourceIsFirst, retardedTime);
         const Vec3 retardedDisplacement=observationPosition-source.position;
         const double retardedDistance=retardedDisplacement.norm();
         const Vec3 retardedDirection=retardedDisplacement/retardedDistance;
@@ -509,15 +562,15 @@ Vec3 regularizedDipoleVectorPotential(const Vec3& observationPosition,
 void initializeRetardedPairFields(MaxwellBlock& block,const State& state,
                                   const StateHistory& history,
                                   int projectionIterations=400) {
-    const RelativisticChargeCloud electron{-eCharge,chargeCloudRestRadius};
-    const RelativisticChargeCloud positron{eCharge,chargeCloudRestRadius};
+    const RelativisticChargeCloud first{firstCharge,chargeCloudRestRadius};
+    const RelativisticChargeCloud second{secondCharge,chargeCloudRestRadius};
     block.clearSources();
-    block.depositCloud(electron,state.electronPosition,state.electronVelocity);
-    block.depositCloud(positron,state.positronPosition,state.positronVelocity);
-    block.depositCovariantDipole(state.electronPosition,state.electronVelocity,
-                                 state.electronDipole);
-    block.depositCovariantDipole(state.positronPosition,state.positronVelocity,
-                                 state.positronDipole);
+    block.depositCloud(first,state.firstPosition,state.firstVelocity);
+    block.depositCloud(second,state.secondPosition,state.secondVelocity);
+    block.depositCovariantDipole(state.firstPosition,state.firstVelocity,
+                                 state.firstDipole);
+    block.depositCovariantDipole(state.secondPosition,state.secondVelocity,
+                                 state.secondDipole);
     block.finalizeBoundInstantaneous();
     block.clearFields();
     std::vector<Vec3> dipoleVectorPotential(block.cells().size());
@@ -525,22 +578,22 @@ void initializeRetardedPairFields(MaxwellBlock& block,const State& state,
         for(int j=0;j<block.cellsPerAxis();++j)
             for(int i=0;i<block.cellsPerAxis();++i) {
                 const Vec3 position=block.cellPosition(i,j,k);
-                const ElectromagneticField fromElectron=lienardWiechertField(
-                    position,state.time,history,state,true,-eCharge,
+                const ElectromagneticField fromFirst=lienardWiechertField(
+                    position,state.time,history,state,true,firstCharge,
                     chargeCloudRestRadius);
-                const ElectromagneticField fromPositron=lienardWiechertField(
-                    position,state.time,history,state,false,eCharge,
+                const ElectromagneticField fromSecond=lienardWiechertField(
+                    position,state.time,history,state,false,secondCharge,
                     chargeCloudRestRadius);
                 const Vec3 dipolePotential=
-                    regularizedDipoleVectorPotential(position,state.electronPosition,
-                        state.electronDipole,chargeCloudRestRadius)
-                   +regularizedDipoleVectorPotential(position,state.positronPosition,
-                        state.positronDipole,chargeCloudRestRadius);
+                    regularizedDipoleVectorPotential(position,state.firstPosition,
+                        state.firstDipole,chargeCloudRestRadius)
+                   +regularizedDipoleVectorPotential(position,state.secondPosition,
+                        state.secondDipole,chargeCloudRestRadius);
                 dipoleVectorPotential[(static_cast<std::size_t>(k)
                     *block.cellsPerAxis()+j)*block.cellsPerAxis()+i]=dipolePotential;
                 block.replaceFieldAt(position,
-                    fromElectron.electric+fromPositron.electric,
-                    fromElectron.magnetic+fromPositron.magnetic);
+                    fromFirst.electric+fromSecond.electric,
+                    fromFirst.magnetic+fromSecond.magnetic);
             }
     block.addMagneticCurl(dipoleVectorPotential);
     // Preserve the retarded transverse content while matching the discrete
@@ -583,23 +636,24 @@ Vec3 velocityFromMomentum(const Vec3& momentum, double mass) {
 }
 
 void synchronizeCovariantDipoles(State& state) {
-    if(state.electronProperDipole.squaredNorm()==0.0
-        &&state.electronDipole.squaredNorm()>0.0)
-        state.electronProperDipole=state.electronDipole;
-    if(state.positronProperDipole.squaredNorm()==0.0
-        &&state.positronDipole.squaredNorm()>0.0)
-        state.positronProperDipole=state.positronDipole;
-    const DipoleTensor electronLab=lorentzBoostDipole(
-        {{},state.electronProperDipole},state.electronVelocity);
-    const DipoleTensor positronLab=lorentzBoostDipole(
-        {{},state.positronProperDipole},state.positronVelocity);
-    state.electronElectricDipole=electronLab.electric;
-    state.electronDipole=electronLab.magnetic;
-    state.positronElectricDipole=positronLab.electric;
-    state.positronDipole=positronLab.magnetic;
+    if(state.firstProperDipole.squaredNorm()==0.0
+        &&state.firstDipole.squaredNorm()>0.0)
+        state.firstProperDipole=state.firstDipole;
+    if(state.secondProperDipole.squaredNorm()==0.0
+        &&state.secondDipole.squaredNorm()>0.0)
+        state.secondProperDipole=state.secondDipole;
+    const DipoleTensor firstLab=lorentzBoostDipole(
+        {{},state.firstProperDipole},state.firstVelocity);
+    const DipoleTensor secondLab=lorentzBoostDipole(
+        {{},state.secondProperDipole},state.secondVelocity);
+    state.firstElectricDipole=firstLab.electric;
+    state.firstDipole=firstLab.magnetic;
+    state.secondElectricDipole=secondLab.electric;
+    state.secondDipole=secondLab.magnetic;
 }
 Vec3 thomasBmtEffectiveField(const Vec3& velocity,
-                             const ElectromagneticField& field);
+                             const ElectromagneticField& field,
+                             double gFactor);
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 // Relativistic Boris rotation written in momentum variables.  Electric
@@ -624,33 +678,33 @@ Vec3 relativisticBorisPush(const Vec3& momentumBefore, double charge,
 // own discrete continuity equation and needs no Poisson repair.
 void pushStateWithYeeField(State& state,YeeMaxwellBlock& field,double dt) {
     const State before=state;
-    const auto [electronElectric,electronMagnetic]=
-        field.interpolateField(before.electronPosition);
-    const auto [positronElectric,positronMagnetic]=
-        field.interpolateField(before.positronPosition);
-    const Vec3 electronMomentum=relativisticBorisPush(
-        momentum(before.electronVelocity,electronMass),-eCharge,electronMass,
-        electronElectric,electronMagnetic,dt);
-    const Vec3 positronMomentum=relativisticBorisPush(
-        momentum(before.positronVelocity,positronMass),eCharge,positronMass,
-        positronElectric,positronMagnetic,dt);
-    state.electronVelocity=velocityFromMomentum(electronMomentum,electronMass);
-    state.positronVelocity=velocityFromMomentum(positronMomentum,positronMass);
-    state.electronPosition=before.electronPosition+state.electronVelocity*dt;
-    state.positronPosition=before.positronPosition+state.positronVelocity*dt;
-    state.electronAcceleration=(state.electronVelocity-before.electronVelocity)/dt;
-    state.positronAcceleration=(state.positronVelocity-before.positronVelocity)/dt;
+    const auto [firstElectric,firstMagnetic]=
+        field.interpolateField(before.firstPosition);
+    const auto [secondElectric,secondMagnetic]=
+        field.interpolateField(before.secondPosition);
+    const Vec3 firstMomentum=relativisticBorisPush(
+        momentum(before.firstVelocity,firstMass),firstCharge,firstMass,
+        firstElectric,firstMagnetic,dt);
+    const Vec3 secondMomentum=relativisticBorisPush(
+        momentum(before.secondVelocity,secondMass),secondCharge,secondMass,
+        secondElectric,secondMagnetic,dt);
+    state.firstVelocity=velocityFromMomentum(firstMomentum,firstMass);
+    state.secondVelocity=velocityFromMomentum(secondMomentum,secondMass);
+    state.firstPosition=before.firstPosition+state.firstVelocity*dt;
+    state.secondPosition=before.secondPosition+state.secondVelocity*dt;
+    state.firstAcceleration=(state.firstVelocity-before.firstVelocity)/dt;
+    state.secondAcceleration=(state.secondVelocity-before.secondVelocity)/dt;
     field.clearSources();
-    field.depositGaussianEsirkepov(-eCharge,chargeCloudRestRadius,
-        before.electronPosition,before.electronVelocity,state.electronPosition,
-        state.electronVelocity,dt);
-    field.depositGaussianEsirkepov(eCharge,chargeCloudRestRadius,
-        before.positronPosition,before.positronVelocity,state.positronPosition,
-        state.positronVelocity,dt);
-    field.depositCovariantDipoleYee(state.electronPosition,
-        state.electronVelocity,state.electronDipole,chargeCloudRestRadius);
-    field.depositCovariantDipoleYee(state.positronPosition,
-        state.positronVelocity,state.positronDipole,chargeCloudRestRadius);
+    field.depositGaussianEsirkepov(firstCharge,chargeCloudRestRadius,
+        before.firstPosition,before.firstVelocity,state.firstPosition,
+        state.firstVelocity,dt);
+    field.depositGaussianEsirkepov(secondCharge,chargeCloudRestRadius,
+        before.secondPosition,before.secondVelocity,state.secondPosition,
+        state.secondVelocity,dt);
+    field.depositCovariantDipoleYee(state.firstPosition,
+        state.firstVelocity,state.firstDipole,chargeCloudRestRadius);
+    field.depositCovariantDipoleYee(state.secondPosition,
+        state.secondVelocity,state.secondDipole,chargeCloudRestRadius);
     field.finalizeBoundSources(dt);
     field.advance(dt);
     state.time+=dt;
@@ -659,73 +713,77 @@ void pushStateWithYeeField(State& state,YeeMaxwellBlock& field,double dt) {
 void pushStateWithGridField(State& state, const MaxwellBlock& field,
                             double dt, bool reciprocalDipoles=false,
                             const State* samplingState=nullptr,
-                            const ElectromagneticField& electronSelfField={},
-                            const ElectromagneticField& positronSelfField={},
-                            const DynamicSelfFieldCalibration* electronCalibration=nullptr,
-                            const DynamicSelfFieldCalibration* positronCalibration=nullptr) {
+                            const ElectromagneticField& firstSelfField={},
+                            const ElectromagneticField& secondSelfField={},
+                            const DynamicSelfFieldCalibration* firstCalibration=nullptr,
+                            const DynamicSelfFieldCalibration* secondCalibration=nullptr) {
     const State& sample=samplingState?*samplingState:state;
-    auto [electronElectric,electronMagnetic]=
-        field.interpolateField(sample.electronPosition);
-    auto [positronElectric,positronMagnetic]=
-        field.interpolateField(sample.positronPosition);
-    const ElectromagneticField currentElectronSelf=electronCalibration
-        ?electronCalibration->field(field,sample.electronPosition,
-                                    sample.electronVelocity,-eCharge):electronSelfField;
-    const ElectromagneticField currentPositronSelf=positronCalibration
-        ?positronCalibration->field(field,sample.positronPosition,
-                                    sample.positronVelocity,eCharge):positronSelfField;
-    electronElectric=electronElectric-currentElectronSelf.electric;
-    electronMagnetic=electronMagnetic-currentElectronSelf.magnetic;
-    positronElectric=positronElectric-currentPositronSelf.electric;
-    positronMagnetic=positronMagnetic-currentPositronSelf.magnetic;
-    const GridDipoleInteraction electronDipoleInteraction=reciprocalDipoles
-        ?field.dipoleInteraction(sample.electronPosition,sample.electronDipole)
+    auto [firstElectric,firstMagnetic]=
+        field.interpolateField(sample.firstPosition);
+    auto [secondElectric,secondMagnetic]=
+        field.interpolateField(sample.secondPosition);
+    const ElectromagneticField currentFirstSelf=firstCalibration
+        ?firstCalibration->field(field,sample.firstPosition,
+                                    sample.firstVelocity,firstCharge):firstSelfField;
+    const ElectromagneticField currentSecondSelf=secondCalibration
+        ?secondCalibration->field(field,sample.secondPosition,
+                                    sample.secondVelocity,secondCharge):secondSelfField;
+    firstElectric=firstElectric-currentFirstSelf.electric;
+    firstMagnetic=firstMagnetic-currentFirstSelf.magnetic;
+    secondElectric=secondElectric-currentSecondSelf.electric;
+    secondMagnetic=secondMagnetic-currentSecondSelf.magnetic;
+    const GridDipoleInteraction firstDipoleInteraction=reciprocalDipoles
+        ?field.dipoleInteraction(sample.firstPosition,sample.firstDipole)
         :GridDipoleInteraction{};
-    const GridDipoleInteraction positronDipoleInteraction=reciprocalDipoles
-        ?field.dipoleInteraction(sample.positronPosition,sample.positronDipole)
+    const GridDipoleInteraction secondDipoleInteraction=reciprocalDipoles
+        ?field.dipoleInteraction(sample.secondPosition,sample.secondDipole)
         :GridDipoleInteraction{};
     if(!reciprocalDipoles) {
-        precessDipole(state.electronDipole,
-            thomasBmtEffectiveField(state.electronVelocity,
-                {electronElectric,electronMagnetic}),-eCharge/electronMass,0.5*dt);
-        precessDipole(state.positronDipole,
-            thomasBmtEffectiveField(state.positronVelocity,
-                {positronElectric,positronMagnetic}),eCharge/positronMass,0.5*dt);
+        precessDipole(state.firstDipole,
+            thomasBmtEffectiveField(state.firstVelocity,
+                {firstElectric,firstMagnetic},firstGFactor),
+            firstCharge/firstMass,0.5*dt);
+        precessDipole(state.secondDipole,
+            thomasBmtEffectiveField(state.secondVelocity,
+                {secondElectric,secondMagnetic},secondGFactor),
+            secondCharge/secondMass,0.5*dt);
     }
-    const Vec3 electronMomentum=relativisticBorisPush(
-        momentum(state.electronVelocity,electronMass),-eCharge,electronMass,
-        electronElectric,electronMagnetic,dt)+electronDipoleInteraction.force*dt;
-    const Vec3 positronMomentum=relativisticBorisPush(
-        momentum(state.positronVelocity,positronMass),eCharge,positronMass,
-        positronElectric,positronMagnetic,dt)+positronDipoleInteraction.force*dt;
-    state.electronVelocity=velocityFromMomentum(electronMomentum,electronMass);
-    state.positronVelocity=velocityFromMomentum(positronMomentum,positronMass);
-    state.electronPosition+=state.electronVelocity*dt;
-    state.positronPosition+=state.positronVelocity*dt;
+    const Vec3 firstMomentum=relativisticBorisPush(
+        momentum(state.firstVelocity,firstMass),firstCharge,firstMass,
+        firstElectric,firstMagnetic,dt)+firstDipoleInteraction.force*dt;
+    const Vec3 secondMomentum=relativisticBorisPush(
+        momentum(state.secondVelocity,secondMass),secondCharge,secondMass,
+        secondElectric,secondMagnetic,dt)+secondDipoleInteraction.force*dt;
+    state.firstVelocity=velocityFromMomentum(firstMomentum,firstMass);
+    state.secondVelocity=velocityFromMomentum(secondMomentum,secondMass);
+    state.firstPosition+=state.firstVelocity*dt;
+    state.secondPosition+=state.secondVelocity*dt;
     if(reciprocalDipoles) {
-        constexpr double electronGyromagneticRatio=-eCharge/(2.0*electronMass);
-        constexpr double positronGyromagneticRatio=eCharge/(2.0*positronMass);
-        const double electronNorm=state.electronDipole.norm();
-        const double positronNorm=state.positronDipole.norm();
-        state.electronDipole+=electronDipoleInteraction.torque
-                            *(electronGyromagneticRatio*dt);
-        state.positronDipole+=positronDipoleInteraction.torque
-                            *(positronGyromagneticRatio*dt);
-        if(state.electronDipole.norm()>0.0)
-            state.electronDipole=state.electronDipole*(electronNorm/state.electronDipole.norm());
-        if(state.positronDipole.norm()>0.0)
-            state.positronDipole=state.positronDipole*(positronNorm/state.positronDipole.norm());
-        state.dipoleConstraintEnergy+=(electronDipoleInteraction.fieldPower
-            +positronDipoleInteraction.fieldPower
-            -dot(electronDipoleInteraction.force,state.electronVelocity)
-            -dot(positronDipoleInteraction.force,state.positronVelocity))*dt;
+        constexpr double firstGyromagneticRatio=firstCharge/(2.0*firstMass);
+        constexpr double secondGyromagneticRatio=secondCharge/(2.0*secondMass);
+        const double firstNorm=state.firstDipole.norm();
+        const double secondNorm=state.secondDipole.norm();
+        state.firstDipole+=firstDipoleInteraction.torque
+                            *(firstGyromagneticRatio*dt);
+        state.secondDipole+=secondDipoleInteraction.torque
+                            *(secondGyromagneticRatio*dt);
+        if(state.firstDipole.norm()>0.0)
+            state.firstDipole=state.firstDipole*(firstNorm/state.firstDipole.norm());
+        if(state.secondDipole.norm()>0.0)
+            state.secondDipole=state.secondDipole*(secondNorm/state.secondDipole.norm());
+        state.dipoleConstraintEnergy+=(firstDipoleInteraction.fieldPower
+            +secondDipoleInteraction.fieldPower
+            -dot(firstDipoleInteraction.force,state.firstVelocity)
+            -dot(secondDipoleInteraction.force,state.secondVelocity))*dt;
     } else {
-        precessDipole(state.electronDipole,
-            thomasBmtEffectiveField(state.electronVelocity,
-                {electronElectric,electronMagnetic}),-eCharge/electronMass,0.5*dt);
-        precessDipole(state.positronDipole,
-            thomasBmtEffectiveField(state.positronVelocity,
-                {positronElectric,positronMagnetic}),eCharge/positronMass,0.5*dt);
+        precessDipole(state.firstDipole,
+            thomasBmtEffectiveField(state.firstVelocity,
+                {firstElectric,firstMagnetic},firstGFactor),
+            firstCharge/firstMass,0.5*dt);
+        precessDipole(state.secondDipole,
+            thomasBmtEffectiveField(state.secondVelocity,
+                {secondElectric,secondMagnetic},secondGFactor),
+            secondCharge/secondMass,0.5*dt);
     }
     state.time+=dt;
 }
@@ -733,155 +791,22 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 
 #include "modules/electrodynamics.hpp"
 
-StateHistory causalInitialHistory(const State& initial,double spanFactor=8.0,
-                                  int intervalCount=64) {
-    State endpoint=initial;
-    synchronizeCovariantDipoles(endpoint);
-    const double lightCrossingTime=separation(endpoint)/c;
-    const double historySpan=std::max(1.0e-24,spanFactor*lightCrossingTime);
-    intervalCount=std::max(intervalCount,2);
-    const auto buildHistory=[&](const Vec3& electronAcceleration,
-                                const Vec3& positronAcceleration) {
-        StateHistory result;
-        for(int index=intervalCount;index>=0;--index) {
-            const double offset=-historySpan*index/intervalCount;
-            State sample=endpoint;
-            sample.time=initial.time+offset;
-            sample.electronPosition=initial.electronPosition
-                +initial.electronVelocity*offset
-                +electronAcceleration*(0.5*offset*offset);
-            sample.positronPosition=initial.positronPosition
-                +initial.positronVelocity*offset
-                +positronAcceleration*(0.5*offset*offset);
-            sample.electronVelocity=initial.electronVelocity
-                +electronAcceleration*offset;
-            sample.positronVelocity=initial.positronVelocity
-                +positronAcceleration*offset;
-            sample.electronAcceleration=electronAcceleration;
-            sample.positronAcceleration=positronAcceleration;
-            // Bookkeeping starts at the requested t=0 event, not in the
-            // hidden causal preparation interval.
-            sample.radiatedEnergy=initial.radiatedEnergy;
-            sample.radiatedMomentum=initial.radiatedMomentum;
-            sample.radiatedAngularMomentum=initial.radiatedAngularMomentum;
-            synchronizeCovariantDipoles(sample);
-            result.push_back(sample);
-        }
-        return result;
-    };
-    const MutualForces seedForces=allExternalForces(endpoint);
-    Vec3 electronAcceleration=relativisticAcceleration(
-        endpoint.electronVelocity,seedForces.electron,electronMass);
-    Vec3 positronAcceleration=relativisticAcceleration(
-        endpoint.positronVelocity,seedForces.positron,positronMass);
-    StateHistory history=buildHistory(electronAcceleration,positronAcceleration);
-    // Two inexpensive Picard updates make the hidden past consistent with
-    // the same retarded interaction used at t=0 instead of freezing the
-    // instantaneous Coulomb acceleration into the whole preparation span.
-    for(int iteration=0;iteration<2;++iteration) {
-        const MutualForces retarded=retardedExternalForces(endpoint,history);
-        electronAcceleration=relativisticAcceleration(
-            endpoint.electronVelocity,retarded.electron,electronMass);
-        positronAcceleration=relativisticAcceleration(
-            endpoint.positronVelocity,retarded.positron,positronMass);
-        history=buildHistory(electronAcceleration,positronAcceleration);
-    }
-    return history;
-}
+// Selected once from --radiation-reaction and read by every trajectory
+// constructed below (visual, beam and interaction experiments alike).
+// Defaults to individualLandauLifshitz (radiation ON): the electric-dipole
+// charge self-force is the only channel that removes orbital energy (see
+// individualLandauLifshitzSelfForces / coherentElectricDipoleReaction), and
+// estimateCremCollapse now measures the classical inspiral mechanically
+// rather than assuming it, so it needs that channel switched on to observe
+// anything.
+// [[maybe_unused]] because the validation executable's main() never reaches
+// the trajectory constructors that read this, so GCC sees no use in that
+// build.
+[[maybe_unused]] ChargeRadiationReactionModel gRadiationReactionModel =
+    ChargeRadiationReactionModel::individualLandauLifshitz;
 
-class ClassicalTrajectoryEngine {
-public:
-    struct Accuracy {
-        double relativeTolerance = 1.0e-7;
-        int maximumDepth = 14;
-        ChargeRadiationReactionModel reactionModel =
-            ChargeRadiationReactionModel::individualLandauLifshitz;
-    };
-    explicit ClassicalTrajectoryEngine(const State& initial)
-        :history_(causalInitialHistory(initial)) {}
-    ClassicalTrajectoryEngine(const State& initial,Accuracy accuracy)
-        :history_(causalInitialHistory(initial)),accuracy_(accuracy) {}
-    ClassicalTrajectoryEngine(StateHistory history,Accuracy accuracy)
-        :history_(std::move(history)),accuracy_(accuracy) {}
-    bool advance(State& state,double dt) {
-        if(!(dt>0.0)||!std::isfinite(dt)) return false;
-        return advanceAdaptive(state,dt,0);
-    }
-    const StateHistory& history() const { return history_; }
-private:
-    static double normalizedStepError(const State& coarse,const State& fine) {
-        const double lengthScale=std::max(separation(fine),nuclearCutoff);
-        const double speedScale=std::max(
-            (fine.electronVelocity-fine.positronVelocity).norm(),1.0e-6*c);
-        return std::max({
-            (coarse.electronPosition-fine.electronPosition).norm()/lengthScale,
-            (coarse.positronPosition-fine.positronPosition).norm()/lengthScale,
-            (coarse.electronVelocity-fine.electronVelocity).norm()/speedScale,
-            (coarse.positronVelocity-fine.positronVelocity).norm()/speedScale});
-    }
+#include "modules/crem_engine.hpp"
 
-    bool advanceAdaptive(State& state,double dt,int depth) {
-        const State start=state;
-
-        // The coarse step is a pure error probe: it is discarded on every
-        // path, so it never needs the far-zone flux integration.
-        State coarse=start;
-        integrateElectrodynamicStep(coarse,dt,history_,false,
-            accuracy_.reactionModel);
-
-        // The two half-steps are the path that *becomes* the trajectory when
-        // the step is accepted, so they carry the complete bookkeeping from
-        // the start and are committed instead of being recomputed.  The flux
-        // flag does not feed back into positions or velocities, so the local
-        // error estimate below is unchanged by enabling it here.
-        State fine=start;
-        StateHistory fineHistory=history_;
-        integrateElectrodynamicStep(fine,0.5*dt,fineHistory,true,
-            accuracy_.reactionModel);
-        if(!isFinite(fine)) return false;
-        appendStateHistory(fineHistory,fine);
-        integrateElectrodynamicStep(fine,0.5*dt,fineHistory,true,
-            accuracy_.reactionModel);
-        if(!isFinite(coarse)||!isFinite(fine)) return false;
-
-        const double error=normalizedStepError(coarse,fine);
-        if(!std::isfinite(error)) return false;
-        if(error<=accuracy_.relativeTolerance||depth>=accuracy_.maximumDepth) {
-            appendStateHistory(fineHistory,fine);
-            history_=std::move(fineHistory);
-            state=fine;
-            return true;
-        }
-        // Nothing above touched state or history_, so the subdivision below
-        // restarts from exactly the caller's state.
-        return advanceAdaptive(state,0.5*dt,depth+1)
-            &&advanceAdaptive(state,0.5*dt,depth+1);
-    }
-    StateHistory history_;
-    Accuracy accuracy_;
-};
-
-// Shared by the production reference panels and by the annihilation
-// generator unit test in the validation build, so it must sit outside
-// the block that the validation executable compiles out.
-double orePowellSpectrum(double* coordinate, double* parameters) {
-    const double endpoint = parameters[1];
-    if (!(endpoint > 0.0)) return 0.0;
-    const double x = coordinate[0]/endpoint;
-    if (!(x > 0.0) || x > 1.0) return 0.0;
-    if (x >= 1.0 - 1.0e-12) return parameters[0];
-    if (x < 1.0e-4) {
-        return parameters[0] * (5.0*x/6.0 + x*x/6.0);
-    }
-    const double logarithm = std::log1p(-x);
-    const double oneMinus = 1.0 - x;
-    const double twoMinus = 2.0 - x;
-    const double shape = x*oneMinus/(twoMinus*twoMinus)
-        - 2.0*oneMinus*oneMinus*logarithm
-            /(twoMinus*twoMinus*twoMinus)
-        + twoMinus/x + 2.0*oneMinus*logarithm/(x*x);
-    return parameters[0]*shape;
-}
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 // Used only by the annihilation-generator unit test in the validation build:
@@ -953,268 +878,7 @@ LegendreFitSummary fitSecondLegendreAnisotropy(
 #endif
 
 #ifndef POSITRONIUM_VALIDATION_EXECUTABLE
-Frame makeFrame(const State& s) {
-    const PairGeometry geometry = pairGeometry(s);
-    const double electronKinetic = (gamma(s.electronVelocity) - 1.0) * electronMass * c*c;
-    const double positronKinetic = (gamma(s.positronVelocity) - 1.0) * positronMass * c*c;
-    const double coulombPotential = -coulomb * eCharge*eCharge * geometry.inverseDistance;
-    const double dipolePotential = -dot(s.electronDipole,
-        regularizedDipoleField(geometry.electronMinusPositron, s.positronDipole));
-    const double darwinEnergy = darwinInteractionEnergy(s);
-    const MutualForces forces = allExternalForces(s);
-    const Vec3 electronAcceleration = relativisticAcceleration(s.electronVelocity, forces.electron, electronMass);
-    const Vec3 positronAcceleration = relativisticAcceleration(s.positronVelocity, forces.positron, positronMass);
-    // Low-velocity diagnostic proxy for the sum of the two individual Schott
-    // near-field energies.  Cross terms belong to the mutual retarded field
-    // and must not be inserted again through a collective dipole expression.
-    const double schottEnergy = -eCharge * eCharge
-        * (dot(electronAcceleration, s.electronVelocity)
-         + dot(positronAcceleration, s.positronVelocity))
-        / (6.0 * pi * epsilon0 * c*c*c);
-    // Noether energy of the conservative approximate action.  The q-mu term
-    // is homogeneous of degree one in both velocities and therefore cancels
-    // in the Legendre transform.
-    const double conservativeNoetherEnergy=conservativeParticleEnergy(s);
-    // One evaluation feeds all three Noether quantities below.
-    const CanonicalMomenta canonical = canonicalMomenta(s);
-    return {s.electronPosition,s.positronPosition,
-            s.electronProperDipole.squaredNorm()>0.0
-                ?s.electronProperDipole:s.electronDipole,
-            s.positronProperDipole.squaredNorm()>0.0
-                ?s.positronProperDipole:s.positronDipole,
-            noetherMomentum(canonical),
-            noetherAngularMomentum(s, canonical),
-            s.radiatedMomentum, s.radiatedAngularMomentum,
-            canonicalMomentumScale(canonical),
-            s.time, geometry.distance, s.radiatedEnergy,
-            conservativeNoetherEnergy,
-            schottEnergy,
-            electronKinetic + 0.5 * (coulombPotential + dipolePotential
-                + darwinEnergy + s.dipoleConstraintEnergy),
-            positronKinetic + 0.5 * (coulombPotential + dipolePotential
-                + darwinEnergy + s.dipoleConstraintEnergy),
-            s.boundFieldEnergy,s.reactionEnergyMismatch,
-            s.boundFieldMomentum,s.boundFieldAngularMomentum,
-            s.reactionMomentumMismatch,s.reactionAngularMomentumMismatch};
-}
-
-const char* phenomenonName(Phenomenon phenomenon) {
-    switch (phenomenon) {
-        case Phenomenon::DirectCollision: return "Direct collision";
-        case Phenomenon::Scattering: return "Scattering";
-        case Phenomenon::ParaPositronium: return "Para-positronium";
-        case Phenomenon::OrthoPositronium: return "Ortho-positronium";
-    }
-    return "Unknown";
-}
-
-SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
-                          SimulationOptions options = {}) {
-    const double reducedMass = electronMass * positronMass / (electronMass + positronMass);
-    const double circularSpeed = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * bohrRadius));
-    const double escapeSpeed = std::sqrt(2.0) * circularSpeed;
-    std::mt19937_64 random(seed);
-    std::uniform_real_distribution<double> unitRandom(0.0, 1.0);
-    std::uniform_real_distribution<double> signedRandom(-1.0, 1.0);
-    std::uniform_real_distribution<double> azimuth(0.0, 2.0*pi);
-    const auto randomDirection = [&]() {
-        const double z = signedRandom(random);
-        const double phi = azimuth(random);
-        const double radial = std::sqrt(1.0 - z*z);
-        return Vec3{radial*std::cos(phi), radial*std::sin(phi), z};
-    };
-
-    State s;
-    s.electronPosition = {bohrRadius * positronMass / (electronMass + positronMass), 0, 0};
-    s.positronPosition = {-bohrRadius * electronMass / (electronMass + positronMass), 0, 0};
-
-    // The selected branch chooses a physically useful sampling range while
-    // all actual initial values inside that range remain random.
-    // Menu order is para, ortho, direct collision, scattering. Internally the
-    // samplers retain the order direct, scattering, para, ortho.
-    const std::array<int, 5> scenarioForMenuChoice = {0, 2, 3, 0, 1};
-    const int sampledScenario = scenarioForMenuChoice[selectedPhenomenon];
-    double radialSpeed = 0.0;
-    double tangentialSpeed = 0.0;
-    if (sampledScenario == 0) {
-        radialSpeed = -escapeSpeed * (0.35 + 0.40 * unitRandom(random));
-        tangentialSpeed = circularSpeed * (0.001 + 0.004 * unitRandom(random));
-    } else if (sampledScenario == 1) {
-        const double speed = escapeSpeed * (1.05 + 0.35 * unitRandom(random));
-        const double tangentialFraction = 0.35 + 0.35 * unitRandom(random);
-        tangentialSpeed = speed * tangentialFraction;
-        radialSpeed = -speed * std::sqrt(1.0 - tangentialFraction*tangentialFraction);
-    } else {
-        radialSpeed = circularSpeed * (-0.12 + 0.24 * unitRandom(random));
-        tangentialSpeed = circularSpeed * (0.72 + 0.25 * unitRandom(random));
-    }
-    const Vec3 relativeVelocity{radialSpeed, tangentialSpeed, 0.0};
-    s.electronVelocity = relativeVelocity * (positronMass / (electronMass + positronMass));
-    s.positronVelocity = relativeVelocity * (-electronMass / (electronMass + positronMass));
-
-    s.electronDipole = randomDirection() * bohrMagneton;
-    do {
-        s.positronDipole = randomDirection() * bohrMagneton;
-    } while ((sampledScenario == 2 && dot(s.electronDipole, s.positronDipole)
-                                  / (bohrMagneton*bohrMagneton) < 0.5)
-          || (sampledScenario == 3 && dot(s.electronDipole, s.positronDipole)
-                                  / (bohrMagneton*bohrMagneton) >= 0.5));
-
-    const double relativeEnergy = 0.5 * reducedMass * relativeVelocity.squaredNorm()
-                                - coulomb * eCharge*eCharge / bohrRadius;
-    const double orbitalAngularMomentum = reducedMass
-                                        * cross(Vec3{bohrRadius, 0, 0}, relativeVelocity).norm();
-    const double specificEnergy = relativeEnergy / reducedMass;
-    const double specificAngularMomentum = orbitalAngularMomentum / reducedMass;
-    const double attractionParameter = coulomb * eCharge*eCharge / reducedMass;
-    const double eccentricity = std::sqrt(std::max(0.0, 1.0 + 2.0 * specificEnergy
-        * specificAngularMomentum*specificAngularMomentum
-        / (attractionParameter*attractionParameter)));
-    const double predictedClosestApproach = specificAngularMomentum == 0.0 ? 0.0
-        : specificAngularMomentum*specificAngularMomentum
-          / (attractionParameter * (1.0 + eccentricity));
-    const double dipoleAlignment = dot(s.electronDipole, s.positronDipole)
-                                 / (bohrMagneton*bohrMagneton);
-    Phenomenon phenomenon;
-    if (radialSpeed < 0.0 && predictedClosestApproach < nuclearCutoff) {
-        phenomenon = Phenomenon::DirectCollision;
-    } else if (relativeEnergy >= 0.0) {
-        phenomenon = Phenomenon::Scattering;
-    } else if (dipoleAlignment >= 0.5) {
-        phenomenon = Phenomenon::ParaPositronium;
-    } else {
-        phenomenon = Phenomenon::OrthoPositronium;
-    }
-
-    const double defaultObservationTime = phenomenon == Phenomenon::DirectCollision ? 4.0e-16
-                                        : phenomenon == Phenomenon::Scattering ? 2.0e-15
-                                        : 1.50e-15;
-    const double observationTime = options.observationTime > 0.0
-                                 ? options.observationTime : defaultObservationTime;
-    const int frameCount = std::max(2, options.frameCount);
-    std::vector<Frame> frames;
-    if (options.collectFrames) frames.reserve(frameCount + 1);
-    const double frameInterval = observationTime / (frameCount - 1);
-    double nextFrame = frameInterval;
-    double minimumSeparation = separation(s);
-    double maximumBeta = std::max(s.electronVelocity.norm(), s.positronVelocity.norm()) / c;
-    double elapsedTime = s.time;
-    double finalRadiatedEnergy = s.radiatedEnergy;
-    SimulationOutcome outcome = SimulationOutcome::NumericalFailure;
-    // Visual mode is a finite-resolution preview. Its looser local tolerance
-    // remains substantially smaller than a screen pixel at the displayed
-    // scale, while endpoint diagnostics continue to expose accumulated drift.
-    const bool directCollision=phenomenon==Phenomenon::DirectCollision;
-    ClassicalTrajectoryEngine trajectory(s,
-        {.relativeTolerance=1.0e-5,.maximumDepth=12});
-    // The visual point-particle picture cannot resolve the interior of the
-    // configured charge cloud. Stop a direct-collision animation at that
-    // model boundary; beam statistics retain the smaller nuclear cutoff.
-    const double trajectoryCutoff=options.terminalSeparation>0.0
-        ?options.terminalSeparation
-        :(directCollision?chargeCloudRestRadius:nuclearCutoff);
-    if (options.collectFrames) {
-        frames.push_back(makeFrame(s));
-        if (options.frameReady) options.frameReady(frames.back());
-    }
-
-    while (s.time < observationTime && separation(s) > trajectoryCutoff
-           &&!(options.stopRequested&&options.stopRequested())) {
-        // Resolve each instantaneous orbit well enough to keep numerical
-        // energy drift below the physical radiation loss.
-        const State beforeStep = s;
-        const double r = separation(beforeStep);
-        const double omega = std::sqrt(coulomb * eCharge*eCharge / (reducedMass * r*r*r));
-        const double dt = std::min({5.0e-18, 2.0 * pi / (128.0 * omega),
-                                    observationTime - s.time});
-        if (!(dt > 0.0) || !std::isfinite(dt)) break;
-        if(!trajectory.advance(s,dt)) break;
-        const double currentSeparation = separation(s);
-        if (!(currentSeparation > 0.0) || !std::isfinite(currentSeparation)) break;
-        if (options.stepReady) options.stepReady(s);
-
-        const bool reachedCutoff = currentSeparation <= trajectoryCutoff;
-        const double crossingFraction = reachedCutoff
-            ? separationCrossingFraction(beforeStep,s,trajectoryCutoff) : 1.0;
-        const double validEndTime = beforeStep.time + crossingFraction * dt;
-        if (options.collectFrames) {
-            while (nextFrame <= validEndTime
-                   && static_cast<int>(frames.size()) < frameCount) {
-                const double sampleFraction = std::clamp(
-                    (nextFrame - beforeStep.time) / dt, 0.0, crossingFraction);
-                const State sampledState = interpolateState(beforeStep, s, sampleFraction);
-                if (separation(sampledState) > trajectoryCutoff) {
-                    frames.push_back(makeFrame(sampledState));
-                    if (options.frameReady) options.frameReady(frames.back());
-                }
-                nextFrame += frameInterval;
-            }
-        }
-
-        if (reachedCutoff) {
-            // Locate the terminal event linearly inside the last, already
-            // very small adaptive step.  This avoids reporting a numerical
-            // overshoot below the boundary of the point-particle model.
-            elapsedTime = beforeStep.time + crossingFraction * dt;
-            finalRadiatedEnergy = beforeStep.radiatedEnergy + crossingFraction
-                * (s.radiatedEnergy - beforeStep.radiatedEnergy);
-            const Vec3 eventElectronVelocity = beforeStep.electronVelocity
-                + (s.electronVelocity - beforeStep.electronVelocity) * crossingFraction;
-            const Vec3 eventPositronVelocity = beforeStep.positronVelocity
-                + (s.positronVelocity - beforeStep.positronVelocity) * crossingFraction;
-            minimumSeparation = std::min(minimumSeparation, trajectoryCutoff);
-            maximumBeta = std::max(maximumBeta,
-                std::max(eventElectronVelocity.norm(), eventPositronVelocity.norm()) / c);
-            if(options.collectFrames) {
-                State eventState=interpolateState(
-                    beforeStep,s,crossingFraction);
-                const double balanceEnergy=conservativeParticleEnergy(beforeStep)
-                    +beforeStep.radiatedEnergy+beforeStep.boundFieldEnergy;
-                const Vec3 balanceMomentum=noetherMomentum(beforeStep)
-                    +beforeStep.radiatedMomentum+beforeStep.boundFieldMomentum;
-                const Vec3 balanceAngularMomentum=noetherAngularMomentum(beforeStep)
-                    +beforeStep.radiatedAngularMomentum
-                    +beforeStep.boundFieldAngularMomentum;
-                eventState.boundFieldEnergy=balanceEnergy
-                    -conservativeParticleEnergy(eventState)
-                    -eventState.radiatedEnergy;
-                eventState.boundFieldMomentum=balanceMomentum
-                    -noetherMomentum(eventState)-eventState.radiatedMomentum;
-                eventState.boundFieldAngularMomentum=balanceAngularMomentum
-                    -noetherAngularMomentum(eventState)
-                    -eventState.radiatedAngularMomentum;
-                if(frames.empty()||frames.back().time<eventState.time) {
-                    frames.push_back(makeFrame(eventState));
-                    if(options.frameReady) options.frameReady(frames.back());
-                }
-            }
-            outcome = SimulationOutcome::ReachedCutoff;
-            break;
-        }
-
-        minimumSeparation = std::min(minimumSeparation, currentSeparation);
-        maximumBeta = std::max(maximumBeta,
-            std::max(s.electronVelocity.norm(), s.positronVelocity.norm()) / c);
-        elapsedTime = s.time;
-        finalRadiatedEnergy = s.radiatedEnergy;
-    }
-    if (outcome != SimulationOutcome::ReachedCutoff
-        && isFinite(s) && s.time >= observationTime) {
-        outcome = SimulationOutcome::ObservationLimit;
-        elapsedTime = s.time;
-        finalRadiatedEnergy = s.radiatedEnergy;
-    }
-    if (options.collectFrames && outcome == SimulationOutcome::ObservationLimit
-        && (frames.empty() || frames.back().time < s.time)) {
-        frames.push_back(makeFrame(s));
-        if (options.frameReady) options.frameReady(frames.back());
-    }
-    const double timeToCutoff = outcome == SimulationOutcome::ReachedCutoff
-                              ? elapsedTime : std::numeric_limits<double>::infinity();
-    return {std::move(frames), {relativeEnergy, orbitalAngularMomentum,
-            predictedClosestApproach, dipoleAlignment, timeToCutoff, phenomenon, seed},
-            outcome, minimumSeparation, elapsedTime, finalRadiatedEnergy, maximumBeta};
-}
+#include "modules/crem_trajectory.hpp"
 
 std::string formatTableValue(double value) {
     std::ostringstream out;
@@ -1233,9 +897,9 @@ std::string cutoffTimeLabel(double timeToCutoff) {
 }
 
 std::string spinLabel(const Frame& frame) {
-    const char* electronArrow = frame.electronDipole.z >= 0.0 ? "#uparrow" : "#downarrow";
-    const char* positronArrow = frame.positronDipole.z >= 0.0 ? "#uparrow" : "#downarrow";
-    return std::string(electronArrow) + " " + positronArrow;
+    const char* firstArrow = frame.firstDipole.z >= 0.0 ? "#uparrow" : "#downarrow";
+    const char* secondArrow = frame.secondDipole.z >= 0.0 ? "#uparrow" : "#downarrow";
+    return std::string(firstArrow) + " " + secondArrow;
 }
 
 void setDipoleArrow(TPolyLine3D& shaft, TPolyLine3D& leftHead, TPolyLine3D& rightHead,
@@ -1362,6 +1026,138 @@ GaussianFitSummary gaussianMaximumLikelihood(const std::vector<double>& values) 
     return result;
 }
 
+// One trajectory's contribution to a right-censored survival sample.
+// observed=true means the collapse was actually seen at `time`; observed=false
+// means the run stopped at `time` with the pair still bound, so all that is
+// known is T > time.
+struct SurvivalObservation { double time=0.0; bool observed=false; };
+
+struct KaplanMeierPoint {
+    double time=0.0;
+    double survival=1.0;
+    double standardError=0.0; // Greenwood
+    int atRisk=0;
+    int events=0;
+};
+
+struct KaplanMeierEstimate {
+    std::vector<KaplanMeierPoint> curve;
+    double medianSurvival=std::numeric_limits<double>::quiet_NaN();
+    bool medianReached=false;
+    // Restricted mean survival time: the area under the curve out to
+    // `horizon`.  With censored observations beyond the last collapse the
+    // unrestricted mean is not identifiable, so RMST is the honest summary.
+    double restrictedMean=std::numeric_limits<double>::quiet_NaN();
+    double restrictedMeanError=std::numeric_limits<double>::quiet_NaN();
+    double horizon=std::numeric_limits<double>::quiet_NaN();
+    double survivalAtHorizon=std::numeric_limits<double>::quiet_NaN();
+    double largestCensoredTime=std::numeric_limits<double>::quiet_NaN();
+    int eventCount=0;
+    int censoredCount=0;
+};
+
+// Product-limit estimator with Greenwood standard errors.  This is what the
+// bound-decay experiments need: a trajectory stopped by the wall-clock budget
+// has NOT told us nothing, it has told us the collapse time exceeds the
+// simulated time it reached, and averaging only the completed runs throws that
+// away -- badly, because the budget preferentially stops the widest orbits,
+// which are exactly the slowest to collapse.
+KaplanMeierEstimate kaplanMeier(std::vector<SurvivalObservation> sample) {
+    KaplanMeierEstimate result;
+    sample.erase(std::remove_if(sample.begin(),sample.end(),
+        [](const SurvivalObservation& o) {
+            return !std::isfinite(o.time)||o.time<0.0;
+        }),sample.end());
+    if(sample.empty()) return result;
+    // Ties: events are ordered before censorings at the same time, the
+    // standard convention -- a run censored at exactly t was still at risk
+    // when the collapse at t happened.
+    std::sort(sample.begin(),sample.end(),
+        [](const SurvivalObservation& a,const SurvivalObservation& b) {
+            if(a.time!=b.time) return a.time<b.time;
+            return a.observed&&!b.observed;
+        });
+    for(const SurvivalObservation& o : sample) {
+        if(o.observed) ++result.eventCount;
+        else {
+            ++result.censoredCount;
+            result.largestCensoredTime=std::isfinite(result.largestCensoredTime)
+                ?std::max(result.largestCensoredTime,o.time):o.time;
+        }
+    }
+    double survival=1.0;
+    double greenwoodSum=0.0;
+    std::size_t index=0;
+    const int total=static_cast<int>(sample.size());
+    result.curve.push_back({0.0,1.0,0.0,total,0});
+    while(index<sample.size()) {
+        const double time=sample[index].time;
+        const int atRisk=total-static_cast<int>(index);
+        int events=0;
+        std::size_t next=index;
+        while(next<sample.size()&&sample[next].time==time) {
+            if(sample[next].observed) ++events;
+            ++next;
+        }
+        if(events>0) {
+            survival*=1.0-static_cast<double>(events)/static_cast<double>(atRisk);
+            if(atRisk>events) {
+                greenwoodSum+=static_cast<double>(events)
+                    /(static_cast<double>(atRisk)
+                      *static_cast<double>(atRisk-events));
+            } else {
+                greenwoodSum=std::numeric_limits<double>::infinity();
+            }
+            result.curve.push_back({time,survival,
+                survival*std::sqrt(greenwoodSum),atRisk,events});
+        }
+        index=next;
+    }
+    if(result.eventCount==0) return result;
+    // Horizon: the last time the estimator actually observed something, so
+    // RMST is not extrapolated past the data.
+    result.horizon=std::max(result.curve.back().time,
+        std::isfinite(result.largestCensoredTime)?result.largestCensoredTime
+                                                 :result.curve.back().time);
+    result.survivalAtHorizon=result.curve.back().survival;
+    for(const KaplanMeierPoint& point : result.curve) {
+        if(!result.medianReached&&point.survival<=0.5) {
+            result.medianSurvival=point.time;
+            result.medianReached=true;
+        }
+    }
+    // RMST = integral of the step function, plus its standard error from the
+    // usual sum of squared tail areas weighted by the Greenwood increments.
+    double area=0.0;
+    for(std::size_t i=0;i+1<result.curve.size();++i) {
+        area+=result.curve[i].survival
+             *(result.curve[i+1].time-result.curve[i].time);
+    }
+    area+=result.curve.back().survival
+         *(result.horizon-result.curve.back().time);
+    result.restrictedMean=area;
+    double varianceSum=0.0;
+    for(std::size_t i=1;i<result.curve.size();++i) {
+        if(result.curve[i].events==0) continue;
+        double tailArea=0.0;
+        for(std::size_t j=i;j+1<result.curve.size();++j) {
+            tailArea+=result.curve[j].survival
+                     *(result.curve[j+1].time-result.curve[j].time);
+        }
+        tailArea+=result.curve.back().survival
+                 *(result.horizon-result.curve.back().time);
+        const int atRisk=result.curve[i].atRisk;
+        const int events=result.curve[i].events;
+        if(atRisk>events) {
+            varianceSum+=tailArea*tailArea*static_cast<double>(events)
+                /(static_cast<double>(atRisk)
+                  *static_cast<double>(atRisk-events));
+        }
+    }
+    result.restrictedMeanError=std::sqrt(std::max(0.0,varianceSum));
+    return result;
+}
+
 std::string compactNumber(double value, int precision = 5) {
     std::ostringstream output;
     output << std::setprecision(precision) << value;
@@ -1427,83 +1223,7 @@ bool reportArchiveOperation(const statistics_archive::OperationResult& result,
     return false;
 }
 
-struct CremCollapseEstimate {
-    double lifetimeSeconds=std::numeric_limits<double>::quiet_NaN();
-    double calibrationSeconds=0.0;
-    double meanRadiatedPowerWatts=std::numeric_limits<double>::quiet_NaN();
-    SimulationOutcome calibrationOutcome=SimulationOutcome::NumericalFailure;
-};
-
-CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
-                                           int selectedPhenomenon) {
-    // Several bound orbits are integrated with the complete CREM engine. The
-    // measured orbit-averaged radiated power then closes the secular Coulomb
-    // inspiral dE/dt=P, with E=-k e^2/(2a) and P proportional to a^-4.
-    constexpr double calibrationWindow=1.5e-15;
-    SimulationOptions options;
-    options.collectFrames=false;
-    options.frameCount=2;
-    options.observationTime=calibrationWindow;
-    options.terminalSeparation=chargeCloudRestRadius;
-    const SimulationResult calibration=simulate(seed,selectedPhenomenon,options);
-    CremCollapseEstimate result;
-    result.calibrationSeconds=calibration.elapsedTime;
-    result.calibrationOutcome=calibration.outcome;
-    if(calibration.outcome==SimulationOutcome::ReachedCutoff) {
-        result.lifetimeSeconds=calibration.elapsedTime;
-        result.meanRadiatedPowerWatts=calibration.finalRadiatedEnergy
-            /std::max(calibration.elapsedTime,1.0e-30);
-        return result;
-    }
-    if(calibration.outcome!=SimulationOutcome::ObservationLimit
-       ||!(calibration.elapsedTime>0.0)
-       ||!(calibration.finalRadiatedEnergy>0.0)
-       ||!(calibration.initial.relativeEnergy<0.0)) return result;
-    result.meanRadiatedPowerWatts=calibration.finalRadiatedEnergy
-        /calibration.elapsedTime;
-    const double coulombCoupling=coulomb*eCharge*eCharge;
-    const double semiMajorAxis=-coulombCoupling
-        /(2.0*calibration.initial.relativeEnergy);
-    if(!(semiMajorAxis>chargeCloudRestRadius)) return result;
-    const double cutoffRatio=chargeCloudRestRadius/semiMajorAxis;
-    result.lifetimeSeconds=(-calibration.initial.relativeEnergy)
-        /(3.0*result.meanRadiatedPowerWatts)
-        *(1.0-cutoffRatio*cutoffRatio*cutoffRatio);
-    if(!(result.lifetimeSeconds>0.0)||!std::isfinite(result.lifetimeSeconds))
-        result.lifetimeSeconds=std::numeric_limits<double>::quiet_NaN();
-    return result;
-}
-
-std::vector<CremCollapseEstimate> runCremCollapseExperiment(
-    std::uint64_t masterSeed,int selectedPhenomenon,int runCount) {
-    std::vector<CremCollapseEstimate> estimates(static_cast<size_t>(runCount));
-    std::atomic<int> nextIndex{0};
-    std::atomic<int> completed{0};
-    std::mutex outputMutex;
-    const int workerCount=std::min(runCount,
-        static_cast<int>(std::max(1u,std::thread::hardware_concurrency())));
-    std::cout<<"Running "<<runCount<<" CREM collapse calibrations on "
-             <<workerCount<<" worker"<<(workerCount==1?"":"s")<<".\n";
-    const auto worker=[&]() {
-        while(true) {
-            const int index=nextIndex.fetch_add(1);
-            if(index>=runCount) break;
-            estimates[static_cast<size_t>(index)]=estimateCremCollapse(
-                splitMix64(masterSeed+static_cast<std::uint64_t>(index)),
-                selectedPhenomenon);
-            const int done=completed.fetch_add(1)+1;
-            if(done%10==0||done==runCount) {
-                std::lock_guard<std::mutex> lock(outputMutex);
-                std::cout<<"CREM calibrations: "<<done<<"/"<<runCount<<'\n';
-            }
-        }
-    };
-    std::vector<std::thread> workers;
-    workers.reserve(static_cast<size_t>(workerCount));
-    for(int index=0;index<workerCount;++index) workers.emplace_back(worker);
-    for(std::thread& thread:workers) thread.join();
-    return estimates;
-}
+#include "modules/crem_collapse.hpp"
 
 // runCount counts full CREM trajectories, which cost seconds each and set the
 // collapse-time panel's statistics.  decayEventCount counts events of the
@@ -1520,18 +1240,36 @@ std::vector<CremCollapseEstimate> runCremCollapseExperiment(
 // sampler is exercised where a self-consistency check belongs, in
 // positronium_validation.  What is drawn here is the exact reference.
 int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
-                             int runCount) {
+                             int runCount, double wallClockBudgetSeconds) {
     const bool isPara = selectedPhenomenon == 1;
     const double timeScale = isPara ? 1.0e12 : 1.0e9;
     const char* timeUnit = isPara ? "ps" : "ns";
 
     const std::vector<CremCollapseEstimate> collapseEstimates=
-        runCremCollapseExperiment(seed,selectedPhenomenon,runCount);
+        runCremCollapseExperiment(seed,selectedPhenomenon,runCount,
+                                  wallClockBudgetSeconds);
     std::vector<double> decayTimes;
     std::vector<double> calibrationPowers;
+    // Right-censored sample for the product-limit estimator: every trajectory
+    // contributes, a completed one as an observed collapse and a stopped one
+    // as a lower bound at the simulated time it reached.
+    std::vector<SurvivalObservation> survivalSample;
+    survivalSample.reserve(static_cast<size_t>(runCount));
+    // External-reference comparisons, collected only from completed runs so
+    // that measurement and reference span the same stretch of orbit.
+    std::vector<double> measuredCollapse, analyticCollapse; // plot units
+    std::vector<double> larmorRatios;
+    std::vector<double> dipoleCouplingsGHz;
+    // Period at both ends of the inspiral and the revolutions between them,
+    // collected only from trajectories that ran to the boundary so the three
+    // numbers describe the same complete collapses as the lifetime above.
+    std::vector<double> initialPeriods, finalPeriods, revolutionCounts;
     int reachedCutoffCount = 0;
     int observationLimitCount = 0;
+    int noSecularLossCount = 0;
     int calibrationFailureCount = 0;
+    double censoredSimulatedTimeMax = 0.0;
+    double censoredSimulatedTimeSum = 0.0;
     decayTimes.reserve(static_cast<size_t>(runCount));
     calibrationPowers.reserve(static_cast<size_t>(runCount));
 
@@ -1540,20 +1278,76 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             collapseEstimates[static_cast<size_t>(index)];
         if(std::isfinite(estimate.lifetimeSeconds))
             decayTimes.push_back(estimate.lifetimeSeconds*timeScale);
+        if(estimate.calibrationOutcome==SimulationOutcome::ReachedCutoff) {
+            if(std::isfinite(estimate.initialPeriodSeconds))
+                initialPeriods.push_back(estimate.initialPeriodSeconds);
+            if(std::isfinite(estimate.finalPeriodSeconds))
+                finalPeriods.push_back(estimate.finalPeriodSeconds);
+            if(std::isfinite(estimate.revolutions))
+                revolutionCounts.push_back(estimate.revolutions);
+            if(std::isfinite(estimate.lifetimeSeconds)
+               &&std::isfinite(estimate.analyticCollapseSeconds)
+               &&estimate.analyticCollapseSeconds>0.0) {
+                measuredCollapse.push_back(estimate.lifetimeSeconds*timeScale);
+                analyticCollapse.push_back(
+                    estimate.analyticCollapseSeconds*timeScale);
+            }
+        }
+        // Independent of completion: both are properties of the prepared
+        // orbit and of orbits actually resolved, so a censored run still
+        // contributes a valid measurement of them.
+        if(std::isfinite(estimate.larmorPowerRatio)
+           && estimate.larmorPowerRatio > 0.0) {
+            larmorRatios.push_back(estimate.larmorPowerRatio);
+        }
+        if(std::isfinite(estimate.dipoleCouplingHz)) {
+            dipoleCouplingsGHz.push_back(estimate.dipoleCouplingHz*1.0e-9);
+        }
         if(std::isfinite(estimate.meanRadiatedPowerWatts)
            && estimate.meanRadiatedPowerWatts > 0.0) {
             calibrationPowers.push_back(estimate.meanRadiatedPowerWatts);
         }
         switch(estimate.calibrationOutcome) {
-            case SimulationOutcome::ReachedCutoff: ++reachedCutoffCount; break;
+            case SimulationOutcome::ReachedCutoff:
+                ++reachedCutoffCount;
+                if(std::isfinite(estimate.lifetimeSeconds)) {
+                    survivalSample.push_back(
+                        {estimate.lifetimeSeconds*timeScale,true});
+                }
+                break;
             case SimulationOutcome::ObservationLimit:
-                ++observationLimitCount; break;
+                // Both stopped states are right-censored: the pair was still
+                // bound when observation ended, so the collapse time is known
+                // only to exceed the simulated time reached.  A non-decaying
+                // trajectory is the limiting case of that.
+                survivalSample.push_back(
+                    {estimate.calibrationSeconds*timeScale,false});
+                if(estimate.secularLossAbsent) { ++noSecularLossCount; break; }
+                ++observationLimitCount;
+                censoredSimulatedTimeMax=std::max(
+                    censoredSimulatedTimeMax,estimate.calibrationSeconds);
+                censoredSimulatedTimeSum+=estimate.calibrationSeconds;
+                break;
             case SimulationOutcome::NumericalFailure:
+                // Excluded outright: a non-finite state carries no bound on
+                // the collapse time in either direction.
                 ++calibrationFailureCount; break;
         }
     }
+    const KaplanMeierEstimate survival=kaplanMeier(survivalSample);
+    const int usableTrajectories=survival.eventCount+survival.censoredCount;
+    const double completionPercent=usableTrajectories>0
+        ?100.0*static_cast<double>(survival.eventCount)
+             /static_cast<double>(usableTrajectories)
+        :0.0;
 
 
+    const GaussianFitSummary initialPeriodMoments=
+        gaussianMaximumLikelihood(initialPeriods);
+    const GaussianFitSummary finalPeriodMoments=
+        gaussianMaximumLikelihood(finalPeriods);
+    const GaussianFitSummary revolutionMoments=
+        gaussianMaximumLikelihood(revolutionCounts);
     const GaussianFitSummary collapseMoments=gaussianMaximumLikelihood(decayTimes);
     const double estimatedLifetime=collapseMoments.mean/timeScale;
     // Standard error of the sample mean.  The previous mean/sqrt(N) is the MLE
@@ -1577,33 +1371,134 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     const statistics_archive::ScientificValue& rateReference =
         statistics_archive::scientificValue(isPara
             ? "para_decay_rate_measurement" : "ortho_decay_rate_measurement");
-    const statistics_archive::ScientificValue& photonEnergyReference =
-        statistics_archive::scientificValue("pdg_two_photon_energy");
-    const statistics_archive::ScientificValue& anisotropyReference =
-        statistics_archive::scientificValue("ideal_para_anisotropy");
     const double experimentalLifetime = lifetimeReference.value;
     const double experimentalLifetimeError = lifetimeReference.totalUncertainty;
     std::cout << (isPara ? "Para-positronium" : "Ortho-positronium")
               << " study: " << runCount << " CREM trajectories ("
-              << collapseMoments.count << " valid extrapolations).\n"
+              << reachedCutoffCount << " reached the collision boundary, "
+              << observationLimitCount << " censored by the per-event "
+                 "wall-clock budget, " << noSecularLossCount
+              << " not decaying, " << calibrationFailureCount
+              << " numerical failures).\n"
               << "Photon panels are exact reference curves, not samples: the "
                  "annihilation generator is a quantum prescription independent\n"
                  "of the classical model, and its self-consistency is checked "
                  "in positronium_validation.\n"
-              << "Mean extrapolated collapse time: " << estimatedLifetime * timeScale
+              << "Collapse time over all "
+              << (survival.eventCount+survival.censoredCount)
+              << " usable trajectories (" << survival.eventCount
+              << " observed collapses, " << survival.censoredCount
+              << " right-censored\nat the simulated time they reached).  "
+                 "Completion fraction: " << completionPercent << "%.\n";
+    if(survival.medianReached) {
+        std::cout << "  Kaplan-Meier median    " << survival.medianSurvival
+                  << ' ' << timeUnit << '\n';
+    } else {
+        std::cout << "  Kaplan-Meier median    not reached: S(t) is still "
+                  << survival.survivalAtHorizon << " at "
+                  << survival.horizon << ' ' << timeUnit << '\n';
+    }
+    if(std::isfinite(survival.restrictedMean)) {
+        std::cout << "  Kaplan-Meier RMST      " << survival.restrictedMean
+                  << " +/- " << survival.restrictedMeanError << ' ' << timeUnit
+                  << "  (area under S(t) out to " << survival.horizon
+                  << ' ' << timeUnit << ")\n";
+    }
+    std::cout << "  mean of completed runs " << estimatedLifetime * timeScale
               << " +/- " << estimatedError * timeScale << ' ' << timeUnit
-              << " (SE of the mean; sample sigma/mean = " << relativeSpread
-              << ")\n"
-              << "Model: full CREM short-orbit calibration + orbit-averaged "
-                 "secular extrapolation to 0.01*a0; external lifetime is comparison only.\n"
+              << " (sigma/mean = " << relativeSpread << ")\n";
+    if(completionPercent < 90.0 && std::isfinite(survival.restrictedMean)) {
+        std::cout << "  WARNING: with " << completionPercent
+                  << "% completion neither figure is an unbiased estimate.  "
+                     "Their biases have OPPOSITE sign, so the\n  true value is "
+                     "expected between them -- a plausibility range, not a "
+                     "proven bound:\n    lower end "
+                  << estimatedLifetime * timeScale << ' ' << timeUnit
+                  << " -- the completed-run mean.  Collapse time scales as a^3 "
+                     "while the orbits that must be\n      integrated scale as "
+                     "a^(3/2), so the budget preferentially stops the widest "
+                     "orbits, which are the\n      slowest to collapse; "
+                     "averaging the survivors is biased low.\n    upper end "
+                  << survival.restrictedMean << ' ' << timeUnit
+                  << " -- the Kaplan-Meier RMST.  Once censoring begins the "
+                     "estimator observes almost no further\n      collapses, "
+                     "so S(t) is held up and the area under it is biased high.\n"
+                     "  Censoring is INFORMATIVE here: the censoring time and "
+                     "the collapse time are driven by the same\n  semi-major "
+                     "axis, which breaks the independence Kaplan-Meier assumes."
+                     "  Raise --crem-wallclock-budget-s\n  until the completion "
+                     "fraction approaches 100%; the two ends then converge onto "
+                     "the true value.\n";
+    }
+    std::cout << "Model: full CREM mechanical integration under the active "
+                 "--radiation-reaction model, run until the pair's periapsis\n"
+                 "reaches 0.1*a0 or the per-event wall-clock budget is spent "
+                 "(then censored, not extrapolated).  The last stretch down to "
+                 "the\n0.01*a0 boundary is truncated deliberately: with t ~ a^3 "
+                 "it is 0.1% of the collapse time, below the 3% per-jump\n"
+                 "tolerance, and the one-period measurement window stops being "
+                 "valid there.  External lifetime is comparison only.\n"
               << "Caution: the CREM collapse time is a classical inspiral time."
                  " Para and ortho differ here only through the initial dipole\n"
                  "alignment, whose coupling is ~1e-5 of the Coulomb potential,"
                  " so both channels yield the same collapse distribution while\n"
                  "their measured annihilation lifetimes differ by ~1000x.  The"
                  " comparison is a scale reference, not a prediction.\n";
+    if(revolutionMoments.count>0) {
+        std::cout<<"\nQuasi-closed orbit (the "<<revolutionMoments.count
+                 <<" trajectories that reached the boundary):\n"
+                 <<"  T of the sampled initial orbit  "
+                 <<initialPeriodMoments.mean*1.0e15<<" +/- "
+                 <<initialPeriodMoments.sigma*1.0e15<<" fs\n"
+                 <<"  T of the last resolved orbit    "
+                 <<finalPeriodMoments.mean*1.0e15<<" +/- "
+                 <<finalPeriodMoments.sigma*1.0e15<<" fs\n"
+                 <<"  revolutions between them        "
+                 <<revolutionMoments.mean
+                 <<" +/- "<<revolutionMoments.sigma<<'\n'
+                 <<"The orbit is not closed: it is an inspiral, so T shrinks as"
+                   " a^(3/2) while the pair sinks and no single period\n"
+                   "describes the whole run.  T is the Kepler period "
+                   "2*pi*sqrt(mu*a^3/(k e^2)) of the osculating orbit.  Every "
+                   "trajectory starts at\nRADIUS a_0 but with a sub-circular "
+                   "tangential speed, so its semi-major axis is already below "
+                   "a_0 and T is below the\n107.5 as of a circular orbit at "
+                   "a_0.  The run ends when the PERIAPSIS reaches 0.1*a_0.  "
+                   "The revolution count is\naccumulated by the orbit-averaged "
+                   "integrator, resolved and skipped orbits alike.\n";
+    }
+    if(observationLimitCount>0) {
+        std::cout<<"Note: "<<observationLimitCount<<" of "<<runCount
+                 <<" trajectories did not reach the boundary within the "
+                    "per-event wall-clock budget and were excluded from the "
+                    "mean above; raise --crem-wallclock-budget-s to reduce "
+                    "censoring.\n"
+                 <<"  Simulated time covered by censored trajectories: mean "
+                 <<(censoredSimulatedTimeSum/observationLimitCount)*1.0e12
+                 <<" ps, max "<<censoredSimulatedTimeMax*1.0e12<<" ps"
+                    " (out of the classical estimate of a few ps to collapse).\n";
+    }
+    if(noSecularLossCount>0) {
+        std::cout<<"Note: "<<noSecularLossCount<<" of "<<runCount
+                 <<" trajectories showed no secular energy loss over the first "
+                    "measured orbit, so they are not decaying at all and no\n"
+                    "  collapse time exists for them.  This is the expected "
+                    "result with --radiation-reaction disabled: the charge "
+                    "self-force is the only\n  channel that removes orbital "
+                    "energy.  Raising --crem-wallclock-budget-s cannot change "
+                    "it.\n";
+    }
     if(collapseMoments.count==0) {
-        std::cerr<<"No finite CREM collapse-time estimates; no plots were produced.\n";
+        if(noSecularLossCount>=observationLimitCount) {
+            std::cerr<<"No CREM trajectory decayed: the active "
+                        "--radiation-reaction model removes no orbital energy, "
+                        "so there is no\ninspiral to measure and no plots were "
+                        "produced. Select individual, coherent or automatic.\n";
+            return 2;
+        }
+        std::cerr<<"No CREM trajectory reached the collision boundary within "
+                    "the wall-clock budget; no plots were produced. Raise "
+                    "--crem-wallclock-budget-s and try again.\n";
         return 2;
     }
     // Statistical rendering is a pure batch job.  Select the virtual ROOT
@@ -1629,8 +1524,10 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     canvas.cd();
     distributionsPage.Draw();
     diagnosticsPage.Draw();
+    // Four distribution pads, down from six: the two exact photon-kinematics
+    // pads carried no CREM output at all and the sixth was a text card.
     distributionsPage.cd();
-    distributionsPage.Divide(2, 3, 0.006, 0.006);
+    distributionsPage.Divide(2, 2, 0.006, 0.006);
     diagnosticsPage.cd();
     diagnosticsPage.Divide(1, 2, 0.006, 0.006);
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
@@ -1638,105 +1535,162 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
 
     std::vector<double> sortedCollapseTimes=decayTimes;
     std::sort(sortedCollapseTimes.begin(),sortedCollapseTimes.end());
-    std::vector<double> empiricalSurvival(sortedCollapseTimes.size());
-    for(size_t index=0;index<sortedCollapseTimes.size();++index)
-        empiricalSurvival[index]=static_cast<double>(sortedCollapseTimes.size()-index)
-            /static_cast<double>(sortedCollapseTimes.size());
+    // Kaplan-Meier step curve, drawn as an explicit staircase so the flat
+    // stretches between collapses are visible rather than interpolated away.
+    // The old curve plotted (N-i)/N over the completed runs only, which drew
+    // a line reaching zero survival even when 90% of the sample never
+    // collapsed within the budget.
+    std::vector<double> survivalStepTime, survivalStepValue;
+    std::vector<double> survivalBandTime, survivalBandValue, survivalBandError;
+    for(const KaplanMeierPoint& point : survival.curve) {
+        if(!survivalStepTime.empty()) {
+            survivalStepTime.push_back(point.time);
+            survivalStepValue.push_back(survivalStepValue.back());
+        }
+        survivalStepTime.push_back(point.time);
+        survivalStepValue.push_back(point.survival);
+        if(point.events>0&&std::isfinite(point.standardError)) {
+            survivalBandTime.push_back(point.time);
+            survivalBandValue.push_back(point.survival);
+            survivalBandError.push_back(point.standardError);
+        }
+    }
+    // Extend the last step out to the horizon so the curve does not stop in
+    // mid-air at the final observed collapse.
+    if(!survivalStepTime.empty()&&std::isfinite(survival.horizon)
+       &&survival.horizon>survivalStepTime.back()) {
+        survivalStepTime.push_back(survival.horizon);
+        survivalStepValue.push_back(survivalStepValue.back());
+    }
+    // Censoring marks: where trajectories left the risk set without collapsing.
+    std::vector<double> censorTime, censorValue;
+    {
+        std::vector<double> censoredTimes;
+        for(const SurvivalObservation& observation : survivalSample)
+            if(!observation.observed) censoredTimes.push_back(observation.time);
+        std::sort(censoredTimes.begin(),censoredTimes.end());
+        for(double time : censoredTimes) {
+            double atTime=1.0;
+            for(const KaplanMeierPoint& point : survival.curve)
+                if(point.time<=time) atTime=point.survival;
+            censorTime.push_back(time);
+            censorValue.push_back(atTime);
+        }
+    }
     // Scale the axis to the simulated data, not to the experimental lifetime.
     // For o-Ps the two differ by ~8 orders of magnitude, and forcing tau_exp
     // into the range collapsed the whole CREM sample onto a single pixel at
     // the left edge.  The experimental curve is still drawn: staying pinned at
     // survival=1 across this window is exactly the honest visual statement
     // that the classical inspiral is far faster than the measured decay.
+    // The axis must cover the censored observations too, otherwise the very
+    // trajectories the estimator now accounts for fall off the right edge.
+    const double survivalHorizon=std::isfinite(survival.horizon)
+        ?std::max(survival.horizon,sortedCollapseTimes.back())
+        :sortedCollapseTimes.back();
     const double lifetimeLower=std::max(
         0.5*sortedCollapseTimes.front(),
-        1.0e-6*std::max(sortedCollapseTimes.back(),1.0e-300));
-    const double lifetimeUpper=std::max(2.0*sortedCollapseTimes.back(),
+        1.0e-6*std::max(survivalHorizon,1.0e-300));
+    const double lifetimeUpper=std::max(1.15*survivalHorizon,
         4.0*lifetimeLower);
     // Both are already in plot units (ps for p-Ps, ns for o-Ps).
     const double experimentalRatio=collapseMoments.mean>0.0
         ?experimentalLifetime/collapseMoments.mean
         :std::numeric_limits<double>::quiet_NaN();
-    TGraph lifetimeSurvival(static_cast<int>(sortedCollapseTimes.size()),
-        sortedCollapseTimes.data(),empiricalSurvival.data());
+    TGraph lifetimeSurvival(static_cast<int>(survivalStepTime.size()),
+        survivalStepTime.data(),survivalStepValue.data());
     std::ostringstream lifetimeTitle;
-    lifetimeTitle<<"CREM collapse survival and experimental comparison;t ["
+    lifetimeTitle<<"CREM collapse survival (Kaplan-Meier, censoring-aware);t ["
                  <<timeUnit<<"];Survival fraction";
     lifetimeSurvival.SetTitle(lifetimeTitle.str().c_str());
     lifetimeSurvival.SetLineColor(plot_style::crem());
+    lifetimeSurvival.SetLineWidth(2);
     lifetimeSurvival.SetMarkerColor(plot_style::crem());
-    lifetimeSurvival.SetMarkerStyle(20);
-    lifetimeSurvival.SetMarkerSize(0.65);
+    lifetimeSurvival.SetMarkerStyle(1);
+    // Greenwood pointwise standard errors at the observed collapses.
+    TGraphErrors survivalBand(static_cast<int>(survivalBandTime.size()),
+        survivalBandTime.data(),survivalBandValue.data(),
+        nullptr,survivalBandError.data());
+    survivalBand.SetLineColor(plot_style::crem());
+    survivalBand.SetMarkerColor(plot_style::crem());
+    survivalBand.SetMarkerStyle(20);
+    survivalBand.SetMarkerSize(0.6);
+    // Vertical ticks where a trajectory was censored: the information the old
+    // completed-runs-only curve discarded.
+    TGraph censorMarks(static_cast<int>(censorTime.size()),
+        censorTime.data(),censorValue.data());
+    censorMarks.SetMarkerColor(plot_style::crem());
+    censorMarks.SetMarkerStyle(2); // upright cross, the survival-analysis tick
+    censorMarks.SetMarkerSize(0.9);
     TF1 experimentalCurve("experimental_lifetime_distribution", "exp(-x/[0])",
                           lifetimeLower, lifetimeUpper);
     experimentalCurve.SetParameter(0,experimentalLifetime);
     experimentalCurve.SetLineColor(plot_style::experimental());
     experimentalCurve.SetLineWidth(3);
     experimentalCurve.SetLineStyle(3);
-    TF1 fittedLifetime("fitted_lifetime_distribution", "exp(-x/[0])",
-                       lifetimeLower, lifetimeUpper);
-    const double displayedFittedLifetime = estimatedLifetime*timeScale;
-    fittedLifetime.SetParameter(0,displayedFittedLifetime);
-    fittedLifetime.SetLineColor(plot_style::crem());
-    fittedLifetime.SetLineWidth(2);
-    fittedLifetime.SetLineStyle(2);
-
-    const double photonEndpoint = 0.5 * bound_decay::energyKeV(
-        bound_decay::positroniumRestEnergyJoules);
-    // Exact inclusive spectrum, normalized as a probability density in x=E/Emax
-    // so that its integral is one photon per unit x.  No sampling is involved.
-    std::unique_ptr<TF1> orePowellTemplate;
-    if (!isPara) {
-        orePowellTemplate = std::make_unique<TF1>(
-            "ore_powell_spectrum_template", orePowellSpectrum,
-            std::max(1.0e-6, photonEndpoint*1.0e-6), photonEndpoint, 2);
-        orePowellTemplate->SetParameters(
-            2.0/((pi*pi - 9.0)*photonEndpoint), photonEndpoint);
-        orePowellTemplate->SetParName(0, "normalization");
-        orePowellTemplate->SetParName(1, "endpoint_keV");
-        orePowellTemplate->SetLineColor(plot_style::theory());
-        orePowellTemplate->SetLineWidth(3);
-        orePowellTemplate->SetLineStyle(2);
-        orePowellTemplate->SetNpx(600);
-        orePowellTemplate->SetTitle(
-            "Ore-Powell inclusive 3#gamma spectrum (exact);"
-            "E_{#gamma} [keV];(1/N_{#gamma}) dN/dE [keV^{-1}]");
-    }
+    // The descriptive exp() through the completed-run mean was removed: the
+    // sample is not exponential (the panel said so itself), and the mean it
+    // was drawn through is the biased one.  Drawing it next to a
+    // censoring-aware estimate invited exactly the misreading this panel now
+    // warns about.
 
     distributionsPage.cd(1);
     gPad->SetGrid();
-    gPad->SetLogx();
-    lifetimeSurvival.Draw("ALP");
-    lifetimeSurvival.GetXaxis()->SetLimits(lifetimeLower,lifetimeUpper);
+    // A log axis spanning less than a decade draws no labelled major tick at
+    // all -- the panel came out with a bare "t [ps]" and no numbers on it.
+    // Use the log axis only when the sample really is decades wide.
+    const bool survivalUsesLogAxis =
+        lifetimeLower > 0.0 && lifetimeUpper/lifetimeLower > 20.0;
+    const double survivalAxisLower =
+        survivalUsesLogAxis ? lifetimeLower : 0.0;
+    if(survivalUsesLogAxis) gPad->SetLogx();
+    lifetimeSurvival.Draw("AL");
+    lifetimeSurvival.GetXaxis()->SetLimits(survivalAxisLower,lifetimeUpper);
     lifetimeSurvival.SetMinimum(0.0);
     lifetimeSurvival.SetMaximum(1.08);
+    survivalBand.Draw("P");
+    if(censorMarks.GetN()>0) censorMarks.Draw("P");
     experimentalCurve.Draw("SAME");
-    fittedLifetime.Draw("SAME");
-    drawAnalysisBox(analysisBoxes, 0.40, 0.40, 0.95, 0.91, {
-        "CREM trajectories: N = " + std::to_string(runCount)
-            + "; valid = " + std::to_string(collapseMoments.count),
-        "Full CREM calibration; secular P(a) #propto a^{-4}",
-        "cutoff: r = 0.01 a_{0}; all orbits start at r = a_{0}",
-        "#LTt_{collapse}#GT = " + compactNumber(collapseMoments.mean)
-            + " #pm " + compactNumber(estimatedError*timeScale) + " " + timeUnit
-            + " (SE of mean)",
-        "sample #sigma/#LTt#GT = " + compactNumber(relativeSpread)
-            + "  (narrow, NOT exponential)",
+    // Which corner is free depends on the shape the curve actually takes, so
+    // pick it from the data instead of hard-coding one.  With high completion
+    // the staircase descends from the top-left and the upper right is empty;
+    // under heavy censoring it stays pinned near 1 across the whole width and
+    // only the lower left is empty.  A fixed corner covered the curve in one
+    // case or the other.
+    const bool boxUpperRight = completionPercent >= 50.0;
+    const double boxX1 = boxUpperRight ? 0.53 : 0.13;
+    const double boxY1 = boxUpperRight ? 0.48 : 0.13;
+    const double boxX2 = boxUpperRight ? 0.97 : 0.63;
+    const double boxY2 = boxUpperRight ? 0.90 : 0.56;
+    drawAnalysisBox(analysisBoxes, boxX1, boxY1, boxX2, boxY2, {
+        "N = " + std::to_string(runCount) + ":  "
+            + std::to_string(survival.eventCount) + " collapsed,  "
+            + std::to_string(survival.censoredCount) + " censored  ("
+            + compactNumber(completionPercent, 3) + "% complete)",
+        "Kaplan-Meier; ticks = censored, bars = Greenwood",
+        survival.medianReached
+            ? "KM median = " + compactNumber(survival.medianSurvival)
+                + " " + timeUnit
+            : "KM median not reached; S = "
+                + compactNumber(survival.survivalAtHorizon, 3) + " at "
+                + compactNumber(survivalHorizon) + " " + timeUnit,
+        "KM RMST = " + compactNumber(survival.restrictedMean)
+            + " #pm " + compactNumber(survival.restrictedMeanError)
+            + " " + timeUnit,
+        "completed-run mean = " + compactNumber(collapseMoments.mean)
+            + " " + timeUnit,
+        completionPercent < 90.0
+            ? "Informative censoring: the two biases have opposite"
+            : "High completion: the two figures agree.",
+        completionPercent < 90.0
+            ? "sign. Raise --crem-wallclock-budget-s to close the gap."
+            : "",
         plot_style::key(true, false, true, false),
-        "blue dashed: descriptive exp() through #LTt#GT - shape",
-        "is illustrative only, the sample is not exponential.",
-        "External comparison only:",
-        "#tau_{exp} = " + compactNumber(experimentalLifetime)
-            + " #pm " + compactNumber(experimentalLifetimeError) + " " + timeUnit
-            + "  (#tau_{exp}/#LTt#GT #approx " + compactNumber(experimentalRatio, 3)
-            + ")",
-        "p-Ps and o-Ps share this classical inspiral: they differ",
-        "only by initial dipole alignment (#approx10^{-5} of Coulomb),",
-        "while #tau_{exp} differs by #approx10^{3}. Scale reference,",
-        "not a prediction of the annihilation lifetime.",
+        "#tau_{exp} = " + compactNumber(experimentalLifetime) + " " + timeUnit
+            + " (scale reference only, not a prediction)",
         isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
                : "Vallery et al., PRL 90 (2003)"
-    }, 0.0165);
+    }, 0.019);
 
     // Annihilation-time spectrum built from the MEASURED decay rate, drawn
     // analytically.  The published rate is real data; turning it into a
@@ -1792,192 +1746,130 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         "expected to agree; this panel sets the scale."
     }, 0.0185);
 
+    // --- Pad 3: measured collapse time against closed-form electrodynamics ---
+    // The engine is compared with the textbook classical inspiral of a
+    // radiating electric dipole, evaluated between the SAME two osculating
+    // orbits each trajectory actually covered.  Nothing from CREM enters the
+    // reference, so a departure from the diagonal is a statement about the
+    // engine, not about positronium.
     distributionsPage.cd(3);
     gPad->SetGrid();
-    std::unique_ptr<TLine> idealPhotonLine;
-    std::unique_ptr<TLine> experimentalPhotonLine;
-    std::unique_ptr<TH1D> photonAxisFrame;
-    if (isPara) {
-        // Exact two-body split: both photons carry E_Ps/2 by kinematics, so the
-        // "spectrum" is a single line and nothing about it is statistical.
-        photonAxisFrame = std::make_unique<TH1D>("decay_photon_energy_axis",
-            "Ideal 2#gamma energy line (exact);E_{#gamma} [keV];"
-            "Relative intensity",
-            100, photonEndpoint - 0.02, photonEndpoint + 0.02);
-        photonAxisFrame->SetDirectory(nullptr);
-        photonAxisFrame->SetStats(false);
-        photonAxisFrame->SetMinimum(0.0);
-        photonAxisFrame->SetMaximum(1.15);
-        photonAxisFrame->Draw();
-        idealPhotonLine = std::make_unique<TLine>(
-            photonEndpoint, 0.0, photonEndpoint, 1.0);
-        idealPhotonLine->SetLineColor(plot_style::theory());
-        idealPhotonLine->SetLineWidth(3);
-        idealPhotonLine->Draw();
-        experimentalPhotonLine = std::make_unique<TLine>(
-            photonEnergyReference.value, 0.0,
-            photonEnergyReference.value, 1.0);
-        experimentalPhotonLine->SetLineColor(plot_style::experimental());
-        experimentalPhotonLine->SetLineWidth(3);
-        experimentalPhotonLine->SetLineStyle(3);
-        experimentalPhotonLine->Draw();
-        drawAnalysisBox(analysisBoxes, 0.13, 0.55, 0.68, 0.91, {
-            plot_style::key(false, false, true, true),
-            "Exact reference curve, no Monte Carlo.",
-            "Two-body at-rest kinematics fixes both photons",
-            "at E_{Ps}/2; there is nothing to sample.",
-            "E_{#gamma} = " + compactNumber(photonEndpoint, 10) + " keV",
-            "blue: model kinematics; red: accepted mass",
-            "Experimental / accepted mass:",
-            "#mu_{exp} = " + compactNumber(photonEnergyReference.value, 10)
-                + " #pm " + compactNumber(
-                    photonEnergyReference.totalUncertainty, 2)
-                + " keV",
-            "PDG 2025 positronium mass"
-        }, 0.021);
-    } else {
-        orePowellTemplate->Draw("L");
-        drawAnalysisBox(analysisBoxes, 0.30, 0.55, 0.94, 0.91, {
-            plot_style::key(false, false, true, true),
-            "Exact reference curve, no Monte Carlo.",
-            "LO Ore-Powell F(E/E_{max}), normalized so that",
-            "#int F dE = 1 per photon; free parameters: 0.",
-            "E_{max} = " + compactNumber(photonEndpoint, 9) + " keV",
-            "Experimental / accepted endpoint:",
-            "E_{max} = " + compactNumber(photonEnergyReference.value, 10)
-                + " #pm " + compactNumber(
-                    photonEnergyReference.totalUncertainty, 2)
-                + " keV (PDG 2025)",
-            "Continuum agrees with QED: Chang et al. (1985)"
-        }, 0.021);
+    double collapseAxisUpper = 1.0;
+    for (std::size_t i = 0; i < measuredCollapse.size(); ++i) {
+        collapseAxisUpper = std::max({collapseAxisUpper,
+            measuredCollapse[i], analyticCollapse[i]});
     }
+    collapseAxisUpper *= 1.15;
+    TGraph collapseVersusTheory(static_cast<int>(measuredCollapse.size()),
+        analyticCollapse.data(), measuredCollapse.data());
+    std::ostringstream collapseCompareTitle;
+    collapseCompareTitle << "CREM collapse time vs closed-form classical "
+                            "inspiral;t_{classical} [" << timeUnit
+                         << "];t_{CREM} [" << timeUnit << ']';
+    collapseVersusTheory.SetTitle(collapseCompareTitle.str().c_str());
+    collapseVersusTheory.SetMarkerColor(plot_style::crem());
+    collapseVersusTheory.SetMarkerStyle(20);
+    collapseVersusTheory.SetMarkerSize(0.7);
+    std::unique_ptr<TF1> collapseDiagonal;
+    std::vector<double> collapseRatios;
+    for (std::size_t i = 0; i < measuredCollapse.size(); ++i) {
+        if (analyticCollapse[i] > 0.0)
+            collapseRatios.push_back(measuredCollapse[i]/analyticCollapse[i]);
+    }
+    const GaussianFitSummary collapseRatioMoments =
+        gaussianMaximumLikelihood(collapseRatios);
+    if (collapseVersusTheory.GetN() > 0) {
+        collapseVersusTheory.Draw("AP");
+        collapseVersusTheory.GetXaxis()->SetLimits(0.0, collapseAxisUpper);
+        collapseVersusTheory.SetMinimum(0.0);
+        collapseVersusTheory.SetMaximum(collapseAxisUpper);
+        collapseDiagonal = std::make_unique<TF1>("collapse_diagonal", "x",
+            0.0, collapseAxisUpper);
+        collapseDiagonal->SetLineColor(plot_style::theory());
+        collapseDiagonal->SetLineWidth(3);
+        collapseDiagonal->SetLineStyle(2);
+        collapseDiagonal->Draw("SAME");
+    }
+    // Lower right: the engine radiates less than the reference, so every point
+    // sits ABOVE the diagonal and the region below it is empty.
+    drawAnalysisBox(analysisBoxes, 0.44, 0.13, 0.96, 0.46, {
+        plot_style::key(true, false, false, true),
+        "Reference: da/dt = -C/a^{2}, C = 8ke^{4}/(6#pi#varepsilon_{0}c^{3}m^{2}),",
+        "orbit-averaged with the DIPOLE factor (1+e^{2}/2)/(1-e^{2})^{5/2}",
+        "evaluated at each trajectory's own a and e. Zero free parameters.",
+        "completed trajectories: N = "
+            + std::to_string(measuredCollapse.size()),
+        "#LTt_{CREM}/t_{classical}#GT = "
+            + compactNumber(collapseRatioMoments.mean, 4)
+            + " #pm " + compactNumber(collapseRatioMoments.sigma, 3),
+        "dashed: exact agreement. Eccentricity is held fixed in",
+        "the reference; radiation actually circularizes the orbit."
+    }, 0.019);
 
-    std::unique_ptr<TH1D> angularHistogram;
-    std::unique_ptr<TH2D> dalitzHistogram;
-    std::unique_ptr<TF1> paraAngularReference;
-    TPaveText channelInformation(0.10, 0.16, 0.90, 0.84, "NDC");
-    if (isPara) {
-        // Unpolarized p-Ps is isotropic: the exact density is flat in
-        // cos(theta) and the ideal Legendre anisotropy is a2 = 0.
-        paraAngularReference = std::make_unique<TF1>(
-            "para_angular_reference", "0.5*(1+[0]*0.5*(3*x*x-1))", -1.0, 1.0);
-        paraAngularReference->SetParameter(0, anisotropyReference.value);
-        paraAngularReference->SetParName(0, "a2");
-        paraAngularReference->SetLineColor(plot_style::theory());
-        paraAngularReference->SetLineWidth(3);
-        paraAngularReference->SetLineStyle(2);
-        paraAngularReference->SetMinimum(0.0);
-        paraAngularReference->SetMaximum(1.0);
-        paraAngularReference->SetTitle(
-            "Photon polar angle, unpolarized p-Ps (exact);"
-            "cos(#theta_{#gamma});(1/N) dN/dcos#theta");
-        distributionsPage.cd(4);
-        gPad->SetGrid();
-        paraAngularReference->Draw("L");
-        drawAnalysisBox(analysisBoxes, 0.26, 0.58, 0.94, 0.91, {
-            plot_style::key(false, false, false, true),
-            "Exact reference curve, no Monte Carlo.",
-            "Unpolarized p-Ps has no preferred axis, so the",
-            "density is flat in cos#theta: C[1+a_{2}P_{2}(cos#theta)]",
-            "with a_{2} = " + compactNumber(anisotropyReference.value) + ".",
-            "Experimental:",
-            "no apparatus-independent a_{2} is available"
-        }, 0.022);
-        distributionsPage.cd(6);
-        channelInformation.SetFillColorAlpha(kWhite, 0.92);
-        channelInformation.SetTextAlign(12);
-        channelInformation.SetTextFont(42);
-        channelInformation.AddText("Ideal vacuum, truth level");
-        channelInformation.AddText("Dominant channel: p-Ps #rightarrow 2#gamma");
-        channelInformation.AddText("Photon multiplicity: 2");
-        channelInformation.AddText("Opening angle in CM: 180 degrees");
-        std::ostringstream energyText;
-        energyText << "E_{#gamma} = " << photonEndpoint << " keV";
-        channelInformation.AddText(energyText.str().c_str());
-        channelInformation.AddText("No detector broadening or material effects");
-        channelInformation.AddText("Panels are exact kinematics, not sampled;");
-        channelInformation.AddText(
-            "the generator is unit-tested in positronium_validation");
-        channelInformation.Draw();
-    } else {
-        // Deterministic quadrature over the Dalitz triangle.  The integrand is
-        // the same Ore-Powell weight the generator targets, so this is the
-        // exact reference rather than a sample of it: no RNG, reproducible
-        // bit-for-bit, and free of statistical noise.
-        constexpr int quadratureSteps = 1400;
-        constexpr int dalitzBins = 70;
-        dalitzHistogram = std::make_unique<TH2D>("ortho_dalitz_histogram",
-            "Three-photon Dalitz density (exact);E_{max} [keV];E_{mid} [keV]",
-            dalitzBins, (2.0/3.0)*photonEndpoint, photonEndpoint,
-            dalitzBins, 0.5*photonEndpoint, photonEndpoint);
-        dalitzHistogram->SetDirectory(nullptr);
-        dalitzHistogram->SetStats(false);
-        angularHistogram = std::make_unique<TH1D>("ortho_leading_angle_histogram",
-            "Angle between the two leading photons (exact);"
-            "#theta_{12} [deg];(1/N) dN/d#theta_{12} [deg^{-1}]",
-            120, 120.0, 180.0);
-        styleHistogram(*angularHistogram, plot_style::theory());
-        angularHistogram->SetLineStyle(2);
-        angularHistogram->SetStats(false);
-        double quadratureNorm = 0.0;
-        for (int i = 0; i < quadratureSteps; ++i) {
-            const double first = (i + 0.5)/quadratureSteps;
-            for (int j = 0; j < quadratureSteps; ++j) {
-                const double second = (j + 0.5)/quadratureSteps;
-                const double third = 2.0 - first - second;
-                if (!(third > 0.0 && third <= 1.0)) continue;
-                const bound_decay::detail::OrthoEnergyPoint point =
-                    bound_decay::detail::makeOrthoEnergyPoint(first, second);
-                const double weight =
-                    bound_decay::detail::orePowellWeight(point);
-                if (!(weight > 0.0) || !std::isfinite(weight)) continue;
-                std::array<std::size_t,3> order{0, 1, 2};
-                std::sort(order.begin(), order.end(),
-                    [&](std::size_t a, std::size_t b) {
-                        return point.fractions[a] > point.fractions[b];
-                    });
-                const double leadingCosine = bound_decay::detail::pairCosine(
-                    point, order[0], order[1]);
-                dalitzHistogram->Fill(photonEndpoint*point.fractions[order[0]],
-                                      photonEndpoint*point.fractions[order[1]],
-                                      weight);
-                angularHistogram->Fill(
-                    std::acos(bound_decay::detail::clampCosine(leadingCosine))
-                        *180.0/pi, weight);
-                quadratureNorm += weight;
-            }
-        }
-        if (quadratureNorm > 0.0) {
-            dalitzHistogram->Scale(1.0/quadratureNorm);
-            angularHistogram->Scale(
-                1.0/(quadratureNorm*angularHistogram->GetBinWidth(1)));
-        }
-        distributionsPage.cd(4);
-        gPad->SetRightMargin(0.14);
-        dalitzHistogram->Draw("COLZ");
-        drawAnalysisBox(analysisBoxes, 0.08, 0.66, 0.56, 0.91, {
-            plot_style::key(false, false, false, true),
-            "Exact reference, no Monte Carlo.",
-            "Ore-Powell density P #propto #Sigma_{ij}(1-cos#theta_{ij})^{2}",
-            "integrated by deterministic quadrature",
-            "free shape parameters: 0",
-            "Experimental:",
-            "no matching acceptance-corrected dataset loaded"
-        }, 0.022);
-        distributionsPage.cd(5);
-        gPad->SetGrid();
-        angularHistogram->Draw("HIST");
-        drawAnalysisBox(analysisBoxes, 0.14, 0.62, 0.62, 0.91, {
-            plot_style::key(false, false, false, true),
-            "Exact reference, no Monte Carlo.",
-            "Ore-Powell density projected onto the angle",
-            "between the two most energetic photons",
-            "free shape parameters: 0",
-            "range: 120 deg #leq #theta_{12} #leq 180 deg",
-            "Experimental:",
-            "no matching detector-independent parameter loaded"
-        }, 0.022);
+    // --- Pad 4: radiation sector against the Larmor rate ---
+    // Per checkpoint the engine measures the orbital energy lost over one
+    // resolved orbit; the Larmor power of the coherent electric dipole for
+    // that same osculating orbit is the reference.  A ratio of 1 means the
+    // engine reproduces coherent dipole radiation.  A ratio near 1/2 would
+    // mean the two charges are radiating incoherently instead: their dipole
+    // contributions add as 4 coherently against 2 incoherently.
+    distributionsPage.cd(4);
+    gPad->SetGrid();
+    double larmorLower = std::numeric_limits<double>::infinity();
+    double larmorUpper = 0.0;
+    for (double value : larmorRatios) {
+        larmorLower = std::min(larmorLower, value);
+        larmorUpper = std::max(larmorUpper, value);
     }
+    if (!(larmorLower < larmorUpper)) { larmorLower = 0.0; larmorUpper = 1.5; }
+    // Always keep both reference marks on the axis.  Left to the data alone
+    // the range collapsed onto the model's own 0.3% spread and the coherent
+    // mark at 1 fell off the plot, hiding the very comparison the panel is for.
+    larmorLower = std::min(larmorLower, 0.45);
+    larmorUpper = std::max(larmorUpper, 1.05);
+    const double larmorPadding = 0.08*(larmorUpper - larmorLower) + 1.0e-6;
+    TH1D larmorRatioHistogram("crem_larmor_ratio",
+        "Radiated power: CREM measured vs Larmor;"
+        "P_{CREM} / P_{Larmor};Trajectories",
+        histogramBins(larmorRatios.size()),
+        larmorLower - larmorPadding, larmorUpper + larmorPadding);
+    styleHistogram(larmorRatioHistogram, plot_style::crem());
+    larmorRatioHistogram.SetStats(false);
+    for (double value : larmorRatios) larmorRatioHistogram.Fill(value);
+    larmorRatioHistogram.Draw("HIST");
+    const GaussianFitSummary larmorMoments =
+        gaussianMaximumLikelihood(larmorRatios);
+    std::unique_ptr<TLine> coherentMarker, incoherentMarker;
+    if (!larmorRatios.empty()) {
+        const double markerTop = 1.05*larmorRatioHistogram.GetMaximum();
+        if (larmorLower - larmorPadding <= 1.0
+            && 1.0 <= larmorUpper + larmorPadding) {
+            coherentMarker = std::make_unique<TLine>(1.0, 0.0, 1.0, markerTop);
+            coherentMarker->SetLineColor(plot_style::theory());
+            coherentMarker->SetLineWidth(3);
+            coherentMarker->Draw();
+        }
+        if (larmorLower - larmorPadding <= 0.5
+            && 0.5 <= larmorUpper + larmorPadding) {
+            incoherentMarker = std::make_unique<TLine>(0.5, 0.0, 0.5, markerTop);
+            incoherentMarker->SetLineColor(plot_style::theory());
+            incoherentMarker->SetLineWidth(2);
+            incoherentMarker->SetLineStyle(3);
+            incoherentMarker->Draw();
+        }
+    }
+    // Upper right: with the axis now forced to span both reference marks the
+    // model's narrow peak sits on the left, leaving this corner clear.
+    drawAnalysisBox(analysisBoxes, 0.48, 0.56, 0.96, 0.91, {
+        plot_style::key(true, false, false, true),
+        "Reference: P = |d''|^{2}/(6#pi#varepsilon_{0}c^{3}), d = e r,",
+        "orbit-averaged at each checkpoint's own a and e.",
+        "checkpoint samples: N = " + std::to_string(larmorRatios.size()),
+        "#LTP_{CREM}/P_{Larmor}#GT = " + compactNumber(larmorMoments.mean, 4)
+            + " #pm " + compactNumber(larmorMoments.sigma, 3),
+        "solid line at 1: coherent electric dipole",
+        "dotted line at 0.5: two charges radiating incoherently"
+    }, 0.019);
 
     // The diagnostics page used to hold four closure histograms of the photon
     // generator.  Those measured the generator's own arithmetic, not the
@@ -1997,7 +1889,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     }
     const double powerPadding = 0.05*(powerUpper - powerLower);
     TH1D calibrationPowerHistogram("crem_calibration_power",
-        "Orbit-averaged radiated power of the CREM calibration;"
+        "Orbit-averaged radiated power of the CREM collapse;"
         "#LTP#GT [W];Trajectories",
         histogramBins(calibrationPowers.size()),
         powerLower - powerPadding, powerUpper + powerPadding);
@@ -2015,47 +1907,61 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             + std::to_string(calibrationPowers.size()),
         "#LTP#GT = " + compactNumber(powerMoments.mean) + " W",
         "#sigma(P) = " + compactNumber(powerMoments.sigma) + " W",
-        "This is the quantity the secular extrapolation",
-        "dE/dt = P is calibrated on; its spread propagates",
-        "directly into the collapse-time spread opposite."
+        "Radiated energy / elapsed time, averaged over each",
+        "trajectory's full mechanical run to the boundary",
+        "(not extrapolated)."
     }, 0.021);
 
-    TPaveText calibrationSummary(0.06, 0.10, 0.94, 0.90, "NDC");
-    calibrationSummary.SetFillColorAlpha(kWhite, 0.95);
-    calibrationSummary.SetTextAlign(12);
-    calibrationSummary.SetTextFont(42);
-    calibrationSummary.AddText("CREM calibration diagnostics");
-    std::ostringstream calibrationCountLine;
-    calibrationCountLine << "trajectories: " << runCount
-                         << ";  valid collapse extrapolations: "
-                         << collapseMoments.count;
-    calibrationSummary.AddText(calibrationCountLine.str().c_str());
-    std::ostringstream calibrationOutcomeLine;
-    calibrationOutcomeLine << "calibration outcome  reached-cutoff / "
-                              "observation-limit / failed = "
-                           << reachedCutoffCount << " / "
-                           << observationLimitCount << " / "
-                           << calibrationFailureCount;
-    calibrationSummary.AddText(calibrationOutcomeLine.str().c_str());
-    calibrationSummary.AddText(
-        "reached-cutoff entries use the integrated time directly;");
-    calibrationSummary.AddText(
-        "observation-limit entries use the secular extrapolation.");
-    calibrationSummary.AddText("");
-    calibrationSummary.AddText(
-        "The photon panels opposite are EXACT reference curves, not samples.");
-    calibrationSummary.AddText(
-        "The annihilation generator is a quantum prescription independent of");
-    calibrationSummary.AddText(
-        "the classical model; sampling it here would only have reproduced the");
-    calibrationSummary.AddText(
-        "distribution it draws from.  Its self-consistency (energy, momentum,");
-    calibrationSummary.AddText(
-        "mass-shell and parent-invariant closure, isotropy, Ore-Powell shape)");
-    calibrationSummary.AddText(
-        "is checked in positronium_validation, where a unit test belongs.");
+    // --- Diagnostics pad 2: magnetic sector against the measured splitting ---
+    // The classical dipole-dipole coupling of the prepared pair is the only
+    // channel by which this model distinguishes para from ortho.  The measured
+    // o-Ps/p-Ps hyperfine splitting is what that channel would have to
+    // reproduce.  The gap is the point: the real splitting is dominated by
+    // virtual annihilation and the Fermi contact term, neither of which a
+    // classical dipole model contains.
     diagnosticsPage.cd(2);
-    calibrationSummary.Draw();
+    gPad->SetGrid();
+    double couplingLower = std::numeric_limits<double>::infinity();
+    double couplingUpper = -std::numeric_limits<double>::infinity();
+    for (double value : dipoleCouplingsGHz) {
+        couplingLower = std::min(couplingLower, std::abs(value));
+        couplingUpper = std::max(couplingUpper, std::abs(value));
+    }
+    if (!(couplingLower < couplingUpper)) { couplingLower = 0.0; couplingUpper = 1.0; }
+    const double couplingPadding = 0.08*(couplingUpper - couplingLower) + 1.0e-9;
+    TH1D dipoleCouplingHistogram("crem_dipole_coupling",
+        "Classical dipole-dipole coupling vs measured hyperfine splitting;"
+        "|U_{dd}| / h [GHz];Trajectories",
+        histogramBins(dipoleCouplingsGHz.size()),
+        std::max(0.0, couplingLower - couplingPadding),
+        couplingUpper + couplingPadding);
+    styleHistogram(dipoleCouplingHistogram, plot_style::crem());
+    dipoleCouplingHistogram.SetStats(false);
+    for (double value : dipoleCouplingsGHz)
+        dipoleCouplingHistogram.Fill(std::abs(value));
+    dipoleCouplingHistogram.Draw("HIST");
+    std::vector<double> couplingMagnitudes;
+    for (double value : dipoleCouplingsGHz)
+        couplingMagnitudes.push_back(std::abs(value));
+    const GaussianFitSummary couplingMoments =
+        gaussianMaximumLikelihood(couplingMagnitudes);
+    // Measured o-Ps/p-Ps splitting, 203.394 GHz.  Far off this axis, so it is
+    // quoted rather than drawn: forcing it into range would flatten the
+    // model's own distribution onto a single bin.
+    constexpr double hyperfineSplittingGHz = 203.3941;
+    const double couplingFraction = couplingMoments.mean > 0.0
+        ? 100.0*couplingMoments.mean/hyperfineSplittingGHz : 0.0;
+    drawAnalysisBox(analysisBoxes, 0.42, 0.55, 0.95, 0.91, {
+        plot_style::key(true, false, true, false),
+        "trajectories: N = " + std::to_string(couplingMagnitudes.size()),
+        "#LT|U_{dd}|/h#GT = " + compactNumber(couplingMoments.mean, 4) + " GHz",
+        "measured o-Ps/p-Ps splitting = 203.3941 GHz",
+        "classical dipolar term covers "
+            + compactNumber(couplingFraction, 3) + "% of it",
+        "The remainder is virtual annihilation and the Fermi",
+        "contact term. A classical point-dipole model has",
+        "neither, so this gap is structural, not a fit residual."
+    }, 0.020);
 
     canvas.cd();
     distributionsPage.Pop();
@@ -2064,16 +1970,11 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     std::vector<root_export::NamedPad> plotsToSave{
         {distributionsPage.GetPad(1), 1, 1, "crem_collapse_time"},
         {distributionsPage.GetPad(2), 1, 2, "annihilation_time"},
-        {distributionsPage.GetPad(3), 1, 3, "photon_energy"},
-        {distributionsPage.GetPad(4), 1, 4, isPara ? "photon_polar_angle"
-                                              : "three_photon_dalitz"},
+        {distributionsPage.GetPad(3), 1, 3, "collapse_time_vs_theory"},
+        {distributionsPage.GetPad(4), 1, 4, "radiated_power_vs_larmor"},
         {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_calibration_power"},
-        {diagnosticsPage.GetPad(2), 2, 2, "diagnostic_calibration_summary"}
+        {diagnosticsPage.GetPad(2), 2, 2, "dipole_coupling_vs_hyperfine"}
     };
-    if (!isPara) {
-        plotsToSave.push_back(
-            {distributionsPage.GetPad(5), 1, 5, "leading_photon_angle"});
-    }
     reportExports(root_export::saveStatisticalPlots(
         selectedPhenomenon, plotsToSave));
 
@@ -2192,7 +2093,7 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
 
     const bool shortRangeFocus = selectedPhenomenon == 3;
     const double energy = energyEv * eCharge;
-    const double coulombStrength = coulomb * eCharge * eCharge;
+    const double coulombStrength = pairCoulombStrength;
     const double coulombLength = coulombStrength / (2.0 * energy);
     const double cutoffImpactParameter = std::sqrt(
         nuclearCutoff * nuclearCutoff + coulombStrength * nuclearCutoff / energy);
@@ -2215,7 +2116,7 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
         throw std::invalid_argument("matching radius must be finite and larger than bmax");
     }
 
-    const double gammaInfinity = 1.0 + energy / (2.0 * electronMass * c*c);
+    const double gammaInfinity = 1.0 + energy / (2.0 * firstMass * c*c);
     const double particleSpeed = c * std::sqrt(1.0 - 1.0 / (gammaInfinity * gammaInfinity));
     const double relativeSpeed = 2.0 * particleSpeed;
     return {energy, impactMaximum, matchingRadius,
@@ -2244,20 +2145,20 @@ BeamEvent simulateBeamEvent(
     const Vec3 tangentDirection = beamDirection * sineAsymptote
         + impactDirection * (longitudinalDistance / configuration.matchingRadius);
 
-    const double coulombStrength = coulomb * eCharge * eCharge;
+    const double coulombStrength = pairCoulombStrength;
     const double finiteKineticEnergy = configuration.centreOfMassKineticEnergy
         + coulombStrength / configuration.matchingRadius;
     const double finiteGamma = 1.0
-        + finiteKineticEnergy / (2.0 * electronMass * c*c);
+        + finiteKineticEnergy / (2.0 * firstMass * c*c);
     const double finiteParticleSpeed = c
         * std::sqrt(1.0 - 1.0 / (finiteGamma * finiteGamma));
     const double finiteRelativeSpeed = 2.0 * finiteParticleSpeed;
     const double asymptoticGamma = 1.0 + configuration.centreOfMassKineticEnergy
-        / (2.0 * electronMass*c*c);
+        / (2.0 * firstMass*c*c);
     const double asymptoticParticleSpeed = 0.5 * configuration.asymptoticRelativeSpeed;
-    const double asymptoticMomentum = asymptoticGamma * electronMass
+    const double asymptoticMomentum = asymptoticGamma * firstMass
         * asymptoticParticleSpeed;
-    const double finiteMomentum = finiteGamma * electronMass * finiteParticleSpeed;
+    const double finiteMomentum = finiteGamma * firstMass * finiteParticleSpeed;
     const double tangentialFraction = impactParameter * asymptoticMomentum
         / (configuration.matchingRadius * finiteMomentum);
     if (!(tangentialFraction >= 0.0 && tangentialFraction < 1.0)) {
@@ -2283,12 +2184,12 @@ BeamEvent simulateBeamEvent(
         return Vec3{transverse * std::cos(phi), transverse * std::sin(phi), cosine};
     };
     State state;
-    state.electronPosition = relativePosition * 0.5;
-    state.positronPosition = relativePosition * -0.5;
-    state.electronVelocity = relativeVelocity * 0.5;
-    state.positronVelocity = relativeVelocity * -0.5;
-    state.electronDipole = randomDirection() * bohrMagneton;
-    state.positronDipole = randomDirection() * bohrMagneton;
+    state.firstPosition = relativePosition * 0.5;
+    state.secondPosition = relativePosition * -0.5;
+    state.firstVelocity = relativeVelocity * 0.5;
+    state.secondVelocity = relativeVelocity * -0.5;
+    state.firstDipole = randomDirection() * firstMagneticMoment;
+    state.secondDipole = randomDirection() * secondMagneticMoment;
     ClassicalTrajectoryEngine trajectory(state,accuracy);
     const State initialState = state;
     const EndpointDiagnostics initialDiagnostics = endpointDiagnostics(state);
@@ -2315,14 +2216,14 @@ BeamEvent simulateBeamEvent(
         return result;
     };
 
-    constexpr double reducedMass = electronMass * positronMass
-                                 / (electronMass + positronMass);
+    constexpr double reducedMass = firstMass * secondMass
+                                 / (firstMass + secondMass);
     bool passedClosestApproach = false;
     while (state.time < configuration.maximumFlightTime) {
         const double radius = separation(state);
         const double relativeSpeed =
-            (state.electronVelocity - state.positronVelocity).norm();
-        const double omega = std::sqrt(coulomb * eCharge*eCharge
+            (state.firstVelocity - state.secondVelocity).norm();
+        const double omega = std::sqrt(pairCoulombStrength
                                       / (reducedMass * radius*radius*radius));
         const double transitStep = 0.02 * radius/std::max(relativeSpeed, 1.0);
         // Far from the interaction region the transit and orbital scales are
@@ -2347,9 +2248,9 @@ BeamEvent simulateBeamEvent(
                 beforeStep.radiatedEnergy, &beforeStep);
         }
         const Vec3 currentRelativePosition =
-            state.electronPosition - state.positronPosition;
+            state.firstPosition - state.secondPosition;
         const Vec3 currentRelativeVelocity =
-            state.electronVelocity - state.positronVelocity;
+            state.firstVelocity - state.secondVelocity;
         const double currentRadius = currentRelativePosition.norm();
         if (!(currentRadius > 0.0) || !std::isfinite(currentRadius)) {
             return makeResult(BeamOutcome::NumericalFailure,
@@ -2392,7 +2293,7 @@ BeamEvent simulateBeamEvent(
             // is the asymptotic outgoing kinetic energy estimator.
             const double outgoingEnergy = makeFrame(state).mechanicalEnergy;
             const Vec3 previousRelativePosition =
-                beforeStep.electronPosition - beforeStep.positronPosition;
+                beforeStep.firstPosition - beforeStep.secondPosition;
             const Vec3 stepDisplacement =
                 currentRelativePosition - previousRelativePosition;
             const double quadraticA = dot(stepDisplacement, stepDisplacement);
@@ -2425,7 +2326,7 @@ BeamEvent simulateBeamEvent(
 }
 
 // ---------------------------------------------------------------------------
-// Experiment 5 "Interactions": an electron and a positron are fired at each
+// Experiment 5 "Interactions": an first and a second are fired at each
 // other with a Gaussian centre-of-mass energy and a Gaussian impact parameter
 // centred on a head-on collision, both dipoles randomly oriented in space.
 // Every trajectory is classified by what actually happens to it.
@@ -2497,12 +2398,27 @@ struct InteractionEvent {
     double finalRelativeEnergyEv = std::numeric_limits<double>::quiet_NaN();
     double scatteringAngleDegrees = std::numeric_limits<double>::quiet_NaN();
     double elapsedTime = std::numeric_limits<double>::quiet_NaN();
-    // Extrapolated CREM collapse time of a captured pair, using the same
-    // secular model as experiments 1 and 2 so the numbers are comparable:
-    // dE/dt = P with E = -k e^2/(2a) and P proportional to a^-4.  It is a
-    // classical inspiral time, not a quantum annihilation lifetime.
+    // Extrapolated CREM collapse time of a captured pair from the secular
+    // model dE/dt = P, with E = -k e^2/(2a) and P proportional to a^-4.  It is
+    // a classical inspiral time, not a quantum annihilation lifetime.
+    //
+    // This is NOT the same measurement experiments 1 and 2 report.  Those now
+    // integrate the trajectory mechanically to the boundary; this one still
+    // extrapolates from a measured power, and it only exists where the
+    // measurement window closed a full orbit (see boundObservedOrbits), which
+    // is the precondition for "orbit-averaged P" to mean anything.  The two
+    // numbers describe different orbits by different methods and should not
+    // be pooled.
     double collapseTimeSeconds = std::numeric_limits<double>::quiet_NaN();
     double boundRadiatedPowerWatts = std::numeric_limits<double>::quiet_NaN();
+    // Kepler period of the captured quasi-closed orbit, taken as the longer of
+    // the capture-time and window-close periods -- the same quantity the
+    // orbit gate below divides by.
+    double boundOrbitalPeriodSeconds = std::numeric_limits<double>::quiet_NaN();
+    // Length of the bound observation window in units of the capture-time
+    // Kepler period.  Below 1 no orbit average exists and collapseTimeSeconds
+    // stays NaN.
+    double boundObservedOrbits = std::numeric_limits<double>::quiet_NaN();
     EndpointDiagnostics initialDiagnostics;
     EndpointDiagnostics finalDiagnostics;
     bool diagnosticsValid = false;
@@ -2518,19 +2434,19 @@ struct InteractionEvent {
 double coulombPairEnergy(const State& state) {
     const PairGeometry geometry = pairGeometry(state);
     const double kinetic =
-        (gamma(state.electronVelocity) - 1.0)*electronMass*c*c
-      + (gamma(state.positronVelocity) - 1.0)*positronMass*c*c;
-    return kinetic - coulomb*eCharge*eCharge*geometry.inverseDistance;
+        (gamma(state.firstVelocity) - 1.0)*firstMass*c*c
+      + (gamma(state.secondVelocity) - 1.0)*secondMass*c*c;
+    return kinetic - pairCoulombStrength*geometry.inverseDistance;
 }
 
 double dipoleAlignmentOf(const State& state) {
-    const double electronNorm = state.electronDipole.norm();
-    const double positronNorm = state.positronDipole.norm();
-    if (!(electronNorm > 0.0) || !(positronNorm > 0.0)) {
+    const double firstNorm = state.firstDipole.norm();
+    const double secondNorm = state.secondDipole.norm();
+    if (!(firstNorm > 0.0) || !(secondNorm > 0.0)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
-    return std::clamp(dot(state.electronDipole, state.positronDipole)
-                      / (electronNorm*positronNorm), -1.0, 1.0);
+    return std::clamp(dot(state.firstDipole, state.secondDipole)
+                      / (firstNorm*secondNorm), -1.0, 1.0);
 }
 
 InteractionConfiguration makeInteractionConfiguration(
@@ -2560,7 +2476,7 @@ InteractionConfiguration makeInteractionConfiguration(
     // l_C = k e^2 / (2 K_CM), which is 72 pm at 10 eV.  A sigma far below it
     // makes every trajectory plunge and be captured, so the automatic default
     // sets sigma = l_C and the ensemble then spans both regimes.
-    const double coulombLength = coulomb*eCharge*eCharge
+    const double coulombLength = pairCoulombStrength
                                / (2.0*configuration.meanKineticEnergy);
     configuration.impactParameterSigma = impactSigmaPm > 0.0
         ? impactSigmaPm*1.0e-12 : coulombLength;
@@ -2569,7 +2485,7 @@ InteractionConfiguration makeInteractionConfiguration(
     // not dominate the run time.
     configuration.matchingRadius = 50.0*bohrRadius;
     const double slowestEnergy = configuration.minimumKineticEnergy;
-    const double slowestGamma = 1.0 + slowestEnergy/(2.0*electronMass*c*c);
+    const double slowestGamma = 1.0 + slowestEnergy/(2.0*firstMass*c*c);
     const double slowestSpeed = c*std::sqrt(
         1.0 - 1.0/(slowestGamma*slowestGamma));
     configuration.maximumFlightTime = 6.0*configuration.matchingRadius
@@ -2625,20 +2541,20 @@ InteractionEvent simulateInteractionEvent(
     // Same construction as the beam experiment: the speed at the starting
     // sphere carries the Coulomb attraction already gained, while the angular
     // momentum is fixed by the asymptotic momentum and the impact parameter.
-    const double coulombStrength = coulomb*eCharge*eCharge;
+    const double coulombStrength = pairCoulombStrength;
     const double finiteKineticEnergy = kineticEnergy
         + coulombStrength/configuration.matchingRadius;
     const double finiteGamma = 1.0
-        + finiteKineticEnergy/(2.0*electronMass*c*c);
+        + finiteKineticEnergy/(2.0*firstMass*c*c);
     const double finiteParticleSpeed = c*std::sqrt(
         1.0 - 1.0/(finiteGamma*finiteGamma));
     const double finiteRelativeSpeed = 2.0*finiteParticleSpeed;
-    const double asymptoticGamma = 1.0 + kineticEnergy/(2.0*electronMass*c*c);
+    const double asymptoticGamma = 1.0 + kineticEnergy/(2.0*firstMass*c*c);
     const double asymptoticSpeed = c*std::sqrt(
         1.0 - 1.0/(asymptoticGamma*asymptoticGamma));
-    const double asymptoticMomentum = asymptoticGamma*electronMass
+    const double asymptoticMomentum = asymptoticGamma*firstMass
                                     * asymptoticSpeed;
-    const double finiteMomentum = finiteGamma*electronMass*finiteParticleSpeed;
+    const double finiteMomentum = finiteGamma*firstMass*finiteParticleSpeed;
     const double tangentialFraction = impactParameter*asymptoticMomentum
         / (configuration.matchingRadius*finiteMomentum);
     if (!(tangentialFraction >= 0.0 && tangentialFraction < 1.0)) return result;
@@ -2656,12 +2572,12 @@ InteractionEvent simulateInteractionEvent(
         return Vec3{transverse*std::cos(phi), transverse*std::sin(phi), cosine};
     };
     State state;
-    state.electronPosition = relativePosition*0.5;
-    state.positronPosition = relativePosition*-0.5;
-    state.electronVelocity = relativeVelocity*0.5;
-    state.positronVelocity = relativeVelocity*-0.5;
-    state.electronDipole = randomDirection()*bohrMagneton;
-    state.positronDipole = randomDirection()*bohrMagneton;
+    state.firstPosition = relativePosition*0.5;
+    state.secondPosition = relativePosition*-0.5;
+    state.firstVelocity = relativeVelocity*0.5;
+    state.secondVelocity = relativeVelocity*-0.5;
+    state.firstDipole = randomDirection()*firstMagneticMoment;
+    state.secondDipole = randomDirection()*secondMagneticMoment;
 
     ClassicalTrajectoryEngine trajectory(state, accuracy);
     result.initialDiagnostics = endpointDiagnostics(state);
@@ -2671,15 +2587,22 @@ InteractionEvent simulateInteractionEvent(
     int captureAttempts = 0;
     const double captureMargin = 0.05*configuration.meanKineticEnergy;
     double boundStartTime = 0.0;
-    double boundStartRadiatedEnergy = 0.0;
+    // Charge-sector radiated energy, i.e. the total outward flux minus the
+    // magnetic-dipole (M1) part.  state.radiatedEnergy accumulates
+    // outwardFlux.energy, which includes M1; state.dipoleConstraintEnergy
+    // accumulates exactly -integral(P_M1 dt), so the sum is the E1+E2
+    // radiation that actually recoils the orbit.  This is the same split
+    // chargeMismatchRates() applies in the energy-balance diagnostic.
+    double boundStartChargeRadiated = 0.0;
+    double boundStartOrbitalPeriod = 0.0;
     double boundObservationTime = configuration.boundObservationTimeCap;
     // Welford accumulation of cos(mu_e, mu_p) over the bound phase.
     std::size_t alignmentCount = 0;
     double alignmentMean = 0.0;
     double alignmentSecondMoment = 0.0;
 
-    constexpr double reducedMass = electronMass*positronMass
-                                 / (electronMass + positronMass);
+    constexpr double reducedMass = firstMass*secondMass
+                                 / (firstMass + secondMass);
     const auto wallClockStart = std::chrono::steady_clock::now();
     long stepCounter = 0;
     const auto finish = [&](InteractionOutcome outcome, const State& endpoint) {
@@ -2706,7 +2629,7 @@ InteractionEvent simulateInteractionEvent(
     while (state.time < configuration.maximumFlightTime) {
         const double radius = separation(state);
         const double relativeSpeed =
-            (state.electronVelocity - state.positronVelocity).norm();
+            (state.firstVelocity - state.secondVelocity).norm();
         const double omega = std::sqrt(coulombStrength
                                        / (reducedMass*radius*radius*radius));
         const double transitStep = 0.02*radius/std::max(relativeSpeed, 1.0);
@@ -2756,7 +2679,7 @@ InteractionEvent simulateInteractionEvent(
             else return finish(InteractionOutcome::Unresolved, state);
         }
 
-        const Vec3 relative = state.electronPosition - state.positronPosition;
+        const Vec3 relative = state.firstPosition - state.secondPosition;
         const double currentRadius = relative.norm();
         if (!(currentRadius > 0.0) || !std::isfinite(currentRadius)) {
             return finish(InteractionOutcome::NumericalFailure, beforeStep);
@@ -2775,7 +2698,7 @@ InteractionEvent simulateInteractionEvent(
             return finish(InteractionOutcome::Collision, cutoffState);
         }
 
-        if (dot(relative, state.electronVelocity - state.positronVelocity) > 0.0) {
+        if (dot(relative, state.firstVelocity - state.secondVelocity) > 0.0) {
             passedClosestApproach = true;
         }
         // Require the pair to be bound by a finite margin, not merely to have
@@ -2789,7 +2712,8 @@ InteractionEvent simulateInteractionEvent(
                 ++captureAttempts;
                 bound = true;
                 boundStartTime = state.time;
-                boundStartRadiatedEnergy = state.radiatedEnergy;
+                boundStartChargeRadiated =
+                    state.radiatedEnergy + state.dipoleConstraintEnergy;
                 // Kepler period of the captured orbit, from its semi-major
                 // axis a = -k/(2E).  Averaging over a fixed number of orbits
                 // costs a fixed number of adaptive steps at any binding energy.
@@ -2797,8 +2721,9 @@ InteractionEvent simulateInteractionEvent(
                 const double orbitalPeriod = 2.0*pi*std::sqrt(
                     reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis
                     / coulombStrength);
-                boundObservationTime = std::isfinite(orbitalPeriod)
-                        && orbitalPeriod > 0.0
+                boundStartOrbitalPeriod = std::isfinite(orbitalPeriod)
+                        && orbitalPeriod > 0.0 ? orbitalPeriod : 0.0;
+                boundObservationTime = boundStartOrbitalPeriod > 0.0
                     ? std::min(configuration.boundObservationOrbits
                                    *orbitalPeriod,
                                configuration.boundObservationTimeCap)
@@ -2817,8 +2742,9 @@ InteractionEvent simulateInteractionEvent(
                 // Orbit-averaged radiated power measured over the observation
                 // window closes the secular Coulomb inspiral to 0.01*a0.
                 const double observed = state.time - boundStartTime;
-                const double radiated = state.radiatedEnergy
-                                      - boundStartRadiatedEnergy;
+                const double radiated =
+                    state.radiatedEnergy + state.dipoleConstraintEnergy
+                    - boundStartChargeRadiated;
                 const double finalEnergy = coulombPairEnergy(state);
                 if (!(finalEnergy < 0.0)) {
                     // Marginal capture that drifted back above threshold: the
@@ -2835,7 +2761,30 @@ InteractionEvent simulateInteractionEvent(
                     const double semiMajorAxis =
                         -coulombStrength/(2.0*finalEnergy);
                     result.boundRadiatedPowerWatts = power;
-                    if (semiMajorAxis > chargeCloudRestRadius) {
+                    // The secular model dE/dt = P(a) with P proportional to
+                    // a^-4 takes the power ORBIT-AVERAGED, and it extrapolates
+                    // from the orbit the pair is on at the END of the window,
+                    // so that orbit's period is what the window has to cover.
+                    // Capture is only detected after closest approach, so a
+                    // shorter window samples the outbound periapsis leg.  For
+                    // these near-parabolic captures (e ~ 0.999) the periapsis
+                    // power exceeds the orbit average by orders of magnitude,
+                    // so a sub-orbit window does not measure the quantity the
+                    // formula consumes.  boundObservationTimeCap truncates the
+                    // window to well under one period for loose captures, so
+                    // the gate is not hypothetical.
+                    const double finalPeriod = 2.0*pi*std::sqrt(
+                        reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis
+                        / coulombStrength);
+                    const double gatePeriod = std::max(
+                        boundStartOrbitalPeriod,
+                        std::isfinite(finalPeriod) ? finalPeriod : 0.0);
+                    result.boundOrbitalPeriodSeconds = gatePeriod > 0.0
+                        ? gatePeriod : std::numeric_limits<double>::quiet_NaN();
+                    result.boundObservedOrbits = gatePeriod > 0.0
+                        ? observed/gatePeriod : 0.0;
+                    if (semiMajorAxis > chargeCloudRestRadius
+                        && result.boundObservedOrbits >= 1.0) {
                         const double ratio =
                             chargeCloudRestRadius/semiMajorAxis;
                         const double collapse = (-finalEnergy)/(3.0*power)
@@ -2858,7 +2807,7 @@ InteractionEvent simulateInteractionEvent(
         }
         if (passedClosestApproach
             && currentRadius >= configuration.matchingRadius) {
-            const Vec3 outgoing = state.electronVelocity - state.positronVelocity;
+            const Vec3 outgoing = state.firstVelocity - state.secondVelocity;
             result.scatteringAngleDegrees = std::acos(std::clamp(
                 dot(beamDirection, outgoing)/outgoing.norm(), -1.0, 1.0))
                 * 180.0/pi;
@@ -2893,11 +2842,13 @@ std::vector<InteractionEvent> runInteractionExperiment(
             // work in exactly the region where the step is already smallest.
             InteractionEvent event = simulateInteractionEvent(
                 eventSeed, configuration, {.relativeTolerance=1.0e-3,
-                                           .maximumDepth=8});
+                                           .maximumDepth=8,
+                                           .reactionModel=gRadiationReactionModel});
             if (event.outcome == InteractionOutcome::NumericalFailure) {
                 event = simulateInteractionEvent(
                     eventSeed, configuration, {.relativeTolerance=1.0e-5,
-                                               .maximumDepth=12});
+                                               .maximumDepth=12,
+                                               .reactionModel=gRadiationReactionModel});
             }
             events[static_cast<size_t>(index)] = std::move(event);
             const int done = completed.fetch_add(1) + 1;
@@ -2935,11 +2886,13 @@ std::vector<BeamEvent> runBeamExperiment(std::uint64_t masterSeed,
             const std::uint64_t eventSeed=splitMix64(
                 masterSeed+static_cast<std::uint64_t>(index));
             BeamEvent event=simulateBeamEvent(eventSeed,configuration,
-                {.relativeTolerance=1.0e-3,.maximumDepth=8});
+                {.relativeTolerance=1.0e-3,.maximumDepth=8,
+                 .reactionModel=gRadiationReactionModel});
             if(event.outcome==BeamOutcome::NumericalFailure) {
                 retried.fetch_add(1);
                 event=simulateBeamEvent(eventSeed,configuration,
-                    {.relativeTolerance=1.0e-5,.maximumDepth=12});
+                    {.relativeTolerance=1.0e-5,.maximumDepth=12,
+                     .reactionModel=gRadiationReactionModel});
                 if(event.outcome!=BeamOutcome::NumericalFailure)
                     recovered.fetch_add(1);
             }
@@ -3005,7 +2958,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         impactMaximumPm, matchingRadiusPm);
     const int workerCount = std::min(runCount,
         static_cast<int>(std::max(1u, std::thread::hardware_concurrency())));
-    const double matchingPotentialRatio = coulomb*eCharge*eCharge
+    const double matchingPotentialRatio = pairCoulombStrength
         / (configuration.matchingRadius * configuration.centreOfMassKineticEnergy);
     const bool matchingRegionWarning = configuration.matchingRadius
             < 20.0*configuration.impactParameterMaximum
@@ -3066,8 +3019,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         return persistenceOk ? 2 : 3;
     }
     constexpr double diagnosticFloor = 64.0 * std::numeric_limits<double>::epsilon();
-    const double energyFloor = diagnosticFloor * 2.0*electronMass*c*c;
-    const double momentumFloor = diagnosticFloor * 2.0*electronMass*c;
+    const double energyFloor = diagnosticFloor * 2.0*firstMass*c*c;
+    const double momentumFloor = diagnosticFloor * 2.0*firstMass*c;
     std::vector<double> relativeEnergyClosures;
     std::vector<double> absoluteEnergyClosures;
     std::vector<double> relativeMomentumClosures;
@@ -3784,6 +3737,14 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     std::vector<double> boundAlignmentSpreads;
     std::vector<double> identityResiduals, reactionFractions;
     std::vector<double> collapseTimesPs;
+    // Bound events whose observation window never closed a full Kepler orbit,
+    // so no orbit-averaged power -- and hence no secular collapse time --
+    // could be formed for them.
+    int shortWindowBoundEvents = 0;
+    // Quasi-closed orbit of every captured pair, whether or not it qualified
+    // for a collapse time: the period itself is measurable from the capture
+    // energy even when the window is too short to average power over.
+    std::vector<double> boundPeriodsFs, boundObservedOrbitCounts;
     // Per-class means of the sampled beam parameters.  The contrast between
     // classes is the point: capture selects small impact parameters, so a
     // single overall mean would hide the mechanism.
@@ -3821,6 +3782,16 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             }
             if (std::isfinite(event.collapseTimeSeconds)) {
                 collapseTimesPs.push_back(event.collapseTimeSeconds*1.0e12);
+            } else if (std::isfinite(event.boundObservedOrbits)
+                       && event.boundObservedOrbits < 1.0) {
+                ++shortWindowBoundEvents;
+            }
+            if (std::isfinite(event.boundOrbitalPeriodSeconds)) {
+                boundPeriodsFs.push_back(
+                    event.boundOrbitalPeriodSeconds*1.0e15);
+            }
+            if (std::isfinite(event.boundObservedOrbits)) {
+                boundObservedOrbitCounts.push_back(event.boundObservedOrbits);
             }
         }
         if (!event.diagnosticsValid) continue;
@@ -3832,7 +3803,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             + final.radiatedEnergy + final.boundFieldEnergy;
         const double energyScale = std::max({std::abs(initial.mechanicalEnergy),
             std::abs(initialBalance), 64.0*std::numeric_limits<double>::epsilon()
-                *2.0*electronMass*c*c});
+                *2.0*firstMass*c*c});
         const double identity = (finalBalance - initialBalance)/energyScale;
         const double radiated = std::abs(final.radiatedEnergy
                                           - initial.radiatedEnergy);
@@ -3890,6 +3861,31 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         std::cout << line.str() << '\n';
     }
 
+    if (!boundPeriodsFs.empty()) {
+        const auto periodExtremes = std::minmax_element(
+            boundPeriodsFs.begin(), boundPeriodsFs.end());
+        std::cout << "\nQuasi-closed orbit of the captured pairs ("
+                  << boundPeriodsFs.size() << " of " << boundTotal
+                  << " bound events):\n"
+                  << "  T  minimum " << *periodExtremes.first << " fs\n"
+                  << "  T  mean    " << mean(boundPeriodsFs) << " fs\n"
+                  << "  T  maximum " << *periodExtremes.second << " fs\n";
+        if (!boundObservedOrbitCounts.empty()) {
+            const auto orbitExtremes = std::minmax_element(
+                boundObservedOrbitCounts.begin(),
+                boundObservedOrbitCounts.end());
+            std::cout << "  revolutions observed: minimum "
+                      << *orbitExtremes.first << ", mean "
+                      << mean(boundObservedOrbitCounts) << ", maximum "
+                      << *orbitExtremes.second << '\n';
+        }
+        std::cout << "T is the Kepler period of the osculating capture orbit, "
+                     "the longer of its capture-time and window-close values.\n"
+                     "The revolution count is what the bound observation window "
+                     "actually covered, NOT a count to collapse: these pairs "
+                     "are\nfollowed only long enough to classify them, so the "
+                     "window is bounded by boundObservationTimeCap.\n";
+    }
     if (!collapseTimesPs.empty()) {
         const auto extremes = std::minmax_element(
             collapseTimesPs.begin(), collapseTimesPs.end());
@@ -3899,12 +3895,26 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
                   << "  mean    " << mean(collapseTimesPs) << " ps\n"
                   << "  maximum " << *extremes.second << " ps\n"
                   << "This is the extrapolated classical inspiral time to "
-                     "0.01*a0 from the orbit-averaged radiated power, the same\n"
-                     "secular model as experiments 1 and 2.  It is NOT a "
-                     "quantum annihilation lifetime.\n";
+                     "0.01*a0 from the orbit-averaged radiated power (secular\n"
+                     "dE/dt=P model; experiments 1 and 2 now measure this "
+                     "mechanically instead, so the two are NOT comparable).  It "
+                     "is not a quantum\nannihilation lifetime.  Only bound "
+                     "events whose observation window closed a full Kepler "
+                     "orbit are included:\nbelow that the window samples the "
+                     "post-periapsis leg, whose instantaneous power is not an "
+                     "orbit average.\n";
+        if (shortWindowBoundEvents > 0) {
+            std::cout << "  " << shortWindowBoundEvents << " of " << boundTotal
+                      << " bound events were excluded by that gate (window "
+                         "shorter than one orbit).\n";
+        }
     } else if (boundTotal > 0) {
-        std::cout << "\nNo bound event yielded a finite collapse time "
-                     "(needs negative energy and positive radiated power).\n";
+        std::cout << "\nNo bound event yielded a finite collapse time: "
+                  << shortWindowBoundEvents << " of " << boundTotal
+                  << " had an observation window shorter than one Kepler "
+                     "orbit,\nso no orbit-averaged power exists for them.  "
+                     "These captures are loose enough that one period exceeds "
+                     "the bound observation cap.\n";
     }
     if (outcomeCounts[4] > 0 || outcomeCounts[5] > 0) {
         std::cerr << "Warning: " << outcomeCounts[4] << " unresolved and "
@@ -4326,14 +4336,16 @@ int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
                             double impactMaximumPm, double matchingRadiusPm,
                             double interactionEnergyEv,
                             double interactionEnergySigmaEv,
-                            double interactionImpactSigmaPm) {
+                            double interactionImpactSigmaPm,
+                            double cremWallClockBudgetSeconds) {
     if (selectedPhenomenon == 5) {
         return showInteractionStatistics(seed, runCount, interactionEnergyEv,
                                          interactionEnergySigmaEv,
                                          interactionImpactSigmaPm);
     }
     if (selectedPhenomenon == 1 || selectedPhenomenon == 2) {
-        return showBoundDecayStatistics(seed, selectedPhenomenon, runCount);
+        return showBoundDecayStatistics(seed, selectedPhenomenon, runCount,
+                                        cremWallClockBudgetSeconds);
     }
     return showBeamStatistics(seed, selectedPhenomenon, runCount,
                               beamEnergyEv, thetaMinimumDegrees,
@@ -4368,22 +4380,32 @@ int main(int argc, char** argv) {
     // channel was selected, which is a poor property for a number that appears
     // on every plot as "N =".
     int statisticalRuns = 1000;
+    // Experiments 3 and 4 only.  Unrelated to interactionEnergyEv below: the
+    // beam channel is a scattering measurement whose reported cross sections
+    // scale as 1/K_CM^2, so this value fixes the axis range of every committed
+    // beam plot and must not be retuned along with the experiment-5 energy.
     double beamEnergyEv = 20.0;
     double thetaMinimumDegrees = 5.0;
     int angleBins = 10;
     double impactParameterMaximumPm = 0.0;
     double matchingRadiusPm = 0.0;
-    // Experiment 5.  A mean of 1 eV sits well below the 6.8 eV Ps binding
+    // Experiment 5.  A mean of 0.6 eV sits well below the 6.8 eV Ps binding
     // energy, so the pair has to shed correspondingly less energy to bind and
     // the captured fraction rises.  The impact-parameter width follows the
     // Coulomb length automatically, which scales as 1/K_CM.
-    double interactionEnergyEv = 1.0;
+    double interactionEnergyEv = 0.6;
     double interactionEnergySigmaEv = 0.4;
     // Fixed in absolute terms, NOT tied to the Coulomb length: l_C scales as
     // 1/K_CM, so an auto width would widen faster than the capture threshold
     // and lowering the energy would produce fewer bound states, not more.
     // Zero still selects the l_C rule for anyone who wants that scaling.
-    double interactionImpactSigmaPm = 72.0;
+    double interactionImpactSigmaPm = 60.0;
+    // Experiments 1/2 now integrate the full mechanical trajectory to the
+    // collision boundary instead of extrapolating; a bound orbit near a0
+    // needs a huge number of cheap orbits before the radiative loss becomes
+    // visible, so each event is censored once it spends this long on the
+    // wall clock rather than left to run indefinitely.
+    double cremWallClockBudgetSeconds = 20.0;
     try {
         for (int i = 1; i < argc; ++i) {
             const std::string argument = argv[i];
@@ -4433,6 +4455,24 @@ int main(int argc, char** argv) {
                 interactionEnergySigmaEv = std::stod(requireValue(argument));
             } else if (argument == "--interaction-bsigma-pm") {
                 interactionImpactSigmaPm = std::stod(requireValue(argument));
+            } else if (argument == "--radiation-reaction") {
+                const std::string model = requireValue(argument);
+                if (model == "disabled") {
+                    gRadiationReactionModel = ChargeRadiationReactionModel::disabled;
+                } else if (model == "coherent") {
+                    gRadiationReactionModel =
+                        ChargeRadiationReactionModel::coherentElectricDipole;
+                } else if (model == "individual") {
+                    gRadiationReactionModel =
+                        ChargeRadiationReactionModel::individualLandauLifshitz;
+                } else if (model == "automatic") {
+                    gRadiationReactionModel = ChargeRadiationReactionModel::automatic;
+                } else {
+                    throw std::invalid_argument("--radiation-reaction must be "
+                        "disabled, coherent, individual or automatic");
+                }
+            } else if (argument == "--crem-wallclock-budget-s") {
+                cremWallClockBudgetSeconds = std::stod(requireValue(argument));
             } else if (argument == "--mode") {
                 const std::string mode = requireValue(argument);
                 if (mode == "visual" || mode == "1") selectedMode = 1;
@@ -4456,6 +4496,20 @@ int main(int argc, char** argv) {
     } catch (const std::exception& error) {
         std::cerr << "Invalid command-line option: " << error.what() << '\n';
         return 1;
+    }
+    {
+        const char* reactionModelName =
+            gRadiationReactionModel == ChargeRadiationReactionModel::disabled
+                ? "disabled (no orbital energy loss; the classical inspiral "
+                  "does not run)"
+            : gRadiationReactionModel
+                    == ChargeRadiationReactionModel::coherentElectricDipole
+                ? "coherent (Abraham-Lorentz on the pair's electric dipole)"
+            : gRadiationReactionModel
+                    == ChargeRadiationReactionModel::individualLandauLifshitz
+                ? "individual (reduced-order Landau-Lifshitz per particle)"
+                : "automatic (blended individual/coherent)";
+        std::cout << "Charge radiation reaction: " << reactionModelName << ".\n";
     }
     if (diagnose) selectedMode = 1;
     if (selectedMode == 0) {
@@ -4514,7 +4568,13 @@ int main(int argc, char** argv) {
         }
     }
     if (selectedMode == 2) {
-        const int maximumStatisticalRuns=selectedPhenomenon<=2?10000
+        // Phenomena 1/2 now mechanically integrate every trajectory to the
+        // collision boundary (orbit-averaged, but still two full-orbit
+        // measurements per checkpoint) instead of a closed-form
+        // extrapolation, so the old 10000 ceiling could mean hours of
+        // wall-clock time; 1000 keeps a full run in the tens-of-minutes
+        // range while still giving smooth statistics.
+        const int maximumStatisticalRuns=selectedPhenomenon<=2?1000
             :(selectedPhenomenon==5?100000:100000);
         if (statisticalRuns < 1 || statisticalRuns > maximumStatisticalRuns) {
             std::cerr << "The number of CREM trajectories/beam trials must be from 1 to "
@@ -4530,7 +4590,8 @@ int main(int argc, char** argv) {
                                            matchingRadiusPm,
                                            interactionEnergyEv,
                                            interactionEnergySigmaEv,
-                                           interactionImpactSigmaPm);
+                                           interactionImpactSigmaPm,
+                                           cremWallClockBudgetSeconds);
         } catch (const std::exception& error) {
             std::cerr << "Invalid statistical experiment: " << error.what() << '\n';
             return 1;
@@ -4576,20 +4637,59 @@ int main(int argc, char** argv) {
              +frames.front().radiatedAngularMomentum
              +frames.front().boundFieldAngularMomentum);
         const double relativeMomentumDrift = momentumDrift.norm()
-            / std::max(frames.front().canonicalMomentumScale, electronMass * c * 1.0e-15);
+            / std::max(frames.front().canonicalMomentumScale, firstMass * c * 1.0e-15);
         const double angularMomentumScale =
             std::max(hbar, frames.front().noetherAngularMomentum.norm());
         const double relativeAngularMomentumDrift =
             angularMomentumDrift.norm() / angularMomentumScale;
-        const bool expectedMotion = initialConditions.phenomenon == Phenomenon::Scattering
-            ? frames.back().radius > frames.front().radius
-            : frames.back().radius < frames.front().radius;
+        // "Ends closer than it started" is the right statement for a plunging
+        // collision and its mirror image for scattering, but NOT for a bound
+        // orbit.  It only held while the sampler drew exclusively sub-circular
+        // tangential speeds, which put every bound pair at apoapsis on the
+        // first frame so the radius could only decrease.  Now that the band
+        // straddles the circular orbit, a pair can start near periapsis and
+        // legitimately move outward.  The physical statement for a bound orbit
+        // is that it stays inside its own apoapsis, a(1+e), which the slow
+        // inspiral can only shrink.
+        const bool boundPhenomenon =
+            initialConditions.phenomenon == Phenomenon::ParaPositronium
+            || initialConditions.phenomenon == Phenomenon::OrthoPositronium;
+        bool expectedMotion;
+        if (boundPhenomenon) {
+            const double reducedMass =
+                firstMass * secondMass / (firstMass + secondMass);
+            const double specificEnergy =
+                initialConditions.relativeEnergy / reducedMass;
+            const double specificAngularMomentum =
+                initialConditions.orbitalAngularMomentum / reducedMass;
+            const double attractionParameter =
+                pairCoulombStrength / reducedMass;
+            const double eccentricity = std::sqrt(std::max(0.0, 1.0
+                + 2.0 * specificEnergy * specificAngularMomentum
+                    * specificAngularMomentum
+                    / (attractionParameter * attractionParameter)));
+            const double semiMajorAxis =
+                -attractionParameter / (2.0 * specificEnergy);
+            const double apoapsis = semiMajorAxis * (1.0 + eccentricity);
+            const auto radiusExtremes = std::minmax_element(
+                frames.begin(), frames.end(),
+                [](const Frame& a, const Frame& b) { return a.radius < b.radius; });
+            // 1% margin absorbs the finite frame sampling and the Darwin and
+            // retardation corrections the Kepler apoapsis does not contain.
+            expectedMotion = specificEnergy < 0.0
+                && radiusExtremes.second->radius <= 1.01 * apoapsis;
+        } else {
+            expectedMotion =
+                initialConditions.phenomenon == Phenomenon::Scattering
+                ? frames.back().radius > frames.front().radius
+                : frames.back().radius < frames.front().radius;
+        }
         double maximumRelativeDipoleNormDrift = 0.0;
         for (const Frame& frame : frames) {
             maximumRelativeDipoleNormDrift = std::max({
                 maximumRelativeDipoleNormDrift,
-                std::abs(frame.electronDipole.norm() / bohrMagneton - 1.0),
-                std::abs(frame.positronDipole.norm() / bohrMagneton - 1.0)});
+                std::abs(frame.firstDipole.norm() / firstMagneticMoment - 1.0),
+                std::abs(frame.secondDipole.norm() / secondMagneticMoment - 1.0)});
         }
         const bool dipoleNormsValid = std::isfinite(maximumRelativeDipoleNormDrift)
                                   && maximumRelativeDipoleNormDrift < 1.0e-12;
@@ -4676,8 +4776,8 @@ int main(int argc, char** argv) {
     const double scale = 1.0 / bohrRadius;
     double viewSpan = 1.10;
     for (const Frame& frame : frames) {
-        viewSpan = std::max({viewSpan, frame.electron.norm() * scale * 1.10,
-                            frame.positron.norm() * scale * 1.10});
+        viewSpan = std::max({viewSpan, frame.first.norm() * scale * 1.10,
+                            frame.second.norm() * scale * 1.10});
     }
     view->SetRange(-viewSpan, -viewSpan, -0.45*viewSpan,
                    viewSpan, viewSpan, 0.45*viewSpan);
@@ -4687,53 +4787,53 @@ int main(int argc, char** argv) {
     // Keep an owned snapshot: `simulation` is replaced by the complete run
     // after the canvas has been created.
     const Frame initialFrame = frames.front();
-    const double initialElectronX = initialFrame.electron.x * scale;
-    const double initialElectronY = initialFrame.electron.y * scale;
-    const double initialElectronZ = initialFrame.electron.z * scale;
-    const double initialPositronX = initialFrame.positron.x * scale;
-    const double initialPositronY = initialFrame.positron.y * scale;
-    const double initialPositronZ = initialFrame.positron.z * scale;
-    TPolyLine3D electronPath(1, &initialElectronX,
-                             &initialElectronY, &initialElectronZ);
-    electronPath.SetLineColor(kBlue + 2);
-    electronPath.SetLineWidth(2);
-    TPolyLine3D positronPath(1, &initialPositronX,
-                             &initialPositronY, &initialPositronZ);
-    positronPath.SetLineColor(kOrange + 7);
-    positronPath.SetLineWidth(2);
+    const double initialFirstX = initialFrame.first.x * scale;
+    const double initialFirstY = initialFrame.first.y * scale;
+    const double initialFirstZ = initialFrame.first.z * scale;
+    const double initialSecondX = initialFrame.second.x * scale;
+    const double initialSecondY = initialFrame.second.y * scale;
+    const double initialSecondZ = initialFrame.second.z * scale;
+    TPolyLine3D firstPath(1, &initialFirstX,
+                             &initialFirstY, &initialFirstZ);
+    firstPath.SetLineColor(kBlue + 2);
+    firstPath.SetLineWidth(2);
+    TPolyLine3D secondPath(1, &initialSecondX,
+                             &initialSecondY, &initialSecondZ);
+    secondPath.SetLineColor(kOrange + 7);
+    secondPath.SetLineWidth(2);
 
-    TPolyMarker3D electronDots(1, 7);
-    electronDots.SetMarkerColor(kBlue + 2);
-    electronDots.SetMarkerSize(0.7);
-    TPolyMarker3D positronDots(1, 7);
-    positronDots.SetMarkerColor(kOrange + 7);
-    positronDots.SetMarkerSize(0.7);
-    electronDots.SetPoint(0, initialElectronX, initialElectronY, initialElectronZ);
-    positronDots.SetPoint(0, initialPositronX, initialPositronY, initialPositronZ);
+    TPolyMarker3D firstDots(1, 7);
+    firstDots.SetMarkerColor(kBlue + 2);
+    firstDots.SetMarkerSize(0.7);
+    TPolyMarker3D secondDots(1, 7);
+    secondDots.SetMarkerColor(kOrange + 7);
+    secondDots.SetMarkerSize(0.7);
+    firstDots.SetPoint(0, initialFirstX, initialFirstY, initialFirstZ);
+    secondDots.SetPoint(0, initialSecondX, initialSecondY, initialSecondZ);
 
     if (visualStyle == VisualStyle::Line) {
-        electronPath.Draw();
-        positronPath.Draw("same");
+        firstPath.Draw();
+        secondPath.Draw("same");
     } else {
-        electronDots.Draw();
-        positronDots.Draw("same");
+        firstDots.Draw();
+        secondDots.Draw("same");
     }
 
-    TPolyMarker3D electron(1), positron(1);
-    electron.SetMarkerStyle(20); electron.SetMarkerSize(2.2); electron.SetMarkerColor(kAzure + 1);
-    positron.SetMarkerStyle(20); positron.SetMarkerSize(2.2); positron.SetMarkerColor(kRed + 1);
+    TPolyMarker3D first(1), second(1);
+    first.SetMarkerStyle(20); first.SetMarkerSize(2.2); first.SetMarkerColor(kAzure + 1);
+    second.SetMarkerStyle(20); second.SetMarkerSize(2.2); second.SetMarkerColor(kRed + 1);
     if (visualStyle == VisualStyle::Line) {
-        electron.Draw("same");
-        positron.Draw("same");
+        first.Draw("same");
+        second.Draw("same");
     }
 
-    TPolyLine3D electronDipoleShaft(2), electronDipoleLeft(2), electronDipoleRight(2);
-    TPolyLine3D positronDipoleShaft(2), positronDipoleLeft(2), positronDipoleRight(2);
-    for (TPolyLine3D* arrow : {&electronDipoleShaft, &electronDipoleLeft, &electronDipoleRight}) {
+    TPolyLine3D firstDipoleShaft(2), firstDipoleLeft(2), firstDipoleRight(2);
+    TPolyLine3D secondDipoleShaft(2), secondDipoleLeft(2), secondDipoleRight(2);
+    for (TPolyLine3D* arrow : {&firstDipoleShaft, &firstDipoleLeft, &firstDipoleRight}) {
         arrow->SetLineColor(kAzure + 1); arrow->SetLineWidth(3);
         if (visualStyle == VisualStyle::Line) arrow->Draw("same");
     }
-    for (TPolyLine3D* arrow : {&positronDipoleShaft, &positronDipoleLeft, &positronDipoleRight}) {
+    for (TPolyLine3D* arrow : {&secondDipoleShaft, &secondDipoleLeft, &secondDipoleRight}) {
         arrow->SetLineColor(kRed + 1); arrow->SetLineWidth(3);
         if (visualStyle == VisualStyle::Line) arrow->Draw("same");
     }
@@ -4811,8 +4911,8 @@ int main(int argc, char** argv) {
         formatTableValue(initialFrame.time * 1.0e12),
         spinLabel(initialFrame),
         formatTableValue(initialFrame.radius * 1.0e12),
-        formatTableValue(initialFrame.electronMechanicalEnergy / eCharge),
-        formatTableValue(initialFrame.positronMechanicalEnergy / eCharge),
+        formatTableValue(initialFrame.firstMechanicalEnergy / eCharge),
+        formatTableValue(initialFrame.secondMechanicalEnergy / eCharge),
         formatTableValue(initialFrame.mechanicalEnergy / eCharge)
     });
     initialBottomRad.SetText(0.84, bottomInitialY, formatTableValue(initialFrame.radiatedEnergy / eCharge).c_str());
@@ -4849,8 +4949,8 @@ int main(int argc, char** argv) {
             formatTableValue(f.time * 1.0e12),
             spinLabel(f),
             formatTableValue(f.radius * 1.0e12),
-            formatTableValue(f.electronMechanicalEnergy / eCharge),
-            formatTableValue(f.positronMechanicalEnergy / eCharge),
+            formatTableValue(f.firstMechanicalEnergy / eCharge),
+            formatTableValue(f.secondMechanicalEnergy / eCharge),
             formatTableValue(f.mechanicalEnergy / eCharge)
         };
         drawBottomRow(currentBottomRow, bottomCurrentY, currentValues);
@@ -4861,8 +4961,8 @@ int main(int argc, char** argv) {
             formatTableValue((f.time - initialFrame.time) * 1.0e12),
             "--",
             formatTableValue((f.radius - initialFrame.radius) * 1.0e12),
-            formatTableValue((f.electronMechanicalEnergy - initialFrame.electronMechanicalEnergy) / eCharge),
-            formatTableValue((f.positronMechanicalEnergy - initialFrame.positronMechanicalEnergy) / eCharge),
+            formatTableValue((f.firstMechanicalEnergy - initialFrame.firstMechanicalEnergy) / eCharge),
+            formatTableValue((f.secondMechanicalEnergy - initialFrame.secondMechanicalEnergy) / eCharge),
             formatTableValue((f.mechanicalEnergy - initialFrame.mechanicalEnergy) / eCharge)
         };
         drawBottomRow(deltaBottomRow, bottomDeltaY, deltaValues);
@@ -4905,41 +5005,41 @@ int main(int argc, char** argv) {
     };
     const auto renderVisualFrame = [&](const Frame& f) {
         syncStopButton();
-        const double electronX = f.electron.x * scale;
-        const double electronY = f.electron.y * scale;
-        const double electronZ = f.electron.z * scale;
-        const double positronX = f.positron.x * scale;
-        const double positronY = f.positron.y * scale;
-        const double positronZ = f.positron.z * scale;
+        const double firstX = f.first.x * scale;
+        const double firstY = f.first.y * scale;
+        const double firstZ = f.first.z * scale;
+        const double secondX = f.second.x * scale;
+        const double secondY = f.second.y * scale;
+        const double secondZ = f.second.z * scale;
         // The canvas is seeded from a short deterministic probe so it can be
         // shown immediately.  Replace that seed with the full run's actual
         // first frame instead of retaining it as a detached history point.
         const std::size_t pointIndex = receivedLiveInitialFrame ? renderedFrame : 0;
-        electronPath.SetPoint(static_cast<int>(pointIndex),
-                              electronX, electronY, electronZ);
-        positronPath.SetPoint(static_cast<int>(pointIndex),
-                              positronX, positronY, positronZ);
-        electronDots.SetPoint(static_cast<int>(pointIndex),
-                              electronX, electronY, electronZ);
-        positronDots.SetPoint(static_cast<int>(pointIndex),
-                              positronX, positronY, positronZ);
+        firstPath.SetPoint(static_cast<int>(pointIndex),
+                              firstX, firstY, firstZ);
+        secondPath.SetPoint(static_cast<int>(pointIndex),
+                              secondX, secondY, secondZ);
+        firstDots.SetPoint(static_cast<int>(pointIndex),
+                              firstX, firstY, firstZ);
+        secondDots.SetPoint(static_cast<int>(pointIndex),
+                              secondX, secondY, secondZ);
         if (receivedLiveInitialFrame) {
             ++renderedFrame;
         } else {
             receivedLiveInitialFrame = true;
         }
         if (visualStyle == VisualStyle::Line) {
-            electron.SetPoint(0, electronX, electronY, electronZ);
-            positron.SetPoint(0, positronX, positronY, positronZ);
-            const Vec3 electronPosition = f.electron * scale;
-            const Vec3 positronPosition = f.positron * scale;
-            setDipoleArrow(electronDipoleShaft, electronDipoleLeft, electronDipoleRight,
-                           electronPosition, f.electronDipole);
-            setDipoleArrow(positronDipoleShaft, positronDipoleLeft, positronDipoleRight,
-                           positronPosition, f.positronDipole);
+            first.SetPoint(0, firstX, firstY, firstZ);
+            second.SetPoint(0, secondX, secondY, secondZ);
+            const Vec3 firstPosition = f.first * scale;
+            const Vec3 secondPosition = f.second * scale;
+            setDipoleArrow(firstDipoleShaft, firstDipoleLeft, firstDipoleRight,
+                           firstPosition, f.firstDipole);
+            setDipoleArrow(secondDipoleShaft, secondDipoleLeft, secondDipoleRight,
+                           secondPosition, f.secondDipole);
         }
         const double requiredSpan = 1.10 * std::max(
-            f.electron.norm(), f.positron.norm()) * scale;
+            f.first.norm(), f.second.norm()) * scale;
         if (requiredSpan > currentViewSpan) {
             currentViewSpan = requiredSpan;
             view->SetRange(-currentViewSpan, -currentViewSpan,

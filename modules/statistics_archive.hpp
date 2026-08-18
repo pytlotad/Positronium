@@ -120,7 +120,7 @@ inline const std::vector<ScientificSource>& scientificSources() {
          "10.1103/PhysRevLett.90.203402",
          "https://doi.org/10.1103/PhysRevLett.90.203402", "2026-08-11"},
         {"ore_powell_1949", "A. Ore; J. L. Powell",
-         "Three-Photon Annihilation of an Electron-Positron Pair",
+         "Three-Photon Annihilation of an First-Second Pair",
          "Physical Review 75, 1696-1699", 1949,
          "10.1103/PhysRev.75.1696",
          "https://doi.org/10.1103/PhysRev.75.1696", "2026-08-11"},

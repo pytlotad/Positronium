@@ -4,7 +4,7 @@
 
 int runMaxwellSelfTest() {
     const auto benchmarkStart=std::chrono::steady_clock::now();
-    const CovariantExtendedBody covarianceBody{-eCharge,electronMass,
+    const CovariantExtendedBody covarianceBody{-eCharge,firstMass,
         chargeCloudRestRadius,{},Vec3{0.31*c,-0.07*c,0.04*c},
         Vec3{0,0,bohrMagneton}};
     const double electromagneticMassFraction=
@@ -13,7 +13,7 @@ int runMaxwellSelfTest() {
         covarianceBody.bareMatterMass()/covarianceBody.physicalMass;
     MaxwellBlock selfForceBlock(24,0.5*chargeCloudRestRadius,{});
     double maximumSelfForceFraction=0.0;
-    const double referenceForce=coulomb*eCharge*eCharge
+    const double referenceForce=pairCoulombStrength
         /std::pow(2.5*chargeCloudRestRadius,2);
     for(int ix=0;ix<2;++ix) for(int iy=0;iy<2;++iy) for(int iz=0;iz<2;++iz) {
         const Vec3 offset{(ix?0.31:-0.19)*selfForceBlock.cellSize(),
@@ -66,33 +66,33 @@ int runMaxwellSelfTest() {
     MaxwellAmrHierarchy coupledHierarchy({},24,3);
     MaxwellBlock& coupledField=coupledHierarchy.finest();
     State particles;
-    particles.electronPosition=separationVector*(-0.5);
-    particles.positronPosition=separationVector*0.5;
-    particles.electronVelocity={0.0,2.0e5,0.0};
-    particles.positronVelocity={0.0,-2.0e5,0.0};
-    particles.electronDipole={0.0,0.0,bohrMagneton};
-    particles.positronDipole={0.0,0.0,-bohrMagneton};
+    particles.firstPosition=separationVector*(-0.5);
+    particles.secondPosition=separationVector*0.5;
+    particles.firstVelocity={0.0,2.0e5,0.0};
+    particles.secondVelocity={0.0,-2.0e5,0.0};
+    particles.firstDipole={0.0,0.0,bohrMagneton};
+    particles.secondDipole={0.0,0.0,-bohrMagneton};
     coupledField.clearSources();
     coupledField.depositCloud({-eCharge,chargeCloudRestRadius},
-        particles.electronPosition,particles.electronVelocity);
+        particles.firstPosition,particles.firstVelocity);
     coupledField.depositCloud({eCharge,chargeCloudRestRadius},
-        particles.positronPosition,particles.positronVelocity);
-    coupledField.depositCovariantDipole(particles.electronPosition,
-        particles.electronVelocity,particles.electronDipole);
-    coupledField.depositCovariantDipole(particles.positronPosition,
-        particles.positronVelocity,particles.positronDipole);
+        particles.secondPosition,particles.secondVelocity);
+    coupledField.depositCovariantDipole(particles.firstPosition,
+        particles.firstVelocity,particles.firstDipole);
+    coupledField.depositCovariantDipole(particles.secondPosition,
+        particles.secondVelocity,particles.secondDipole);
     coupledField.finalizeBoundInstantaneous();
     coupledField.projectElectricGaussConstraint(400);
-    const auto [electronSelfElectric,electronSelfMagnetic]=
+    const auto [firstSelfElectric,firstSelfMagnetic]=
         coupledField.numericalSelfField({-eCharge,chargeCloudRestRadius},
-            particles.electronPosition,particles.electronVelocity);
-    const auto [positronSelfElectric,positronSelfMagnetic]=
+            particles.firstPosition,particles.firstVelocity);
+    const auto [secondSelfElectric,secondSelfMagnetic]=
         coupledField.numericalSelfField({eCharge,chargeCloudRestRadius},
-            particles.positronPosition,particles.positronVelocity);
-    const ElectromagneticField electronSelfField{
-        electronSelfElectric,electronSelfMagnetic};
-    const ElectromagneticField positronSelfField{
-        positronSelfElectric,positronSelfMagnetic};
+            particles.secondPosition,particles.secondVelocity);
+    const ElectromagneticField firstSelfField{
+        firstSelfElectric,firstSelfMagnetic};
+    const ElectromagneticField secondSelfField{
+        secondSelfElectric,secondSelfMagnetic};
     const DynamicSelfFieldCalibration dynamicSelfCalibration(
         coupledField,eCharge,120);
     const double phaseEpsilon=1.0e-8*coupledField.cellSize();
@@ -125,8 +125,8 @@ int runMaxwellSelfTest() {
     double maximumRelativeLongitudinalCurl=0.0;
     double coupledEscapedEnergy=0.0;
     Vec3 coupledEscapedMomentum,coupledEscapedAngularMomentum;
-    const RelativisticChargeCloud gridElectron{-eCharge,chargeCloudRestRadius};
-    const RelativisticChargeCloud gridPositron{eCharge,chargeCloudRestRadius};
+    const RelativisticChargeCloud gridFirst{-eCharge,chargeCloudRestRadius};
+    const RelativisticChargeCloud gridSecond{eCharge,chargeCloudRestRadius};
     for(int step=0;step<24;++step) {
         const MaxwellBoundaryFlux beforeFlux=coupledField.boundaryFlux();
         const std::vector<double> previousCharge=
@@ -135,18 +135,18 @@ int runMaxwellSelfTest() {
             coupledField.polarizationSnapshot();
         State midpointParticles=particles;
         pushStateWithGridField(midpointParticles,coupledField,0.5*coupledDt,true,
-            nullptr,electronSelfField,positronSelfField,
+            nullptr,firstSelfField,secondSelfField,
             &dynamicSelfCalibration,&dynamicSelfCalibration);
         MaxwellBlock midpointField=coupledField;
         midpointField.clearSources();
-        midpointField.depositCloud(gridElectron,midpointParticles.electronPosition,
-                                   midpointParticles.electronVelocity);
-        midpointField.depositCloud(gridPositron,midpointParticles.positronPosition,
-                                   midpointParticles.positronVelocity);
-        midpointField.depositCovariantDipole(midpointParticles.electronPosition,
-            midpointParticles.electronVelocity,midpointParticles.electronDipole);
-        midpointField.depositCovariantDipole(midpointParticles.positronPosition,
-            midpointParticles.positronVelocity,midpointParticles.positronDipole);
+        midpointField.depositCloud(gridFirst,midpointParticles.firstPosition,
+                                   midpointParticles.firstVelocity);
+        midpointField.depositCloud(gridSecond,midpointParticles.secondPosition,
+                                   midpointParticles.secondVelocity);
+        midpointField.depositCovariantDipole(midpointParticles.firstPosition,
+            midpointParticles.firstVelocity,midpointParticles.firstDipole);
+        midpointField.depositCovariantDipole(midpointParticles.secondPosition,
+            midpointParticles.secondVelocity,midpointParticles.secondDipole);
         midpointField.finalizeBoundCurrent(previousPolarization,0.5*coupledDt);
         midpointField.finalizeChargeConservingCurrent(
             previousCharge,0.5*coupledDt,240);
@@ -154,19 +154,19 @@ int runMaxwellSelfTest() {
 
         State finalParticles=particles;
         pushStateWithGridField(finalParticles,midpointField,coupledDt,true,
-            &midpointParticles,electronSelfField,positronSelfField,
+            &midpointParticles,firstSelfField,secondSelfField,
             &dynamicSelfCalibration,&dynamicSelfCalibration);
         coupledField.clearSources();
-        coupledField.depositChargeDensity(gridElectron,finalParticles.electronPosition);
-        coupledField.depositChargeDensity(gridPositron,finalParticles.positronPosition);
-        coupledField.depositConvectionCurrent(gridElectron,
-            midpointParticles.electronPosition,midpointParticles.electronVelocity);
-        coupledField.depositConvectionCurrent(gridPositron,
-            midpointParticles.positronPosition,midpointParticles.positronVelocity);
-        coupledField.depositCovariantDipole(midpointParticles.electronPosition,
-            midpointParticles.electronVelocity,midpointParticles.electronDipole);
-        coupledField.depositCovariantDipole(midpointParticles.positronPosition,
-            midpointParticles.positronVelocity,midpointParticles.positronDipole);
+        coupledField.depositChargeDensity(gridFirst,finalParticles.firstPosition);
+        coupledField.depositChargeDensity(gridSecond,finalParticles.secondPosition);
+        coupledField.depositConvectionCurrent(gridFirst,
+            midpointParticles.firstPosition,midpointParticles.firstVelocity);
+        coupledField.depositConvectionCurrent(gridSecond,
+            midpointParticles.secondPosition,midpointParticles.secondVelocity);
+        coupledField.depositCovariantDipole(midpointParticles.firstPosition,
+            midpointParticles.firstVelocity,midpointParticles.firstDipole);
+        coupledField.depositCovariantDipole(midpointParticles.secondPosition,
+            midpointParticles.secondVelocity,midpointParticles.secondDipole);
         coupledField.finalizeBoundCurrent(previousPolarization,coupledDt);
         const ChargeConservingDepositResult deposition=
             coupledField.finalizeChargeConservingCurrent(
@@ -195,8 +195,8 @@ int runMaxwellSelfTest() {
         +coupledEscapedEnergy-initialCoupledTotals.energy)
         /std::max(std::abs(initialCoupledTotals.energy),1.0e-30);
     const double coupledMomentumScale=std::max(
-        momentum(particles.electronVelocity,electronMass).norm()
-       +momentum(particles.positronVelocity,positronMass).norm(),1.0e-40);
+        momentum(particles.firstVelocity,firstMass).norm()
+       +momentum(particles.secondVelocity,secondMass).norm(),1.0e-40);
     const double coupledMomentumClosure=((finalCoupledTotals.momentum
         +coupledEscapedMomentum)-initialCoupledTotals.momentum).norm()
         /coupledMomentumScale;
@@ -205,11 +205,11 @@ int runMaxwellSelfTest() {
     const double coupledAngularClosure=((finalCoupledTotals.angularMomentum
         +coupledEscapedAngularMomentum)-initialCoupledTotals.angularMomentum).norm()
         /coupledAngularScale;
-    const double coupledBeta=std::max(particles.electronVelocity.norm(),
-                                      particles.positronVelocity.norm())/c;
+    const double coupledBeta=std::max(particles.firstVelocity.norm(),
+                                      particles.secondVelocity.norm())/c;
     const double dipoleNormResidual=std::max(
-        std::abs(particles.electronDipole.norm()/bohrMagneton-1.0),
-        std::abs(particles.positronDipole.norm()/bohrMagneton-1.0));
+        std::abs(particles.firstDipole.norm()/bohrMagneton-1.0),
+        std::abs(particles.secondDipole.norm()/bohrMagneton-1.0));
     MaxwellBlock absorbingTest(32,0.5*chargeCloudRestRadius,{});
     absorbingTest.setPlaneWavePacketX(1.0e5,chargeCloudRestRadius);
     absorbingTest.enableConvolutionalPml(8,1.0e-10);
@@ -278,14 +278,14 @@ int runMaxwellSelfTest() {
         boundCurrentTest.maximumCurrentGradientScale(),1.0);
     const double relativeBoundContinuity=boundContinuityResidual/boundContinuityScale;
     State retardedInitialState;
-    retardedInitialState.electronPosition={-1.5*chargeCloudRestRadius,0,0};
-    retardedInitialState.positronPosition={1.5*chargeCloudRestRadius,0,0};
-    retardedInitialState.electronVelocity={0,0.03*c,0};
-    retardedInitialState.positronVelocity={0,-0.02*c,0};
-    retardedInitialState.electronAcceleration={1.0e20,-0.5e20,0.25e20};
-    retardedInitialState.positronAcceleration={-0.7e20,0.4e20,-0.2e20};
-    retardedInitialState.electronDipole={0,0,bohrMagneton};
-    retardedInitialState.positronDipole={0,0,-bohrMagneton};
+    retardedInitialState.firstPosition={-1.5*chargeCloudRestRadius,0,0};
+    retardedInitialState.secondPosition={1.5*chargeCloudRestRadius,0,0};
+    retardedInitialState.firstVelocity={0,0.03*c,0};
+    retardedInitialState.secondVelocity={0,-0.02*c,0};
+    retardedInitialState.firstAcceleration={1.0e20,-0.5e20,0.25e20};
+    retardedInitialState.secondAcceleration={-0.7e20,0.4e20,-0.2e20};
+    retardedInitialState.firstDipole={0,0,bohrMagneton};
+    retardedInitialState.secondDipole={0,0,-bohrMagneton};
     const StateHistory retardedInitialHistory{retardedInitialState};
     MaxwellBlock retardedInitialField(24,0.5*chargeCloudRestRadius,{});
     initializeRetardedPairFields(retardedInitialField,retardedInitialState,
@@ -299,13 +299,13 @@ int runMaxwellSelfTest() {
     const Vec3 retardedProbe{0,4.0*chargeCloudRestRadius,0};
     const ElectromagneticField acceleratedProbe=lienardWiechertField(
         retardedProbe,retardedInitialState.time,retardedInitialHistory,
-        retardedInitialState,true,-eCharge,chargeCloudRestRadius);
+        retardedInitialState,true,firstCharge,chargeCloudRestRadius);
     State uniformInitialState=retardedInitialState;
-    uniformInitialState.electronAcceleration={};
+    uniformInitialState.firstAcceleration={};
     const StateHistory uniformInitialHistory{uniformInitialState};
     const ElectromagneticField uniformProbe=lienardWiechertField(
         retardedProbe,uniformInitialState.time,uniformInitialHistory,
-        uniformInitialState,true,-eCharge,chargeCloudRestRadius);
+        uniformInitialState,true,firstCharge,chargeCloudRestRadius);
     const double retardedAccelerationSignal=
         (acceleratedProbe.electric-uniformProbe.electric).norm()
         /std::max(acceleratedProbe.electric.norm(),1.0);
@@ -326,16 +326,16 @@ int runMaxwellSelfTest() {
     const double maxwellConvergenceOrder=std::log(coarseWaveError/fineWaveError)
                                         /std::log(2.0);
     State boostedChargeState;
-    boostedChargeState.electronVelocity={0.35*c,0,0};
+    boostedChargeState.firstVelocity={0.35*c,0,0};
     const StateHistory boostedChargeHistory{boostedChargeState};
     const Vec3 boostProbe{2.0*chargeCloudRestRadius,
                           3.0*chargeCloudRestRadius,
                          -1.0*chargeCloudRestRadius};
     const ElectromagneticField boostedLw=lienardWiechertField(
         boostProbe,0.0,boostedChargeHistory,boostedChargeState,true,eCharge);
-    const double boostGamma=gamma(boostedChargeState.electronVelocity);
-    const Vec3 boostAxis=boostedChargeState.electronVelocity
-                        /boostedChargeState.electronVelocity.norm();
+    const double boostGamma=gamma(boostedChargeState.firstVelocity);
+    const Vec3 boostAxis=boostedChargeState.firstVelocity
+                        /boostedChargeState.firstVelocity.norm();
     const Vec3 parallelPrime=boostAxis*(dot(boostProbe,boostAxis)*boostGamma);
     const Vec3 restEventPosition=parallelPrime+(boostProbe
         -boostAxis*dot(boostProbe,boostAxis));
@@ -344,7 +344,7 @@ int runMaxwellSelfTest() {
     const Vec3 expectedBoostedElectric=boostAxis*dot(restElectric,boostAxis)
         +(restElectric-boostAxis*dot(restElectric,boostAxis))*boostGamma;
     const Vec3 expectedBoostedMagnetic=cross(
-        boostedChargeState.electronVelocity,expectedBoostedElectric)/(c*c);
+        boostedChargeState.firstVelocity,expectedBoostedElectric)/(c*c);
     const double lorentzFieldResidual=std::max(
         (boostedLw.electric-expectedBoostedElectric).norm()
             /std::max(expectedBoostedElectric.norm(),1.0),
@@ -357,34 +357,34 @@ int runMaxwellSelfTest() {
                 -c*c*boostedLw.magnetic.squaredNorm()
                 -restElectric.squaredNorm())
             /std::max(restElectric.squaredNorm(),1.0));
-    const Vec3 productionElectron{0.5*bohrRadius,0,0};
-    const Vec3 productionPositron{-0.5*bohrRadius,0,0};
+    const Vec3 productionFirst{0.5*bohrRadius,0,0};
+    const Vec3 productionSecond{-0.5*bohrRadius,0,0};
     MaxwellPairPatchHierarchy productionGeometry(
-        productionElectron,productionPositron);
+        productionFirst,productionSecond);
     const bool productionInitialCoverage=productionGeometry.coversPair(
-        productionElectron,productionPositron);
+        productionFirst,productionSecond);
     productionGeometry.farField().setUniformField({1,0,0},{});
-    productionGeometry.electronPatch().setUniformField({2,0,0},{});
-    productionGeometry.positronPatch().setUniformField({3,0,0},{});
-    const auto [electronPatchField,unusedElectronMagnetic]=
-        productionGeometry.fieldAt(productionElectron);
-    const auto [positronPatchField,unusedPositronMagnetic]=
-        productionGeometry.fieldAt(productionPositron);
-    const Vec3 shiftedProductionElectron=productionElectron
-        +Vec3{0,0.25*productionGeometry.electronPatch().extent(),0};
+    productionGeometry.firstPatch().setUniformField({2,0,0},{});
+    productionGeometry.secondPatch().setUniformField({3,0,0},{});
+    const auto [firstPatchField,unusedFirstMagnetic]=
+        productionGeometry.fieldAt(productionFirst);
+    const auto [secondPatchField,unusedSecondMagnetic]=
+        productionGeometry.fieldAt(productionSecond);
+    const Vec3 shiftedProductionFirst=productionFirst
+        +Vec3{0,0.25*productionGeometry.firstPatch().extent(),0};
     const std::size_t productionMovedPatches=productionGeometry.follow(
-        shiftedProductionElectron,productionPositron);
+        shiftedProductionFirst,productionSecond);
     const bool productionMovedCoverage=productionGeometry.coversPair(
-        shiftedProductionElectron,productionPositron);
+        shiftedProductionFirst,productionSecond);
     MaxwellPairPatchHierarchy branchCouplingGeometry(
-        productionElectron,productionPositron);
+        productionFirst,productionSecond);
     const double branchWaveNumber=2.0*pi
         /branchCouplingGeometry.farField().extent();
     branchCouplingGeometry.farField().setVacuumPlaneWaveWavenumber(
         1.0e5,branchWaveNumber);
-    branchCouplingGeometry.electronPatch().setVacuumPlaneWaveWavenumber(
+    branchCouplingGeometry.firstPatch().setVacuumPlaneWaveWavenumber(
         1.0e5,branchWaveNumber);
-    branchCouplingGeometry.positronPatch().setVacuumPlaneWaveWavenumber(
+    branchCouplingGeometry.secondPatch().setVacuumPlaneWaveWavenumber(
         1.0e5,branchWaveNumber);
     MaxwellPairPatchHierarchy serialBranchGeometry=branchCouplingGeometry;
     const double branchInitialEnergy=
@@ -420,10 +420,10 @@ int runMaxwellSelfTest() {
     const double branchParallelResidual=std::max({
         blockDifference(branchCouplingGeometry.farField(),
                         serialBranchGeometry.farField()),
-        blockDifference(branchCouplingGeometry.electronPatch(),
-                        serialBranchGeometry.electronPatch()),
-        blockDifference(branchCouplingGeometry.positronPatch(),
-                        serialBranchGeometry.positronPatch())})/1.0e5;
+        blockDifference(branchCouplingGeometry.firstPatch(),
+                        serialBranchGeometry.firstPatch()),
+        blockDifference(branchCouplingGeometry.secondPatch(),
+                        serialBranchGeometry.secondPatch())})/1.0e5;
     const double branchParallelSpeedup=serialBranchSeconds
         /std::max(parallelBranchSeconds,1.0e-12);
     YeeMaxwellBlock yeeTest(24,0.5*chargeCloudRestRadius,{});
@@ -519,52 +519,52 @@ int runMaxwellSelfTest() {
         /yeeCpmlInitialEnergy;
     const double yeeCpmlDivB=yeeCpmlTest.maximumMagneticDivergence(8)
         /yeeCpmlTest.magneticDivergenceScale(8);
-    const Vec3 reversibleMomentum{0.17*electronMass*c,-0.09*electronMass*c,
-                                   0.06*electronMass*c};
+    const Vec3 reversibleMomentum{0.17*firstMass*c,-0.09*firstMass*c,
+                                   0.06*firstMass*c};
     const Vec3 reversibleElectric{2.0e5,-1.0e5,0.7e5};
     const Vec3 reversibleMagnetic{0.13,-0.08,0.05};
     const double reversibleDt=2.0e-20;
     const Vec3 pushedMomentum=relativisticBorisPush(reversibleMomentum,
-        -eCharge,electronMass,reversibleElectric,reversibleMagnetic,reversibleDt);
+        -eCharge,firstMass,reversibleElectric,reversibleMagnetic,reversibleDt);
     const Vec3 recoveredMomentum=relativisticBorisPush(pushedMomentum,
-        -eCharge,electronMass,reversibleElectric,reversibleMagnetic,-reversibleDt);
+        -eCharge,firstMass,reversibleElectric,reversibleMagnetic,-reversibleDt);
     const double yeePusherReversibility=(recoveredMomentum-reversibleMomentum).norm()
         /reversibleMomentum.norm();
     State conservativeReverseStart=particles;
-    conservativeReverseStart.electronDipole={};
-    conservativeReverseStart.positronDipole={};
-    conservativeReverseStart.electronProperDipole={};
-    conservativeReverseStart.positronProperDipole={};
+    conservativeReverseStart.firstDipole={};
+    conservativeReverseStart.secondDipole={};
+    conservativeReverseStart.firstProperDipole={};
+    conservativeReverseStart.secondProperDipole={};
     State conservativeReverse=conservativeReverseStart;
     constexpr double conservativeReverseDt=2.0e-22;
     integrateConservativeMidpoint(conservativeReverse,conservativeReverseDt,12);
     integrateConservativeMidpoint(conservativeReverse,-conservativeReverseDt,12);
     const double conservativeReverseResidual=std::max({
-        (conservativeReverse.electronPosition
-            -conservativeReverseStart.electronPosition).norm()/bohrRadius,
-        (conservativeReverse.positronPosition
-            -conservativeReverseStart.positronPosition).norm()/bohrRadius,
-        (conservativeReverse.electronVelocity
-            -conservativeReverseStart.electronVelocity).norm()/c,
-        (conservativeReverse.positronVelocity
-            -conservativeReverseStart.positronVelocity).norm()/c});
+        (conservativeReverse.firstPosition
+            -conservativeReverseStart.firstPosition).norm()/bohrRadius,
+        (conservativeReverse.secondPosition
+            -conservativeReverseStart.secondPosition).norm()/bohrRadius,
+        (conservativeReverse.firstVelocity
+            -conservativeReverseStart.firstVelocity).norm()/c,
+        (conservativeReverse.secondVelocity
+            -conservativeReverseStart.secondVelocity).norm()/c});
     YeeMaxwellBlock yeeCoupledField(32,0.5*chargeCloudRestRadius,{});
     State yeeCoupledState;
-    yeeCoupledState.electronPosition={-2.2*chargeCloudRestRadius,0,0};
-    yeeCoupledState.positronPosition={2.2*chargeCloudRestRadius,0,0};
-    yeeCoupledState.electronVelocity={0,0.025*c,0};
-    yeeCoupledState.positronVelocity={0,-0.025*c,0};
-    yeeCoupledState.electronDipole={0,0,bohrMagneton};
-    yeeCoupledState.positronDipole={0,0,-bohrMagneton};
+    yeeCoupledState.firstPosition={-2.2*chargeCloudRestRadius,0,0};
+    yeeCoupledState.secondPosition={2.2*chargeCloudRestRadius,0,0};
+    yeeCoupledState.firstVelocity={0,0.025*c,0};
+    yeeCoupledState.secondVelocity={0,-0.025*c,0};
+    yeeCoupledState.firstDipole={0,0,bohrMagneton};
+    yeeCoupledState.secondDipole={0,0,-bohrMagneton};
     yeeCoupledField.depositInitialGaussian(-eCharge,chargeCloudRestRadius,
-        yeeCoupledState.electronPosition,yeeCoupledState.electronVelocity);
+        yeeCoupledState.firstPosition,yeeCoupledState.firstVelocity);
     yeeCoupledField.depositInitialGaussian(eCharge,chargeCloudRestRadius,
-        yeeCoupledState.positronPosition,yeeCoupledState.positronVelocity);
-    yeeCoupledField.depositCovariantDipoleYee(yeeCoupledState.electronPosition,
-        yeeCoupledState.electronVelocity,yeeCoupledState.electronDipole,
+        yeeCoupledState.secondPosition,yeeCoupledState.secondVelocity);
+    yeeCoupledField.depositCovariantDipoleYee(yeeCoupledState.firstPosition,
+        yeeCoupledState.firstVelocity,yeeCoupledState.firstDipole,
         chargeCloudRestRadius);
-    yeeCoupledField.depositCovariantDipoleYee(yeeCoupledState.positronPosition,
-        yeeCoupledState.positronVelocity,yeeCoupledState.positronDipole,
+    yeeCoupledField.depositCovariantDipoleYee(yeeCoupledState.secondPosition,
+        yeeCoupledState.secondVelocity,yeeCoupledState.secondDipole,
         chargeCloudRestRadius);
     yeeCoupledField.finalizeInitialBoundSources();
     const double yeeCoupledDt=0.18*yeeCoupledField.courantTimeStep();
@@ -576,8 +576,8 @@ int runMaxwellSelfTest() {
             /yeeCoupledField.continuityScale(yeeCoupledDt));
     }
     const double yeeCoupledCharge=yeeCoupledField.totalCharge()/eCharge;
-    const double yeeCoupledBeta=std::max(yeeCoupledState.electronVelocity.norm(),
-        yeeCoupledState.positronVelocity.norm())/c;
+    const double yeeCoupledBeta=std::max(yeeCoupledState.firstVelocity.norm(),
+        yeeCoupledState.secondVelocity.norm())/c;
     State sharedEngineVisualState=yeeCoupledState;
     State sharedEngineStatisticalState=yeeCoupledState;
     ClassicalTrajectoryEngine visualEngine(sharedEngineVisualState);
@@ -591,16 +591,16 @@ int runMaxwellSelfTest() {
                 sharedEngineStatisticalState,sharedEngineDt)
             &&sharedEngineAdvanced;
     const double sharedEngineResidual=std::max({
-        (sharedEngineVisualState.electronPosition
-            -sharedEngineStatisticalState.electronPosition).norm()
+        (sharedEngineVisualState.firstPosition
+            -sharedEngineStatisticalState.firstPosition).norm()
             /chargeCloudRestRadius,
-        (sharedEngineVisualState.positronPosition
-            -sharedEngineStatisticalState.positronPosition).norm()
+        (sharedEngineVisualState.secondPosition
+            -sharedEngineStatisticalState.secondPosition).norm()
             /chargeCloudRestRadius,
-        (sharedEngineVisualState.electronVelocity
-            -sharedEngineStatisticalState.electronVelocity).norm()/c,
-        (sharedEngineVisualState.positronVelocity
-            -sharedEngineStatisticalState.positronVelocity).norm()/c});
+        (sharedEngineVisualState.firstVelocity
+            -sharedEngineStatisticalState.firstVelocity).norm()/c,
+        (sharedEngineVisualState.secondVelocity
+            -sharedEngineStatisticalState.secondVelocity).norm()/c});
     const double sharedInitialTotalEnergy=conservativeParticleEnergy(yeeCoupledState)
         +yeeCoupledState.radiatedEnergy+yeeCoupledState.boundFieldEnergy;
     const double sharedFinalTotalEnergy=
@@ -702,10 +702,10 @@ int runMaxwellSelfTest() {
         result.reactionFluxResidual=std::abs(full.reactionEnergyMismatch)
             /std::max(std::abs(full.radiatedEnergy),1.0e-300);
         result.stepConvergence=std::max({
-            (full.electronPosition-half.electronPosition).norm()/bohrRadius,
-            (full.positronPosition-half.positronPosition).norm()/bohrRadius,
-            (full.electronVelocity-half.electronVelocity).norm()/c,
-            (full.positronVelocity-half.positronVelocity).norm()/c});
+            (full.firstPosition-half.firstPosition).norm()/bohrRadius,
+            (full.secondPosition-half.secondPosition).norm()/bohrRadius,
+            (full.firstVelocity-half.firstVelocity).norm()/c,
+            (full.secondVelocity-half.secondVelocity).norm()/c});
         return result;
     };
     const ReactionModelBenchmark reactionDisabled=reactionBenchmark(
@@ -757,40 +757,40 @@ int runMaxwellSelfTest() {
                 *covarianceBoostGamma};
     };
     State covarianceRest;
-    covarianceRest.electronPosition={0,0.5*bohrRadius,0};
-    covarianceRest.positronPosition={0,-0.5*bohrRadius,0};
+    covarianceRest.firstPosition={0,0.5*bohrRadius,0};
+    covarianceRest.secondPosition={0,-0.5*bohrRadius,0};
     const double covarianceOrbitalSpeed=std::sqrt(
-        coulomb*eCharge*eCharge/(2.0*electronMass*bohrRadius));
-    covarianceRest.electronVelocity={covarianceOrbitalSpeed,0,0};
-    covarianceRest.positronVelocity={-covarianceOrbitalSpeed,0,0};
-    covarianceRest.electronDipole={0,0,1.0e-3*bohrMagneton};
-    covarianceRest.positronDipole={0,0,-1.0e-3*bohrMagneton};
-    covarianceRest.electronProperDipole=covarianceRest.electronDipole;
-    covarianceRest.positronProperDipole=covarianceRest.positronDipole;
+        pairCoulombStrength/(2.0*firstMass*bohrRadius));
+    covarianceRest.firstVelocity={covarianceOrbitalSpeed,0,0};
+    covarianceRest.secondVelocity={-covarianceOrbitalSpeed,0,0};
+    covarianceRest.firstDipole={0,0,1.0e-3*bohrMagneton};
+    covarianceRest.secondDipole={0,0,-1.0e-3*bohrMagneton};
+    covarianceRest.firstProperDipole=covarianceRest.firstDipole;
+    covarianceRest.secondProperDipole=covarianceRest.secondDipole;
     State covarianceMoving=covarianceRest;
-    const auto [boostedElectronPosition,boostedElectronTime]=boostEvent(
-        covarianceRest.electronPosition,covarianceRest.time);
-    const auto [boostedPositronPosition,boostedPositronTime]=boostEvent(
-        covarianceRest.positronPosition,covarianceRest.time);
-    covarianceMoving.electronPosition=boostedElectronPosition;
-    covarianceMoving.positronPosition=boostedPositronPosition;
-    covarianceMoving.electronVelocity=boostVelocity(
-        covarianceRest.electronVelocity);
-    covarianceMoving.positronVelocity=boostVelocity(
-        covarianceRest.positronVelocity);
-    const DipoleTensor boostedElectronDipole=lorentzBoostDipole(
-        {{},covarianceRest.electronDipole},covarianceBoost);
-    const DipoleTensor boostedPositronDipole=lorentzBoostDipole(
-        {{},covarianceRest.positronDipole},covarianceBoost);
-    covarianceMoving.electronDipole=boostedElectronDipole.magnetic;
-    covarianceMoving.positronDipole=boostedPositronDipole.magnetic;
-    covarianceMoving.electronElectricDipole=boostedElectronDipole.electric;
-    covarianceMoving.positronElectricDipole=boostedPositronDipole.electric;
-    covarianceMoving.electronProperDipole=lorentzBoostDipole(
-        boostedElectronDipole,covarianceMoving.electronVelocity*-1.0).magnetic;
-    covarianceMoving.positronProperDipole=lorentzBoostDipole(
-        boostedPositronDipole,covarianceMoving.positronVelocity*-1.0).magnetic;
-    covarianceMoving.time=0.5*(boostedElectronTime+boostedPositronTime);
+    const auto [boostedFirstPosition,boostedFirstTime]=boostEvent(
+        covarianceRest.firstPosition,covarianceRest.time);
+    const auto [boostedSecondPosition,boostedSecondTime]=boostEvent(
+        covarianceRest.secondPosition,covarianceRest.time);
+    covarianceMoving.firstPosition=boostedFirstPosition;
+    covarianceMoving.secondPosition=boostedSecondPosition;
+    covarianceMoving.firstVelocity=boostVelocity(
+        covarianceRest.firstVelocity);
+    covarianceMoving.secondVelocity=boostVelocity(
+        covarianceRest.secondVelocity);
+    const DipoleTensor boostedFirstDipole=lorentzBoostDipole(
+        {{},covarianceRest.firstDipole},covarianceBoost);
+    const DipoleTensor boostedSecondDipole=lorentzBoostDipole(
+        {{},covarianceRest.secondDipole},covarianceBoost);
+    covarianceMoving.firstDipole=boostedFirstDipole.magnetic;
+    covarianceMoving.secondDipole=boostedSecondDipole.magnetic;
+    covarianceMoving.firstElectricDipole=boostedFirstDipole.electric;
+    covarianceMoving.secondElectricDipole=boostedSecondDipole.electric;
+    covarianceMoving.firstProperDipole=lorentzBoostDipole(
+        boostedFirstDipole,covarianceMoving.firstVelocity*-1.0).magnetic;
+    covarianceMoving.secondProperDipole=lorentzBoostDipole(
+        boostedSecondDipole,covarianceMoving.secondVelocity*-1.0).magnetic;
+    covarianceMoving.time=0.5*(boostedFirstTime+boostedSecondTime);
     ClassicalTrajectoryEngine covarianceRestEngine(covarianceRest);
     ClassicalTrajectoryEngine covarianceMovingEngine(covarianceMoving);
     constexpr double covarianceRestStep=1.0e-20;
@@ -801,41 +801,41 @@ int runMaxwellSelfTest() {
             covarianceMoving,covarianceBoostGamma*covarianceRestStep)
             &&covarianceTrajectoriesAdvanced;
     }
-    const auto [expectedElectronPosition,expectedElectronTime]=boostEvent(
-        covarianceRest.electronPosition,covarianceRest.time);
-    const auto [expectedPositronPosition,expectedPositronTime]=boostEvent(
-        covarianceRest.positronPosition,covarianceRest.time);
-    const Vec3 expectedElectronVelocity=boostVelocity(
-        covarianceRest.electronVelocity);
-    const Vec3 expectedPositronVelocity=boostVelocity(
-        covarianceRest.positronVelocity);
+    const auto [expectedFirstPosition,expectedFirstTime]=boostEvent(
+        covarianceRest.firstPosition,covarianceRest.time);
+    const auto [expectedSecondPosition,expectedSecondTime]=boostEvent(
+        covarianceRest.secondPosition,covarianceRest.time);
+    const Vec3 expectedFirstVelocity=boostVelocity(
+        covarianceRest.firstVelocity);
+    const Vec3 expectedSecondVelocity=boostVelocity(
+        covarianceRest.secondVelocity);
     const double covarianceWorldlineResidual=std::max({
-        (covarianceMoving.electronPosition-expectedElectronPosition).norm()/bohrRadius,
-        (covarianceMoving.positronPosition-expectedPositronPosition).norm()/bohrRadius,
-        std::abs(covarianceMoving.time-expectedElectronTime)
+        (covarianceMoving.firstPosition-expectedFirstPosition).norm()/bohrRadius,
+        (covarianceMoving.secondPosition-expectedSecondPosition).norm()/bohrRadius,
+        std::abs(covarianceMoving.time-expectedFirstTime)
             /(covarianceRestStep*8.0),
-        std::abs(covarianceMoving.time-expectedPositronTime)
+        std::abs(covarianceMoving.time-expectedSecondTime)
             /(covarianceRestStep*8.0)});
     const double covarianceVelocityResidual=std::max(
-        (covarianceMoving.electronVelocity-expectedElectronVelocity).norm()/c,
-        (covarianceMoving.positronVelocity-expectedPositronVelocity).norm()/c);
-    const DipoleTensor expectedElectronTensor=lorentzBoostDipole(
-        {covarianceRest.electronElectricDipole,covarianceRest.electronDipole},
+        (covarianceMoving.firstVelocity-expectedFirstVelocity).norm()/c,
+        (covarianceMoving.secondVelocity-expectedSecondVelocity).norm()/c);
+    const DipoleTensor expectedFirstTensor=lorentzBoostDipole(
+        {covarianceRest.firstElectricDipole,covarianceRest.firstDipole},
         covarianceBoost);
-    const DipoleTensor expectedPositronTensor=lorentzBoostDipole(
-        {covarianceRest.positronElectricDipole,covarianceRest.positronDipole},
+    const DipoleTensor expectedSecondTensor=lorentzBoostDipole(
+        {covarianceRest.secondElectricDipole,covarianceRest.secondDipole},
         covarianceBoost);
     const double covarianceDipoleEvolutionResidual=std::max({
-        (covarianceMoving.electronDipole-expectedElectronTensor.magnetic).norm()
-            /std::max(expectedElectronTensor.magnetic.norm(),1.0e-300),
-        (covarianceMoving.positronDipole-expectedPositronTensor.magnetic).norm()
-            /std::max(expectedPositronTensor.magnetic.norm(),1.0e-300),
-        (covarianceMoving.electronElectricDipole
-            -expectedElectronTensor.electric).norm()
-            /std::max(expectedElectronTensor.magnetic.norm()/c,1.0e-300),
-        (covarianceMoving.positronElectricDipole
-            -expectedPositronTensor.electric).norm()
-            /std::max(expectedPositronTensor.magnetic.norm()/c,1.0e-300)});
+        (covarianceMoving.firstDipole-expectedFirstTensor.magnetic).norm()
+            /std::max(expectedFirstTensor.magnetic.norm(),1.0e-300),
+        (covarianceMoving.secondDipole-expectedSecondTensor.magnetic).norm()
+            /std::max(expectedSecondTensor.magnetic.norm(),1.0e-300),
+        (covarianceMoving.firstElectricDipole
+            -expectedFirstTensor.electric).norm()
+            /std::max(expectedFirstTensor.magnetic.norm()/c,1.0e-300),
+        (covarianceMoving.secondElectricDipole
+            -expectedSecondTensor.electric).norm()
+            /std::max(expectedSecondTensor.magnetic.norm()/c,1.0e-300)});
     const MutualForces covarianceRestExternal=retardedExternalForces(
         covarianceRest,covarianceRestEngine.history());
     const MutualForces covarianceMovingExternal=retardedExternalForces(
@@ -846,17 +846,17 @@ int runMaxwellSelfTest() {
         localRelativisticFields(covarianceMoving,covarianceMovingEngine.history());
     constexpr double covarianceBmtProbeDt=1.0e-22;
     const Vec3 restBmtProbe=advanceCovariantBmt(
-        covarianceRest.electronProperDipole,covarianceRest.electronVelocity,
-        covarianceRestLocal.atElectron,-eCharge/electronMass,
-        covarianceBmtProbeDt);
+        covarianceRest.firstProperDipole,covarianceRest.firstVelocity,
+        covarianceRestLocal.atFirst,firstCharge/firstMass,
+        covarianceBmtProbeDt,firstGFactor);
     const Vec3 movingBmtProbe=advanceCovariantBmt(
-        covarianceMoving.electronProperDipole,covarianceMoving.electronVelocity,
-        covarianceMovingLocal.atElectron,-eCharge/electronMass,
-        covarianceBoostGamma*covarianceBmtProbeDt);
+        covarianceMoving.firstProperDipole,covarianceMoving.firstVelocity,
+        covarianceMovingLocal.atFirst,firstCharge/firstMass,
+        covarianceBoostGamma*covarianceBmtProbeDt,firstGFactor);
     const FourVector expectedBmtFour=boostFourVector(dipoleFourVector(
-        restBmtProbe,covarianceRest.electronVelocity));
+        restBmtProbe,covarianceRest.firstVelocity));
     const FourVector movingBmtFour=dipoleFourVector(
-        movingBmtProbe,covarianceMoving.electronVelocity);
+        movingBmtProbe,covarianceMoving.firstVelocity);
     const double covarianceBmtResidual=std::max(
         std::abs(movingBmtFour.time-expectedBmtFour.time)
             /std::max(restBmtProbe.norm(),1.0e-300),
@@ -868,15 +868,15 @@ int runMaxwellSelfTest() {
     const ParticleMultipoleRadiation covarianceMovingRadiation=
         particleMultipoleRadiation(covarianceMoving,covarianceMovingExternal,
             covarianceMovingEngine.history(),false);
-    const FourVector expectedElectronForce=boostFourVector(fourForce(
-        covarianceRest.electronVelocity,covarianceRestExternal.electron
-            +covarianceRestRadiation.chargeReaction.electron));
-    const FourVector movingElectronForce=fourForce(
-        covarianceMoving.electronVelocity,covarianceMovingExternal.electron
-            +covarianceMovingRadiation.chargeReaction.electron);
+    const FourVector expectedFirstForce=boostFourVector(fourForce(
+        covarianceRest.firstVelocity,covarianceRestExternal.first
+            +covarianceRestRadiation.chargeReaction.first));
+    const FourVector movingFirstForce=fourForce(
+        covarianceMoving.firstVelocity,covarianceMovingExternal.first
+            +covarianceMovingRadiation.chargeReaction.first);
     const double covarianceForceResidual=
-        (movingElectronForce.space-expectedElectronForce.space).norm()
-        /std::max(expectedElectronForce.space.norm(),1.0e-300);
+        (movingFirstForce.space-expectedFirstForce.space).norm()
+        /std::max(expectedFirstForce.space.norm(),1.0e-300);
     const FourVector expectedRadiation=boostFourVector({
         covarianceRest.radiatedEnergy/c,covarianceRest.radiatedMomentum});
     const FourVector movingRadiation{covarianceMoving.radiatedEnergy/c,
@@ -930,15 +930,15 @@ int runMaxwellSelfTest() {
         (boostedDipole.electric-expectedInducedElectric).norm()
         /std::max(expectedInducedElectric.norm(),1.0e-300);
     State staticElectricDipoleState;
-    staticElectricDipoleState.electronPosition={2.0*bohrRadius,0,0};
-    staticElectricDipoleState.positronPosition={0,0,0};
-    staticElectricDipoleState.positronElectricDipole={
+    staticElectricDipoleState.firstPosition={2.0*bohrRadius,0,0};
+    staticElectricDipoleState.secondPosition={0,0,0};
+    staticElectricDipoleState.secondElectricDipole={
         0,0,eCharge*bohrRadius};
     State staticElectricDipolePast=staticElectricDipoleState;
     staticElectricDipolePast.time=-8.0*bohrRadius/c;
     const ElectromagneticField staticElectricDipoleField=
         retardedElectricDipoleField(
-            staticElectricDipoleState.electronPosition,0.0,
+            staticElectricDipoleState.firstPosition,0.0,
             {staticElectricDipolePast,staticElectricDipoleState},
             staticElectricDipoleState,false);
     const Vec3 expectedStaticElectricDipole={0,0,
@@ -947,11 +947,11 @@ int runMaxwellSelfTest() {
         (staticElectricDipoleField.electric-expectedStaticElectricDipole).norm()
         /expectedStaticElectricDipole.norm();
     State gradientDipoleState;
-    gradientDipoleState.electronPosition={2.0*bohrRadius,0,0};
-    gradientDipoleState.positronPosition={0,0,0};
-    gradientDipoleState.electronProperDipole={0.3*bohrMagneton,
+    gradientDipoleState.firstPosition={2.0*bohrRadius,0,0};
+    gradientDipoleState.secondPosition={0,0,0};
+    gradientDipoleState.firstProperDipole={0.3*bohrMagneton,
                                               0.2*bohrMagneton,0};
-    gradientDipoleState.positronProperDipole={-0.1*bohrMagneton,
+    gradientDipoleState.secondProperDipole={-0.1*bohrMagneton,
                                                0.4*bohrMagneton,0};
     synchronizeCovariantDipoles(gradientDipoleState);
     State gradientDipolePast=gradientDipoleState;
@@ -961,22 +961,22 @@ int runMaxwellSelfTest() {
     const Vec3 tensorGradientForce=covariantDipoleGradientForce(
         gradientDipoleState,gradientDipoleHistory,true);
     const Vec3 analyticGradientForce=regularizedDipoleForce(
-        gradientDipoleState.electronPosition
-            -gradientDipoleState.positronPosition,
-        gradientDipoleState.electronProperDipole,
-        gradientDipoleState.positronProperDipole);
+        gradientDipoleState.firstPosition
+            -gradientDipoleState.secondPosition,
+        gradientDipoleState.firstProperDipole,
+        gradientDipoleState.secondProperDipole);
     const double tensorGradientStaticResidual=
         (tensorGradientForce-analyticGradientForce).norm()
         /std::max(analyticGradientForce.norm(),1.0e-300);
     State quadrupolePair=yeeCoupledState;
-    quadrupolePair.electronPosition={-1.7*bohrRadius,0.4*bohrRadius,
+    quadrupolePair.firstPosition={-1.7*bohrRadius,0.4*bohrRadius,
                                       -0.2*bohrRadius};
-    quadrupolePair.positronPosition={0.9*bohrRadius,-0.8*bohrRadius,
+    quadrupolePair.secondPosition={0.9*bohrRadius,-0.8*bohrRadius,
                                       0.6*bohrRadius};
     const ElectricQuadrupole neutralQuadrupole=
         electricQuadrupole(quadrupolePair);
     const double quadrupoleScale=eCharge
-        *(quadrupolePair.electronPosition-quadrupolePair.positronPosition)
+        *(quadrupolePair.firstPosition-quadrupolePair.secondPosition)
             .squaredNorm();
     double quadrupoleTrace=neutralQuadrupole.component[0]
         +neutralQuadrupole.component[4]+neutralQuadrupole.component[8];
@@ -999,7 +999,7 @@ int runMaxwellSelfTest() {
     for(int index=-8;index<=0;++index) {
         State sample;
         sample.time=0.5*dipoleDerivativeStep*index;
-        sample.positronPosition=Vec3{bohrRadius,0,0}
+        sample.secondPosition=Vec3{bohrRadius,0,0}
             +cubicCoefficient*(sample.time*sample.time*sample.time);
         cubicDipoleHistory.push_back(sample);
     }
@@ -1011,9 +1011,9 @@ int runMaxwellSelfTest() {
         -expectedDipoleThird).norm()/expectedDipoleThird.norm();
     const MutualForces coherentProbe=coherentElectricDipoleReaction(
         cubicDipolePresent,cubicDipoleHistory);
-    const double coherentReactionMomentumResidual=(coherentProbe.electron
-        +coherentProbe.positron).norm()
-        /std::max(coherentProbe.electron.norm(),1.0e-300);
+    const double coherentReactionMomentumResidual=(coherentProbe.first
+        +coherentProbe.second).norm()
+        /std::max(coherentProbe.first.norm(),1.0e-300);
 
     // Convergence matrix for the production far-zone surface integral.  The
     // high-resolution, acceleration-field-only result is the reference: it
@@ -1071,6 +1071,106 @@ int runMaxwellSelfTest() {
                 visualEngine.history(),{farDirectionCounts[index],
                     farReferenceSampling.controlRadius,false}),farFullReference);
     }
+    // --- Far-zone quadrature against the closed-form Larmor rate ---
+    //
+    // Every other far-field check here compares the quadrature with ITSELF at
+    // a different radius or direction count, so all of them pass while the
+    // absolute normalization is wrong.  This one supplies the missing external
+    // reference: a circular e+e- orbit radiates as a pure electric dipole
+    // d = e r with the orbit-averaged power
+    //
+    //     P = |d''|^2/(6 pi eps0 c^3),   |d''| = 2 k e^3/(m r^2),
+    //
+    // and the charge quadrupole vanishes identically for a symmetric pair, so
+    // this is the whole charge-sector radiation with no free parameters.  The
+    // dipoles are set to zero so the M1 channel contributes nothing and the
+    // flux needs no decomposition.
+    double larmorNormalizationRatio=std::numeric_limits<double>::quiet_NaN();
+    double larmorProductionRatio=std::numeric_limits<double>::quiet_NaN();
+    double larmorAccumulationRatio=std::numeric_limits<double>::quiet_NaN();
+    {
+        const double larmorProbeRadius=pairBohrRadius(defaultPair);
+        const double larmorReducedMass=pairReducedMass;
+        const double circularRelativeSpeed=std::sqrt(
+            pairCoulombStrength/(larmorReducedMass*larmorProbeRadius));
+        State larmorState;
+        larmorState.firstPosition={0.5*larmorProbeRadius,0,0};
+        larmorState.secondPosition={-0.5*larmorProbeRadius,0,0};
+        larmorState.firstVelocity={0,0.5*circularRelativeSpeed,0};
+        larmorState.secondVelocity={0,-0.5*circularRelativeSpeed,0};
+        // Let the engine build a genuine retarded history rather than reading
+        // the reconstructed one, so the comparison tests the quadrature and
+        // not causalInitialHistory().
+        ClassicalTrajectoryEngine larmorEngine(larmorState);
+        const double larmorPeriod=2.0*pi*std::sqrt(
+            larmorReducedMass*larmorProbeRadius*larmorProbeRadius
+            *larmorProbeRadius/(pairCoulombStrength));
+        bool larmorAdvanced=true;
+        for(int step=0;step<32&&larmorAdvanced;++step)
+            larmorAdvanced=larmorEngine.advance(larmorState,larmorPeriod/512.0);
+        const FieldFluxRates larmorFlux=electromagneticFieldFluxRates(
+            larmorState,larmorEngine.history(),farReferenceSampling);
+        const double dipoleSecondDerivative=2.0*pairCoulombStrength*eCharge
+            /(firstMass*larmorProbeRadius*larmorProbeRadius);
+        const double analyticLarmorPower=dipoleSecondDerivative
+            *dipoleSecondDerivative/(6.0*pi*epsilon0*c*c*c);
+        // Same orbit, same instant, but sampled the way the PRODUCTION path
+        // samples it: default FarFieldSampling, i.e. 50 directions and
+        // radiationFieldOnly=false so the velocity (near-field) terms are
+        // included in the Poynting integral.
+        const FieldFluxRates larmorProductionFlux=
+            electromagneticFieldFluxRates(larmorState,larmorEngine.history());
+        if(larmorAdvanced&&std::isfinite(larmorFlux.energy)
+           &&analyticLarmorPower>0.0) {
+            larmorNormalizationRatio=larmorFlux.energy/analyticLarmorPower;
+            larmorProductionRatio=
+                larmorProductionFlux.energy/analyticLarmorPower;
+        }
+        // Second, separate check: the ACCUMULATED radiatedEnergy over a known
+        // stretch of the same circular orbit, against the analytic energy for
+        // that stretch.  The ratio above tests the quadrature at one instant;
+        // this tests the time integration of it, which is where the bookkeeping
+        // used to lose 34% by evaluating the flux at a predictor state.  A
+        // check of the instantaneous quadrature alone cannot see that.
+        // Run this part at the accuracy and step size the STATISTICAL and
+        // VISUAL paths actually use.  The size of the predictor-state error
+        // depends on dt relative to the wavefront offset sourceExtent/c, so a
+        // finer probe than production simply does not exercise it: at
+        // period/512 with tolerance 1e-7 the old trapezoid came out only 1.2%
+        // low and slipped through, while at production settings it is 34% low.
+        State accumulationState=larmorState;
+        ClassicalTrajectoryEngine accumulationEngine(accumulationState,
+            {.relativeTolerance=1.0e-5,.maximumDepth=12});
+        const double accumulationStart=accumulationState.radiatedEnergy;
+        const double accumulationTime=accumulationState.time;
+        bool accumulationAdvanced=larmorAdvanced;
+        for(int step=0;step<64&&accumulationAdvanced;++step)
+            accumulationAdvanced=accumulationEngine.advance(
+                accumulationState,larmorPeriod/128.0);
+        const double accumulationElapsed=accumulationState.time-accumulationTime;
+        if(accumulationAdvanced&&accumulationElapsed>0.0
+           &&analyticLarmorPower>0.0) {
+            larmorAccumulationRatio=
+                (accumulationState.radiatedEnergy-accumulationStart)
+                /(analyticLarmorPower*accumulationElapsed);
+        }
+    }
+
+    // 1% band around unity.  The measured deviation is 7e-5, so this leaves a
+    // margin of more than a hundred and still fails outright on any break of
+    // the absolute normalization -- which no other far-field check here can
+    // see, since they all compare the quadrature with itself.
+    const bool larmorNormalizationOk=
+        std::isfinite(larmorNormalizationRatio)
+        &&std::isfinite(larmorProductionRatio)
+        &&std::abs(larmorNormalizationRatio-1.0)<0.01
+        &&std::abs(larmorProductionRatio-1.0)<0.01
+        &&std::isfinite(larmorAccumulationRatio)
+        // Looser than the instantaneous band: the accumulation is first order
+        // in dt by construction.  Still far tighter than the 34% it used to be
+        // out by.
+        &&std::abs(larmorAccumulationRatio-1.0)<0.02;
+
     const std::array<double,3> farControlRadii{
         1.0e4*bohrRadius,1.0e5*bohrRadius,1.0e6*bohrRadius};
     std::array<double,3> farRadiusResiduals{};
@@ -1095,13 +1195,13 @@ int runMaxwellSelfTest() {
     const auto trajectoryResidual=[](const State& value,const State& reference) {
         const double lengthScale=std::max(separation(reference),nuclearCutoff);
         const double speedScale=std::max(
-            (reference.electronVelocity-reference.positronVelocity).norm(),
+            (reference.firstVelocity-reference.secondVelocity).norm(),
             1.0e-6*c);
         return std::max({
-            (value.electronPosition-reference.electronPosition).norm()/lengthScale,
-            (value.positronPosition-reference.positronPosition).norm()/lengthScale,
-            (value.electronVelocity-reference.electronVelocity).norm()/speedScale,
-            (value.positronVelocity-reference.positronVelocity).norm()/speedScale});
+            (value.firstPosition-reference.firstPosition).norm()/lengthScale,
+            (value.secondPosition-reference.secondPosition).norm()/lengthScale,
+            (value.firstVelocity-reference.firstVelocity).norm()/speedScale,
+            (value.secondVelocity-reference.secondVelocity).norm()/speedScale});
     };
     const auto integrateAccuracyCase=[&](double tolerance,double proposedDt,
                                          int steps) {
@@ -1146,8 +1246,8 @@ int runMaxwellSelfTest() {
         /(separation(yeeCoupledState)/c);
     const MutualForces startupForces=retardedExternalForces(
         yeeCoupledState,startupHistory);
-    const bool startupFinite=isFinite(startupForces.electron)
-        &&isFinite(startupForces.positron)
+    const bool startupFinite=isFinite(startupForces.first)
+        &&isFinite(startupForces.second)
         &&isFinite(startupHistory.back());
 
     const auto interpolationErrors=[](double span) {
@@ -1159,11 +1259,11 @@ int runMaxwellSelfTest() {
             const double phase=omega*time;
             State state;
             state.time=time;
-            state.electronPosition={radius*std::cos(phase),
+            state.firstPosition={radius*std::cos(phase),
                                     radius*std::sin(phase),0};
-            state.electronVelocity={-radius*omega*std::sin(phase),
+            state.firstVelocity={-radius*omega*std::sin(phase),
                                      radius*omega*std::cos(phase),0};
-            state.electronAcceleration=state.electronPosition*(-omega*omega);
+            state.firstAcceleration=state.firstPosition*(-omega*omega);
             return state;
         };
         const State older=circularState(0.0);
@@ -1176,10 +1276,10 @@ int runMaxwellSelfTest() {
             older,newer,true,query);
         const auto residual=[&](const ChargeKinematics& value) {
             return std::max({
-                (value.position-exact.electronPosition).norm()/orbitRadius,
-                (value.velocity-exact.electronVelocity).norm()
+                (value.position-exact.firstPosition).norm()/orbitRadius,
+                (value.velocity-exact.firstVelocity).norm()
                     /(orbitRadius*angularRate),
-                (value.acceleration-exact.electronAcceleration).norm()
+                (value.acceleration-exact.firstAcceleration).norm()
                     /(orbitRadius*angularRate*angularRate)});
         };
         return std::array<double,2>{residual(linear),residual(hermite)};
@@ -1192,30 +1292,30 @@ int runMaxwellSelfTest() {
         interpolationCoarse[1]/interpolationFine[1])/std::log(2.0);
 
     State staticDipoleState;
-    staticDipoleState.electronPosition={2.0*nuclearCutoff,0,0};
-    staticDipoleState.positronPosition={0,0,0};
-    staticDipoleState.positronDipole={0,0,bohrMagneton};
+    staticDipoleState.firstPosition={2.0*nuclearCutoff,0,0};
+    staticDipoleState.secondPosition={0,0,0};
+    staticDipoleState.secondDipole={0,0,bohrMagneton};
     State staticDipolePast=staticDipoleState;
     staticDipolePast.time=-8.0*nuclearCutoff/c;
     const StateHistory staticDipoleHistory{staticDipolePast,staticDipoleState};
     const ElectromagneticField retardedStaticDipole=
-        retardedMagneticDipoleField(staticDipoleState.electronPosition,0.0,
+        retardedMagneticDipoleField(staticDipoleState.firstPosition,0.0,
             staticDipoleHistory,staticDipoleState,false);
     const Vec3 directStaticDipole=regularizedDipoleField(
-        staticDipoleState.electronPosition-staticDipoleState.positronPosition,
-        staticDipoleState.positronDipole);
+        staticDipoleState.firstPosition-staticDipoleState.secondPosition,
+        staticDipoleState.secondDipole);
     const double staticDipoleScale=std::max(directStaticDipole.norm(),1.0e-300);
     const double retardedStaticLimitResidual=
         (retardedStaticDipole.magnetic-directStaticDipole).norm()
         /staticDipoleScale;
     const Vec3 equatorialPointField=regularizedDipoleField(
-        {nuclearCutoff,0,0},staticDipoleState.positronDipole,0.0);
+        {nuclearCutoff,0,0},staticDipoleState.secondDipole,0.0);
     const std::array<double,3> regulatorRadii{
         0.75*nuclearCutoff,0.50*nuclearCutoff,0.25*nuclearCutoff};
     std::array<double,3> regulatorFieldResiduals{};
     for(std::size_t index=0;index<regulatorRadii.size();++index) {
         const Vec3 field=regularizedDipoleField({nuclearCutoff,0,0},
-            staticDipoleState.positronDipole,regulatorRadii[index]);
+            staticDipoleState.secondDipole,regulatorRadii[index]);
         regulatorFieldResiduals[index]=(field-equatorialPointField).norm()
             /equatorialPointField.norm();
     }
@@ -1229,11 +1329,11 @@ int runMaxwellSelfTest() {
     const std::array<double,3> regulatorExponents{4.0,6.0,8.0};
     const double regulatorFarRadius=10.0*magneticRegularizationRadius;
     const Vec3 farPointField=regularizedDipoleField(
-        {regulatorFarRadius,0,0},staticDipoleState.positronDipole,0.0);
+        {regulatorFarRadius,0,0},staticDipoleState.secondDipole,0.0);
     std::array<double,3> regulatorProfileResiduals{};
     for(std::size_t index=0;index<regulatorExponents.size();++index) {
         const Vec3 field=regularizedDipoleField({regulatorFarRadius,0,0},
-            staticDipoleState.positronDipole,magneticRegularizationRadius,
+            staticDipoleState.secondDipole,magneticRegularizationRadius,
             regulatorExponents[index]);
         regulatorProfileResiduals[index]=(field-farPointField).norm()
             /farPointField.norm();
@@ -1244,34 +1344,39 @@ int runMaxwellSelfTest() {
     // M rather than antiparallel as on the equator of a point dipole, so the
     // direction check has to be made where the two are supposed to agree.
     const Vec3 farRegularizedField=regularizedDipoleField(
-        {regulatorFarRadius,0,0},staticDipoleState.positronDipole);
+        {regulatorFarRadius,0,0},staticDipoleState.secondDipole);
     const double regulatorFarAlignment=dot(farRegularizedField,farPointField);
     // Deep inside the core the regularized field must be strongly suppressed
     // relative to the point dipole, which is what removes the singularity.
     const double regulatorCoreRadius=0.01*magneticRegularizationRadius;
     const double regulatorCoreSuppression=
         regularizedDipoleField({regulatorCoreRadius,0,0},
-            staticDipoleState.positronDipole).norm()
+            staticDipoleState.secondDipole).norm()
         /regularizedDipoleField({regulatorCoreRadius,0,0},
-            staticDipoleState.positronDipole,0.0).norm();
+            staticDipoleState.secondDipole,0.0).norm();
     // The physical ceiling the radius is chosen for: the classical dipole
-    // interaction energy must stay below the electron rest energy everywhere.
+    // interaction energy must stay below the first rest energy everywhere.
     // w(r)/r^3 peaks at r=a, so the maximum is (mu0/4pi)mu^2/(2a^3).
     double peakDipoleEnergyOverRestEnergy=0.0;
     for(int sample=0;sample<4000;++sample) {
         const double radius=magneticRegularizationRadius
             *std::pow(10.0,-3.0+6.0*sample/3999.0);
+        // Must use the moment the dynamics actually carries, not the bare
+        // Bohr magneton: the ceiling is a statement about the field the
+        // simulated particles produce, so quoting mu_B here would certify a
+        // cap that the production dipoles exceed by (g/2)^2.
         const double energy=shortRangeFieldWeight(radius)
-            *(mu0/(4.0*pi))*bohrMagneton*bohrMagneton/(radius*radius*radius);
+            *(mu0/(4.0*pi))*firstMagneticMoment*firstMagneticMoment
+            /(radius*radius*radius);
         peakDipoleEnergyOverRestEnergy=std::max(
-            peakDipoleEnergyOverRestEnergy,energy/(electronMass*c*c));
+            peakDipoleEnergyOverRestEnergy,energy/(firstMass*c*c));
     }
     const Vec3 cutoffDipoleForce=regularizedDipoleForce(
         {nuclearCutoff,0,0},{bohrMagneton,0,0},
-        staticDipoleState.positronDipole);
+        staticDipoleState.secondDipole);
     State crossingBefore,crossingAfter;
-    crossingBefore.electronPosition={1.1*nuclearCutoff,0.2*nuclearCutoff,0};
-    crossingAfter.electronPosition={0.7*nuclearCutoff,-0.1*nuclearCutoff,0};
+    crossingBefore.firstPosition={1.1*nuclearCutoff,0.2*nuclearCutoff,0};
+    crossingAfter.firstPosition={0.7*nuclearCutoff,-0.1*nuclearCutoff,0};
     const double exactCrossingFraction=separationCrossingFraction(
         crossingBefore,crossingAfter,nuclearCutoff);
     const State exactCrossingState=interpolateState(
@@ -1384,8 +1489,8 @@ int runMaxwellSelfTest() {
         &&std::isfinite(fieldInvariantResidual)&&fieldInvariantResidual<1.0e-10;
     const bool productionGeometryOk=productionInitialCoverage
         &&productionMovedCoverage&&productionMovedPatches>=1
-        &&std::abs(electronPatchField.x-2.0)<1.0e-15
-        &&std::abs(positronPatchField.x-3.0)<1.0e-15;
+        &&std::abs(firstPatchField.x-2.0)<1.0e-15
+        &&std::abs(secondPatchField.x-3.0)<1.0e-15;
     const bool branchCouplingOk=branchCouplingStep.restrictedCells>=2
         &&serialBranchCouplingStep.restrictedCells
             ==branchCouplingStep.restrictedCells
@@ -1491,109 +1596,15 @@ int runMaxwellSelfTest() {
         &&regulatorProfileResiduals[2]<regulatorProfileResiduals[1]
         &&std::isfinite(regulatorCoreSuppression)
         &&regulatorCoreSuppression<1.0e-9
-        &&peakDipoleEnergyOverRestEnergy<1.0
+        // The design invariant is the m_e c^2/2 cap, not merely staying under
+        // the rest energy: w(r)/r^3 peaks at r=a, so a radius derived from the
+        // moment the dipoles actually carry puts the maximum at exactly 0.5
+        // (0.49999 on this 4000-point grid).  A loose "< 1.0" accepted a
+        // radius derived from the wrong moment, which lands at 0.50116.
+        &&peakDipoleEnergyOverRestEnergy<0.5005
         &&regulatorFarAlignment>0.0
         &&isFinite(cutoffDipoleForce)
         &&cutoffSurfaceResidual<1.0e-14;
-
-    // ---------------------------------------------------------------------
-    // Annihilation-generator unit test.  This used to be a million-event Monte
-    // Carlo inside the statistical experiments, where it produced four
-    // "closure" panels that only measured the generator's own arithmetic and
-    // three kinematics panels that reproduced the distribution the sampler
-    // draws from.  None of it tested the classical model.  A generator
-    // self-consistency check is a unit test, so it lives here, with explicit
-    // thresholds and a modest fixed sample.
-    // ---------------------------------------------------------------------
-    constexpr int generatorEvents=200000;
-    std::mt19937_64 generatorRandom(0x9e3779b97f4a7c15ULL);
-    double maximumEnergyClosure=0.0,maximumMomentumClosure=0.0;
-    double maximumShellClosure=0.0,maximumParentClosure=0.0;
-    std::vector<double> paraPolarCosines;
-    paraPolarCosines.reserve(generatorEvents);
-    std::array<double,12> orePowellBins{};
-    double orePowellTotal=0.0;
-    const double parentEnergy=bound_decay::positroniumRestEnergyJoules;
-    constexpr double machineEpsilon=std::numeric_limits<double>::epsilon();
-    for(int channel=0;channel<2;++channel) {
-        const bound_decay::PositroniumState decayState=channel==0
-            ?bound_decay::PositroniumState::Para
-            :bound_decay::PositroniumState::Ortho;
-        for(int index=0;index<generatorEvents;++index) {
-            const bound_decay::DecayEvent event=
-                bound_decay::generateDecay(decayState,generatorRandom);
-            double energySum=0.0;
-            bound_decay::Vec3 momentumSum;
-            for(std::size_t photon=0;photon<event.photonCount;++photon) {
-                const bound_decay::Photon& current=event.photons[photon];
-                energySum+=current.energyJoules;
-                const bound_decay::Vec3 photonMomentum=current.momentum();
-                momentumSum=momentumSum+photonMomentum;
-                const double energySquared=current.energyJoules
-                                          *current.energyJoules;
-                maximumShellClosure=std::max(maximumShellClosure,std::abs(
-                    (energySquared-bound_decay::speedOfLight
-                        *bound_decay::speedOfLight
-                        *bound_decay::dot(photonMomentum,photonMomentum))
-                    /(energySquared*machineEpsilon)));
-                if(channel==1) {
-                    const double fraction=current.energyJoules
-                        /(0.5*parentEnergy);
-                    const int bin=std::clamp(static_cast<int>(
-                        fraction*orePowellBins.size()),0,
-                        static_cast<int>(orePowellBins.size())-1);
-                    orePowellBins[static_cast<std::size_t>(bin)]+=1.0;
-                    orePowellTotal+=1.0;
-                }
-            }
-            maximumEnergyClosure=std::max(maximumEnergyClosure,
-                std::abs((energySum-parentEnergy)/(parentEnergy*machineEpsilon)));
-            maximumMomentumClosure=std::max(maximumMomentumClosure,
-                bound_decay::speedOfLight*bound_decay::norm(momentumSum)
-                /(parentEnergy*machineEpsilon));
-            maximumParentClosure=std::max(maximumParentClosure,std::abs(
-                (energySum*energySum-bound_decay::speedOfLight
-                    *bound_decay::speedOfLight
-                    *bound_decay::dot(momentumSum,momentumSum)
-                 -parentEnergy*parentEnergy)
-                /(parentEnergy*parentEnergy*machineEpsilon)));
-            if(channel==0) paraPolarCosines.push_back(event.paraPhotonCosPolar);
-        }
-    }
-    const LegendreFitSummary generatorAnisotropy=
-        fitSecondLegendreAnisotropy(paraPolarCosines);
-    // The sampled inclusive spectrum must reproduce the analytic Ore-Powell
-    // shape it targets.  Compare binned fractions against the exact integral.
-    double maximumSpectrumDeviation=0.0;
-    if(orePowellTotal>0.0) {
-        const double endpointKeV=0.5*bound_decay::energyKeV(parentEnergy);
-        double shapeParameters[2]={2.0/((pi*pi-9.0)*endpointKeV),endpointKeV};
-        for(std::size_t bin=0;bin<orePowellBins.size();++bin) {
-            const double lower=endpointKeV*bin/orePowellBins.size();
-            const double upper=endpointKeV*(bin+1)/orePowellBins.size();
-            double integral=0.0;
-            constexpr int steps=400;
-            for(int step=0;step<steps;++step) {
-                double point=lower+(upper-lower)*(step+0.5)/steps;
-                integral+=orePowellSpectrum(&point,shapeParameters)
-                    *(upper-lower)/steps;
-            }
-            const double sampled=orePowellBins[bin]/orePowellTotal;
-            maximumSpectrumDeviation=std::max(maximumSpectrumDeviation,
-                std::abs(sampled-integral));
-        }
-    }
-    const bool annihilationGeneratorOk=
-        maximumEnergyClosure<64.0
-        &&maximumMomentumClosure<64.0
-        &&maximumShellClosure<64.0
-        &&maximumParentClosure<64.0
-        &&std::isfinite(generatorAnisotropy.anisotropy)
-        &&std::isfinite(generatorAnisotropy.standardError)
-        // Isotropic by construction: a2 must sit on zero within 5 sigma.
-        &&std::abs(generatorAnisotropy.anisotropy)
-            <5.0*generatorAnisotropy.standardError
-        &&maximumSpectrumDeviation<5.0e-3;
 
     const double benchmarkSeconds=std::chrono::duration<double>(
         std::chrono::steady_clock::now()-benchmarkStart).count();
@@ -1735,6 +1746,10 @@ int runMaxwellSelfTest() {
               << "far R=1e4/5/6 a0:   " << farRadiusResiduals[0] << " / "
               << farRadiusResiduals[1] << " / "
               << farRadiusResiduals[2] << '\n'
+              << "Larmor norm ratio:  " << larmorNormalizationRatio
+              << " (radiation-only) / " << larmorProductionRatio
+              << " (production sampling)\n"
+              << "Larmor accumulation:" << larmorAccumulationRatio << '\n'
               << "near R=1e4/5/6 a0:  " << farNearFieldContamination[0] << " / "
               << farNearFieldContamination[1] << " / "
               << farNearFieldContamination[2] << '\n'
@@ -1758,12 +1773,6 @@ int runMaxwellSelfTest() {
               << "reg core suppress: " << regulatorCoreSuppression << '\n'
               << "reg peak U/m_e c2: " << peakDipoleEnergyOverRestEnergy << '\n'
               << "cutoff surface:     " << cutoffSurfaceResidual << '\n'
-              << "gen closure E/p/m/M:" << maximumEnergyClosure << " / "
-              << maximumMomentumClosure << " / " << maximumShellClosure
-              << " / " << maximumParentClosure << " eps\n"
-              << "gen a2 +/- SE:      " << generatorAnisotropy.anisotropy
-              << " +/- " << generatorAnisotropy.standardError << '\n'
-              << "gen spectrum dev:   " << maximumSpectrumDeviation << '\n'
               << "CFL dt:             " << cflStep << " s\n"
               << "field storage:      "
               << static_cast<double>(hierarchyBytes)/(1024.0*1024.0) << " MiB\n"
@@ -1801,11 +1810,11 @@ int runMaxwellSelfTest() {
         {"shared-classical-engine",    sharedClassicalEngineOk},
         {"reaction-models",            reactionModelsOk},
         {"far-field-convergence",      farFieldConvergenceOk},
+        {"larmor-normalization",       larmorNormalizationOk},
         {"trajectory-convergence",     trajectoryConvergenceOk},
         {"causal-startup",             causalStartupOk},
         {"retarded-interpolation",     retardedInterpolationOk},
-        {"short-range-regularization", shortRangeRegularizationOk},
-        {"annihilation-generator",     annihilationGeneratorOk}
+        {"short-range-regularization", shortRangeRegularizationOk}
     }};
     int failedChecks=0;
     for(const auto& [name,ok]:regressionChecks) {

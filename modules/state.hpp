@@ -8,15 +8,15 @@
 namespace positronium::objects {
 
 struct State {
-    Vec3 electronPosition,positronPosition;
-    Vec3 electronVelocity,positronVelocity;
-    Vec3 electronAcceleration,positronAcceleration;
-    Vec3 electronDipole,positronDipole;
-    Vec3 electronElectricDipole,positronElectricDipole;
+    Vec3 firstPosition,secondPosition;
+    Vec3 firstVelocity,secondVelocity;
+    Vec3 firstAcceleration,secondAcceleration;
+    Vec3 firstDipole,secondDipole;
+    Vec3 firstElectricDipole,secondElectricDipole;
     // Magnetic moments in the instantaneous particle rest frames.  These are
     // the independent degrees of freedom; the laboratory p and mu above are
     // reconstructed from the covariant tensor after every update.
-    Vec3 electronProperDipole,positronProperDipole;
+    Vec3 firstProperDipole,secondProperDipole;
     double time=0.0;
     double radiatedEnergy=0.0;
     double dipoleConstraintEnergy=0.0;

@@ -62,8 +62,24 @@ opis punktowego momentu magnetycznego nie ma podstaw fizycznych.
 
 Wszystkie obliczenia wykonywane są w jednostkach SI. Elektron i pozyton mają tę
 samą masę \(m_e\), przeciwne ładunki \(-e\) i \(+e\) oraz momenty magnetyczne o
-stałej wartości magnetonu Bohra \(\mu_B\). Początkowa odległość wynosi jeden
-promień Bohra \(a_0\), a środek masy układu spoczywa.
+stałej wartości \((g/2)\mu_B\). Początkowa odległość wynosi promień Bohra
+**pozytonium** \(a_{Ps}=2a_0=1{,}058\,\mathrm{\AA}\), a środek masy układu
+spoczywa.
+
+\(a_0\) jest promieniem Bohra wodoru, zbudowanym z masy elektronu; pozytonium
+ma masę zredukowaną \(\mu=m_e/2\), więc jego skala to \(\hbar^2/(\mu ke^2)=2a_0\).
+Wcześniej para była przygotowywana w \(a_0\) z podkołową prędkością styczną, co
+dawało orbity o \(L=0{,}51\!-\!0{,}69\,\hbar\), półosi \(\approx0{,}8a_0\) i
+energii wiązania \(\approx17\,\mathrm{eV}\) — czyli **wewnątrz** stanu
+podstawowego, który model ma reprezentować. Ponieważ klasyczny czas inspirali
+skaluje się jak \(a^3\), samo to skracało kolaps ponad dwudziestokrotnie.
+Pasmo prędkości stycznej jest teraz wyśrodkowane na orbicie kołowej w
+\(a_{Ps}\), czyli na stanie \(L=\hbar\).
+
+\(L=\hbar\) to wartość Bohra/SED, nie kwantowa wartość stanu 1s, która wynosi
+\(L=0\). Klasyczna orbita o \(L=0\) jest radialnym spadkiem, więc nie może
+zastąpić stanu podstawowego; \(L=\hbar\) jest orbitą klasyczną odtwarzającą
+poprawną energię wiązania i średni promień.
 
 ### Wynik audytu kompletności fizycznej
 
@@ -944,27 +960,65 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
 Dla przygotowanego p-Ps lub o-Ps eksperymentalną charakterystyką rozpadu jest
 \(\Gamma=1/\tau\), a nie przekrój czynny. Obecny CREM nie zawiera kwantowego
 operatora anihilacji. Statistical 1/2 oblicza zamiast tego operacyjny klasyczny
-czas kolapsu: dla każdej realizacji krótki odcinek wielu orbit jest całkowany
-pełnym modelem CREM, a zmierzona średnia moc promieniowania kalibruje równanie
+czas kolapsu, i to **mierzy** go mechanicznie, a nie ekstrapoluje wzorem.
+
+Trajektoria nie jest orbitą zamkniętą, tylko inspiralą: okres kurczy się jak
+\(T\propto a^{3/2}\), więc pojedyncza liczba go nie opisuje. Program raportuje
+okres oskulacyjny
 
 \[
-\frac{dE}{dt}=P_{\rm CREM},\qquad
-E=-\frac{k e^2}{2a},\qquad P(a)\propto a^{-4}.
+T=2\pi\sqrt{\frac{\mu a^{3}}{k e^{2}}}
 \]
 
-Równanie sekularne jest całkowane do `0.01*a0`. Wynik nie jest kwantowym czasem
-anihilacji. Zewnętrzne pomiary nie są wejściem CREM; tworzą wyłącznie krzywe
-porównawcze
+na obu końcach przebiegu oraz liczbę obiegów między nimi. Bezpośrednie
+całkowanie wszystkich \(\sim10^{5}\) obiegów byłoby zbyt kosztowne, więc jeden
+reprezentatywny obieg jest rozwiązywany pełnym silnikiem CREM, jego **zmierzona**
+strata energii i momentu pędu daje bieżące tempo dysypacji, a ograniczona liczba
+kolejnych obiegów jest pomijana analitycznie przy zamrożonym tempie, zanim
+nastąpi ponowny pomiar. To standardowa technika elementów oskulacyjnych. Bieg
+kończy się, gdy **perycentrum** osiągnie \(0{,}1\,a_0\); pozostały odcinek do
+\(0{,}01\,a_0\) jest świadomie obcinany, bo przy \(t\sim a^3\) odpowiada za
+0,1% czasu kolapsu.
 
-\[
-t_{\rm collapse}=\frac{|E_0|}{3\langle P_{\rm CREM}\rangle}
-\left[1-\left(\frac{0.01a_0}{a}\right)^3\right].
-\]
+Każde zdarzenie ma budżet zegarowy (`--crem-wallclock-budget-s`). Trajektoria,
+która go wyczerpie, jest **cenzurowana prawostronnie**, a nie odrzucana: wiadomo
+o niej, że czas kolapsu przekracza osiągnięty czas symulowany. Krzywa przeżycia
+jest dlatego estymatorem iloczynowym Kaplana-Meiera z błędami Greenwooda,
+liczonym ze wszystkich użytecznych trajektorii.
 
-Jest to przybliżenie uśrednione po orbicie: pełna trajektoria kalibracyjna trwa
-`1.5 fs`, natomiast dalsze tysiące orbit nie są całkowane krok po kroku.
-Domyślne 100 trajektorii zajęło w pomiarze referencyjnym około 2,6 minuty na
-eksperyment przy czterech wątkach; czas zależy od procesora.
+To rozróżnienie jest istotne ilościowo. Cenzura **nie** jest niezależna od
+mierzonej wielkości: czas kolapsu skaluje się jak \(a^3\), a liczba obiegów do
+scałkowania jak \(a^{3/2}\), więc budżet zatrzymuje przede wszystkim orbity
+najszersze, czyli najwolniej zapadające się. Uśrednianie samych przebiegów
+ukończonych zaniża wynik — w teście kontrolnym na tym samym ziarnie dawało
+1,72 ps wobec 3,60 ps przy pełnej kompletacji. Ponieważ cenzura jest
+informatywna, sam Kaplan-Meier też nie jest nieobciążony: po jej rozpoczęciu
+estymator nie widzi kolejnych kolapsów, więc \(S(t)\) jest podtrzymywane i RMST
+zawyża. Oba obciążenia mają **przeciwne znaki**, więc program podaje obie
+liczby wraz z frakcją ukończenia i poniżej 90% ostrzega, że wartość jest tylko
+zakresem wiarygodności. Przy 100% kompletacji RMST i zwykła średnia są sobie
+równe. Wnioski ilościowe wymagają budżetu dającego kompletację bliską 100%.
+
+Po poprawieniu skali orbity na \(a_{Ps}\) oraz dołożeniu brakującego członu
+wzajemnej reakcji promieniowania zmierzony czas kolapsu wynosi **33,9 ps** przy
+stanie związanym o energii \(-6{,}3\,\mathrm{eV}\) i \(L=1{,}03\,\hbar\).
+Dla porównania: przy poprzedniej, zbyt ciasnej orbicie było 3,6 ps, a po samej
+poprawce skali — 76 ps, przy czym ta ostatnia wartość zawierała jeszcze
+dwukrotne niedopromieniowanie. Podana wartość pochodzi z przebiegu N=1000
+o pełnej kompletacji (1000/1000 trajektorii dotarło do granicy, zero cenzury),
+przy rozrzucie sigma/średnia = 0,41.
+
+Zmierzony czas życia p-Ps to 125,1 ps, więc pozostała rozbieżność to czynnik
+\(\approx3{,}7\). Świadomie nie próbujemy jej domknąć: silnik odtwarza teraz
+zamknięty wzór klasycznej inspirali z dokładnością 2%
+(`N_1_3_collapse_time_vs_theory.pdf`), więc dalsze zbliżanie się do 125 ps
+wymagałoby zepsucia elektrodynamiki, a nie jej poprawiania. Klasyczna inspirala
+i anihilacja \(2\gamma\) to różne procesy. Czas życia o-Ps pozostaje poza
+zasięgiem: 142 ns odpowiadałby orbicie \(a=33a_0\), czyli \(n\approx4\), a nie
+stanowi podstawowemu.
+
+Wynik nie jest kwantowym czasem anihilacji. Zewnętrzne pomiary nie są wejściem
+CREM; tworzą wyłącznie krzywe porównawcze
 
 \[
 P_{\rm exp}(t)=\tau_{\rm exp}^{-1}e^{-t/\tau_{\rm exp}},
@@ -973,19 +1027,21 @@ P_{\rm exp}(t)=\tau_{\rm exp}^{-1}e^{-t/\tau_{\rm exp}},
 z parametrami pochodzącymi z cytowanych pomiarów. Osobny generator produktów
 zachowuje energię i pęd w układzie spoczynkowym pozytonium.
 
-Dla para-pozytonium wyświetlane są:
+Dla obu kanałów wyświetlany jest ten sam zestaw czterech rozkładów i dwóch
+diagnostyk:
 
-- rozkład ekstrapolowanego czasu kolapsu CREM i krzywa eksperymentalna;
-- idealna linia energii dwóch fotonów około \(511\,\mathrm{keV}\);
-- rozkład \(\cos\theta_\gamma\) dla niepolaryzowanego źródła;
-- karta kinematyczna kanału \(2\gamma\), w którym fotony są przeciwbieżne.
+- krzywa przeżycia kolapsu CREM (Kaplan-Meier) i krzywa eksperymentalna;
+- widmo czasu anihilacji z mierzonej stałej rozpadu, jako odniesienie skali;
+- zmierzony czas kolapsu wobec zamkniętego wzoru klasycznej inspirali;
+- stosunek zmierzonej mocy promieniowania do wzoru Larmora dla dipola
+  koherentnego;
+- rozkład mocy promieniowania uśrednionej po trajektorii;
+- klasyczne sprzężenie dipol-dipol wobec mierzonego rozszczepu nadsubtelnego.
 
-Dla orto-pozytonium wyświetlane są:
-
-- rozkład ekstrapolowanego czasu kolapsu CREM i krzywa eksperymentalna;
-- inkluzywne widmo energii fotonów w przybliżeniu Ore’a–Powella;
-- dwuwymiarowy wykres Dalitza \(E_{max}\)–\(E_{mid}\);
-- kąt między dwoma najbardziej energetycznymi fotonami kanału \(3\gamma\).
+Dwa środkowe panele i ostatni są testami: pierwsze dwa wobec zamkniętej
+elektrodynamiki klasycznej, ostatni wobec pomiaru. Odniesienia nie zawierają
+żadnego składnika CREM, więc odchyłka jest wypowiedzią o silniku, a nie o
+pozytonium.
 
 Są to wielkości mierzalne, ale na poziomie „truth”: idealna próżnia, stan w
 spoczynku, brak rozdzielczości i akceptancji detektora, zderzeń z materiałem,
@@ -1183,18 +1239,78 @@ przykład:
 
 ```text
 distributions/1_1_1_crem_collapse_time.pdf
-distributions/2_1_3_three_photon_dalitz.pdf
+distributions/2_1_4_three_photon_dalitz.pdf
 distributions/3_1_3_energy_loss_cross_section.pdf
 distributions/4_1_1_differential_cross_section.pdf
 ```
 
 Diagnostyki drugiej strony również są zapisywane jako osobne pliki. Każdy PDF
 zawiera dokładnie jeden pad i jeden odpowiadający mu rozkład; plik nazwany
-`diagnostic_energy_closure` nie zawiera pozostałych trzech diagnostyk. Zbiorcze
+`diagnostic_energy_balance` nie zawiera pozostałych diagnostyk. Zbiorcze
 PDF całych stron Statistical nie są tworzone. Kolejne uruchomienie atomowo
 nadpisuje pliki o tych samych nazwach; program najpierw sprawdza poprawność
 nowego PDF, aby nie utracić poprzedniego obrazu przy błędzie renderowania.
 Eksport działa także z `--no-gui`.
+
+#### Katalog generowanych plików
+
+Poniżej wszystkie pliki, jakie program może zapisać. Zestaw zależy od
+wybranego eksperymentu; dwa wpisy są warunkowe i zaznaczono to osobno.
+
+**Statistical 1 i 2 — para- i orto-pozytonium** (po 6 plików; `N` = 1 lub 2)
+
+Oba eksperymenty mają teraz identyczny zestaw paneli: różnią się wyłącznie
+wymuszonym wyrównaniem dipoli przy losowaniu i jednostką czasu (ps / ns).
+
+Panele fotonowe (energia 2γ, kąt biegunowy, widmo Ore'a-Powella, wykres
+Dalitza, kąt między wiodącymi fotonami) zostały **usunięte**. Były dokładnymi
+krzywymi kwantowymi i nie zawierały żadnego wyniku CREM, więc nie dawały się
+z niczym porównać. Zwolnione pady zajmują porównania modelu z zamkniętymi
+wzorami elektrodynamiki i z pomiarem. Samospójność generatora anihilacji jest
+nadal sprawdzana w `positronium_validation` jako test `annihilation-generator`.
+
+| Plik | Zawartość |
+| --- | --- |
+| `N_1_1_crem_collapse_time.pdf` | Krzywa przeżycia kolapsu CREM, estymator Kaplana-Meiera. Schodki ze znacznikami cenzury i słupkami Greenwooda; krzywa `exp(-t/τ_exp)` z pomiaru jako odniesienie skali. Oś czasu przełącza się na logarytmiczną dopiero powyżej ~1,3 dekady rozpiętości. |
+| `N_1_2_annihilation_time.pdf` | Widmo czasu anihilacji z **mierzonej** stałej rozpadu, rysowane analitycznie. Pionowa linia = średni czas kolapsu CREM, dla porównania skal. |
+| `N_1_3_collapse_time_vs_theory.pdf` | **Porównanie z teorią.** Zmierzony czas kolapsu wobec zamkniętego wzoru klasycznej inspirali `da/dt = −C/a²`, `C = 8ke⁴/(6πε₀c³m²)`, uśrednionego czynnikiem **dipolowym** `(1+e²/2)/(1−e²)^{5/2}` przy własnych `a` i `e` każdej trajektorii. Zero parametrów swobodnych, żaden składnik CREM nie wchodzi do odniesienia. Przerywana przekątna = zgodność dokładna. |
+| `N_1_4_radiated_power_vs_larmor.pdf` | **Porównanie z teorią.** Stosunek zmierzonej mocy dysypacji orbitalnej do larmorowskiej mocy koherentnego dipola elektrycznego dla tej samej orbity oskulacyjnej. Linia ciągła przy 1 = dipol koherentny, kropkowana przy 0,5 = dwa ładunki promieniujące niezależnie. |
+| `N_2_1_diagnostic_calibration_power.pdf` | Histogram mocy promieniowania uśrednionej po trajektorii, tylko dla przebiegów zakończonych na granicy. |
+| `N_2_2_dipole_coupling_vs_hyperfine.pdf` | **Porównanie z pomiarem.** Rozkład klasycznej energii oddziaływania dipol-dipol przygotowanej pary, wyrażonej jako częstość, zestawiony z mierzonym rozszczepem nadsubtelnym o-Ps/p-Ps 203,3941 GHz. Panel podaje, jaki procent rozszczepu pokrywa człon klasyczny; reszta to anihilacja wirtualna i człon kontaktowy Fermiego, których model klasyczny nie zawiera. |
+
+**Statistical 3 i 4 — wiązka e⁺e⁻** (`N` = 3 lub 4)
+
+Eksperyment 3 to kanał krótkiego zasięgu (`shortRangeFocus`), 4 — rozpraszanie
+elastyczne. Poza doborem akceptancji kątowej i `b_max` różnią się jednym
+plikiem: panel strat energii powstaje **wyłącznie w eksperymencie 3**, więc 3
+daje 6 plików, a 4 daje 5.
+
+| Plik | Zawartość |
+| --- | --- |
+| `N_1_1_differential_cross_section.pdf` | Różniczkowy przekrój `dσ/dΩ` z błędami dwumianowymi, na tle Rutherforda i dopasowania `C_R × Rutherford`. |
+| `N_1_2_cumulative_cross_section.pdf` | Skumulowany przekrój `σ(θ ≥ θ_min)`. Bez niezależnego dopasowania — progi są skorelowane, więc rzutowane jest `C_R` z panelu różniczkowego. |
+| `3_1_3_energy_loss_cross_section.pdf` | **Tylko eksperyment 3.** Różniczkowy przekrój po `ΔE = K_CM − E_out` w oknie fiducjalnym. |
+| `N_2_1_diagnostic_energy_balance.pdf` | Residuum **tożsamości** bilansu energii. To nie jest test zachowania: `E_bound` jest zdefiniowane jako reszta domykająca sumę. Panel podaje osobno niezależne residuum fizyczne LL-vs-strumień. |
+| `N_2_2_diagnostic_momentum_balance.pdf` | To samo dla pędu, w skali `log₁₀`. |
+| `N_2_3_diagnostic_angular_momentum_balance.pdf` | To samo dla momentu pędu. |
+
+**Statistical 5 — oddziaływania** (7 plików)
+
+| Plik | Zawartość |
+| --- | --- |
+| `5_1_1_outcome_summary.pdf` | Klasyfikacja zakończeń: zderzenie, rozproszenie, para-Ps, orto-Ps, nierozstrzygnięte, awaria numeryczna. |
+| `5_1_2_collision_energy.pdf` | Losowana energia w układzie środka masy, z zaznaczeniem podpróbki związanej. |
+| `5_1_3_impact_parameter.pdf` | Losowany parametr zderzenia (rozkład półnormalny), z podpróbką związaną. |
+| `5_1_4_dipole_alignment.pdf` | Wyrównanie dipoli w stanach związanych, z progiem para/orto przy `+0,5`. Stosunek 1:3 wynika tu z **geometrii** progu na izotropowej sferze, a nie ze statystyki spinowej — zbieżność liczbowa jest przypadkowa. |
+| `5_1_5_annihilation_time_para.pdf` | Widmo czasu anihilacji z mierzonej stałej rozpadu p-Ps, zawężone do zdarzeń sklasyfikowanych jako para. |
+| `5_1_6_annihilation_time_ortho.pdf` | To samo dla klasy orto. |
+| `5_2_1_diagnostic_summary.pdf` | Panel tekstowy z medianami residuów bilansu i zastrzeżeniem o definicji `E_bound`. |
+
+**Tryb wizualny** (1 plik na eksperyment, `N` = 1…4)
+
+| Plik | Zawartość |
+| --- | --- |
+| `N_1_1_visual_simulation.pdf` | Zrzut całego ekranu animacji: scena, tabela i przyciski. |
 
 Po zakończeniu animacji trybu wizualnego cały ekran (scena, tabela i przyciski)
 jest zapisywany jako `N_1_1_visual_simulation.pdf`, gdzie `N` jest numerem
@@ -1209,6 +1325,32 @@ po każdym przebiegu statystycznym zapisywany do
 `ScientificalReferences.txt`. Plik tekstowy zawiera wartości pierwotne,
 niepewności statystyczne/systematyczne, wartości pochodne, wzory, założenia,
 cytowania, DOI i adresy źródeł. Kolejne uruchomienie nadpisuje go atomowo.
+
+## Struktura źródeł
+
+Nagłówki w `modules/` są **modułami tekstowymi**, nie osobnymi jednostkami
+kompilacji: każdy jest włączany dokładnie raz, wewnątrz anonimowej przestrzeni
+nazw `positronium.cpp`, i korzysta z tego, co zdefiniowano przed nim. Dzięki
+temu cały program pozostaje jedną jednostką kompilacji, a podział służy
+czytelności i rozdzieleniu odpowiedzialności.
+
+| Moduł | Zawartość |
+| --- | --- |
+| `vector3.hpp`, `state.hpp`, `dipole_tensor.hpp` | typy podstawowe |
+| `physical_constants.hpp` | stałe fizyczne wraz z wyprowadzeniami |
+| `electrodynamics.hpp` | **prawa sił**: pola opóźnione, Darwin, sprzężenie dipolowe, reakcja promieniowania, strumień dalekiego pola |
+| `crem_engine.hpp` | **numeryka**: rekonstrukcja historii przyczynowej i adaptacyjny integrator (sonda błędu, podział kroku, retencja historii) |
+| `crem_trajectory.hpp` | warstwa trajektorii: `Frame`, wspólna pętla całkowania, sampler warunków początkowych i klasyfikacja zjawiska |
+| `crem_collapse.hpp` | estymator kolapsu: całkowanie sekularne z uśrednianiem po orbitach oraz zamknięte odniesienia elektrodynamiczne |
+| `bound_decay.hpp` | generator produktów anihilacji (recepta kwantowa, niezależna od CREM) |
+| `statistics_archive.hpp` | katalog wartości zmierzonych i teoretycznych |
+| `root_export.hpp` | atomowy zapis PDF |
+| `maxwell_validation*.hpp` | zestaw testów budowany do `positronium_validation` |
+
+Trzy moduły `crem_*` nie zawierają **żadnego kodu ROOT** — cała prezentacja
+pozostaje w `positronium.cpp`. Podział przeprowadzono jako przeniesienie
+tekstu: wyniki po nim są bit-identyczne (walidacja 28/28, diagnostyka i czas
+kolapsu bez zmian).
 
 ## Metoda numeryczna
 
@@ -1295,7 +1437,36 @@ wiązki e⁺e⁻. Tryb, wybór eksperymentu i ziarno można podać bez interakcj
 
 Parametry wiązki można dodatkowo kontrolować przez `--bmax-pm` i
 `--matching-radius-pm`; gdy ich nie podano, program dobiera je z energii i
-akceptancji kątowej. `--no-gui` wykonuje serię i wypisuje podsumowanie bez
+akceptancji kątowej.
+
+Dwie opcje sterują samą fizyką i kosztem eksperymentów związanych:
+
+| Opcja | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `--radiation-reaction` | `individual` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki) albo `automatic` (mieszanka obu). Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
+
+Dwie własności modeli reakcji, które warto znać przed użyciem:
+
+- **`individual` zawiera człon wzajemny i odtwarza koherentne tempo
+  dipolowe.** Rozkładając moc koherentną
+  `|q₁a₁+q₂a₂|² = |q₁a₁|² + |q₂a₂|² + 2q₁q₂(a₁·a₂)`, samosiła per-cząstkowa
+  daje tylko dwa pierwsze człony; dla e⁺e⁻ człon interferencyjny równa się ich
+  sumie, więc jego brak kosztował dokładnie czynnik 2 w stracie energii
+  orbitalnej. Po dołożeniu `F_i = (q_i q_j/(6πε₀c³))·ȧ_j` panel
+  `N_1_4_radiated_power_vs_larmor.pdf` mierzy `⟨P_CREM/P_Larmor⟩ = 0,998`,
+  panel `N_1_3_collapse_time_vs_theory.pdf` daje `⟨t_CREM/t_klasyczne⟩ = 1,02`,
+  a residuum bilansu `|dE_LL-vs-strumień|/E_rad` spada z 0,501 do **0,003**.
+  Czas kolapsu skrócił się przy tym dokładnie dwukrotnie.
+- **`coherent` wykazuje rozbieg Abrahama-Lorentza i nie nadaje się do pomiaru
+  sekularnego.** Siła jest budowana z trzeciej pochodnej momentu dipolowego,
+  co dopuszcza rozwiązania samoprzyspieszające: część zmierzonych orbit
+  *zyskuje* energię zamiast tracić, a sporadycznie stencil dzielony przez
+  `2h³` zwraca wartość niefizyczną. Estymator odrzuca teraz pomiar implikujący
+  stratę powyżej 50% energii wiązania na jedną orbitę i zgłasza go jako awarię
+  numeryczną, zamiast wcielać go do stanu oskulacyjnego.
+| `--crem-wallclock-budget-s` | `20` | Budżet zegarowy na jedno zdarzenie w eksperymentach 1/2. Po jego wyczerpaniu trajektoria jest cenzurowana prawostronnie. Wartość domyślna daje niską frakcję ukończenia przy `N = 1000`; do wniosków ilościowych trzeba ją podnieść tak, aby kompletacja zbliżyła się do 100%. |
+
+`--no-gui` wykonuje serię i wypisuje podsumowanie bez
 otwierania okna ROOT, ale nadal renderuje i zapisuje pliki PDF, co jest
 przydatne w obliczeniach wsadowych:
 
@@ -1326,8 +1497,8 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
 - mechanika kwantowa w dynamice orbitalnej, funkcja falowa, zasada Pauliego,
   splątanie i dynamiczne tworzenie stanów para-/ortopozytonium;
 - kwantowy czas anihilacji nie jest wyprowadzany z dynamiki klasycznej;
-  Statistical 1/2 raportuje odrębny, operacyjny czas kolapsu CREM otrzymany
-  przez kalibrację pełnej trajektorii i ekstrapolację sekularną, natomiast
+  Statistical 1/2 raportuje odrębny, operacyjny czas kolapsu CREM mierzony
+  przez całkowanie mechaniczne z uśrednianiem po orbitach, natomiast
   zewnętrzne czasy życia służą wyłącznie do porównania;
 - odpowiedź detektora, oddziaływania pozytonium w materiale, pick-off,
   quenching, poprawki radiacyjne i rzadsze kanały rozpadu;
