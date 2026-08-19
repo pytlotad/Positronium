@@ -1110,6 +1110,19 @@ LocalElectromagneticFields localRelativisticFields(
     // a field this weak is the channel that actually does something.
     atFirst.magnetic+=gExternalMagneticField;
     atSecond.magnetic+=gExternalMagneticField;
+    // The zero-point field, unlike the uniform one, differs between the two
+    // positions and changes with time, so each role is sampled separately.
+    if(gZeroPointField.active()) {
+        Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
+        gZeroPointField.sample(s.firstPosition,s.time,
+                               firstElectric,firstMagnetic);
+        gZeroPointField.sample(s.secondPosition,s.time,
+                               secondElectric,secondMagnetic);
+        atFirst.electric+=firstElectric;
+        atFirst.magnetic+=firstMagnetic;
+        atSecond.electric+=secondElectric;
+        atSecond.magnetic+=secondMagnetic;
+    }
     return {atFirst, atSecond};
 }
 
@@ -1252,9 +1265,20 @@ MutualForces allExternalForces(const State& s) {
     const MutualForces velocityForces = darwinForces(s);
     const StateHistory localHistory{State{s}};
     const MutualForces mixedMagneticForces = chargeDipoleForces(s, localHistory);
-    const MutualForces externalField{
+    MutualForces externalField{
         lorentzForce(firstCharge, s.firstVelocity, {{}, gExternalMagneticField}),
         lorentzForce(secondCharge, s.secondVelocity, {{}, gExternalMagneticField})};
+    if(gZeroPointField.active()) {
+        Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
+        gZeroPointField.sample(s.firstPosition,s.time,
+                               firstElectric,firstMagnetic);
+        gZeroPointField.sample(s.secondPosition,s.time,
+                               secondElectric,secondMagnetic);
+        externalField.first=externalField.first+lorentzForce(firstCharge,
+            s.firstVelocity,{firstElectric,firstMagnetic});
+        externalField.second=externalField.second+lorentzForce(secondCharge,
+            s.secondVelocity,{secondElectric,secondMagnetic});
+    }
     return {positionForces.first + velocityForces.first
                 + mixedMagneticForces.first + externalField.first,
             positionForces.second + velocityForces.second
@@ -1355,9 +1379,20 @@ MutualForces retardedExternalForces(const State& s,
         covariantDipoleGradientForce(s,history,false)};
     // Same uniform external field as in the instantaneous sum.  It is not
     // retarded because it is not sourced by either particle.
-    const MutualForces externalField{
+    MutualForces externalField{
         lorentzForce(firstCharge,s.firstVelocity,{{},gExternalMagneticField}),
         lorentzForce(secondCharge,s.secondVelocity,{{},gExternalMagneticField})};
+    if(gZeroPointField.active()) {
+        Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
+        gZeroPointField.sample(s.firstPosition,s.time,
+                               firstElectric,firstMagnetic);
+        gZeroPointField.sample(s.secondPosition,s.time,
+                               secondElectric,secondMagnetic);
+        externalField.first=externalField.first+lorentzForce(firstCharge,
+            s.firstVelocity,{firstElectric,firstMagnetic});
+        externalField.second=externalField.second+lorentzForce(secondCharge,
+            s.secondVelocity,{secondElectric,secondMagnetic});
+    }
     return {chargeCharge.first+tensorGradient.first+externalField.first,
             chargeCharge.second+tensorGradient.second+externalField.second};
 }

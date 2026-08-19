@@ -1503,6 +1503,7 @@ Cztery opcje sterują samą fizyką i kosztem eksperymentów związanych:
 
 | Opcja | Domyślnie | Znaczenie |
 | --- | --- | --- |
+| `--zpf`, `--zpf-band` | `0` (wyłączone) | **Eksperyment, nie część modelu.** Klasyczne pole punktu zerowego elektrodynamiki stochastycznej: losowe fale płaskie o widmie \(\rho(\omega)=\hbar\omega^3/2\pi^2c^3\), 64 mody o równej energii, orientacje i fazy z ziarna `--seed`. `--zpf` skaluje **amplitudę** (1 = poziom fizyczny, moc pochłaniana rośnie jak kwadrat), `--zpf-band lo,hi` ustala pasmo w jednostkach częstości orbitalnej pary (domyślnie `0.3,3`). To jest fluktuacyjna połowa pary fluktuacja–dyssypacja; dyssypacyjną, czyli reakcję promieniowania, model ma od zawsze. Wchodzi w te same trzy miejsca co pole jednorodne, ale próbkowane osobno dla każdej cząstki, bo zależy od położenia i czasu. **Nie odtwarza stanu podstawowego SED — patrz niżej.** |
 | `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
 | `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
 | `--radiation-reaction` | `individual` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki) albo `automatic` (mieszanka obu). Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
@@ -1520,6 +1521,27 @@ Eksperymenty 3, 4 i 5 nie mają odniesienia anihilacyjnego w części pomiarowej
 i działają dla dowolnej pary przyciągającej — z zastrzeżeniem, że eksperyment 5
 nadal etykietuje wychwycone stany jako „Para-/Ortho-Positronium" i zapisuje
 panele `annihilation_time_*` z danych pozytonium, co dla innej pary jest mylące.
+
+Wynik eksperymentu z polem punktu zerowego (`--zpf`) jest **negatywny i warto
+go znać przed uruchomieniem**. Mechanizm działa: energia wpływa do orbity,
+orbita się rozszerza, a czas kolapsu rośnie monotonicznie z górną krawędzią
+pasma — 43,0 ps bez pola, 43,2 przy `0.3,3`, 45,2 przy `0.3,10`, 57,3 przy
+`0.3,30` i 152,5 przy `0.3,100`. Powodem tej zależności jest to, że orbita
+w trakcie spirali przyspiesza: zmierzony okres spada z 0,327 fs do 0,0031 fs,
+czyli o czynnik 105, więc pole działa tylko dopóki pozostaje w rezonansie.
+
+Przy `0.3,300` estymator zgłasza brak zaniku — ale to **nie jest równowaga**.
+Diagnostyka pokazuje promień końcowy 219,5 pm wobec 123,7 pm bez pola i zakres
+101,6–225,8 pm: orbita jest przepompowywana i się rozszerza, co utrzymane
+prowadziłoby do jonizacji. Przejście jest więc z „zapada się" wprost w
+„rozszerza się", bez stanu stacjonarnego pomiędzy.
+
+Fizycznie widmo pola punktu zerowego nie ma górnego odcięcia, więc pasmo jest
+wyłącznie obcięciem numerycznym, a wynik od niego silnie zależy — to znaczy, że
+ta implementacja nie daje odpowiedzi fizycznej. Poprawne odtworzenie równowagi
+SED wymaga samouzgodnionej odpowiedzi cząstki na pełne widmo, a nie dołożenia
+losowego pola do gotowych równań ruchu; równowaga jest delikatnym skasowaniem,
+nie efektem rzędu wiodącego.
 
 Dwie własności modeli reakcji, które warto znać przed użyciem:
 

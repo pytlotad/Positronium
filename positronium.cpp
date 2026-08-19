@@ -240,6 +240,90 @@ Vec3 cross(const Vec3& a, const Vec3& b) {
     return {a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x};
 }
 
+// Classical zero-point field of stochastic electrodynamics: a random,
+// homogeneous, isotropic radiation field with spectral energy density
+//
+//     rho(omega) = hbar omega^3 / (2 pi^2 c^3).
+//
+// It is NOT a drag.  Radiation reaction is the dissipative half and is already
+// in the model; this is the fluctuating half, and it pumps energy INTO the
+// orbit.  Together they are a Langevin pair whose stationary state is the SED
+// ground state, which is where the L = hbar initial condition this project
+// already uses comes from.  The omega^3 spectrum is the unique one invariant
+// under boosts, which is exactly why it cannot act as a drag: a drag would
+// single out a rest frame.
+//
+// Represented as equal-energy plane waves.  Sampling omega from the inverse
+// CDF of omega^3 over the band, omega = (w1^4 + x(w2^4 - w1^4))^(1/4), makes
+// every mode carry the same energy, so one amplitude serves all of them:
+// u = eps0 <E^2> and <cos^2> = 1/2 give E = sqrt(2u/(N eps0)).
+//
+// The band cannot be the whole spectrum.  It is centred on the PAIR's own
+// orbital frequency, because that is where the secular exchange happens, and
+// its upper edge is what the integrator has to resolve -- the step is set by
+// the trajectory error probe, so a wider band buys accuracy in the field at
+// the price of a much shorter step.
+struct ZeroPointField {
+    std::vector<Vec3> waveVector, polarization, magneticDirection;
+    std::vector<double> phase, angularFrequency;
+    double amplitude=0.0;
+    bool active() const { return amplitude>0.0&&!waveVector.empty(); }
+    void sample(const Vec3& position,double time,
+                Vec3& electric,Vec3& magnetic) const {
+        electric=Vec3{};
+        magnetic=Vec3{};
+        for(std::size_t n=0;n<waveVector.size();++n) {
+            const double wave=std::cos(dot(waveVector[n],position)
+                -angularFrequency[n]*time+phase[n]);
+            electric+=polarization[n]*(amplitude*wave);
+            magnetic+=magneticDirection[n]*(amplitude*wave/c);
+        }
+    }
+};
+ZeroPointField gZeroPointField;
+
+// scale multiplies the field AMPLITUDE, so 1 is the full zero-point level and
+// the absorbed power scales as scale^2.  Anything other than 1 is a numerical
+// experiment, not the physical field.
+ZeroPointField makeZeroPointField(double lowFrequency,double highFrequency,
+                                  int modeCount,double scale,
+                                  std::uint64_t seed) {
+    ZeroPointField field;
+    if(!(scale>0.0)||modeCount<=0||!(highFrequency>lowFrequency)) return field;
+    const double lowFourth=std::pow(lowFrequency,4.0);
+    const double highFourth=std::pow(highFrequency,4.0);
+    const double energyDensity=hbar*(highFourth-lowFourth)
+        /(8.0*pi*pi*c*c*c);
+    field.amplitude=scale*std::sqrt(2.0*energyDensity
+        /(static_cast<double>(modeCount)*epsilon0));
+    std::mt19937_64 random(seed^0x5851f42d4c957f2dULL);
+    std::uniform_real_distribution<double> uniform(0.0,1.0);
+    for(int mode=0;mode<modeCount;++mode) {
+        const double omega=std::pow(lowFourth
+            +uniform(random)*(highFourth-lowFourth),0.25);
+        const double cosine=2.0*uniform(random)-1.0;
+        const double azimuth=2.0*pi*uniform(random);
+        const double transverse=std::sqrt(std::max(0.0,1.0-cosine*cosine));
+        const Vec3 direction{transverse*std::cos(azimuth),
+                             transverse*std::sin(azimuth),cosine};
+        // Any unit vector orthogonal to the propagation direction; the random
+        // angle around it makes the polarization isotropic.
+        const Vec3 seedAxis=std::abs(direction.z)<0.9?Vec3{0,0,1}:Vec3{1,0,0};
+        Vec3 first=cross(direction,seedAxis);
+        first=first/first.norm();
+        const Vec3 second=cross(direction,first);
+        const double polarizationAngle=2.0*pi*uniform(random);
+        const Vec3 polarization=first*std::cos(polarizationAngle)
+                               +second*std::sin(polarizationAngle);
+        field.waveVector.push_back(direction*(omega/c));
+        field.polarization.push_back(polarization);
+        field.magneticDirection.push_back(cross(direction,polarization));
+        field.phase.push_back(2.0*pi*uniform(random));
+        field.angularFrequency.push_back(omega);
+    }
+    return field;
+}
+
 DipoleTensor lorentzBoostDipole(const DipoleTensor& dipole,
                                 const Vec3& frameVelocity) {
     const double speedSquared=frameVelocity.squaredNorm();
@@ -4646,6 +4730,13 @@ int main(int argc, char** argv) {
     // startup question below stay silent for a fully specified batch run
     // instead of blocking it on stdin.
     double externalFieldMicroTesla = -1.0;
+    // Amplitude of the stochastic-electrodynamics zero-point field, in units
+    // of the physical level.  Off by default: it is an experiment, not part of
+    // the model every committed result was produced with.
+    double zeroPointScale = 0.0;
+    // Band edges in units of the pair's orbital angular frequency.
+    double zeroPointBandLow = 0.3;
+    double zeroPointBandHigh = 3.0;
     try {
         for (int i = 1; i < argc; ++i) {
             const std::string argument = argv[i];
@@ -4726,6 +4817,23 @@ int main(int argc, char** argv) {
                 } else {
                     throw std::invalid_argument("mode must be visual or statistical");
                 }
+            } else if (argument == "--zpf-band") {
+                const std::string value = requireValue(argument);
+                const std::size_t comma = value.find(',');
+                if (comma == std::string::npos)
+                    throw std::invalid_argument(
+                        "--zpf-band needs lo,hi in units of the orbital frequency");
+                zeroPointBandLow = std::stod(value.substr(0, comma));
+                zeroPointBandHigh = std::stod(value.substr(comma + 1));
+                if (!(zeroPointBandHigh > zeroPointBandLow)
+                    || !(zeroPointBandLow > 0.0))
+                    throw std::invalid_argument("--zpf-band needs 0 < lo < hi");
+            } else if (argument == "--zpf") {
+                zeroPointScale = std::stod(requireValue(argument));
+                if (!std::isfinite(zeroPointScale) || zeroPointScale < 0.0) {
+                    throw std::invalid_argument(
+                        "--zpf scale must be finite and non-negative");
+                }
             } else if (argument == "--external-field") {
                 externalFieldMicroTesla = std::stod(requireValue(argument));
                 if (!std::isfinite(externalFieldMicroTesla)
@@ -4787,6 +4895,35 @@ int main(int argc, char** argv) {
                      "visible channel is dipole precession.\n";
     } else {
         std::cout << "External magnetic field: none.\n";
+    }
+    if (zeroPointScale > 0.0) {
+        // Band centred on the pair's own orbital angular frequency, which for
+        // a Kepler orbit at the pair Bohr radius is sqrt(k|q1 q2|/(mu a^3)).
+        const double orbitRadius = pairBohrRadius(activePair);
+        const double orbitalFrequency = std::sqrt(pairCoulombStrength
+            /(pairReducedMass*orbitRadius*orbitRadius*orbitRadius));
+        // 0.3 to 3 times that.  The upper edge is set by what the trajectory
+        // integrator can resolve, not by physics: its step follows the error
+        // probe, so a wider band costs a proportionally shorter step.  The
+        // secular exchange lives near resonance anyway.
+        constexpr int zeroPointModes = 64;
+        const double bandLow = zeroPointBandLow*orbitalFrequency;
+        const double bandHigh = zeroPointBandHigh*orbitalFrequency;
+        gZeroPointField = makeZeroPointField(bandLow, bandHigh,
+            zeroPointModes, zeroPointScale, seed);
+        const double bandEnergyDensity = hbar
+            *(std::pow(bandHigh,4.0)-std::pow(bandLow,4.0))/(8.0*pi*pi*c*c*c);
+        std::cout << "Zero-point field: scale " << zeroPointScale << ", "
+                  << zeroPointModes << " modes over ["
+                  << bandLow << ", " << bandHigh
+                  << "] rad/s, E_rms "
+                  << zeroPointScale*std::sqrt(bandEnergyDensity/epsilon0)
+                  << " V/m against a binding field of "
+                  << pairCoulombStrength/(eCharge*orbitRadius*orbitRadius)
+                  << " V/m.\n"
+                  << "  This is the FLUCTUATING half of stochastic "
+                     "electrodynamics; it feeds energy in, and the radiation "
+                     "reaction is the dissipative half already present.\n";
     }
     {
         const char* reactionModelName =
