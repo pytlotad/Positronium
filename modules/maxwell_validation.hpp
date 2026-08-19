@@ -845,23 +845,60 @@ int runMaxwellSelfTest() {
     const LocalElectromagneticFields covarianceMovingLocal=
         localRelativisticFields(covarianceMoving,covarianceMovingEngine.history());
     constexpr double covarianceBmtProbeDt=1.0e-22;
-    const Vec3 restBmtProbe=advanceCovariantBmt(
-        covarianceRest.firstProperDipole,covarianceRest.firstVelocity,
-        covarianceRestLocal.atFirst,firstCharge/firstMass,
-        covarianceBmtProbeDt,firstGFactor);
-    const Vec3 movingBmtProbe=advanceCovariantBmt(
-        covarianceMoving.firstProperDipole,covarianceMoving.firstVelocity,
-        covarianceMovingLocal.atFirst,firstCharge/firstMass,
-        covarianceBoostGamma*covarianceBmtProbeDt,firstGFactor);
-    const FourVector expectedBmtFour=boostFourVector(dipoleFourVector(
-        restBmtProbe,covarianceRest.firstVelocity));
-    const FourVector movingBmtFour=dipoleFourVector(
-        movingBmtProbe,covarianceMoving.firstVelocity);
+    // Evolve one role's dipole in the rest frame and in the boosted frame, and
+    // compare the boosted rest-frame result with the moving-frame one.  The
+    // covariance being tested is a property of a SINGLE particle, so one probe
+    // is enough to exercise advanceCovariantBmt itself.
+    //
+    // Both roles are probed because the integrator's behaviour depends on the
+    // arguments it is handed.  For a symmetric pair the two residuals come out
+    // bit-identical -- e+e- has equal masses, equal g and opposite charges, so
+    // the second probe is pure redundancy there.  For an asymmetric pair they
+    // are not: measured on proton+electron they differ by a factor of 540
+    // (8.1e-9 against 4.4e-6), and the SECOND one is the binding constraint.
+    // Without it a defect affecting only the heavier-coupling role would go
+    // unseen for every pair.
+    //
+    // What this does NOT catch is a role mix-up at the CALL SITES -- passing
+    // one particle's g-factor or charge-to-mass ratio to the other inside
+    // applyDipolePrecession().  The check builds its own arguments explicitly,
+    // so it never executes those call sites; injecting exactly that swap
+    // leaves the residual unchanged to every printed digit, for e+e- and for
+    // proton+electron alike.  Guarding call-site role assignment needs a test
+    // that drives applyDipolePrecession() itself and compares each role's
+    // precession against its own g, which does not exist yet.
+    const auto bmtCovarianceResidual=[&](const Vec3& restProperDipole,
+                                         const Vec3& restVelocity,
+                                         const ElectromagneticField& restField,
+                                         const Vec3& movingProperDipole,
+                                         const Vec3& movingVelocity,
+                                         const ElectromagneticField& movingField,
+                                         double chargeToMass,double gFactor) {
+        const Vec3 restProbe=advanceCovariantBmt(restProperDipole,restVelocity,
+            restField,chargeToMass,covarianceBmtProbeDt,gFactor);
+        const Vec3 movingProbe=advanceCovariantBmt(movingProperDipole,
+            movingVelocity,movingField,chargeToMass,
+            covarianceBoostGamma*covarianceBmtProbeDt,gFactor);
+        const FourVector expected=boostFourVector(
+            dipoleFourVector(restProbe,restVelocity));
+        const FourVector actual=dipoleFourVector(movingProbe,movingVelocity);
+        const double scale=std::max(restProbe.norm(),1.0e-300);
+        return std::max(std::abs(actual.time-expected.time)/scale,
+                        (actual.space-expected.space).norm()/scale);
+    };
     const double covarianceBmtResidual=std::max(
-        std::abs(movingBmtFour.time-expectedBmtFour.time)
-            /std::max(restBmtProbe.norm(),1.0e-300),
-        (movingBmtFour.space-expectedBmtFour.space).norm()
-            /std::max(restBmtProbe.norm(),1.0e-300));
+        bmtCovarianceResidual(
+            covarianceRest.firstProperDipole,covarianceRest.firstVelocity,
+            covarianceRestLocal.atFirst,
+            covarianceMoving.firstProperDipole,covarianceMoving.firstVelocity,
+            covarianceMovingLocal.atFirst,
+            firstCharge/firstMass,firstGFactor),
+        bmtCovarianceResidual(
+            covarianceRest.secondProperDipole,covarianceRest.secondVelocity,
+            covarianceRestLocal.atSecond,
+            covarianceMoving.secondProperDipole,covarianceMoving.secondVelocity,
+            covarianceMovingLocal.atSecond,
+            secondCharge/secondMass,secondGFactor));
     const ParticleMultipoleRadiation covarianceRestRadiation=
         particleMultipoleRadiation(covarianceRest,covarianceRestExternal,
             covarianceRestEngine.history(),false);
