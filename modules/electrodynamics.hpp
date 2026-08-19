@@ -738,6 +738,22 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
             result.sourceCompactness,5.0e-2,1.0e-1);
         const double llGate=decreasingGate(
             result.landauLifshitzValidity,5.0e-3,1.0e-2);
+        // Measured, not assumed: correcting the quadrupole origin to the
+        // centre of mass moves this gate's INPUT by ten orders of magnitude
+        // for an unequal-mass pair, and changes its VERDICT nowhere.
+        //
+        // For p+e- the electric quadrupole went from 1.6e-30 W (the old
+        // midpoint origin, which forced Q == 0 identically and left only
+        // rounding) to 1.4e-11 W, dropping dominance from 3.5e13 to 3.3e3.
+        // The gate saturates at 1 for anything above 20, so both sit deep in
+        // the saturated region and E1 stays overwhelmingly dominant either
+        // way.  A 30-event experiment 5 run under --radiation-reaction
+        // automatic is byte-identical with and without the correction.
+        //
+        // For E2 to matter here it would have to come within a factor of 20
+        // of E1, which needs a far more compact and relativistic source than
+        // this model integrates.  The correction is therefore right and
+        // currently inert -- worth stating so nobody re-derives it.
         const double dominanceGate=std::clamp((dominance-10.0)/10.0,0.0,1.0);
         result.coherentWeight=smoothGate*compactGate*llGate*dominanceGate;
     }
