@@ -2580,7 +2580,21 @@ InteractionConfiguration makeInteractionConfiguration(
     // Start far enough out that the Coulomb potential is a small correction to
     // the sampled kinetic energy, but close enough that the approach phase does
     // not dominate the run time.
-    configuration.matchingRadius = 50.0*bohrRadius;
+    //
+    // Expressed in the PAIR's Bohr radius, not hydrogen's.  50*a0 was 25 pair
+    // radii for positronium and nothing in particular for anyone else: for
+    // mu+mu- it would have started the pair 5000 atom-widths out and spent the
+    // whole run on the approach.
+    //
+    // Note that the criterion in the comment above is really about the Coulomb
+    // length l_C = k|q1 q2|/(2K), which is computed a few lines up, and NOT
+    // about the Bohr radius at all -- the Bohr radius is here only because the
+    // experiment was first written for positronium.  At the default 0.6 eV,
+    // l_C is 1200 pm against a start separation of 2646 pm, so "small
+    // correction" holds by a factor of 2.2 and no more.  Retuning that is a
+    // separate decision about experiment 5's defaults, not part of making the
+    // constant pair-relative, so it is left alone and written down instead.
+    configuration.matchingRadius = 25.0*pairBohrRadius(activePair);
     const double slowestEnergy = configuration.minimumKineticEnergy;
     const double slowestGamma = 1.0 + slowestEnergy/(2.0*firstMass*c*c);
     const double slowestSpeed = c*std::sqrt(
@@ -4894,7 +4908,14 @@ int main(int argc, char** argv) {
     // ROOT rotates this 3D view when the user drags the mouse in the scene.
     // A non-zero Z span preserves perspective for the initially planar orbit.
     TView* view = TView::CreateView(1);
-    const double scale = 1.0 / bohrRadius;
+    // Positions in units of the PAIR's Bohr radius, so the camera frames the
+    // orbit for every pair.  In hydrogen's a0 a muonium orbit is 1e-3 across
+    // and the view floor below would have collapsed it to an invisible dot in
+    // the middle of an empty box.  For e+e- this halves the numbers the span
+    // is built from, so the default pair's camera sits twice as close -- the
+    // orbit fills the view instead of occupying its middle half, which is the
+    // same framing every other pair now gets.
+    const double scale = 1.0 / pairBohrRadius(activePair);
     double viewSpan = 1.10;
     for (const Frame& frame : frames) {
         viewSpan = std::max({viewSpan, frame.first.norm() * scale * 1.10,
