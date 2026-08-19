@@ -2,6 +2,10 @@
 
 #include "physical_constants.hpp"
 
+#include <array>
+#include <string>
+#include <string_view>
+
 namespace positronium::parameters {
 
 // A charged spin-1/2 particle, given by the three properties that fix its
@@ -155,10 +159,32 @@ constexpr double dipoleRegularizationRadius(const ParticlePair& pair) {
 }
 
 // The name the field code has always used, now answering for whichever pair
-// the build integrates.
-inline constexpr double magneticRegularizationRadius=
+// the RUN integrates.  Deliberately not constexpr: --pair chooses the pair at
+// startup and applyPair reassigns this before anything integrates.  It is
+// constant-initialized to the default pair's value, so a build that never
+// touches --pair behaves exactly as before.
+inline double magneticRegularizationRadius=
     dipoleRegularizationRadius(defaultPair);
 
+// Everything --pair is allowed to name.  Kept next to the species themselves
+// so a new species cannot be added without becoming selectable.
+inline constexpr std::array<const ParticleSpecies*,6> selectableSpecies{
+    &electron,&positron,&muon,&antimuon,&proton,&antiproton};
+
+inline const ParticleSpecies* speciesByName(std::string_view name) {
+    for(const ParticleSpecies* species:selectableSpecies)
+        if(name==species->name) return species;
+    return nullptr;
+}
+
+inline std::string selectableSpeciesList() {
+    std::string result;
+    for(const ParticleSpecies* species:selectableSpecies) {
+        if(!result.empty()) result+=", ";
+        result+=species->name;
+    }
+    return result;
+}
 
 // The species table must agree with the standalone electron constants, or the
 // two descriptions of the same particle have drifted apart.

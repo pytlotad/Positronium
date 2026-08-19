@@ -15,8 +15,8 @@ ParticleFieldTotals particleFieldTotals(const State& state,
     const Vec3 firstMomentum=momentum(state.firstVelocity,firstMass);
     const Vec3 secondMomentum=momentum(state.secondVelocity,secondMass);
     const MaxwellVolumeIntegrals fieldTotals=field.volumeIntegrals();
-    constexpr double firstGyromagneticRatio=firstCharge/(2.0*firstMass);
-    constexpr double secondGyromagneticRatio=secondCharge/(2.0*secondMass);
+    const double firstGyromagneticRatio=firstCharge/(2.0*firstMass);
+    const double secondGyromagneticRatio=secondCharge/(2.0*secondMass);
     // Rest energies are constant and omitted from the diagnostic difference.
     return {(gamma(state.firstVelocity)-1.0)*firstMass*c*c
           +(gamma(state.secondVelocity)-1.0)*secondMass*c*c
@@ -790,8 +790,8 @@ bool finiteRadiationResponse(const ParticleMultipoleRadiation& response) {
 void applyDipoleRadiationTorque(State& state,
                                 const ParticleMultipoleRadiation& reaction,
                                 double dt) {
-    constexpr double firstGyromagneticRatio=firstCharge/(2.0*firstMass);
-    constexpr double secondGyromagneticRatio=secondCharge/(2.0*secondMass);
+    const double firstGyromagneticRatio=firstCharge/(2.0*firstMass);
+    const double secondGyromagneticRatio=secondCharge/(2.0*secondMass);
     synchronizeCovariantDipoles(state);
     const double firstNorm=state.firstProperDipole.norm();
     const double secondNorm=state.secondProperDipole.norm();
@@ -1044,7 +1044,7 @@ MutualForces darwinForces(const State& s) {
     const MutualForces leading = coulombForces(s);
     const Vec3 firstLeadingAcceleration = leading.first / firstMass;
     const Vec3 secondLeadingAcceleration = leading.second / secondMass;
-    constexpr double chargeProduct = pairChargeProduct;
+    const double chargeProduct = pairChargeProduct;
     return {
         darwinForceOnFirst(s.firstVelocity, s.secondVelocity,
                            secondLeadingAcceleration,
@@ -1058,7 +1058,7 @@ MutualForces darwinForces(const State& s) {
 double darwinInteractionEnergy(const State& s) {
     const PairGeometry geometry = pairGeometry(s);
     const Vec3 n = geometry.firstMinusSecond * geometry.inverseDistance;
-    constexpr double chargeProduct = pairChargeProduct;
+    const double chargeProduct = pairChargeProduct;
     return coulomb * chargeProduct * geometry.inverseDistance / (2.0 * c*c)
          * (dot(s.firstVelocity, s.secondVelocity)
           + dot(s.firstVelocity, n) * dot(s.secondVelocity, n));
@@ -1338,7 +1338,7 @@ struct CanonicalMomenta { Vec3 first, second; };
 CanonicalMomenta canonicalMomenta(const State& s) {
     const PairGeometry geometry = pairGeometry(s);
     const Vec3 n = geometry.firstMinusSecond * geometry.inverseDistance;
-    constexpr double chargeProduct = pairChargeProduct;
+    const double chargeProduct = pairChargeProduct;
     const double darwinCoefficient = coulomb * chargeProduct
         * geometry.inverseDistance / (2.0 * c*c);
 
@@ -1386,8 +1386,8 @@ double canonicalMomentumScale(const State& s) {
 
 Vec3 noetherAngularMomentum(const State& s,
                             const CanonicalMomenta& canonical) {
-    constexpr double firstGyromagneticRatio = firstCharge / (2.0 * firstMass);
-    constexpr double secondGyromagneticRatio = secondCharge / (2.0 * secondMass);
+    const double firstGyromagneticRatio = firstCharge / (2.0 * firstMass);
+    const double secondGyromagneticRatio = secondCharge / (2.0 * secondMass);
     const Vec3 orbital = cross(s.firstPosition, canonical.first)
                        + cross(s.secondPosition, canonical.second);
     const Vec3 intrinsic = s.firstDipole / firstGyromagneticRatio

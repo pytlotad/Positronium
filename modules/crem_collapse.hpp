@@ -173,7 +173,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                            int selectedPhenomenon,
                                            double wallClockBudgetSeconds) {
     CremCollapseEstimate result;
-    constexpr double reducedMass=firstMass*secondMass
+    const double reducedMass=firstMass*secondMass
         /(firstMass+secondMass);
     const double attractionParameter=pairCoulombStrength/reducedMass;
 

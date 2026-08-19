@@ -939,7 +939,7 @@ int runMaxwellSelfTest() {
     // become visible.
     State roleRoutingState;
     {
-        const double radius=pairBohrRadius(defaultPair);
+        const double radius=pairBohrRadius(activePair);
         const double firstShare=secondMass/(firstMass+secondMass);
         const double secondShare=firstMass/(firstMass+secondMass);
         const double circular=std::sqrt(pairCoulombStrength
@@ -1116,7 +1116,7 @@ int runMaxwellSelfTest() {
     // two masses are equal: 0 for e+e- and mu+mu-, -0.9989 e for p+e-.  That
     // is the real statement "positronium has no E2 channel", now derived from
     // the masses instead of assumed by the choice of origin.
-    constexpr double quadrupoleCoefficient=
+    const double quadrupoleCoefficient=
         (firstCharge*secondMass*secondMass
         +secondCharge*firstMass*firstMass)
         /((firstMass+secondMass)*(firstMass+secondMass));
@@ -1250,7 +1250,7 @@ int runMaxwellSelfTest() {
     double larmorProductionRatio=std::numeric_limits<double>::quiet_NaN();
     double larmorAccumulationRatio=std::numeric_limits<double>::quiet_NaN();
     {
-        const double larmorProbeRadius=pairBohrRadius(defaultPair);
+        const double larmorProbeRadius=pairBohrRadius(activePair);
         const double larmorReducedMass=pairReducedMass;
         const double circularRelativeSpeed=std::sqrt(
             pairCoulombStrength/(larmorReducedMass*larmorProbeRadius));

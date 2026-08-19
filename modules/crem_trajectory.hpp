@@ -244,7 +244,7 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // certainly not hydrogen's.  105.8 pm for e+e-, 512 fm for mu+mu-, 57.6 fm
     // for p+pbar.  The orbit carrying L = hbar sits here, which is also where
     // the binding energy matches the measured one.
-    const double initialSeparation = pairBohrRadius(defaultPair);
+    const double initialSeparation = pairBohrRadius(activePair);
     const double circularSpeed =
         std::sqrt(pairCoulombStrength / (reducedMass * initialSeparation));
     const double escapeSpeed = std::sqrt(2.0) * circularSpeed;
