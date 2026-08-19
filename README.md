@@ -1439,11 +1439,26 @@ Parametry wiązki można dodatkowo kontrolować przez `--bmax-pm` i
 `--matching-radius-pm`; gdy ich nie podano, program dobiera je z energii i
 akceptancji kątowej.
 
-Dwie opcje sterują samą fizyką i kosztem eksperymentów związanych:
+Trzy opcje sterują samą fizyką i kosztem eksperymentów związanych:
 
 | Opcja | Domyślnie | Znaczenie |
 | --- | --- | --- |
+| `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
 | `--radiation-reaction` | `individual` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki) albo `automatic` (mieszanka obu). Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
+
+Zasięg `--pair` nie jest jednakowy dla wszystkich eksperymentów.
+Eksperymenty 1 i 2 mierzą klasyczną inspiralę CREM — ta część jest ogólna dla
+par i liczy się poprawnie dla każdej z nich; dla p+e⁻ daje średni czas kolapsu
+17,8 ps przy podręcznikowej wartości klasycznej około 16 ps. Raportowana jest
+jednak obok mierzonych czasów życia pozytonium (widmo czasu anihilacji,
+odniesienie \(\tau_{\rm exp}\), etykiety para/orto), a te są danymi e⁺e⁻:
+proton i elektron nie anihilują, tylko tworzą stabilny wodór, a mionium
+i protonium anihilują kanałami, których ten model nie niesie. Dlatego
+eksperymenty 1 i 2 są odrzucane dla par innych niż `electron,positron`.
+Eksperymenty 3, 4 i 5 nie mają odniesienia anihilacyjnego w części pomiarowej
+i działają dla dowolnej pary przyciągającej — z zastrzeżeniem, że eksperyment 5
+nadal etykietuje wychwycone stany jako „Para-/Ortho-Positronium" i zapisuje
+panele `annihilation_time_*` z danych pozytonium, co dla innej pary jest mylące.
 
 Dwie własności modeli reakcji, które warto znać przed użyciem:
 
@@ -1513,8 +1528,12 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
   \(10^{-14}\,\mathrm m\);
 - pola zewnętrzne, zderzenia z materią, grawitacja i wpływ ośrodka;
 - energia orbitalnego pola magnetycznego w prezentowanym bilansie energii;
-- wyższe multipole promieniowania: dipol magnetyczny, kwadrupol elektryczny i
-  kolejne człony rozwinięcia.
+- wyższe multipole promieniowania jako kanały reakcji: moc dipola
+  magnetycznego i kwadrupola elektrycznego jest liczona, ale wyłącznie jako
+  wejście bramki `dominance` ważącej model koherentny E1 przeciw
+  Landauowi-Lifszycowi przy `--radiation-reaction automatic`. Do bilansu
+  energii nie wchodzi żadna z nich, a dalsze człony rozwinięcia nie są
+  liczone w ogóle.
 
 ## Literatura pomocnicza
 
