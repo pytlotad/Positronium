@@ -119,33 +119,55 @@ ten integrator klasyczny.
 
 Bieżący `positronium_validation` potwierdza własności algebraiczne i numeryczne,
 ale jego końcowe `PASS` oznacza wyłącznie przejście ustawionych progów regresji.
-Nie jest certyfikatem kompletności fizycznej. W audycie z 14 sierpnia 2026 r.
-uzyskano między innymi:
+Nie jest certyfikatem kompletności fizycznej. Audyt przeprowadzony ponownie
+**19 sierpnia 2026 r.** dał następujący obraz.
 
-- resztę kowariancji pojedynczego pola Liénarda–Wiecherta
-  \(9{,}89\cdot10^{-16}\), lecz resztę skończonego strumienia promieniowania
-  po boostcie \(0{,}2105\) i skumulowanego czteropędu promieniowania
-  \(0{,}2109\) (bieżąca walidacja daje dla obu \(0{,}2084\); rząd wielkości
-  i wniosek bez zmian);
-- rozbieżność skumulowanej pracy indywidualnej reakcji LL względem
-  koherentnego strumienia ładunkowego równą \(0{,}4884\) energii
-  wypromieniowanej. **Ta pozycja jest już nieaktualna**: brakował w niej człon
-  interferencyjny, dołożony w commicie `1bf45af` już po tym audycie, po którym
-  residuum spadło do \(0{,}003\) (szczegóły w sekcji o modelach reakcji
-  promieniowania). Czas kolapsu skrócił się przy tym dokładnie dwukrotnie;
-- resztę siły po boostcie \(1{,}10\cdot10^{-6}\), ale resztę ewolucji tensora
-  dipolowego \(3{,}86\cdot10^{-3}\);
-- dokładne numeryczne domknięcie raportowanego bilansu cząstki–promieniowanie–
-  pole związane, ponieważ `boundField*` jest obliczane jako brakująca reszta
-  bilansu po każdym kroku. Jest to księgowanie, a nie niezależne obliczenie
-  energii i pędu pola bliskiego. To domknięcie jest **tożsamością algebraiczną**:
-  wykresy `diagnostic_*_balance` i pozycje `identity resid` / `identity |dP|` /
-  `identity |dJ|` w trybie diagnostycznym mierzą wyłącznie zaokrąglenia i błąd
-  interpolacji punktu końcowego, więc nie są testem zachowania. Niezależnymi
-  miarami są `|E_bound|/E_rad` (na orbitach związanych 1,2–1,4) oraz
-  `|dE_LL-vs-flux|/E_rad` (0,03–0,09 w dniu audytu, 0,003 po dołożeniu członu
-  interferencyjnego); pierwsza z nich wyznacza faktyczną granicę wiarygodności
-  raportowanej energii wypromieniowanej i pozostaje aktualna.
+Kowariancja i operatory pojedyncze (z `positronium_validation`):
+
+- reszta kowariancji pojedynczego pola Liénarda–Wiecherta \(9{,}89\cdot10^{-16}\)
+  i reszta siły po boostcie \(1{,}10\cdot10^{-6}\) — obie na poziomie
+  numerycznym;
+- reszta skończonego strumienia promieniowania po boostcie \(0{,}2084\)
+  i skumulowanego czteropędu promieniowania \(0{,}2084\) — to nadal najsłabszy
+  wynik kowariancyjny i najostrzejsze ograniczenie interpretacji strumienia
+  w układach ruchomych;
+- reszta ewolucji tensora dipolowego \(3{,}86\cdot10^{-3}\).
+
+Bilans energii jest **tożsamością algebraiczną**, nie testem zachowania:
+`boundField*` liczone jest jako brakująca reszta bilansu po każdym kroku, więc
+wykresy `diagnostic_*_balance` i pozycje `identity resid` / `identity |dP|` /
+`identity |dJ|` mierzą wyłącznie zaokrąglenia i błąd interpolacji punktu
+końcowego. Niezależne są trzy miary poniżej, zmierzone dla trzech ziaren na
+kanał w trybie diagnostycznym. `E_rel` normalizuje rezerwuar pola związanego do
+skali energii samej orbity, co jest uczciwsze niż dzielenie go przez energię
+wypromieniowaną, która bywa dowolnie mała:
+
+| kanał | \(\lvert E_{bound}\rvert/\lvert E_{rel}\rvert\) | \(\lvert E_{Schott}\rvert/E_{rad}\) | \(\lvert dE_{LL\text{-}flux}\rvert/E_{rad}\) |
+| --- | --- | --- | --- |
+| orbity związane (1, 2) | \(3{,}6\cdot10^{-5}\)–\(1{,}4\cdot10^{-4}\) | \(7\cdot10^{-5}\)–\(2{,}9\cdot10^{-3}\) | \(5{,}1\cdot10^{-4}\)–\(8{,}2\cdot10^{-3}\) |
+| rozpraszanie szerokie (4) | \(2{,}1\cdot10^{-4}\)–\(2{,}5\cdot10^{-4}\) | \(3{,}3\cdot10^{-6}\)–\(4{,}9\cdot10^{-5}\) | \(0{,}026\)–\(0{,}28\) |
+| **kanał krótkiego zasięgu (3)** | **1,4–9,4** | **3,4–3,7** | **6,2–6,4** |
+
+Wniosek jest ostrzejszy niż w poprzednim audycie, który podawał jeden zakres
+\(0{,}03\)–\(0{,}09\) i nie ujawniał rozwarstwienia. Kanały związany i szeroko
+rozpraszający są czyste we wszystkich trzech miarach: rezerwuar pola bliskiego
+to \(10^{-4}\) energii orbity, człon Schotta ułamek promila energii
+wypromieniowanej, a praca reakcji LL zgadza się ze strumieniem dalekiego pola
+do promila. **Kanał krótkiego zasięgu jest natomiast poza zakresem
+stosowalności modelu wedle jego własnej diagnostyki**: rezerwuar pola
+związanego przekracza energię orbity nawet dziewięciokrotnie, człon Schotta jest
+trzy i pół raza większy od energii wypromieniowanej, a praca LL rozmija się ze
+strumieniem o czynnik sześć. To nie jest efekt małego mianownika — bezwzględnie
+przy \(E_{rel}=-7{,}8\) eV wychodzi \(E_{bound}=+11{,}0\) eV i
+\(E_{Schott}=-1{,}5\) eV wobec \(0{,}45\) eV wypromieniowanych. Liczb
+z eksperymentu 3 nie wolno traktować jako pomiaru energetycznego.
+
+Względem audytu z 14 sierpnia zmieniło się przy tym pięć rzeczy: dołożono człon
+interferencyjny w indywidualnej reakcji LL (residuum \(0{,}501\to0{,}003\),
+czas kolapsu skrócony dokładnie dwukrotnie), przeniesiono początek układu
+kwadrupola elektrycznego do środka masy, wyprowadzono promień regularyzacji
+dipola z wybranej pary, dodano wybór pary w czasie działania oraz niezależne
+losowanie energii obu cząstek w eksperymencie 5.
 
 W konsekwencji ilościowo wiarygodne są testy jednostkowe danego operatora w
 podanym zakresie rozdzielczości. Długoczasowe trajektorie, promieniowanie,
