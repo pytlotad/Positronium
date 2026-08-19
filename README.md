@@ -125,10 +125,14 @@ uzyskano między innymi:
 - resztę kowariancji pojedynczego pola Liénarda–Wiecherta
   \(9{,}89\cdot10^{-16}\), lecz resztę skończonego strumienia promieniowania
   po boostcie \(0{,}2105\) i skumulowanego czteropędu promieniowania
-  \(0{,}2109\);
+  \(0{,}2109\) (bieżąca walidacja daje dla obu \(0{,}2084\); rząd wielkości
+  i wniosek bez zmian);
 - rozbieżność skumulowanej pracy indywidualnej reakcji LL względem
   koherentnego strumienia ładunkowego równą \(0{,}4884\) energii
-  wypromieniowanej;
+  wypromieniowanej. **Ta pozycja jest już nieaktualna**: brakował w niej człon
+  interferencyjny, dołożony w commicie `1bf45af` już po tym audycie, po którym
+  residuum spadło do \(0{,}003\) (szczegóły w sekcji o modelach reakcji
+  promieniowania). Czas kolapsu skrócił się przy tym dokładnie dwukrotnie;
 - resztę siły po boostcie \(1{,}10\cdot10^{-6}\), ale resztę ewolucji tensora
   dipolowego \(3{,}86\cdot10^{-3}\);
 - dokładne numeryczne domknięcie raportowanego bilansu cząstki–promieniowanie–
@@ -139,8 +143,9 @@ uzyskano między innymi:
   `identity |dJ|` w trybie diagnostycznym mierzą wyłącznie zaokrąglenia i błąd
   interpolacji punktu końcowego, więc nie są testem zachowania. Niezależnymi
   miarami są `|E_bound|/E_rad` (na orbitach związanych 1,2–1,4) oraz
-  `|dE_LL-vs-flux|/E_rad` (0,03–0,09); pierwsza z nich wyznacza faktyczną
-  granicę wiarygodności raportowanej energii wypromieniowanej.
+  `|dE_LL-vs-flux|/E_rad` (0,03–0,09 w dniu audytu, 0,003 po dołożeniu członu
+  interferencyjnego); pierwsza z nich wyznacza faktyczną granicę wiarygodności
+  raportowanej energii wypromieniowanej i pozostaje aktualna.
 
 W konsekwencji ilościowo wiarygodne są testy jednostkowe danego operatora w
 podanym zakresie rozdzielczości. Długoczasowe trajektorie, promieniowanie,
@@ -1371,11 +1376,11 @@ czytelności i rozdzieleniu odpowiedzialności.
 | --- | --- |
 | `vector3.hpp`, `state.hpp`, `dipole_tensor.hpp` | typy podstawowe |
 | `physical_constants.hpp` | stałe fizyczne wraz z wyprowadzeniami |
+| `particle_species.hpp` | tablica gatunków (masa, ładunek, `g`), para integrowana przez przebieg i skale, które z niej wynikają: masa zredukowana, promień Bohra pary, energia wiązania, promień regularyzacji dipola oraz wyszukiwanie gatunku dla `--pair` |
 | `electrodynamics.hpp` | **prawa sił**: pola opóźnione, Darwin, sprzężenie dipolowe, reakcja promieniowania, strumień dalekiego pola |
 | `crem_engine.hpp` | **numeryka**: rekonstrukcja historii przyczynowej i adaptacyjny integrator (sonda błędu, podział kroku, retencja historii) |
 | `crem_trajectory.hpp` | warstwa trajektorii: `Frame`, wspólna pętla całkowania, sampler warunków początkowych i klasyfikacja zjawiska |
 | `crem_collapse.hpp` | estymator kolapsu: całkowanie sekularne z uśrednianiem po orbitach oraz zamknięte odniesienia elektrodynamiczne |
-| `bound_decay.hpp` | generator produktów anihilacji (recepta kwantowa, niezależna od CREM) |
 | `statistics_archive.hpp` | katalog wartości zmierzonych i teoretycznych |
 | `root_export.hpp` | atomowy zapis PDF |
 | `maxwell_validation*.hpp` | zestaw testów budowany do `positronium_validation` |
