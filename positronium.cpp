@@ -2621,19 +2621,34 @@ InteractionEvent simulateInteractionEvent(
 
     InteractionEvent result;
     result.eventSeed = seed;
-    double kineticEnergy = configuration.meanKineticEnergy;
-    if (configuration.kineticEnergySigma > 0.0) {
+    // Each particle's kinetic energy is drawn on its own, so the two beams
+    // carry independent spreads and the pair generally arrives with a NET
+    // momentum.  That is the physical content of the change: for a two-body
+    // system whose centre of mass is at rest the two energies cannot be
+    // independent, because zero total momentum forces |p1| = |p2| and fixes
+    // the second energy once the first and the two masses are known.  Drawing
+    // them separately therefore necessarily sets the centre of mass moving.
+    //
+    // configuration.meanKineticEnergy is consequently a PER-PARTICLE lab
+    // energy now, not the centre-of-mass energy it used to be.  The relative
+    // energy the collision actually happens at is derived below and is roughly
+    // twice as large for an equal-mass pair, so this moves the experiment's
+    // operating point; both numbers are printed at startup.
+    const auto sampleKinetic = [&]() {
+        if (!(configuration.kineticEnergySigma > 0.0))
+            return configuration.meanKineticEnergy;
         for (int attempt = 0; attempt < 1000; ++attempt) {
-            kineticEnergy = energyGaussian(random);
-            if (kineticEnergy >= configuration.minimumKineticEnergy) break;
-            kineticEnergy = configuration.minimumKineticEnergy;
+            const double sampled = energyGaussian(random);
+            if (sampled >= configuration.minimumKineticEnergy) return sampled;
         }
-    }
+        return configuration.minimumKineticEnergy;
+    };
+    const double firstKineticEnergy = sampleKinetic();
+    const double secondKineticEnergy = sampleKinetic();
     // Gaussian around a head-on collision: the signed sample is folded, which
     // is the half-normal radial profile of a beam centred on b=0.
     const double impactParameter = std::min(
         std::abs(impactGaussian(random)), 0.5*configuration.matchingRadius);
-    result.kineticEnergyEv = kineticEnergy/eCharge;
     result.impactParameter = impactParameter;
 
     const double azimuth = 2.0*pi*uniform(random);
@@ -2649,23 +2664,68 @@ InteractionEvent simulateInteractionEvent(
             *(impactParameter/configuration.matchingRadius)
         + impactDirection*(longitudinalDistance/configuration.matchingRadius);
 
-    // Same construction as the beam experiment: the speed at the starting
-    // sphere carries the Coulomb attraction already gained, while the angular
-    // momentum is fixed by the asymptotic momentum and the impact parameter.
+    // p(K,m) = sqrt(K(K + 2 m c^2))/c, exact.
+    const auto momentumFromKinetic = [](double kinetic, double mass) {
+        return std::sqrt(std::max(0.0, kinetic*(kinetic + 2.0*mass*c*c)))/c;
+    };
+    // Magnitude of either particle's momentum in the centre-of-mass frame,
+    // given the pair's total invariant energy W.  Exact two-body relation,
+    // and the replacement for the old 1 + K/(2 m1 c^2) shortcut: that form
+    // split the energy equally between the roles and multiplied one particle's
+    // speed by two to get the relative speed, which is the equal-mass case and
+    // nothing else.  For p+e- it assigned the proton the electron's share.
+    const auto centreOfMassMomentum = [](double invariant) {
+        const double sumTerm = invariant*invariant
+            - (firstMass + secondMass)*(firstMass + secondMass)*c*c*c*c;
+        const double differenceTerm = invariant*invariant
+            - (firstMass - secondMass)*(firstMass - secondMass)*c*c*c*c;
+        if (!(sumTerm > 0.0) || !(differenceTerm > 0.0)) return 0.0;
+        return std::sqrt(sumTerm*differenceTerm)/(2.0*invariant*c);
+    };
+
+    // Head-on lab beams: the two momenta point at each other along the beam
+    // axis and do NOT cancel, because the energies were drawn independently.
+    const double firstLabMomentum =
+        momentumFromKinetic(firstKineticEnergy, firstMass);
+    const double secondLabMomentum =
+        momentumFromKinetic(secondKineticEnergy, secondMass);
+    const Vec3 labMomentum =
+        beamDirection*(firstLabMomentum - secondLabMomentum);
+    const double labEnergy = firstKineticEnergy + firstMass*c*c
+                           + secondKineticEnergy + secondMass*c*c;
+    // The centre of mass now moves.  Internal forces cannot change it, so this
+    // velocity rides along untouched for the whole event and every Coulomb
+    // effect below belongs to the relative motion alone.
+    const Vec3 centreOfMassVelocity = labMomentum*(c*c/labEnergy);
+    const double invariantEnergy = std::sqrt(std::max(0.0,
+        labEnergy*labEnergy - labMomentum.squaredNorm()*c*c));
+    // The energy the collision actually happens at, which is what every
+    // threshold and axis in this experiment means by "collision energy".
+    const double kineticEnergy =
+        invariantEnergy - (firstMass + secondMass)*c*c;
+    if (!(kineticEnergy > 0.0)) return result;
+    result.kineticEnergyEv = kineticEnergy/eCharge;
+
+    // Same construction as before: the speed at the starting sphere carries
+    // the Coulomb attraction already gained, while the angular momentum is
+    // fixed by the asymptotic momentum and the impact parameter.  Both now act
+    // on the relative motion in the centre-of-mass frame.
     const double coulombStrength = pairCoulombStrength;
-    const double finiteKineticEnergy = kineticEnergy
-        + coulombStrength/configuration.matchingRadius;
-    const double finiteGamma = 1.0
-        + finiteKineticEnergy/(2.0*firstMass*c*c);
-    const double finiteParticleSpeed = c*std::sqrt(
-        1.0 - 1.0/(finiteGamma*finiteGamma));
-    const double finiteRelativeSpeed = 2.0*finiteParticleSpeed;
-    const double asymptoticGamma = 1.0 + kineticEnergy/(2.0*firstMass*c*c);
-    const double asymptoticSpeed = c*std::sqrt(
-        1.0 - 1.0/(asymptoticGamma*asymptoticGamma));
-    const double asymptoticMomentum = asymptoticGamma*firstMass
-                                    * asymptoticSpeed;
-    const double finiteMomentum = finiteGamma*firstMass*finiteParticleSpeed;
+    const double asymptoticMomentum = centreOfMassMomentum(invariantEnergy);
+    const double finiteMomentum = centreOfMassMomentum(
+        invariantEnergy + coulombStrength/configuration.matchingRadius);
+    if (!(finiteMomentum > 0.0)) return result;
+    const auto lorentzFactor = [](double momentum, double mass) {
+        const double ratio = momentum/(mass*c);
+        return std::sqrt(1.0 + ratio*ratio);
+    };
+    const double firstFiniteGamma = lorentzFactor(finiteMomentum, firstMass);
+    const double secondFiniteGamma = lorentzFactor(finiteMomentum, secondMass);
+    // v_rel = |v1| + |v2| with the two moving oppositely in the CM frame.
+    const double firstMobility = 1.0/(firstFiniteGamma*firstMass);
+    const double secondMobility = 1.0/(secondFiniteGamma*secondMass);
+    const double finiteRelativeSpeed =
+        finiteMomentum*(firstMobility + secondMobility);
     const double tangentialFraction = impactParameter*asymptoticMomentum
         / (configuration.matchingRadius*finiteMomentum);
     if (!(tangentialFraction >= 0.0 && tangentialFraction < 1.0)) return result;
@@ -2683,12 +2743,20 @@ InteractionEvent simulateInteractionEvent(
         return Vec3{transverse*std::cos(phi), transverse*std::sin(phi), cosine};
     };
     State state;
-    // Mass-weighted split; see simulateBeamEvent for why halving is wrong for
-    // any pair other than equal masses.
+    // Positions still split mass-weighted about the origin, so the pair starts
+    // with its centre of mass there; it no longer STAYS there, because the
+    // centre of mass now carries the net momentum drawn above.
     state.firstPosition = relativePosition*(secondMass/(firstMass+secondMass));
     state.secondPosition = relativePosition*(-firstMass/(firstMass+secondMass));
-    state.firstVelocity = relativeVelocity*(secondMass/(firstMass+secondMass));
-    state.secondVelocity = relativeVelocity*(-firstMass/(firstMass+secondMass));
+    // Relative velocity shared out by mobility rather than by mass, which is
+    // the same mass weighting in the non-relativistic limit and stays correct
+    // when the two Lorentz factors differ, then boosted by the centre-of-mass
+    // motion to give the lab velocities the integrator actually receives.
+    const double mobilitySum = firstMobility + secondMobility;
+    state.firstVelocity = centreOfMassVelocity
+        + relativeVelocity*(firstMobility/mobilitySum);
+    state.secondVelocity = centreOfMassVelocity
+        - relativeVelocity*(secondMobility/mobilitySum);
     state.firstDipole = randomDirection()*firstMagneticMoment;
     state.secondDipole = randomDirection()*secondMagneticMoment;
 
@@ -2698,7 +2766,11 @@ InteractionEvent simulateInteractionEvent(
     bool passedClosestApproach = false;
     bool bound = false;
     int captureAttempts = 0;
-    const double captureMargin = 0.05*configuration.meanKineticEnergy;
+    // Five per cent of THIS event's collision energy.  It used to be five per
+    // cent of configuration.meanKineticEnergy, which was the centre-of-mass
+    // energy; that field is now a per-particle lab energy, so reading it here
+    // would have quietly halved the margin for an equal-mass pair.
+    const double captureMargin = 0.05*kineticEnergy;
     double boundStartTime = 0.0;
     // Charge-sector radiated energy, i.e. the total outward flux minus the
     // magnetic-dipole (M1) part.  state.radiatedEnergy accumulates
@@ -3816,9 +3888,13 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
                               double impactSigmaPm) {
     const InteractionConfiguration configuration = makeInteractionConfiguration(
         meanEnergyEv, energySigmaEv, impactSigmaPm);
-    std::cout << "Interaction experiment: K_CM ~ N(" << meanEnergyEv << ", "
+    std::cout << "Interaction experiment: EACH particle's lab kinetic energy "
+                 "~ N(" << meanEnergyEv << ", "
               << energySigmaEv << ") eV truncated at "
-              << configuration.minimumKineticEnergy/eCharge << " eV; b ~ |N(0, "
+              << configuration.minimumKineticEnergy/eCharge
+              << " eV, drawn independently, so the pair carries a net momentum "
+                 "and the centre of mass moves; K_CM below is the invariant "
+                 "derived from the two.  b ~ |N(0, "
               << configuration.impactParameterSigma*1.0e12
               << " pm)|; both dipoles isotropic.\n"
               << "Start/escape separation " << configuration.matchingRadius*1.0e12
@@ -4143,12 +4219,25 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     }
     drawAnalysisBox(analysisBoxes, 0.42, 0.42, 0.96, 0.91, summaryLines, 0.019);
 
+    // Built from the observed collision energies rather than from
+    // meanKineticEnergy +/- 4 sigma.  That formula described the sampled
+    // quantity only while ONE centre-of-mass energy was drawn per event; now
+    // two per-particle lab energies are drawn and the collision energy is the
+    // invariant derived from them, whose mean is roughly twice the
+    // per-particle mean for an equal-mass pair and whose spread is not
+    // available in closed form here.
+    const double observedEnergyLow = allEnergies.empty() ? 0.0
+        : *std::min_element(allEnergies.begin(), allEnergies.end());
+    const double observedEnergyHigh = allEnergies.empty() ? 1.0
+        : *std::max_element(allEnergies.begin(), allEnergies.end());
+    const double energySpan = std::max(observedEnergyHigh - observedEnergyLow,
+                                       1.0e-12);
     const double energyLower = std::max(0.0,
-        configuration.meanKineticEnergy/eCharge - 4.0*energySigmaEv);
-    const double energyUpper = configuration.meanKineticEnergy/eCharge
-                             + 4.0*energySigmaEv;
+        observedEnergyLow - 0.05*energySpan);
+    const double energyUpper = observedEnergyHigh + 0.05*energySpan;
     TH1D energyHistogram("interaction_collision_energy",
-        "Sampled centre-of-mass energy;K_{CM} [eV];Trajectories",
+        "Collision energy from independent per-particle draws"
+        ";K_{CM} [eV];Trajectories",
         histogramBins(allEnergies.size()), energyLower, energyUpper);
     energyHistogram.SetStats(false);
     energyHistogram.SetLineColor(plot_style::sampled());

@@ -938,8 +938,9 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    i pomarańczowe dla pozytonu.
 2. `Statistical analysis` wykonuje domyślnie **1000 trajektorii w każdym
    eksperymencie statystycznym**.
-   Eksperyment 5 (`Interactions`) wystrzeliwuje 100 par naprzeciw siebie z
-   gaussowsko losowaną energią i półgaussowskim parametrem zderzenia, po czym
+   Eksperyment 5 (`Interactions`) wystrzeliwuje 100 par naprzeciw siebie
+   z półgaussowskim parametrem zderzenia i **energią losowaną osobno dla każdej
+   cząstki** z tego samego rozkładu \(N(\mu,\sigma)\), po czym
    klasyfikuje każdą trajektorię jako `Collision`, `Scattering`,
    `Para-Positronium` albo `Orto-Positronium` i podaje zestawienie liczności.
    Próg zderzenia to granica rozdzielczości modelu
@@ -947,6 +948,22 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    \(10\,\mathrm{fm}\): ta ostatnia leży poniżej klasycznej bariery
    dipol-dipol przy \(193\,\mathrm{fm}\), więc była nieosiągalna;
    szczegóły w `README.ap`, sekcja 5.4a.
+
+   Niezależne losowanie obu energii oznacza, że **środek masy pary się
+   porusza**. Dla układu dwóch ciał ze środkiem masy w spoczynku energie nie
+   mogą być niezależne: zerowy pęd całkowity wymusza \(|p_1|=|p_2|\) i ustala
+   drugą energię, gdy zna się pierwszą i obie masy. `--interaction-energy-ev`
+   oznacza więc teraz energię kinetyczną **jednej cząstki w układzie
+   laboratoryjnym**, a nie energię zderzenia. Energia zderzenia \(K_{CM}\)
+   jest niezmiennikiem wyliczanym z obu pędów i raportowanym per zdarzenie.
+
+   Zależność od pary jest przy tym silna i warto ją znać przed doborem
+   \(\mu\). Przy równych masach pędy prawie się znoszą, środek masy prawie nie
+   rusza i \(\langle K_{CM}\rangle\) wychodzi około dwa razy większe od
+   średniej na cząstkę — dla e⁺e⁻ przy \(N(0{,}6;0{,}4)\) eV jest to 1,27 eV.
+   Przy p+e⁻ proton ma przy tej samej energii pęd 43 razy większy, więc niemal
+   cała jego energia idzie w ruch środka masy i na zderzenie zostaje w praktyce
+   sama energia elektronu: \(\langle K_{CM}\rangle = 0{,}66\) eV.
    Panele kinematyki fotonów są dokładnymi krzywymi referencyjnymi, a nie
    wynikiem Monte Carlo: generator anihilacji jest kwantową receptą niezależną
    od modelu klasycznego, a próbkowanie go odtwarzało jedynie rozkład, z
