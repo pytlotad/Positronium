@@ -2184,10 +2184,18 @@ BeamEvent simulateBeamEvent(
         return Vec3{transverse * std::cos(phi), transverse * std::sin(phi), cosine};
     };
     State state;
-    state.firstPosition = relativePosition * 0.5;
-    state.secondPosition = relativePosition * -0.5;
-    state.firstVelocity = relativeVelocity * 0.5;
-    state.secondVelocity = relativeVelocity * -0.5;
+    // Mass-weighted split, so the centre of mass sits at the origin and stays
+    // at rest.  Halving is the equal-mass special case; for any other pair it
+    // leaves the pair drifting and the "centre-of-mass kinetic energy" this
+    // experiment reports would not be one.
+    state.firstPosition =
+        relativePosition * (secondMass/(firstMass+secondMass));
+    state.secondPosition =
+        relativePosition * (-firstMass/(firstMass+secondMass));
+    state.firstVelocity =
+        relativeVelocity * (secondMass/(firstMass+secondMass));
+    state.secondVelocity =
+        relativeVelocity * (-firstMass/(firstMass+secondMass));
     state.firstDipole = randomDirection() * firstMagneticMoment;
     state.secondDipole = randomDirection() * secondMagneticMoment;
     ClassicalTrajectoryEngine trajectory(state,accuracy);
@@ -2572,10 +2580,12 @@ InteractionEvent simulateInteractionEvent(
         return Vec3{transverse*std::cos(phi), transverse*std::sin(phi), cosine};
     };
     State state;
-    state.firstPosition = relativePosition*0.5;
-    state.secondPosition = relativePosition*-0.5;
-    state.firstVelocity = relativeVelocity*0.5;
-    state.secondVelocity = relativeVelocity*-0.5;
+    // Mass-weighted split; see simulateBeamEvent for why halving is wrong for
+    // any pair other than equal masses.
+    state.firstPosition = relativePosition*(secondMass/(firstMass+secondMass));
+    state.secondPosition = relativePosition*(-firstMass/(firstMass+secondMass));
+    state.firstVelocity = relativeVelocity*(secondMass/(firstMass+secondMass));
+    state.secondVelocity = relativeVelocity*(-firstMass/(firstMass+secondMass));
     state.firstDipole = randomDirection()*firstMagneticMoment;
     state.secondDipole = randomDirection()*secondMagneticMoment;
 

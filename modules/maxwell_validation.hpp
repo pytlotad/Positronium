@@ -925,13 +925,16 @@ int runMaxwellSelfTest() {
     // caught, the two roles carrying opposite signs.  For proton+electron both
     // become visible.
     State roleRoutingState;
-    roleRoutingState.firstPosition={0.5*pairBohrRadius(defaultPair),0,0};
-    roleRoutingState.secondPosition={-0.5*pairBohrRadius(defaultPair),0,0};
     {
+        const double radius=pairBohrRadius(defaultPair);
+        const double firstShare=secondMass/(firstMass+secondMass);
+        const double secondShare=firstMass/(firstMass+secondMass);
         const double circular=std::sqrt(pairCoulombStrength
-            /(pairReducedMass*pairBohrRadius(defaultPair)));
-        roleRoutingState.firstVelocity={0,0.5*circular,0};
-        roleRoutingState.secondVelocity={0,-0.5*circular,0};
+            /(pairReducedMass*radius));
+        roleRoutingState.firstPosition={firstShare*radius,0,0};
+        roleRoutingState.secondPosition={-secondShare*radius,0,0};
+        roleRoutingState.firstVelocity={0,firstShare*circular,0};
+        roleRoutingState.secondVelocity={0,-secondShare*circular,0};
     }
     // Tilted off x, y and z alike, so no field component can leave the
     // precession accidentally zero.
@@ -1202,10 +1205,17 @@ int runMaxwellSelfTest() {
         const double circularRelativeSpeed=std::sqrt(
             pairCoulombStrength/(larmorReducedMass*larmorProbeRadius));
         State larmorState;
-        larmorState.firstPosition={0.5*larmorProbeRadius,0,0};
-        larmorState.secondPosition={-0.5*larmorProbeRadius,0,0};
-        larmorState.firstVelocity={0,0.5*circularRelativeSpeed,0};
-        larmorState.secondVelocity={0,-0.5*circularRelativeSpeed,0};
+        // Mass-weighted, not halved: the analytic reference below is the
+        // orbit-averaged power of a pair whose centre of mass is at rest, so
+        // the probe state has to be one.  Halving is the equal-mass special
+        // case and silently sets the pair drifting for any other, which drove
+        // the measured ratio to 8e5 instead of 1 on proton+electron.
+        const double firstShare=secondMass/(firstMass+secondMass);
+        const double secondShare=firstMass/(firstMass+secondMass);
+        larmorState.firstPosition={firstShare*larmorProbeRadius,0,0};
+        larmorState.secondPosition={-secondShare*larmorProbeRadius,0,0};
+        larmorState.firstVelocity={0,firstShare*circularRelativeSpeed,0};
+        larmorState.secondVelocity={0,-secondShare*circularRelativeSpeed,0};
         // Let the engine build a genuine retarded history rather than reading
         // the reconstructed one, so the comparison tests the quadrature and
         // not causalInitialHistory().
@@ -1218,8 +1228,14 @@ int runMaxwellSelfTest() {
             larmorAdvanced=larmorEngine.advance(larmorState,larmorPeriod/512.0);
         const FieldFluxRates larmorFlux=electromagneticFieldFluxRates(
             larmorState,larmorEngine.history(),farReferenceSampling);
-        const double dipoleSecondDerivative=2.0*pairCoulombStrength*eCharge
-            /(firstMass*larmorProbeRadius*larmorProbeRadius);
+        // |d''| = |q_eff| k|q1 q2| / (mu a^2), with q_eff the pair's effective
+        // dipole charge and mu the reduced mass.  The earlier form,
+        // 2 k e^3/(m a^2), is the equal-mass special case: it silently swaps mu
+        // for m/2 and q_eff for e, which for proton+electron overstates the
+        // denominator by m_p/(2 m_e) = 918 and drove this ratio to 8e5.
+        const double dipoleSecondDerivative=magnitude(pairDipoleCharge)
+            *pairCoulombStrength
+            /(pairReducedMass*larmorProbeRadius*larmorProbeRadius);
         const double analyticLarmorPower=dipoleSecondDerivative
             *dipoleSecondDerivative/(6.0*pi*epsilon0*c*c*c);
         // Same orbit, same instant, but sampled the way the PRODUCTION path
