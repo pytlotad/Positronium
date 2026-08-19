@@ -41,39 +41,16 @@ inline constexpr double bohrRadius = 5.29177210903e-11;
 // correct binding energy and mean radius.
 inline constexpr double positroniumBohrRadius = 2.0*bohrRadius;
 inline constexpr double nuclearCutoff = 1.0e-14;
-// Smoothing radius of the magnetic dipole field, fixed by a physical ceiling
-// rather than by the point-particle boundary:
+// The smoothing radius of the magnetic dipole field is NOT here: it depends on
+// which two particles are being integrated, so it is derived in
+// particle_species.hpp as dipoleRegularizationRadius(pair) and exported there
+// under the name magneticRegularizationRadius.  The exponent below is a pure
+// shape parameter of the regulator and carries no species scale, so it stays.
 //
-//     a = cbrt( (mu0/4pi) * mu^2 / (m_e c^2) ) = 47.22 fm
-//
-// is the separation at which the classical dipole-dipole interaction energy
-// reaches the electron rest energy.  Because the regularized profile
-// w(r)/r^3 = r^3/(r^6+a^6) peaks exactly at r=a, this choice caps the classical
-// dipole energy at m_e c^2 / 2 everywhere.  A classical model has no business
-// producing interaction energies above the pair-creation threshold.
-//
-// mu is electronMagneticMoment = (g/2)*mu_B, the moment the dynamics actually
-// carries -- not the bare Bohr magneton.  Deriving the radius from mu_B while
-// the dipoles carry (g/2)*mu_B left the true peak at 0.5012*m_e c^2, i.e. just
-// above the ceiling this constant exists to enforce.  The (g/2)^(2/3) = 1.00077
-// correction is numerically inert for every reported orbit but restores the
-// guarantee exactly; positronium_validation measures the peak with the same
-// moment, so the check now certifies the production configuration.
-//
-// The previous value, 0.5*nuclearCutoff = 5 fm, was chosen only so the
-// smoothing stayed inside the reported domain.  It let the dipole energy reach
-// 2.1e8 eV, i.e. 420 electron rest masses, and it left the magnetic sector 106
-// times more point-like than the charge sector, which already assumes a finite
-// source of radius chargeCloudRestRadius.  Raising the radius to 47 fm leaves
-// every reported orbit bit-identical: at tens of picometres the weight differs
-// from one by less than 1e-19.
-//
-// This does NOT remove the short-range dipole barrier.  That barrier sits where
-// the unregularized dipole and Coulomb energies cross,
-// r* = sqrt((mu0/4pi)*mu^2/(k e^2)) = 193 fm, which is half the reduced
-// Compton wavelength and far outside any smoothing radius that leaves the
-// reported orbits untouched.
-inline constexpr double magneticRegularizationRadius = 4.722121244442525e-14;
+// It used to be the literal 4.722121244442525e-14 sitting in this file, which
+// is the correct value for e+e- and for nothing else -- it was built from the
+// electron's moment and the electron's rest energy, so for any other pair the
+// ceiling it exists to enforce silently stopped binding.
 inline constexpr double magneticRegularizationExponent = 6.0;
 inline constexpr double hbar = 1.054571817e-34;
 inline constexpr double chargeCloudRestRadius = 0.01*bohrRadius;

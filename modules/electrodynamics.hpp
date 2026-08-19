@@ -494,10 +494,31 @@ struct ElectricQuadrupole {
 };
 
 ElectricQuadrupole electricQuadrupole(const State& state) {
-    // Use the equal-mass centre as origin.  This keeps the truncated
-    // multipole decomposition reproducible while the complete neutral-source
-    // radiation remains origin independent.
-    const Vec3 origin=(state.firstPosition+state.secondPosition)*0.5;
+    // Centre of mass as origin.  For a NEUTRAL pair the quadrupole is origin
+    // independent only when the dipole moment also vanishes; this pair carries
+    // d = q1 r1 + q2 r2 != 0, so where the expansion is centred is a physical
+    // choice and not a convention.  The centre of mass is the origin in which
+    // the two-body multipole series is normally written, and it gives
+    //
+    //     Q_ij = kappa (3 d_i d_j - d^2 delta_ij),
+    //     kappa = (q1 m2^2 + q2 m1^2)/(m1+m2)^2,   d = r1 - r2.
+    //
+    // The equal-mass midpoint (r1+r2)/2 used to stand here, and it silently
+    // deleted the whole channel.  About that point x2 = -x1, and 3 x_i x_j -
+    // r^2 delta_ij is QUADRATIC in x, so the two contributions add instead of
+    // cancelling and the sum collapses to (q1 + q2)(3 x1_i x1_j - x1^2 delta),
+    // which is identically zero for any neutral pair -- exactly zero in
+    // floating point too, since +e and -e are one literal with a flipped sign.
+    //
+    // That reproduced the right answer for e+e- for the wrong reason.  The
+    // real reason positronium has no E2 channel is that kappa vanishes when
+    // the pair is MASS symmetric, which the midpoint origin never consults:
+    // it returned zero for p+e- as well, where kappa = -0.9989 e and the
+    // channel is at nearly full strength.  Mass-symmetric pairs still give
+    // exactly zero here, so e+e- and mu+mu- are unaffected.
+    const Vec3 origin=(state.firstPosition*firstMass
+                      +state.secondPosition*secondMass)
+                     /(firstMass+secondMass);
     ElectricQuadrupole result;
     const auto accumulate=[&](double charge,const Vec3& position) {
         const Vec3 x=position-origin;

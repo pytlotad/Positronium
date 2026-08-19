@@ -103,6 +103,63 @@ constexpr double pairBindingEnergy(const ParticlePair& pair) {
 // The pair this build integrates unless something selects another one.
 inline constexpr ParticlePair defaultPair{electron,positron};
 
+// Cube root usable in a constant expression, which std::cbrt is not.  The
+// argument is first scaled into [1,8) by powers of eight -- exact in binary
+// floating point, so the scaling costs no precision -- and Newton's iteration
+// x <- (2x + v/x^2)/3 then converges quadratically from that seed.  Sixty
+// passes are far more than double precision can use; the count is chosen to
+// need no convergence argument at all.
+constexpr double cubeRoot(double value) {
+    if(!(value>0.0)) return 0.0;
+    double scaled=value,factor=1.0;
+    while(scaled>8.0) { scaled/=8.0; factor*=2.0; }
+    while(scaled<1.0) { scaled*=8.0; factor/=2.0; }
+    double x=scaled;
+    for(int step=0;step<60;++step) x=(2.0*x+scaled/(x*x))/3.0;
+    return x*factor;
+}
+
+// Smoothing radius of the magnetic dipole field, set by a physical ceiling
+// rather than by the point-particle boundary.  The dipole-dipole interaction
+// energy of the pair is (mu0/4pi) mu1 mu2 / r^3, and the regularized profile
+//
+//     w(r)/r^3 = r^3/(r^6 + a^6)
+//
+// peaks exactly at r = a with value 1/(2 a^3).  Choosing
+//
+//     a = cbrt( (mu0/4pi) mu1 mu2 / E )
+//
+// therefore caps the classical dipole energy at E/2 EVERYWHERE, for any pair.
+//
+// E is the rest energy of the LIGHTER of the two, which is the first scale at
+// which the classical description of a constituent stops meaning anything.  A
+// classical model has no business producing interaction energies above it.
+//
+// Both moments enter, mu1 mu2 rather than mu^2.  That is the same number only
+// for a particle and its own antiparticle; the proton's moment is 658 times
+// smaller than the electron's, so p+e- needs 5.43 fm where e+e- needs 47.22.
+// Squaring one role's moment would have overestimated the singular energy of
+// every mixed pair and smoothed it far more than its own physics asks for.
+//
+// This does NOT remove the short-range dipole barrier.  That barrier sits
+// where the unregularized dipole and Coulomb energies cross,
+// r* = sqrt((mu0/4pi) mu1 mu2 / k|q1 q2|), which for e+e- is 193 fm -- half
+// the reduced Compton wavelength and far outside any smoothing radius that
+// leaves the reported orbits untouched.
+constexpr double dipoleRegularizationRadius(const ParticlePair& pair) {
+    const double lighterMass=pair.first.mass<pair.second.mass
+        ?pair.first.mass:pair.second.mass;
+    return cubeRoot((mu0/(4.0*pi))
+        *magneticMoment(pair.first)*magneticMoment(pair.second)
+        /(lighterMass*speedOfLight*speedOfLight));
+}
+
+// The name the field code has always used, now answering for whichever pair
+// the build integrates.
+inline constexpr double magneticRegularizationRadius=
+    dipoleRegularizationRadius(defaultPair);
+
+
 // The species table must agree with the standalone electron constants, or the
 // two descriptions of the same particle have drifted apart.
 //
@@ -122,6 +179,21 @@ static_assert(positron.mass==positronMass);
 static_assert(electron.gFactor==electronGFactor);
 static_assert(magnitude(electron.charge)==elementaryCharge);
 static_assert(agreesTo(magneticMoment(electron),electronMagneticMoment,1.0e-8));
-static_assert(agreesTo(pairBohrRadius(defaultPair),positroniumBohrRadius,1.0e-8));
+// Pinned to e+e- explicitly, not to defaultPair: positroniumBohrRadius is
+// positronium's scale and stays the right comparison however the default pair
+// is set.  Written against defaultPair this assertion stopped being a
+// consistency check and became a ban on ever selecting another pair.
+static_assert(agreesTo(pairBohrRadius(ParticlePair{electron,positron}),
+                       positroniumBohrRadius,1.0e-8));
+// The radius above used to be the literal 4.722121244442525e-14 in
+// physical_constants.hpp.  Deriving it must not have moved the default pair,
+// and it does not: the gap is 4.1e-10, the same "independently rounded CODATA
+// values do not recombine bit-for-bit" effect as the two assertions above.
+// Its whole source is that the old literal was built from the TABULATED Bohr
+// magneton while magneticMoment(electron) derives the magneton as
+// e*hbar/(2 m_e); reproducing the literal from the tabulated route agrees to
+// 1.3e-16.  A wrong mass, charge or g-factor would miss by 1e-3 or worse.
+static_assert(agreesTo(dipoleRegularizationRadius(ParticlePair{electron,positron}),
+                       4.722121244442525e-14,1.0e-8));
 
 } // namespace positronium::parameters

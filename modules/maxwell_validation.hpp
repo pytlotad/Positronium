@@ -4,9 +4,9 @@
 
 int runMaxwellSelfTest() {
     const auto benchmarkStart=std::chrono::steady_clock::now();
-    const CovariantExtendedBody covarianceBody{-eCharge,firstMass,
+    const CovariantExtendedBody covarianceBody{firstCharge,firstMass,
         chargeCloudRestRadius,{},Vec3{0.31*c,-0.07*c,0.04*c},
-        Vec3{0,0,bohrMagneton}};
+        Vec3{0,0,firstMagneticMoment}};
     const double electromagneticMassFraction=
         covarianceBody.electromagneticMass()/covarianceBody.physicalMass;
     const double bareMassFraction=
@@ -20,13 +20,13 @@ int runMaxwellSelfTest() {
                           (iy?0.27:-0.23)*selfForceBlock.cellSize(),
                           (iz?0.17:-0.33)*selfForceBlock.cellSize()};
         const auto [selfElectric,selfMagnetic]=selfForceBlock.numericalSelfField(
-            {-eCharge,chargeCloudRestRadius},offset,Vec3{1.0e5,2.0e5,-0.5e5},240);
+            {firstCharge,chargeCloudRestRadius},offset,Vec3{1.0e5,2.0e5,-0.5e5},240);
         const Vec3 selfForce=(selfElectric+cross(Vec3{1.0e5,2.0e5,-0.5e5},
-                                                  selfMagnetic))*(-eCharge);
+                                                  selfMagnetic))*firstCharge;
         maximumSelfForceFraction=std::max(maximumSelfForceFraction,
                                           selfForce.norm()/referenceForce);
     }
-    const FourVector restCurrent{c*(-eCharge)*covarianceBody.properShape({}),{}};
+    const FourVector restCurrent{c*firstCharge*covarianceBody.properShape({}),{}};
     const FourVector boostedCurrent=covarianceBody.freeFourCurrent({});
     const double currentInvariantResidual=std::abs(
         minkowskiDot(boostedCurrent,boostedCurrent)
@@ -70,12 +70,12 @@ int runMaxwellSelfTest() {
     particles.secondPosition=separationVector*0.5;
     particles.firstVelocity={0.0,2.0e5,0.0};
     particles.secondVelocity={0.0,-2.0e5,0.0};
-    particles.firstDipole={0.0,0.0,bohrMagneton};
-    particles.secondDipole={0.0,0.0,-bohrMagneton};
+    particles.firstDipole={0.0,0.0,firstMagneticMoment};
+    particles.secondDipole={0.0,0.0,-secondMagneticMoment};
     coupledField.clearSources();
-    coupledField.depositCloud({-eCharge,chargeCloudRestRadius},
+    coupledField.depositCloud({firstCharge,chargeCloudRestRadius},
         particles.firstPosition,particles.firstVelocity);
-    coupledField.depositCloud({eCharge,chargeCloudRestRadius},
+    coupledField.depositCloud({secondCharge,chargeCloudRestRadius},
         particles.secondPosition,particles.secondVelocity);
     coupledField.depositCovariantDipole(particles.firstPosition,
         particles.firstVelocity,particles.firstDipole);
@@ -84,10 +84,10 @@ int runMaxwellSelfTest() {
     coupledField.finalizeBoundInstantaneous();
     coupledField.projectElectricGaussConstraint(400);
     const auto [firstSelfElectric,firstSelfMagnetic]=
-        coupledField.numericalSelfField({-eCharge,chargeCloudRestRadius},
+        coupledField.numericalSelfField({firstCharge,chargeCloudRestRadius},
             particles.firstPosition,particles.firstVelocity);
     const auto [secondSelfElectric,secondSelfMagnetic]=
-        coupledField.numericalSelfField({eCharge,chargeCloudRestRadius},
+        coupledField.numericalSelfField({secondCharge,chargeCloudRestRadius},
             particles.secondPosition,particles.secondVelocity);
     const ElectromagneticField firstSelfField{
         firstSelfElectric,firstSelfMagnetic};
@@ -125,8 +125,8 @@ int runMaxwellSelfTest() {
     double maximumRelativeLongitudinalCurl=0.0;
     double coupledEscapedEnergy=0.0;
     Vec3 coupledEscapedMomentum,coupledEscapedAngularMomentum;
-    const RelativisticChargeCloud gridFirst{-eCharge,chargeCloudRestRadius};
-    const RelativisticChargeCloud gridSecond{eCharge,chargeCloudRestRadius};
+    const RelativisticChargeCloud gridFirst{firstCharge,chargeCloudRestRadius};
+    const RelativisticChargeCloud gridSecond{secondCharge,chargeCloudRestRadius};
     for(int step=0;step<24;++step) {
         const MaxwellBoundaryFlux beforeFlux=coupledField.boundaryFlux();
         const std::vector<double> previousCharge=
@@ -208,8 +208,8 @@ int runMaxwellSelfTest() {
     const double coupledBeta=std::max(particles.firstVelocity.norm(),
                                       particles.secondVelocity.norm())/c;
     const double dipoleNormResidual=std::max(
-        std::abs(particles.firstDipole.norm()/bohrMagneton-1.0),
-        std::abs(particles.secondDipole.norm()/bohrMagneton-1.0));
+        std::abs(particles.firstDipole.norm()/firstMagneticMoment-1.0),
+        std::abs(particles.secondDipole.norm()/secondMagneticMoment-1.0));
     MaxwellBlock absorbingTest(32,0.5*chargeCloudRestRadius,{});
     absorbingTest.setPlaneWavePacketX(1.0e5,chargeCloudRestRadius);
     absorbingTest.enableConvolutionalPml(8,1.0e-10);
@@ -249,9 +249,15 @@ int runMaxwellSelfTest() {
     const auto gaussResidualAt=[&](double spacing) {
         MaxwellBlock block(24,spacing,{});
         block.clearSources();
-        block.depositCloud({-eCharge,chargeCloudRestRadius},
+        // The pair's own charges, in the pair's own role order.  Writing -e
+        // and +e mirrored the DEFAULT pair and inverted both roles for any
+        // other; nothing is pushed here so the mirrored field gives the same
+        // normalized residual either way, but this is the exact shape of the
+        // hard-coding that did bite the Yee coupled continuity test, where a
+        // pusher then moved the charge the deposit had contradicted.
+        block.depositCloud({firstCharge,chargeCloudRestRadius},
                            separationVector*(-0.5),{});
-        block.depositCloud({eCharge,chargeCloudRestRadius},
+        block.depositCloud({secondCharge,chargeCloudRestRadius},
                            separationVector*0.5,{});
         block.projectElectricGaussConstraint(400);
         return block.maximumElectricGaussResidual()
@@ -284,8 +290,8 @@ int runMaxwellSelfTest() {
     retardedInitialState.secondVelocity={0,-0.02*c,0};
     retardedInitialState.firstAcceleration={1.0e20,-0.5e20,0.25e20};
     retardedInitialState.secondAcceleration={-0.7e20,0.4e20,-0.2e20};
-    retardedInitialState.firstDipole={0,0,bohrMagneton};
-    retardedInitialState.secondDipole={0,0,-bohrMagneton};
+    retardedInitialState.firstDipole={0,0,firstMagneticMoment};
+    retardedInitialState.secondDipole={0,0,-secondMagneticMoment};
     const StateHistory retardedInitialHistory{retardedInitialState};
     MaxwellBlock retardedInitialField(24,0.5*chargeCloudRestRadius,{});
     initializeRetardedPairFields(retardedInitialField,retardedInitialState,
@@ -525,9 +531,9 @@ int runMaxwellSelfTest() {
     const Vec3 reversibleMagnetic{0.13,-0.08,0.05};
     const double reversibleDt=2.0e-20;
     const Vec3 pushedMomentum=relativisticBorisPush(reversibleMomentum,
-        -eCharge,firstMass,reversibleElectric,reversibleMagnetic,reversibleDt);
+        firstCharge,firstMass,reversibleElectric,reversibleMagnetic,reversibleDt);
     const Vec3 recoveredMomentum=relativisticBorisPush(pushedMomentum,
-        -eCharge,firstMass,reversibleElectric,reversibleMagnetic,-reversibleDt);
+        firstCharge,firstMass,reversibleElectric,reversibleMagnetic,-reversibleDt);
     const double yeePusherReversibility=(recoveredMomentum-reversibleMomentum).norm()
         /reversibleMomentum.norm();
     State conservativeReverseStart=particles;
@@ -554,11 +560,18 @@ int runMaxwellSelfTest() {
     yeeCoupledState.secondPosition={2.2*chargeCloudRestRadius,0,0};
     yeeCoupledState.firstVelocity={0,0.025*c,0};
     yeeCoupledState.secondVelocity={0,-0.025*c,0};
-    yeeCoupledState.firstDipole={0,0,bohrMagneton};
-    yeeCoupledState.secondDipole={0,0,-bohrMagneton};
-    yeeCoupledField.depositInitialGaussian(-eCharge,chargeCloudRestRadius,
+    yeeCoupledState.firstDipole={0,0,firstMagneticMoment};
+    yeeCoupledState.secondDipole={0,0,-secondMagneticMoment};
+    // The deposited charge has to be the charge the pusher then moves.  These
+    // were written as -e and +e, which matches the default pair and inverts
+    // both signs for, say, proton+electron: the current deposited by Esirkepov
+    // then contradicted the motion and the continuity residual jumped to 1.0
+    // against a 1e-11 tolerance.  The tell was that proton+electron failed
+    // while antiproton+positron -- the same system under charge conjugation --
+    // passed, because there the hard-coded signs happened to line up.
+    yeeCoupledField.depositInitialGaussian(firstCharge,chargeCloudRestRadius,
         yeeCoupledState.firstPosition,yeeCoupledState.firstVelocity);
-    yeeCoupledField.depositInitialGaussian(eCharge,chargeCloudRestRadius,
+    yeeCoupledField.depositInitialGaussian(secondCharge,chargeCloudRestRadius,
         yeeCoupledState.secondPosition,yeeCoupledState.secondVelocity);
     yeeCoupledField.depositCovariantDipoleYee(yeeCoupledState.firstPosition,
         yeeCoupledState.firstVelocity,yeeCoupledState.firstDipole,
@@ -763,8 +776,8 @@ int runMaxwellSelfTest() {
         pairCoulombStrength/(2.0*firstMass*bohrRadius));
     covarianceRest.firstVelocity={covarianceOrbitalSpeed,0,0};
     covarianceRest.secondVelocity={-covarianceOrbitalSpeed,0,0};
-    covarianceRest.firstDipole={0,0,1.0e-3*bohrMagneton};
-    covarianceRest.secondDipole={0,0,-1.0e-3*bohrMagneton};
+    covarianceRest.firstDipole={0,0,1.0e-3*firstMagneticMoment};
+    covarianceRest.secondDipole={0,0,-1.0e-3*secondMagneticMoment};
     covarianceRest.firstProperDipole=covarianceRest.firstDipole;
     covarianceRest.secondProperDipole=covarianceRest.secondDipole;
     State covarianceMoving=covarianceRest;
@@ -1084,20 +1097,52 @@ int runMaxwellSelfTest() {
                                       -0.2*bohrRadius};
     quadrupolePair.secondPosition={0.9*bohrRadius,-0.8*bohrRadius,
                                       0.6*bohrRadius};
-    const ElectricQuadrupole neutralQuadrupole=
+    const ElectricQuadrupole pairQuadrupole=
         electricQuadrupole(quadrupolePair);
+    const Vec3 quadrupoleSeparation=quadrupolePair.firstPosition
+                                   -quadrupolePair.secondPosition;
     const double quadrupoleScale=eCharge
-        *(quadrupolePair.firstPosition-quadrupolePair.secondPosition)
-            .squaredNorm();
-    double quadrupoleTrace=neutralQuadrupole.component[0]
-        +neutralQuadrupole.component[4]+neutralQuadrupole.component[8];
+        *quadrupoleSeparation.squaredNorm();
+    // Analytic two-body quadrupole about the centre of mass,
+    // Q_ij = kappa (3 d_i d_j - d^2 delta_ij).  Comparing against THIS rather
+    // than against zero is what makes the check a measurement again.  The old
+    // form demanded that Q vanish, which the equal-mass midpoint origin
+    // guaranteed on its own for every neutral pair -- so it could not tell
+    // positronium's genuine cancellation apart from a channel that had been
+    // deleted outright, and reported the same 0 for p+e- where the quadrupole
+    // is at nearly full strength.
+    //
+    // kappa carries the entire pair dependence and vanishes exactly when the
+    // two masses are equal: 0 for e+e- and mu+mu-, -0.9989 e for p+e-.  That
+    // is the real statement "positronium has no E2 channel", now derived from
+    // the masses instead of assumed by the choice of origin.
+    constexpr double quadrupoleCoefficient=
+        (firstCharge*secondMass*secondMass
+        +secondCharge*firstMass*firstMass)
+        /((firstMass+secondMass)*(firstMass+secondMass));
+    ElectricQuadrupole expectedQuadrupole;
+    {
+        const std::array<double,3> offset{quadrupoleSeparation.x,
+            quadrupoleSeparation.y,quadrupoleSeparation.z};
+        const double offsetSquared=quadrupoleSeparation.squaredNorm();
+        for(int i=0;i<3;++i) for(int j=0;j<3;++j)
+            expectedQuadrupole.component[static_cast<std::size_t>(3*i+j)]=
+                quadrupoleCoefficient*(3.0
+                    *offset[static_cast<std::size_t>(i)]
+                    *offset[static_cast<std::size_t>(j)]
+                  -(i==j?offsetSquared:0.0));
+    }
+    double quadrupoleTrace=pairQuadrupole.component[0]
+        +pairQuadrupole.component[4]+pairQuadrupole.component[8];
     double quadrupoleSymmetry=0.0;
     for(int i=0;i<3;++i) for(int j=0;j<3;++j)
         quadrupoleSymmetry=std::max(quadrupoleSymmetry,std::abs(
-            neutralQuadrupole.component[static_cast<std::size_t>(3*i+j)]
-           -neutralQuadrupole.component[static_cast<std::size_t>(3*j+i)]));
-    const double quadrupoleCancellation=std::sqrt(
-        neutralQuadrupole.squaredNorm())/quadrupoleScale;
+            pairQuadrupole.component[static_cast<std::size_t>(3*i+j)]
+           -pairQuadrupole.component[static_cast<std::size_t>(3*j+i)]));
+    const double quadrupoleResidual=std::sqrt(
+        (pairQuadrupole-expectedQuadrupole).squaredNorm())/quadrupoleScale;
+    const double quadrupoleMagnitude=std::sqrt(
+        pairQuadrupole.squaredNorm())/quadrupoleScale;
     quadrupoleTrace=std::abs(quadrupoleTrace)/quadrupoleScale;
     quadrupoleSymmetry/=quadrupoleScale;
 
@@ -1115,7 +1160,12 @@ int runMaxwellSelfTest() {
         cubicDipoleHistory.push_back(sample);
     }
     const State cubicDipolePresent=cubicDipoleHistory.back();
-    const Vec3 expectedDipoleThird=cubicCoefficient*(6.0*eCharge);
+    // Only the SECOND role moves in this probe, so d''' = q2 r2''' and the
+    // expected value carries the second charge, not the elementary charge.
+    // Writing +e was right only while the second role was the positron; with
+    // an electron there the measured third derivative came out exactly
+    // negated and the residual sat at 2.
+    const Vec3 expectedDipoleThird=cubicCoefficient*(6.0*secondCharge);
     const Vec3 measuredDipoleThird=electricDipoleThirdDerivative(
         cubicDipolePresent,cubicDipoleHistory);
     const double coherentDerivativeResidual=(measuredDipoleThird
@@ -1347,16 +1397,42 @@ int runMaxwellSelfTest() {
         if(!advanced) value.time=std::numeric_limits<double>::quiet_NaN();
         return value;
     };
-    const State trajectoryReference=integrateAccuracyCase(1.0e-8,1.0e-20,4);
+    // Probe step, scaled to the PAIR's own dynamical time instead of nailed to
+    // 1e-20 s.  A tolerance only tests the adaptive controller while the step
+    // is long enough for it to bind, and a fixed step covers a different
+    // fraction of an orbit for every pair.  For mu+mu- the muon is 207 times
+    // heavier, 1e-20 s advanced it so little that tol=1e-5 and tol=1e-6 came
+    // out bit-equal (residual 1.3374808e-07 twice), and the monotonicity below
+    // failed on that tie -- not because the trajectory was inaccurate (it was
+    // eighty times better than the 1e-5 bar) but because two of the three
+    // tolerances had stopped testing anything.  Loosening the comparison to
+    // <= would have hidden that instead of fixing it, and would equally admit
+    // a controller that ignores the tolerance outright.
+    //
+    // The Kepler time sqrt(mu r^3 / k|q1 q2|) is the scale that binds.  Only
+    // its RATIO to the e+e- value is needed, so the probe separation cancels
+    // and the default pair divides identical operands: the ratio is exactly
+    // 1.0 and every e+e- residual below is bit-for-bit what it was.
+    constexpr double referenceReducedMass=
+        reducedMassOf(ParticlePair{electron,positron});
+    constexpr double referenceCoulombStrength=coulombConstant
+        *magnitude(chargeProduct(ParticlePair{electron,positron}));
+    const double trajectoryProbeDt=1.0e-20*std::sqrt(
+        (pairReducedMass/referenceReducedMass)
+       *(referenceCoulombStrength/pairCoulombStrength));
+    const State trajectoryReference=
+        integrateAccuracyCase(1.0e-8,trajectoryProbeDt,4);
     const std::array<double,3> trajectoryTolerances{1.0e-5,1.0e-6,1.0e-7};
     std::array<double,3> trajectoryToleranceResiduals{};
     for(std::size_t index=0;index<trajectoryTolerances.size();++index)
         trajectoryToleranceResiduals[index]=trajectoryResidual(
-            integrateAccuracyCase(trajectoryTolerances[index],1.0e-20,4),
+            integrateAccuracyCase(trajectoryTolerances[index],
+                                  trajectoryProbeDt,4),
             trajectoryReference);
-    const State trajectoryHalfStep=integrateAccuracyCase(1.0e-7,0.5e-20,8);
+    const State trajectoryHalfStep=
+        integrateAccuracyCase(1.0e-7,0.5*trajectoryProbeDt,8);
     const double trajectoryStepResidual=trajectoryResidual(
-        integrateAccuracyCase(1.0e-7,1.0e-20,4),trajectoryHalfStep);
+        integrateAccuracyCase(1.0e-7,trajectoryProbeDt,4),trajectoryHalfStep);
 
     const auto integrateHistoryCase=[&](double spanFactor,int intervals) {
         State value=yeeCoupledState;
@@ -1428,7 +1504,7 @@ int runMaxwellSelfTest() {
     State staticDipoleState;
     staticDipoleState.firstPosition={2.0*nuclearCutoff,0,0};
     staticDipoleState.secondPosition={0,0,0};
-    staticDipoleState.secondDipole={0,0,bohrMagneton};
+    staticDipoleState.secondDipole={0,0,secondMagneticMoment};
     State staticDipolePast=staticDipoleState;
     staticDipolePast.time=-8.0*nuclearCutoff/c;
     const StateHistory staticDipoleHistory{staticDipolePast,staticDipoleState};
@@ -1488,25 +1564,41 @@ int runMaxwellSelfTest() {
             staticDipoleState.secondDipole).norm()
         /regularizedDipoleField({regulatorCoreRadius,0,0},
             staticDipoleState.secondDipole,0.0).norm();
-    // The physical ceiling the radius is chosen for: the classical dipole
-    // interaction energy must stay below the first rest energy everywhere.
-    // w(r)/r^3 peaks at r=a, so the maximum is (mu0/4pi)mu^2/(2a^3).
+    // The physical ceiling the radius is chosen for: the classical dipole-dipole
+    // interaction energy must stay below the lighter constituent's rest energy
+    // everywhere.  w(r)/r^3 peaks at r=a, so the maximum is
+    // (mu0/4pi) mu1 mu2 /(2a^3), and the radius is derived to put that at
+    // exactly half the ceiling.
+    //
+    // Both factors have to match what dipoleRegularizationRadius used, or this
+    // stops measuring the invariant and starts measuring the mismatch.  It
+    // previously squared the FIRST role's moment and divided by the FIRST
+    // role's rest energy, which is the right pair of numbers only when the two
+    // particles are each other's antiparticle.  For p+e- it compared the
+    // electron's moment squared against a radius built from mu_p*mu_e and
+    // reported 6.3e-10 -- comfortably under the bound, and completely blind to
+    // whether the cap held.
+    const double lighterMass=std::min(firstMass,secondMass);
     double peakDipoleEnergyOverRestEnergy=0.0;
     for(int sample=0;sample<4000;++sample) {
         const double radius=magneticRegularizationRadius
             *std::pow(10.0,-3.0+6.0*sample/3999.0);
-        // Must use the moment the dynamics actually carries, not the bare
-        // Bohr magneton: the ceiling is a statement about the field the
-        // simulated particles produce, so quoting mu_B here would certify a
-        // cap that the production dipoles exceed by (g/2)^2.
+        // Must use the moments the dynamics actually carries, not the bare
+        // magnetons: the ceiling is a statement about the field the simulated
+        // particles produce, so quoting a magneton here would certify a cap
+        // that the production dipoles exceed by (g/2)^2.
         const double energy=shortRangeFieldWeight(radius)
-            *(mu0/(4.0*pi))*firstMagneticMoment*firstMagneticMoment
+            *(mu0/(4.0*pi))*firstMagneticMoment*secondMagneticMoment
             /(radius*radius*radius);
         peakDipoleEnergyOverRestEnergy=std::max(
-            peakDipoleEnergyOverRestEnergy,energy/(firstMass*c*c));
+            peakDipoleEnergyOverRestEnergy,energy/(lighterMass*c*c));
     }
+    // Both moments come from the roles now.  This mixed a bare magneton for
+    // the first dipole with the second role's actual moment, which was a
+    // half-finished migration rather than a deliberate pairing; the check is
+    // only isFinite, so nothing downstream moved either way.
     const Vec3 cutoffDipoleForce=regularizedDipoleForce(
-        {nuclearCutoff,0,0},{bohrMagneton,0,0},
+        {nuclearCutoff,0,0},{firstMagneticMoment,0,0},
         staticDipoleState.secondDipole);
     State crossingBefore,crossingAfter;
     crossingBefore.firstPosition={1.1*nuclearCutoff,0.2*nuclearCutoff,0};
@@ -1552,11 +1644,27 @@ int runMaxwellSelfTest() {
                        &&maximumRelativeLongitudinalCurl<1.0e-12
                        && coupledBeta<1.0 && dipoleNormResidual<1.0e-12
                        && isFinite(particles);
+    // All three closures are held to the same 1e-3 band, because all three
+    // measure the same thing: how well the coupled particle/grid step balances
+    // a conserved quantity against the flux that left the box.
+    //
+    // The momentum bound used to be 1e-10, and it passed -- but it was never
+    // measuring momentum conservation.  The probe launches the pair
+    // antisymmetrically (+/-r, +/-v, opposite charges), and under that
+    // symmetry every momentum contribution cancels against its mirror
+    // identically, so the residual sat at 2e-16 no matter how the scheme
+    // behaved.  Breaking the symmetry exposes the real number two ways, and
+    // they agree: an unequal-mass pair gives 2.9e-5, and the DEFAULT e+e- pair
+    // with one velocity merely halved gives 1.4e-4 -- the same order as the
+    // energy (3.5e-4) and angular (4.5e-4) closures that were always checked
+    // against 1e-3.  Halving the timestep leaves it unmoved (2.8941e-5 ->
+    // 2.8935e-5), so this is the scheme's spatial closure floor, not a
+    // convergence error a tighter step could reach.
     const bool balanceFinite=std::isfinite(coupledEnergyClosure)
         &&std::isfinite(coupledMomentumClosure)
         &&std::isfinite(coupledAngularClosure)
         &&std::abs(coupledEnergyClosure)<1.0e-3
-        &&coupledMomentumClosure<1.0e-10
+        &&coupledMomentumClosure<1.0e-3
         &&coupledAngularClosure<1.0e-3;
     const bool boundaryOk=std::isfinite(absorbedFraction)
                        && absorbedFraction>0.05
@@ -1663,7 +1771,7 @@ int runMaxwellSelfTest() {
         &&std::isfinite(llValidity)
         &&quadrupoleTrace<1.0e-14
         &&quadrupoleSymmetry<1.0e-14
-        &&quadrupoleCancellation<1.0e-14
+        &&quadrupoleResidual<1.0e-14
         &&coherentDerivativeResidual<1.0e-12
         &&coherentReactionMomentumResidual<1.0e-14;
     const auto finiteReactionBenchmark=[](const ReactionModelBenchmark& value) {
@@ -1732,12 +1840,20 @@ int runMaxwellSelfTest() {
         &&regulatorProfileResiduals[2]<regulatorProfileResiduals[1]
         &&std::isfinite(regulatorCoreSuppression)
         &&regulatorCoreSuppression<1.0e-9
-        // The design invariant is the m_e c^2/2 cap, not merely staying under
-        // the rest energy: w(r)/r^3 peaks at r=a, so a radius derived from the
-        // moment the dipoles actually carry puts the maximum at exactly 0.5
-        // (0.49999 on this 4000-point grid).  A loose "< 1.0" accepted a
-        // radius derived from the wrong moment, which lands at 0.50116.
+        // The design invariant is the E/2 cap, not merely staying under the
+        // rest energy: w(r)/r^3 peaks at r=a, so a radius derived from the
+        // moments the dipoles actually carry puts the maximum at exactly 0.5
+        // (0.49999 on this 4000-point grid, and the same 0.49999 for every
+        // pair because the grid is laid out in units of a).  A loose "< 1.0"
+        // accepted a radius derived from the wrong moment, which lands at
+        // 0.50116.
+        //
+        // The lower bound is what makes this a test of the cap rather than of
+        // its direction.  Without it a radius that is merely too large passes
+        // trivially -- which is how p+e- (6.3e-10) and mu+mu- (5.7e-8) sailed
+        // through while the ceiling was not binding for either of them.
         &&peakDipoleEnergyOverRestEnergy<0.5005
+        &&peakDipoleEnergyOverRestEnergy>0.4995
         &&regulatorFarAlignment>0.0
         &&isFinite(cutoffDipoleForce)
         &&cutoffSurfaceResidual<1.0e-14;
@@ -1871,7 +1987,8 @@ int runMaxwellSelfTest() {
               << sharedFinalRadiation.coherentDerivativeConsistency << " / "
               << sharedFinalRadiation.sourceCompactness << " / "
               << sharedFinalRadiation.coherentWeight << '\n'
-              << "e+e- E2 cancellation:" << quadrupoleCancellation << '\n'
+              << "E2 vs analytic:      " << quadrupoleResidual << '\n'
+              << "E2 |Q|/scale:        " << quadrupoleMagnitude << '\n'
               << "E2 trace/symmetry:   " << quadrupoleTrace << " / "
               << quadrupoleSymmetry << '\n'
               << "coherent E1 d3/Fsum:" << coherentDerivativeResidual << " / "
@@ -1909,7 +2026,7 @@ int runMaxwellSelfTest() {
               << regulatorProfileResiduals[1] << " / "
               << regulatorProfileResiduals[2] << '\n'
               << "reg core suppress: " << regulatorCoreSuppression << '\n'
-              << "reg peak U/m_e c2: " << peakDipoleEnergyOverRestEnergy << '\n'
+              << "reg peak U/m c2:   " << peakDipoleEnergyOverRestEnergy << '\n'
               << "cutoff surface:     " << cutoffSurfaceResidual << '\n'
               << "CFL dt:             " << cflStep << " s\n"
               << "field storage:      "
