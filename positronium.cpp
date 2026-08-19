@@ -1299,6 +1299,37 @@ bool reportArchiveOperation(const statistics_archive::OperationResult& result,
 // positronium_validation.  What is drawn here is the exact reference.
 int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                              int runCount, double wallClockBudgetSeconds) {
+    // Experiments 1 and 2 are positronium experiments, not pair-general ones,
+    // and --pair must not be able to pretend otherwise.
+    //
+    // The CREM inspiral they measure IS pair-general and correct for any pair:
+    // run for p+e- it returns a mean collapse time of 17.8 ps against the
+    // textbook classical hydrogen value of about 16 ps, with an initial
+    // orbital period of 0.164 fs against the Bohr orbit's 0.152 fs.  What is
+    // not pair-general is everything it is reported ALONGSIDE.  The
+    // annihilation-time spectrum, the tau_exp scale reference and the
+    // para/ortho labelling all come from the MEASURED positronium lifetimes
+    // (Al-Ramadhan & Gidley, PRL 72 (1994); Vallery et al., PRL 90 (2003)).
+    //
+    // A proton and an electron do not annihilate at all -- they form hydrogen,
+    // which is stable -- so for that pair the whole overlay is positronium's
+    // data pasted onto someone else's dynamics.  Nor do the numbers transfer
+    // to the pairs that DO annihilate: true muonium and protonium annihilate
+    // through channels this model does not carry, so the guard is positronium
+    // specifically and not "a particle with its own antiparticle".
+    if(!isPositronium(activePair)) {
+        std::cerr
+            << "Experiments 1 and 2 measure a positronium CREM collapse "
+               "against the measured positronium annihilation lifetimes, so "
+               "they only mean anything for electron+positron.\n"
+            << "The selected pair is " << firstSpecies.name << " + "
+            << secondSpecies.name << ", which does not annihilate into those "
+               "channels; the classical inspiral would be computed correctly "
+               "but reported beside data that does not describe it.\n"
+            << "Experiments 3, 4 and 5 carry no annihilation reference and "
+               "run for any attracting pair.\n";
+        return 2;
+    }
     const bool isPara = selectedPhenomenon == 1;
     const double timeScale = isPara ? 1.0e12 : 1.0e9;
     const char* timeUnit = isPara ? "ps" : "ns";

@@ -166,6 +166,17 @@ constexpr double dipoleRegularizationRadius(const ParticlePair& pair) {
 inline double magneticRegularizationRadius=
     dipoleRegularizationRadius(defaultPair);
 
+// True only for e-e+ in either role order.  Not merely "a particle with its
+// own antiparticle": the annihilation data the bound-decay experiments compare
+// against is positronium's measured lifetimes, and true muonium and protonium
+// annihilate through different physics that this model does not carry.
+constexpr bool isPositronium(const ParticlePair& pair) {
+    return pair.first.mass==electron.mass
+        && pair.second.mass==electron.mass
+        && pair.first.charge==-pair.second.charge
+        && magnitude(pair.first.charge)==elementaryCharge;
+}
+
 // Everything --pair is allowed to name.  Kept next to the species themselves
 // so a new species cannot be added without becoming selectable.
 inline constexpr std::array<const ParticleSpecies*,6> selectableSpecies{
