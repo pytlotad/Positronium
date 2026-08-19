@@ -4746,6 +4746,10 @@ int main(int argc, char** argv) {
         std::cerr << "Invalid command-line option: " << error.what() << '\n';
         return 1;
     }
+    // Settle the mode first: --diagnose implies the visual engine and so is a
+    // fully specified run whenever it also names a phenomenon.  Leaving this
+    // after the question below made every --diagnose run stop on it.
+    if (diagnose) selectedMode = 1;
     // Asked before every other question, and only when some other question is
     // going to be asked anyway.  A run that states both --mode and
     // --phenomenon is a batch run and must never stop here waiting for input.
@@ -4803,7 +4807,6 @@ int main(int argc, char** argv) {
                   << pairBohrRadius(activePair)/bohrRadius << " a0, binding "
                   << pairBindingEnergy(activePair)/eCharge << " eV).\n";
     }
-    if (diagnose) selectedMode = 1;
     if (selectedMode == 0) {
         std::cout << "Choose simulation mode:\n"
                   << "1 -> Visual simulation\n"
