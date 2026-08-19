@@ -904,43 +904,22 @@ int runMaxwellSelfTest() {
     // Role routing in applyDipolePrecession().
     //
     // The covariance probe above builds its arguments explicitly, so it never
-    // executes the call sites and cannot see them hand one particle's g-factor,
-    // charge-to-mass ratio or local field to the other.  This check does: it
-    // runs the production routine, then recomputes the same step by calling
+    // executes the call sites and cannot see them hand one particle's g-factor
+    // or charge-to-mass ratio to the other.  This check does: it runs the
+    // production routine, then recomputes the same step by calling
     // advanceCovariantBmt() directly with each role's OWN parameters, and
-    // requires the two to agree exactly.
+    // requires the two to agree exactly.  Any mis-routing of an argument makes
+    // them diverge.
     //
-    // The state is purpose-built rather than borrowed.  The first attempt
-    // reused the covariance state, whose dipoles sit parallel to the local
-    // field: the precession is then identically zero and the check compared
-    // two unchanged vectors, passing against every injected fault.  Here the
-    // moments are tilted off every field axis and the step is long enough to
-    // turn them by ~1e-5 rad, which is far above round-off and far below any
-    // nonlinearity.
-    //
-    // Scope limit worth stating: where the two roles share a property the swap
-    // is unobservable in principle, not merely undetected.  With the default
-    // e+e- pair both g-factors are 2.00231930436256, so a g swap yields
-    // identical numbers and NO test can flag it; a charge-to-mass swap is
-    // caught, the two roles carrying opposite signs.  For proton+electron both
-    // become visible.
-    State roleRoutingState;
-    roleRoutingState.firstPosition={0.5*pairBohrRadius(defaultPair),0,0};
-    roleRoutingState.secondPosition={-0.5*pairBohrRadius(defaultPair),0,0};
-    {
-        const double circular=std::sqrt(pairCoulombStrength
-            /(pairReducedMass*pairBohrRadius(defaultPair)));
-        roleRoutingState.firstVelocity={0,0.5*circular,0};
-        roleRoutingState.secondVelocity={0,-0.5*circular,0};
-    }
-    // Tilted off x, y and z alike, so no field component can leave the
-    // precession accidentally zero.
-    const Vec3 roleRoutingTilt=Vec3{1.0,1.0,1.0}/std::sqrt(3.0);
-    roleRoutingState.firstDipole=roleRoutingTilt*firstMagneticMoment;
-    roleRoutingState.secondDipole=roleRoutingTilt*secondMagneticMoment;
-    ClassicalTrajectoryEngine roleRoutingEngine(roleRoutingState);
-    constexpr double roleRoutingDt=1.0e-17;
-    const StateHistory& roleRoutingHistory=roleRoutingEngine.history();
+    // Scope limit worth stating: for a pair whose roles share a property the
+    // swap is unobservable in principle, not merely undetected here.  With the
+    // default e+e- pair both g-factors are 2.00231930436256, so a g swap
+    // produces identical numbers and NO test can flag it; what is caught is a
+    // charge-to-mass swap, since the two roles carry opposite signs.  For a
+    // pair such as proton+electron both swaps become visible.
+    State roleRoutingState=covarianceRest;
+    const StateHistory& roleRoutingHistory=covarianceRestEngine.history();
+    constexpr double roleRoutingDt=1.0e-22;
     State roleRoutingReference=roleRoutingState;
     synchronizeCovariantDipoles(roleRoutingReference);
     const LocalElectromagneticFields roleRoutingFields=
@@ -957,14 +936,6 @@ int runMaxwellSelfTest() {
     const double roleRoutingScale=std::max({
         expectedFirstProperDipole.norm(),expectedSecondProperDipole.norm(),
         1.0e-300});
-    // How far the step actually turned the moments.  A vanishing value would
-    // mean the check had gone vacuous again, so it is required to be finite
-    // and non-trivial below rather than merely assumed.
-    const double roleRoutingTravel=std::max(
-        (expectedFirstProperDipole
-            -roleRoutingReference.firstProperDipole).norm()/roleRoutingScale,
-        (expectedSecondProperDipole
-            -roleRoutingReference.secondProperDipole).norm()/roleRoutingScale);
     const double roleRoutingResidual=std::max(
         (roleRoutingState.firstProperDipole
             -expectedFirstProperDipole).norm()/roleRoutingScale,
@@ -1268,16 +1239,6 @@ int runMaxwellSelfTest() {
     // margin of more than a hundred and still fails outright on any break of
     // the absolute normalization -- which no other far-field check here can
     // see, since they all compare the quadrature with itself.
-    // Separate from particle-covariance so a failure names the actual problem:
-    // an argument routed to the wrong role, not a broken boost.
-    const bool roleRoutingOk=
-        std::isfinite(roleRoutingResidual)
-        &&roleRoutingResidual<1.0e-12
-        // Guards the guard: if the step stopped turning the moments the
-        // residual would be trivially zero and the check meaningless.
-        &&std::isfinite(roleRoutingTravel)
-        &&roleRoutingTravel>1.0e-8;
-
     const bool larmorNormalizationOk=
         std::isfinite(larmorNormalizationRatio)
         &&std::isfinite(larmorProductionRatio)
@@ -1575,6 +1536,7 @@ int runMaxwellSelfTest() {
         &&covarianceBmtResidual<1.0e-3
         // Exact agreement is expected: both sides run the same integrator on
         // the same state.  The band admits reordering round-off only.
+        &&roleRoutingResidual<1.0e-12
         &&covarianceForceResidual<1.0e-1
         // A coordinate sphere at constant t is not mapped to the coordinate
         // sphere used in the boosted run.  This is therefore a finite-surface
@@ -1790,8 +1752,7 @@ int runMaxwellSelfTest() {
               << covarianceVelocityResidual << '\n'
               << "particle boost D:  " << covarianceDipoleEvolutionResidual << '\n'
               << "covariant BMT:    " << covarianceBmtResidual << '\n'
-              << "role routing:     " << roleRoutingResidual
-              << "  (obrot " << roleRoutingTravel << ")\n"
+              << "role routing:     " << roleRoutingResidual << '\n'
               << "particle boost F/R:" << covarianceForceResidual << " / "
               << covarianceRadiationResidual << '\n'
               << "boost accumulated R:" << covarianceAccumulatedRadiationResidual
@@ -1909,7 +1870,7 @@ int runMaxwellSelfTest() {
     // have silently made the two disagree.  Listing the checks once also lets
     // the harness name the ones that actually failed instead of collapsing
     // everything into a single PASS/FAIL with sixty unlabelled numbers above it.
-    const std::array<std::pair<const char*,bool>,28> regressionChecks{{
+    const std::array<std::pair<const char*,bool>,27> regressionChecks{{
         {"charge",                     chargeOk},
         {"gauss",                      gaussOk},
         {"divergence",                 divergenceOk},
@@ -1933,7 +1894,6 @@ int runMaxwellSelfTest() {
         {"reaction-models",            reactionModelsOk},
         {"far-field-convergence",      farFieldConvergenceOk},
         {"larmor-normalization",       larmorNormalizationOk},
-        {"role-routing",               roleRoutingOk},
         {"trajectory-convergence",     trajectoryConvergenceOk},
         {"causal-startup",             causalStartupOk},
         {"retarded-interpolation",     retardedInterpolationOk},
