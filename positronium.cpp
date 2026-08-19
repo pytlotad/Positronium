@@ -214,6 +214,25 @@ void applyPairFromOption(const std::string& value) {
             +selectableSpeciesList());
     applyPair({*first,*second});
 }
+// Uniform external magnetic field, zero unless the run asks for one.  Zero is
+// the historical behaviour and the default: the model's own list of excluded
+// effects named external fields, and every committed result was produced
+// without one.
+//
+// It enters in exactly three places, which are the three the pair can feel it
+// through: the instantaneous force sum, the retarded force sum, and the local
+// field each particle sees, the last of which carries it into Thomas-BMT
+// precession for both roles.
+Vec3 gExternalMagneticField;
+
+// Earth's field is about this, and it is the value the startup question
+// offers.  Worth knowing before reading the output: at 50 uT the cyclotron
+// rate eB/m is 8.8e6 rad/s against an orbital rate near 3e15 rad/s, so the
+// orbit itself is untouched at the ninth decimal.  What the field does reach
+// is the dipoles, which precess at the same 8.8e6 rad/s -- about 3e-4 rad over
+// a 35 ps collapse.  The effect is real, small, and mostly magnetic.
+inline constexpr double earthScaleMagneticField=50.0e-6;
+
 double dot(const Vec3& a,const Vec3& b);
 double gamma(const Vec3& velocity);
 
@@ -4623,6 +4642,10 @@ int main(int argc, char** argv) {
     // visible, so each event is censored once it spends this long on the
     // wall clock rather than left to run indefinitely.
     double cremWallClockBudgetSeconds = 20.0;
+    // Negative means "not stated on the command line", which is what lets the
+    // startup question below stay silent for a fully specified batch run
+    // instead of blocking it on stdin.
+    double externalFieldMicroTesla = -1.0;
     try {
         for (int i = 1; i < argc; ++i) {
             const std::string argument = argv[i];
@@ -4703,6 +4726,13 @@ int main(int argc, char** argv) {
                 } else {
                     throw std::invalid_argument("mode must be visual or statistical");
                 }
+            } else if (argument == "--external-field") {
+                externalFieldMicroTesla = std::stod(requireValue(argument));
+                if (!std::isfinite(externalFieldMicroTesla)
+                    || externalFieldMicroTesla < 0.0) {
+                    throw std::invalid_argument(
+                        "external field must be finite and non-negative [uT]");
+                }
             } else if (argument == "--visual-style") {
                 const std::string style = requireValue(argument);
                 if (style == "line" || style == "1") visualStyle = VisualStyle::Line;
@@ -4715,6 +4745,44 @@ int main(int argc, char** argv) {
     } catch (const std::exception& error) {
         std::cerr << "Invalid command-line option: " << error.what() << '\n';
         return 1;
+    }
+    // Asked before every other question, and only when some other question is
+    // going to be asked anyway.  A run that states both --mode and
+    // --phenomenon is a batch run and must never stop here waiting for input.
+    if (externalFieldMicroTesla < 0.0
+        && (selectedMode == 0 || selectedPhenomenon == 0)) {
+        std::cout << "Move the pair in an external magnetic field of 50 uT?\n"
+                  << "1 -> No  (as before: no external field)\n"
+                  << "2 -> Yes (uniform 50 uT, orientation drawn at random)\n"
+                  << "Selection [1-2]: " << std::flush;
+        int selectedExternalField = 0;
+        if (!(std::cin >> selectedExternalField)
+            || selectedExternalField < 1 || selectedExternalField > 2) {
+            std::cerr << "Invalid selection.\n";
+            return 1;
+        }
+        externalFieldMicroTesla =
+            selectedExternalField == 2 ? earthScaleMagneticField*1.0e6 : 0.0;
+    }
+    if (externalFieldMicroTesla > 0.0) {
+        // Isotropic direction, drawn from the run seed so the orientation is
+        // part of what --seed reproduces rather than a hidden extra input.
+        std::mt19937_64 fieldRandom(seed ^ 0x9e3779b97f4a7c15ULL);
+        std::uniform_real_distribution<double> uniformField(0.0, 1.0);
+        const double cosine = 2.0*uniformField(fieldRandom) - 1.0;
+        const double azimuth = 2.0*pi*uniformField(fieldRandom);
+        const double transverse = std::sqrt(std::max(0.0, 1.0 - cosine*cosine));
+        gExternalMagneticField = Vec3{transverse*std::cos(azimuth),
+                                      transverse*std::sin(azimuth), cosine}
+                               * (externalFieldMicroTesla*1.0e-6);
+        std::cout << "External magnetic field: " << externalFieldMicroTesla
+                  << " uT along (" << gExternalMagneticField.x/gExternalMagneticField.norm()
+                  << ", " << gExternalMagneticField.y/gExternalMagneticField.norm()
+                  << ", " << gExternalMagneticField.z/gExternalMagneticField.norm()
+                  << ").  At this strength the orbit is untouched and the "
+                     "visible channel is dipole precession.\n";
+    } else {
+        std::cout << "External magnetic field: none.\n";
     }
     {
         const char* reactionModelName =

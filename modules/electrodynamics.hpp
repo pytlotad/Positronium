@@ -1104,6 +1104,12 @@ LocalElectromagneticFields localRelativisticFields(
         +firstElectricDipole.electric;
     atSecond.magnetic+=firstDipole.magnetic
         +firstElectricDipole.magnetic;
+    // The external field is uniform, so both roles see the same addition and
+    // no gradient force follows from it.  Adding it here rather than only in
+    // the force sums is what carries it into Thomas-BMT precession, which for
+    // a field this weak is the channel that actually does something.
+    atFirst.magnetic+=gExternalMagneticField;
+    atSecond.magnetic+=gExternalMagneticField;
     return {atFirst, atSecond};
 }
 
@@ -1246,8 +1252,13 @@ MutualForces allExternalForces(const State& s) {
     const MutualForces velocityForces = darwinForces(s);
     const StateHistory localHistory{State{s}};
     const MutualForces mixedMagneticForces = chargeDipoleForces(s, localHistory);
-    return {positionForces.first + velocityForces.first + mixedMagneticForces.first,
-            positionForces.second + velocityForces.second + mixedMagneticForces.second};
+    const MutualForces externalField{
+        lorentzForce(firstCharge, s.firstVelocity, {{}, gExternalMagneticField}),
+        lorentzForce(secondCharge, s.secondVelocity, {{}, gExternalMagneticField})};
+    return {positionForces.first + velocityForces.first
+                + mixedMagneticForces.first + externalField.first,
+            positionForces.second + velocityForces.second
+                + mixedMagneticForces.second + externalField.second};
 }
 
 ElectromagneticField fieldFromOtherParticleAt(
@@ -1342,8 +1353,13 @@ MutualForces retardedExternalForces(const State& s,
     const MutualForces tensorGradient{
         covariantDipoleGradientForce(s,history,true),
         covariantDipoleGradientForce(s,history,false)};
-    return {chargeCharge.first+tensorGradient.first,
-            chargeCharge.second+tensorGradient.second};
+    // Same uniform external field as in the instantaneous sum.  It is not
+    // retarded because it is not sourced by either particle.
+    const MutualForces externalField{
+        lorentzForce(firstCharge,s.firstVelocity,{{},gExternalMagneticField}),
+        lorentzForce(secondCharge,s.secondVelocity,{{},gExternalMagneticField})};
+    return {chargeCharge.first+tensorGradient.first+externalField.first,
+            chargeCharge.second+tensorGradient.second+externalField.second};
 }
 
 struct CanonicalMomenta { Vec3 first, second; };

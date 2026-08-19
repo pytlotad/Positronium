@@ -1456,10 +1456,11 @@ Parametry wiązki można dodatkowo kontrolować przez `--bmax-pm` i
 `--matching-radius-pm`; gdy ich nie podano, program dobiera je z energii i
 akceptancji kątowej.
 
-Trzy opcje sterują samą fizyką i kosztem eksperymentów związanych:
+Cztery opcje sterują samą fizyką i kosztem eksperymentów związanych:
 
 | Opcja | Domyślnie | Znaczenie |
 | --- | --- | --- |
+| `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
 | `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
 | `--radiation-reaction` | `individual` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki) albo `automatic` (mieszanka obu). Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
 
@@ -1543,7 +1544,9 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
   układami odniesienia oraz kwantowe sprzężenie spin–orbita;
 - skończony rozmiar cząstek i struktura krótkiego zasięgu — zastępuje je próg
   \(10^{-14}\,\mathrm m\);
-- pola zewnętrzne, zderzenia z materią, grawitacja i wpływ ośrodka;
+- zderzenia z materią, grawitacja i wpływ ośrodka (jednorodne zewnętrzne pole
+  magnetyczne jest natomiast dostępne — patrz `--external-field` — ale
+  zewnętrzne pole elektryczne i pola niejednorodne nadal nie);
 - energia orbitalnego pola magnetycznego w prezentowanym bilansie energii;
 - wyższe multipole promieniowania jako kanały reakcji: moc dipola
   magnetycznego i kwadrupola elektrycznego jest liczona, ale wyłącznie jako
