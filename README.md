@@ -35,10 +35,18 @@ wynika z dojścia klasycznej trajektorii do małej odległości.
 Pole dipola magnetycznego jest wygładzane wagą \(w(r)=1/(1+(a/r)^p)\) z
 \(p=6\) i
 
-\[a=\sqrt[3]{\frac{\mu_0}{4\pi}\frac{\mu_B^2}{m_e c^2}}=47{,}18\,\mathrm{fm},\]
+\[a=\sqrt[3]{\frac{\mu_0}{4\pi}\frac{\mu_1\mu_2}{E}}=47{,}22\,\mathrm{fm},\]
 
-czyli separacją, przy której klasyczna energia oddziaływania dipol-dipol
-osiąga energię spoczynkową elektronu. Profil \(w(r)/r^3=r^3/(r^6+a^6)\) ma
+czyli separacją, przy której klasyczna energia oddziaływania dipol-dipol osiąga
+\(E\) — energię spoczynkową **lżejszego** składnika pary. Wchodzą oba momenty,
+\(\mu_1\mu_2\), a nie kwadrat jednego: to ta sama liczba wyłącznie dla cząstki
+i jej antycząstki, bo moment protonu jest 658 razy mniejszy od elektronowego,
+więc p+e⁻ potrzebuje 5,43 fm tam, gdzie e⁺e⁻ potrzebuje 47,22. Promień jest
+wyprowadzany z wybranej pary, a nie wpisany jako stała.
+
+Momenty są przy tym tymi, które niesie dynamika, czyli \((g/2)\mu_B\) dla
+elektronu, a nie gołym magnetonem Bohra. Wzór z \(\mu_B^2\) i masą elektronu
+dawał 47,18 fm i był poprawny wyłącznie dla pozytonium. Profil \(w(r)/r^3=r^3/(r^6+a^6)\) ma
 maksimum dokładnie w \(r=a\), więc ten wybór ogranicza klasyczną energię
 dipolową do \(m_ec^2/2\) w całej dziedzinie. Model klasyczny nie powinien
 generować energii oddziaływania powyżej progu kreacji par.
@@ -55,7 +63,7 @@ diagnostycznym oraz na eksperymencie 3.
 
 To **nie** usuwa krótkozasięgowej bariery dipolowej. Bariera leży tam, gdzie
 nieregularyzowane energie dipolowa i kulombowska się zrównują,
-\(r^\*=\sqrt{(\mu_0/4\pi)\mu_B^2/(ke^2)}=193\,\mathrm{fm}\), czyli w
+\(r^\*=\sqrt{(\mu_0/4\pi)\mu_1\mu_2/(ke^2)}=193\,\mathrm{fm}\), czyli w
 połowie zredukowanej długości Comptona — daleko poza jakimkolwiek promieniem
 wygładzania, który nie rusza raportowanych orbit. Poniżej tej skali klasyczny
 opis punktowego momentu magnetycznego nie ma podstaw fizycznych.
@@ -100,8 +108,11 @@ dwóch ładunków z samooddziaływaniem. Jest hybrydą trzech warstw:
 Elektron i pozyton są w części orbitalnej traktowane symetrycznie: mają równe
 masy, przeciwne ładunki oraz te same równania ruchu, przy czym znak ładunku
 zmienia siłę Lorentza i precesję. Przypisanie każdej cząstce klasycznego,
-trwałego momentu \(|\boldsymbol\mu|=\mu_B\) przy klasycznym \(g=1\) jest
-założeniem modelu, nie klasycznym wyprowadzeniem własności elektronu. Rzeczywisty
+trwałego momentu \(|\boldsymbol\mu|=(g/2)\mu_B\) przy mierzonym
+\(g=2{,}00231930436256\) jest założeniem modelu, nie klasycznym wyprowadzeniem
+własności elektronu. Moment jest wyprowadzany z masy, ładunku i \(g\) danego
+gatunku, więc nie może rozjechać się z nimi; \(g\) nie jest przy tym bliskie
+dwóm dla każdej cząstki — proton niesie \(g=5{,}5857\), bo jest złożony. Rzeczywisty
 moment elektronu, spin 1/2, splątanie, wymiana, energia wiązania, anihilacja i
 poprawki radiacyjne należą do QED i nie mogą zostać dokładnie odtworzone przez
 ten integrator klasyczny.
@@ -722,11 +733,12 @@ gdzie, dla \(a=(g-2)/2\),
 \frac{\boldsymbol\beta\times\mathbf E}{c}.
 \]
 
-Model zachowuje klasyczną wartość orbitalną \(g=1\), czyli \(a=-1/2\), bez
-kwantowej anomalii momentu elektronu. Uwzględnia precesję Thomasa, wpływ pola
-elektrycznego i podłużnej składowej pola magnetycznego. Znaki precesji
-elektronu i pozytonu są przeciwne. Obrót jest wykonywany wzorem Rodriguesa w
-dwóch symetrycznych półkrokach i zachowuje \(|\boldsymbol\mu_i|=\mu_B\).
+Model używa mierzonej wartości \(g\) danego gatunku, czyli
+\(a=(g-2)/2=+0{,}00115965\) dla elektronu, a nie klasycznego \(g=1\)
+(\(a=-1/2\)). Uwzględnia precesję Thomasa, wpływ pola elektrycznego i podłużnej
+składowej pola magnetycznego. Znaki precesji elektronu i pozytonu są przeciwne.
+Obrót jest wykonywany wzorem Rodriguesa w dwóch symetrycznych półkrokach
+i zachowuje \(|\boldsymbol\mu_i|=(g/2)\mu_B\).
 
 Niskoprędkościowym punktem odniesienia dla sprzężenia poruszającego się
 ładunku z poruszającym się dipolem drugiej cząstki jest człon lagrangianu
@@ -906,7 +918,10 @@ klasyczne drzewo decyzyjne, używające:
 - przewidywanej odległości największego zbliżenia \(r_{min}\) z problemu
   Keplera–Coulomba;
 - współczynnika ustawienia dipoli
-  \(A=(\boldsymbol\mu_e\cdot\boldsymbol\mu_p)/\mu_B^2\).
+  \(A=(\boldsymbol\mu_1\cdot\boldsymbol\mu_2)/(\mu_1\mu_2)\), czyli cosinusa
+  kąta między momentami. Normalizacja przez iloczyn momentów obu ról, a nie
+  przez \(\mu_B^2\), utrzymuje \(A\in[-1,1]\) także dla pary, w której momenty
+  różnią się o rzędy wielkości.
 
 Klasyfikacja przebiega następująco:
 
@@ -1143,7 +1158,8 @@ moment magnetyczny i indukowany moment elektryczny.
 Niezależnym stopniem swobody jest obecnie moment magnetyczny w chwilowym
 układzie spoczynkowym cząstki. Jest on zamieniany na czterowektor dipolowy
 ortogonalny do czteroprędkości i ewoluowany względem czasu własnego
-czterowymiarowym równaniem Thomasa–BMT dla klasycznego \(g=1\). Krok RK4
+czterowymiarowym równaniem Thomasa–BMT z mierzonym \(g\) danego gatunku,
+osobno dla każdej z dwóch ról. Krok RK4
 kończy projekcja \(S\cdot u=0\) oraz odtworzenie stałej normy własnej. Pełny
 tensor jest następnie boostowany do układu laboratoryjnego i wyznacza jednocześnie
 \(\mathbf p\) oraz \(\boldsymbol\mu\). Poprzedni ręczny człon
