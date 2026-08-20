@@ -1705,6 +1705,28 @@ lokalizacja elektronu wymaga pędów rzędu \(mc\), czyli na granicy, poniżej
 której klasyczna elektrodynamika punktowej cząstki przestaje obowiązywać;
 anihilacja zachodzi \(137\) razy głębiej w obszarze kwantowym.
 
+Sprawdzone, jak głęboko model da się zepchnąć. Bieg kolapsu kończy się na
+peryapsis \(10\times\)`chargeCloudRestRadius`; obniżenie tej krotności do
+\(1\) działa i schodzi dziesięciokrotnie głębiej, do \(596\) fm, przy 3 z 4
+ukończonych trajektoriach i czasie kolapsu \(39{,}5\) ps wobec \(35{,}6\) ps.
+Przy krotności \(0{,}5\), czyli \(265\) fm, **wszystkie cztery trajektorie
+kończą się awarią numeryczną** — i to jest istotne, bo \(265\) fm leży wciąż
+**powyżej** bariery \(193\) fm. Ścianą jest więc integrator, a nie fizyka
+bariery; do samej bariery model nie dochodzi.
+
+Ważniejszy jest kształt profilu w głębi. Gęstość **nie rośnie monotonicznie do
+środka**: osiąga maksimum \(1{,}58\cdot10^{32}\,\mathrm m^{-3}\) przy
+\(750\) fm, czyli \(589\times|\psi(0)|^2\), po czym **spada** do
+\(7{,}2\cdot10^{31}\) na krawędzi \(596\) fm. Powód jest elementarny: przy
+największym zbliżeniu para porusza się najszybciej, więc spędza tam najmniej
+czasu — ułamek czasu w najgłębszej powłoce wynosi \(2{,}2\cdot10^{-5}\).
+
+To domyka sprawę mocniej niż samo twarde zero. Klasyczna gęstość ma
+**maksimum przy skończonym promieniu i maleje do wewnątrz**, podczas gdy
+\(|\psi(0)|^2\) jest gęstością dokładnie w zerze i jest tam największa.
+Ekstrapolacja \(r^{-1{,}8}\), którą sugerował profil zewnętrzny, w głębi po
+prostu nie obowiązuje.
+
 Wniosek: **czasu kolapsu CREM nie da się połączyć z czasem życia para-Ps przez
 gęstość kontaktową.** Nawet po obniżeniu granicy zderzenia do samej bariery
 model zatrzyma się \(68{,}5\,r_e\) od skali procesu, a tego czynnika nie da się
