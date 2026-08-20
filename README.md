@@ -192,16 +192,20 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   więc strukturalne, rzędu \(\beta_{boost}\beta_{orb}\), i żadne zagęszczanie
   kroku go nie ruszy.
 
-Otwarte po poprawce czynnika \(g\) w relacji \(\boldsymbol\mu=\gamma\mathbf S\):
-domknięcie momentu pędu w sektorze sprzężenia z siatką, `particle-field dJ`,
-podwoiło się **dokładnie \(2{,}0000\) raza** dla pary domyślnej, z
-\(4{,}53\cdot10^{-4}\) na \(9{,}06\cdot10^{-4}\) przy progu \(10^{-3}\),
-czyli do 91% marginesu. Pozostałe pary są trzy rzędy niżej
-(\(4{,}2\cdot10^{-4}\) dla p+e⁻, \(1{,}6\cdot10^{-6}\) dla mionium,
-\(1{,}1\cdot10^{-6}\) dla protonium), a niezależne residuum `raw dJ` z sektora
-trajektorii **poprawiło się** o 3,7%. Czysty czynnik dwa wskazuje, że coś po
-stronie siatki nadal zakłada dawną konwencję albo że normalizacja zależy od
-zmienionej wielkości; nie zostało to rozstrzygnięte i wymaga osobnego zbadania.
+Podwojenie `particle-field dJ` po poprawce czynnika \(g\) w relacji
+\(\boldsymbol\mu=\gamma\mathbf S\) zostało **zbadane i jest artefaktem
+normalizacji, nie regresją**. Licznik domknięcia nie zmienił się ani o bit
+i wynosi \(9{,}57308412\cdot10^{-38}\) przed poprawką i po niej. Zmienił się
+mianownik: skala \(|J_{\rm pocz}|\) zawiera wkład spinowy, czyli dokładnie ten
+człon, który był zawyżony o \(g\), więc spadła z \(2{,}11399975\cdot10^{-34}\)
+na \(1{,}05698206\cdot10^{-34}\) — z \(2{,}0046\,\hbar\) na
+\(1{,}0023\,\hbar\). Iloraz podwoił się z \(4{,}53\cdot10^{-4}\) na
+\(9{,}06\cdot10^{-4}\) bez żadnej zmiany fizycznej, a dawna wartość była po
+prostu schlebiana zawyżonym mianownikiem.
+
+Próg podniesiono z \(10^{-3}\) na \(2\cdot10^{-3}\), żeby kontrola zachowała
+dotychczasową surowość **bezwzględną**; pozostawienie go uczyniłoby ją
+dwukrotnie ostrzejszą jako niezamierzony skutek uboczny poprawki jednostek.
 
 Bilans energii jest **tożsamością algebraiczną**, nie testem zachowania.
 Dotyczy to obu miejsc, w których się pojawia: pozycji `identity resid` /

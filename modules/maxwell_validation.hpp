@@ -2069,7 +2069,19 @@ int runMaxwellSelfTest() {
         &&std::isfinite(coupledAngularClosure)
         &&std::abs(coupledEnergyClosure)<1.0e-3
         &&coupledMomentumClosure<1.0e-3
-        &&coupledAngularClosure<1.0e-3;
+        // Was 1.0e-3.  Restoring the g in mu = gamma S did not move the
+        // numerator by a single bit -- it stays 9.57308412e-38 -- but it
+        // halved the denominator, because the |J_initial| scale contains the
+        // intrinsic spin, and that was the very term inflated by g.  The
+        // scale fell from 2.11399975e-34 to 1.05698206e-34, i.e. from
+        // 2.0046 hbar to 1.0023 hbar, so the ratio doubled from 4.53e-04 to
+        // 9.06e-04 with no physical change whatsoever.
+        //
+        // The bound is raised in the same proportion so the check keeps its
+        // previous ABSOLUTE strictness.  Leaving it at 1.0e-3 would have made
+        // it twice as strict as a side effect of a units correction, which
+        // nobody intended, and would have left 9% of margin.
+        &&coupledAngularClosure<2.0e-3;
     const bool boundaryOk=std::isfinite(absorbedFraction)
                        && absorbedFraction>0.05
                        &&std::isfinite(cpmlReflection)&&cpmlReflection<1.0e-6
