@@ -1815,9 +1815,34 @@ int runMaxwellSelfTest() {
         &&yeeCoupledBeta<1.0&&isFinite(yeeCoupledState);
     const bool sharedClassicalEngineOk=sharedEngineAdvanced
         &&sharedEngineResidual==0.0
+        // These three are an IDENTITY, not a conservation test: boundField* is
+        // accumulated every step as the residual that closes the balance, so
+        // the sum telescopes and has to come out zero.  Measured: breaking the
+        // probe's antisymmetry completely, by taking the second velocity to
+        // zero, does not move them at all -- they stay at 0 / 2.4e-19 /
+        // 5.7e-26.  The 1e-12 bound is therefore a bound on roundoff and
+        // certifies nothing beyond it.
         &&sharedEnergyBalanceResidual<1.0e-12
         &&sharedMomentumBalanceResidual<1.0e-12
         &&sharedAngularBalanceResidual<1.0e-12
+        // These three are the MEASUREMENT: they exclude boundField*, so they do
+        // not close by construction.  Until now they were printed and never
+        // checked, so they could have drifted arbitrarily while the suite kept
+        // reporting 28/28.
+        //
+        // 3e-3 for all three, the momentum one included.  The shipped probe is
+        // antisymmetric (+/-0.025c), which puts its momentum residual at
+        // 1.3e-08 -- five orders better than energy and angular momentum, but
+        // that is the symmetry talking, not the accuracy.  Halving the second
+        // velocity gives 2.6e-04 and zeroing it gives 8.1e-04, the same order
+        // as energy (8.4e-04) and angular momentum (1.8e-04).  A bound fitted
+        // to 1.3e-08 would be a bound on the probe's setup, not on the code.
+        &&std::isfinite(sharedRawEnergyResidual)
+        &&sharedRawEnergyResidual<3.0e-3
+        &&std::isfinite(sharedRawMomentumResidual)
+        &&sharedRawMomentumResidual<3.0e-3
+        &&std::isfinite(sharedRawAngularResidual)
+        &&sharedRawAngularResidual<3.0e-3
         &&std::isfinite(reactionMismatchFraction)
         &&std::isfinite(llValidity)
         &&quadrupoleTrace<1.0e-14
@@ -2010,11 +2035,12 @@ int runMaxwellSelfTest() {
               << "Yee coupled q/e:    " << yeeCoupledCharge << '\n'
               << "Yee coupled beta:   " << yeeCoupledBeta << '\n'
               << "Visual/stat engine: " << sharedEngineResidual << '\n'
-              << "pair-field dE/dP/dJ:" << sharedEnergyBalanceResidual << " / "
+              << "pair-field IDENTITY:" << sharedEnergyBalanceResidual << " / "
               << sharedMomentumBalanceResidual << " / "
               << sharedAngularBalanceResidual << '\n'
               << "raw dE/dP/dJ:       " << sharedRawEnergyResidual << " / "
               << sharedRawMomentumResidual << " / " << sharedRawAngularResidual
+              << "  (IDENTITY closes by construction; raw is the measurement)"
               << '\n'
               << "reaction/flux dE:   " << reactionMismatchFraction << '\n'
               << "LL validity |F|:    " << llValidity << '\n'

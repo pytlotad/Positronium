@@ -179,7 +179,25 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   więc strukturalne, rzędu \(\beta_{boost}\beta_{orb}\), i żadne zagęszczanie
   kroku go nie ruszy.
 
-Bilans energii jest **tożsamością algebraiczną**, nie testem zachowania:
+Bilans energii jest **tożsamością algebraiczną**, nie testem zachowania.
+Dotyczy to obu miejsc, w których się pojawia: pozycji `identity resid` /
+`identity |dP|` / `identity |dJ|` w trybie diagnostycznym oraz linii
+`pair-field IDENTITY` w walidacji. Ta druga była do niedawna opisana jako
+`pair-field dE/dP/dJ` i dawała `0 / 0 / 1,1e-26`, co czytało się jak ścisłe
+zachowanie energii, pędu i momentu pędu; jest to jednak suma teleskopująca,
+bo `boundField*` jest akumulowane co krok właśnie jako reszta domykająca.
+Sprawdzone pomiarem: całkowite złamanie antysymetrii sondy nie rusza tych
+liczb wcale.
+
+Niezależnym pomiarem jest linia `raw dE/dP/dJ`, która wyklucza `boundField*`.
+Do niedawna **była wypisywana i nigdy nie sprawdzana**, więc mogła dryfować
+dowolnie przy dalej zielonym 28/28; ma teraz własne progi. Jej składowa pędowa
+wymaga przy tym ostrożności tego samego rodzaju co reszta bilansu pola: wysyłana
+sonda jest antysymetryczna, przez co pęd wychodzi 1,3e-08, czyli pięć rzędów
+lepiej niż energia — po złamaniu symetrii wychodzi 8,1e-04, czyli tyle samo co
+energia (8,4e-04) i moment pędu (1,8e-04).
+
+
 `boundField*` liczone jest jako brakująca reszta bilansu po każdym kroku, więc
 wykresy `diagnostic_*_balance` i pozycje `identity resid` / `identity |dP|` /
 `identity |dJ|` mierzą wyłącznie zaokrąglenia i błąd interpolacji punktu
