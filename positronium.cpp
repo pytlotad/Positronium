@@ -983,6 +983,10 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 // [[maybe_unused]] because the validation executable's main() never reaches
 // the trajectory constructors that read this, so GCC sees no use in that
 // build.
+// Order of the trajectory composition: 2 is the bare symmetric step, 4 the
+// Yoshida composition of three of them.  Two is the default and every result
+// in this repository was produced with it.
+[[maybe_unused]] int gIntegratorOrder = 2;
 [[maybe_unused]] ChargeRadiationReactionModel gRadiationReactionModel =
     ChargeRadiationReactionModel::individualLandauLifshitz;
 
@@ -4912,6 +4916,11 @@ int main(int argc, char** argv) {
                 zeroPointModes = std::stoi(requireValue(argument));
                 if (zeroPointModes <= 0)
                     throw std::invalid_argument("--zpf-modes must be positive");
+            } else if (argument == "--integrator-order") {
+                gIntegratorOrder = std::stoi(requireValue(argument));
+                if (gIntegratorOrder != 2 && gIntegratorOrder != 4)
+                    throw std::invalid_argument(
+                        "--integrator-order must be 2 or 4");
             } else if (argument == "--zpf-band") {
                 const std::string value = requireValue(argument);
                 const std::size_t comma = value.find(',');
@@ -5042,6 +5051,10 @@ int main(int argc, char** argv) {
                 ? "individual (reduced-order Landau-Lifshitz per particle)"
                 : "automatic (blended individual/coherent)";
         std::cout << "Charge radiation reaction: " << reactionModelName << ".\n";
+        std::cout << "Trajectory composition order: " << gIntegratorOrder
+                  << (gIntegratorOrder==4
+                      ? " (Yoshida composition of three symmetric steps)"
+                      : " (bare symmetric step)") << ".\n";
         std::cout << "Pair: " << firstSpecies.name << " + "
                   << secondSpecies.name << " (reduced mass "
                   << pairReducedMass/electronMass << " m_e, Bohr radius "

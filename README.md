@@ -1766,10 +1766,28 @@ Co pozostaje prawdziwe, to **stosunek skal**: ta ograniczona oscylacja
 \(4{,}8\cdot10^{-5}\) jest osiemnastokrotnie większa od mierzonego sygnału
 fizycznego, czyli straty energii na obieg \(2{,}6\cdot10^{-6}\). To jest
 powód, dla którego estymator odejmuje przebieg tła — kasuje zależny od fazy,
-ograniczony błąd schematu, a nie dryf. Lekarstwem byłby zatem **wyższy rząd**,
-a nie symplektyczność: złożenie Yoshidy czwartego rzędu na istniejącym kroku
-drugiego rzędu zmniejszyłoby tę amplitudę o rząd \(dt^2\) i mogłoby zejść
-poniżej sygnału, co usunęłoby potrzebę przebiegu tła i o połowę obniżyło koszt.
+ograniczony błąd schematu, a nie dryf. Nasuwało to receptę **wyższego rzędu**, a nie
+symplektyczności. Została zaimplementowana i **zmierzona jako gorsza**.
+
+Złożenie Yoshidy czwartego rzędu jest dostępne pod `--integrator-order 4`
+i domyślnie wyłączone. Porównane z krokiem bazowym przy tej samej tolerancji
+wypada źle na obu osiach naraz: przy \(10^{-7}\) daje błąd
+\(1{,}62\cdot10^{-5}\) w \(16{,}9\) s wobec \(5{,}04\cdot10^{-6}\)
+w \(5{,}68\) s dla rzędu drugiego, czyli jest \(3{,}2\) raza mniej dokładne
+i \(3{,}0\) raza wolniejsze. Powodów jest kilka: krok środkowy biegnie wstecz
+w czasie, wszystkie trzy podkroki czytają historię zamrożoną na początku kroku,
+a kontroler adaptacyjny i tak wyrównuje błąd do tolerancji, więc wyższy rząd
+kupowałby najwyżej szybkość — i nie kupuje nawet jej.
+
+Pomiar ujawnił przy tym **prawdziwe ograniczenie**, którego żadna z dwóch
+hipotez nie trafiała. Błąd nie schodzi poniżej około \(5\cdot10^{-6}\)
+niezależnie od tolerancji: przy \(10^{-7}\) wynosi \(5{,}04\cdot10^{-6}\),
+a przy \(10^{-9}\) **rośnie** do \(6{,}78\cdot10^{-6}\) przy
+czterokrotnie większej liczbie kroków. Zatrzymanie się poprawy i jej odwrócenie
+przy zagęszczaniu to sygnatura **akumulacji zaokrągleń**, a nie błędu obcięcia.
+Ten próg leży niecałe dwa razy powyżej mierzonego sygnału
+\(2{,}6\cdot10^{-6}\) na obieg, co wyjaśnia, dlaczego odejmowania przebiegu
+tła nie da się usunąć strojeniem integratora — ani rzędem, ani tolerancją.
 
 Prawdziwe przyczyny są dwie i żadna nie jest precyzją. Po pierwsze **granice są
 sprzężone**: wewnętrzne całkowanie ma `terminalSeparation` równe
