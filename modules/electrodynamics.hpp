@@ -15,8 +15,8 @@ ParticleFieldTotals particleFieldTotals(const State& state,
     const Vec3 firstMomentum=momentum(state.firstVelocity,firstMass);
     const Vec3 secondMomentum=momentum(state.secondVelocity,secondMass);
     const MaxwellVolumeIntegrals fieldTotals=field.volumeIntegrals();
-    const double firstGyromagneticRatio=firstCharge/(2.0*firstMass);
-    const double secondGyromagneticRatio=secondCharge/(2.0*secondMass);
+    const double firstGyromagneticRatio=firstGyromagneticRatioOf();
+    const double secondGyromagneticRatio=secondGyromagneticRatioOf();
     // Rest energies are constant and omitted from the diagnostic difference.
     return {kineticEnergy(state.firstVelocity,firstMass)
           +kineticEnergy(state.secondVelocity,secondMass)
@@ -870,8 +870,8 @@ bool finiteRadiationResponse(const ParticleMultipoleRadiation& response) {
 void applyDipoleRadiationTorque(State& state,
                                 const ParticleMultipoleRadiation& reaction,
                                 double dt) {
-    const double firstGyromagneticRatio=firstCharge/(2.0*firstMass);
-    const double secondGyromagneticRatio=secondCharge/(2.0*secondMass);
+    const double firstGyromagneticRatio=firstGyromagneticRatioOf();
+    const double secondGyromagneticRatio=secondGyromagneticRatioOf();
     synchronizeCovariantDipoles(state);
     const double firstNorm=state.firstProperDipole.norm();
     const double secondNorm=state.secondProperDipole.norm();
@@ -1541,8 +1541,8 @@ double canonicalMomentumScale(const State& s) {
 
 Vec3 noetherAngularMomentum(const State& s,
                             const CanonicalMomenta& canonical) {
-    const double firstGyromagneticRatio = firstCharge / (2.0 * firstMass);
-    const double secondGyromagneticRatio = secondCharge / (2.0 * secondMass);
+    const double firstGyromagneticRatio = firstGyromagneticRatioOf();
+    const double secondGyromagneticRatio = secondGyromagneticRatioOf();
     const Vec3 orbital = cross(s.firstPosition, canonical.first)
                        + cross(s.secondPosition, canonical.second);
     const Vec3 intrinsic = s.firstDipole / firstGyromagneticRatio

@@ -192,6 +192,17 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   więc strukturalne, rzędu \(\beta_{boost}\beta_{orb}\), i żadne zagęszczanie
   kroku go nie ruszy.
 
+Otwarte po poprawce czynnika \(g\) w relacji \(\boldsymbol\mu=\gamma\mathbf S\):
+domknięcie momentu pędu w sektorze sprzężenia z siatką, `particle-field dJ`,
+podwoiło się **dokładnie \(2{,}0000\) raza** dla pary domyślnej, z
+\(4{,}53\cdot10^{-4}\) na \(9{,}06\cdot10^{-4}\) przy progu \(10^{-3}\),
+czyli do 91% marginesu. Pozostałe pary są trzy rzędy niżej
+(\(4{,}2\cdot10^{-4}\) dla p+e⁻, \(1{,}6\cdot10^{-6}\) dla mionium,
+\(1{,}1\cdot10^{-6}\) dla protonium), a niezależne residuum `raw dJ` z sektora
+trajektorii **poprawiło się** o 3,7%. Czysty czynnik dwa wskazuje, że coś po
+stronie siatki nadal zakłada dawną konwencję albo że normalizacja zależy od
+zmienionej wielkości; nie zostało to rozstrzygnięte i wymaga osobnego zbadania.
+
 Bilans energii jest **tożsamością algebraiczną**, nie testem zachowania.
 Dotyczy to obu miejsc, w których się pojawia: pozycji `identity resid` /
 `identity |dP|` / `identity |dJ|` w trybie diagnostycznym oraz linii

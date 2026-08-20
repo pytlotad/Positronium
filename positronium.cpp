@@ -135,6 +135,25 @@ double firstCharge=firstSpecies.charge;
 double secondCharge=secondSpecies.charge;
 double firstGFactor=firstSpecies.gFactor;
 double secondGFactor=secondSpecies.gFactor;
+
+// Gyromagnetic ratio relating the intrinsic moment to the intrinsic spin,
+// mu = gamma S with gamma = g q / (2 m).  The g belongs here and was missing
+// from four call sites that wrote q/(2m) instead.
+//
+// The model carries |mu| = (g/2) * magneton, so the correct ratio returns
+// S = hbar/2 exactly, as a spin-1/2 particle must.  Dropping g returned
+// 1.00116 hbar, i.e. the reported intrinsic angular momentum was inflated by
+// g = 2.0023, and the dipole's response to a radiation-reaction torque,
+// d(mu) = gamma tau dt, was weaker by the same factor.
+double gyromagneticRatio(double charge,double mass,double gFactor) {
+    return gFactor*charge/(2.0*mass);
+}
+double firstGyromagneticRatioOf() {
+    return gyromagneticRatio(firstCharge,firstMass,firstGFactor);
+}
+double secondGyromagneticRatioOf() {
+    return gyromagneticRatio(secondCharge,secondMass,secondGFactor);
+}
 // Magnitudes differ between roles for every pair except a particle and its
 // own antiparticle: the proton carries 1.41e-26 J/T against the electron's
 // 9.28e-24, four hundred times smaller.  Code that reached for one role's
@@ -952,8 +971,8 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
     state.firstPosition+=state.firstVelocity*dt;
     state.secondPosition+=state.secondVelocity*dt;
     if(reciprocalDipoles) {
-        const double firstGyromagneticRatio=firstCharge/(2.0*firstMass);
-        const double secondGyromagneticRatio=secondCharge/(2.0*secondMass);
+        const double firstGyromagneticRatio=firstGyromagneticRatioOf();
+        const double secondGyromagneticRatio=secondGyromagneticRatioOf();
         const double firstNorm=state.firstDipole.norm();
         const double secondNorm=state.secondDipole.norm();
         state.firstDipole+=firstDipoleInteraction.torque
