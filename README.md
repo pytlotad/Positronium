@@ -167,25 +167,33 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   reguła użyta do porównania, „zboostuj tempo i podziel przez \(\gamma\)",
   pomija zależny od kształtu wiązki człon aberracji: tempo przez sferę przy
   ustalonym czasie **nie jest** czterowektorem, bo \(dt\) nie jest
-  niezmiennikiem. **Wada leży w regule porównania, nie w integratorze.**
-  Rozdziela to niezmiennik czterowektora tempa, który musi być ten sam w obu
-  układach niezależnie od tego, czy reguła jest dobra. Jest naruszony dopiero
-  w rzędzie \(\beta^2\) (\(0{,}273\), \(0{,}0187\), \(0{,}00463\) przy
-  \(\beta=0{,}35\), \(0{,}10\), \(0{,}05\)), i to naruszenie jest w całości
-  skutkiem czynnika \(1{,}4\) w pędzie: podstawiając pęd \(1{,}4\times\) za
-  duży do \((E/c)^2-|p|^2\) dostaje się odchyłkę \(\approx0{,}96\beta^2\).
-  Jest więc jedna wada, w składowej pędowej, a reszta z niej wynika. W układzie
-  spoczynkowym pęd strumienia wynosi \(4{,}6\cdot10^{-5}\) energii — praktycznie
-  zero, jak każe symetria pary — więc integrator liczy poprawnie tam, gdzie
-  źródło spoczywa.
+  niezmiennikiem. **Czyja to jednak wada — integratora czy reguły porównania —
+  pozostaje otwarte.**
 
-  Mechanizm: dla źródła w ruchu **strumień przez sferę nie równa się tempu
-  emisji**. Promieniowanie docierające do sfery o promieniu \(R\) zostało
-  wyemitowane z pozycji przesuniętej o \(\beta R\) względem środka sfery, więc
-  całka próbkuje powłokę niecentrycznie już w pierwszym rzędzie w \(\beta\),
-  a współczynnik zależy od kształtu wiązki — stąd \(\langle\cos^2\theta\rangle\).
-  Reguła „zboostuj tempo i podziel przez \(\gamma\)" jest poprawna dla **tempa
-  emisji**, a stosowana jest do **strumienia przez sferę**.
+  Wcześniejsza wersja tego akapitu twierdziła, że reguły, opierając się na tym,
+  że niezmiennik \((E/c)^2-|p|^2\) jest naruszony dopiero w rzędzie
+  \(\beta^2\) (\(0{,}273\), \(0{,}0187\), \(0{,}00463\) przy
+  \(\beta=0{,}35\), \(0{,}10\), \(0{,}05\)). Argument był wadliwy i został
+  wycofany: naruszenie niezmiennika pokazuje jedynie, że liczona wielkość nie
+  jest czterowektorem, co jest równie zgodne z „integrator liczy poprawnie
+  wielkość niekowariantną", jak i z „integrator ma błąd w pędzie".
+
+  Zaproponowany wtedy mechanizm — że promieniowanie docierające do sfery
+  o promieniu \(R\) wyszło z pozycji przesuniętej o \(\beta R\), więc całka
+  próbkuje powłokę niecentrycznie — został **obalony pomiarem**: wycentrowanie
+  sfery na opóźnionej pozycji środka masy, dokładnie o \(-\mathbf v_{CM}R/c\),
+  zmienia \(|p|/(E/c)\) z \(0{,}46712\) na \(0{,}46702\), czyli w czwartej
+  cyfrze.
+
+  Wiadomo natomiast, że w układzie spoczynkowym pęd strumienia wynosi
+  \(4{,}6\cdot10^{-5}\) energii — praktycznie zero, jak każe symetria pary —
+  więc integrator liczy poprawnie tam, gdzie źródło spoczywa.
+
+  Rozstrzygający test, jeszcze niewykonany: dla źródła dryfującego z prędkością
+  \(\mathbf v\) w stanie quasi-stacjonarnym strumień przez sferę równa się
+  tempu emisji, a relacja Liénarda daje \(d\mathbf p/dt=(P/c^2)\mathbf v\),
+  czyli \(|p|/(E/c)=\beta\). Zmierzone \(1{,}40\beta\) byłoby wtedy błędem
+  integratora, nie reguły.
 
   Skutek dla wyników produkcyjnych: **żaden.** W eksperymencie kolapsu środek
   masy spoczywa, w wiązkowych 3 i 4 również, z konstrukcji podziału ważonego
@@ -194,7 +202,8 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   błąd pędu promieniowania rzędu \(10^{-5}\).
 
   Wniosek: wypromieniowany czteropęd **nie jest kowariantny w pierwszym rzędzie
-  w \(\beta\)** i wada siedzi w składowej pędowej, nie energetycznej. Ponieważ produkcja liczy w jednym układzie, nie
+  w \(\beta\)** i wada siedzi w składowej pędowej, nie energetycznej. Ponieważ
+  produkcja liczy w jednym układzie, nie
   unieważnia to bezpośrednio raportowanych czasów kolapsu, ale zabrania
   interpretowania strumienia jako wielkości kowariantnej;
 - reszta ewolucji tensora dipolowego \(3{,}86\cdot10^{-3}\) — **nie jest to
