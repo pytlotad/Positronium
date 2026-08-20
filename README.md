@@ -1739,6 +1739,20 @@ Na samej podłodze, przy zasięgu \(529\) fm, ukończenie spada do 2 z 3
 trajektorii, a gęstość na krawędzi \(596\) fm wynosi
 \(8{,}2\cdot10^{31}\,\mathrm m^{-3}\), czyli \(307\times|\psi(0)|^2\).
 
+Podłoga została zlokalizowana bisekcją i jest **ostra**: \(520\) fm daje
+2 z 3 trajektorii, \(500\) fm — 1 z 3, a \(470\) fm i niżej już żadnej.
+Nie leży więc na barierze Comptona \(193\) fm, tylko \(2{,}7\) raza powyżej
+niej; fizyka bariery nadal nie jest testowana.
+
+Jej charakter zbadano trzema gałkami. Zwiększenie głębokości podziału kroku
+z 12 na 20 **nie zmienia nic** — wzorzec awarii pozostaje ten sam.
+Zacieśnienie tolerancji z \(10^{-5}\) do \(10^{-7}\) usuwa awarie przy tym
+samym budżecie, ale trajektorie są wtedy cenzurowane zegarem zamiast kończyć;
+przy budżecie podniesionym czterokrotnie awaria wraca. Podłoga jest więc
+**wspólnym ograniczeniem dokładności i kosztu** integratora adaptacyjnego, a nie
+ścianą strukturalną ani fizyczną — da się ją przesuwać, ale coraz drożej i o
+coraz mniej.
+
 Prawdziwe przyczyny są dwie i żadna nie jest precyzją. Po pierwsze **granice są
 sprzężone**: wewnętrzne całkowanie ma `terminalSeparation` równe
 `chargeCloudRestRadius`, czyli \(529\) fm, więc żądanie peryapsis \(265\) fm
