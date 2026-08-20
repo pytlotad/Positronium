@@ -167,9 +167,31 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   reguła użyta do porównania, „zboostuj tempo i podziel przez \(\gamma\)",
   pomija zależny od kształtu wiązki człon aberracji: tempo przez sferę przy
   ustalonym czasie **nie jest** czterowektorem, bo \(dt\) nie jest
-  niezmiennikiem. Nie jest jeszcze rozstrzygnięte, czy wada leży w regule
-  porównania w teście, czy w samym integratorze strumienia — obie dają ten sam
-  podpis.
+  niezmiennikiem. **Wada leży w regule porównania, nie w integratorze.**
+  Rozdziela to niezmiennik czterowektora tempa, który musi być ten sam w obu
+  układach niezależnie od tego, czy reguła jest dobra. Jest naruszony dopiero
+  w rzędzie \(\beta^2\) (\(0{,}273\), \(0{,}0187\), \(0{,}00463\) przy
+  \(\beta=0{,}35\), \(0{,}10\), \(0{,}05\)), i to naruszenie jest w całości
+  skutkiem czynnika \(1{,}4\) w pędzie: podstawiając pęd \(1{,}4\times\) za
+  duży do \((E/c)^2-|p|^2\) dostaje się odchyłkę \(\approx0{,}96\beta^2\).
+  Jest więc jedna wada, w składowej pędowej, a reszta z niej wynika. W układzie
+  spoczynkowym pęd strumienia wynosi \(4{,}6\cdot10^{-5}\) energii — praktycznie
+  zero, jak każe symetria pary — więc integrator liczy poprawnie tam, gdzie
+  źródło spoczywa.
+
+  Mechanizm: dla źródła w ruchu **strumień przez sferę nie równa się tempu
+  emisji**. Promieniowanie docierające do sfery o promieniu \(R\) zostało
+  wyemitowane z pozycji przesuniętej o \(\beta R\) względem środka sfery, więc
+  całka próbkuje powłokę niecentrycznie już w pierwszym rzędzie w \(\beta\),
+  a współczynnik zależy od kształtu wiązki — stąd \(\langle\cos^2\theta\rangle\).
+  Reguła „zboostuj tempo i podziel przez \(\gamma\)" jest poprawna dla **tempa
+  emisji**, a stosowana jest do **strumienia przez sferę**.
+
+  Skutek dla wyników produkcyjnych: **żaden.** W eksperymencie kolapsu środek
+  masy spoczywa, w wiązkowych 3 i 4 również, z konstrukcji podziału ważonego
+  masami. W eksperymencie 5 po przejściu na niezależne losowanie energii środek
+  masy się porusza, ale \(\beta_{CM}\) sięga \(3{,}5\cdot10^{-5}\), co daje
+  błąd pędu promieniowania rzędu \(10^{-5}\).
 
   Wniosek: wypromieniowany czteropęd **nie jest kowariantny w pierwszym rzędzie
   w \(\beta\)** i wada siedzi w składowej pędowej, nie energetycznej. Ponieważ produkcja liczy w jednym układzie, nie
