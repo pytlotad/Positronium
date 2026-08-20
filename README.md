@@ -1659,6 +1659,44 @@ i działają dla dowolnej pary przyciągającej — z zastrzeżeniem, że eksper
 nadal etykietuje wychwycone stany jako „Para-/Ortho-Positronium" i zapisuje
 panele `annihilation_time_*` z danych pozytonium, co dla innej pary jest mylące.
 
+### Klasyczna gęstość kontaktowa wzdłuż spirali
+
+Kwantowe tempo anihilacji jest rządzone gęstością w zerze,
+\(\Gamma_{2\gamma}=4\pi r_e^2c\,|\psi(0)|^2\) przy
+\(|\psi(0)|^2=1/(\pi a_{Ps}^3)=2{,}685\cdot10^{29}\,\mathrm m^{-3}\), co daje
+\(124{,}5\) ps wobec zmierzonych \(125{,}14\) ps. Naturalne jest pytanie, czy
+model klasyczny dostarcza odpowiednika tej gęstości. **Zmierzone: dostarcza go
+co do rzędu, ale nie tam, gdzie trzeba.**
+
+Histogram separacji ważony krokiem czasu, zebrany wzdłuż sześciu pełnych
+spiral, daje gęstość objętościową \(\rho(r)\) uśrednioną po czasie —
+klasyczny odpowiednik \(|\psi(r)|^2\). Zajmuje ona 30 powłok logarytmicznych
+od \(5{,}96\) pm do \(168\) pm, z profilem bliskim \(\rho\propto r^{-1{,}8}\).
+
+Na wewnętrznej krawędzi \(\rho=6{,}36\cdot10^{30}\,\mathrm m^{-3}\), czyli
+**23,7 raza** \(|\psi(0)|^2\). Rząd wielkości się więc zgadza — spirala
+faktycznie zagęszcza parę do właściwej skali.
+
+Poniżej krawędzi \(\rho\) wynosi jednak **dokładnie zero**, i to jest różnica
+jakościowa, nie ilościowa. Każda orbita keplerowska ma barierę odśrodkową
+i twardy punkt zwrotny; zespół ma krawędź w najmniejszym osiągniętym peryapsis.
+Funkcja falowa stanu \(1s\) jest w zerze skończona. Żadna ekstrapolacja nie
+łączy twardego zera ze skończoną wartością.
+
+Skale mówią resztę. Krawędź \(5{,}96\) pm leży \(31\) razy powyżej bariery
+dipol-dipol \(193\) fm i \(2114\) razy powyżej promienia \(r_e\), przy którym
+anihilacja zachodzi; sama bariera leży \(68{,}5\) raza powyżej \(r_e\).
+Model zatrzymuje się więc dwa i pół rzędu przed miejscem, w którym proces ma
+miejsce, a jego własna bariera krótkiego zasięgu nie puściłaby go dalej niż
+\(68\,r_e\). Wniosek: **czasu kolapsu CREM nie da się połączyć z czasem życia
+para-Ps przez gęstość kontaktową**, bo model nie sięga skali kontaktu.
+
+Dodatkowo rozkłady mają inny kształt: anihilacja daje rozkład wykładniczy,
+dla którego \(\sigma/\overline{t}=1\), a zmierzony rozkład czasu kolapsu ma
+\(\sigma/\overline{t}=0{,}38\)–\(0{,}46\). Model nie rozróżnia też para od
+orto (\(1{,}00\times\) wobec \(1135\times\) w eksperymencie), więc każde
+dopasowanie do jednej z tych liczb rozmija się z drugą o trzy rzędy.
+
 Wynik eksperymentu z polem punktu zerowego (`--zpf`) jest **negatywny i warto
 go znać przed uruchomieniem**. Pasmo **podąża za orbitą**: jest zdefiniowane
 w krotnościach oskulacyjnej częstości orbitalnej pary i przeliczane przy każdym
