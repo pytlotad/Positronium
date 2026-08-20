@@ -127,120 +127,43 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
 - reszta kowariancji pojedynczego pola Liénarda–Wiecherta \(9{,}89\cdot10^{-16}\)
   i reszta siły po boostcie \(1{,}10\cdot10^{-6}\) — obie na poziomie
   numerycznym;
-- reszta skończonego strumienia promieniowania po boostcie \(0{,}2084\)
-  i skumulowanego czteropędu promieniowania \(0{,}2084\) — najsłabszy wynik
-  kowariancyjny całego audytu i najostrzejsze ograniczenie interpretacji
-  strumienia w układach ruchomych. Scharakteryzowany pomiarowo, choć przyczyna
-  nie jest jeszcze wskazana:
+- reszta skończonego strumienia promieniowania po boostcie \(7{,}0\cdot10^{-4}\)
+  i skumulowanego czteropędu promieniowania \(2{,}1\cdot10^{-6}\). Były to
+  \(0{,}2084\) i \(0{,}2084\), zdecydowanie najgorsze liczby audytu; przyczyna
+  została **znaleziona i naprawiona**, a droga do niej jest zapisana niżej, bo
+  cztery z sześciu hipotez okazały się błędne.
 
-  - **nie jest to zbyt krótka historia opóźniona.** Promień powierzchni
-    kontrolnej \(10^6a_0\) wymaga czasu opóźnionego \(1{,}8\cdot10^{-13}\) s,
-    a historia sondy obejmuje \(7{,}2\cdot10^{-19}\) s, czyli 245 000 razy
-    mniej. Zjechanie z promieniem do \(1\,a_0\), gdzie czas opóźniony mieści
-    się w historii z czterokrotnym zapasem, zbija resztę zaledwie z
-    \(0{,}2084\) do \(0{,}1695\);
-  - **nie jest to rozdzielczość kwadratury.** Zmiana liczby kierunków
-    Lebiediewa z 50 na 770 zmienia resztę dopiero na piątej cyfrze;
-  - **jest to efekt geometrii boostu, pierwszego rzędu w \(\beta\).** Reszta
-    wynosi \(0{,}2084\), \(0{,}0917\), \(0{,}0414\) i \(0{,}0202\) przy
-    \(\beta=0{,}35\), \(0{,}20\), \(0{,}10\) i \(0{,}05\); iloraz
-    \(\text{reszta}/\beta\) dąży do \(0{,}40\), a lokalny wykładnik do
-    \(1{,}04\). Znika więc liniowo z prędkością układu.
+  Przyczyną był **brakujący czynnik Dopplera** \(\kappa=1-\hat n\!\cdot\!
+  \boldsymbol\beta\). Całka po sferze liczyła \(|E_{rad}|^2R^2\), czyli moc
+  **odbieraną** na jednostkę czasu obserwatora, która niesie \(\kappa^{-6}\),
+  podczas gdy moc **emitowana** na jednostkę czasu emitera niesie
+  \(\kappa^{-5}\). Brakowało dokładnie jednego \(\kappa\). Dla źródła w ruchu
+  dawało to błąd pierwszego rzędu w \(\beta\): przy \(\beta=0{,}35\) moc
+  promieniowania wychodziła \(1{,}1955\) razy większa od spoczynkowej, czego
+  zabrania niezmienniczość wzoru Larmora, a \(|p|/(E/c)\) wychodziło
+  \(0{,}467\) tam, gdzie struktura czterowektorowa wymaga \(\beta=0{,}350\).
+  Zgodność jest przy tym ścisła: \(1/(1-\beta\langle\cos\theta\rangle)
+  =1/(1-0{,}35\cdot0{,}46712)=1{,}19544\) wobec zmierzonych \(1{,}1955\).
 
-  Dalej wykluczone: **nie są to źle transformowane przyspieszenia.**
-  Przyspieszenie własne, będące niezmiennikiem Lorentza, zgadza się między
-  układami do \(2{,}6\cdot10^{-8}\) przy \(\beta=0{,}35\). Sektor dynamiczny
-  jest kowariantny; niekowariantne jest samo liczenie strumienia.
+  Po przywróceniu \(\kappa\) reszta strumienia spada 298-krotnie,
+  skumulowanego czteropędu 100 000-krotnie, a \(|p|/(E/c)\) wynosi
+  \(0{,}35002\) wobec przewidywanych \(0{,}35003\). Źródła spoczywające są
+  nietknięte, bo dla nich \(\kappa\equiv1\): stosunek do wzoru Larmora
+  pozostaje \(1{,}00007\), a produkcyjna energia wypromieniowana jest bit
+  w bit ta sama.
 
-  Rozbicie residuum wskazuje winowajcę. Składowa **energii** jest kwadratowa
-  w \(\beta\) (\(1{,}96\cdot10^{-1}\), \(1{,}42\cdot10^{-2}\),
-  \(3{,}52\cdot10^{-3}\) przy \(\beta=0{,}35\), \(0{,}10\), \(0{,}05\)),
-  czyli zachowuje się poprawnie. Dominuje składowa **pędu**, liniowa w
-  \(\beta\): wypromieniowany pęd w układzie ruchomym jest konsekwentnie
-  \(1{,}40\) raza większy, niż przewiduje boost, a czynnik ten dąży do stałej
-  przy \(\beta\to0\) (\(1{,}334\), \(1{,}394\), \(1{,}398\)).
-
-  Silna poszlaka co do mechanizmu: dla promieniowania dipolowego
-  \(dP/d\Omega\propto\sin^2\theta\) zachodzi
-  \(\langle\cos^2\theta\rangle=\tfrac15\), a \(1+2\langle\cos^2\theta\rangle
-  =1{,}4\) — zgodność z \(1{,}398\) na poziomie \(0{,}15\%\). Sugeruje to, że
-  reguła użyta do porównania, „zboostuj tempo i podziel przez \(\gamma\)",
-  pomija zależny od kształtu wiązki człon aberracji: tempo przez sferę przy
-  ustalonym czasie **nie jest** czterowektorem, bo \(dt\) nie jest
-  niezmiennikiem. **Czyja to jednak wada — integratora czy reguły porównania —
-  pozostaje otwarte.**
-
-  Wcześniejsza wersja tego akapitu twierdziła, że reguły, opierając się na tym,
-  że niezmiennik \((E/c)^2-|p|^2\) jest naruszony dopiero w rzędzie
-  \(\beta^2\) (\(0{,}273\), \(0{,}0187\), \(0{,}00463\) przy
-  \(\beta=0{,}35\), \(0{,}10\), \(0{,}05\)). Argument był wadliwy i został
-  wycofany: naruszenie niezmiennika pokazuje jedynie, że liczona wielkość nie
-  jest czterowektorem, co jest równie zgodne z „integrator liczy poprawnie
-  wielkość niekowariantną", jak i z „integrator ma błąd w pędzie".
-
-  Zaproponowany wtedy mechanizm — że promieniowanie docierające do sfery
-  o promieniu \(R\) wyszło z pozycji przesuniętej o \(\beta R\), więc całka
-  próbkuje powłokę niecentrycznie — został **obalony pomiarem**: wycentrowanie
-  sfery na opóźnionej pozycji środka masy, dokładnie o \(-\mathbf v_{CM}R/c\),
-  zmienia \(|p|/(E/c)\) z \(0{,}46712\) na \(0{,}46702\), czyli w czwartej
-  cyfrze.
-
-  Wiadomo natomiast, że w układzie spoczynkowym pęd strumienia wynosi
-  \(4{,}6\cdot10^{-5}\) energii — praktycznie zero, jak każe symetria pary —
-  więc integrator liczy poprawnie tam, gdzie źródło spoczywa.
-
-  Mechanizm jest natomiast zlokalizowany w kodzie. W `farZoneChargeField` pole
-  jest poprzeczne do `direction`, czyli kierunku od **opóźnionej** pozycji
-  źródła do punktu obserwacji, a `electromagneticFieldFluxRates` całkuje po
-  `normal` — normalnej sfery. Dla pola czysto promienistego zachodzi tożsamość
-  \(-T\!\cdot\!\hat n=u\hat n\) i \(\mathbf S\!\cdot\!\hat n=cu\), z których
-  wynika, że na każdy kierunek stosunek strumienia pędu do energii wynosi
-  dokładnie \(\hat n\), a więc \(|p|/(E/c)=|\langle\hat n\rangle|\). Tożsamość
-  ta wymaga jednak poprzeczności względem \(\hat n\), nie względem
-  `direction`. Gdy źródło dryfuje, jego pozycja opóźniona jest przesunięta
-  o \(\sim\beta R\) od środka sfery, oba kierunki rozjeżdżają się o kąt rzędu
-  \(\beta\) i tożsamość pęka w pierwszym rzędzie. Rozjazd jest przy tym
-  **kierunkowy**, różny w każdym punkcie sfery — dlatego jednolite przesunięcie
-  środka o \(-\mathbf v_{CM}R/c\) niczego nie zmieniło.
-
-  Teoria daje tu wartość ścisłą do porównania: dla źródła o zerowym pędzie
-  promieniowania w układzie własnym \(\langle\hat n\rangle=\beta\) dokładnie,
-  tak samo dla emitera izotropowego jak dla dipola. Zmierzone \(1{,}40\beta\)
-  jest więc miarą pęknięcia tej tożsamości.
-
-  **Rozstrzygnięcie: to błąd integratora strumienia, nie reguły porównania.**
-  Rozstrzyga to skan promienia sfery zamiast całki objętościowej z zamkniętego
-  pędu pola. W stanie stacjonarnym strumień przez każdą powierzchnię otaczającą
-  źródło jest ten sam, bo między nimi nic się nie gromadzi. Zmierzony stosunek
-  \(|p|/(E/c)\) wynosi \(0{,}467120\) i jest stały **co do czwartej cyfry
-  przez pięć rzędów promienia**, od \(10\,a_0\) do \(10^6a_0\). Akumulacji
-  zatem nie ma, strumień równa się tempu emisji, a tempo emisji musi spełniać
-  \(|p|/(E/c)=\beta\) dokładnie — czteropęd na jednostkę czasu własnego jest
-  czterowektorem, a pęd w układzie własnym zmierzono jako \(4{,}6\cdot10^{-5}\).
-  Przy \(\beta=0{,}35\) predykcja wynosi \(0{,}35\), pomiar \(0{,}46712\).
-
-  Błędna jest też energia. Moc promieniowania powinna być w tej konfiguracji
-  niezmiennikiem — \((P_0/c,0)\) po boostcie i podzieleniu przez \(\gamma\)
-  daje \((P_0/c,\beta P_0/c)\), więc moc w układzie ruchomym równa się mocy
-  w spoczynkowym. Zmierzony stosunek to \(1{,}1955\).
-
-  Zasięg błędu: pojawia się **wyłącznie dla źródła w ruchu**. Dla źródła
-  spoczywającego integrator liczy poprawnie — pęd strumienia wychodzi
-  \(4{,}6\cdot10^{-5}\) energii, a stosunek do wzoru Larmora \(1{,}00007\).
-  Wyniki produkcyjne pozostają więc nietknięte, bo tam środek masy spoczywa
-  albo \(\beta_{CM}\le3{,}5\cdot10^{-5}\).
-
-  Skutek dla wyników produkcyjnych: **żaden.** W eksperymencie kolapsu środek
-  masy spoczywa, w wiązkowych 3 i 4 również, z konstrukcji podziału ważonego
-  masami. W eksperymencie 5 po przejściu na niezależne losowanie energii środek
-  masy się porusza, ale \(\beta_{CM}\) sięga \(3{,}5\cdot10^{-5}\), co daje
-  błąd pędu promieniowania rzędu \(10^{-5}\).
-
-  Wniosek: wypromieniowany czteropęd **nie jest kowariantny w pierwszym rzędzie
-  w \(\beta\)** i wada siedzi w składowej pędowej, nie energetycznej. Ponieważ
-  produkcja liczy w jednym układzie, nie
-  unieważnia to bezpośrednio raportowanych czasów kolapsu, ale zabrania
-  interpretowania strumienia jako wielkości kowariantnej;
+  Hipotezy obalone po drodze, zapisane, żeby ich nie powtarzać: **zbyt krótka
+  historia opóźniona** (promień \(10^6a_0\) wymaga \(1{,}8\cdot10^{-13}\) s,
+  historia daje \(7{,}2\cdot10^{-19}\) s, ale zejście do \(1\,a_0\) zmienia
+  resztę tylko z \(0{,}2084\) na \(0{,}1695\)); **rozdzielczość kwadratury**
+  (50 do 770 kierunków rusza piątą cyfrę); **transformacja przyspieszeń**
+  (przyspieszenie własne, niezmiennik, zgadza się do \(2{,}6\cdot10^{-8}\));
+  **niecentryczne próbkowanie powłoki** (wycentrowanie sfery na opóźnionej
+  pozycji środka masy zmienia \(|p|/(E/c)\) z \(0{,}46712\) na \(0{,}46702\)).
+  Rozstrzygnął dopiero skan promienia: stosunek \(|p|/(E/c)\) był stały co do
+  czwartej cyfry przez pięć rzędów \(R\), więc nic się między powierzchniami
+  nie gromadziło, strumień równał się tempu emisji i musiał spełniać
+  \(|p|/(E/c)=\beta\);
 - reszta ewolucji tensora dipolowego \(3{,}86\cdot10^{-3}\) — **nie jest to
   błąd całkowania**. Jest odporna na krok (ośmiokrotne zagęszczenie przy stałym
   czasie całkowitym nie zmienia jej ani na piątej cyfrze) i na tolerancję

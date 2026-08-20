@@ -1750,7 +1750,12 @@ int runMaxwellSelfTest() {
         // sphere used in the boosted run.  This is therefore a finite-surface
         // diagnostic, not a strict four-vector pass criterion.  It must remain
         // bounded; the local worldline and four-force tests above are strict.
-        &&covarianceRadiationResidual<2.5e-1;
+        // Bylo 2.5e-1, czyli prog dopasowany do bledu, nie do fizyki:
+        // brakowalo czynnika Dopplera zamieniajacego moc odbierana na
+        // emitowana.  Po jego przywroceniu reszta wynosi 7.0e-04, a reszta
+        // skumulowanego czteropedu 2.1e-06.
+        &&covarianceRadiationResidual<3.0e-3
+        &&covarianceAccumulatedRadiationResidual<1.0e-4;
     const bool dipoleTensorCovarianceOk=dipoleTensorRoundtrip<1.0e-12
         &&dipoleFirstInvariantResidual<1.0e-12
         &&dipoleSecondInvariantResidual<1.0e-12
