@@ -35,6 +35,16 @@ struct State {
     // Independent integral of the mismatch between individual LL reaction
     // and the coherent charge-sector far-field flux.
     double reactionEnergyMismatch=0.0;
+    // Previous COMMITTED step length and the rates sampled at its start.
+    // They exist only to give the radiation bookkeeping trapezoidal weights,
+    // and they live in the State so a rejected trial step discards them with
+    // everything else.
+    double previousStepDt=0.0;
+    bool hasPreviousRates=false;
+    double previousFluxEnergy=0.0,previousDipoleFluxEnergy=0.0;
+    Vec3 previousFluxMomentum,previousFluxAngularMomentum;
+    double previousMismatchEnergy=0.0;
+    Vec3 previousMismatchMomentum,previousMismatchAngularMomentum;
     Vec3 reactionMomentumMismatch,reactionAngularMomentumMismatch;
 };
 

@@ -1752,10 +1752,56 @@ void integrateElectrodynamicStep(State& s, double dt,
     // the correct answer is 8.268e-05 eV; the committed-state form below gives
     // 8.274e-05 eV, i.e. 0.08%.
     //
-    // This is first order in dt rather than second, but advanceAdaptive()
-    // evaluates it at the start of each half-step, so a full step samples the
-    // start and the midpoint.  None of it feeds back into the trajectory.
-    const double radiatedEnergyIncrement = radiation.outwardFlux.energy*dt;
+    // The committed-state RATE above is kept for exactly that reason; what
+    // changed since is only the QUADRATURE applied to it, which used to be a
+    // left rule and is now trapezoidal -- see below.  None of it feeds back
+    // into the trajectory.
+    // Trapezoidal weight for the radiation bookkeeping.  The rate is sampled
+    // at the step START, so weighting every sample by its own dt is a LEFT
+    // Riemann sum: first order, and near collapse the power roughly doubles
+    // per step, so that error is about half the power itself.  Measured on
+    // the collapse trajectory against the identity
+    // W = -dE_S^coh - P_E1 dt, sampled every fifteenth step: the left rule
+    // leaves -0.298, -0.435, -0.492, -0.503 of P dt as r/r_coll runs
+    // 104 -> 4.9, while matched trapezoidal quadrature leaves +0.026,
+    // +0.041, +0.052, +0.064.  e+e- and mu+mu- agree to four digits at equal
+    // r/r_coll, so this is quadrature, not a pair-dependent effect.
+    //
+    // Summing f_k*(dt_{k-1}+dt_k)/2 IS the trapezoid rule regrouped by
+    // sample, and it needs only the previous step length -- no second force
+    // evaluation, so the cost is one double.  The earlier attempt used the
+    // trial state's rate as the right endpoint and under-reported by 34%
+    // because that reconstruction is inconsistent; this form never evaluates
+    // anything off the committed trajectory.
+    //
+    // Concretely, after step k the accumulator holds every COMPLETED interval
+    // as an exact trapezoid plus a provisional left-rule value for the
+    // current one, which the next step corrects:
+    //
+    //     increment = f_k*dt_k + (f_k - f_{k-1})*dt_{k-1}/2.
+    //
+    // Weighting each sample by (dt_{k-1}+dt_k)/2 instead is the same rule
+    // regrouped, but it drops the final half interval outright; that cost
+    // 0.34% on the suite's Larmor accumulation check (0.99998 -> 0.99656),
+    // because the deficit there is half a step's VALUE.  The form above
+    // leaves only half a step's CHANGE, which vanishes whenever the power is
+    // slowly varying.
+    const auto trapezoid=[&](double rate,double previousRate) {
+        return rate*dt + (s.hasPreviousRates
+            ? 0.5*(rate-previousRate)*s.previousStepDt : 0.0);
+    };
+    const auto trapezoidVector=[&](const Vec3& rate,const Vec3& previousRate) {
+        return rate*dt + (s.hasPreviousRates
+            ? (rate-previousRate)*(0.5*s.previousStepDt) : Vec3{});
+    };
+    trial.previousStepDt = dt;
+    trial.hasPreviousRates = true;
+    trial.previousFluxEnergy = radiation.outwardFlux.energy;
+    trial.previousFluxMomentum = radiation.outwardFlux.momentum;
+    trial.previousFluxAngularMomentum = radiation.outwardFlux.angularMomentum;
+    trial.previousDipoleFluxEnergy = radiation.magneticDipoleFlux.energy;
+    const double radiatedEnergyIncrement =
+        trapezoid(radiation.outwardFlux.energy,s.previousFluxEnergy);
     trial.radiatedEnergy += radiatedEnergyIncrement;
     // Unlike the bookkeeping around it, this one DOES feed back: it is the
     // clock the orbit-following zero-point band reads.  Accumulating it here
@@ -1769,11 +1815,13 @@ void integrateElectrodynamicStep(State& s, double dt,
     // Magnetic-dipole damping changes the constrained internal dipole sector.
     // The charge part is already represented by the particle self-force and
     // its near-field (Schott) term.
-    const double dipoleRadiatedEnergy=
-        radiation.magneticDipoleFlux.energy*dt;
+    const double dipoleRadiatedEnergy=trapezoid(
+        radiation.magneticDipoleFlux.energy,s.previousDipoleFluxEnergy);
     trial.dipoleConstraintEnergy-=dipoleRadiatedEnergy;
-    trial.radiatedMomentum += radiation.outwardFlux.momentum*dt;
-    trial.radiatedAngularMomentum += radiation.outwardFlux.angularMomentum*dt;
+    trial.radiatedMomentum += trapezoidVector(
+        radiation.outwardFlux.momentum,s.previousFluxMomentum);
+    trial.radiatedAngularMomentum += trapezoidVector(
+        radiation.outwardFlux.angularMomentum,s.previousFluxAngularMomentum);
 
     if(computeOutwardFlux) {
         // Exact discrete world-tube balance.  This reservoir contains bound
@@ -1823,31 +1871,116 @@ void integrateElectrodynamicStep(State& s, double dt,
         const FieldFluxRates initialMismatch=
             chargeMismatchRates(balanceStart,radiation);
         trial.reactionEnergyMismatch=balanceStart.reactionEnergyMismatch
-            +initialMismatch.energy*dt;
+            +trapezoid(initialMismatch.energy,s.previousMismatchEnergy);
         trial.reactionMomentumMismatch=balanceStart.reactionMomentumMismatch
-            +initialMismatch.momentum*dt;
+            +trapezoidVector(initialMismatch.momentum,s.previousMismatchMomentum);
+        trial.previousMismatchEnergy=initialMismatch.energy;
+        trial.previousMismatchMomentum=initialMismatch.momentum;
+        trial.previousMismatchAngularMomentum=initialMismatch.angularMomentum;
         trial.reactionAngularMomentumMismatch=
             balanceStart.reactionAngularMomentumMismatch
-            +initialMismatch.angularMomentum*dt;
+            +trapezoidVector(initialMismatch.angularMomentum,
+                             s.previousMismatchAngularMomentum);
     }
     s = trial;
 }
 
 void appendStateHistory(StateHistory& history, const State& state) {
-    history.push_back(state);
     const double retentionTime = std::max(1.0e-20, 4.0 * separation(state) / c);
+    // Node SPACING follows the retarded window, not the integration step.
+    //
+    // Storing one node per accepted step ties the spacing to dt, and the
+    // retarded derivatives are differenced over h = 2*spacing.  The Schott
+    // sector needs a third derivative, whose stencil divides by h^3, so
+    // halving dt multiplies its round-off amplification by eight.  Refining
+    // the step therefore made the velocity channel WORSE: measured against
+    // the collapse trajectory, the position residual fell as dt^2 from
+    // 5.0e-09 to 4.6e-13 while the velocity residual rose from 1.25e-07 to
+    // 4.31e-07 over the same three halvings, and the adaptive engine then
+    // exhausted its subdivision depth and reported a numerical failure at
+    // 1.1-2.2 collision radii.  That is why the tolerance could not be
+    // tightened past 1e-6 at all.
+    //
+    // Pinning the spacing to retentionTime/targetHistoryNodes breaks that
+    // feedback: h stops shrinking with dt, and the node count is bounded by
+    // construction for every pair rather than only for e+e-, which leaves
+    // the decimation below as a safety net that no longer fires in ordinary
+    // running.  Raising maximumDepth instead was measured at 445x the run
+    // time and still failed, and a fixed absolute h floor produced a
+    // nonsense 2.3e+08 eV radiated energy at fine steps.
+    //
+    // This buys robustness, NOT a closed radiative balance: with the wall
+    // removed, tightening the tolerance to 1e-7 still moves the radiated
+    // energy from 0.412 to 0.345 eV, and the reaction mismatch stays near
+    // 2.4 eV against 0.41 eV of radiation.
+    //
+    // That leftover is NOT the reduced-order expansion breaking down, and it
+    // is worth recording why, because the opposite is the natural guess.  At
+    // the e+e- collision boundary the LL parameter is tau*omega = 3.7e-4
+    // (tau = 2 r_e/3c = 6.26e-24 s, omega = 5.9e19 rad/s) and beta = 0.10, so
+    // the self-force expansion is nowhere near its limit.
+    //
+    // It is NOT a missing interference term either.  individualLandau-
+    // LifshitzSelfForces already returns firstSelf+firstMutual, where the
+    // mutual part is exactly the 2 q1 q2 a1.a2 cross term, so that route is
+    // algebraically the coherent dipole reaction q_i d'''/norm.
+    //
+    // Decomposed along the collapse (e+e-, seed 12345, eV): true retarded
+    // flux 0.422, coherent E1 Larmor 0.527, sum of individual 0.268,
+    // interference 0.259, reaction work +2.071.  The interference is nine
+    // times too small to account for a 2.43 eV gap, and the work comes out
+    // POSITIVE, i.e. dominated by the reversible Schott term rather than by
+    // damping.  E_S at t=0 was measured, not assumed, at -1.2e-06 eV.
+    //
+    // Structurally the gap tracks -dE_S^coh: integral(flux) - dE_S^coh -
+    // integral(P_E1) = 0.422 + 2.667 - 0.527 = 2.562 against a measured
+    // 2.432.  The Schott boundary term, which is reversible near-field
+    // energy rather than a conservation violation, is thus the bulk of it,
+    // and the genuine radiation part (flux - P_E1 = -0.105 eV) is about the
+    // retardation correction expected at beta=0.1.
+    //
+    // individualLandauLifshitzSelfForces itself is SOUND.  Tested locally,
+    // step by step, its identity work = -dE_S^coh - P_E1 dt closes to
+    // 2.5-10%, and e+e- and mu+mu- agree to four digits at equal r/r_coll
+    // (0.0255 vs 0.0254), so the reaction sector is scale invariant as the
+    // shared tau*omega = 3.7e-4 requires.
+    //
+    // Two earlier readings of this were measurement artefacts, recorded so
+    // they are not rediscovered: comparing the work INTEGRAL against an
+    // endpoint value of E_S makes the identity look 75-97% wrong for
+    // mu+mu-, because E_S varies fastest exactly at the endpoint; and
+    // evaluating the work at the step start while taking dE_S exactly across
+    // the step leaves a spurious -0.5 P dt.  Neither survives a matched
+    // quadrature.  Lowering the 1e-24 derivativeStep floor a thousandfold
+    // moves the muon result by 0.6%, so that floor is not implicated either.
+    //
+    // One concrete trap found while checking this: on an ORDINARY BOUND
+    // ORBIT the retarded window max(1e-20, 4r/c) is SHORTER than the
+    // integration step, so the history holds about three nodes -- too few for
+    // the third-derivative stencil, which then correctly returns zero.  The
+    // coherent route is thus unavailable there by construction, and comparing
+    // it against the LL route at that point compares against a near-zero
+    // vector.  That is a measurement trap, not a second bug.
+    constexpr std::size_t targetHistoryNodes = 128;
+    if (history.size() >= 2
+        && state.time - history.back().time
+               < retentionTime / static_cast<double>(targetHistoryNodes)) {
+        // Keep the leading edge current without densifying the grid.
+        history.back() = state;
+        return;
+    }
+    history.push_back(state);
     const double earliestNeeded = state.time - retentionTime;
     while (history.size() > 2 && history[1].time < earliestNeeded) {
         history.pop_front();
     }
-    // Cap the sample count inside the retarded window.  The window length is
-    // set by the light-crossing time of the pair, but the number of samples
-    // needed inside it is set by how fast the source moves, not by the
-    // integration step.  Without a cap the count is window/step, which grows
-    // like r^{-1/2} and reached ten thousand entries at short range.  Ordinary
-    // orbits hold three to six nodes, so this never triggers there and their
-    // results are bit-identical.
-    constexpr std::size_t maximumHistoryNodes = 128;
+    // Backstop for the sample count inside the retarded window.  Before the
+    // spacing rule above, the count was window/step, which grows like
+    // r^{-1/2} and reached ten thousand entries at short range; this cap was
+    // what kept that bounded.  The spacing rule now holds the count near
+    // targetHistoryNodes by construction, so the decimation below is reached
+    // only if a caller appends out of order.  It stays as a safety net.
+    constexpr std::size_t maximumHistoryNodes = 2*targetHistoryNodes;
     if (history.size() > maximumHistoryNodes) {
         StateHistory thinned;
         const std::size_t keepRecent = maximumHistoryNodes/2;

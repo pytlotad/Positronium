@@ -102,6 +102,192 @@ Pasmo prędkości stycznej jest teraz wyśrodkowane na orbicie kołowej w
 zastąpić stanu podstawowego; \(L=\hbar\) jest orbitą klasyczną odtwarzającą
 poprawną energię wiązania i średni promień.
 
+### Granica zderzenia
+
+Separacja, przy której trajektoria liczy się jako zderzenie, też skaluje się
+z parą:
+
+\[
+r_{\rm coll}=0{,}005\,a_{\rm pary},
+\]
+
+co daje 0,529177 pm dla e⁺e⁻, 0,00255928 pm dla µ⁺µ⁻ i 0,000288199 pm dla
+p+p̄. Wcześniej była to stała 0,01·a₀ = 529 fm, zbudowana z promienia Bohra
+**wodoru**, podczas gdy separacja startowa od dawna brała promień Bohra
+**wybranej pary**. Dla µ⁺µ⁻ start wypada na 512 fm, a dla p+p̄ na 57,6 fm,
+czyli już wewnątrz tej granicy: pętla uznawała trajektorię za zderzoną przed
+pierwszym krokiem i zwracała awarię numeryczną. Po przeskalowaniu eksperyment 5
+dla mionium schodzi z 2/12 zderzeń do 0/12. Granica jest wyprowadzana
+w `particle_species.hpp` jako `collisionBoundaryOf(pair)`, obok promienia
+regularyzacji — obie opuściły `physical_constants.hpp` z tego samego powodu:
+niosły skalę gatunku, a nie czystą stałą fizyczną.
+
+### Siatka historii retardowanej
+
+Węzeł historii nie jest już zapisywany na każdy przyjęty krok. Odstęp węzłów
+jest przypięty do okna retardowanego,
+
+\[
+\Delta t_{\rm hist}=\frac{\max(10^{-20}\,\mathrm{s},\;4r/c)}{128},
+\]
+
+a nowszy stan, który nie sięga tego odstępu, tylko odświeża czoło zamiast
+zagęszczać siatkę.
+
+Powód jest mierzalny. Pochodne retardowane są różnicowane po \(h=2\Delta
+t_{\rm hist}\), a sektor Schotta potrzebuje **trzeciej** pochodnej, której
+stencil dzieli przez \(h^3\). Gdy odstęp szedł za krokiem, połowienie kroku
+ośmiokrotnie wzmacniało zaokrąglenia w tym członie. Zagęszczanie kroku
+psuło więc kanał prędkości: na trajektorii kolapsu reszta **pozycji** opadała
+jak \(dt^2\) z \(5{,}0\cdot10^{-9}\) do \(4{,}6\cdot10^{-13}\),
+podczas gdy reszta **prędkości** w tych samych trzech połowieniach *rosła*
+z \(1{,}25\cdot10^{-7}\) do \(4{,}31\cdot10^{-7}\). Silnik adaptacyjny
+wyczerpywał wtedy głębokość podziału i zgłaszał awarię numeryczną przy 1,1–2,2
+promienia zderzenia — dlatego tolerancji nie dawało się zacieśnić poniżej
+\(10^{-6}\) w ogóle.
+
+Po zmianie tolerancja schodzi niżej, a czas kolapsu zbiega monotonicznie:
+3,252639e-05, 3,2526313e-05, 3,252627e-05 i 3,252626e-05 ps dla tolerancji
+\(10^{-5}\) do \(10^{-8}\), gdzie wcześniej dwie ostatnie kończyły się
+awarią. Sektor koherentnej reakcji wyraźnie zyskał: stosunek strumienia
+przeszedł z \(1{,}1139\) na \(0{,}9965\) przy ideale 1, a reszta kroku
+z \(8{,}40\cdot10^{-6}\) na \(1{,}70\cdot10^{-8}\), czyli 493 razy.
+Koszt jest ujemny — walidacja skróciła się z 19,77 s do 16,56 s, bo węzłów
+jest mniej. Pogorszyła się jedna pozycja: skumulowana reszta czteropędu po
+boostcie z \(2{,}08\cdot10^{-6}\) na \(2{,}33\cdot10^{-6}\).
+
+Gęstość 128 węzłów nie jest dowolna. Przy 64 reszta kroku przestawała zbiegać
+z tolerancją (9,2/6,8/6,2\(\cdot10^{-6}\) zamiast 5,4/1,3/0,30), a przy 256
+znikał zysk w sektorze koherentnym — siatka musi być dość gęsta, by rozdzielić
+okno, i dość rzadka, by odczepić się od kroku. Limit `maximumHistoryNodes`
+jest teraz jej dwukrotnością i w zwykłym biegu nie jest osiągany.
+
+Cztery inne wyjaśnienia zostały po drodze **obalone pomiarem**: limit 128
+węzłów (wynik bit-w-bit identyczny), rozejście się historii między próbą
+zgrubną a dokładną, podniesienie `maximumDepth` do 16 (445-krotny czas i dalej
+awaria) oraz sztywna podłoga \(h\), która przy drobnym kroku dała
+\(2{,}3\cdot10^{8}\) eV energii wypromieniowanej.
+
+Zmiana kupuje **odporność, nie domknięty bilans radiacyjny**. Po usunięciu
+ściany zacieśnienie tolerancji do \(10^{-7}\) wciąż przesuwa energię
+wypromieniowaną z 0,412 na 0,345 eV, a niedopasowanie reakcji zostaje przy
+2,4 eV wobec 0,41 eV promieniowania.
+
+Warto zapisać, **czym ta reszta nie jest**, bo nasuwa się to samo błędne
+wyjaśnienie. Nie jest załamaniem rozwinięcia zredukowanego: na granicy
+zderzenia e⁺e⁻ parametr Landaua–Lifshitza wynosi \(\tau\omega=3{,}7\cdot
+10^{-4}\) przy \(\tau=2r_e/3c=6{,}26\cdot10^{-24}\) s i
+\(\omega=5{,}9\cdot10^{19}\) rad/s, a \(\beta=0{,}10\). Rozwinięcie
+siły własnej jest tam znakomicie zbieżne.
+
+Nie jest też **brakującym członem interferencyjnym**.
+`individualLandauLifshitzSelfForces` zwraca `firstSelf+firstMutual`, gdzie
+część wzajemna to dokładnie wyraz \(2q_1q_2\,\mathbf a_1\!\cdot\!\mathbf
+a_2\); ta droga jest więc algebraicznie tożsama z reakcją dipola koherentnego
+\(q_i\dddot{\mathbf d}/\mathrm{norm}\). Człon w kodzie jest.
+
+Rozkład wzdłuż kolapsu (e⁺e⁻, ziarno 12345, w eV): strumień retardowany 0,422,
+E1 koherentny 0,527, suma indywidualnych 0,268, **interferencja 0,259**, praca
+reakcji **+2,071**. Kontrola instrumentacji: E1/indywidualny = 1,97 wobec
+dokładnie 2 wymaganych dla pary symetrycznej. Interferencja jest więc
+dziewięć razy za mała, by wyjaśnić lukę 2,43 eV, a praca wychodzi **dodatnia**,
+czyli zdominowana przez odwracalny człon Schotta, nie przez tłumienie.
+\(E_S\) na starcie zmierzono, a nie założono: −1,2·10⁻⁶ eV.
+
+Strukturalnie luka idzie za \(-\Delta E_S^{\rm koh}\):
+\(\int\Phi-\Delta E_S^{\rm koh}-\int P_{E1}=0{,}422+2{,}667-0{,}527=2{,}562\)
+wobec zmierzonych 2,432. Człon Schotta — odwracalna energia pola bliskiego, a
+nie złamanie zachowania — jest więc główną jej częścią, a właściwa część
+promienista (strumień − \(P_{E1}=-0{,}105\) eV) to mniej więcej poprawka
+retardacyjna przy \(\beta=0{,}1\).
+
+Sama `individualLandauLifshitzSelfForces` jest **poprawna**. Sprawdzona
+lokalnie, krok po kroku, jej tożsamość \(W=-\Delta E_S^{\rm koh}-P_{E1}dt\)
+domyka się do 2,5–10%, a e⁺e⁻ i µ⁺µ⁻ zgadzają się na cztery cyfry przy równym
+\(r/r_{\rm coll}\) (0,0255 wobec 0,0254) — sektor reakcji jest niezmienniczy
+względem skali, jak wymaga wspólne \(\tau\omega=3{,}7\cdot10^{-4}\).
+
+Dwa wcześniejsze odczyty tej wielkości były **artefaktami pomiaru** i są tu
+zapisane, żeby nikt ich nie odkrywał ponownie. Porównywanie **całki** pracy
+z **punktową** wartością \(E_S\) na końcu każe tożsamości chybiać o 75–97%
+dla µ⁺µ⁻ — bo \(E_S\) zmienia się najszybciej właśnie na końcu. Liczenie
+pracy z lewego końca kroku przy dokładnym \(\Delta E_S\) zostawia pozorną
+resztę \(-0{,}5\,P\,dt\). Żaden z nich nie przeżywa wyrównania kwadratur.
+Obniżenie podłogi `derivativeStep` \(10^{-24}\) tysiąckrotnie przesuwa wynik
+mionowy o 0,6%, więc i ona jest bez związku.
+
+Przy sprawdzaniu tego wyszła jedna pułapka pomiarowa warta zapisania: na
+**zwykłej orbicie związanej** okno retardowane \(\max(10^{-20},4r/c)\) jest
+**krótsze niż krok całkowania**, więc historia trzyma około trzech węzłów — za
+mało na stencil trzeciej pochodnej, który wtedy poprawnie zwraca zero. Droga
+koherentna jest tam z konstrukcji niedostępna, a porównywanie jej z drogą LL
+oznacza porównywanie z wektorem bliskim zeru (stosunek rzędu \(10^8\),
+kosinus skaczący od −0,95 do +0,77). To artefakt pomiaru, nie druga usterka.
+
+Cztery pary dają 33/33. Wyniki produkcyjne przy tolerancji \(10^{-5}\) są
+dla e⁺e⁻ bit-w-bit te same; dla µ⁺µ⁻ czas kolapsu różni się na ósmej cyfrze
+(1,5733404e-07 wobec 1,5733401e-07 ps), czyli poniżej wykazanego poziomu
+zbieżności.
+
+### Kwadratura księgowości radiacyjnej
+
+Szybkości promieniowania są próbkowane na **początku** kroku, więc ważenie
+każdej próbki jej własnym \(dt\) było sumą Riemanna z lewego końca — regułą
+pierwszego rzędu. Blisko kolapsu moc podwaja się mniej więcej co krok, więc
+ten błąd sięga połowy samej mocy.
+
+Zmierzone na trajektorii kolapsu wobec tożsamości
+\(W=-\Delta E_S^{\rm koh}-P_{E1}dt\), co piętnasty krok, przy \(r/r_{\rm
+coll}\) biegnącym 104 → 4,9:
+
+| reguła | reszta / \(P\,dt\) |
+|---|---|
+| lewy koniec | −0,298, −0,435, −0,492, −0,503 |
+| trapez | +0,026, +0,041, +0,052, +0,064 |
+
+e⁺e⁻ i µ⁺µ⁻ zgadzają się przy tym na cztery cyfry, więc rzecz dotyczy
+kwadratury, nie pary.
+
+Akumulator ma teraz postać
+
+\[
+\Delta A_k=f_k\,dt_k+\tfrac12\,(f_k-f_{k-1})\,dt_{k-1},
+\]
+
+czyli każdy **zamknięty** przedział jest dokładnym trapezem, a bieżący nosi
+tymczasową wartość z lewego końca, którą poprawia następny krok. Kosztuje to
+jeden `bool` i piętnaście liczb w `State` — żadnej dodatkowej ewaluacji siły.
+Wcześniejsza próba trapezu brała prawy koniec ze **stanu próbnego** i zaniżała
+o 34%, bo tamta rekonstrukcja jest niespójna; ta postać nie sięga poza
+trajektorię zatwierdzoną.
+
+Odrzucono też wariant ważący próbkę przez \((dt_{k-1}+dt_k)/2\). Jest to ta
+sama reguła przegrupowana, ale gubi ostatnie pół przedziału, co kosztowało
+0,34% na kontroli `Larmor accumulation` (0,99998 → 0,99656) — deficyt jest tam
+połową **wartości** mocy. Postać powyżej zostawia połowę jej **przyrostu**,
+który znika, gdy moc zmienia się wolno.
+
+Skutek jest taki, że energia wypromieniowana **zaczęła zbiegać**:
+
+| tolerancja | lewy koniec | trapez |
+|---|---|---|
+| \(10^{-5}\) | 0,41196 | 0,42603 |
+| \(10^{-6}\) | 0,41882 (+1,67%) | 0,42611 (**+0,019%**) |
+| \(10^{-7}\) | 0,34528 (−17,6%) | 0,42820 (**+0,49%**) |
+
+Rozrzut spadł z 17,6% do pół procenta, a wartość produkcyjna przy kolapsie
+przesunęła się o +3,4%, bo lewy koniec ją zaniżał. W audycie `pair-field
+IDENTITY` poprawiło się pięciokrotnie (1,03·10⁻²⁵ → 2,05·10⁻²⁶), skumulowana
+reszta czteropędu po boostcie o 2,5% (2,33 → 2,27·10⁻⁶), a `Larmor
+accumulation` zostało nietknięte (0,99998 → 0,99997).
+
+Czego to **nie** zmienia: stosunek niedopasowania reakcji przy kolapsie stoi
+(5,905 → 5,912). I tak być powinno — jak opisano wyżej, tworzy go człon
+Schotta, a nie błąd kwadratury. Poprawka naprawia całkowanie, nie
+interpretację.
+
+Cztery pary dają 33/33.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
@@ -141,7 +327,7 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   i reszta siły po boostcie \(1{,}10\cdot10^{-6}\) — obie na poziomie
   numerycznym;
 - reszta skończonego strumienia promieniowania po boostcie \(7{,}0\cdot10^{-4}\)
-  i skumulowanego czteropędu promieniowania \(2{,}1\cdot10^{-6}\). Były to
+  i skumulowanego czteropędu promieniowania \(2{,}3\cdot10^{-6}\). Były to
   \(0{,}2084\) i \(0{,}2084\), zdecydowanie najgorsze liczby audytu; przyczyna
   została **znaleziona i naprawiona**, a droga do niej jest zapisana niżej, bo
   cztery z sześciu hipotez okazały się błędne.
@@ -192,7 +378,21 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   więc strukturalne, rzędu \(\beta_{boost}\beta_{orb}\), i żadne zagęszczanie
   kroku go nie ruszy.
 
-Podwojenie `particle-field dJ` po poprawce czynnika \(g\) w relacji
+Relacja moment–spin niosła błąd czynnika \(g\). Model definiuje
+\(\boldsymbol\mu=\gamma\mathbf S\) z \(\gamma=gq/2m\) i przechowuje
+\(|\boldsymbol\mu|=(g/2)\,\text{magneton}\), ale cztery miejsca liczyły
+\(\gamma\) jako \(q/2m\): wewnętrzny moment pędu w `particleFieldTotals`
+i w `noetherAngularMomentum` (obie postaci \(\boldsymbol\mu/\gamma\)) oraz
+odpowiedź na moment siły \(d\boldsymbol\mu=\gamma\boldsymbol\tau\,dt\)
+w `applyDipoleRadiationTorque` i w `pushStateWithGridField`. Raportowany
+wewnętrzny moment pędu wychodził przez to \(1{,}001160\,\hbar\) zamiast
+\(0{,}500000\,\hbar\), czyli był zawyżony dokładnie o \(g=2{,}0023\),
+a odpowiedź dipola na moment siły była o tyle samo za słaba. Wszystkie cztery
+miejsca korzystają teraz ze wspólnego `gyromagneticRatio(charge, mass, gFactor)`,
+żeby \(g\) nie mogło wypaść przy kolejnym wywołaniu. Niezależne residuum
+`raw dJ` poprawiło się o 3,7%.
+
+Podwojenie `particle-field dJ` po tej poprawce w relacji
 \(\boldsymbol\mu=\gamma\mathbf S\) zostało **zbadane i jest artefaktem
 normalizacji, nie regresją**. Licznik domknięcia nie zmienił się ani o bit
 i wynosi \(9{,}57308412\cdot10^{-38}\) przed poprawką i po niej. Zmienił się
@@ -217,6 +417,15 @@ bo `boundField*` jest akumulowane co krok właśnie jako reszta domykająca.
 Sprawdzone pomiarem: całkowite złamanie antysymetrii sondy nie rusza tych
 liczb wcale.
 
+Zestaw kontroli rozszerzono o pięć pozycji towarzyszących modułowi
+`two_body_kinematics.hpp`: `two-body-role-invariance` sprawdza, że zamiana ról
+w parze nie zmienia kinematyki wejściowej ani swobodnej,
+`two-body-lorentz-boost` — że boost i powrót odtwarzają oba stany,
+`two-body-causality` — przyczynowość ustawienia dwuciałowego,
+`coherent-magnetic-dipole` — residuum pochodnej w koherentnym sektorze
+magnetycznym, a `adaptive-depth-rejection` — zachowanie integratora przy
+odrzucaniu kroku na granicy głębokości podziału.
+
 Wzorzec „wielkość wypisywana, ale niesprawdzana" został przejrzany
 **systematycznie**: dla każdej ze 135 wielkości w wyjściu walidacji sprawdzono,
 czy jej nazwa występuje w jakimkolwiek predykacie. Trzynaście nie występowało.
@@ -239,7 +448,7 @@ na samą wartość postawić się więc nie da; sprawdzane jest zamiast tego, cz
 
 Ten sam wzorzec dotyczył całego sektora reakcji promieniowania. `finiteReactionBenchmark` testował wyłącznie
 `isfinite`, więc dziewięć liczb opisujących trzy modele reakcji mogło przyjąć
-dowolną wartość przy dalej zielonym 28/28. Mają teraz progi.
+dowolną wartość, a suite i tak raportowałby komplet zdanych kontroli. Mają teraz progi.
 
 Przy okazji ujawniła się pułapka normalizacji. `reaction flux off/LL/C` dzieli
 rozjazd pracy reakcji przez **energię wypromieniowaną**, a ta w sondzie trwającej
@@ -253,7 +462,7 @@ jest ta druga postać, dopisana jako `reaction mism/E_mech`.
 
 Niezależnym pomiarem jest linia `raw dE/dP/dJ`, która wyklucza `boundField*`.
 Do niedawna **była wypisywana i nigdy nie sprawdzana**, więc mogła dryfować
-dowolnie przy dalej zielonym 28/28; ma teraz własne progi. Jej składowa pędowa
+dowolnie przy komplecie zdanych kontroli; ma teraz własne progi. Jej składowa pędowa
 wymaga przy tym ostrożności tego samego rodzaju co reszta bilansu pola: wysyłana
 sonda jest antysymetryczna, przez co pęd wychodzi 1,3e-08, czyli pięć rzędów
 lepiej niż energia — po złamaniu symetrii wychodzi 8,1e-04, czyli tyle samo co
@@ -327,7 +536,8 @@ z pełnego oddziaływania retardowanego i historia jest odbudowywana. Ogranicza
 to niedopasowanie przy \(t=0\) bez wydłużania właściwej trajektorii. Kroki
 różnicowe pochodnych dipolowych są związane z lokalnym odstępem historii przez
 współczynnik 2 zamiast wcześniejszego 8, co zmniejsza błąd obcięcia bez
-rekurencyjnego obliczania pola BMT.
+rekurencyjnego obliczania pola BMT. Sam odstęp historii nie idzie już jednak
+za krokiem całkowania — patrz „Siatka historii retardowanej".
 
 Dostępny jest alternatywny model `coherentElectricDipole`: wspólne pole reakcji
 Abrahama–Lorentza jest wyznaczane z tej samej trzeciej pochodnej elektrycznego
@@ -1586,7 +1796,7 @@ czytelności i rozdzieleniu odpowiedzialności.
 | --- | --- |
 | `vector3.hpp`, `state.hpp`, `dipole_tensor.hpp` | typy podstawowe |
 | `physical_constants.hpp` | stałe fizyczne wraz z wyprowadzeniami |
-| `particle_species.hpp` | tablica gatunków (masa, ładunek, `g`), para integrowana przez przebieg i skale, które z niej wynikają: masa zredukowana, promień Bohra pary, energia wiązania, promień regularyzacji dipola oraz wyszukiwanie gatunku dla `--pair` |
+| `particle_species.hpp` | tablica gatunków (masa, ładunek, `g`), para integrowana przez przebieg i skale, które z niej wynikają: masa zredukowana, promień Bohra pary, energia wiązania, promień regularyzacji dipola, granica zderzenia oraz wyszukiwanie gatunku dla `--pair` |
 | `two_body_kinematics.hpp` | stabilna relatywistyczna kinematyka dwuciałowa: czteropędy, energia niezmiennicza, boost Lorentza i stan wejściowy na sferze dopasowania |
 | `electrodynamics.hpp` | **prawa sił**: pola opóźnione, Darwin, sprzężenie dipolowe, reakcja promieniowania, strumień dalekiego pola |
 | `crem_engine.hpp` | **numeryka**: rekonstrukcja historii przyczynowej i adaptacyjny integrator (sonda błędu, podział kroku, retencja historii) |
