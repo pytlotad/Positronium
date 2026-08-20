@@ -1648,11 +1648,24 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
   quenching, poprawki radiacyjne i rzadsze kanały rozpadu;
 - relatywistyczne amplitudy QED niezwiązanej pary, w tym rozpraszanie Bhabhy
   i przekrój anihilacji e⁺e⁻;
-- pełne, wzajemnie opóźnione pola Liénarda–Wiecherta i kompletna dynamika pola
-  Maxwella;
-- poprawki oddziaływania ładunków wyższe niż rząd \(v^2/c^2\);
-- relatywistyczna precesja BMT, precesja Thomasa, transformacja dipoli między
-  układami odniesienia oraz kwantowe sprzężenie spin–orbita;
+- kompletna dynamika pola Maxwella w torze produkcyjnym. Same **wzajemnie
+  opóźnione pola Liénarda–Wiecherta są uwzględnione** i to one napędzają
+  trajektorię (`retardedExternalForces`, patrz sekcja *Retardowane pola
+  Liénarda–Wiecherta*); nieobecne jest rozwiązywanie równań Maxwella na
+  siatce, które kompiluje się wyłącznie do `positronium_validation` jako
+  kontrola krzyżowa i nie bierze udziału w produkcyjnym całkowaniu;
+- ograniczenie do rzędu \(v^2/c^2\) **nie obowiązuje** w torze produkcyjnym:
+  siła między ładunkami liczona jest z pełnego pola Liénarda–Wiecherta,
+  dokładnego we wszystkich rzędach \(v/c\) wraz z retardacją. Przybliżenie
+  Darwina, które jest rzędu \(v^2/c^2\), występuje wyłącznie w raportowanej
+  diagnostyce energii oraz jako zalążek rekonstrukcji historii przyczynowej,
+  natychmiast zastępowany dwiema iteracjami Picarda na siłach retardowanych;
+- kwantowa struktura subtelna i kwantowe elementy macierzowe sprzężenia
+  spin–orbita. Klasyczne odpowiedniki **są uwzględnione**: relatywistyczna
+  precesja BMT z mierzonym \(g\), precesja Thomasa i transformacja tensora
+  dipolowego między układami odniesienia; człon \(\boldsymbol\beta\times\mathbf E\)
+  w polu efektywnym BMT to właśnie ruchowe pole magnetyczne, czyli klasyczne
+  sprzężenie spin–orbita;
 - skończony rozmiar cząstek i struktura krótkiego zasięgu — zastępuje je próg
   \(10^{-14}\,\mathrm m\);
 - zderzenia z materią, grawitacja i wpływ ośrodka (jednorodne zewnętrzne pole
