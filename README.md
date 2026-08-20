@@ -147,9 +147,32 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
     \(\text{reszta}/\beta\) dąży do \(0{,}40\), a lokalny wykładnik do
     \(1{,}04\). Znika więc liniowo z prędkością układu.
 
+  Dalej wykluczone: **nie są to źle transformowane przyspieszenia.**
+  Przyspieszenie własne, będące niezmiennikiem Lorentza, zgadza się między
+  układami do \(2{,}6\cdot10^{-8}\) przy \(\beta=0{,}35\). Sektor dynamiczny
+  jest kowariantny; niekowariantne jest samo liczenie strumienia.
+
+  Rozbicie residuum wskazuje winowajcę. Składowa **energii** jest kwadratowa
+  w \(\beta\) (\(1{,}96\cdot10^{-1}\), \(1{,}42\cdot10^{-2}\),
+  \(3{,}52\cdot10^{-3}\) przy \(\beta=0{,}35\), \(0{,}10\), \(0{,}05\)),
+  czyli zachowuje się poprawnie. Dominuje składowa **pędu**, liniowa w
+  \(\beta\): wypromieniowany pęd w układzie ruchomym jest konsekwentnie
+  \(1{,}40\) raza większy, niż przewiduje boost, a czynnik ten dąży do stałej
+  przy \(\beta\to0\) (\(1{,}334\), \(1{,}394\), \(1{,}398\)).
+
+  Silna poszlaka co do mechanizmu: dla promieniowania dipolowego
+  \(dP/d\Omega\propto\sin^2\theta\) zachodzi
+  \(\langle\cos^2\theta\rangle=\tfrac15\), a \(1+2\langle\cos^2\theta\rangle
+  =1{,}4\) — zgodność z \(1{,}398\) na poziomie \(0{,}15\%\). Sugeruje to, że
+  reguła użyta do porównania, „zboostuj tempo i podziel przez \(\gamma\)",
+  pomija zależny od kształtu wiązki człon aberracji: tempo przez sferę przy
+  ustalonym czasie **nie jest** czterowektorem, bo \(dt\) nie jest
+  niezmiennikiem. Nie jest jeszcze rozstrzygnięte, czy wada leży w regule
+  porównania w teście, czy w samym integratorze strumienia — obie dają ten sam
+  podpis.
+
   Wniosek: wypromieniowany czteropęd **nie jest kowariantny w pierwszym rzędzie
-  w \(\beta\)**, i nie da się tego zrzucić na dyskretyzację ani na dobór
-  promienia czy kwadratury. Ponieważ produkcja liczy w jednym układzie, nie
+  w \(\beta\)** i wada siedzi w składowej pędowej, nie energetycznej. Ponieważ produkcja liczy w jednym układzie, nie
   unieważnia to bezpośrednio raportowanych czasów kolapsu, ale zabrania
   interpretowania strumienia jako wielkości kowariantnej;
 - reszta ewolucji tensora dipolowego \(3{,}86\cdot10^{-3}\) — **nie jest to
