@@ -128,9 +128,30 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   i reszta siły po boostcie \(1{,}10\cdot10^{-6}\) — obie na poziomie
   numerycznym;
 - reszta skończonego strumienia promieniowania po boostcie \(0{,}2084\)
-  i skumulowanego czteropędu promieniowania \(0{,}2084\) — to nadal najsłabszy
-  wynik kowariancyjny i najostrzejsze ograniczenie interpretacji strumienia
-  w układach ruchomych;
+  i skumulowanego czteropędu promieniowania \(0{,}2084\) — najsłabszy wynik
+  kowariancyjny całego audytu i najostrzejsze ograniczenie interpretacji
+  strumienia w układach ruchomych. Scharakteryzowany pomiarowo, choć przyczyna
+  nie jest jeszcze wskazana:
+
+  - **nie jest to zbyt krótka historia opóźniona.** Promień powierzchni
+    kontrolnej \(10^6a_0\) wymaga czasu opóźnionego \(1{,}8\cdot10^{-13}\) s,
+    a historia sondy obejmuje \(7{,}2\cdot10^{-19}\) s, czyli 245 000 razy
+    mniej. Zjechanie z promieniem do \(1\,a_0\), gdzie czas opóźniony mieści
+    się w historii z czterokrotnym zapasem, zbija resztę zaledwie z
+    \(0{,}2084\) do \(0{,}1695\);
+  - **nie jest to rozdzielczość kwadratury.** Zmiana liczby kierunków
+    Lebiediewa z 50 na 770 zmienia resztę dopiero na piątej cyfrze;
+  - **jest to efekt geometrii boostu, pierwszego rzędu w \(\beta\).** Reszta
+    wynosi \(0{,}2084\), \(0{,}0917\), \(0{,}0414\) i \(0{,}0202\) przy
+    \(\beta=0{,}35\), \(0{,}20\), \(0{,}10\) i \(0{,}05\); iloraz
+    \(\text{reszta}/\beta\) dąży do \(0{,}40\), a lokalny wykładnik do
+    \(1{,}04\). Znika więc liniowo z prędkością układu.
+
+  Wniosek: wypromieniowany czteropęd **nie jest kowariantny w pierwszym rzędzie
+  w \(\beta\)**, i nie da się tego zrzucić na dyskretyzację ani na dobór
+  promienia czy kwadratury. Ponieważ produkcja liczy w jednym układzie, nie
+  unieważnia to bezpośrednio raportowanych czasów kolapsu, ale zabrania
+  interpretowania strumienia jako wielkości kowariantnej;
 - reszta ewolucji tensora dipolowego \(3{,}86\cdot10^{-3}\) — **nie jest to
   błąd całkowania**. Jest odporna na krok (ośmiokrotne zagęszczenie przy stałym
   czasie całkowitym nie zmienia jej ani na piątej cyfrze) i na tolerancję
