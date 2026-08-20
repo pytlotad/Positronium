@@ -1123,6 +1123,12 @@ oddziaływania. Każda z \(N\) prób ma wagę \(A/N\). Wyświetlane są:
 - skumulowany przekrój akceptancji \(\sigma(\theta\ge\theta_{min})\);
 - karta ustawień, przekroju fiducjalnego i liczby nieudanych trajektorii.
 
+Ten sam schemat obsługuje dwa eksperymenty: 4 to rozpraszanie szerokie, 3 to
+kanał krótkiego zasięgu. Dla eksperymentu 3 obowiązuje ostrzeżenie o zakresie
+stosowalności podane przy opisie jego plików wyjściowych — z tego kanału nie
+wolno czytać wielkości energetycznych, bo bilans energii modelu się w nim
+rozjeżdża.
+
 Dla kanału krótkiego zasięgu dochodzi modelowe widmo strat energii
 \(d\sigma/d\Delta E\), gdzie \(\Delta E=K_{CM}-E_{out}\). Zakres osi obejmuje
 energię wiązki i jest w razie potrzeby poszerzany do pełnej próbki. Dla
@@ -1345,12 +1351,35 @@ elastyczne. Poza doborem akceptancji kątowej i `b_max` różnią się jednym
 plikiem: panel strat energii powstaje **wyłącznie w eksperymencie 3**, więc 3
 daje 6 plików, a 4 daje 5.
 
+> **Ostrzeżenie o zakresie stosowalności — eksperyment 3.** Audyt kompletności
+> fizycznej (sekcja *Wynik audytu kompletności fizycznej*) pokazuje, że kanał
+> krótkiego zasięgu wypada poza zakres stosowalności modelu wedle jego własnej
+> diagnostyki, i to we wszystkich trzech niezależnych miarach naraz: rezerwuar
+> pola związanego sięga \(1{,}4\)–\(9{,}4\) energii samej orbity, człon Schotta
+> jest \(3{,}4\)–\(3{,}7\) raza większy od energii wypromieniowanej, a praca
+> reakcji Landaua–Lifshitza rozmija się ze strumieniem dalekiego pola
+> o czynnik \(6{,}2\)–\(6{,}4\). Nie jest to efekt małego mianownika:
+> bezwzględnie przy \(E_{rel}=-7{,}8\) eV wychodzi \(E_{bound}=+11{,}0\) eV
+> i \(E_{Schott}=-1{,}5\) eV wobec \(0{,}45\) eV wypromieniowanych.
+>
+> Dla porównania kanał związany (1, 2) i szerokie rozpraszanie (4) są w tych
+> samych miarach czyste, na poziomie \(10^{-4}\) energii orbity.
+>
+> W praktyce znaczy to, że **z eksperymentu 3 nie wolno czytać wielkości
+> energetycznych**. Dotyczy to wprost panelu strat energii poniżej, a także
+> interpretacji panelu bilansu energii, którego niezależne residuum
+> LL-vs-strumień jest dla tego kanału rzędu jedności, a nie promila. Rozkłady
+> kątowe \(d\sigma/d\Omega\) i \(\sigma(\theta\ge\theta_{min})\) opierają się
+> na geometrii rozproszenia, nie na bilansie energii, więc to ostrzeżenie ich
+> bezpośrednio nie unieważnia — ale i one pochodzą z trajektorii liczonych
+> w tym samym reżimie.
+
 | Plik | Zawartość |
 | --- | --- |
 | `N_1_1_differential_cross_section.pdf` | Różniczkowy przekrój `dσ/dΩ` z błędami dwumianowymi, na tle Rutherforda i dopasowania `C_R × Rutherford`. |
 | `N_1_2_cumulative_cross_section.pdf` | Skumulowany przekrój `σ(θ ≥ θ_min)`. Bez niezależnego dopasowania — progi są skorelowane, więc rzutowane jest `C_R` z panelu różniczkowego. |
-| `3_1_3_energy_loss_cross_section.pdf` | **Tylko eksperyment 3.** Różniczkowy przekrój po `ΔE = K_CM − E_out` w oknie fiducjalnym. |
-| `N_2_1_diagnostic_energy_balance.pdf` | Residuum **tożsamości** bilansu energii. To nie jest test zachowania: `E_bound` jest zdefiniowane jako reszta domykająca sumę. Panel podaje osobno niezależne residuum fizyczne LL-vs-strumień. |
+| `3_1_3_energy_loss_cross_section.pdf` | **Tylko eksperyment 3.** Różniczkowy przekrój po `ΔE = K_CM − E_out` w oknie fiducjalnym. **Nie czytać jako pomiaru energetycznego** — patrz ostrzeżenie o zakresie stosowalności powyżej: dla tego kanału bilans energii modelu się rozjeżdża. |
+| `N_2_1_diagnostic_energy_balance.pdf` | Residuum **tożsamości** bilansu energii. To nie jest test zachowania: `E_bound` jest zdefiniowane jako reszta domykająca sumę. Panel podaje osobno niezależne residuum fizyczne LL-vs-strumień — i to właśnie ono jest dla eksperymentu 3 rzędu jedności zamiast promila, patrz ostrzeżenie powyżej. |
 | `N_2_2_diagnostic_momentum_balance.pdf` | To samo dla pędu, w skali `log₁₀`. |
 | `N_2_3_diagnostic_angular_momentum_balance.pdf` | To samo dla momentu pędu. |
 
