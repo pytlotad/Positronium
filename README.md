@@ -1683,13 +1683,32 @@ i twardy punkt zwrotny; zespół ma krawędź w najmniejszym osiągniętym perya
 Funkcja falowa stanu \(1s\) jest w zerze skończona. Żadna ekstrapolacja nie
 łączy twardego zera ze skończoną wartością.
 
-Skale mówią resztę. Krawędź \(5{,}96\) pm leży \(31\) razy powyżej bariery
-dipol-dipol \(193\) fm i \(2114\) razy powyżej promienia \(r_e\), przy którym
-anihilacja zachodzi; sama bariera leży \(68{,}5\) raza powyżej \(r_e\).
-Model zatrzymuje się więc dwa i pół rzędu przed miejscem, w którym proces ma
-miejsce, a jego własna bariera krótkiego zasięgu nie puściłaby go dalej niż
-\(68\,r_e\). Wniosek: **czasu kolapsu CREM nie da się połączyć z czasem życia
-para-Ps przez gęstość kontaktową**, bo model nie sięga skali kontaktu.
+Skale mówią resztę i warto je uporządkować, bo dwie różne rzeczy bywają mylone.
+Trajektorie zatrzymuje **granica zderzenia** \(0{,}01a_0=529\) fm, czyli
+zadeklarowana rozdzielczość przestrzenna modelu, równa rozmiarowi chmury
+ładunku. Bariera dipol-dipol \(193\) fm leży \(2{,}74\) raza **poniżej** tego
+punktu i nigdy nie jest osiągana. Krawędź gęstości \(5{,}96\) pm leży wyżej od
+obu, bo bieg kolapsu jest ucinany na peryapsis \(0{,}1a_0\).
+
+Rozróżnienie ma znaczenie, bo pierwsza z tych granic jest **parametrem**,
+a druga nie. Granicę zderzenia da się obniżyć, zmniejszając
+`chargeCloudRestRadius`; zyskuje się wtedy co najwyżej czynnik \(2{,}74\), do
+bariery. Barierę wyznacza natomiast tożsamość
+
+\[r^\*=\frac{g}{2}\cdot\frac{\bar\lambda_C}{2}=193{,}30\ \mathrm{fm},
+\qquad \frac{r^\*}{r_e}=\frac{g/2}{2\alpha}=68{,}60,\]
+
+czyli **połowa zredukowanej długości Comptona**, a jej odległość od promienia
+anihilacji to \(1/(2\alpha)=68{,}52\). To nie jest wybór regularyzacji ani nic
+nastawialnego — to stała struktury subtelnej. Bariera stoi dokładnie tam, gdzie
+lokalizacja elektronu wymaga pędów rzędu \(mc\), czyli na granicy, poniżej
+której klasyczna elektrodynamika punktowej cząstki przestaje obowiązywać;
+anihilacja zachodzi \(137\) razy głębiej w obszarze kwantowym.
+
+Wniosek: **czasu kolapsu CREM nie da się połączyć z czasem życia para-Ps przez
+gęstość kontaktową.** Nawet po obniżeniu granicy zderzenia do samej bariery
+model zatrzyma się \(68{,}5\,r_e\) od skali procesu, a tego czynnika nie da się
+zmniejszyć bez porzucenia klasycznego opisu — jest nim \(1/(2\alpha)\).
 
 Dodatkowo rozkłady mają inny kształt: anihilacja daje rozkład wykładniczy,
 dla którego \(\sigma/\overline{t}=1\), a zmierzony rozkład czasu kolapsu ma
