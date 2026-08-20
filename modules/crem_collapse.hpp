@@ -63,7 +63,10 @@ struct OsculatingElements { double specificEnergy=0.0; double specificAngularMom
 // effective dipole charge and mu the reduced mass.  For e+e- (q_eff = e,
 // mu = m/2) this collapses to the familiar 8 k e^4/(6 pi eps0 c^3 m^2), which
 // is what the previous form hard-coded along with the equal-mass assumption.
-inline constexpr double classicalInspiralCoefficient() {
+// The active pair is selected by --pair, so these inputs are runtime globals.
+// Keeping this function constexpr is ill-formed even though GCC historically
+// accepted it as an extension with -Winvalid-constexpr.
+inline double classicalInspiralCoefficient() {
     return 2.0*pairDipoleCharge*pairDipoleCharge*pairCoulombStrength
         /(6.0*pi*epsilon0*c*c*c*pairReducedMass*pairReducedMass);
 }
@@ -575,9 +578,18 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         const double lossPerOrbit=std::abs(deltaEnergyPerOrbit);
         int orbitsToSkip=1;
         if(lossPerOrbit>0.0&&energyMagnitude>0.0) {
-            orbitsToSkip=std::clamp(static_cast<int>(
-                maximumJumpParameter*energyMagnitude/(1.5*lossPerOrbit)),
-                1,maxOrbitsSkippedAtOnce);
+            const double requestedOrbits=maximumJumpParameter*energyMagnitude
+                /(1.5*lossPerOrbit);
+            // Saturate while the value is still floating-point.  For a tiny
+            // measured loss requestedOrbits can exceed INT_MAX or become +inf;
+            // converting either value to int before clamp has undefined
+            // behaviour.  The bounded value is always representable because
+            // maxOrbitsSkippedAtOnce itself is an int.
+            const double boundedOrbits=std::isfinite(requestedOrbits)
+                ?std::clamp(requestedOrbits,1.0,
+                    static_cast<double>(maxOrbitsSkippedAtOnce))
+                :static_cast<double>(maxOrbitsSkippedAtOnce);
+            orbitsToSkip=static_cast<int>(boundedOrbits);
         }
         const double jumpParameter=std::min(
             1.5*static_cast<double>(orbitsToSkip)*lossPerOrbit/energyMagnitude,
@@ -618,6 +630,14 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
 std::vector<CremCollapseEstimate> runCremCollapseExperiment(
     std::uint64_t masterSeed,int selectedPhenomenon,int runCount,
     double wallClockBudgetSeconds) {
+    // Keep the safety boundary valid for non-CLI callers too.  In particular,
+    // comparisons against NaN or +infinity never become true and would disable
+    // every wall-clock stop inside estimateCremCollapse().
+    if(!(wallClockBudgetSeconds>0.0)
+       ||!std::isfinite(wallClockBudgetSeconds)) {
+        throw std::invalid_argument(
+            "--crem-wallclock-budget-s must be finite and positive");
+    }
     std::vector<CremCollapseEstimate> estimates(static_cast<size_t>(runCount));
     std::atomic<int> nextIndex{0};
     std::atomic<int> completed{0};

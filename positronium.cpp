@@ -59,6 +59,7 @@
 #include "modules/state.hpp"
 #include "modules/physical_constants.hpp"
 #include "modules/particle_species.hpp"
+#include "modules/two_body_kinematics.hpp"
 #include "modules/root_export.hpp"
 #include "modules/statistics_archive.hpp"
 
@@ -107,6 +108,7 @@ using positronium::objects::State;
 using positronium::objects::StateHistory;
 using positronium::objects::DipoleTensor;
 using namespace positronium::parameters;
+namespace two_body = positronium::kinematics;
 constexpr double c=speedOfLight;
 constexpr double eCharge=elementaryCharge;
 constexpr double coulomb=coulombConstant;
@@ -197,8 +199,11 @@ void applyPair(const ParticlePair& pair) {
         (firstCharge*secondMass-secondCharge*firstMass)/(firstMass+secondMass);
     pairReducedMass=firstMass*secondMass/(firstMass+secondMass);
     // Derived in particle_species.hpp from BOTH moments and the lighter mass,
-    // so it has to follow the pair rather than stay at the default's 47.22 fm.
+    // so it has to follow the pair rather than stay at the default's 68.47 fm.
     magneticRegularizationRadius=dipoleRegularizationRadius(pair);
+    // Same reason: the boundary is a fraction of the pair's own orbit, and a
+    // heavy pair starts inside hydrogen's 529 fm.
+    collisionBoundaryRadius=collisionBoundaryOf(pair);
 }
 
 // Parse "first,second" as the command line spells it.
@@ -392,6 +397,8 @@ bool isFinite(const Vec3& value) {
 bool isFinite(const State& state) {
     return isFinite(state.firstPosition) && isFinite(state.secondPosition)
         && isFinite(state.firstVelocity) && isFinite(state.secondVelocity)
+        && two_body::subluminal(state.firstVelocity)
+        && two_body::subluminal(state.secondVelocity)
         && isFinite(state.firstAcceleration) && isFinite(state.secondAcceleration)
         && isFinite(state.firstDipole) && isFinite(state.secondDipole)
         &&isFinite(state.firstElectricDipole)
@@ -406,6 +413,7 @@ bool isFinite(const State& state) {
         && isFinite(state.reactionAngularMomentumMismatch)
         && std::isfinite(state.time) && std::isfinite(state.radiatedEnergy)
         && std::isfinite(state.dipoleConstraintEnergy)
+        && std::isfinite(state.zeroPointPhase)
         && std::isfinite(state.boundFieldEnergy)
         && std::isfinite(state.reactionEnergyMismatch);
 }
@@ -806,10 +814,14 @@ void precessDipole(Vec3& dipole,const Vec3& field,
 #endif
 
 double gamma(const Vec3& velocity) {
-    return 1.0 / std::sqrt(std::max(1.0e-15, 1.0 - velocity.squaredNorm() / (c*c)));
+    return two_body::strictLorentzFactor(velocity);
 }
 
 Vec3 momentum(const Vec3& velocity, double mass) { return velocity * (gamma(velocity) * mass); }
+
+double kineticEnergy(const Vec3& velocity,double mass) {
+    return two_body::kineticEnergyFromVelocity(velocity,mass);
+}
 
 Vec3 velocityFromMomentum(const Vec3& momentum, double mass) {
     const double gammaFromMomentum = std::sqrt(1.0 + momentum.squaredNorm() / (mass*mass*c*c));
@@ -1293,12 +1305,21 @@ KaplanMeierEstimate kaplanMeier(std::vector<SurvivalObservation> sample) {
             } else {
                 greenwoodSum=std::numeric_limits<double>::infinity();
             }
-            result.curve.push_back({time,survival,
-                survival*std::sqrt(greenwoodSum),atRisk,events});
+            // If the last risk-set member fails, Greenwood's sum is infinite
+            // while S(t) is exactly zero.  The literal product 0*sqrt(inf) is
+            // NaN; its limiting pointwise standard error is zero.
+            const double standardError=survival==0.0
+                ?0.0:survival*std::sqrt(greenwoodSum);
+            result.curve.push_back(
+                {time,survival,standardError,atRisk,events});
         }
         index=next;
     }
-    if(result.eventCount==0) return result;
+    // An all-censored sample is still a valid (degenerate) KM estimate: no
+    // observed event lowers S(t), so S(t)=1 through the largest censoring time.
+    // Continue through the common integration below to report a finite horizon,
+    // RMST=horizon and Greenwood error 0.  The median correctly remains
+    // unreached; nothing here extrapolates a lifetime beyond the observed data.
     // Horizon: the last time the estimator actually observed something, so
     // RMST is not extrapolated past the data.
     result.horizon=std::max(result.curve.back().time,
@@ -1615,36 +1636,57 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                   << survival.horizon << ' ' << timeUnit << '\n';
     }
     if(std::isfinite(survival.restrictedMean)) {
-        std::cout << "  Kaplan-Meier RMST      " << survival.restrictedMean
-                  << " +/- " << survival.restrictedMeanError << ' ' << timeUnit
-                  << "  (area under S(t) out to " << survival.horizon
+        std::cout << "  Kaplan-Meier RMST      " << survival.restrictedMean;
+        if(survival.eventCount>0) {
+            std::cout << " +/- " << survival.restrictedMeanError;
+        }
+        std::cout << ' ' << timeUnit;
+        if(survival.eventCount==0)
+            std::cout << "  (all observations censored; uncertainty not estimable)";
+        std::cout << "  (area under S(t) out to " << survival.horizon
                   << ' ' << timeUnit << ")\n";
     }
-    std::cout << "  mean of completed runs " << estimatedLifetime * timeScale
-              << " +/- " << estimatedError * timeScale << ' ' << timeUnit
-              << " (sigma/mean = " << relativeSpread << ")\n";
+    if(collapseMoments.count>0) {
+        std::cout << "  mean of completed runs " << estimatedLifetime * timeScale
+                  << " +/- " << estimatedError * timeScale << ' ' << timeUnit
+                  << " (sigma/mean = " << relativeSpread << ")\n";
+    } else {
+        std::cout << "  mean of completed runs unavailable: no collapse was "
+                     "observed\n";
+    }
     if(completionPercent < 90.0 && std::isfinite(survival.restrictedMean)) {
-        std::cout << "  WARNING: with " << completionPercent
-                  << "% completion neither figure is an unbiased estimate.  "
-                     "Their biases have OPPOSITE sign, so the\n  true value is "
-                     "expected between them -- a plausibility range, not a "
-                     "proven bound:\n    lower end "
-                  << estimatedLifetime * timeScale << ' ' << timeUnit
-                  << " -- the completed-run mean.  Collapse time scales as a^3 "
-                     "while the orbits that must be\n      integrated scale as "
-                     "a^(3/2), so the budget preferentially stops the widest "
-                     "orbits, which are the\n      slowest to collapse; "
-                     "averaging the survivors is biased low.\n    upper end "
-                  << survival.restrictedMean << ' ' << timeUnit
-                  << " -- the Kaplan-Meier RMST.  Once censoring begins the "
-                     "estimator observes almost no further\n      collapses, "
-                     "so S(t) is held up and the area under it is biased high.\n"
-                     "  Censoring is INFORMATIVE here: the censoring time and "
-                     "the collapse time are driven by the same\n  semi-major "
-                     "axis, which breaks the independence Kaplan-Meier assumes."
-                     "  Raise --crem-wallclock-budget-s\n  until the completion "
-                     "fraction approaches 100%; the two ends then converge onto "
-                     "the true value.\n";
+        if(survival.eventCount==0) {
+            std::cout << "  WARNING: every usable trajectory is censored.  "
+                         "Kaplan-Meier therefore has S(t)=1 through "
+                      << survival.horizon << ' ' << timeUnit
+                      << " and RMST=" << survival.restrictedMean << ' '
+                      << timeUnit << ".\n  This finite restricted estimate does "
+                         "not identify the median or the unrestricted mean; "
+                         "raise --crem-wallclock-budget-s until collapses are "
+                         "observed.\n";
+        } else {
+            std::cout << "  WARNING: with " << completionPercent
+                      << "% completion neither figure is an unbiased estimate.  "
+                         "Their biases have OPPOSITE sign, so the\n  true value is "
+                         "expected between them -- a plausibility range, not a "
+                         "proven bound:\n    lower end "
+                      << estimatedLifetime * timeScale << ' ' << timeUnit
+                      << " -- the completed-run mean.  Collapse time scales as a^3 "
+                         "while the orbits that must be\n      integrated scale as "
+                         "a^(3/2), so the budget preferentially stops the widest "
+                         "orbits, which are the\n      slowest to collapse; "
+                         "averaging the survivors is biased low.\n    upper end "
+                      << survival.restrictedMean << ' ' << timeUnit
+                      << " -- the Kaplan-Meier RMST.  Once censoring begins the "
+                         "estimator observes almost no further\n      collapses, "
+                         "so S(t) is held up and the area under it is biased high.\n"
+                         "  Censoring is INFORMATIVE here: the censoring time and "
+                         "the collapse time are driven by the same\n  semi-major "
+                         "axis, which breaks the independence Kaplan-Meier assumes."
+                         "  Raise --crem-wallclock-budget-s\n  until the completion "
+                         "fraction approaches 100%; the two ends then converge onto "
+                         "the true value.\n";
+        }
     }
     std::cout << "Model: full CREM mechanical integration under the active "
                  "--radiation-reaction model, run until the pair's periapsis\n"
@@ -2204,12 +2246,14 @@ enum class BeamOutcome {
     Escaped, ShortRange, Captured, Unresolved, NumericalFailure
 };
 
+double relativeConservativeParticleEnergy(const State& state);
+
 struct BeamConfiguration {
     double centreOfMassKineticEnergy;
     double impactParameterMaximum;
     double matchingRadius;
     double maximumFlightTime;
-    double asymptoticRelativeSpeed;
+    double maximumAsymptoticBeta;
     double analysisThetaMinimum;
     double coulombLength;
     double analyticCutoffImpactParameter;
@@ -2332,11 +2376,15 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
         throw std::invalid_argument("matching radius must be finite and larger than bmax");
     }
 
-    const double gammaInfinity = 1.0 + energy / (2.0 * firstMass * c*c);
-    const double particleSpeed = c * std::sqrt(1.0 - 1.0 / (gammaInfinity * gammaInfinity));
-    const double relativeSpeed = 2.0 * particleSpeed;
+    const two_body::CentreOfMomentumKinematics asymptotic =
+        two_body::centreOfMomentumKinematics(energy,firstMass,secondMass);
+    if (!asymptotic.valid() || !(asymptotic.relativeSpeed > 0.0)) {
+        throw std::invalid_argument(
+            "beam energy cannot be represented for the selected pair");
+    }
     return {energy, impactMaximum, matchingRadius,
-            8.0 * matchingRadius / relativeSpeed, relativeSpeed,
+            8.0 * matchingRadius / asymptotic.relativeSpeed,
+            std::max(asymptotic.firstSpeed,asymptotic.secondSpeed)/c,
             analysisThetaMinimum, coulombLength, cutoffImpactParameter,
             angleBins, shortRangeFocus};
 }
@@ -2362,36 +2410,18 @@ BeamEvent simulateBeamEvent(
         + impactDirection * (longitudinalDistance / configuration.matchingRadius);
 
     const double coulombStrength = pairCoulombStrength;
-    const double finiteKineticEnergy = configuration.centreOfMassKineticEnergy
-        + coulombStrength / configuration.matchingRadius;
-    const double finiteGamma = 1.0
-        + finiteKineticEnergy / (2.0 * firstMass * c*c);
-    const double finiteParticleSpeed = c
-        * std::sqrt(1.0 - 1.0 / (finiteGamma * finiteGamma));
-    const double finiteRelativeSpeed = 2.0 * finiteParticleSpeed;
-    const double asymptoticGamma = 1.0 + configuration.centreOfMassKineticEnergy
-        / (2.0 * firstMass*c*c);
-    const double asymptoticParticleSpeed = 0.5 * configuration.asymptoticRelativeSpeed;
-    const double asymptoticMomentum = asymptoticGamma * firstMass
-        * asymptoticParticleSpeed;
-    const double finiteMomentum = finiteGamma * firstMass * finiteParticleSpeed;
-    const double tangentialFraction = impactParameter * asymptoticMomentum
-        / (configuration.matchingRadius * finiteMomentum);
-    if (!(tangentialFraction >= 0.0 && tangentialFraction < 1.0)) {
+    const two_body::IncomingTwoBodyKinematics incoming =
+        two_body::incomingTwoBodyKinematics(
+            configuration.centreOfMassKineticEnergy,
+            coulombStrength/configuration.matchingRadius,
+            impactParameter,configuration.matchingRadius,
+            radialDirection,tangentDirection,
+            firstMass,secondMass);
+    if (!incoming.valid()) {
         BeamEvent result{BeamOutcome::NumericalFailure, seed, impactParameter};
         result.impactAzimuth = azimuth;
         return result;
     }
-    const double tangentialSpeed = finiteRelativeSpeed * tangentialFraction;
-    const double radialSpeedSquared = finiteRelativeSpeed * finiteRelativeSpeed
-                                    - tangentialSpeed * tangentialSpeed;
-    if (!(radialSpeedSquared > 0.0)) {
-        BeamEvent result{BeamOutcome::NumericalFailure, seed, impactParameter};
-        result.impactAzimuth = azimuth;
-        return result;
-    }
-    const Vec3 relativeVelocity = radialDirection * (-std::sqrt(radialSpeedSquared))
-                                + tangentDirection * tangentialSpeed;
 
     const auto randomDirection = [&]() {
         const double cosine = 2.0 * uniform(random) - 1.0;
@@ -2400,18 +2430,19 @@ BeamEvent simulateBeamEvent(
         return Vec3{transverse * std::cos(phi), transverse * std::sin(phi), cosine};
     };
     State state;
-    // Mass-weighted split, so the centre of mass sits at the origin and stays
-    // at rest.  Halving is the equal-mass special case; for any other pair it
-    // leaves the pair drifting and the "centre-of-mass kinetic energy" this
-    // experiment reports would not be one.
+    // The beam experiments are initialized directly in the pair's COM frame.
+    // Equal and opposite momenta, rather than a mass-weighted split of one
+    // relative velocity, keep the total momentum exactly zero for unequal
+    // masses.  Energy weights put the free-particle centre of energy at the
+    // origin; they reduce to the familiar mass weights at low velocity.
+    const double finiteEnergy = incoming.finiteRadius.firstEnergy
+                              + incoming.finiteRadius.secondEnergy;
     state.firstPosition =
-        relativePosition * (secondMass/(firstMass+secondMass));
+        relativePosition * (incoming.finiteRadius.secondEnergy/finiteEnergy);
     state.secondPosition =
-        relativePosition * (-firstMass/(firstMass+secondMass));
-    state.firstVelocity =
-        relativeVelocity * (secondMass/(firstMass+secondMass));
-    state.secondVelocity =
-        relativeVelocity * (-firstMass/(firstMass+secondMass));
+        relativePosition * (-incoming.finiteRadius.firstEnergy/finiteEnergy);
+    state.firstVelocity = incoming.firstVelocity;
+    state.secondVelocity = incoming.secondVelocity;
     state.firstDipole = randomDirection() * firstMagneticMoment;
     state.secondDipole = randomDirection() * secondMagneticMoment;
     ClassicalTrajectoryEngine trajectory(state,accuracy);
@@ -2502,43 +2533,40 @@ BeamEvent simulateBeamEvent(
         // sphere without a later external energy source. Do not integrate its
         // many tiny bound-orbit periods all the way to the wall-clock flight
         // gate; report it as a distinct captured channel.
-        if(passedClosestApproach&&conservativeParticleEnergy(state)<0.0) {
+        if(passedClosestApproach&&relativeConservativeParticleEnergy(state)<0.0) {
             return makeResult(BeamOutcome::Captured,
                 std::numeric_limits<double>::quiet_NaN(),
                 std::numeric_limits<double>::quiet_NaN(),
                 state.radiatedEnergy,&state);
         }
         if (passedClosestApproach && currentRadius >= configuration.matchingRadius) {
-            const double angle = std::acos(std::clamp(
-                dot(beamDirection, currentRelativeVelocity)
-                    / currentRelativeVelocity.norm(), -1.0, 1.0));
-            // At the finite matching sphere the kinetic energy still contains
-            // the Coulomb acceleration.  The conservative mechanical energy
-            // is the asymptotic outgoing kinetic energy estimator.
-            const double outgoingEnergy = makeFrame(state).mechanicalEnergy;
-            const Vec3 previousRelativePosition =
-                beforeStep.firstPosition - beforeStep.secondPosition;
-            const Vec3 stepDisplacement =
-                currentRelativePosition - previousRelativePosition;
-            const double quadraticA = dot(stepDisplacement, stepDisplacement);
-            const double quadraticB = 2.0 * dot(previousRelativePosition,
-                                                 stepDisplacement);
-            const double quadraticC = dot(previousRelativePosition,
-                                           previousRelativePosition)
-                                    - configuration.matchingRadius
-                                      * configuration.matchingRadius;
-            double crossingFraction = 1.0;
-            const double discriminant = quadraticB*quadraticB
-                                      - 4.0*quadraticA*quadraticC;
-            if (quadraticA > 0.0 && discriminant >= 0.0) {
-                crossingFraction = std::clamp(
-                    (-quadraticB + std::sqrt(discriminant))/(2.0*quadraticA),
-                    0.0, 1.0);
+            const double crossingFraction=separationCrossingFraction(
+                beforeStep,state,configuration.matchingRadius);
+            const State diagnosticEndpoint=interpolateState(
+                beforeStep,state,crossingFraction);
+            const Vec3 endpointRelativeVelocity=
+                diagnosticEndpoint.firstVelocity
+                -diagnosticEndpoint.secondVelocity;
+            const double endpointRelativeSpeed=endpointRelativeVelocity.norm();
+            if (!(endpointRelativeSpeed > 0.0)
+                || !std::isfinite(endpointRelativeSpeed)) {
+                return makeResult(BeamOutcome::NumericalFailure,
+                    std::numeric_limits<double>::quiet_NaN(),
+                    std::numeric_limits<double>::quiet_NaN(),
+                    diagnosticEndpoint.radiatedEnergy,&diagnosticEndpoint);
             }
-            const State diagnosticEndpoint = interpolateState(
-                beforeStep, state, crossingFraction);
+            const double angle=std::acos(std::clamp(
+                dot(beamDirection,endpointRelativeVelocity)
+                    /endpointRelativeSpeed,-1.0,1.0));
+            // At the finite matching sphere the kinetic energy still contains
+            // the Coulomb acceleration.  Evaluate every terminal observable at
+            // the same interpolated crossing event; using the post-step state
+            // mixed two different radii in one reported result.
+            const double outgoingEnergy=
+                relativeConservativeParticleEnergy(diagnosticEndpoint);
             BeamEvent result = makeResult(BeamOutcome::Escaped, angle,
-                outgoingEnergy, state.radiatedEnergy, &diagnosticEndpoint);
+                outgoingEnergy,diagnosticEndpoint.radiatedEnergy,
+                &diagnosticEndpoint);
             result.finalDiagnostics = endpointDiagnostics(diagnosticEndpoint);
             result.diagnosticsValid = true;
             return result;
@@ -2574,7 +2602,7 @@ const char* interactionOutcomeName(InteractionOutcome outcome) {
 }
 
 struct InteractionConfiguration {
-    double meanKineticEnergy = 0.0;      // centre-of-mass kinetic energy [J]
+    double meanKineticEnergy = 0.0;      // per-particle laboratory energy [J]
     double kineticEnergySigma = 0.0;     // [J]
     double minimumKineticEnergy = 0.0;   // truncation of the Gaussian [J]
     double impactParameterSigma = 0.0;   // [m], distribution centred on b=0
@@ -2657,10 +2685,29 @@ struct InteractionEvent {
 // model, and experiments 1 and 2 calibrate it on exactly this energy.
 double coulombPairEnergy(const State& state) {
     const PairGeometry geometry = pairGeometry(state);
-    const double kinetic =
-        (gamma(state.firstVelocity) - 1.0)*firstMass*c*c
-      + (gamma(state.secondVelocity) - 1.0)*secondMass*c*c;
-    return kinetic - pairCoulombStrength*geometry.inverseDistance;
+    const two_body::FreeTwoBodyKinematics freePair =
+        two_body::freeTwoBodyKinematics(
+            state.firstVelocity,firstMass,
+            state.secondVelocity,secondMass);
+    if (!freePair.valid()) return std::numeric_limits<double>::quiet_NaN();
+    return freePair.centreOfMomentumKineticEnergy
+         - pairCoulombStrength*geometry.inverseDistance;
+}
+
+// Conservative model energy with the free translational kinetic energy of the
+// pair removed.  This is used by the COM-initialized beam experiments 3/4.
+// Experiment 5 deliberately uses coulombPairEnergy() instead, because its
+// capture and secular-collapse branches are both Coulomb/Kepler models and
+// must not let the short-range dipole term redefine their binding energy.
+double relativeConservativeParticleEnergy(const State& state) {
+    const two_body::FreeTwoBodyKinematics freePair =
+        two_body::freeTwoBodyKinematics(
+            state.firstVelocity,firstMass,
+            state.secondVelocity,secondMass);
+    if (!freePair.valid()) return std::numeric_limits<double>::quiet_NaN();
+    return conservativeParticleEnergy(state)
+         - freePair.laboratoryKineticEnergy
+         + freePair.centreOfMomentumKineticEnergy;
 }
 
 double dipoleAlignmentOf(const State& state) {
@@ -2691,17 +2738,31 @@ InteractionConfiguration makeInteractionConfiguration(
     InteractionConfiguration configuration;
     configuration.meanKineticEnergy = meanEnergyEv*eCharge;
     configuration.kineticEnergySigma = energySigmaEv*eCharge;
-    // Truncate well below the mean but strictly positive: a non-positive
-    // centre-of-mass energy has no incoming asymptote to start from.
-    configuration.minimumKineticEnergy = std::max(
-        0.02*configuration.meanKineticEnergy,
-        1.0e-3*eCharge);
+    // Truncate well below the mean but strictly positive: a particle with
+    // non-positive laboratory kinetic energy has no incoming beam asymptote.
+    // Never put the cutoff above the requested mean.  In particular, a
+    // zero-width beam below 1 meV must use its actual speed when the COM flight
+    // window is sized, rather than a fictitious faster 1 meV particle.
+    configuration.minimumKineticEnergy=std::min(
+        configuration.meanKineticEnergy,
+        std::max(0.02*configuration.meanKineticEnergy,1.0e-3*eCharge));
     // The scale that decides capture versus fly-past is the Coulomb length
-    // l_C = k e^2 / (2 K_CM), which is 72 pm at 10 eV.  A sigma far below it
-    // makes every trajectory plunge and be captured, so the automatic default
-    // sets sigma = l_C and the ensemble then spans both regimes.
+    // l_C = k|q1 q2|/(2 K_CM).  meanKineticEnergy is a PER-PARTICLE lab
+    // quantity, so first convert two representative opposing beams to their
+    // invariant K_CM; using the lab mean directly is wrong even for equal
+    // masses (where K_CM is approximately twice as large), and has no fixed
+    // correction for unequal masses.
+    const two_body::HeadOnLabKinematics representativeBeam =
+        two_body::headOnLabKinematics(
+            configuration.meanKineticEnergy,firstMass,
+            configuration.meanKineticEnergy,secondMass,Vec3{1.0,0.0,0.0});
+    if (!representativeBeam.valid()
+        || !(representativeBeam.pair.centreOfMomentumKineticEnergy > 0.0)) {
+        throw std::invalid_argument(
+            "interaction energy cannot be represented for the selected pair");
+    }
     const double coulombLength = pairCoulombStrength
-                               / (2.0*configuration.meanKineticEnergy);
+        /(2.0*representativeBeam.pair.centreOfMomentumKineticEnergy);
     configuration.impactParameterSigma = impactSigmaPm > 0.0
         ? impactSigmaPm*1.0e-12 : coulombLength;
     // Start far enough out that the Coulomb potential is a small correction to
@@ -2721,13 +2782,31 @@ InteractionConfiguration makeInteractionConfiguration(
     // correction" holds by a factor of 2.2 and no more.  Retuning that is a
     // separate decision about experiment 5's defaults, not part of making the
     // constant pair-relative, so it is left alone and written down instead.
-    configuration.matchingRadius = 25.0*pairBohrRadius(activePair);
-    const double slowestEnergy = configuration.minimumKineticEnergy;
-    const double slowestGamma = 1.0 + slowestEnergy/(2.0*firstMass*c*c);
-    const double slowestSpeed = c*std::sqrt(
-        1.0 - 1.0/(slowestGamma*slowestGamma));
+    // Keep the half-normal beam well inside the matching sphere for every
+    // species.  A fixed 25 pair radii is only picometres for true muonium and
+    // protonium; clipping a 60 pm beam at R/2 then piles almost every event on
+    // one artificial impact parameter.  Five sigma fit below R/2 here.
+    configuration.matchingRadius = std::max(
+        25.0*pairBohrRadius(activePair),
+        10.0*configuration.impactParameterSigma);
+    const double slowestEnergy=configuration.minimumKineticEnergy;
+    const two_body::HeadOnLabKinematics slowestLabPair=
+        two_body::headOnLabKinematics(
+            slowestEnergy,firstMass,slowestEnergy,secondMass,
+            Vec3{1.0,0.0,0.0});
+    const two_body::CentreOfMomentumKinematics slowestComPair=
+        two_body::centreOfMomentumKinematics(
+            slowestLabPair.pair.centreOfMomentumKineticEnergy,
+            firstMass,secondMass);
+    const double slowestClosingSpeed=slowestComPair.relativeSpeed;
+    if (!slowestLabPair.valid() || !slowestComPair.valid()
+        || !(slowestClosingSpeed > 0.0)
+        || !std::isfinite(slowestClosingSpeed)) {
+        throw std::invalid_argument(
+            "interaction energy cannot be represented for the selected pair");
+    }
     configuration.maximumFlightTime = 6.0*configuration.matchingRadius
-                                    / (2.0*slowestSpeed);
+                                    / slowestClosingSpeed;
     // Long enough to average the dipole orientation over several bound orbits.
     configuration.boundObservationOrbits = 8.0;
     configuration.boundObservationTimeCap = 2.0e-16;
@@ -2773,9 +2852,19 @@ InteractionEvent simulateInteractionEvent(
     const double firstKineticEnergy = sampleKinetic();
     const double secondKineticEnergy = sampleKinetic();
     // Gaussian around a head-on collision: the signed sample is folded, which
-    // is the half-normal radial profile of a beam centred on b=0.
-    const double impactParameter = std::min(
-        std::abs(impactGaussian(random)), 0.5*configuration.matchingRadius);
+    // is the half-normal radial profile of a beam centred on b=0.  Reject the
+    // negligible tail outside the matching sphere instead of clipping it;
+    // clipping creates a delta-like pile-up at exactly R/2 for a narrow atomic
+    // scale or a user-selected broad beam.
+    double impactParameter = std::numeric_limits<double>::quiet_NaN();
+    for (int attempt=0;attempt<1000;++attempt) {
+        const double sampledImpact=std::abs(impactGaussian(random));
+        if (sampledImpact <= 0.5*configuration.matchingRadius) {
+            impactParameter=sampledImpact;
+            break;
+        }
+    }
+    if (!std::isfinite(impactParameter)) return result;
     result.impactParameter = impactParameter;
 
     const double azimuth = 2.0*pi*uniform(random);
@@ -2791,77 +2880,36 @@ InteractionEvent simulateInteractionEvent(
             *(impactParameter/configuration.matchingRadius)
         + impactDirection*(longitudinalDistance/configuration.matchingRadius);
 
-    // p(K,m) = sqrt(K(K + 2 m c^2))/c, exact.
-    const auto momentumFromKinetic = [](double kinetic, double mass) {
-        return std::sqrt(std::max(0.0, kinetic*(kinetic + 2.0*mass*c*c)))/c;
-    };
-    // Magnitude of either particle's momentum in the centre-of-mass frame,
-    // given the pair's total invariant energy W.  Exact two-body relation,
-    // and the replacement for the old 1 + K/(2 m1 c^2) shortcut: that form
-    // split the energy equally between the roles and multiplied one particle's
-    // speed by two to get the relative speed, which is the equal-mass case and
-    // nothing else.  For p+e- it assigned the proton the electron's share.
-    const auto centreOfMassMomentum = [](double invariant) {
-        const double sumTerm = invariant*invariant
-            - (firstMass + secondMass)*(firstMass + secondMass)*c*c*c*c;
-        const double differenceTerm = invariant*invariant
-            - (firstMass - secondMass)*(firstMass - secondMass)*c*c*c*c;
-        if (!(sumTerm > 0.0) || !(differenceTerm > 0.0)) return 0.0;
-        return std::sqrt(sumTerm*differenceTerm)/(2.0*invariant*c);
-    };
-
     // Head-on lab beams: the two momenta point at each other along the beam
     // axis and do NOT cancel, because the energies were drawn independently.
-    const double firstLabMomentum =
-        momentumFromKinetic(firstKineticEnergy, firstMass);
-    const double secondLabMomentum =
-        momentumFromKinetic(secondKineticEnergy, secondMass);
-    const Vec3 labMomentum =
-        beamDirection*(firstLabMomentum - secondLabMomentum);
-    const double labEnergy = firstKineticEnergy + firstMass*c*c
-                           + secondKineticEnergy + secondMass*c*c;
-    // The centre of mass now moves.  Internal forces cannot change it, so this
-    // velocity rides along untouched for the whole event and every Coulomb
-    // effect below belongs to the relative motion alone.
-    const Vec3 centreOfMassVelocity = labMomentum*(c*c/labEnergy);
-    const double invariantEnergy = std::sqrt(std::max(0.0,
-        labEnergy*labEnergy - labMomentum.squaredNorm()*c*c));
+    // Construct their exact four-momenta first; the invariant collision energy
+    // and COM velocity then follow without subtracting nearly equal rest-energy
+    // squares for a light-heavy pair.
+    const two_body::HeadOnLabKinematics labIncoming =
+        two_body::headOnLabKinematics(
+            firstKineticEnergy,firstMass,
+            secondKineticEnergy,secondMass,beamDirection);
+    if (!labIncoming.valid()) return result;
     // The energy the collision actually happens at, which is what every
     // threshold and axis in this experiment means by "collision energy".
     const double kineticEnergy =
-        invariantEnergy - (firstMass + secondMass)*c*c;
+        labIncoming.pair.centreOfMomentumKineticEnergy;
     if (!(kineticEnergy > 0.0)) return result;
     result.kineticEnergyEv = kineticEnergy/eCharge;
 
-    // Same construction as before: the speed at the starting sphere carries
-    // the Coulomb attraction already gained, while the angular momentum is
-    // fixed by the asymptotic momentum and the impact parameter.  Both now act
-    // on the relative motion in the centre-of-mass frame.
+    // Transform the independently sampled lab beams to their COM invariant,
+    // then define and integrate the matching sphere in that COM frame.  A
+    // lab-t=const sphere is not simultaneous in COM, while the Coulomb matching
+    // potential, Kepler clock and capture energy below are all internal COM
+    // quantities.  Keeping one frame for the entire trajectory avoids mixing
+    // those quantities with a boosted laboratory geometry.
     const double coulombStrength = pairCoulombStrength;
-    const double asymptoticMomentum = centreOfMassMomentum(invariantEnergy);
-    const double finiteMomentum = centreOfMassMomentum(
-        invariantEnergy + coulombStrength/configuration.matchingRadius);
-    if (!(finiteMomentum > 0.0)) return result;
-    const auto lorentzFactor = [](double momentum, double mass) {
-        const double ratio = momentum/(mass*c);
-        return std::sqrt(1.0 + ratio*ratio);
-    };
-    const double firstFiniteGamma = lorentzFactor(finiteMomentum, firstMass);
-    const double secondFiniteGamma = lorentzFactor(finiteMomentum, secondMass);
-    // v_rel = |v1| + |v2| with the two moving oppositely in the CM frame.
-    const double firstMobility = 1.0/(firstFiniteGamma*firstMass);
-    const double secondMobility = 1.0/(secondFiniteGamma*secondMass);
-    const double finiteRelativeSpeed =
-        finiteMomentum*(firstMobility + secondMobility);
-    const double tangentialFraction = impactParameter*asymptoticMomentum
-        / (configuration.matchingRadius*finiteMomentum);
-    if (!(tangentialFraction >= 0.0 && tangentialFraction < 1.0)) return result;
-    const double tangentialSpeed = finiteRelativeSpeed*tangentialFraction;
-    const double radialSpeedSquared = finiteRelativeSpeed*finiteRelativeSpeed
-                                    - tangentialSpeed*tangentialSpeed;
-    if (!(radialSpeedSquared > 0.0)) return result;
-    const Vec3 relativeVelocity = radialDirection*(-std::sqrt(radialSpeedSquared))
-                                + tangentDirection*tangentialSpeed;
+    const two_body::IncomingTwoBodyKinematics incoming =
+        two_body::incomingTwoBodyKinematics(
+            kineticEnergy,coulombStrength/configuration.matchingRadius,
+            impactParameter,configuration.matchingRadius,
+            radialDirection,tangentDirection,firstMass,secondMass);
+    if (!incoming.valid()) return result;
 
     const auto randomDirection = [&]() {
         const double cosine = 2.0*uniform(random) - 1.0;
@@ -2870,20 +2918,17 @@ InteractionEvent simulateInteractionEvent(
         return Vec3{transverse*std::cos(phi), transverse*std::sin(phi), cosine};
     };
     State state;
-    // Positions still split mass-weighted about the origin, so the pair starts
-    // with its centre of mass there; it no longer STAYS there, because the
-    // centre of mass now carries the net momentum drawn above.
-    state.firstPosition = relativePosition*(secondMass/(firstMass+secondMass));
-    state.secondPosition = relativePosition*(-firstMass/(firstMass+secondMass));
-    // Relative velocity shared out by mobility rather than by mass, which is
-    // the same mass weighting in the non-relativistic limit and stays correct
-    // when the two Lorentz factors differ, then boosted by the centre-of-mass
-    // motion to give the lab velocities the integrator actually receives.
-    const double mobilitySum = firstMobility + secondMobility;
-    state.firstVelocity = centreOfMassVelocity
-        + relativeVelocity*(firstMobility/mobilitySum);
-    state.secondVelocity = centreOfMassVelocity
-        - relativeVelocity*(secondMobility/mobilitySum);
+    // Energy weights place the COM centre of energy at the origin while
+    // preserving the requested relative position.  They reduce to the usual
+    // mass weights in the nonrelativistic limit.
+    const double finiteComEnergy=incoming.finiteRadius.firstEnergy
+                                +incoming.finiteRadius.secondEnergy;
+    state.firstPosition = relativePosition
+        *(incoming.finiteRadius.secondEnergy/finiteComEnergy);
+    state.secondPosition = relativePosition
+        *(-incoming.finiteRadius.firstEnergy/finiteComEnergy);
+    state.firstVelocity = incoming.firstVelocity;
+    state.secondVelocity = incoming.secondVelocity;
     state.firstDipole = randomDirection()*firstMagneticMoment;
     state.secondDipole = randomDirection()*secondMagneticMoment;
 
@@ -2922,7 +2967,7 @@ InteractionEvent simulateInteractionEvent(
         result.minimumSeparation = minimumSeparation;
         result.radiatedEnergyEv = endpoint.radiatedEnergy/eCharge;
         result.finalRelativeEnergyEv =
-            conservativeParticleEnergy(endpoint)/eCharge;
+            coulombPairEnergy(endpoint)/eCharge;
         result.elapsedTime = endpoint.time;
         if (alignmentCount > 0) {
             result.dipoleAlignment = alignmentMean;
@@ -3119,11 +3164,19 @@ InteractionEvent simulateInteractionEvent(
         }
         if (passedClosestApproach
             && currentRadius >= configuration.matchingRadius) {
-            const Vec3 outgoing = state.firstVelocity - state.secondVelocity;
+            const double crossingFraction=separationCrossingFraction(
+                beforeStep,state,configuration.matchingRadius);
+            const State escapeState=interpolateState(
+                beforeStep,state,crossingFraction);
+            const Vec3 outgoing=escapeState.firstVelocity
+                               -escapeState.secondVelocity;
+            if (!(outgoing.norm() > 0.0) || !std::isfinite(outgoing.norm())) {
+                return finish(InteractionOutcome::NumericalFailure,escapeState);
+            }
             result.scatteringAngleDegrees = std::acos(std::clamp(
                 dot(beamDirection, outgoing)/outgoing.norm(), -1.0, 1.0))
                 * 180.0/pi;
-            return finish(InteractionOutcome::Scattering, state);
+            return finish(InteractionOutcome::Scattering,escapeState);
         }
     }
     return finish(InteractionOutcome::Unresolved, state);
@@ -3275,7 +3328,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     const bool matchingRegionWarning = configuration.matchingRadius
             < 20.0*configuration.impactParameterMaximum
         || matchingPotentialRatio > 0.01;
-    std::cout << "Running an e+e- beam experiment with " << runCount
+    std::cout << "Running a " << firstSpecies.name << '+' << secondSpecies.name
+              << " beam experiment with " << runCount
               << (runCount == 1 ? " trajectory on " : " trajectories on ")
               << workerCount << " worker"
               << (workerCount == 1 ? "" : "s") << ".\n"
@@ -3283,9 +3337,10 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
               << configuration.impactParameterMaximum * 1.0e12
               << " pm, R_match = " << configuration.matchingRadius * 1.0e12
               << " pm, theta acceptance >= "
-              << configuration.analysisThetaMinimum * 180.0/pi << " deg, beta_infinity = "
-              << configuration.asymptoticRelativeSpeed/(2.0*c) << ".\n";
-    if (configuration.asymptoticRelativeSpeed/(2.0*c) > 0.1) {
+              << configuration.analysisThetaMinimum * 180.0/pi
+              << " deg, max beta_infinity = "
+              << configuration.maximumAsymptoticBeta << ".\n";
+    if (configuration.maximumAsymptoticBeta > 0.1) {
         std::cout << "Warning: beta > 0.1; the Darwin/instantaneous interaction model is "
                      "outside its intended low-velocity regime.\n";
     }
@@ -3843,8 +3898,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     summary.SetTextFont(42);
     std::ostringstream setupLine;
     setupLine << "K_{CM} = " << beamEnergyEv << " eV, N = " << runCount
-              << ", #beta_{#infty} = "
-              << configuration.asymptoticRelativeSpeed/(2.0*c);
+              << ", max #beta_{#infty} = "
+              << configuration.maximumAsymptoticBeta;
     summary.AddText(setupLine.str().c_str());
     std::ostringstream acceptanceLine;
     acceptanceLine << "#theta_{CM} >= " << thetaLowDegrees << " deg";
@@ -3879,7 +3934,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     if (unresolved > 0) {
         summary.AddText("Finite flight-time/accuracy gate: channels are censored");
     }
-    if (configuration.asymptoticRelativeSpeed/(2.0*c) > 0.1) {
+    if (configuration.maximumAsymptoticBeta > 0.1) {
         summary.AddText("WARNING: outside the intended low-velocity regime");
     }
     if (matchingRegionWarning) {
@@ -3982,7 +4037,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     diagnosticSummary.AddText("Cutoff, captured and unresolved outcomes are excluded");
     diagnosticSummary.AddText("P_{rad}, J_{rad}: integrated Maxwell flux on the control wavefront");
     diagnosticSummary.AddText("P_{N}, J_{N}: approximate near-field/particle Noether sector");
-    if (configuration.asymptoticRelativeSpeed/(2.0*c) > 0.1) {
+    if (configuration.maximumAsymptoticBeta > 0.1) {
         diagnosticSummary.AddText("WARNING: outside the intended low-velocity regime");
     }
     if (matchingRegionWarning) {
@@ -4089,9 +4144,11 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
               << configuration.minimumKineticEnergy/eCharge
               << " eV, drawn independently, so the pair carries a net momentum "
                  "and the centre of mass moves; K_CM below is the invariant "
-                 "derived from the two.  b ~ |N(0, "
+                 "derived from the two, and each trajectory is integrated in "
+                 "that COM frame.  b ~ |N(0, "
               << configuration.impactParameterSigma*1.0e12
-              << " pm)|; both dipoles isotropic.\n"
+              << " pm)|, truncated by rejection at R_match/2; both dipoles "
+                 "isotropic.\n"
               << "Start/escape separation " << configuration.matchingRadius*1.0e12
               << " pm; collision boundary "
               << configuration.collisionRadius*1.0e12
@@ -4467,12 +4524,12 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         gaussianMaximumLikelihood(allEnergies);
     drawAnalysisBox(analysisBoxes, 0.52, 0.60, 0.95, 0.91, {
         "Sampled: N = " + std::to_string(allEnergies.size()),
-        "requested #mu / #sigma = " + compactNumber(meanEnergyEv, 4)
+        "per-particle lab input #mu / #sigma = " + compactNumber(meanEnergyEv, 4)
             + " / " + compactNumber(energySigmaEv, 4) + " eV",
-        "sample #mu / #sigma = " + compactNumber(energyMoments.mean, 4)
+        "sample K_{CM} #mu / #sigma = " + compactNumber(energyMoments.mean, 4)
             + " / " + compactNumber(energyMoments.sigma, 4) + " eV",
         plot_style::key(false, true, false, false),
-        "orange outline = sampled input, fill = class",
+        "orange outline = sampled K_{CM}, fill = class",
         "bound fraction = " + compactNumber(
             100.0*boundTotal/std::max(runCount, 1), 3) + "%",
         "#LTK_{CM}#GT bound = " + compactNumber(mean(boundEnergies), 4)
@@ -4901,6 +4958,11 @@ int main(int argc, char** argv) {
                 }
             } else if (argument == "--crem-wallclock-budget-s") {
                 cremWallClockBudgetSeconds = std::stod(requireValue(argument));
+                if (!(cremWallClockBudgetSeconds > 0.0)
+                    || !std::isfinite(cremWallClockBudgetSeconds)) {
+                    throw std::invalid_argument(
+                        "--crem-wallclock-budget-s must be finite and positive");
+                }
             } else if (argument == "--mode") {
                 const std::string mode = requireValue(argument);
                 if (mode == "visual" || mode == "1") selectedMode = 1;

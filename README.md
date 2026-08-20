@@ -35,37 +35,50 @@ wynika z dojścia klasycznej trajektorii do małej odległości.
 Pole dipola magnetycznego jest wygładzane wagą \(w(r)=1/(1+(a/r)^p)\) z
 \(p=6\) i
 
-\[a=\sqrt[3]{\frac{\mu_0}{4\pi}\frac{\mu_1\mu_2}{E}}=47{,}22\,\mathrm{fm},\]
+\[
+a=\sqrt[3]{
+  \frac{\mu_0}{4\pi}\frac{\mu_1\mu_2}{E/2}\,K_6
+}=68{,}47\,\mathrm{fm},
+\qquad K_6=1{,}5244264856,
+\]
 
-czyli separacją, przy której klasyczna energia oddziaływania dipol-dipol osiąga
-\(E\) — energię spoczynkową **lżejszego** składnika pary. Wchodzą oba momenty,
+gdzie \(E\) jest energią spoczynkową **lżejszego** składnika pary. Wchodzą oba momenty,
 \(\mu_1\mu_2\), a nie kwadrat jednego: to ta sama liczba wyłącznie dla cząstki
 i jej antycząstki, bo moment protonu jest 658 razy mniejszy od elektronowego,
-więc p+e⁻ potrzebuje 5,43 fm tam, gdzie e⁺e⁻ potrzebuje 47,22. Promień jest
+więc p+e⁻ potrzebuje 7,87 fm tam, gdzie e⁺e⁻ potrzebuje 68,47. Promień jest
 wyprowadzany z wybranej pary, a nie wpisany jako stała.
 
 Momenty są przy tym tymi, które niesie dynamika, czyli \((g/2)\mu_B\) dla
 elektronu, a nie gołym magnetonem Bohra. Wzór z \(\mu_B^2\) i masą elektronu
-dawał 47,18 fm i był poprawny wyłącznie dla pozytonium. Profil \(w(r)/r^3=r^3/(r^6+a^6)\) ma
-maksimum dokładnie w \(r=a\), więc ten wybór ogranicza klasyczną energię
-dipolową do \(m_ec^2/2\) w całej dziedzinie. Model klasyczny nie powinien
-generować energii oddziaływania powyżej progu kreacji par.
+pomijałby zależność od wybranej pary. Współczynnik \(K_6\) nie pochodzi z
+samego \(w/r^3\), lecz z rzeczywistego pola
+\(\mathbf B_{\rm reg}=\boldsymbol\nabla\times\mathbf A_{\rm reg}\). Największa
+wartość poprzeczna wynosi
+\(x^3(5-x^6)/(1+x^6)^2=K_6\) przy
+\(x=r/a=(9-2\sqrt{19})^{1/6}\). Dzięki temu klasyczna energia
+\(-\boldsymbol\mu_1\cdot\mathbf B_{2,\rm reg}\), a nie jej uproszczony
+substytut, jest ograniczona do \(E/2\) w całej dziedzinie (dla e⁺e⁻:
+\(m_ec^2/2\)).
+Limit dotyczy tablicowych wartości momentów w ich wspólnym układzie
+spoczynkowym; nie jest obietnicą niezmienniczego ograniczenia laboratoryjnej
+energii po dowolnie dużym boostcie.
 
 Poprzednia wartość \(0{,}5\cdot\)`nuclearCutoff` \(=5\,\mathrm{fm}\) była
 dobrana wyłącznie tak, aby wygładzanie pozostało wewnątrz raportowanej
-dziedziny. Dopuszczała energię dipolową \(2{,}1\cdot10^8\,\mathrm{eV}\),
-czyli 420 mas spoczynkowych elektronu, i czyniła sektor magnetyczny 106 razy
+dziedziny. Uproszczony skalar \(w/r^3\) wskazywał
+\(2{,}1\cdot10^8\,\mathrm{eV}\), lecz pełne `curl(A)` dopuszczało około
+\(6{,}6\cdot10^8\,\mathrm{eV}\), czyli 1284 masy spoczynkowe elektronu.
+Wartość 5 fm czyniła też sektor magnetyczny 106 razy
 bardziej punktowym niż sektor ładunkowy, który już zakłada źródło o skończonym
-promieniu `chargeCloudRestRadius`. Podniesienie promienia do 47 fm pozostawia
-każdą raportowaną orbitę bit-identyczną: przy dziesiątkach pikometrów waga
-różni się od jedności o mniej niż \(10^{-19}\); sprawdzono to na trybie
-diagnostycznym oraz na eksperymencie 3.
+promieniu `chargeCloudRestRadius`. Promień 68 fm nadal leży daleko poniżej
+skali atomowej; przy dziesiątkach pikometrów korekta wagi jest mniejsza niż
+kilka części na \(10^{12}\).
 
-To **nie** usuwa krótkozasięgowej bariery dipolowej. Bariera leży tam, gdzie
+Dla e⁺e⁻ nie usuwa to krótkozasięgowej bariery dipolowej. Bariera leży tam, gdzie
 nieregularyzowane energie dipolowa i kulombowska się zrównują,
 \(r^\*=\sqrt{(\mu_0/4\pi)\mu_1\mu_2/(ke^2)}=193\,\mathrm{fm}\), czyli w
-połowie zredukowanej długości Comptona — daleko poza jakimkolwiek promieniem
-wygładzania, który nie rusza raportowanych orbit. Poniżej tej skali klasyczny
+połowie zredukowanej długości Comptona i poza promieniem wygładzania.
+Poniżej tej skali klasyczny
 opis punktowego momentu magnetycznego nie ma podstaw fizycznych.
 
 Wszystkie obliczenia wykonywane są w jednostkach SI. Elektron i pozyton mają tę
@@ -303,7 +316,10 @@ rekurencyjnego obliczania pola BMT.
 
 Dostępny jest alternatywny model `coherentElectricDipole`: wspólne pole reakcji
 Abrahama–Lorentza jest wyznaczane z tej samej trzeciej pochodnej elektrycznego
-momentu dipolowego pary. Siły na elektron i pozyton są dokładnie przeciwne;
+momentu dipolowego pary. Kanał M1 jest zawsze liczony koherentnie z
+\(\mathbf m=\mathbf m_1+\mathbf m_2\), zatem zachowuje zarówno konstruktywną,
+jak i destruktywną interferencję obu dipoli. Siły na elektron i pozyton są
+dokładnie przeciwne;
 test wielomianu sześciennego daje względny błąd pochodnej
 \(8{,}72\cdot10^{-15}\). Model pozostaje opcjonalny, ponieważ opisuje wprost
 tylko dominujący kanał E1; domyślna trajektoria nadal używa indywidualnego LL.
@@ -886,11 +902,13 @@ Punktowe wzory magnetyczne są osobliwe dla \(r\to0\), dlatego pole orbitalne,
 energia i siła dipolowa są płynnie tłumione funkcją
 
 \[
-w(r)=\frac{1}{1+(r_m/r)^6},\qquad r_m=0{,}5r_{\rm cutoff}.
+w(r)=\frac{1}{1+(a/r)^6},\qquad
+a^3=\frac{\mu_0}{4\pi}\frac{\mu_1\mu_2}{E/2}K_6.
 \]
 
-Przejście regulatora leży wewnątrz wyłączonego obszaru modelu punktowego,
-więc nie deformuje raportowanej części trajektorii na skali atomowej.
+Przejście regulatora leży daleko poniżej skali atomowej. Jego wpływ na
+najkrótszy, modelowy fragment trajektorii zależy od wybranej pary i orientacji
+dipoli; nie jest ono utożsamiane z dodatkową granicą kończącą integrację.
 Regularizacja jest nakładana na potencjał wektorowy, a wszystkie pola dipolowe
 są wyznaczane z jednego związku
 
@@ -1096,6 +1114,13 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    oznacza więc teraz energię kinetyczną **jednej cząstki w układzie
    laboratoryjnym**, a nie energię zderzenia. Energia zderzenia \(K_{CM}\)
    jest niezmiennikiem wyliczanym z obu pędów i raportowanym per zdarzenie.
+   Po wyznaczeniu \(K_{CM}\) trajektoria jest transformowana i całkowana w
+   układzie COM. Na sferze dopasowania wspólny pęd obu cząstek wynika z
+   \(K_{CM}+k|q_1q_2|/r\), a pędy są równe i przeciwne. Dzięki temu geometria
+   sfery, zegar orbit związanych i kryterium wychwytu należą do tej samej ramy;
+   translacja środka masy nie może zmienić stanu związanego w niezwiązany.
+   Parametr zderzenia (poprzeczny do osi wiązki) zachowuje wartość przy tym
+   boostcie, a izotropowe kierunki dipoli są losowane w COM.
 
    Zależność od pary jest przy tym silna i warto ją znać przed doborem
    \(\mu\). Przy równych masach pędy prawie się znoszą, środek masy prawie nie
@@ -1141,7 +1166,10 @@ Każde zdarzenie ma budżet zegarowy (`--crem-wallclock-budget-s`). Trajektoria,
 która go wyczerpie, jest **cenzurowana prawostronnie**, a nie odrzucana: wiadomo
 o niej, że czas kolapsu przekracza osiągnięty czas symulowany. Krzywa przeżycia
 jest dlatego estymatorem iloczynowym Kaplana-Meiera z błędami Greenwooda,
-liczonym ze wszystkich użytecznych trajektorii.
+liczonym ze wszystkich użytecznych trajektorii. Gdy cenzurowana jest cała
+próba, estymator pozostaje skończony: \(S(t)=1\) do największego czasu cenzury,
+RMST jest równe temu horyzontowi, a mediana pozostaje nieosiągnięta. Nie jest to
+ekstrapolacja czasu życia poza dane.
 
 To rozróżnienie jest istotne ilościowo. Cenzura **nie** jest niezależna od
 mierzonej wielkości: czas kolapsu skaluje się jak \(a^3\), a liczba obiegów do
@@ -1215,7 +1243,15 @@ b=b_{max}\sqrt{U},\qquad A=\pi b_{max}^2,
 \]
 
 i całkuje trajektorię od sfery dopasowania do ponownego wyjścia z obszaru
-oddziaływania. Każda z \(N\) prób ma wagę \(A/N\). Wyświetlane są:
+oddziaływania. Każda z \(N\) prób ma wagę \(A/N\).
+
+Wspólny moduł kinematyki wyznacza dokładny relatywistyczny pęd COM dla obu
+mas. Na sferze dopasowania cząstki dostają równe i przeciwne pędy, a nie
+masowo dzieloną prędkość względną. Dzięki temu zadane \(K_{CM}\), całkowity
+pęd równy zeru i wynik są niezmiennicze przy zamianie kolejności ról, również
+dla pary proton–elektron.
+
+Wyświetlane są:
 
 - różniczkowy przekrój elastyczny \(d\sigma/d\Omega\) z błędami dwumianowymi;
 - skumulowany przekrój akceptancji \(\sigma(\theta\ge\theta_{min})\);
@@ -1496,7 +1532,7 @@ daje 6 plików, a 4 daje 5.
 | Plik | Zawartość |
 | --- | --- |
 | `5_1_1_outcome_summary.pdf` | Klasyfikacja zakończeń: zderzenie, rozproszenie, para-Ps, orto-Ps, nierozstrzygnięte, awaria numeryczna. |
-| `5_1_2_collision_energy.pdf` | Losowana energia w układzie środka masy, z zaznaczeniem podpróbki związanej. |
+| `5_1_2_collision_energy.pdf` | Wyliczona niezmiennicza energia w układzie środka masy, z zaznaczeniem podpróbki związanej. |
 | `5_1_3_impact_parameter.pdf` | Losowany parametr zderzenia (rozkład półnormalny), z podpróbką związaną. |
 | `5_1_4_dipole_alignment.pdf` | Wyrównanie dipoli w stanach związanych, z progiem para/orto przy `+0,5`. Stosunek 1:3 wynika tu z **geometrii** progu na izotropowej sferze, a nie ze statystyki spinowej — zbieżność liczbowa jest przypadkowa. |
 | `5_1_5_annihilation_time_para.pdf` | Widmo czasu anihilacji z mierzonej stałej rozpadu p-Ps, zawężone do zdarzeń sklasyfikowanych jako para. |
@@ -1536,6 +1572,7 @@ czytelności i rozdzieleniu odpowiedzialności.
 | `vector3.hpp`, `state.hpp`, `dipole_tensor.hpp` | typy podstawowe |
 | `physical_constants.hpp` | stałe fizyczne wraz z wyprowadzeniami |
 | `particle_species.hpp` | tablica gatunków (masa, ładunek, `g`), para integrowana przez przebieg i skale, które z niej wynikają: masa zredukowana, promień Bohra pary, energia wiązania, promień regularyzacji dipola oraz wyszukiwanie gatunku dla `--pair` |
+| `two_body_kinematics.hpp` | stabilna relatywistyczna kinematyka dwuciałowa: czteropędy, energia niezmiennicza, boost Lorentza i stan wejściowy na sferze dopasowania |
 | `electrodynamics.hpp` | **prawa sił**: pola opóźnione, Darwin, sprzężenie dipolowe, reakcja promieniowania, strumień dalekiego pola |
 | `crem_engine.hpp` | **numeryka**: rekonstrukcja historii przyczynowej i adaptacyjny integrator (sonda błędu, podział kroku, retencja historii) |
 | `crem_trajectory.hpp` | warstwa trajektorii: `Frame`, wspólna pętla całkowania, sampler warunków początkowych i klasyfikacja zjawiska |
@@ -1545,9 +1582,11 @@ czytelności i rozdzieleniu odpowiedzialności.
 | `maxwell_validation*.hpp` | zestaw testów budowany do `positronium_validation` |
 
 Trzy moduły `crem_*` nie zawierają **żadnego kodu ROOT** — cała prezentacja
-pozostaje w `positronium.cpp`. Podział przeprowadzono jako przeniesienie
-tekstu: wyniki po nim są bit-identyczne (walidacja 28/28, diagnostyka i czas
-kolapsu bez zmian).
+pozostaje w `positronium.cpp`. Bieżąca walidacja ma 33 nazwane bramki; trzy
+pierwsze sprawdzają kinematykę dwuciałową, w tym zamianę ról nierównych mas,
+boost i boost odwrotny oraz warunek \(|v|<c\). Osobna bramka kontrolera
+adaptacyjnego wymusza odrzucenie kroku, który na `maximumDepth` nadal
+przekracza tolerancję, oraz sprawdza atomowy rollback stanu i historii.
 
 ## Metoda numeryczna
 
@@ -1730,7 +1769,7 @@ Odpowiedź: **nie da się poniżej mniej więcej \(529\) fm.** Przy zasięgu
 te same dwie trajektorie z trzech giną tak samo, niezależnie od tego, jak
 głęboko się prosi. Trajektorie umierają więc w tym samym miejscu, a żądanie
 \(1\) fm nie przybliża do niego ani o krok. Skala \(1\) fm leży zresztą
-poniżej promienia regularyzacji dipola \(47\) fm, poniżej bariery
+poniżej promienia regularyzacji dipola \(68\) fm, poniżej bariery
 Comptona \(193\) fm i poniżej samego \(r_e=2{,}82\) fm, więc model
 produkowałby tam liczby w reżimie, w którym klasyczna elektrodynamika
 punktowej cząstki na pewno nie obowiązuje.
@@ -1902,7 +1941,7 @@ Dwie własności modeli reakcji, które warto znać przed użyciem:
   `2h³` zwraca wartość niefizyczną. Estymator odrzuca teraz pomiar implikujący
   stratę powyżej 50% energii wiązania na jedną orbitę i zgłasza go jako awarię
   numeryczną, zamiast wcielać go do stanu oskulacyjnego.
-| `--crem-wallclock-budget-s` | `20` | Budżet zegarowy na jedno zdarzenie w eksperymentach 1/2. Po jego wyczerpaniu trajektoria jest cenzurowana prawostronnie. Wartość domyślna daje niską frakcję ukończenia przy `N = 1000`; do wniosków ilościowych trzeba ją podnieść tak, aby kompletacja zbliżyła się do 100%. |
+| `--crem-wallclock-budget-s` | `20` | Skończony dodatni budżet zegarowy na jedno zdarzenie w eksperymentach 1/2. Po jego wyczerpaniu trajektoria jest cenzurowana prawostronnie. Wartość domyślna daje niską frakcję ukończenia przy `N = 1000`; do wniosków ilościowych trzeba ją podnieść tak, aby kompletacja zbliżyła się do 100%. |
 
 `--no-gui` wykonuje serię i wypisuje podsumowanie bez
 otwierania okna ROOT, ale nadal renderuje i zapisuje pliki PDF, co jest
@@ -1954,13 +1993,12 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
   Darwina, które jest rzędu \(v^2/c^2\), występuje wyłącznie w raportowanej
   diagnostyce energii oraz jako zalążek rekonstrukcji historii przyczynowej,
   natychmiast zastępowany dwiema iteracjami Picarda na siłach retardowanych;
-- odrzut orbitalny od promieniowania dipola magnetycznego. Moc M1 jest
-  liczona, a jej energia księgowana w `dipoleConstraintEnergy`, czyli poza
-  orbitą. Zmierzony stosunek \(P_{M1}/P_{E1}\) wynosi \(8{,}5\cdot10^{-16}\)
-  dla e⁺e⁻, \(2{,}9\cdot10^{-14}\) dla p+e⁻, \(8{,}5\cdot10^{-16}\) dla
-  mionium i \(6{,}6\cdot10^{-15}\) dla protonium, więc dołączenie odrzutu
-  zmieniłoby czas kolapsu o rząd \(10^{-15}\) — poniżej każdego innego
-  residuum w tym modelu. Pominięcie jest świadome i nierozstrzygalne pomiarowo;
+- odrzut orbitalny od promieniowania dipola magnetycznego. Koherentna moc M1
+  jest liczona z \(|\ddot{\mathbf m}_1+\ddot{\mathbf m}_2|^2\), a jej energia
+  księgowana w `dipoleConstraintEnergy`, czyli poza
+  orbitą. Walidator sprawdza oba skrajne przypadki interferencji: dwa zgodne
+  źródła dają \(4P_1\), a dwa przeciwne — zerową moc. Odrzut M1 pozostaje
+  poza ruchem orbitalnym; pominięcie jest świadome;
 - kwantowa struktura subtelna i kwantowe elementy macierzowe sprzężenia
   spin–orbita. Klasyczne odpowiedniki **są uwzględnione**: relatywistyczna
   precesja BMT z mierzonym \(g\), precesja Thomasa i transformacja tensora

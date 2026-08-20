@@ -47,22 +47,21 @@ inline constexpr double nuclearCutoff = 1.0e-14;
 // under the name magneticRegularizationRadius.  The exponent below is a pure
 // shape parameter of the regulator and carries no species scale, so it stays.
 //
-// It used to be the literal 4.722121244442525e-14 sitting in this file, which
-// is the correct value for e+e- and for nothing else -- it was built from the
-// electron's moment and the electron's rest energy, so for any other pair the
-// ceiling it exists to enforce silently stopped binding.
+// It used to be the literal 4.722121244442525e-14 sitting in this file.  Apart
+// from being tied to e+e-, that value bounded only w/r^3; the production
+// curl(A) has a larger transverse maximum.  particle_species.hpp now derives
+// the pair scale from that actual field maximum.
 inline constexpr double magneticRegularizationExponent = 6.0;
 inline constexpr double hbar = 1.054571817e-34;
 inline constexpr double chargeCloudRestRadius = 0.01*bohrRadius;
-// Separation at which a trajectory is declared to have collided, and the depth
-// at which the collapse estimator stops integrating.
+// The separation at which a trajectory counts as collided is NOT here: it
+// scales with the pair, so it is derived in particle_species.hpp as
+// collisionBoundaryOf(pair) and exported there as collisionBoundaryRadius.
 //
-// Numerically equal to chargeCloudRestRadius, and that is the point: until now
-// ONE constant played both roles, so the reach of the trajectory sector could
-// not be changed without also resizing the charge cloud that the Maxwell grid
-// deposits, and vice versa.  They are separate questions -- one is the model's
-// spatial resolution, the other is where a trajectory is deemed to have ended
-// -- and separating them is what allows the reach to be probed on its own.
-inline constexpr double collisionBoundaryRadius = chargeCloudRestRadius;
+// It used to sit here as 0.01*a0 = 529 fm, hydrogen's Bohr radius, while the
+// starting separation has long been the PAIR's Bohr radius.  For mu+mu- that
+// start is 512 fm and for p+pbar 57.6 fm, i.e. already inside the boundary:
+// the trajectory was declared collided before its first step and came back as
+// a numerical failure.
 
 } // namespace positronium::parameters

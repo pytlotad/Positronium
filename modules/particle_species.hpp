@@ -124,16 +124,22 @@ constexpr double cubeRoot(double value) {
 }
 
 // Smoothing radius of the magnetic dipole field, set by a physical ceiling
-// rather than by the point-particle boundary.  The dipole-dipole interaction
-// energy of the pair is (mu0/4pi) mu1 mu2 / r^3, and the regularized profile
+// rather than by the point-particle boundary.  The regulator is applied to
+// A=C f(r)(mu x r), not directly to B, so its energy ceiling must be derived
+// from curl(A).  With x=r/a and p=6 the two eigenvalues of B/(C mu/a^3) are
 //
-//     w(r)/r^3 = r^3/(r^6 + a^6)
+//     longitudinal:  2 x^3/(1+x^6),
+//     transverse:     x^3(5-x^6)/(1+x^6)^2.
 //
-// peaks exactly at r = a with value 1/(2 a^3).  Choosing
+// The absolute transverse eigenvalue is the larger one.  It peaks at
+// x^6=9-2 sqrt(19) with the dimensionless value below.  Therefore
 //
-//     a = cbrt( (mu0/4pi) mu1 mu2 / E )
+//     a^3 = peak * (mu0/4pi) mu1 mu2 / (E/2)
 //
-// therefore caps the classical dipole energy at E/2 EVERYWHERE, for any pair.
+// caps the ACTUAL energy -mu1.B_reg at E/2 for every separation and
+// orientation when both moments have their tabulated proper magnitudes in a
+// common rest frame.  Omitting peak and the factor two capped only f(r), while
+// the production curl(A) still reached 1.524 E.
 //
 // E is the rest energy of the LIGHTER of the two, which is the first scale at
 // which the classical description of a constituent stops meaning anything.  A
@@ -141,28 +147,35 @@ constexpr double cubeRoot(double value) {
 //
 // Both moments enter, mu1 mu2 rather than mu^2.  That is the same number only
 // for a particle and its own antiparticle; the proton's moment is 658 times
-// smaller than the electron's, so p+e- needs 5.43 fm where e+e- needs 47.22.
+// smaller than the electron's, so the radii remain strongly pair-dependent.
 // Squaring one role's moment would have overestimated the singular energy of
 // every mixed pair and smoothed it far more than its own physics asks for.
 //
-// This does NOT remove the short-range dipole barrier.  That barrier sits
-// where the unregularized dipole and Coulomb energies cross,
-// r* = sqrt((mu0/4pi) mu1 mu2 / k|q1 q2|), which for e+e- is 193 fm -- half
-// the reduced Compton wavelength and far outside any smoothing radius that
-// leaves the reported orbits untouched.
+// For e+e- this does NOT remove the short-range dipole barrier: the
+// unregularized dipole and Coulomb energies cross at
+// r* = sqrt((mu0/4pi) mu1 mu2 / k|q1 q2|) = 193 fm, outside the 68.47 fm
+// smoothing radius.  For sufficiently asymmetric pairs the E/2 scale can
+// overlap that formal point-dipole crossover, but both then lie at or below
+// the 10 fm terminal boundary where the reported trajectory already ends.
+inline constexpr double dipoleEnergyCeilingFraction=0.5;
+inline constexpr double sixthOrderDipoleCurlPeak=1.5244264856335352;
+static_assert(magneticRegularizationExponent==6.0,
+    "sixthOrderDipoleCurlPeak must be re-derived when the profile changes");
+
 constexpr double dipoleRegularizationRadius(const ParticlePair& pair) {
     const double lighterMass=pair.first.mass<pair.second.mass
         ?pair.first.mass:pair.second.mass;
     return cubeRoot((mu0/(4.0*pi))
         *magneticMoment(pair.first)*magneticMoment(pair.second)
-        /(lighterMass*speedOfLight*speedOfLight));
+        *sixthOrderDipoleCurlPeak
+        /(dipoleEnergyCeilingFraction
+          *lighterMass*speedOfLight*speedOfLight));
 }
 
 // The name the field code has always used, now answering for whichever pair
 // the RUN integrates.  Deliberately not constexpr: --pair chooses the pair at
 // startup and applyPair reassigns this before anything integrates.  It is
-// constant-initialized to the default pair's value, so a build that never
-// touches --pair behaves exactly as before.
+// constant-initialized to the default pair's derived value.
 inline double magneticRegularizationRadius=
     dipoleRegularizationRadius(defaultPair);
 
@@ -176,6 +189,28 @@ constexpr bool isPositronium(const ParticlePair& pair) {
         && pair.first.charge==-pair.second.charge
         && magnitude(pair.first.charge)==elementaryCharge;
 }
+
+// Separation at which a trajectory is declared to have collided, and the depth
+// at which the collapse estimator stops integrating.
+//
+// Expressed as a fraction of the PAIR's own Bohr radius, so the experiments
+// stay geometrically similar from one pair to the next.  The coefficient is
+// chosen to reproduce the historical 0.01*a0 = 529 fm for positronium, whose
+// pair radius is 2*a0: 0.005 * 2 a0 = 0.01 a0.  Every other pair now gets the
+// same fraction of its own orbit instead of hydrogen's absolute number --
+// 2.56 fm for mu+mu-, 0.29 fm for p+pbar, 265 fm for p+e-.
+//
+// The default pair shifts by 2.6e-9 relative, because pairBohrRadius derives
+// the radius from hbar^2/(mu k q^2) while the old constant came from the
+// tabulated a0; that is the same rounding gap the assertions below admit.
+constexpr double collisionBoundaryOf(const ParticlePair& pair) {
+    return 0.005*pairBohrRadius(pair);
+}
+
+// The name the trajectory and collapse code use, following whichever pair the
+// run integrates.  Not constexpr for the same reason as the regularization
+// radius above: --pair reassigns it before anything integrates.
+inline double collisionBoundaryRadius=collisionBoundaryOf(defaultPair);
 
 // Everything --pair is allowed to name.  Kept next to the species themselves
 // so a new species cannot be added without becoming selectable.
@@ -222,15 +257,11 @@ static_assert(agreesTo(magneticMoment(electron),electronMagneticMoment,1.0e-8));
 // consistency check and became a ban on ever selecting another pair.
 static_assert(agreesTo(pairBohrRadius(ParticlePair{electron,positron}),
                        positroniumBohrRadius,1.0e-8));
-// The radius above used to be the literal 4.722121244442525e-14 in
-// physical_constants.hpp.  Deriving it must not have moved the default pair,
-// and it does not: the gap is 4.1e-10, the same "independently rounded CODATA
-// values do not recombine bit-for-bit" effect as the two assertions above.
-// Its whole source is that the old literal was built from the TABULATED Bohr
-// magneton while magneticMoment(electron) derives the magneton as
-// e*hbar/(2 m_e); reproducing the literal from the tabulated route agrees to
-// 1.3e-16.  A wrong mass, charge or g-factor would miss by 1e-3 or worse.
+// Pin the default scale as a guard against dropping the curl(A) peak factor or
+// one of the two role moments.  The former scalar-profile radius was 47.22 fm;
+// enforcing the same E/2 ceiling on the production field raises it by
+// (2*1.524426...)^(1/3)=1.450036... to 68.47 fm.
 static_assert(agreesTo(dipoleRegularizationRadius(ParticlePair{electron,positron}),
-                       4.722121244442525e-14,1.0e-8));
+                       6.847246471287685e-14,1.0e-8));
 
 } // namespace positronium::parameters

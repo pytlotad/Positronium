@@ -4,6 +4,154 @@
 
 int runMaxwellSelfTest() {
     const auto benchmarkStart=std::chrono::steady_clock::now();
+
+    // Cheap production-kinematics regressions.  These call the same builders
+    // as experiments 3--5, so they detect role-dependent energy splits and a
+    // return to Galilean velocity addition without running a trajectory.
+    const double twoBodyTestEnergy=20.0*eCharge;
+    const double twoBodyMatchingRadius=1.0e-9;
+    const double twoBodyImpact=0.2*twoBodyMatchingRadius;
+    const double twoBodyPotentialGain=pairCoulombStrength/twoBodyMatchingRadius;
+    const Vec3 twoBodyRadial{-std::sqrt(1.0-0.2*0.2),0.2,0.0};
+    const Vec3 twoBodyTangent{0.2,std::sqrt(1.0-0.2*0.2),0.0};
+    const two_body::IncomingTwoBodyKinematics protonElectronIncoming=
+        two_body::incomingTwoBodyKinematics(
+            twoBodyTestEnergy,twoBodyPotentialGain,
+            twoBodyImpact,twoBodyMatchingRadius,
+            twoBodyRadial,twoBodyTangent,proton.mass,electron.mass);
+    const two_body::IncomingTwoBodyKinematics electronProtonIncoming=
+        two_body::incomingTwoBodyKinematics(
+            twoBodyTestEnergy,twoBodyPotentialGain,
+            twoBodyImpact,twoBodyMatchingRadius,
+            twoBodyRadial,twoBodyTangent,electron.mass,proton.mass);
+    const two_body::FreeTwoBodyKinematics protonElectronFree=
+        two_body::freeTwoBodyKinematics(
+            protonElectronIncoming.firstVelocity,proton.mass,
+            protonElectronIncoming.secondVelocity,electron.mass);
+    const two_body::FreeTwoBodyKinematics electronProtonFree=
+        two_body::freeTwoBodyKinematics(
+            electronProtonIncoming.firstVelocity,electron.mass,
+            electronProtonIncoming.secondVelocity,proton.mass);
+    const double twoBodyRoleEnergyResidual=std::max(
+        std::abs((protonElectronFree.centreOfMomentumKineticEnergy
+                  -twoBodyPotentialGain-twoBodyTestEnergy)/twoBodyTestEnergy),
+        std::abs((electronProtonFree.centreOfMomentumKineticEnergy
+                  -twoBodyPotentialGain-twoBodyTestEnergy)/twoBodyTestEnergy));
+    const double twoBodyRoleMomentumResidual=std::max(
+        (protonElectronIncoming.firstFrame.momentum
+         +protonElectronIncoming.secondFrame.momentum).norm()
+            /std::max(2.0*protonElectronIncoming.finiteRadius.momentumMagnitude,
+                      1.0e-300),
+        (electronProtonIncoming.firstFrame.momentum
+         +electronProtonIncoming.secondFrame.momentum).norm()
+            /std::max(2.0*electronProtonIncoming.finiteRadius.momentumMagnitude,
+                      1.0e-300));
+    const double twoBodyRoleSwapResidual=std::max({
+        std::abs(protonElectronIncoming.asymptotic.momentumMagnitude
+                -electronProtonIncoming.asymptotic.momentumMagnitude)
+            /std::max(protonElectronIncoming.asymptotic.momentumMagnitude,
+                      1.0e-300),
+        std::abs(protonElectronIncoming.finiteRadius.firstSpeed
+                -electronProtonIncoming.finiteRadius.secondSpeed)
+            /std::max(protonElectronIncoming.finiteRadius.firstSpeed,1.0),
+        std::abs(protonElectronIncoming.finiteRadius.secondSpeed
+                -electronProtonIncoming.finiteRadius.firstSpeed)
+            /std::max(protonElectronIncoming.finiteRadius.secondSpeed,1.0)});
+
+    const double electronRestEnergy=electron.mass*c*c;
+    const two_body::HeadOnLabKinematics asymmetricLab=
+        two_body::headOnLabKinematics(
+            2.0*electronRestEnergy,electron.mass,
+            0.01*electronRestEnergy,positron.mass,Vec3{1.0,0.0,0.0});
+    const two_body::IncomingTwoBodyKinematics boostedIncoming=
+        two_body::incomingTwoBodyKinematics(
+            asymmetricLab.pair.centreOfMomentumKineticEnergy,
+            twoBodyPotentialGain,twoBodyImpact,twoBodyMatchingRadius,
+            twoBodyRadial,twoBodyTangent,electron.mass,positron.mass,
+            asymmetricLab.pair.centreOfMomentumVelocity);
+    const two_body::FreeTwoBodyKinematics boostedFree=
+        two_body::freeTwoBodyKinematics(
+            boostedIncoming.firstVelocity,electron.mass,
+            boostedIncoming.secondVelocity,positron.mass);
+    const two_body::ParticleFourMomentum recoveredFirst=
+        two_body::boostFourMomentum(boostedIncoming.firstFrame,
+            asymmetricLab.pair.centreOfMomentumVelocity*(-1.0));
+    const two_body::ParticleFourMomentum recoveredSecond=
+        two_body::boostFourMomentum(boostedIncoming.secondFrame,
+            asymmetricLab.pair.centreOfMomentumVelocity*(-1.0));
+    const Vec3 unequalFrameVelocity{0.55*c,0.10*c,0.0};
+    const two_body::IncomingTwoBodyKinematics unequalBoostedIncoming=
+        two_body::incomingTwoBodyKinematics(
+            twoBodyTestEnergy,twoBodyPotentialGain,
+            twoBodyImpact,twoBodyMatchingRadius,
+            twoBodyRadial,twoBodyTangent,proton.mass,electron.mass,
+            unequalFrameVelocity);
+    const two_body::FreeTwoBodyKinematics unequalBoostedFree=
+        two_body::freeTwoBodyKinematics(
+            unequalBoostedIncoming.firstVelocity,proton.mass,
+            unequalBoostedIncoming.secondVelocity,electron.mass);
+    const two_body::ParticleFourMomentum unequalRecoveredFirst=
+        two_body::boostFourMomentum(unequalBoostedIncoming.firstFrame,
+            unequalFrameVelocity*(-1.0));
+    const two_body::ParticleFourMomentum unequalRecoveredSecond=
+        two_body::boostFourMomentum(unequalBoostedIncoming.secondFrame,
+            unequalFrameVelocity*(-1.0));
+    const double twoBodyBoostEnergyResidual=std::max(std::abs(
+        boostedFree.centreOfMomentumKineticEnergy
+        -boostedIncoming.finiteRadius.kineticEnergy)
+        /std::max(boostedIncoming.finiteRadius.kineticEnergy,1.0e-300),
+        std::abs(unequalBoostedFree.centreOfMomentumKineticEnergy
+                 -unequalBoostedIncoming.finiteRadius.kineticEnergy)
+        /std::max(unequalBoostedIncoming.finiteRadius.kineticEnergy,1.0e-300));
+    const double twoBodyBoostVelocityResidual=std::max(
+        (boostedFree.centreOfMomentumVelocity
+         -asymmetricLab.pair.centreOfMomentumVelocity).norm()/c,
+        (unequalBoostedFree.centreOfMomentumVelocity
+         -unequalFrameVelocity).norm()/c);
+    const double twoBodyInverseBoostResidual=std::max({
+        (recoveredFirst.momentum
+         -boostedIncoming.firstCentreOfMomentum.momentum).norm()
+            /std::max(boostedIncoming.finiteRadius.momentumMagnitude,1.0e-300),
+        (recoveredSecond.momentum
+         -boostedIncoming.secondCentreOfMomentum.momentum).norm()
+            /std::max(boostedIncoming.finiteRadius.momentumMagnitude,1.0e-300),
+        (unequalRecoveredFirst.momentum
+         -unequalBoostedIncoming.firstCentreOfMomentum.momentum).norm()
+            /std::max(unequalBoostedIncoming.finiteRadius.momentumMagnitude,
+                      1.0e-300),
+        (unequalRecoveredSecond.momentum
+         -unequalBoostedIncoming.secondCentreOfMomentum.momentum).norm()
+            /std::max(unequalBoostedIncoming.finiteRadius.momentumMagnitude,
+                      1.0e-300)});
+    const double commonNearLightBeta=1.0-std::ldexp(1.0,-40);
+    const Vec3 commonNearLightVelocity{commonNearLightBeta*c,0.0,0.0};
+    const two_body::FreeTwoBodyKinematics comovingNearLightPair=
+        two_body::freeTwoBodyKinematics(
+            commonNearLightVelocity,proton.mass,
+            commonNearLightVelocity,electron.mass);
+    const double comovingInternalEnergyEv=
+        comovingNearLightPair.centreOfMomentumKineticEnergy/eCharge;
+    const bool allInitialVelocitiesCausal=
+        two_body::subluminal(protonElectronIncoming.firstVelocity)
+        &&two_body::subluminal(protonElectronIncoming.secondVelocity)
+        &&two_body::subluminal(electronProtonIncoming.firstVelocity)
+        &&two_body::subluminal(electronProtonIncoming.secondVelocity)
+        &&two_body::subluminal(boostedIncoming.firstVelocity)
+        &&two_body::subluminal(boostedIncoming.secondVelocity)
+        &&two_body::subluminal(unequalBoostedIncoming.firstVelocity)
+        &&two_body::subluminal(unequalBoostedIncoming.secondVelocity)
+        &&two_body::subluminal(commonNearLightVelocity);
+    const double maximumInitialBeta=std::sqrt(std::max({
+        protonElectronIncoming.firstVelocity.squaredNorm(),
+        protonElectronIncoming.secondVelocity.squaredNorm(),
+        electronProtonIncoming.firstVelocity.squaredNorm(),
+        electronProtonIncoming.secondVelocity.squaredNorm(),
+        boostedIncoming.firstVelocity.squaredNorm(),
+        boostedIncoming.secondVelocity.squaredNorm(),
+        unequalBoostedIncoming.firstVelocity.squaredNorm(),
+        unequalBoostedIncoming.secondVelocity.squaredNorm(),
+        commonNearLightVelocity.squaredNorm()}))/c;
+
     const CovariantExtendedBody covarianceBody{firstCharge,firstMass,
         chargeCloudRestRadius,{},Vec3{0.31*c,-0.07*c,0.04*c},
         Vec3{0,0,firstMagneticMoment}};
@@ -1230,6 +1378,105 @@ int runMaxwellSelfTest() {
         +coherentProbe.second).norm()
         /std::max(coherentProbe.first.norm(),1.0e-300);
 
+    // Production-path regression for M1 source interference.  Collinear,
+    // positive moments keep interpolateDipole() exactly linear.  Thus
+    // m_i(t)=100 +/- t^2 gives m1''=2 and m2''=+/-2 through the real history
+    // stencil: equal derivatives must radiate 4 P1 and opposite derivatives
+    // must radiate nothing.
+    const auto magneticInterferenceHistory=[](bool opposite) {
+        StateHistory history;
+        for(int index=0;index<=4;++index) {
+            State sample;
+            sample.time=static_cast<double>(index);
+            const double square=sample.time*sample.time;
+            sample.firstDipole={100.0+square,0,0};
+            sample.secondDipole={100.0+(opposite?-square:square),0,0};
+            history.push_back(sample);
+        }
+        return history;
+    };
+    const StateHistory alignedMagneticHistory=
+        magneticInterferenceHistory(false);
+    const StateHistory cancellingMagneticHistory=
+        magneticInterferenceHistory(true);
+    const State& alignedMagneticState=alignedMagneticHistory.back();
+    const State& cancellingMagneticState=cancellingMagneticHistory.back();
+    const RetardedDipoleKinematics alignedFirstMagnetic=
+        historicalDipoleKinematics(alignedMagneticHistory,
+            alignedMagneticState,true,alignedMagneticState.time);
+    const RetardedDipoleKinematics alignedSecondMagnetic=
+        historicalDipoleKinematics(alignedMagneticHistory,
+            alignedMagneticState,false,alignedMagneticState.time);
+    const RetardedDipoleKinematics cancellingSecondMagnetic=
+        historicalDipoleKinematics(cancellingMagneticHistory,
+            cancellingMagneticState,false,cancellingMagneticState.time);
+    const DipoleRadiationReaction alignedMagneticRadiation=
+        dipoleRadiationReaction(alignedMagneticState,alignedMagneticHistory);
+    const DipoleRadiationReaction cancellingMagneticRadiation=
+        dipoleRadiationReaction(
+            cancellingMagneticState,cancellingMagneticHistory);
+    constexpr double magneticRadiationCoefficient=mu0/(6.0*pi*c*c*c);
+    const double singleMagneticPower=magneticRadiationCoefficient
+        *alignedFirstMagnetic.secondDerivative.squaredNorm();
+    const double alignedMagneticPowerRatio=
+        alignedMagneticRadiation.power/std::max(singleMagneticPower,1.0e-300);
+    const double cancellingMagneticPowerRatio=
+        cancellingMagneticRadiation.power/std::max(singleMagneticPower,1.0e-300);
+    const double magneticDerivativeResidual=std::max({
+        (alignedFirstMagnetic.secondDerivative-Vec3{2,0,0}).norm()/2.0,
+        (alignedSecondMagnetic.secondDerivative-Vec3{2,0,0}).norm()/2.0,
+        (cancellingSecondMagnetic.secondDerivative-Vec3{-2,0,0}).norm()/2.0});
+
+    // Direct algebra probe complements the production-history check above: a
+    // derivative carried by the second source must torque the first moment,
+    // angular flux uses M' x M'', and a common boost transports the coherent
+    // power with the velocity of the pair as a whole.
+    RetardedDipoleKinematics magneticAlgebraFirst;
+    RetardedDipoleKinematics magneticAlgebraSecond;
+    const Vec3 magneticCommonVelocity{0.125*c,-0.04*c,0.02*c};
+    const Vec3 magneticSourcePosition{10.0,-4.0,2.0};
+    magneticAlgebraFirst.position=magneticSourcePosition;
+    magneticAlgebraSecond.position=magneticSourcePosition;
+    magneticAlgebraFirst.velocity=magneticCommonVelocity;
+    magneticAlgebraSecond.velocity=magneticCommonVelocity;
+    magneticAlgebraFirst.moment={1,0,0};
+    magneticAlgebraSecond.moment={0,1,0};
+    magneticAlgebraFirst.firstDerivative={1,0,0};
+    magneticAlgebraFirst.secondDerivative={0,1,0};
+    magneticAlgebraSecond.thirdDerivative={0,1,0};
+    const DipoleRadiationReaction magneticAlgebra=
+        coherentMagneticDipoleRadiationReaction(
+            magneticAlgebraFirst,magneticAlgebraSecond);
+    const Vec3 expectedMagneticTorque{0,0,magneticRadiationCoefficient};
+    const Vec3 expectedMagneticMomentum=magneticCommonVelocity
+        *(magneticAlgebra.power/(c*c));
+    const Vec3 expectedMagneticAngularFlux=expectedMagneticTorque
+        +cross(magneticSourcePosition,expectedMagneticMomentum);
+    const double magneticTorqueResidual=std::max(
+        (magneticAlgebra.firstTorque-expectedMagneticTorque).norm()
+            /magneticRadiationCoefficient,
+        magneticAlgebra.secondTorque.norm()/magneticRadiationCoefficient);
+    const double magneticAngularFluxResidual=
+        (magneticAlgebra.angularMomentumRate-expectedMagneticAngularFlux).norm()
+            /std::max(expectedMagneticAngularFlux.norm(),1.0e-300);
+    const double magneticMomentumResidual=
+        (magneticAlgebra.momentumRate-expectedMagneticMomentum).norm()
+            /std::max(expectedMagneticMomentum.norm(),1.0e-300);
+    RetardedDipoleKinematics magneticComFirst=magneticAlgebraFirst;
+    RetardedDipoleKinematics magneticComSecond=magneticAlgebraSecond;
+    const Vec3 magneticComMomentum{
+        0.05*std::min(firstMass,secondMass)*c,0,0};
+    magneticComFirst.velocity=velocityFromMomentum(
+        magneticComMomentum,firstMass);
+    magneticComSecond.velocity=velocityFromMomentum(
+        magneticComMomentum*-1.0,secondMass);
+    const DipoleRadiationReaction magneticComRadiation=
+        coherentMagneticDipoleRadiationReaction(
+            magneticComFirst,magneticComSecond);
+    const double magneticComMomentumResidual=
+        magneticComRadiation.momentumRate.norm()
+            /std::max(magneticComRadiation.power/c,1.0e-300);
+
     // Convergence matrix for the production far-zone surface integral.  The
     // high-resolution, acceleration-field-only result is the reference: it
     // excludes finite-radius 1/R^2 fields without changing the source model.
@@ -1488,6 +1735,61 @@ int runMaxwellSelfTest() {
     const double trajectoryStepResidual=trajectoryResidual(
         integrateAccuracyCase(1.0e-7,trajectoryProbeDt,4),trajectoryHalfStep);
 
+    // A deliberately under-resolved circular step exercises the recursion
+    // ceiling itself.  maximumDepth=0 must reject it, while the same tolerance
+    // with enough depth must resolve it.  Rejection is transactional: neither
+    // the caller's state nor the retained causal history may advance by even a
+    // half-step.
+    State depthLimitInitial;
+    const double depthLimitRadius=pairBohrRadius(activePair);
+    const double depthLimitFirstShare=secondMass/(firstMass+secondMass);
+    const double depthLimitSecondShare=firstMass/(firstMass+secondMass);
+    const double depthLimitRelativeSpeed=std::sqrt(
+        pairCoulombStrength/(pairReducedMass*depthLimitRadius));
+    depthLimitInitial.firstPosition={
+        depthLimitFirstShare*depthLimitRadius,0.0,0.0};
+    depthLimitInitial.secondPosition={
+        -depthLimitSecondShare*depthLimitRadius,0.0,0.0};
+    depthLimitInitial.firstVelocity={
+        0.0,depthLimitFirstShare*depthLimitRelativeSpeed,0.0};
+    depthLimitInitial.secondVelocity={
+        0.0,-depthLimitSecondShare*depthLimitRelativeSpeed,0.0};
+    synchronizeCovariantDipoles(depthLimitInitial);
+    const double depthLimitPeriod=2.0*pi*std::sqrt(
+        pairReducedMass*depthLimitRadius*depthLimitRadius*depthLimitRadius
+        /pairCoulombStrength);
+    const double depthLimitDt=depthLimitPeriod/8.0;
+    const StateHistory depthLimitHistory=causalInitialHistory(depthLimitInitial);
+    State depthRejectedState=depthLimitInitial;
+    ClassicalTrajectoryEngine depthLimitedEngine(depthLimitHistory,
+        {.relativeTolerance=1.0e-6,.maximumDepth=0,
+         .compositionOrder=2,
+         .reactionModel=ChargeRadiationReactionModel::disabled,
+         .computeOutwardFlux=false});
+    const std::size_t depthHistorySizeBefore=depthLimitedEngine.history().size();
+    const double depthHistoryStartBefore=depthLimitedEngine.history().front().time;
+    const double depthHistoryEndBefore=depthLimitedEngine.history().back().time;
+    const bool depthLimitAccepted=
+        depthLimitedEngine.advance(depthRejectedState,depthLimitDt);
+    const double depthRollbackResidual=std::max(
+        trajectoryResidual(depthRejectedState,depthLimitInitial),
+        std::abs(depthRejectedState.time-depthLimitInitial.time)/depthLimitDt);
+    const bool depthHistoryUnchanged=
+        depthLimitedEngine.history().size()==depthHistorySizeBefore
+        &&depthLimitedEngine.history().front().time==depthHistoryStartBefore
+        &&depthLimitedEngine.history().back().time==depthHistoryEndBefore;
+    State depthResolvedState=depthLimitInitial;
+    ClassicalTrajectoryEngine depthResolvingEngine(depthLimitHistory,
+        {.relativeTolerance=1.0e-6,.maximumDepth=12,
+         .compositionOrder=2,
+         .reactionModel=ChargeRadiationReactionModel::disabled,
+         .computeOutwardFlux=false});
+    const bool depthResolved=
+        depthResolvingEngine.advance(depthResolvedState,depthLimitDt);
+    const double depthResolvedTimeResidual=std::abs(
+        depthResolvedState.time-depthLimitInitial.time-depthLimitDt)
+        /depthLimitDt;
+
     const auto integrateHistoryCase=[&](double spanFactor,int intervals) {
         State value=yeeCoupledState;
         ClassicalTrajectoryEngine engine(
@@ -1618,35 +1920,57 @@ int runMaxwellSelfTest() {
             staticDipoleState.secondDipole).norm()
         /regularizedDipoleField({regulatorCoreRadius,0,0},
             staticDipoleState.secondDipole,0.0).norm();
-    // The physical ceiling the radius is chosen for: the classical dipole-dipole
-    // interaction energy must stay below the lighter constituent's rest energy
-    // everywhere.  w(r)/r^3 peaks at r=a, so the maximum is
-    // (mu0/4pi) mu1 mu2 /(2a^3), and the radius is derived to put that at
-    // exactly half the ceiling.
-    //
-    // Both factors have to match what dipoleRegularizationRadius used, or this
-    // stops measuring the invariant and starts measuring the mismatch.  It
-    // previously squared the FIRST role's moment and divided by the FIRST
-    // role's rest energy, which is the right pair of numbers only when the two
-    // particles are each other's antiparticle.  For p+e- it compared the
-    // electron's moment squared against a radius built from mu_p*mu_e and
-    // reported 6.3e-10 -- comfortably under the bound, and completely blind to
-    // whether the cap held.
+    const Vec3 regulatorOriginField=regularizedDipoleField(
+        {},staticDipoleState.secondDipole);
+    const Vec3 regulatorOriginForce=regularizedDipoleForce(
+        {},{firstMagneticMoment,0,0},staticDipoleState.secondDipole);
+    // The physical ceiling the radius is chosen for, measured through the same
+    // curl(A) field as production.  With the separation along x the field map
+    // is diagonal: radial and transverse source/target dipoles span all of its
+    // singular values, hence the larger absolute energy is the maximum over
+    // every orientation.  The old test sampled only w(r)*mu1*mu2/r^3; it
+    // certified 0.5 while this production operator actually reached 1.524.
     const double lighterMass=std::min(firstMass,secondMass);
     double peakDipoleEnergyOverRestEnergy=0.0;
+    double peakRadialDipoleEnergyOverRestEnergy=0.0;
+    double peakTransverseDipoleEnergyOverRestEnergy=0.0;
+    double measuredDipoleCurlPeak=0.0;
     for(int sample=0;sample<4000;++sample) {
         const double radius=magneticRegularizationRadius
             *std::pow(10.0,-3.0+6.0*sample/3999.0);
-        // Must use the moments the dynamics actually carries, not the bare
-        // magnetons: the ceiling is a statement about the field the simulated
-        // particles produce, so quoting a magneton here would certify a cap
-        // that the production dipoles exceed by (g/2)^2.
-        const double energy=shortRangeFieldWeight(radius)
-            *(mu0/(4.0*pi))*firstMagneticMoment*secondMagneticMoment
-            /(radius*radius*radius);
+        const Vec3 separation{radius,0,0};
+        const Vec3 radialTarget{firstMagneticMoment,0,0};
+        const Vec3 transverseTarget{0,firstMagneticMoment,0};
+        const double radialEnergy=std::abs(
+            regularizedDipoleInteractionEnergy(separation,radialTarget,
+                {secondMagneticMoment,0,0}));
+        const double transverseEnergy=std::abs(
+            regularizedDipoleInteractionEnergy(separation,transverseTarget,
+                {0,secondMagneticMoment,0}));
+        const double energy=std::max(radialEnergy,transverseEnergy);
+        peakRadialDipoleEnergyOverRestEnergy=std::max(
+            peakRadialDipoleEnergyOverRestEnergy,
+            radialEnergy/(lighterMass*c*c));
+        peakTransverseDipoleEnergyOverRestEnergy=std::max(
+            peakTransverseDipoleEnergyOverRestEnergy,
+            transverseEnergy/(lighterMass*c*c));
         peakDipoleEnergyOverRestEnergy=std::max(
             peakDipoleEnergyOverRestEnergy,energy/(lighterMass*c*c));
+        measuredDipoleCurlPeak=std::max(measuredDipoleCurlPeak,
+            energy*std::pow(magneticRegularizationRadius,3)
+                /((mu0/(4.0*pi))*firstMagneticMoment*secondMagneticMoment));
     }
+    const double exactDipolePeakRadius=magneticRegularizationRadius
+        *std::pow(9.0-2.0*std::sqrt(19.0),1.0/6.0);
+    const Vec3 exactDipolePeakSeparation{exactDipolePeakRadius,0,0};
+    const double exactParallelDipoleEnergy=regularizedDipoleInteractionEnergy(
+        exactDipolePeakSeparation,{0,firstMagneticMoment,0},
+        {0,secondMagneticMoment,0});
+    const double exactAntiparallelDipoleEnergy=
+        regularizedDipoleInteractionEnergy(exactDipolePeakSeparation,
+            {0,-firstMagneticMoment,0},{0,secondMagneticMoment,0});
+    const double exactDipolePeakOverRestEnergy=
+        exactAntiparallelDipoleEnergy/(lighterMass*c*c);
     // Both moments come from the roles now.  This mixed a bare magneton for
     // the first dipole with the second role's actual moment, which was a
     // half-finished migration rather than a deliberate pairing; the check is
@@ -1689,6 +2013,32 @@ int runMaxwellSelfTest() {
     const double coarseFineBoundaryMismatch=
         subcycleTest.levels()[1].maximumBoundaryMismatch(
             subcycleTest.levels().front())/1.0e5;
+    const bool twoBodyRoleOk=protonElectronIncoming.valid()
+        &&electronProtonIncoming.valid()
+        &&protonElectronFree.valid()&&electronProtonFree.valid()
+        &&std::isfinite(twoBodyRoleEnergyResidual)
+        &&twoBodyRoleEnergyResidual<1.0e-10
+        &&std::isfinite(twoBodyRoleMomentumResidual)
+        &&twoBodyRoleMomentumResidual<1.0e-13
+        &&std::isfinite(twoBodyRoleSwapResidual)
+        &&twoBodyRoleSwapResidual<1.0e-13;
+    const bool twoBodyBoostOk=asymmetricLab.valid()&&boostedIncoming.valid()
+        &&boostedFree.valid()&&recoveredFirst.valid()&&recoveredSecond.valid()
+        &&unequalBoostedIncoming.valid()&&unequalBoostedFree.valid()
+        &&unequalRecoveredFirst.valid()&&unequalRecoveredSecond.valid()
+        &&std::isfinite(twoBodyBoostEnergyResidual)
+        &&twoBodyBoostEnergyResidual<1.0e-10
+        &&std::isfinite(twoBodyBoostVelocityResidual)
+        &&twoBodyBoostVelocityResidual<1.0e-12
+        &&std::isfinite(twoBodyInverseBoostResidual)
+        // The unequal-mass 0.56c round trip subtracts a proton boost momentum
+        // about 1e5 times larger than the internal momentum represented by the
+        // residual, so double precision limits this check near 1e-11.
+        &&twoBodyInverseBoostResidual<1.0e-10;
+    const bool twoBodyCausalOk=comovingNearLightPair.valid()
+        &&comovingInternalEnergyEv==0.0
+        &&allInitialVelocitiesCausal
+        &&std::isfinite(maximumInitialBeta)&&maximumInitialBeta<1.0;
     const bool chargeOk = std::abs(depositedCharge/eCharge) < 1.0e-12;
     const bool gaussOk = std::isfinite(relativeGaussResidual)
                       && relativeGaussResidual < 2.0e-2;
@@ -1911,6 +2261,21 @@ int runMaxwellSelfTest() {
         &&finiteReactionBenchmark(reactionCoherent)
         &&finiteReactionBenchmark(reactionAutomatic)
         &&std::isfinite(coherentCostRatio)&&coherentCostRatio<10.0;
+    const bool coherentMagneticDipoleOk=
+        std::isfinite(magneticDerivativeResidual)
+        &&magneticDerivativeResidual<1.0e-12
+        &&std::isfinite(alignedMagneticPowerRatio)
+        &&std::abs(alignedMagneticPowerRatio-4.0)<1.0e-12
+        &&std::isfinite(cancellingMagneticPowerRatio)
+        &&std::abs(cancellingMagneticPowerRatio)<1.0e-12
+        &&std::isfinite(magneticTorqueResidual)
+        &&magneticTorqueResidual<1.0e-12
+        &&std::isfinite(magneticAngularFluxResidual)
+        &&magneticAngularFluxResidual<1.0e-12
+        &&std::isfinite(magneticMomentumResidual)
+        &&magneticMomentumResidual<1.0e-12
+        &&std::isfinite(magneticComMomentumResidual)
+        &&magneticComMomentumResidual<1.0e-12;
     const bool farFieldConvergenceOk=std::isfinite(farReference.energy)
         &&farReference.energy>=0.0
         &&std::ranges::all_of(farDirectionResiduals,
@@ -1941,6 +2306,10 @@ int runMaxwellSelfTest() {
         &&trajectoryToleranceResiduals.back()<1.0e-5
         &&std::isfinite(trajectoryStepResidual)
         &&trajectoryStepResidual<1.0e-5;
+    const bool adaptiveDepthRejectionOk=!depthLimitAccepted
+        &&depthRollbackResidual==0.0&&depthHistoryUnchanged&&depthResolved
+        &&std::isfinite(depthResolvedTimeResidual)
+        &&depthResolvedTimeResidual<1.0e-13;
     const bool causalStartupOk=startupFinite
         &&startupCoverage>=7.99
         &&std::abs(startupHistory.back().time-yeeCoupledState.time)<1.0e-30
@@ -1965,20 +2334,23 @@ int runMaxwellSelfTest() {
         &&regulatorProfileResiduals[2]<regulatorProfileResiduals[1]
         &&std::isfinite(regulatorCoreSuppression)
         &&regulatorCoreSuppression<1.0e-9
-        // The design invariant is the E/2 cap, not merely staying under the
-        // rest energy: w(r)/r^3 peaks at r=a, so a radius derived from the
-        // moments the dipoles actually carry puts the maximum at exactly 0.5
-        // (0.49999 on this 4000-point grid, and the same 0.49999 for every
-        // pair because the grid is laid out in units of a).  A loose "< 1.0"
-        // accepted a radius derived from the wrong moment, which lands at
-        // 0.50116.
-        //
-        // The lower bound is what makes this a test of the cap rather than of
-        // its direction.  Without it a radius that is merely too large passes
-        // trivially -- which is how p+e- (6.3e-10) and mu+mu- (5.7e-8) sailed
-        // through while the ceiling was not binding for either of them.
+        &&isFinite(regulatorOriginField)&&regulatorOriginField.norm()==0.0
+        &&isFinite(regulatorOriginForce)&&regulatorOriginForce.norm()==0.0
+        // Check both the requested cap and the analytic peak of curl(A).  The
+        // lower cap bound prevents an accidentally oversized radius from
+        // passing, while the measured 1.524 factor prevents the validator from
+        // silently returning to the scalar w/r^3 surrogate.
         &&peakDipoleEnergyOverRestEnergy<0.5005
         &&peakDipoleEnergyOverRestEnergy>0.4995
+        &&peakTransverseDipoleEnergyOverRestEnergy<0.5005
+        &&peakTransverseDipoleEnergyOverRestEnergy>0.4995
+        &&peakRadialDipoleEnergyOverRestEnergy<0.329
+        &&peakRadialDipoleEnergyOverRestEnergy>0.327
+        &&std::abs(measuredDipoleCurlPeak-sixthOrderDipoleCurlPeak)<1.0e-4
+        &&exactParallelDipoleEnergy<0.0
+        &&exactAntiparallelDipoleEnergy>0.0
+        &&std::abs(exactDipolePeakOverRestEnergy
+                    -dipoleEnergyCeilingFraction)<1.0e-12
         &&regulatorFarAlignment>0.0
         &&isFinite(cutoffDipoleForce)
         &&cutoffSurfaceResidual<1.0e-14;
@@ -1997,6 +2369,15 @@ int runMaxwellSelfTest() {
         /fieldStepsPerSecond;
     std::cout << std::setprecision(8)
               << "Maxwell-AMR self-test\n"
+              << "2-body role E/P:    " << twoBodyRoleEnergyResidual << " / "
+              << twoBodyRoleMomentumResidual << '\n'
+              << "2-body role swap:   " << twoBodyRoleSwapResidual << '\n'
+              << "2-body boost K/V:   " << twoBodyBoostEnergyResidual << " / "
+              << twoBodyBoostVelocityResidual << '\n'
+              << "2-body inverse:     " << twoBodyInverseBoostResidual << '\n'
+              << "2-body comoving K:  " << comovingInternalEnergyEv << " eV\n"
+              << "2-body max beta:    " << std::setprecision(16)
+              << maximumInitialBeta << std::setprecision(8) << '\n'
               << "levels:             " << hierarchy.levels().size() << '\n'
               << "finest dx/r_c:      " << finest.cellSize()/chargeCloudRestRadius << '\n'
               << "neutral charge/e:   " << depositedCharge/eCharge << '\n'
@@ -2122,6 +2503,12 @@ int runMaxwellSelfTest() {
               << quadrupoleSymmetry << '\n'
               << "coherent E1 d3/Fsum:" << coherentDerivativeResidual << " / "
               << coherentReactionMomentumResidual << '\n'
+              << "coherent M1 +/-:     " << alignedMagneticPowerRatio << " / "
+              << cancellingMagneticPowerRatio << '\n'
+              << "coherent M1 T/J/P/PC:" << magneticTorqueResidual << " / "
+              << magneticAngularFluxResidual << " / "
+              << magneticMomentumResidual << " / "
+              << magneticComMomentumResidual << '\n'
               << "far N=26/50/98:     " << farDirectionResiduals[0] << " / "
               << farDirectionResiduals[1] << " / "
               << farDirectionResiduals[2] << '\n'
@@ -2141,6 +2528,9 @@ int runMaxwellSelfTest() {
               << " / " << trajectoryToleranceResiduals[1] << " / "
               << trajectoryToleranceResiduals[2] << '\n'
               << "step dt/(dt/2):     " << trajectoryStepResidual << '\n'
+              << "depth reject/rollback/resolve: " << depthLimitAccepted
+              << " / " << depthRollbackResidual << " / " << depthResolved
+              << '\n'
               << "history span r/c:   " << startupCoverage << '\n'
               << "history 4/8 vs 16: " << startupHistoryResidual4 << " / "
               << startupHistoryResidual8 << '\n'
@@ -2155,7 +2545,11 @@ int runMaxwellSelfTest() {
               << regulatorProfileResiduals[1] << " / "
               << regulatorProfileResiduals[2] << '\n'
               << "reg core suppress: " << regulatorCoreSuppression << '\n'
-              << "reg peak U/m c2:   " << peakDipoleEnergyOverRestEnergy << '\n'
+              << "reg peak U T/R:    "
+              << peakTransverseDipoleEnergyOverRestEnergy << " / "
+              << peakRadialDipoleEnergyOverRestEnergy << '\n'
+              << "reg curl(A) peak:  " << measuredDipoleCurlPeak << '\n'
+              << "reg exact U/m c2:  " << exactDipolePeakOverRestEnergy << '\n'
               << "cutoff surface:     " << cutoffSurfaceResidual << '\n'
               << "CFL dt:             " << cflStep << " s\n"
               << "field storage:      "
@@ -2171,7 +2565,10 @@ int runMaxwellSelfTest() {
     // have silently made the two disagree.  Listing the checks once also lets
     // the harness name the ones that actually failed instead of collapsing
     // everything into a single PASS/FAIL with sixty unlabelled numbers above it.
-    const std::array<std::pair<const char*,bool>,28> regressionChecks{{
+    const std::array<std::pair<const char*,bool>,33> regressionChecks{{
+        {"two-body-role-invariance",   twoBodyRoleOk},
+        {"two-body-lorentz-boost",     twoBodyBoostOk},
+        {"two-body-causality",         twoBodyCausalOk},
         {"charge",                     chargeOk},
         {"gauss",                      gaussOk},
         {"divergence",                 divergenceOk},
@@ -2193,10 +2590,12 @@ int runMaxwellSelfTest() {
         {"yee-and-esirkepov",          yeeAndEsirkepovOk},
         {"shared-classical-engine",    sharedClassicalEngineOk},
         {"reaction-models",            reactionModelsOk},
+        {"coherent-magnetic-dipole",   coherentMagneticDipoleOk},
         {"far-field-convergence",      farFieldConvergenceOk},
         {"larmor-normalization",       larmorNormalizationOk},
         {"role-routing",               roleRoutingOk},
         {"trajectory-convergence",     trajectoryConvergenceOk},
+        {"adaptive-depth-rejection",   adaptiveDepthRejectionOk},
         {"causal-startup",             causalStartupOk},
         {"retarded-interpolation",     retardedInterpolationOk},
         {"short-range-regularization", shortRangeRegularizationOk}

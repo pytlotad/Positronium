@@ -10,11 +10,11 @@
 
 Frame makeFrame(const State& s) {
     const PairGeometry geometry = pairGeometry(s);
-    const double firstKinetic = (gamma(s.firstVelocity) - 1.0) * firstMass * c*c;
-    const double secondKinetic = (gamma(s.secondVelocity) - 1.0) * secondMass * c*c;
+    const double firstKinetic=kineticEnergy(s.firstVelocity,firstMass);
+    const double secondKinetic=kineticEnergy(s.secondVelocity,secondMass);
     const double coulombPotential = -pairCoulombStrength * geometry.inverseDistance;
-    const double dipolePotential = -dot(s.firstDipole,
-        regularizedDipoleField(geometry.firstMinusSecond, s.secondDipole));
+    const double dipolePotential = regularizedDipoleInteractionEnergy(
+        geometry.firstMinusSecond,s.firstDipole,s.secondDipole);
     const double darwinEnergy = darwinInteractionEnergy(s);
     const MutualForces forces = allExternalForces(s);
     const Vec3 firstAcceleration = relativisticAcceleration(s.firstVelocity, forces.first, firstMass);

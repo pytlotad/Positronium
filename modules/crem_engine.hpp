@@ -81,7 +81,7 @@ public:
         // retarded time for both charges, on every fine half-step.  It feeds
         // only the flux BOOKKEEPING (radiatedEnergy/Momentum/AngularMomentum,
         // boundField*, reaction mismatches).  The trajectory itself never
-        // reads any of them: forces, chargeReaction, magneticDipolePower and
+        // reads any of them: forces, chargeReaction, magneticDipoleFlux and
         // hence dipoleConstraintEnergy are all computed outside that block,
         // so switching it off leaves positions, velocities and dipoles
         // bit-identical.  Callers that do not report a radiated energy can
@@ -95,8 +95,24 @@ public:
     ClassicalTrajectoryEngine(StateHistory history,Accuracy accuracy)
         :history_(std::move(history)),accuracy_(accuracy) {}
     bool advance(State& state,double dt) {
-        if(!(dt>0.0)||!std::isfinite(dt)) return false;
-        return advanceAdaptive(state,dt,0);
+        if(!(dt>0.0)||!std::isfinite(dt)||!isFinite(state)
+            ||!(accuracy_.relativeTolerance>=0.0)
+            ||!std::isfinite(accuracy_.relativeTolerance)
+            ||accuracy_.maximumDepth<0) return false;
+
+        // Treat a proposed step as a transaction.  Recursive subdivision may
+        // finish its first half before the second half discovers that even the
+        // deepest allowed step misses the tolerance.  Build the accepted state
+        // and history in local outputs, then commit both together only after
+        // the complete interval succeeds.
+        State accepted;
+        StateHistory acceptedHistory;
+        if(!advanceAdaptive(state,history_,dt,0,accepted,acceptedHistory)) {
+            return false;
+        }
+        state=std::move(accepted);
+        history_=std::move(acceptedHistory);
+        return true;
     }
     const StateHistory& history() const { return history_; }
 private:
@@ -149,13 +165,31 @@ private:
         }
     }
 
-    bool advanceAdaptive(State& state,double dt,int depth) {
-        const State start=state;
+    bool advanceAdaptive(const State& start,const StateHistory& history,
+                         double dt,int depth,State& accepted,
+                         StateHistory& acceptedHistory) {
+        const double requestedEndTime=start.time+dt;
+        if(!(requestedEndTime>start.time)||!std::isfinite(requestedEndTime)) {
+            return false;
+        }
+        const auto subdivide=[&]() {
+            if(depth>=accuracy_.maximumDepth) return false;
+            State midpoint;
+            StateHistory midpointHistory;
+            if(!advanceAdaptive(start,history,0.5*dt,depth+1,
+                                midpoint,midpointHistory)) {
+                return false;
+            }
+            return advanceAdaptive(midpoint,midpointHistory,0.5*dt,depth+1,
+                                   accepted,acceptedHistory);
+        };
 
         // The coarse step is a pure error probe: it is discarded on every
         // path, so it never needs the far-zone flux integration.
         State coarse=start;
-        composedStep(coarse,dt,history_,false);
+        composedStep(coarse,dt,history,false);
+        if(!isFinite(coarse)) return subdivide();
+        if(!(coarse.time>start.time)) return false;
 
         // The two half-steps are the path that *becomes* the trajectory when
         // the step is accepted, so they carry the complete bookkeeping from
@@ -163,25 +197,29 @@ private:
         // flag does not feed back into positions or velocities, so the local
         // error estimate below is unchanged by enabling it here.
         State fine=start;
-        StateHistory fineHistory=history_;
+        StateHistory fineHistory=history;
         composedStep(fine,0.5*dt,fineHistory,accuracy_.computeOutwardFlux);
-        if(!isFinite(fine)) return false;
+        if(!isFinite(fine)) return subdivide();
+        if(!(fine.time>start.time)) return false;
+        const double midpointTime=fine.time;
         appendStateHistory(fineHistory,fine);
         composedStep(fine,0.5*dt,fineHistory,accuracy_.computeOutwardFlux);
-        if(!isFinite(coarse)||!isFinite(fine)) return false;
+        if(!isFinite(fine)) return subdivide();
+        if(!(fine.time>midpointTime)) return false;
 
         const double error=normalizedStepError(coarse,fine);
-        if(!std::isfinite(error)) return false;
-        if(error<=accuracy_.relativeTolerance||depth>=accuracy_.maximumDepth) {
+        if(!std::isfinite(error)) return subdivide();
+        if(error<=accuracy_.relativeTolerance) {
             appendStateHistory(fineHistory,fine);
-            history_=std::move(fineHistory);
-            state=fine;
+            accepted=fine;
+            acceptedHistory=std::move(fineHistory);
             return true;
         }
-        // Nothing above touched state or history_, so the subdivision below
-        // restarts from exactly the caller's state.
-        return advanceAdaptive(state,0.5*dt,depth+1)
-            &&advanceAdaptive(state,0.5*dt,depth+1);
+        // Reaching the recursion limit is a failed accuracy contract, not an
+        // alternative acceptance rule.  Returning false activates the caller's
+        // recovery ladder instead of silently committing an under-resolved
+        // trajectory.
+        return subdivide();
     }
     StateHistory history_;
     Accuracy accuracy_;
