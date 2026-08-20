@@ -1723,6 +1723,22 @@ Wobec \(15{,}95\) cyfr `double` zostaje margines około \(14{,}8\) cyfr;
 wyczerpanie go wymagałoby stosunku `raw/measured` rzędu \(10^{16}\), podczas
 gdy największy zaobserwowany to \(13{,}5\). Szersze typy nic by tu nie dały.
 
+Zbadane też, jak głęboko da się zejść po obniżeniu **obu** sprzężonych granic
+naraz, czyli krotności końcowego zbliżenia i zasięgu wewnętrznego całkowania.
+Odpowiedź: **nie da się poniżej mniej więcej \(529\) fm.** Przy zasięgu
+\(53\) fm, \(5{,}3\) fm i \(1\) fm wzorzec awarii jest **identyczny** —
+te same dwie trajektorie z trzech giną tak samo, niezależnie od tego, jak
+głęboko się prosi. Trajektorie umierają więc w tym samym miejscu, a żądanie
+\(1\) fm nie przybliża do niego ani o krok. Skala \(1\) fm leży zresztą
+poniżej promienia regularyzacji dipola \(47\) fm, poniżej bariery
+Comptona \(193\) fm i poniżej samego \(r_e=2{,}82\) fm, więc model
+produkowałby tam liczby w reżimie, w którym klasyczna elektrodynamika
+punktowej cząstki na pewno nie obowiązuje.
+
+Na samej podłodze, przy zasięgu \(529\) fm, ukończenie spada do 2 z 3
+trajektorii, a gęstość na krawędzi \(596\) fm wynosi
+\(8{,}2\cdot10^{31}\,\mathrm m^{-3}\), czyli \(307\times|\psi(0)|^2\).
+
 Prawdziwe przyczyny są dwie i żadna nie jest precyzją. Po pierwsze **granice są
 sprzężone**: wewnętrzne całkowanie ma `terminalSeparation` równe
 `chargeCloudRestRadius`, czyli \(529\) fm, więc żądanie peryapsis \(265\) fm
