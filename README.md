@@ -131,7 +131,20 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   i skumulowanego czteropędu promieniowania \(0{,}2084\) — to nadal najsłabszy
   wynik kowariancyjny i najostrzejsze ograniczenie interpretacji strumienia
   w układach ruchomych;
-- reszta ewolucji tensora dipolowego \(3{,}86\cdot10^{-3}\).
+- reszta ewolucji tensora dipolowego \(3{,}86\cdot10^{-3}\) — **nie jest to
+  błąd całkowania**. Jest odporna na krok (ośmiokrotne zagęszczenie przy stałym
+  czasie całkowitym nie zmienia jej ani na piątej cyfrze) i na tolerancję
+  (identyczna od \(10^{-6}\) do \(10^{-12}\)), stała w czasie, a przy tym
+  dokładnie pierwszego rzędu w prędkości orbitalnej: połowienie \(\beta_{orb}\)
+  połowi ją, a wyzerowanie zbija ją 288-krotnie. Pokrywa się co do pięciu cyfr
+  z raportowaną obok **luką reprezentacji**, bo jest tą samą wielkością
+  widzianą z drugiej strony. Model przechowuje dipol **własny** i odtwarza
+  tensor laboratoryjny jako \(\mathrm{boost}(\{0,\mathbf m\},\mathbf v)\), a ta
+  parametryzacja nie wyraża każdego tensora: złożenie boostu układu z własną
+  prędkością orbitalną cząstki to boost **razy obrót Wignera**, a obrócony
+  tensor nie ma już tej postaci dla żadnego \(\mathbf m\). Ograniczenie jest
+  więc strukturalne, rzędu \(\beta_{boost}\beta_{orb}\), i żadne zagęszczanie
+  kroku go nie ruszy.
 
 Bilans energii jest **tożsamością algebraiczną**, nie testem zachowania:
 `boundField*` liczone jest jako brakująca reszta bilansu po każdym kroku, więc

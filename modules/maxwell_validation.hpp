@@ -780,6 +780,14 @@ int runMaxwellSelfTest() {
     covarianceRest.secondDipole={0,0,-1.0e-3*secondMagneticMoment};
     covarianceRest.firstProperDipole=covarianceRest.firstDipole;
     covarianceRest.secondProperDipole=covarianceRest.secondDipole;
+    // Make the rest state exactly self-consistent BEFORE boosting anything.
+    // It used to be initialized with firstProperDipole = firstDipole and a
+    // zero electric dipole, which is only true for a particle at rest -- these
+    // orbit at beta = 5.2e-3, so the motional electric dipole (v x m)/c^2 was
+    // missing from the tensor that then got boosted.  The evolution creates it
+    // one step later, so the initial state disagreed with the code's own
+    // representation by exactly beta_orb.
+    synchronizeCovariantDipoles(covarianceRest);
     State covarianceMoving=covarianceRest;
     const auto [boostedFirstPosition,boostedFirstTime]=boostEvent(
         covarianceRest.firstPosition,covarianceRest.time);
@@ -791,19 +799,47 @@ int runMaxwellSelfTest() {
         covarianceRest.firstVelocity);
     covarianceMoving.secondVelocity=boostVelocity(
         covarianceRest.secondVelocity);
+    // The FULL tensor is boosted, electric part included.  Boosting {0, m}
+    // discarded the motional electric dipole the rest frame already carries.
     const DipoleTensor boostedFirstDipole=lorentzBoostDipole(
-        {{},covarianceRest.firstDipole},covarianceBoost);
+        {covarianceRest.firstElectricDipole,covarianceRest.firstDipole},
+        covarianceBoost);
     const DipoleTensor boostedSecondDipole=lorentzBoostDipole(
-        {{},covarianceRest.secondDipole},covarianceBoost);
+        {covarianceRest.secondElectricDipole,covarianceRest.secondDipole},
+        covarianceBoost);
     covarianceMoving.firstDipole=boostedFirstDipole.magnetic;
     covarianceMoving.secondDipole=boostedSecondDipole.magnetic;
     covarianceMoving.firstElectricDipole=boostedFirstDipole.electric;
     covarianceMoving.secondElectricDipole=boostedSecondDipole.electric;
-    covarianceMoving.firstProperDipole=lorentzBoostDipole(
-        boostedFirstDipole,covarianceMoving.firstVelocity*-1.0).magnetic;
-    covarianceMoving.secondProperDipole=lorentzBoostDipole(
-        boostedSecondDipole,covarianceMoving.secondVelocity*-1.0).magnetic;
+    // Derived through the spin FOUR-VECTOR, which transforms simply, instead
+    // of boosting the lab tensor back and keeping only its magnetic part.
+    // That discard was the whole problem: what it threw away is exactly the
+    // Wigner rotation that composing the frame boost with the particle's own
+    // orbital velocity produces, so the moving proper dipole came out wrong at
+    // first order in beta_boost * beta_orb.  The four-vector route carries the
+    // rotation for free and is exact.
+    covarianceMoving.firstProperDipole=properDipoleFromFourVector(
+        boostFourVector(dipoleFourVector(covarianceRest.firstProperDipole,
+            covarianceRest.firstVelocity)),covarianceMoving.firstVelocity);
+    covarianceMoving.secondProperDipole=properDipoleFromFourVector(
+        boostFourVector(dipoleFourVector(covarianceRest.secondProperDipole,
+            covarianceRest.secondVelocity)),covarianceMoving.secondVelocity);
     covarianceMoving.time=0.5*(boostedFirstTime+boostedSecondTime);
+    // What the exact boost says the lab tensor should be, kept before the
+    // state is forced back onto the manifold the model can actually represent.
+    const Vec3 exactBoostedFirstMagnetic=covarianceMoving.firstDipole;
+    // The model stores a PROPER dipole and rebuilds the lab tensor as
+    // boost({0, m_proper}, v).  That parametrization cannot express every
+    // tensor: composing the frame boost with the particle's own orbital
+    // velocity is a boost TIMES A WIGNER ROTATION, and the rotated tensor is
+    // not of the form boost({0, m}, v) for any m.  Re-synchronizing here puts
+    // the moving state exactly on that manifold, so both states are now
+    // self-consistent to machine precision and the residual below measures the
+    // gap itself instead of hiding it inside an inconsistent initial state.
+    synchronizeCovariantDipoles(covarianceMoving);
+    const double covarianceRepresentabilityGap=
+        (covarianceMoving.firstDipole-exactBoostedFirstMagnetic).norm()
+        /std::max(exactBoostedFirstMagnetic.norm(),1.0e-300);
     ClassicalTrajectoryEngine covarianceRestEngine(covarianceRest);
     ClassicalTrajectoryEngine covarianceMovingEngine(covarianceMoving);
     constexpr double covarianceRestStep=1.0e-20;
@@ -1695,7 +1731,17 @@ int runMaxwellSelfTest() {
         // The remaining sub-percent defect measures the still noncovariant
         // gradient-force sector; tensor transformation itself is tested at
         // machine precision below.
+        // 3.86e-3, and it is NOT an integration error: it is immune to the
+        // step (8x refinement at fixed total time) and to the tolerance (1e-6
+        // to 1e-12), constant in elapsed time, and exactly first order in the
+        // orbital speed -- halving beta_orb halves it, zeroing it drops the
+        // number 288-fold.  With everything else made exact it coincides with
+        // the representability gap below to five digits, so the two lines
+        // measure the same thing from opposite ends and the bound belongs to
+        // the parametrization, not to the integrator.
         &&covarianceDipoleEvolutionResidual<5.0e-3
+        &&std::isfinite(covarianceRepresentabilityGap)
+        &&covarianceRepresentabilityGap<5.0e-3
         &&covarianceBmtResidual<1.0e-3
         // Exact agreement is expected: both sides run the same integrator on
         // the same state.  The band admits reordering round-off only.
@@ -1920,7 +1966,7 @@ int runMaxwellSelfTest() {
               << "particle boost run: " << covarianceTrajectoriesAdvanced << '\n'
               << "particle boost x/v:" << covarianceWorldlineResidual << " / "
               << covarianceVelocityResidual << '\n'
-              << "particle boost D:  " << covarianceDipoleEvolutionResidual << '\n'
+              << "particle boost D:  " << covarianceDipoleEvolutionResidual << '\n'              << "dipole repr gap:   " << covarianceRepresentabilityGap << '\n'
               << "covariant BMT:    " << covarianceBmtResidual << '\n'
               << "role routing:     " << roleRoutingResidual
               << "  (obrot " << roleRoutingTravel << ")\n"
