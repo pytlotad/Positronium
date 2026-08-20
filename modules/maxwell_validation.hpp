@@ -672,6 +672,12 @@ int runMaxwellSelfTest() {
             visualEngine.history(),false,
             ChargeRadiationReactionModel::automatic);
     const double llValidity=sharedFinalRadiation.landauLifshitzValidity;
+    // The three inputs of the blending gate.  They were printed as
+    // "auto smooth/kR/w" and checked nowhere.
+    const double blendSmoothness=
+        sharedFinalRadiation.coherentDerivativeConsistency;
+    const double blendCompactness=sharedFinalRadiation.sourceCompactness;
+    const double blendWeight=sharedFinalRadiation.coherentWeight;
 
     struct ReactionModelBenchmark {
         State finalState;
@@ -1856,7 +1862,24 @@ int runMaxwellSelfTest() {
         &&std::isfinite(sharedRawAngularResidual)
         &&sharedRawAngularResidual<3.0e-3
         &&std::isfinite(reactionMismatchFraction)
-        &&std::isfinite(llValidity)
+        // Was isfinite alone.  llValidity is the Landau-Lifshitz validity
+        // parameter and has to be far below one for the reduced-order form to
+        // mean anything; it runs 8.0e-05 for e+e- down to 4.8e-08 for p+pbar,
+        // so 1e-2 leaves two orders of margin on the worst pair.
+        &&std::isfinite(llValidity)&&llValidity<1.0e-2
+        // Compactness kR is the validity condition of the electric-dipole
+        // approximation the whole radiative sector rests on: 0.049 for e+e-
+        // and smaller for every heavier pair.
+        &&std::isfinite(blendCompactness)&&blendCompactness<0.1
+        &&std::isfinite(blendSmoothness)
+        &&std::isfinite(blendWeight)&&blendWeight>=0.0&&blendWeight<=1.0
+        // Consistency of the gate with its own threshold, rather than a bound
+        // on the smoothness itself, which legitimately blows up: for mu+mu-
+        // the two step sizes disagree by 2.611, i.e. the third derivative is
+        // numerical noise there.  What must then hold is that the gate SAW it
+        // and zeroed the weight.  Checked across the four pairs: 3.97e-04 -> 1,
+        // 1.66e-03 -> 1, 2.611 -> 0, 2.79e-02 -> 0.552.
+        &&(blendSmoothness<=5.0e-2||blendWeight==0.0)
         &&quadrupoleTrace<1.0e-14
         &&quadrupoleSymmetry<1.0e-14
         &&quadrupoleResidual<1.0e-14

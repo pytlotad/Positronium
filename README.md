@@ -189,8 +189,27 @@ bo `boundField*` jest akumulowane co krok właśnie jako reszta domykająca.
 Sprawdzone pomiarem: całkowite złamanie antysymetrii sondy nie rusza tych
 liczb wcale.
 
-Ten sam wzorzec — wielkość wypisywana, ale niesprawdzana — dotyczył całego
-sektora reakcji promieniowania. `finiteReactionBenchmark` testował wyłącznie
+Wzorzec „wielkość wypisywana, ale niesprawdzana" został przejrzany
+**systematycznie**: dla każdej ze 135 wielkości w wyjściu walidacji sprawdzono,
+czy jej nazwa występuje w jakimkolwiek predykacie. Trzynaście nie występowało.
+Dziesięć z nich jest niebramkowanych słusznie — pięć to pomiary wydajności
+(bramkowanie ich kazałoby suite wywalać się na obciążonej maszynie), cztery to
+obiekty pomocnicze i pętla raportująca, a `gaussBefore` i `quadrupoleMagnitude`
+są kontekstem, którego znormalizowane odpowiedniki mają własne bramki.
+`cflStep` jest egzekwowany strukturalnie, bo każdy krok w suite jest ułamkiem
+`courantTimeStep()`. Pozostałe trzy — trzy wejścia bramki mieszającej modele
+reakcji — dostały progi, a razem z nimi `llValidity`, sprawdzany dotąd wyłącznie
+przez `isfinite`.
+
+Jedna z tych bramek jest nietypowa i warto wiedzieć dlaczego. `smooth`, czyli
+zgodność oszacowań trzeciej pochodnej momentu dipolowego przy dwóch krokach,
+sięga \(2{,}611\) dla mionium — tam ta pochodna jest po prostu szumem. Progu
+na samą wartość postawić się więc nie da; sprawdzane jest zamiast tego, czy
+**bramka to zauważyła i wyzerowała wagę**. Przez cztery pary:
+\(3{,}97\cdot10^{-4}\to1\), \(1{,}66\cdot10^{-3}\to1\),
+\(2{,}611\to0\), \(2{,}79\cdot10^{-2}\to0{,}552\).
+
+Ten sam wzorzec dotyczył całego sektora reakcji promieniowania. `finiteReactionBenchmark` testował wyłącznie
 `isfinite`, więc dziewięć liczb opisujących trzy modele reakcji mogło przyjąć
 dowolną wartość przy dalej zielonym 28/28. Mają teraz progi.
 
