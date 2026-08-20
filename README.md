@@ -208,11 +208,27 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   tak samo dla emitera izotropowego jak dla dipola. Zmierzone \(1{,}40\beta\)
   jest więc miarą pęknięcia tej tożsamości.
 
-  Rozstrzygający test, jeszcze niewykonany: dla źródła dryfującego z prędkością
-  \(\mathbf v\) w stanie quasi-stacjonarnym strumień przez sferę równa się
-  tempu emisji, a relacja Liénarda daje \(d\mathbf p/dt=(P/c^2)\mathbf v\),
-  czyli \(|p|/(E/c)=\beta\). Zmierzone \(1{,}40\beta\) byłoby wtedy błędem
-  integratora, nie reguły.
+  **Rozstrzygnięcie: to błąd integratora strumienia, nie reguły porównania.**
+  Rozstrzyga to skan promienia sfery zamiast całki objętościowej z zamkniętego
+  pędu pola. W stanie stacjonarnym strumień przez każdą powierzchnię otaczającą
+  źródło jest ten sam, bo między nimi nic się nie gromadzi. Zmierzony stosunek
+  \(|p|/(E/c)\) wynosi \(0{,}467120\) i jest stały **co do czwartej cyfry
+  przez pięć rzędów promienia**, od \(10\,a_0\) do \(10^6a_0\). Akumulacji
+  zatem nie ma, strumień równa się tempu emisji, a tempo emisji musi spełniać
+  \(|p|/(E/c)=\beta\) dokładnie — czteropęd na jednostkę czasu własnego jest
+  czterowektorem, a pęd w układzie własnym zmierzono jako \(4{,}6\cdot10^{-5}\).
+  Przy \(\beta=0{,}35\) predykcja wynosi \(0{,}35\), pomiar \(0{,}46712\).
+
+  Błędna jest też energia. Moc promieniowania powinna być w tej konfiguracji
+  niezmiennikiem — \((P_0/c,0)\) po boostcie i podzieleniu przez \(\gamma\)
+  daje \((P_0/c,\beta P_0/c)\), więc moc w układzie ruchomym równa się mocy
+  w spoczynkowym. Zmierzony stosunek to \(1{,}1955\).
+
+  Zasięg błędu: pojawia się **wyłącznie dla źródła w ruchu**. Dla źródła
+  spoczywającego integrator liczy poprawnie — pęd strumienia wychodzi
+  \(4{,}6\cdot10^{-5}\) energii, a stosunek do wzoru Larmora \(1{,}00007\).
+  Wyniki produkcyjne pozostają więc nietknięte, bo tam środek masy spoczywa
+  albo \(\beta_{CM}\le3{,}5\cdot10^{-5}\).
 
   Skutek dla wyników produkcyjnych: **żaden.** W eksperymencie kolapsu środek
   masy spoczywa, w wiązkowych 3 i 4 również, z konstrukcji podziału ważonego
