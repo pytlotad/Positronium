@@ -20,6 +20,13 @@ struct State {
     double time=0.0;
     double radiatedEnergy=0.0;
     double dipoleConstraintEnergy=0.0;
+    // Accumulated phase of the orbit-following zero-point field, integral of
+    // the osculating orbital angular frequency.  Carried in the state because
+    // a band that tracks the orbit has a CHANGING mode frequency, and a phase
+    // written as -omega(t)*t would jump whenever omega moved, injecting energy
+    // out of nowhere.  Integrating d(phase)/dt = omega keeps it continuous.
+    // Zero and unused unless --zpf is on.
+    double zeroPointPhase=0.0;
     Vec3 radiatedMomentum,radiatedAngularMomentum;
     // Reconstructed bound/interference field reservoir required to close the
     // particle-plus-field conservation laws on the control surface.

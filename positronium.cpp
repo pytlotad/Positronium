@@ -264,17 +264,38 @@ Vec3 cross(const Vec3& a, const Vec3& b) {
 // the trajectory error probe, so a wider band buys accuracy in the field at
 // the price of a much shorter step.
 struct ZeroPointField {
-    std::vector<Vec3> waveVector, polarization, magneticDirection;
-    std::vector<double> phase, angularFrequency;
-    double amplitude=0.0;
-    bool active() const { return amplitude>0.0&&!waveVector.empty(); }
-    void sample(const Vec3& position,double time,
-                Vec3& electric,Vec3& magnetic) const {
+    // Directions and polarizations are fixed; the FREQUENCIES are not.  Each
+    // mode carries a dimensionless factor f_n against the pair's osculating
+    // orbital frequency, so the whole band rides up with the orbit as it
+    // shrinks and stays in resonance instead of being left behind.
+    std::vector<Vec3> direction, polarization, magneticDirection;
+    std::vector<double> phase, frequencyFactor;
+    // amplitude = coefficient * omega_orb^2, because the band energy density
+    // integral of hbar omega^3 over [f_lo, f_hi]*omega_orb scales as
+    // omega_orb^4 and the amplitude is its square root.  The field therefore
+    // strengthens as the orbit tightens, which is what the omega^3 spectrum
+    // says it should do.
+    double amplitudeCoefficient=0.0;
+    bool active() const {
+        return amplitudeCoefficient>0.0&&!direction.empty();
+    }
+    void sample(const Vec3& position,double orbitalFrequency,
+                double accumulatedPhase,Vec3& electric,Vec3& magnetic) const {
         electric=Vec3{};
         magnetic=Vec3{};
-        for(std::size_t n=0;n<waveVector.size();++n) {
-            const double wave=std::cos(dot(waveVector[n],position)
-                -angularFrequency[n]*time+phase[n]);
+        if(!(orbitalFrequency>0.0)) return;
+        const double amplitude=amplitudeCoefficient
+            *orbitalFrequency*orbitalFrequency;
+        for(std::size_t n=0;n<direction.size();++n) {
+            const double waveNumber=frequencyFactor[n]*orbitalFrequency/c;
+            // The temporal phase is f_n times the INTEGRATED orbital phase,
+            // so its time derivative is exactly the mode's instantaneous
+            // frequency and nothing jumps when the band moves.  The spatial
+            // term is kept for completeness but is tiny: k*r is about 3e-3 rad
+            // across the pair, which is the long-wavelength limit.
+            const double wave=std::cos(
+                dot(direction[n],position)*waveNumber
+                -frequencyFactor[n]*accumulatedPhase+phase[n]);
             electric+=polarization[n]*(amplitude*wave);
             magnetic+=magneticDirection[n]*(amplitude*wave/c);
         }
@@ -285,41 +306,40 @@ ZeroPointField gZeroPointField;
 // scale multiplies the field AMPLITUDE, so 1 is the full zero-point level and
 // the absorbed power scales as scale^2.  Anything other than 1 is a numerical
 // experiment, not the physical field.
-ZeroPointField makeZeroPointField(double lowFrequency,double highFrequency,
+ZeroPointField makeZeroPointField(double lowFactor,double highFactor,
                                   int modeCount,double scale,
                                   std::uint64_t seed) {
     ZeroPointField field;
-    if(!(scale>0.0)||modeCount<=0||!(highFrequency>lowFrequency)) return field;
-    const double lowFourth=std::pow(lowFrequency,4.0);
-    const double highFourth=std::pow(highFrequency,4.0);
-    const double energyDensity=hbar*(highFourth-lowFourth)
-        /(8.0*pi*pi*c*c*c);
-    field.amplitude=scale*std::sqrt(2.0*energyDensity
-        /(static_cast<double>(modeCount)*epsilon0));
+    if(!(scale>0.0)||modeCount<=0||!(highFactor>lowFactor)) return field;
+    const double lowFourth=std::pow(lowFactor,4.0);
+    const double highFourth=std::pow(highFactor,4.0);
+    // u(omega_orb) = hbar (f_hi^4 - f_lo^4) omega_orb^4 / (8 pi^2 c^3), and
+    // u = eps0 <E^2> with <cos^2> = 1/2 over N equal-energy modes.
+    field.amplitudeCoefficient=scale*std::sqrt(
+        2.0*hbar*(highFourth-lowFourth)
+        /(8.0*pi*pi*c*c*c*static_cast<double>(modeCount)*epsilon0));
     std::mt19937_64 random(seed^0x5851f42d4c957f2dULL);
     std::uniform_real_distribution<double> uniform(0.0,1.0);
     for(int mode=0;mode<modeCount;++mode) {
-        const double omega=std::pow(lowFourth
+        const double factor=std::pow(lowFourth
             +uniform(random)*(highFourth-lowFourth),0.25);
         const double cosine=2.0*uniform(random)-1.0;
         const double azimuth=2.0*pi*uniform(random);
         const double transverse=std::sqrt(std::max(0.0,1.0-cosine*cosine));
-        const Vec3 direction{transverse*std::cos(azimuth),
-                             transverse*std::sin(azimuth),cosine};
-        // Any unit vector orthogonal to the propagation direction; the random
-        // angle around it makes the polarization isotropic.
-        const Vec3 seedAxis=std::abs(direction.z)<0.9?Vec3{0,0,1}:Vec3{1,0,0};
-        Vec3 first=cross(direction,seedAxis);
+        const Vec3 propagation{transverse*std::cos(azimuth),
+                               transverse*std::sin(azimuth),cosine};
+        const Vec3 seedAxis=std::abs(propagation.z)<0.9?Vec3{0,0,1}:Vec3{1,0,0};
+        Vec3 first=cross(propagation,seedAxis);
         first=first/first.norm();
-        const Vec3 second=cross(direction,first);
+        const Vec3 second=cross(propagation,first);
         const double polarizationAngle=2.0*pi*uniform(random);
         const Vec3 polarization=first*std::cos(polarizationAngle)
                                +second*std::sin(polarizationAngle);
-        field.waveVector.push_back(direction*(omega/c));
+        field.direction.push_back(propagation);
         field.polarization.push_back(polarization);
-        field.magneticDirection.push_back(cross(direction,polarization));
+        field.magneticDirection.push_back(cross(propagation,polarization));
         field.phase.push_back(2.0*pi*uniform(random));
-        field.angularFrequency.push_back(omega);
+        field.frequencyFactor.push_back(factor);
     }
     return field;
 }
@@ -4737,6 +4757,9 @@ int main(int argc, char** argv) {
     // Band edges in units of the pair's orbital angular frequency.
     double zeroPointBandLow = 0.3;
     double zeroPointBandHigh = 3.0;
+    // Mode count is a convergence knob, not physics: the real spectrum is a
+    // continuum and 64 discrete waves are a sampling of it.
+    int zeroPointModes = 64;
     try {
         for (int i = 1; i < argc; ++i) {
             const std::string argument = argv[i];
@@ -4817,6 +4840,10 @@ int main(int argc, char** argv) {
                 } else {
                     throw std::invalid_argument("mode must be visual or statistical");
                 }
+            } else if (argument == "--zpf-modes") {
+                zeroPointModes = std::stoi(requireValue(argument));
+                if (zeroPointModes <= 0)
+                    throw std::invalid_argument("--zpf-modes must be positive");
             } else if (argument == "--zpf-band") {
                 const std::string value = requireValue(argument);
                 const std::size_t comma = value.find(',');
@@ -4906,23 +4933,32 @@ int main(int argc, char** argv) {
         // integrator can resolve, not by physics: its step follows the error
         // probe, so a wider band costs a proportionally shorter step.  The
         // secular exchange lives near resonance anyway.
-        constexpr int zeroPointModes = 64;
-        const double bandLow = zeroPointBandLow*orbitalFrequency;
-        const double bandHigh = zeroPointBandHigh*orbitalFrequency;
-        gZeroPointField = makeZeroPointField(bandLow, bandHigh,
-            zeroPointModes, zeroPointScale, seed);
-        const double bandEnergyDensity = hbar
-            *(std::pow(bandHigh,4.0)-std::pow(bandLow,4.0))/(8.0*pi*pi*c*c*c);
+        // Factors, not frequencies: the band is now defined against the
+        // pair's OSCULATING orbital frequency and is re-evaluated at every
+        // force call, so it stays in resonance for the whole inspiral.  With
+        // a fixed band the orbit outran it -- the measured period falls from
+        // 0.327 fs to 0.0031 fs over a collapse, a factor of 105 -- which is
+        // why the fixed-band lifetime depended so strongly on where the upper
+        // edge was cut.
+        gZeroPointField = makeZeroPointField(zeroPointBandLow,
+            zeroPointBandHigh, zeroPointModes, zeroPointScale, seed);
+        // Root-mean-square field, not the per-mode amplitude: N equal-energy
+        // modes with <cos^2> = 1/2 give E_rms = amplitude*sqrt(N/2).
+        const double initialAmplitude = gZeroPointField.amplitudeCoefficient
+            *orbitalFrequency*orbitalFrequency
+            *std::sqrt(zeroPointModes/2.0);
         std::cout << "Zero-point field: scale " << zeroPointScale << ", "
                   << zeroPointModes << " modes over ["
-                  << bandLow << ", " << bandHigh
-                  << "] rad/s, E_rms "
-                  << zeroPointScale*std::sqrt(bandEnergyDensity/epsilon0)
+                  << zeroPointBandLow << ", " << zeroPointBandHigh
+                  << "] x the osculating orbital frequency, which starts at "
+                  << orbitalFrequency << " rad/s and RISES as the orbit "
+                     "tightens, so the band follows it.\n"
+                  << "  Starting E_rms " << initialAmplitude
                   << " V/m against a binding field of "
                   << pairCoulombStrength/(eCharge*orbitRadius*orbitRadius)
-                  << " V/m.\n"
+                  << " V/m; it grows as the square of the orbital frequency.\n"
                   << "  This is the FLUCTUATING half of stochastic "
-                     "electrodynamics; it feeds energy in, and the radiation "
+                  "electrodynamics; it feeds energy in, and the radiation "
                      "reaction is the dissipative half already present.\n";
     }
     {

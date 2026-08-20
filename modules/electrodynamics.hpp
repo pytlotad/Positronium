@@ -1080,6 +1080,17 @@ double darwinInteractionEnergy(const State& s) {
           + dot(s.firstVelocity, n) * dot(s.secondVelocity, n));
 }
 
+// Osculating orbital angular frequency of the pair, sqrt(k|q1 q2|/(mu r^3)).
+// This is the rail the orbit-following zero-point band rides on: as the orbit
+// tightens the frequency rises and the whole band rises with it, instead of
+// being left behind at the value the orbit had when the run started.
+double osculatingOrbitalFrequency(const State& s) {
+    const double radius=separation(s);
+    if(!(radius>0.0)) return 0.0;
+    return std::sqrt(pairCoulombStrength
+        /(pairReducedMass*radius*radius*radius));
+}
+
 LocalElectromagneticFields localRelativisticFields(
     const State& s, const StateHistory& history) {
     ElectromagneticField atFirst = lienardWiechertField(
@@ -1114,10 +1125,11 @@ LocalElectromagneticFields localRelativisticFields(
     // positions and changes with time, so each role is sampled separately.
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
-        gZeroPointField.sample(s.firstPosition,s.time,
-                               firstElectric,firstMagnetic);
-        gZeroPointField.sample(s.secondPosition,s.time,
-                               secondElectric,secondMagnetic);
+        const double orbitalFrequency=osculatingOrbitalFrequency(s);
+        gZeroPointField.sample(s.firstPosition,orbitalFrequency,
+                               s.zeroPointPhase,firstElectric,firstMagnetic);
+        gZeroPointField.sample(s.secondPosition,orbitalFrequency,
+                               s.zeroPointPhase,secondElectric,secondMagnetic);
         atFirst.electric+=firstElectric;
         atFirst.magnetic+=firstMagnetic;
         atSecond.electric+=secondElectric;
@@ -1270,10 +1282,11 @@ MutualForces allExternalForces(const State& s) {
         lorentzForce(secondCharge, s.secondVelocity, {{}, gExternalMagneticField})};
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
-        gZeroPointField.sample(s.firstPosition,s.time,
-                               firstElectric,firstMagnetic);
-        gZeroPointField.sample(s.secondPosition,s.time,
-                               secondElectric,secondMagnetic);
+        const double orbitalFrequency=osculatingOrbitalFrequency(s);
+        gZeroPointField.sample(s.firstPosition,orbitalFrequency,
+                               s.zeroPointPhase,firstElectric,firstMagnetic);
+        gZeroPointField.sample(s.secondPosition,orbitalFrequency,
+                               s.zeroPointPhase,secondElectric,secondMagnetic);
         externalField.first=externalField.first+lorentzForce(firstCharge,
             s.firstVelocity,{firstElectric,firstMagnetic});
         externalField.second=externalField.second+lorentzForce(secondCharge,
@@ -1384,10 +1397,11 @@ MutualForces retardedExternalForces(const State& s,
         lorentzForce(secondCharge,s.secondVelocity,{{},gExternalMagneticField})};
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
-        gZeroPointField.sample(s.firstPosition,s.time,
-                               firstElectric,firstMagnetic);
-        gZeroPointField.sample(s.secondPosition,s.time,
-                               secondElectric,secondMagnetic);
+        const double orbitalFrequency=osculatingOrbitalFrequency(s);
+        gZeroPointField.sample(s.firstPosition,orbitalFrequency,
+                               s.zeroPointPhase,firstElectric,firstMagnetic);
+        gZeroPointField.sample(s.secondPosition,orbitalFrequency,
+                               s.zeroPointPhase,secondElectric,secondMagnetic);
         externalField.first=externalField.first+lorentzForce(firstCharge,
             s.firstVelocity,{firstElectric,firstMagnetic});
         externalField.second=externalField.second+lorentzForce(secondCharge,
@@ -1670,6 +1684,13 @@ void integrateElectrodynamicStep(State& s, double dt,
     // start and the midpoint.  None of it feeds back into the trajectory.
     const double radiatedEnergyIncrement = radiation.outwardFlux.energy*dt;
     trial.radiatedEnergy += radiatedEnergyIncrement;
+    // Unlike the bookkeeping around it, this one DOES feed back: it is the
+    // clock the orbit-following zero-point band reads.  Accumulating it here
+    // means a rejected trial step discards its phase along with everything
+    // else, and the adaptive error estimate sees the phase difference between
+    // a full step and two half steps, so the step control governs it too.
+    if(gZeroPointField.active())
+        trial.zeroPointPhase += osculatingOrbitalFrequency(s)*dt;
     // Magnetic-dipole damping changes the constrained internal dipole sector.
     // The charge part is already represented by the particle self-force and
     // its near-field (Schott) term.

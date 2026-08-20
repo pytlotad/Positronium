@@ -1523,12 +1523,29 @@ nadal etykietuje wychwycone stany jako „Para-/Ortho-Positronium" i zapisuje
 panele `annihilation_time_*` z danych pozytonium, co dla innej pary jest mylące.
 
 Wynik eksperymentu z polem punktu zerowego (`--zpf`) jest **negatywny i warto
-go znać przed uruchomieniem**. Mechanizm działa: energia wpływa do orbity,
+go znać przed uruchomieniem**. Pasmo **podąża za orbitą**: jest zdefiniowane
+w krotnościach oskulacyjnej częstości orbitalnej pary i przeliczane przy każdym
+wywołaniu siły, więc zostaje w rezonansie przez całą spiralę. Wymaga to niesienia
+fazy w stanie (`State::zeroPointPhase`, całka z częstości orbitalnej), bo faza
+zapisana jako \(-\omega(t)t\) skakałaby przy każdej zmianie pasma i wstrzykiwała
+energię z niczego. Amplituda rośnie jak \(\omega_{orb}^2\), co wynika z widma.
+
+To pozwala oddzielić efekt rezonansowy od efektu obcięcia i **rozstrzyga sprawę
+na niekorzyść mechanizmu**. Przy paśmie podążającym, wąskim i pozostającym
+w rezonansie, wpływ na czas kolapsu jest znikomy: mediana 36,12 ps przy paśmie
+\([0{,}3;3]\) i 36,123 ps przy \([0{,}5;2]\), wobec 35,998 ps bez pola — czyli
+około \(+0{,}3\%\), a obie wartości zgadzają się ze sobą do czterech cyfr. Wynik
+jest zbieżny po liczbie modów: 36,69 / 36,12 / 36,68 ps przy 32 / 64 / 256
+modach, więc nie jest artefaktem próbkowania.
+
+Duże wydłużenia pojawiają się dopiero po rozszerzeniu górnej krawędzi daleko
+poza rezonans — 83,9 ps przy \([0{,}3;10]\) i brak zaniku przy \([0{,}3;30]\) —
+czyli pochodzą od modów **daleko od rezonansu**, o dużej amplitudzie, a nie od
+absorpcji rezonansowej, na której opiera się równowaga SED. To jest odwrotność
+tego, czego mechanizm wymaga. Mechanizm działa: energia wpływa do orbity,
 orbita się rozszerza, a czas kolapsu rośnie monotonicznie z górną krawędzią
 pasma — 43,0 ps bez pola, 43,2 przy `0.3,3`, 45,2 przy `0.3,10`, 57,3 przy
-`0.3,30` i 152,5 przy `0.3,100`. Powodem tej zależności jest to, że orbita
-w trakcie spirali przyspiesza: zmierzony okres spada z 0,327 fs do 0,0031 fs,
-czyli o czynnik 105, więc pole działa tylko dopóki pozostaje w rezonansie.
+`0.3,30` i 152,5 przy `0.3,100`. Przy paśmie USTALONYM na starcie orbita ucieka polu: zmierzony okres spada z 0,327 fs do 0,0031 fs, czyli o czynnik 105.
 
 Przy `0.3,300` estymator zgłasza brak zaniku — ale to **nie jest równowaga**.
 Diagnostyka pokazuje promień końcowy 219,5 pm wobec 123,7 pm bez pola i zakres
