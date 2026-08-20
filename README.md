@@ -189,6 +189,21 @@ bo `boundField*` jest akumulowane co krok właśnie jako reszta domykająca.
 Sprawdzone pomiarem: całkowite złamanie antysymetrii sondy nie rusza tych
 liczb wcale.
 
+Ten sam wzorzec — wielkość wypisywana, ale niesprawdzana — dotyczył całego
+sektora reakcji promieniowania. `finiteReactionBenchmark` testował wyłącznie
+`isfinite`, więc dziewięć liczb opisujących trzy modele reakcji mogło przyjąć
+dowolną wartość przy dalej zielonym 28/28. Mają teraz progi.
+
+Przy okazji ujawniła się pułapka normalizacji. `reaction flux off/LL/C` dzieli
+rozjazd pracy reakcji przez **energię wypromieniowaną**, a ta w sondzie trwającej
+\(8\cdot10^{-22}\) s wynosi dla pary protonów \(1{,}2\cdot10^{-29}\) J. Iloraz
+sięga wtedy \(1893\) przy \(0{,}026\) dla e⁺e⁻, co czyta się jak katastrofa,
+a jest wyłącznie znikającym mianownikiem. Ta sama wielkość odniesiona do energii
+mechanicznej orbity wynosi \(9{,}2\cdot10^{-7}\) dla e⁺e⁻,
+\(5{,}6\cdot10^{-11}\) dla mionium i \(7{,}1\cdot10^{-13}\) dla protonium —
+znikoma i **malejąca** z masą, czyli wniosek dokładnie przeciwny. Bramkowana
+jest ta druga postać, dopisana jako `reaction mism/E_mech`.
+
 Niezależnym pomiarem jest linia `raw dE/dP/dJ`, która wyklucza `boundField*`.
 Do niedawna **była wypisywana i nigdy nie sprawdzana**, więc mogła dryfować
 dowolnie przy dalej zielonym 28/28; ma teraz własne progi. Jej składowa pędowa

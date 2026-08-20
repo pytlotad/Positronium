@@ -678,6 +678,16 @@ int runMaxwellSelfTest() {
         bool advanced=false;
         double rawEnergyResidual=0.0;
         double reactionFluxResidual=0.0;
+        // Same mismatch, normalized by the orbit's own mechanical energy
+        // instead of by the radiated energy.  The flux-normalized form is
+        // unusable across pairs: over the benchmark's 8e-22 s a proton pair
+        // radiates 1.2e-29 J, so any mismatch divided by it explodes -- it
+        // reaches 1893 for p+pbar against 0.026 for e+e-, which reads like a
+        // catastrophic defect and is nothing but the denominator vanishing.
+        // Against the mechanical energy the same quantity is 9.2e-07 for e+e-,
+        // 5.6e-11 for mu+mu- and 7.1e-13 for p+pbar, i.e. tiny and DECREASING
+        // with mass, which is the opposite conclusion.
+        double reactionMechanicalMismatch=0.0;
         double stepConvergence=0.0;
         double wallSeconds=0.0;
     };
@@ -714,6 +724,8 @@ int runMaxwellSelfTest() {
             /std::max(std::abs(initialMechanical),1.0e-300);
         result.reactionFluxResidual=std::abs(full.reactionEnergyMismatch)
             /std::max(std::abs(full.radiatedEnergy),1.0e-300);
+        result.reactionMechanicalMismatch=std::abs(full.reactionEnergyMismatch)
+            /std::max(std::abs(initialMechanical),1.0e-300);
         result.stepConvergence=std::max({
             (full.firstPosition-half.firstPosition).norm()/bohrRadius,
             (full.secondPosition-half.secondPosition).norm()/bohrRadius,
@@ -1850,11 +1862,25 @@ int runMaxwellSelfTest() {
         &&quadrupoleResidual<1.0e-14
         &&coherentDerivativeResidual<1.0e-12
         &&coherentReactionMomentumResidual<1.0e-14;
+    // Until now this checked isfinite and nothing else, so nine numbers in the
+    // radiation-reaction sector -- the model's core claim -- could take any
+    // value at all and the suite would still report 28/28.  They are bounded
+    // now.
+    //
+    // reactionFluxResidual is deliberately left ungated: its denominator is
+    // the energy radiated over 8e-22 s, which is meaningless for heavy pairs,
+    // and it ranges from 0.026 to 1893 across the four pairs for that reason
+    // alone.  reactionMechanicalMismatch measures the same mismatch against a
+    // scale that survives, and is bounded instead.
     const auto finiteReactionBenchmark=[](const ReactionModelBenchmark& value) {
         return value.advanced&&isFinite(value.finalState)
             &&std::isfinite(value.rawEnergyResidual)
+            &&value.rawEnergyResidual<1.0e-4
             &&std::isfinite(value.reactionFluxResidual)
+            &&std::isfinite(value.reactionMechanicalMismatch)
+            &&value.reactionMechanicalMismatch<1.0e-5
             &&std::isfinite(value.stepConvergence)
+            &&value.stepConvergence<1.0e-4
             &&std::isfinite(value.wallSeconds)&&value.wallSeconds>0.0;
     };
     const bool reactionModelsOk=finiteReactionBenchmark(reactionDisabled)
@@ -2051,6 +2077,9 @@ int runMaxwellSelfTest() {
               << reactionDisabled.reactionFluxResidual << " / "
               << reactionLl.reactionFluxResidual << " / "
               << reactionCoherent.reactionFluxResidual << '\n'
+              << "reaction mism/E_mech:" << reactionDisabled.reactionMechanicalMismatch
+              << " / " << reactionLl.reactionMechanicalMismatch << " / "
+              << reactionCoherent.reactionMechanicalMismatch << '\n'
               << "reaction step off/LL/C:"
               << reactionDisabled.stepConvergence << " / "
               << reactionLl.stepConvergence << " / "
