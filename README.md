@@ -189,6 +189,25 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   \(4{,}6\cdot10^{-5}\) energii — praktycznie zero, jak każe symetria pary —
   więc integrator liczy poprawnie tam, gdzie źródło spoczywa.
 
+  Mechanizm jest natomiast zlokalizowany w kodzie. W `farZoneChargeField` pole
+  jest poprzeczne do `direction`, czyli kierunku od **opóźnionej** pozycji
+  źródła do punktu obserwacji, a `electromagneticFieldFluxRates` całkuje po
+  `normal` — normalnej sfery. Dla pola czysto promienistego zachodzi tożsamość
+  \(-T\!\cdot\!\hat n=u\hat n\) i \(\mathbf S\!\cdot\!\hat n=cu\), z których
+  wynika, że na każdy kierunek stosunek strumienia pędu do energii wynosi
+  dokładnie \(\hat n\), a więc \(|p|/(E/c)=|\langle\hat n\rangle|\). Tożsamość
+  ta wymaga jednak poprzeczności względem \(\hat n\), nie względem
+  `direction`. Gdy źródło dryfuje, jego pozycja opóźniona jest przesunięta
+  o \(\sim\beta R\) od środka sfery, oba kierunki rozjeżdżają się o kąt rzędu
+  \(\beta\) i tożsamość pęka w pierwszym rzędzie. Rozjazd jest przy tym
+  **kierunkowy**, różny w każdym punkcie sfery — dlatego jednolite przesunięcie
+  środka o \(-\mathbf v_{CM}R/c\) niczego nie zmieniło.
+
+  Teoria daje tu wartość ścisłą do porównania: dla źródła o zerowym pędzie
+  promieniowania w układzie własnym \(\langle\hat n\rangle=\beta\) dokładnie,
+  tak samo dla emitera izotropowego jak dla dipola. Zmierzone \(1{,}40\beta\)
+  jest więc miarą pęknięcia tej tożsamości.
+
   Rozstrzygający test, jeszcze niewykonany: dla źródła dryfującego z prędkością
   \(\mathbf v\) w stanie quasi-stacjonarnym strumień przez sferę równa się
   tempu emisji, a relacja Liénarda daje \(d\mathbf p/dt=(P/c^2)\mathbf v\),
