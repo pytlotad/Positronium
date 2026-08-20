@@ -1739,10 +1739,19 @@ Na samej podłodze, przy zasięgu \(529\) fm, ukończenie spada do 2 z 3
 trajektorii, a gęstość na krawędzi \(596\) fm wynosi
 \(8{,}2\cdot10^{31}\,\mathrm m^{-3}\), czyli \(307\times|\psi(0)|^2\).
 
-Podłoga została zlokalizowana bisekcją i jest **ostra**: \(520\) fm daje
-2 z 3 trajektorii, \(500\) fm — 1 z 3, a \(470\) fm i niżej już żadnej.
-Nie leży więc na barierze Comptona \(193\) fm, tylko \(2{,}7\) raza powyżej
-niej; fizyka bariery nadal nie jest testowana.
+Podłoga wyglądała na **ostrą** — \(520\) fm dawało 2 z 3 trajektorii,
+\(500\) fm 1 z 3, a \(470\) fm i niżej żadnej — ale ten skan zrobiono na
+jednym ziarnie i wniosek był przez to zbyt mocny. Powtórzony na ośmiu różnych
+ziarnach **cel \(193\) fm osiąga 2 z 8 trajektorii**. Nie ma więc ściany,
+tylko malejący z głębokością **odsetek dochodzących**: bariera Comptona
+\(193\) fm jest osiągalna dla mniej więcej ćwiartki trajektorii, a które
+konkretnie, zależy od mimośrodu wylosowanej orbity.
+
+Głębsze zejście **nie zmienia mierzonego czasu kolapsu**, co potwierdza
+założenie o ucinaniu ostatniego odcinka: dla ziarna 7 wychodzi \(40{,}488\) ps
+przy \(5{,}29\) pm i \(40{,}492\) ps przy \(193\) fm, dla ziarna 23
+odpowiednio \(19{,}804\) i \(19{,}806\) ps — w obu wypadkach różnica
+\(+0{,}01\%\), przy zejściu \(27\) razy głębiej.
 
 Jej charakter zbadano trzema gałkami. Zwiększenie głębokości podziału kroku
 z 12 na 20 **nie zmienia nic** — wzorzec awarii pozostaje ten sam.
