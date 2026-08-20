@@ -3341,6 +3341,11 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     // endpoint interpolation.  These two measure the model itself.
     std::vector<double> reactionMismatchFractions;
     std::vector<double> boundReservoirFractions;
+    // Same reservoir, normalized by the ORBIT's own mechanical energy instead
+    // of by the radiated energy.  The radiated-energy form is unusable as a
+    // validity signal because its denominator can be arbitrarily small; this
+    // one measures the reservoir against a scale that does not vanish.
+    std::vector<double> boundReservoirVsOrbit;
     double maximumSchottFraction = 0.0;
     for (const BeamEvent& event : events) {
         if (event.outcome != BeamOutcome::Escaped || !event.diagnosticsValid) continue;
@@ -3399,6 +3404,13 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         }
         if (std::isfinite(reservoirFraction)) {
             boundReservoirFractions.push_back(reservoirFraction);
+        }
+        const double orbitScale = std::max(std::abs(initial.mechanicalEnergy),
+                                           1.0e-300);
+        const double reservoirVsOrbit = std::abs(final.boundFieldEnergy
+            - initial.boundFieldEnergy)/orbitScale;
+        if (std::isfinite(reservoirVsOrbit)) {
+            boundReservoirVsOrbit.push_back(reservoirVsOrbit);
         }
     }
     const double sampledArea = pi * configuration.impactParameterMaximum
@@ -3483,6 +3495,62 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                   << sampleQuantile(reactionMismatchFractions, 0.5)
                   << ", median |E_bound|/E_rad="
                   << sampleQuantile(boundReservoirFractions, 0.5) << ".\n";
+    }
+    // Self-diagnosis of the regime, driven by measurement rather than by a
+    // hard-coded experiment number.  The reservoir is the energy the balance
+    // could not attribute to mechanics or radiation and had to invent; once it
+    // rivals the orbit's own energy, the bookkeeping has stopped describing
+    // the trajectory and no energy quantity from the run may be read as a
+    // measurement.
+    //
+    // This is what the physical-completeness audit found for the short-range
+    // channel, where the reservoir reaches 1.4 to 9.4 times the orbit energy
+    // while the bound and wide-scattering channels stay near 1e-4.  Stating it
+    // as a threshold on the measured value rather than as a ban on experiment
+    // 3 means it also fires for any pair or any settings that stray into the
+    // same regime, and stays silent when they do not.
+    if (!boundReservoirVsOrbit.empty()) {
+        // The median is the wrong statistic here and reporting it alone would
+        // hide the problem: a beam ensemble is dominated by wide fly-bys whose
+        // reservoir is negligible, while the close encounters this channel
+        // exists to study sit in the tail.  For experiment 3 the median is
+        // 0.057 against 6.7e-08 for experiment 4 -- six orders apart already,
+        // but far below the level the audit found on close trajectories.  The
+        // tail and the exceedance fraction are what decide.
+        const double medianReservoir =
+            sampleQuantile(boundReservoirVsOrbit, 0.5);
+        const double tailReservoir =
+            sampleQuantile(boundReservoirVsOrbit, 0.95);
+        const std::size_t overOrbit = static_cast<std::size_t>(
+            std::count_if(boundReservoirVsOrbit.begin(),
+                          boundReservoirVsOrbit.end(),
+                          [](double value){ return value > 1.0; }));
+        const double overFraction = static_cast<double>(overOrbit)
+            /static_cast<double>(boundReservoirVsOrbit.size());
+        std::cout << "Reservoir against orbit energy |E_bound|/|E_rel|: median="
+                  << medianReservoir << ", 95th=" << tailReservoir
+                  << ", exceeding the orbit energy in " << overOrbit << " of "
+                  << boundReservoirVsOrbit.size() << " trajectories.\n";
+        // The bound is on the tail, not on the median and not on exceeding
+        // the orbit energy outright.  Measured: experiment 3 gives a 95th
+        // percentile of 0.35 against 1.8e-07 for experiment 4, so 0.1 sits six
+        // orders clear of both, and it means one trajectory in twenty has a
+        // tenth of its orbit energy unattributed.
+        //
+        // The 1.4-9.4 figures in the completeness audit come from a single
+        // diagnostic trajectory, not from a beam ensemble; the ensemble is
+        // dominated by wide fly-bys and comes out milder.
+        if (tailReservoir > 0.1 || overFraction > 0.02) {
+            std::cout << "WARNING: on part of this ensemble the reconstructed "
+                         "bound-field reservoir reaches a substantial "
+                         "fraction of the orbit's own energy, so those "
+                         "trajectories are outside the regime where the "
+                         "model's energy bookkeeping describes them.\n"
+                      << "         Angular distributions rest on scattering "
+                         "geometry and are not invalidated by this, but NO "
+                         "energy quantity from this run may be read as a "
+                         "measurement.\n";
+        }
     }
     gROOT->SetBatch(kTRUE);
     root_export::preparePdfExporter();

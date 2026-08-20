@@ -1463,6 +1463,16 @@ daje 6 plików, a 4 daje 5.
 > Dla porównania kanał związany (1, 2) i szerokie rozpraszanie (4) są w tych
 > samych miarach czyste, na poziomie \(10^{-4}\) energii orbity.
 >
+> Wartości \(1{,}4\)–\(9{,}4\) pochodzą z pojedynczej trajektorii
+> diagnostycznej. **Zespół wiązkowy wypada łagodniej**, bo dominują w nim
+> dalekie przeloty: mediana \(|E_{bound}|/|E_{rel}|\) wynosi \(0{,}11\),
+> a 95. percentyl \(0{,}35\), wobec \(7{,}1\cdot10^{-8}\) i
+> \(1{,}8\cdot10^{-7}\) dla eksperymentu 4 — nadal sześć rzędów różnicy.
+> Program **sam to teraz wykrywa i ostrzega w czasie działania**, progiem na
+> 95. percentylu, a nie zakazem wpisanym na numer eksperymentu: ostrzeżenie
+> zadziała dla dowolnej pary i dowolnych ustawień, które wejdą w ten sam reżim,
+> i milczy, gdy nie wejdą.
+>
 > W praktyce znaczy to, że **z eksperymentu 3 nie wolno czytać wielkości
 > energetycznych**. Dotyczy to wprost panelu strat energii poniżej, a także
 > interpretacji panelu bilansu energii, którego niezależne residuum
@@ -1758,6 +1768,13 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
   Darwina, które jest rzędu \(v^2/c^2\), występuje wyłącznie w raportowanej
   diagnostyce energii oraz jako zalążek rekonstrukcji historii przyczynowej,
   natychmiast zastępowany dwiema iteracjami Picarda na siłach retardowanych;
+- odrzut orbitalny od promieniowania dipola magnetycznego. Moc M1 jest
+  liczona, a jej energia księgowana w `dipoleConstraintEnergy`, czyli poza
+  orbitą. Zmierzony stosunek \(P_{M1}/P_{E1}\) wynosi \(8{,}5\cdot10^{-16}\)
+  dla e⁺e⁻, \(2{,}9\cdot10^{-14}\) dla p+e⁻, \(8{,}5\cdot10^{-16}\) dla
+  mionium i \(6{,}6\cdot10^{-15}\) dla protonium, więc dołączenie odrzutu
+  zmieniłoby czas kolapsu o rząd \(10^{-15}\) — poniżej każdego innego
+  residuum w tym modelu. Pominięcie jest świadome i nierozstrzygalne pomiarowo;
 - kwantowa struktura subtelna i kwantowe elementy macierzowe sprzężenia
   spin–orbita. Klasyczne odpowiedniki **są uwzględnione**: relatywistyczna
   precesja BMT z mierzonym \(g\), precesja Thomasa i transformacja tensora
