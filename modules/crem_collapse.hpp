@@ -194,7 +194,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
 
     // Osculating elements of the prepared orbit and the closed-form classical
     // prediction they imply.  The run is stopped when the PERIAPSIS reaches
-    // finalApproachMultiple*chargeCloudRestRadius, so the reference must be
+    // finalApproachMultiple*collisionBoundaryRadius, so the reference must be
     // evaluated between the same two orbits, not down to a = 0.
     result.initialSemiMajorAxis=
         -attractionParameter/(2.0*elements.specificEnergy);
@@ -333,7 +333,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // quickly), so pushing further trades a well-understood, negligible
         // truncation for an unreliable measurement.
         constexpr double finalApproachMultiple=10.0;
-        if(periapsis<=finalApproachMultiple*chargeCloudRestRadius) {
+        if(periapsis<=finalApproachMultiple*collisionBoundaryRadius) {
             result.lifetimeSeconds=simulatedTimeTotal;
             result.meanRadiatedPowerWatts=simulatedTimeTotal>0.0
                 ?radiatedEnergyTotal/simulatedTimeTotal
@@ -350,7 +350,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         SimulationOptions measureOptions;
         measureOptions.collectFrames=false;
         measureOptions.observationTime=period;
-        measureOptions.terminalSeparation=chargeCloudRestRadius;
+        measureOptions.terminalSeparation=collisionBoundaryRadius;
         // The secular update below is driven entirely by mechanical
         // quantities -- conservativeParticleEnergy() and the orbital angular
         // momentum read off the endpoint states -- and radiatedEnergyTotal is
@@ -365,7 +365,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             return wallClockSpent()>wallClockBudgetSeconds;
         };
         const MechanicalTrajectoryResult run=runMechanicalTrajectory(
-            measurementState,period,chargeCloudRestRadius,measureOptions,
+            measurementState,period,collisionBoundaryRadius,measureOptions,
             activeReactionModel);
 
         // Angular momentum and energy are both read from the measured
@@ -410,7 +410,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         MechanicalTrajectoryResult background;
         if(refreshBackground) {
             background=runMechanicalTrajectory(
-                measurementState,period,chargeCloudRestRadius,measureOptions,
+                measurementState,period,collisionBoundaryRadius,measureOptions,
                 ChargeRadiationReactionModel::disabled);
         }
         const auto measuredDelta=[&](const State& end) {

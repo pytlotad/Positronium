@@ -343,7 +343,7 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // model boundary; beam statistics retain the smaller nuclear cutoff.
     const double trajectoryCutoff=options.terminalSeparation>0.0
         ?options.terminalSeparation
-        :(directCollision?chargeCloudRestRadius:nuclearCutoff);
+        :(directCollision?collisionBoundaryRadius:nuclearCutoff);
     MechanicalTrajectoryResult run = runMechanicalTrajectory(
         s, observationTime, trajectoryCutoff, options);
     const double timeToCutoff = run.outcome == SimulationOutcome::ReachedCutoff

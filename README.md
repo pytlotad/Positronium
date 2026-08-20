@@ -1753,6 +1753,24 @@ przy budżecie podniesionym czterokrotnie awaria wraca. Podłoga jest więc
 ścianą strukturalną ani fizyczną — da się ją przesuwać, ale coraz drożej i o
 coraz mniej.
 
+Rozważana w związku z tym wymiana silnika na schemat symplektyczny **nie ma
+podstaw** i pomiar to przesądził. Obecny krok jest już strukturą
+kick-drift-kick, a dla członu zależnego wyłącznie od położenia taka struktura
+jest symplektyczna. Zmierzony błąd energii zachowawczej przy wyłączonej reakcji
+promieniowania **oscyluje i nie narasta**: amplituda w kolejnych ćwiartkach
+przebiegu wynosi \(4{,}84\), \(4{,}66\), \(4{,}62\) i
+\(4{,}83\cdot10^{-5}\), a wartość przechodzi przez zero. Dryfu sekularnego
+nie ma, więc przepisanie na splitting nic by tu nie kupiło.
+
+Co pozostaje prawdziwe, to **stosunek skal**: ta ograniczona oscylacja
+\(4{,}8\cdot10^{-5}\) jest osiemnastokrotnie większa od mierzonego sygnału
+fizycznego, czyli straty energii na obieg \(2{,}6\cdot10^{-6}\). To jest
+powód, dla którego estymator odejmuje przebieg tła — kasuje zależny od fazy,
+ograniczony błąd schematu, a nie dryf. Lekarstwem byłby zatem **wyższy rząd**,
+a nie symplektyczność: złożenie Yoshidy czwartego rzędu na istniejącym kroku
+drugiego rzędu zmniejszyłoby tę amplitudę o rząd \(dt^2\) i mogłoby zejść
+poniżej sygnału, co usunęłoby potrzebę przebiegu tła i o połowę obniżyło koszt.
+
 Prawdziwe przyczyny są dwie i żadna nie jest precyzją. Po pierwsze **granice są
 sprzężone**: wewnętrzne całkowanie ma `terminalSeparation` równe
 `chargeCloudRestRadius`, czyli \(529\) fm, więc żądanie peryapsis \(265\) fm

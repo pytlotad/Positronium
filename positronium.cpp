@@ -2728,7 +2728,7 @@ InteractionConfiguration makeInteractionConfiguration(
     configuration.boundObservationOrbits = 8.0;
     configuration.boundObservationTimeCap = 2.0e-16;
     configuration.eventWallClockBudgetSeconds = 20.0;
-    configuration.collisionRadius = chargeCloudRestRadius;
+    configuration.collisionRadius = collisionBoundaryRadius;
     return configuration;
 }
 
@@ -3091,10 +3091,10 @@ InteractionEvent simulateInteractionEvent(
                         ? gatePeriod : std::numeric_limits<double>::quiet_NaN();
                     result.boundObservedOrbits = gatePeriod > 0.0
                         ? observed/gatePeriod : 0.0;
-                    if (semiMajorAxis > chargeCloudRestRadius
+                    if (semiMajorAxis > collisionBoundaryRadius
                         && result.boundObservedOrbits >= 1.0) {
                         const double ratio =
-                            chargeCloudRestRadius/semiMajorAxis;
+                            collisionBoundaryRadius/semiMajorAxis;
                         const double collapse = (-finalEnergy)/(3.0*power)
                             *(1.0 - ratio*ratio*ratio);
                         if (collapse > 0.0 && std::isfinite(collapse)) {

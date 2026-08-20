@@ -54,5 +54,15 @@ inline constexpr double nuclearCutoff = 1.0e-14;
 inline constexpr double magneticRegularizationExponent = 6.0;
 inline constexpr double hbar = 1.054571817e-34;
 inline constexpr double chargeCloudRestRadius = 0.01*bohrRadius;
+// Separation at which a trajectory is declared to have collided, and the depth
+// at which the collapse estimator stops integrating.
+//
+// Numerically equal to chargeCloudRestRadius, and that is the point: until now
+// ONE constant played both roles, so the reach of the trajectory sector could
+// not be changed without also resizing the charge cloud that the Maxwell grid
+// deposits, and vice versa.  They are separate questions -- one is the model's
+// spatial resolution, the other is where a trajectory is deemed to have ended
+// -- and separating them is what allows the reach to be probed on its own.
+inline constexpr double collisionBoundaryRadius = chargeCloudRestRadius;
 
 } // namespace positronium::parameters
