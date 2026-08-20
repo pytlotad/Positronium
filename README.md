@@ -1714,6 +1714,26 @@ kończą się awarią numeryczną** — i to jest istotne, bo \(265\) fm leży w
 **powyżej** bariery \(193\) fm. Ścianą jest więc integrator, a nie fizyka
 bariery; do samej bariery model nie dochodzi.
 
+Awarie przy krotności \(0{,}5\) zostały zbadane osobno, bo nasuwały podejrzenie,
+że `double` przestaje wystarczać. **Nie przestaje.** Estymator liczy stratę
+energii na obieg jako różnicę `measured = raw - background`, więc kasowanie się
+cyfr jest tam realne, ale zmierzone: przez cały bieg zabiera najwyżej
+\(1{,}13\) cyfry znaczącej, a przez większość biegu \(0{,}2\)–\(0{,}5\).
+Wobec \(15{,}95\) cyfr `double` zostaje margines około \(14{,}8\) cyfr;
+wyczerpanie go wymagałoby stosunku `raw/measured` rzędu \(10^{16}\), podczas
+gdy największy zaobserwowany to \(13{,}5\). Szersze typy nic by tu nie dały.
+
+Prawdziwe przyczyny są dwie i żadna nie jest precyzją. Po pierwsze **granice są
+sprzężone**: wewnętrzne całkowanie ma `terminalSeparation` równe
+`chargeCloudRestRadius`, czyli \(529\) fm, więc żądanie peryapsis \(265\) fm
+prosi o coś, czego niższy poziom nie potrafi dostarczyć — obniżenie samej
+krotności końcowego zbliżenia nie wystarcza. Po drugie tam, gdzie całkowanie
+faktycznie rozbiega, przekroczenie wynosi \(1{,}66\cdot10^{14}\) energii
+wiązania na obieg. To rozbieg zredukowanej reakcji Landaua-Lifshitza przy
+zacieśniającej się orbicie, a nie utrata cyfr — czternastu rzędów żadna
+precyzja nie odzyska. Wyłapuje go istniejąca bramka odrzucająca stratę powyżej
+50% energii wiązania na obieg.
+
 Ważniejszy jest kształt profilu w głębi. Gęstość **nie rośnie monotonicznie do
 środka**: osiąga maksimum \(1{,}58\cdot10^{32}\,\mathrm m^{-3}\) przy
 \(750\) fm, czyli \(589\times|\psi(0)|^2\), po czym **spada** do
