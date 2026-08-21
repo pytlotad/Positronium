@@ -594,34 +594,36 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             return result;
         }
-        // Stop the orbit-averaged phase a bit before the exact boundary
-        // rather than chasing it there.  With t~a^3 near collapse (P~a^-4),
-        // covering the remaining stretch from 10*comptonBarrierRadius down to
-        // comptonBarrierRadius accounts for only (1/10)^3 = 0.1% of the total
-        // collapse time, well under the 3% per-jump tolerance already
-        // accepted elsewhere -- but the one-period measurement window this
-        // loop relies on stops being a good approximation exactly in that
-        // last stretch (eccentricity and the dipole barrier both grow
-        // quickly), so pushing further trades a well-understood, negligible
-        // truncation for an unreliable measurement.
+        // Stop the orbit-averaged phase exactly AT comptonBarrierRadius --
+        // the same physically meaningful scale ("where classical point-
+        // particle electrodynamics stops applying") already used as the
+        // Collision boundary in experiment 5 (makeInteractionConfiguration),
+        // so "collapsed" now means the same separation there and here rather
+        // than two different numbers that happened to both be called a
+        // stopping point.  This used to be 10x further out (finalApproachMultiple
+        // was 10.0): the one-period measurement window this loop relies on
+        // stopped being a good approximation approaching the barrier under
+        // the OLD hard-clamp force law (a real kink in the force at the
+        // clamp boundary, see f477866), so the loop backed off well before
+        // it rather than chasing an unreliable measurement for a truncation
+        // that (t~a^3 near collapse) only cost 0.1% of the total collapse
+        // time anyway.
         //
-        // The target used to be collisionBoundaryRadius (529 fm, the pair's
-        // charge-cloud/spatial-resolution scale) rather than the physically
-        // meaningful comptonBarrierRadius (193.30 fm) used now.  That was a
-        // historical accident, not a deliberate choice: collisionBoundaryRadius
-        // stood in because it was the only "how close is too close" scale
-        // available, and the retarded-history/step coupling bug fixed in
-        // d164f69 made anything much deeper than it numerically unreachable
-        // anyway, so the gap never showed up.  With that bug fixed, a
-        // multi-seed sweep (6 seeds, testCutoff pushed to 1 fm to find where
-        // trajectories actually die) measured genuine numerical failures
-        // clustering at 47-495 fm, median 155 fm -- an order of magnitude
-        // below the old 529 fm floor and centred on the 193.30 fm barrier,
-        // not on 529 fm.  Resolving mechanically down to the barrier itself is
-        // therefore both reachable and the physically correct place to stop:
-        // it is where classical point-particle electrodynamics stops applying,
-        // not an artifact of the charge cloud's regularization size.
-        constexpr double finalApproachMultiple=10.0;
+        // With that force-law kink removed (Plummer softening, f477866) and
+        // the energy signal itself no longer riding on the Darwin
+        // approximation (orbitalRadiatedEnergy, 0ebc7d2), the 10x margin is
+        // no longer needed: measured directly on the same 6 seeds used
+        // throughout this investigation, finalApproachMultiple=1.0 (i.e.
+        // stopping exactly at the barrier) completes cleanly on all six,
+        // zero numerical failures, zero censored.  0.5 (past the barrier)
+        // already is not reliably safe -- 2 of 6 seeds hit NumericalFailure
+        // or exhausted their wall-clock budget there, the boundary this
+        // whole investigation has independently kept finding from the force-
+        // law and Darwin-approximation sides -- so 1.0 is not an arbitrary
+        // round number, it is measured to be the deepest value that is
+        // consistently reachable, and it happens to coincide exactly with
+        // where the model already declares Collision elsewhere.
+        constexpr double finalApproachMultiple=1.0;
         if(periapsis<=finalApproachMultiple*comptonBarrierRadius) {
             result.lifetimeSeconds=simulatedTimeTotal;
             result.meanRadiatedPowerWatts=simulatedTimeTotal>0.0
