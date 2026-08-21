@@ -560,7 +560,9 @@ struct SimulationOptions {
     int frameCount = 1200;
     double observationTime = 0.0; // zero selects the phenomenon's visual window
     // Positive values override the visual point-particle cutoff. Statistical
-    // CREM lifetime studies use the agreed charge-cloud boundary 0.01*a0.
+    // CREM lifetime studies (experiments 1/2) instead pass comptonBarrierRadius
+    // directly as runMechanicalTrajectory's trajectoryCutoff argument, so this
+    // field is not what bounds them -- see crem_collapse.hpp.
     double terminalSeparation = 0.0;
     std::function<void(const Frame&)> frameReady;
     // Called after every accepted integration step.  Unlike frameReady this
@@ -1709,12 +1711,14 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     }
     std::cout << "Model: full CREM mechanical integration under the active "
                  "--radiation-reaction model, run until the pair's periapsis\n"
-                 "reaches 0.1*a0 or the per-event wall-clock budget is spent "
-                 "(then censored, not extrapolated).  The last stretch down to "
-                 "the\n0.01*a0 boundary is truncated deliberately: with t ~ a^3 "
-                 "it is 0.1% of the collapse time, below the 3% per-jump\n"
-                 "tolerance, and the one-period measurement window stops being "
-                 "valid there.  External lifetime is comparison only.\n"
+                 "reaches 10x the Compton barrier (1.933 pm) or the per-event "
+                 "wall-clock budget is spent (then censored, not extrapolated)."
+                 "  The last stretch down to\nthe Compton barrier itself "
+                 "(193.30 fm, where classical point-particle electrodynamics "
+                 "stops applying) is truncated deliberately:\nwith t ~ a^3 it is "
+                 "0.1% of the collapse time, below the 3% per-jump tolerance, "
+                 "and the one-period measurement window stops being\nvalid "
+                 "there.  External lifetime is comparison only.\n"
               << "Caution: the CREM collapse time is a classical inspiral time."
                  " Para and ortho differ here only through the initial dipole\n"
                  "alignment, whose coupling is ~1e-5 of the Coulomb potential,"
@@ -1740,9 +1744,10 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                    "trajectory starts at\nRADIUS a_0 but with a sub-circular "
                    "tangential speed, so its semi-major axis is already below "
                    "a_0 and T is below the\n107.5 as of a circular orbit at "
-                   "a_0.  The run ends when the PERIAPSIS reaches 0.1*a_0.  "
-                   "The revolution count is\naccumulated by the orbit-averaged "
-                   "integrator, resolved and skipped orbits alike.\n";
+                   "a_0.  The run ends when the PERIAPSIS reaches 10x the "
+                   "Compton barrier (1.933 pm).  The revolution count is\n"
+                   "accumulated by the orbit-averaged integrator, resolved and "
+                   "skipped orbits alike.\n";
     }
     if(observationLimitCount>0) {
         std::cout<<"Note: "<<observationLimitCount<<" of "<<runCount

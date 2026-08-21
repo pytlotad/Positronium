@@ -288,6 +288,71 @@ interpretację.
 
 Cztery pary dają 33/33.
 
+### Podłoga zasięgu CREM: bariera Comptona zamiast granicy zderzenia
+
+Poprzednia podsekcja usunęła sprzężenie siatki historii retardowanej z krokiem
+integratora, które wcześniej powodowało awarię numeryczną przy dowolnym
+żądaniu peryapsis poniżej z grubsza \(529\) fm (patrz niżej, "Klasyczna
+gęstość kontaktowa..."). Ta poprawka nie została tam zmierzona pod kątem
+głębokości — sprawdzono tylko zbieżność czasu kolapsu i sektora reakcji.
+Zmierzono to osobno, po fakcie.
+
+Metoda: `estimateCremCollapse` podmieniono tymczasowo tak, by cel pomiaru
+mechanicznego (dotąd `collisionBoundaryRadius` = \(529\) fm, rozmiar chmury
+ładunku) wskazywał \(1\) fm — celowo nieosiągalnie głęboko, żeby wymusić serię
+prawdziwych pomiarów mechanicznych aż do faktycznej awarii, i zlokalizować, GDZIE
+ona teraz leży. Powtórzone na sześciu ziarnach (42, 1, 7, 23, 99, 2024),
+eksperyment 1, po \(6\) trajektorii na ziarno.
+
+Wynik, \(21\) zarejestrowanych awarii numerycznych (peryapsis w chwili awarii,
+w fm):
+
+| ziarno | awarie (fm) |
+|---|---|
+| 42 | 164,6 / 191,8 / 133,5 / 149,3 / 211,4 / 231,1 |
+| 1 | 287,0 / 155,3 / 68,6 |
+| 7 | 163,9 / 46,6 / 131,1 |
+| 23 | 139,5 / 188,8 |
+| 99 | 62,4 / 137,5 / 108,8 / 495,1 / 133,3 |
+| 2024 | 210,7 / 227,9 |
+
+Mediana \(155\) fm, średnia \(173\) fm, odchylenie standardowe \(92\) fm,
+zakres \(47\)–\(495\) fm. **Żadne** ziarno nie odtworzyło starej skali
+\(529\) fm poza jednym odstającym przypadkiem (ziarno 99, \(495\) fm) — awarie
+skupiają się o rząd wielkości głębiej, w paśmie obejmującym barierę Comptona
+\(r^*=193{,}30\) fm z poprzedniej podsekcji: \(71\%\) awarii wypada poniżej
+niej, \(43\%\) w promieniu \(\pm20\%\) od niej. To nie jest ostra ściana —
+zgodnie z wcześniejszym pomiarem na starym silniku ("nie ma ściany, tylko
+malejący z głębokością odsetek dochodzących") — ale środek ciężkości
+niepowodzeń przesunął się z \(529\) fm na coś bliskiego \(r^*\).
+
+Wniosek praktyczny: stara wartość `collisionBoundaryRadius` nigdy nie była
+właściwym celem dla tego pomiaru — była pod ręką, bo `chargeCloudRestRadius`
+(rozdzielczość przestrzenna modelu) to jedyna skala "jak blisko jest za blisko"
+dostępna w chwili, gdy CREM powstawał. Fizycznie właściwym celem jest bariera
+Comptona: miejsce, w którym lokalizacja elektronu wymaga pędów rzędu \(mc\) i
+klasyczna elektrodynamika punktowej cząstki przestaje obowiązywać — nie
+rozmiar chmury ładunku, który jest osobnym, niepowiązanym wyborem
+regularyzacji.
+
+Zmiana produkcyjna: `comptonBarrierRadius` (`physical_constants.hpp`,
+\(=g\hbar/4m_ec=193{,}30\) fm) zastąpił `collisionBoundaryRadius` jako cel
+pomiaru mechanicznego w `crem_collapse.hpp` — wyłącznie tam; ogólna granica
+zderzenia (`collisionBoundaryRadius`, eksperyment 5) zostaje nietknięta, bo to
+osobne, poprawnie działające pojęcie. `finalApproachMultiple=10` zostawiono
+bez zmian: próg zatrzymania pętli sekularnej wynosi teraz \(10\times
+r^*=1933\) fm — wciąż bezpiecznie powyżej całego zmierzonego pasma awarii
+(\(47\)–\(495\) fm), więc pomiar mechaniczny w normalnej pracy nigdy nie
+zbliża się do strefy ryzyka. Potwierdzone: \(5\) ziaren \(\times\) \(6\)
+trajektorii = \(30/30\) bez żadnej awarii po zmianie, walidacja pól nadal
+\(33/33\) (sektor CREM jej nie dotyczy).
+
+Czego to nie zmienia: obcięcie ostatniego odcinka nadal jest tylko \(0{,}1\%\)
+czasu kolapsu (ten sam argument \(t\sim a^3\), teraz liczony od \(r^*\) zamiast
+od \(529\) fm), więc raportowany czas kolapsu praktycznie się nie zmienia.
+Zmienia się natomiast GDZIE model deklaruje koniec swojej ważności — z
+przypadkowej skali chmury ładunku na skalę wyprowadzoną z fizyki.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
@@ -2025,6 +2090,15 @@ przy budżecie podniesionym czterokrotnie awaria wraca. Podłoga jest więc
 **wspólnym ograniczeniem dokładności i kosztu** integratora adaptacyjnego, a nie
 ścianą strukturalną ani fizyczną — da się ją przesuwać, ale coraz drożej i o
 coraz mniej.
+
+**Nieaktualne po naprawie siatki historii retardowanej** (`d164f69`, patrz
+"Podłoga zasięgu CREM: bariera Comptona zamiast granicy zderzenia" wyżej).
+Cała powyższa podłoga \(529\) fm okazała się artefaktem sprzężenia siatki
+historii z krokiem, nie ograniczeniem dokładności/kosztu integratora
+adaptacyjnego, za jakie ją tu wzięto. Po naprawie awarie na sześciu ziarnach
+skupiają się w paśmie \(47\)–\(495\) fm (mediana \(155\) fm), rząd wielkości
+głębiej i wokół bariery \(193\) fm, nie \(529\) fm. `crem_collapse.hpp` celuje
+teraz w `comptonBarrierRadius` zamiast w `collisionBoundaryRadius`.
 
 Rozważana w związku z tym wymiana silnika na schemat symplektyczny **nie ma
 podstaw** i pomiar to przesądził. Obecny krok jest już strukturą

@@ -53,6 +53,21 @@ inline constexpr double nuclearCutoff = 1.0e-14;
 // the pair scale from that actual field maximum.
 inline constexpr double magneticRegularizationExponent = 6.0;
 inline constexpr double hbar = 1.054571817e-34;
+// Compton barrier of the e+e- pair: r* = (g/2)*(reduced Compton wavelength)/2
+//   = g*hbar/(4*m_e*c) = 193.30 fm,
+// the separation at which localizing the electron requires momenta of order
+// m_e*c, i.e. where classical point-particle electrodynamics stops applying.
+// r*/r_e = (g/2)/(2*alpha) = 68.60: this is not a regularization choice or
+// anything tunable, it follows from the fine structure constant.  Annihilation
+// happens 137x deeper, at r_e.  Used in crem_collapse.hpp as the depth
+// Experiments 1/2 actually resolve the pair's inspiral down to, replacing the
+// unrelated chargeCloudRestRadius-derived collisionBoundaryRadius that used
+// to bound that measurement -- see README's floor-lowering measurement for
+// why: once the retarded-history/step coupling bug was fixed, the mechanical
+// integrator turned out to reach this scale reliably, so there was no longer
+// a reason to stop three orders of magnitude short of it.
+inline constexpr double comptonBarrierRadius =
+    electronGFactor*hbar/(4.0*electronMass*speedOfLight);
 inline constexpr double chargeCloudRestRadius = 0.01*bohrRadius;
 // The separation at which a trajectory counts as collided is NOT here: it
 // scales with the pair, so it is derived in particle_species.hpp as

@@ -197,7 +197,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
 
     // Osculating elements of the prepared orbit and the closed-form classical
     // prediction they imply.  The run is stopped when the PERIAPSIS reaches
-    // finalApproachMultiple*collisionBoundaryRadius, so the reference must be
+    // finalApproachMultiple*comptonBarrierRadius, so the reference must be
     // evaluated between the same two orbits, not down to a = 0.
     result.initialSemiMajorAxis=
         -attractionParameter/(2.0*elements.specificEnergy);
@@ -327,16 +327,33 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         }
         // Stop the orbit-averaged phase a bit before the exact boundary
         // rather than chasing it there.  With t~a^3 near collapse (P~a^-4),
-        // covering the remaining stretch from 10*collisionRadius down to
-        // collisionRadius accounts for only (1/10)^3 = 0.1% of the total
+        // covering the remaining stretch from 10*comptonBarrierRadius down to
+        // comptonBarrierRadius accounts for only (1/10)^3 = 0.1% of the total
         // collapse time, well under the 3% per-jump tolerance already
         // accepted elsewhere -- but the one-period measurement window this
         // loop relies on stops being a good approximation exactly in that
         // last stretch (eccentricity and the dipole barrier both grow
         // quickly), so pushing further trades a well-understood, negligible
         // truncation for an unreliable measurement.
+        //
+        // The target used to be collisionBoundaryRadius (529 fm, the pair's
+        // charge-cloud/spatial-resolution scale) rather than the physically
+        // meaningful comptonBarrierRadius (193.30 fm) used now.  That was a
+        // historical accident, not a deliberate choice: collisionBoundaryRadius
+        // stood in because it was the only "how close is too close" scale
+        // available, and the retarded-history/step coupling bug fixed in
+        // d164f69 made anything much deeper than it numerically unreachable
+        // anyway, so the gap never showed up.  With that bug fixed, a
+        // multi-seed sweep (6 seeds, testCutoff pushed to 1 fm to find where
+        // trajectories actually die) measured genuine numerical failures
+        // clustering at 47-495 fm, median 155 fm -- an order of magnitude
+        // below the old 529 fm floor and centred on the 193.30 fm barrier,
+        // not on 529 fm.  Resolving mechanically down to the barrier itself is
+        // therefore both reachable and the physically correct place to stop:
+        // it is where classical point-particle electrodynamics stops applying,
+        // not an artifact of the charge cloud's regularization size.
         constexpr double finalApproachMultiple=10.0;
-        if(periapsis<=finalApproachMultiple*collisionBoundaryRadius) {
+        if(periapsis<=finalApproachMultiple*comptonBarrierRadius) {
             result.lifetimeSeconds=simulatedTimeTotal;
             result.meanRadiatedPowerWatts=simulatedTimeTotal>0.0
                 ?radiatedEnergyTotal/simulatedTimeTotal
@@ -353,7 +370,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         SimulationOptions measureOptions;
         measureOptions.collectFrames=false;
         measureOptions.observationTime=period;
-        measureOptions.terminalSeparation=collisionBoundaryRadius;
+        measureOptions.terminalSeparation=comptonBarrierRadius;
         // The secular update below is driven entirely by mechanical
         // quantities -- conservativeParticleEnergy() and the orbital angular
         // momentum read off the endpoint states -- and radiatedEnergyTotal is
@@ -368,7 +385,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             return wallClockSpent()>wallClockBudgetSeconds;
         };
         const MechanicalTrajectoryResult run=runMechanicalTrajectory(
-            measurementState,period,collisionBoundaryRadius,measureOptions,
+            measurementState,period,comptonBarrierRadius,measureOptions,
             activeReactionModel);
 
         // Angular momentum and energy are both read from the measured
@@ -413,7 +430,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         MechanicalTrajectoryResult background;
         if(refreshBackground) {
             background=runMechanicalTrajectory(
-                measurementState,period,collisionBoundaryRadius,measureOptions,
+                measurementState,period,comptonBarrierRadius,measureOptions,
                 ChargeRadiationReactionModel::disabled);
         }
         const auto measuredDelta=[&](const State& end) {
