@@ -3164,10 +3164,22 @@ InteractionEvent simulateInteractionEvent(
                         ? gatePeriod : std::numeric_limits<double>::quiet_NaN();
                     result.boundObservedOrbits = gatePeriod > 0.0
                         ? observed/gatePeriod : 0.0;
-                    if (semiMajorAxis > collisionBoundaryRadius
+                    // The same secular extrapolation experiments 1/2 do, and
+                    // for a captured e+e- pair it closes the SAME collapse
+                    // this bound-state branch can itself classify as para or
+                    // ortho a few lines below -- so it inherits the same fix:
+                    // extrapolate to the Compton barrier, not to the pair's
+                    // charge-cloud/collision scale, which was never the
+                    // physically meaningful inner boundary (see README's
+                    // floor-lowering measurement).  comptonBarrierRadius is
+                    // an electron-specific constant, so it only applies when
+                    // the captured pair actually IS positronium; every other
+                    // pair keeps the previous collisionBoundaryRadius target.
+                    const double innerRadius = isPositronium(activePair)
+                        ? comptonBarrierRadius : collisionBoundaryRadius;
+                    if (semiMajorAxis > innerRadius
                         && result.boundObservedOrbits >= 1.0) {
-                        const double ratio =
-                            collisionBoundaryRadius/semiMajorAxis;
+                        const double ratio = innerRadius/semiMajorAxis;
                         const double collapse = (-finalEnergy)/(3.0*power)
                             *(1.0 - ratio*ratio*ratio);
                         if (collapse > 0.0 && std::isfinite(collapse)) {
@@ -4359,8 +4371,10 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
                   << "  minimum " << *extremes.first << " ps\n"
                   << "  mean    " << mean(collapseTimesPs) << " ps\n"
                   << "  maximum " << *extremes.second << " ps\n"
-                  << "This is the extrapolated classical inspiral time to "
-                     "0.01*a0 from the orbit-averaged radiated power (secular\n"
+                  << "This is the extrapolated classical inspiral time to the "
+                     "pair's inner boundary (the Compton barrier for e+e-,\n"
+                     "the collision boundary for every other pair) from the "
+                     "orbit-averaged radiated power (secular\n"
                      "dE/dt=P model; experiments 1 and 2 now measure this "
                      "mechanically instead, so the two are NOT comparable).  It "
                      "is not a quantum\nannihilation lifetime.  Only bound "

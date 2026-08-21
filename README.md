@@ -353,6 +353,19 @@ od \(529\) fm), więc raportowany czas kolapsu praktycznie się nie zmienia.
 Zmienia się natomiast GDZIE model deklaruje koniec swojej ważności — z
 przypadkowej skali chmury ładunku na skalę wyprowadzoną z fizyki.
 
+Ta sama poprawka dotyczy też Eksperymentu 5 ("Interactions"): schwytana para
+tam też bywa klasyfikowana jako para- lub orto-pozytonium
+(`InteractionOutcome::ParaPositronium`/`OrthoPositronium`), a "Bound-state CREM
+collapse time" ekstrapoluje dokładnie ten sam sekularny model co powyżej. Cel
+tej ekstrapolacji zmieniony analogicznie, warunkowo: `comptonBarrierRadius`
+dla schwytanej pary e⁺e⁻, `collisionBoundaryRadius` bez zmian dla każdej innej
+pary (`comptonBarrierRadius` jest stałą specyficzną dla elektronu, więc
+podmiana na sztywno byłaby fizycznie błędna dla mionium czy protonium).
+Granica, przy której trajektoria jest deklarowana jako dosłowne "Collision"
+(zatrzymanie całkowania mechanicznego, niezależne od tego, czy para się
+związała), zostaje nietknięta — to osobny, ogólny mechanizm numeryczny, nie
+ekstrapolacja czasu kolapsu.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
