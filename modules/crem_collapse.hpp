@@ -122,76 +122,17 @@ double osculatingPeriapsis(const OsculatingElements& elements,
         /(attractionParameter*(1.0+eccentricity));
 }
 
-// Periapsis under the FORCE-CLAMPED law, for orbits whose naive (pure 1/r)
-// periapsis above falls below floor (separationFloor(), the Compton barrier
-// for e+e-).  Below floor the specific radial force is pinned at the constant
-// value it has AT floor (see clampedSeparationVector in positronium.cpp),
-// a0 = attractionParameter/floor^2, rather than continuing to grow as 1/r^2,
-// so the effective potential turns LINEAR there instead of Coulombic:
-//
-//     u_eff(r) = -attractionParameter/floor + a0*(r-floor) + L^2/(2r^2),  r<floor
-//
-// continuous in both value and slope with the unclamped -attractionParameter/r
-// + L^2/(2r^2) at r=floor, since a0 is exactly the unclamped force there.  The
-// periapsis is where h(r) = specificEnergy - u_eff(r) first reaches zero
-// coming in from floor.  h is concave on (0,floor] with its one interior
-// maximum at r_min = (L^2/a0)^(1/3) -- the radius where the pinned force
-// exactly balances the centrifugal term, i.e. where an orbit would sit if it
-// had exactly enough energy to hover there -- and h -> -infinity as r -> 0,
-// so h is monotonically FALLING on (0, r_min) and bisection there finds the
-// one physically relevant root (the true turning point on the way in; the
-// mirror root beyond r_min, if any, is not on the infalling branch).
-//
-// If h(r_min) itself is not positive, the naive (E,L) pair has no strictly
-// accessible point below floor at all under the clamped force -- but h is a
-// SMOOTH function of (E,L), so a small negative h(r_min) does not mean no
-// orbit exists there, it means the pair is almost exactly circular AT
-// r_min (h(r_min)=0 is precisely that circular orbit, sitting where the
-// pinned force balances the centrifugal term).  This is the common case in
-// practice: once the secular jump extrapolation has circularized an orbit
-// enough that even its NAIVE apoapsis sits inside floor (a bookkeeping
-// state the unclamped a,e parametrization was never meant to describe, but
-// one the jump scheme can still reach), h(r_min) lands close to zero on
-// whichever side essentially by chance.  Comparing |h(r_min)| against the
-// LOCAL energy scale there (a0*r_min, the specific potential step across
-// the interval, equal to twice the centrifugal term at r_min by r_min's own
-// definition) keeps the margin scale-free rather than an arbitrary absolute
-// number.  Within that margin, r_min is returned.  Beyond it, the mismatch
-// is not marginal -- the clamped force law genuinely cannot supply an orbit
-// with this (E,L) -- and fabricating a root that is not really there would
-// be worse than saying so, so the naive value is returned unchanged (it is
-// no longer a good answer either at that point, but this function's job is
-// the clamped turning point, not repairing an (E,L) pair from further out).
-//
-// This is a closed-form correction, not a fit: it uses nothing about this
-// orbit beyond (E,L,attractionParameter,floor), the same inputs the naive
-// formula uses, so it costs nothing extra to evaluate and reduces to the
-// naive formula exactly whenever periapsis does not reach the floor.
-double regularizedPeriapsis(const OsculatingElements& elements,
-                            double attractionParameter,double floor) {
-    const double naive=osculatingPeriapsis(elements,attractionParameter);
-    if(!(floor>0.0)||!(naive<floor)) return naive;
+// Apoapsis of the two-body Kepler ellipse -- osculatingPeriapsis's mirror
+// root (a(1+e) instead of a(1-e)).  Infinity for an unbound (e>=1) orbit.
+double osculatingApoapsis(const OsculatingElements& elements,
+                          double attractionParameter) {
     const double L=elements.specificAngularMomentum;
-    const double a0=attractionParameter/(floor*floor);
-    if(!(a0>0.0)||!(L!=0.0)) return naive;
-    const double rMin=std::cbrt(L*L/a0);
-    const auto h=[&](double r) {
-        return elements.specificEnergy+2.0*attractionParameter/floor
-            -a0*r-L*L/(2.0*r*r);
-    };
-    double hi=std::min(rMin,floor);
-    const double hAtHi=h(hi);
-    if(!(hAtHi>0.0)) {
-        constexpr double marginalRelativeTolerance=0.05;
-        if(hi>0.0&&-hAtHi<=marginalRelativeTolerance*a0*hi) return hi;
-        return naive;
-    }
-    double lo=std::numeric_limits<double>::min();
-    for(int i=0;i<80;++i) {
-        const double mid=0.5*(lo+hi);
-        if(h(mid)>0.0) hi=mid; else lo=mid;
-    }
-    return 0.5*(lo+hi);
+    if(!(L!=0.0)) return 0.0;
+    const double eccentricity=std::sqrt(std::max(0.0,1.0
+        +2.0*elements.specificEnergy*L*L
+            /(attractionParameter*attractionParameter)));
+    if(!(eccentricity<1.0)) return std::numeric_limits<double>::infinity();
+    return L*L/(attractionParameter*(1.0-eccentricity));
 }
 
 // Unperturbed Kepler period at the given specific energy; used only to size
@@ -202,137 +143,229 @@ double osculatingPeriod(double specificEnergy,double attractionParameter) {
         /attractionParameter);
 }
 
-// Companion to regularizedPeriapsis(): the outer turning point (apoapsis)
-// under the same clamped force law.  Needed only to size regularizedPeriod()
-// below; nothing else in this file reads an apoapsis directly.  If the
-// orbit's naive apoapsis already sits at or beyond floor, the clamp never
-// touches that part of the orbit (it only pins the force below floor), so
-// the naive value is exact and is returned unchanged -- the common case,
-// since periapsis dips below floor long before apoapsis does for anything
-// but a nearly circular orbit.  Otherwise the whole orbit lives below floor,
-// and the true apoapsis is the SECOND root of regularizedPeriapsis()'s own
-// h(r): h falls monotonically for r > r_min (down to -infinity as
-// r -> infinity), so bisecting between r_min (where h is positive, subject
-// to the same marginal near-circular tolerance regularizedPeriapsis uses)
-// and floor finds it.
-double regularizedApoapsis(const OsculatingElements& elements,
-                           double attractionParameter,double floor) {
-    const double L=elements.specificAngularMomentum;
-    if(!(L!=0.0)) return 0.0;
-    const double eccentricity=std::sqrt(std::max(0.0,1.0
-        +2.0*elements.specificEnergy*L*L
-            /(attractionParameter*attractionParameter)));
-    if(!(eccentricity<1.0)) return std::numeric_limits<double>::infinity();
-    const double naive=L*L/(attractionParameter*(1.0-eccentricity));
-    if(!(floor>0.0)||!(naive<floor)) return naive;
-    const double a0=attractionParameter/(floor*floor);
-    if(!(a0>0.0)) return naive;
-    const double rMin=std::cbrt(L*L/a0);
-    const auto h=[&](double r) {
-        return elements.specificEnergy+2.0*attractionParameter/floor
-            -a0*r-L*L/(2.0*r*r);
+// Radial potential energy (per unit reduced mass) for the Plummer-softened
+// force law: the specific radial force is
+// F_r(r) = -attractionParameter/(r^2+floor^2), matching the true Coulomb
+// force -attractionParameter/r^2 for r >> floor and saturating smoothly
+// (rather than diverging) as r -> 0, with clampedSeparationVector in
+// positronium.cpp (r_eff = sqrt(r^2+floor^2)) as the force-law-level source
+// of this.  Integrating -dU/dr = F_r gives
+//
+//     U(r) = -(attractionParameter/floor) * atan(floor/r),
+//
+// with the integration constant fixed so U -> -attractionParameter/r as
+// r -> infinity (atan(floor/r) ~ floor/r there), matching the unclamped
+// Coulomb potential exactly in that limit.  Valid and smooth for every
+// r > 0: unlike the earlier hard-clamp regularization, there is no separate
+// branch for r above/below floor here at all -- one formula, everywhere,
+// which is what removes the kink in the force that stalled the adaptive
+// integrator at the old floor crossing.
+double regularizedPotentialEnergy(double r,double attractionParameter,
+                                  double floor) {
+    return -(attractionParameter/floor)*std::atan(floor/r);
+}
+
+// Radius where the softened force above exactly balances the centrifugal
+// term for angular momentum L -- the circular-orbit radius under this force
+// law.  Setting -dU/dr = L^2/r^3 gives
+// attractionParameter/(r^2+floor^2) = L^2/r^3, i.e.
+//
+//     attractionParameter*r^3 - L^2*r^2 - L^2*floor^2 = 0,
+//
+// a cubic with exactly one positive real root (Descartes: coefficient signs
+// +,-,0,- change sign once), interpolating smoothly between the deep limit
+// (floor dominates, r ~ floor) and the standard Kepler circular-orbit radius
+// L^2/attractionParameter (the floor -> 0 limit -- the identity this reduces
+// to away from the barrier).  No simpler closed form survives adding the
+// floor^2 term, so this is found by bisection.  The bracket is a physically
+// motivated guess (floor plus the naive circular radius), doubled until it
+// brackets a root as cheap insurance against a bad guess rather than a claim
+// of precision: bisection's absolute convergence over even a wildly
+// oversized bracket reaches machine precision at the relevant scale well
+// within the iteration budget below regardless of how tight the guess was.
+double criticalRadius(double L,double attractionParameter,double floor) {
+    const auto cubic=[&](double r) {
+        return attractionParameter*r*r*r-L*L*(r*r+floor*floor);
     };
-    double lo=rMin;
-    const double hAtLo=h(lo);
-    if(!(hAtLo>0.0)) {
-        constexpr double marginalRelativeTolerance=0.05;
-        if(lo>0.0&&-hAtLo<=marginalRelativeTolerance*a0*lo) return lo;
-        return naive;
-    }
-    double hi=floor;
-    for(int i=0;i<80;++i) {
+    double lo=std::numeric_limits<double>::min();
+    double hi=2.0*(floor+L*L/attractionParameter);
+    for(int i=0;i<200&&!(cubic(hi)>0.0);++i) hi*=2.0;
+    for(int i=0;i<200;++i) {
         const double mid=0.5*(lo+hi);
-        if(h(mid)>0.0) lo=mid; else hi=mid;
+        if(cubic(mid)>0.0) hi=mid; else lo=mid;
     }
     return 0.5*(lo+hi);
 }
 
-// Regularized orbital period, replacing osculatingPeriod() once part or all
-// of the orbit dips below separationFloor().  osculatingPeriod() sizes the
-// one-orbit measurement window in estimateCremCollapse(); once
-// regularizedPeriapsis() starts differing from the naive value, that window
-// is no longer one true period of the ACTUAL (clamped) orbit, and the
-// mismatch compounds into the jump extrapolation the same way periapsis's
-// own mismatch did before it was fixed (c909ee8/2bb2751): measured directly
-// on seed 42, dE/E per "orbit" grew markedly larger and noisier for several
-// checkpoints past the point osculatingPeriapsisState first regularized
-// (0.05, 0.048, ... vs <0.006 before), and dL/L flipped sign once.
+struct RegularizedTurningPoints {
+    double periapsis,apoapsis;
+    // False only in the naive-fallback branch below: there periapsis/
+    // apoapsis are NOT roots of h(r) (h(r_min) missed even the marginal
+    // circular-orbit tolerance, so no such roots exist), they are the plain
+    // osculatingPeriapsis/osculatingApoapsis values returned as the
+    // least-bad guess for STATE CONSTRUCTION (regularizedPeriapsis, via
+    // osculatingPeriapsisState, where any single r is better than none).
+    // regularizedPeriod's quadrature integrates h(r) between periapsis and
+    // apoapsis, which is only valid when they truly are h's roots -- with
+    // the naive fallback pair instead, h is negative at every quadrature
+    // node (that is exactly what "not even marginal" means), so every node
+    // gets skipped and the sum silently comes out zero.  Measured directly
+    // (seed 5, the checkpoint where h(r_min)/localScale missed the 5%
+    // margin by roughly a percentage point): regularizedPeriod returned
+    // 0 ps before this flag existed to stop it from even trying.
+    bool exact;
+};
+
+// Periapsis and apoapsis under the Plummer-softened force law
+// (regularizedPotentialEnergy), replacing the naive (pure 1/r) formulas
+// osculatingPeriapsis/osculatingApoapsis wherever the orbit's own scale
+// approaches separationFloor().  h(r) = specificEnergy -
+// regularizedPotentialEnergy(r) - L^2/(2r^2) is smooth for every r > 0 --
+// no piecewise construction, unlike the hard-clamp regularization this
+// replaces, since the force itself is now one formula everywhere -- concave
+// with a single interior maximum at r = criticalRadius(...), and
+// h -> -infinity as r -> 0 (centrifugal term dominates) or r -> infinity
+// (bound orbit, specificEnergy < 0), so it has at most two roots straddling
+// that maximum, found by bisecting on each side of it.  Cost is negligible
+// (a few hundred evaluations of an elementary function) against the
+// mechanical integration this sizes a measurement for, so -- unlike the
+// hard-clamp predecessor -- there is no need to shortcut to the naive
+// formula when the orbit is far from the barrier: the exact formula already
+// reduces to it there (the correction is a part in 10^7 at Bohr-radius
+// scale), so always using it is both simpler and correct everywhere.
 //
-// No closed form exists here in general: the radial motion follows the
-// KEPLER effective potential above floor and the LINEAR (pinned-force) one
-// below it, and only the Kepler half admits the standard eccentric-anomaly
-// substitution.  The period is instead found by direct quadrature of
-// T = 2 * integral[r_p,r_a] dr / sqrt(2 h(r)), using the substitution
-// r(theta) = (r_p+r_a)/2 + (r_a-r_p)/2 * cos(theta), theta in (0,pi): this
-// removes BOTH endpoint (turning-point) singularities for ANY smooth h with
-// simple roots there -- not just Kepler's -- because near either root
+// If h(r_min) itself is not positive, the (E,L) pair has no strictly
+// accessible orbit at all under this force law -- but h is smooth in (E,L),
+// so a small negative h(r_min) means the pair is almost exactly circular AT
+// r_min (h(r_min)=0 is precisely that circular orbit), not that no orbit
+// exists.  Comparing |h(r_min)| against the local force scale there
+// (attractionParameter*r_min/(r_min^2+floor^2), i.e. force(r_min)*r_min, the
+// specific potential step across a distance ~r_min) keeps the margin
+// scale-free.  Within that margin both turning points collapse to r_min (a
+// genuinely circular orbit); beyond it the naive values are returned as the
+// least-bad fallback, since fabricating a root that is not there would be
+// worse than saying so.
+RegularizedTurningPoints regularizedTurningPoints(
+    const OsculatingElements& elements,double attractionParameter,
+    double floor) {
+    const double naivePeriapsis=
+        osculatingPeriapsis(elements,attractionParameter);
+    const double naiveApoapsis=
+        osculatingApoapsis(elements,attractionParameter);
+    const double L=elements.specificAngularMomentum;
+    if(!(floor>0.0)||!(L!=0.0)) return {naivePeriapsis,naiveApoapsis,false};
+    const double rMin=criticalRadius(L,attractionParameter,floor);
+    if(!(rMin>0.0)||!std::isfinite(rMin))
+        return {naivePeriapsis,naiveApoapsis,false};
+    const auto h=[&](double r) {
+        return elements.specificEnergy
+            -regularizedPotentialEnergy(r,attractionParameter,floor)
+            -L*L/(2.0*r*r);
+    };
+    const double hAtMin=h(rMin);
+    if(!(hAtMin>0.0)) {
+        const double localScale=
+            attractionParameter*rMin/(rMin*rMin+floor*floor);
+        constexpr double marginalRelativeTolerance=0.05;
+        if(localScale>0.0&&-hAtMin<=marginalRelativeTolerance*localScale)
+            return {rMin,rMin,true};
+        return {naivePeriapsis,naiveApoapsis,false};
+    }
+    double periapsisLo=std::numeric_limits<double>::min();
+    double periapsisHi=rMin;
+    for(int i=0;i<200;++i) {
+        const double mid=0.5*(periapsisLo+periapsisHi);
+        if(h(mid)>0.0) periapsisHi=mid; else periapsisLo=mid;
+    }
+    double apoapsisLo=rMin;
+    double apoapsisHi=(std::isfinite(naiveApoapsis)&&naiveApoapsis>rMin)
+        ?naiveApoapsis:2.0*rMin;
+    for(int i=0;i<200&&!(h(apoapsisHi)<0.0);++i) apoapsisHi*=2.0;
+    for(int i=0;i<200;++i) {
+        const double mid=0.5*(apoapsisLo+apoapsisHi);
+        if(h(mid)>0.0) apoapsisLo=mid; else apoapsisHi=mid;
+    }
+    return {0.5*(periapsisLo+periapsisHi),0.5*(apoapsisLo+apoapsisHi),true};
+}
+
+double regularizedPeriapsis(const OsculatingElements& elements,
+                            double attractionParameter,double floor) {
+    return regularizedTurningPoints(elements,attractionParameter,floor)
+        .periapsis;
+}
+
+// Regularized orbital period, replacing osculatingPeriod() once the orbit's
+// own scale approaches separationFloor().  osculatingPeriod() sizes the
+// one-orbit measurement window in estimateCremCollapse(); once
+// regularizedTurningPoints() starts differing materially from the naive
+// values, that window is no longer one true period of the actual (softened)
+// orbit, and the mismatch compounds into the jump extrapolation the same
+// way periapsis's own mismatch did before it was fixed (c909ee8/2bb2751).
+//
+// No closed form exists here in general -- the softened force does not
+// admit the standard eccentric-anomaly substitution -- so the period is
+// found by direct quadrature of T = 2 * integral[r_p,r_a] dr / sqrt(2 h(r)),
+// using the substitution r(theta) = (r_p+r_a)/2 + (r_a-r_p)/2 * cos(theta),
+// theta in (0,pi): this removes BOTH endpoint (turning-point) singularities
+// for ANY smooth h with simple roots there, because near either root
 // h(r) ~ h'(r_root)*(r-r_root) while r(theta)-r_root ~ -/+(r_a-r_p)/4 *
 // theta^2 near theta=0/pi, so h(r(theta)) ~ theta^2 while dr/dtheta ~ theta,
-// and the ratio in the integrand stays finite.  h itself is the correct
-// PIECEWISE potential (Kepler above floor, linear below), continuous in
-// value and slope at floor (same matching as regularizedPeriapsis), so one
-// integral spans both regimes without solving them separately and matching
-// a crossing time by hand.
+// and the ratio in the integrand stays finite.  h is now the single smooth
+// formula everywhere (no piecewise potential to match across a boundary the
+// way the hard-clamp version needed), so this integral is, if anything,
+// better conditioned than its predecessor: there is no interior kink in
+// curvature left for the quadrature to sit near.
 //
 // Fixed-node midpoint quadrature is used rather than Gauss-Legendre so no
 // tabulated node/weight constants need transcribing; every node falls
 // strictly inside (0,pi), so the removable endpoint singularities are never
-// evaluated at all.  Checked against the closed form in the region where
-// the whole orbit is still Kepler (r_p >= floor, where the true answer is
-// osculatingPeriod() exactly): relative error 1e-14 already at N=50, i.e.
-// machine precision, not just "good enough" -- the substitution removes the
-// singularity exactly, so there is no algebraic tail to wait out there.
-// A genuinely mixed orbit (periapsis clamped, apoapsis still Kepler)
-// converges almost as cleanly -- 2.5e-8 at N=200 for periapsis a comfortable
-// factor of ~2 inside floor -- EXCEPT when periapsis happens to land within
-// about a part in 1e4 of floor itself: there h(r) is nearly flat near its
-// root (a near-double-root, the same conditioning problem
-// regularizedPeriapsis's own bisection has there, not an artifact of this
-// quadrature specifically), and convergence with N stops being monotonic
-// (checked: N=3200 and 6400 still disagreed at the percent level in that
-// configuration).  N=200 is not raised to chase that narrow coincidence: it
-// is a rare, narrow window in (E,L), the scheme already carries a 3%
-// per-jump tolerance elsewhere, and this sizes a measurement WINDOW, not a
-// reported quantity, so an occasional percent-level miss there is absorbed
-// by the same machinery that already tolerates it.  Cost is negligible
-// either way (a few hundred h(r) evaluations against the full mechanical
-// integration this sizes the window for).
+// evaluated at all.  N=200 carries over unchanged from the hard-clamp
+// version (checked there to machine precision against the closed form in
+// the far-field limit); cost is negligible either way (a few hundred h(r)
+// evaluations against the full mechanical integration this sizes the window
+// for), and always running the same quadrature -- rather than shortcutting
+// to osculatingPeriod() far from the barrier -- keeps this function as
+// simple as regularizedTurningPoints() above for the same reason.
 double regularizedPeriod(const OsculatingElements& elements,
                          double attractionParameter,double floor) {
     const double naive=osculatingPeriod(
         elements.specificEnergy,attractionParameter);
-    const double periapsis=regularizedPeriapsis(
-        elements,attractionParameter,floor);
-    if(!(floor>0.0)||!(periapsis<floor)) return naive;
-    const double apoapsis=regularizedApoapsis(
-        elements,attractionParameter,floor);
+    if(!(floor>0.0)) return naive;
+    const RegularizedTurningPoints turningPoints=
+        regularizedTurningPoints(elements,attractionParameter,floor);
+    // Naive fallback (turningPoints.exact == false): periapsis/apoapsis are
+    // NOT roots of h(r) below, so integrating between them is meaningless --
+    // h is negative at every quadrature node (that is exactly what "missed
+    // even the marginal tolerance" means), every node gets skipped, and the
+    // sum silently comes out zero.  Measured directly: this is precisely
+    // what happened before this check existed (seed 5, one checkpoint whose
+    // h(r_min)/localScale missed the 5% margin by about a point -- naive is
+    // still the least-bad state-construction guess regularizedPeriapsis
+    // hands to osculatingPeriapsisState in that case, but it is not a valid
+    // integration bound here, so this falls back to osculatingPeriod()
+    // instead of the quadrature).
+    if(!turningPoints.exact) return naive;
+    const double periapsis=turningPoints.periapsis;
+    const double apoapsis=turningPoints.apoapsis;
     const double L=elements.specificAngularMomentum;
     if(!(apoapsis>periapsis)) {
-        // Degenerate: periapsis and apoapsis have collapsed onto (about) the
-        // same radius -- both regularizedPeriapsis and regularizedApoapsis
-        // hit their own marginal-near-circular tolerance and returned the
-        // same r_min, which happens exactly in the checkpoint-28-and-beyond
-        // regime this function exists for (h(r_min) barely failing to clear
-        // zero, i.e. an orbit sitting almost exactly at the bottom of the
-        // clamped effective-potential well).  The RADIAL period (periapsis
-        // to periapsis) is not just small there, it is the wrong question:
-        // for a (near-)circular orbit under a force law that does not
-        // satisfy Bertrand's theorem, radial and angular period are
-        // different things, and "one orbit" for a nearly circular orbit
-        // means one REVOLUTION, not one (vanishing) radial oscillation.
-        // phi-dot = L/r^2 by definition of specific angular momentum, so
-        // the angular period is 2*pi*r^2/L, evaluated at the shared radius.
+        // Degenerate: both turning points collapsed onto (about) the same
+        // radius -- regularizedTurningPoints' own marginal branch, an orbit
+        // sitting almost exactly at the bottom of the effective-potential
+        // well.  The RADIAL period is not just small there, it is the wrong
+        // question: for a force law that does not satisfy Bertrand's
+        // theorem, radial and angular period differ, and "one orbit" for a
+        // near-circular orbit means one REVOLUTION, not one (vanishing)
+        // radial oscillation.  phi-dot = L/r^2 by definition of specific
+        // angular momentum, so the angular period is 2*pi*r^2/L at the
+        // shared radius.
         const double r=0.5*(periapsis+apoapsis);
         return (L!=0.0)?2.0*pi*r*r/std::abs(L):naive;
     }
-    const double a0=attractionParameter/(floor*floor);
     const auto h=[&](double r) {
-        if(r>=floor) {
-            return elements.specificEnergy+attractionParameter/r
-                -L*L/(2.0*r*r);
-        }
-        return elements.specificEnergy+2.0*attractionParameter/floor
-            -a0*r-L*L/(2.0*r*r);
+        return elements.specificEnergy
+            -regularizedPotentialEnergy(r,attractionParameter,floor)
+            -L*L/(2.0*r*r);
     };
     constexpr int quadratureNodes=200;
     double halfPeriod=0.0;

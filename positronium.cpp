@@ -579,22 +579,43 @@ struct SimulationOptions {
     bool radiatedEnergyBookkeeping = true;
 };
 
-// Rescales a source-to-target separation to have magnitude at least `floor`,
-// keeping its direction -- the same regularization idea as gravitational
-// softening in N-body codes, except tied to a physically motivated radius
-// (the Compton barrier for e+e-) instead of an arbitrary softening length.
-// Below the floor every force/field law this feeds evaluates as if the pair
-// were still exactly at the floor, so nothing it computes diverges and the
-// integrator can carry a close encounter through instead of failing on it.
+// Rescales a source-to-target separation to an effective distance
+// sqrt(r^2+floor^2), keeping its direction -- Plummer-style gravitational
+// softening, tied to a physically motivated radius (the Compton barrier for
+// e+e-) instead of an arbitrary softening length. Force/field laws fed this
+// vector see r_eff -> floor (bounded) as r -> 0 and r_eff -> r (unchanged)
+// for r >> floor, with EVERY derivative continuous in between: unlike a hard
+// clamp to floor (this function's previous form, r_eff = max(r,floor)),
+// there is no kink in the force at r = floor. That kink was measured
+// directly to stall the adaptive integrator's step-doubling error probe
+// (repeated failed subdivision, maximumDepth exhausted) exactly where an
+// inspiralling orbit first crossed the old hard floor -- a structural
+// property of a piecewise-constant regularization, not a tolerance or
+// step-size problem, so no amount of retrying fixed it.
+//
+// The correction this makes to the TRUE force is negligible except near
+// floor: at r = 10*floor it is already only 0.5%, and at production
+// (Bohr-radius) separations, ~500x floor, it is a few parts in 10^7 --
+// several orders below every other tolerance already accepted in this
+// engine. It is not confined to r < floor the way the hard clamp was; it is
+// evaluated identically for every r, which is what removes the kink (a
+// switch between "identity" and "constant" at one point is exactly where a
+// derivative discontinuity has to live).
+//
 // True coincidence has no direction to preserve; any fixed one works, since
-// every consumer only reads the clamped MAGNITUDE from it in that case.
+// every consumer only reads the returned MAGNITUDE from it in that case, and
+// that magnitude is exactly floor there (sqrt(0+floor^2)), so the general
+// formula already gives the right answer -- the special case below exists
+// only to avoid dividing trueSeparation by a zero trueDistance.
 Vec3 clampedSeparationVector(const Vec3& trueSeparation, double floor) {
+    if (!(floor > 0.0)) return trueSeparation;
     const double trueDistance = trueSeparation.norm();
-    if (!(floor > 0.0) || !(trueDistance < floor)) return trueSeparation;
+    const double effectiveDistance =
+        std::sqrt(trueDistance*trueDistance + floor*floor);
     if (!(trueDistance > std::numeric_limits<double>::min())) {
-        return Vec3{floor, 0.0, 0.0};
+        return Vec3{effectiveDistance, 0.0, 0.0};
     }
-    return trueSeparation * (floor / trueDistance);
+    return trueSeparation * (effectiveDistance / trueDistance);
 }
 
 // The floor itself: comptonBarrierRadius for e+e-, since it is derived from
