@@ -39,6 +39,7 @@ StateHistory causalInitialHistory(const State& initial,double spanFactor=8.0,
             // Bookkeeping starts at the requested t=0 event, not in the
             // hidden causal preparation interval.
             sample.radiatedEnergy=initial.radiatedEnergy;
+            sample.orbitalRadiatedEnergy=initial.orbitalRadiatedEnergy;
             sample.radiatedMomentum=initial.radiatedMomentum;
             sample.radiatedAngularMomentum=initial.radiatedAngularMomentum;
             synchronizeCovariantDipoles(sample);

@@ -1831,6 +1831,12 @@ void integrateElectrodynamicStep(State& s, double dt,
     const double dipoleRadiatedEnergy=trapezoid(
         radiation.magneticDipoleFlux.energy,s.previousDipoleFluxEnergy);
     trial.dipoleConstraintEnergy-=dipoleRadiatedEnergy;
+    // E1-only, M1 excluded: valid by linearity of the trapezoid rule in its
+    // rate argument, so this is exactly trapezoid(outwardFlux-
+    // magneticDipoleFlux, previousFluxEnergy-previousDipoleFluxEnergy)
+    // without a third trapezoid() call.  See orbitalRadiatedEnergy's own
+    // comment in state.hpp for why this is kept separate from radiatedEnergy.
+    trial.orbitalRadiatedEnergy += radiatedEnergyIncrement-dipoleRadiatedEnergy;
     trial.radiatedMomentum += trapezoidVector(
         radiation.outwardFlux.momentum,s.previousFluxMomentum);
     trial.radiatedAngularMomentum += trapezoidVector(

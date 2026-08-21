@@ -19,6 +19,21 @@ struct State {
     Vec3 firstProperDipole,secondProperDipole;
     double time=0.0;
     double radiatedEnergy=0.0;
+    // Same accumulation as radiatedEnergy, but the E1 (charge-charge,
+    // orbital) far-zone flux only, with the M1 (magnetic-dipole/spin-
+    // precession) channel excluded rather than merged in.  Exists because
+    // radiatedEnergy's merge is exactly what makes it useless as an
+    // orbital-decay diagnostic near/below the Compton barrier: M1 dominates
+    // it by orders of magnitude there (does not recoil the orbit at all),
+    // while orbitalRadiatedEnergy is computed from the exact retarded far-
+    // zone Poynting integral and does not share conservativeParticleEnergy's
+    // Darwin/near-field approximation, so it stays meaningful exactly where
+    // that approximation (period comparable to the light-crossing time)
+    // breaks down.  Diagnostic-only: nothing currently reads it in
+    // production, and it costs nothing extra to accumulate once the flux
+    // quadrature (computeOutwardFlux) is already being computed for
+    // radiatedEnergy's own sake.
+    double orbitalRadiatedEnergy=0.0;
     double dipoleConstraintEnergy=0.0;
     // Accumulated phase of the orbit-following zero-point field, integral of
     // the osculating orbital angular frequency.  Carried in the state because
