@@ -17,6 +17,7 @@
 #include <TGraphErrors.h>
 #include <TInterpreter.h>
 #include <TLegend.h>
+#include <TLegendEntry.h>
 #include <TLatex.h>
 #include <TLine.h>
 #include <TH1D.h>
@@ -1408,16 +1409,37 @@ std::string compactNumber(double value, int precision = 5) {
     return output.str();
 }
 
+// One line of an analysis box, tinted to match the provenance colour
+// convention (plot_style::crem/sampled/experimental/theory) of whichever
+// series it describes -- so a reader can tell what a number is FOR without
+// tracing it back to a legend.  Converts implicitly from a bare string
+// literal, defaulting to kBlack, so a line with no single-series meaning
+// (counts, captions, warnings) needs no change at the call site.
+struct AnalysisLine {
+    std::string text;
+    int color;
+    AnalysisLine(std::string t, int c = kBlack) : text(std::move(t)), color(c) {}
+    // A bare string literal is a const char*, and reaching AnalysisLine from
+    // one needs a SINGLE user-defined conversion -- going through the
+    // std::string overload above would be two (const char*->string->
+    // AnalysisLine) chained implicit conversions, which C++ does not allow,
+    // and every brace-enclosed lines list below mixes literals with coloured
+    // AnalysisLine(...) entries.
+    AnalysisLine(const char* t, int c = kBlack) : text(t), color(c) {}
+};
+
 TPaveText* drawAnalysisBox(std::vector<std::unique_ptr<TPaveText>>& storage,
                            double x1, double y1, double x2, double y2,
-                           const std::vector<std::string>& lines,
+                           const std::vector<AnalysisLine>& lines,
                            double textSize = 0.027) {
     auto box = std::make_unique<TPaveText>(x1, y1, x2, y2, "NDC");
     box->SetFillColorAlpha(kWhite, 0.84);
     box->SetTextAlign(12);
     box->SetTextFont(42);
     box->SetTextSize(textSize);
-    for (const std::string& line : lines) box->AddText(line.c_str());
+    for (const AnalysisLine& line : lines) {
+        box->AddText(line.text.c_str())->SetTextColor(line.color);
+    }
     box->Draw();
     TPaveText* result = box.get();
     storage.push_back(std::move(box));
@@ -1962,22 +1984,25 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     const double boxX2 = boxUpperRight ? 0.97 : 0.63;
     const double boxY2 = boxUpperRight ? 0.90 : 0.56;
     drawAnalysisBox(analysisBoxes, boxX1, boxY1, boxX2, boxY2, {
-        "N = " + std::to_string(runCount) + ":  "
+        AnalysisLine("N = " + std::to_string(runCount) + ":  "
             + std::to_string(survival.eventCount) + " collapsed,  "
             + std::to_string(survival.censoredCount) + " censored  ("
             + compactNumber(completionPercent, 3) + "% complete)",
-        "Kaplan-Meier; ticks = censored, bars = Greenwood",
-        survival.medianReached
+            plot_style::crem()),
+        AnalysisLine("Kaplan-Meier; ticks = censored, bars = Greenwood",
+            plot_style::crem()),
+        AnalysisLine(survival.medianReached
             ? "KM median = " + compactNumber(survival.medianSurvival)
                 + " " + timeUnit
             : "KM median not reached; S = "
                 + compactNumber(survival.survivalAtHorizon, 3) + " at "
                 + compactNumber(survivalHorizon) + " " + timeUnit,
-        "KM RMST = " + compactNumber(survival.restrictedMean)
+            plot_style::crem()),
+        AnalysisLine("KM RMST = " + compactNumber(survival.restrictedMean)
             + " #pm " + compactNumber(survival.restrictedMeanError)
-            + " " + timeUnit,
-        "completed-run mean = " + compactNumber(collapseMoments.mean)
-            + " " + timeUnit,
+            + " " + timeUnit, plot_style::crem()),
+        AnalysisLine("completed-run mean = " + compactNumber(collapseMoments.mean)
+            + " " + timeUnit, plot_style::crem()),
         completionPercent < 90.0
             ? "Informative censoring: the two biases have opposite"
             : "High completion: the two figures agree.",
@@ -1985,10 +2010,10 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             ? "sign. Raise --crem-wallclock-budget-s to close the gap."
             : "",
         plot_style::key(true, false, true, false),
-        "#tau_{exp} = " + compactNumber(experimentalLifetime) + " " + timeUnit
-            + " (scale reference only, not a prediction)",
-        isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
-               : "Vallery et al., PRL 90 (2003)"
+        AnalysisLine("#tau_{exp} = " + compactNumber(experimentalLifetime) + " " + timeUnit
+            + " (scale reference only, not a prediction)", plot_style::experimental()),
+        AnalysisLine(isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
+               : "Vallery et al., PRL 90 (2003)", plot_style::experimental())
     }, 0.019);
 
     // Annihilation-time spectrum built from the MEASURED decay rate, drawn
@@ -2027,18 +2052,23 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     }
     drawAnalysisBox(analysisBoxes, 0.40, 0.50, 0.95, 0.91, {
         plot_style::key(true, false, true, false),
-        "Measured data, drawn analytically - no Monte Carlo.",
-        "Decay law N(t) #propto exp(-t/#tau) with the published",
-        "rate; the spectrum follows in closed form.",
-        "#lambda = " + compactNumber(rateReference.value, 6) + " #pm "
+        AnalysisLine("Measured data, drawn analytically - no Monte Carlo.",
+            plot_style::experimental()),
+        AnalysisLine("Decay law N(t) #propto exp(-t/#tau) with the published",
+            plot_style::experimental()),
+        AnalysisLine("rate; the spectrum follows in closed form.",
+            plot_style::experimental()),
+        AnalysisLine("#lambda = " + compactNumber(rateReference.value, 6) + " #pm "
             + compactNumber(rateReference.totalUncertainty, 2) + " "
-            + rateReference.unit,
-        "#tau_{exp} = " + compactNumber(experimentalLifetime) + " #pm "
+            + rateReference.unit, plot_style::experimental()),
+        AnalysisLine("#tau_{exp} = " + compactNumber(experimentalLifetime) + " #pm "
             + compactNumber(experimentalLifetimeError) + " " + timeUnit,
-        isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
-               : "Vallery et al., PRL 90 (2003)",
-        "blue dashed: CREM collapse #LTt#GT = "
+            plot_style::experimental()),
+        AnalysisLine(isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
+               : "Vallery et al., PRL 90 (2003)", plot_style::experimental()),
+        AnalysisLine("blue dashed: CREM collapse #LTt#GT = "
             + compactNumber(collapseMoments.mean, 4) + " " + timeUnit,
+            plot_style::crem()),
         "#tau_{exp}/#LTt#GT #approx " + compactNumber(experimentalRatio, 3)
             + ": the classical inspiral is far faster.",
         "The two are different processes and are not",
@@ -2093,16 +2123,21 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     // sits ABOVE the diagonal and the region below it is empty.
     drawAnalysisBox(analysisBoxes, 0.44, 0.13, 0.96, 0.46, {
         plot_style::key(true, false, false, true),
-        "Reference: da/dt = -C/a^{2}, C = 8ke^{4}/(6#pi#varepsilon_{0}c^{3}m^{2}),",
-        "orbit-averaged with the DIPOLE factor (1+e^{2}/2)/(1-e^{2})^{5/2}",
-        "evaluated at each trajectory's own a and e. Zero free parameters.",
-        "completed trajectories: N = "
-            + std::to_string(measuredCollapse.size()),
+        AnalysisLine("Reference: da/dt = -C/a^{2}, C = 8ke^{4}/(6#pi#varepsilon_{0}c^{3}m^{2}),",
+            plot_style::theory()),
+        AnalysisLine("orbit-averaged with the DIPOLE factor (1+e^{2}/2)/(1-e^{2})^{5/2}",
+            plot_style::theory()),
+        AnalysisLine("evaluated at each trajectory's own a and e. Zero free parameters.",
+            plot_style::theory()),
+        AnalysisLine("completed trajectories: N = "
+            + std::to_string(measuredCollapse.size()), plot_style::crem()),
         "#LTt_{CREM}/t_{classical}#GT = "
             + compactNumber(collapseRatioMoments.mean, 4)
             + " #pm " + compactNumber(collapseRatioMoments.sigma, 3),
-        "dashed: exact agreement. Eccentricity is held fixed in",
-        "the reference; radiation actually circularizes the orbit."
+        AnalysisLine("dashed: exact agreement. Eccentricity is held fixed in",
+            plot_style::theory()),
+        AnalysisLine("the reference; radiation actually circularizes the orbit.",
+            plot_style::theory())
     }, 0.019);
 
     // --- Pad 4: radiation sector against the Larmor rate ---
@@ -2162,13 +2197,18 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     // model's narrow peak sits on the left, leaving this corner clear.
     drawAnalysisBox(analysisBoxes, 0.48, 0.56, 0.96, 0.91, {
         plot_style::key(true, false, false, true),
-        "Reference: P = |d''|^{2}/(6#pi#varepsilon_{0}c^{3}), d = e r,",
-        "orbit-averaged at each checkpoint's own a and e.",
-        "checkpoint samples: N = " + std::to_string(larmorRatios.size()),
+        AnalysisLine("Reference: P = |d''|^{2}/(6#pi#varepsilon_{0}c^{3}), d = e r,",
+            plot_style::theory()),
+        AnalysisLine("orbit-averaged at each checkpoint's own a and e.",
+            plot_style::theory()),
+        AnalysisLine("checkpoint samples: N = " + std::to_string(larmorRatios.size()),
+            plot_style::crem()),
         "#LTP_{CREM}/P_{Larmor}#GT = " + compactNumber(larmorMoments.mean, 4)
             + " #pm " + compactNumber(larmorMoments.sigma, 3),
-        "solid line at 1: coherent electric dipole",
-        "dotted line at 0.5: two charges radiating incoherently"
+        AnalysisLine("solid line at 1: coherent electric dipole",
+            plot_style::theory()),
+        AnalysisLine("dotted line at 0.5: two charges radiating incoherently",
+            plot_style::theory())
     }, 0.019);
 
     // The diagnostics page used to hold four closure histograms of the photon
@@ -2204,10 +2244,12 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     styleBinCounts(calibrationPowerHistogram);
     calibrationPowerHistogram.Draw("HIST TEXT0");
     drawAnalysisBox(analysisBoxes, 0.50, 0.58, 0.95, 0.91, {
-        "Trajectories with a finite power: N = "
-            + std::to_string(calibrationPowers.size()),
-        "#LTP#GT = " + compactNumber(powerMoments.mean) + " W",
-        "#sigma(P) = " + compactNumber(powerMoments.sigma) + " W",
+        AnalysisLine("Trajectories with a finite power: N = "
+            + std::to_string(calibrationPowers.size()), plot_style::crem()),
+        AnalysisLine("#LTP#GT = " + compactNumber(powerMoments.mean) + " W",
+            plot_style::crem()),
+        AnalysisLine("#sigma(P) = " + compactNumber(powerMoments.sigma) + " W",
+            plot_style::crem()),
         "Radiated energy / elapsed time, averaged over each",
         "trajectory's full mechanical run to the boundary",
         "(not extrapolated)."
@@ -2255,9 +2297,12 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         ? 100.0*couplingMoments.mean/hyperfineSplittingGHz : 0.0;
     drawAnalysisBox(analysisBoxes, 0.42, 0.55, 0.95, 0.91, {
         plot_style::key(true, false, true, false),
-        "trajectories: N = " + std::to_string(couplingMagnitudes.size()),
-        "#LT|U_{dd}|/h#GT = " + compactNumber(couplingMoments.mean, 4) + " GHz",
-        "measured o-Ps/p-Ps splitting = 203.3941 GHz",
+        AnalysisLine("trajectories: N = " + std::to_string(couplingMagnitudes.size()),
+            plot_style::crem()),
+        AnalysisLine("#LT|U_{dd}|/h#GT = " + compactNumber(couplingMoments.mean, 4) + " GHz",
+            plot_style::crem()),
+        AnalysisLine("measured o-Ps/p-Ps splitting = 203.3941 GHz",
+            plot_style::experimental()),
         "classical dipolar term covers "
             + compactNumber(couplingFraction, 3) + "% of it",
         "The remainder is virtual annihilation and the Fermi",
@@ -3861,10 +3906,13 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     fittedRutherfordHistogram.Draw("HIST SAME");
     TLegend angularLegend(0.55, 0.69, 0.89, 0.89);
     angularLegend.SetFillColorAlpha(kWhite, 0.88);
-    angularLegend.AddEntry(&angularCrossSection, "trajectory model", "lep");
-    angularLegend.AddEntry(&rutherfordHistogram, "Rutherford (bin average)", "l");
+    angularLegend.AddEntry(&angularCrossSection, "trajectory model", "lep")
+        ->SetTextColor(plot_style::crem());
+    angularLegend.AddEntry(&rutherfordHistogram, "Rutherford (bin average)", "l")
+        ->SetTextColor(plot_style::theory());
     angularLegend.AddEntry(&fittedRutherfordHistogram,
-                           "C_{R} #times Rutherford fit", "l");
+                           "C_{R} #times Rutherford fit", "l")
+        ->SetTextColor(plot_style::crem());
     angularLegend.Draw();
     std::string normalizationEstimate = "C_{R} = "
         + compactNumber(rutherfordNormalization);
@@ -3874,17 +3922,21 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     }
     drawAnalysisBox(beamAnalysisBoxes, 0.12, 0.10, 0.57, 0.34, {
         plot_style::key(true, false, false, true),
-        "MC trajectories: N = " + std::to_string(runCount),
-        "Fit: C_{R} d#sigma_{R}/d#Omega (binomial MLE)",
-        normalizationEstimate,
-        "95% Wilson: [" + compactNumber(rutherfordNormalizationLower95)
+        AnalysisLine("MC trajectories: N = " + std::to_string(runCount),
+            plot_style::crem()),
+        AnalysisLine("Fit: C_{R} d#sigma_{R}/d#Omega (binomial MLE)",
+            plot_style::crem()),
+        AnalysisLine(normalizationEstimate, plot_style::crem()),
+        AnalysisLine("95% Wilson: [" + compactNumber(rutherfordNormalizationLower95)
             + ", " + compactNumber(rutherfordNormalizationUpper95) + "]",
-        "Reference: pure Coulomb C_{R}=1",
+            plot_style::crem()),
+        AnalysisLine("Reference: pure Coulomb C_{R}=1", plot_style::theory()),
         configuration.shortRangeFocus
             ? "C_{R} applies only to escaped events; cutoff excluded"
             : "C_{R} applies to the escaped elastic channel",
-        "Experimental:",
-        "no matching free e^{+}e^{-} dataset loaded"
+        AnalysisLine("Experimental:", plot_style::experimental()),
+        AnalysisLine("no matching free e^{+}e^{-} dataset loaded",
+            plot_style::experimental())
     }, 0.020);
 
     distributionsPage.cd(2);
@@ -3898,20 +3950,26 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     cumulativeFit.Draw("L SAME");
     TLegend cumulativeLegend(0.53, 0.68, 0.89, 0.89);
     cumulativeLegend.SetFillColorAlpha(kWhite, 0.88);
-    cumulativeLegend.AddEntry(&cumulativeGraph, "trajectory model", "lep");
-    cumulativeLegend.AddEntry(&cumulativeRutherford, "Rutherford", "l");
+    cumulativeLegend.AddEntry(&cumulativeGraph, "trajectory model", "lep")
+        ->SetTextColor(plot_style::crem());
+    cumulativeLegend.AddEntry(&cumulativeRutherford, "Rutherford", "l")
+        ->SetTextColor(plot_style::theory());
     cumulativeLegend.AddEntry(&cumulativeFit,
-                              "projection of panel-1 fit", "l");
+                              "projection of panel-1 fit", "l")
+        ->SetTextColor(plot_style::crem());
     cumulativeLegend.Draw();
     drawAnalysisBox(beamAnalysisBoxes, 0.12, 0.10, 0.58, 0.32, {
         plot_style::key(true, false, false, true),
-        "MC trajectories: N = " + std::to_string(runCount),
-        "Model: C_{R} #pi l_{C}^{2} cot^{2}(#theta/2)",
-        "C_{R} from differential-panel fit = "
-            + compactNumber(rutherfordNormalization),
+        AnalysisLine("MC trajectories: N = " + std::to_string(runCount),
+            plot_style::crem()),
+        AnalysisLine("Model: C_{R} #pi l_{C}^{2} cot^{2}(#theta/2)",
+            plot_style::theory()),
+        AnalysisLine("C_{R} from differential-panel fit = "
+            + compactNumber(rutherfordNormalization), plot_style::crem()),
         "No independent fit: thresholds are correlated",
-        "Experimental:",
-        "no matching cuts/covariance dataset loaded"
+        AnalysisLine("Experimental:", plot_style::experimental()),
+        AnalysisLine("no matching cuts/covariance dataset loaded",
+            plot_style::experimental())
     }, 0.022);
     distributionsPage.cd(3);
     std::unique_ptr<TPaveText> thirdPanelInformation;
@@ -3921,17 +3979,19 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         const GaussianFitSummary energyLossSummary =
             gaussianMaximumLikelihood(fiducialEnergyLossesEv);
         drawAnalysisBox(beamAnalysisBoxes, 0.45, 0.55, 0.94, 0.90, {
-            "Accepted trajectories: N = "
-                + std::to_string(fiducialEnergyLossesEv.size()),
+            AnalysisLine("Accepted trajectories: N = "
+                + std::to_string(fiducialEnergyLossesEv.size()), plot_style::crem()),
             "Fit: none - escaped channel; cutoff-censored",
             "No justified universal Gaussian/Landau law",
-            "mean = " + compactNumber(energyLossSummary.mean) + " eV",
-            "median / p95 = "
+            AnalysisLine("mean = " + compactNumber(energyLossSummary.mean) + " eV",
+                plot_style::crem()),
+            AnalysisLine("median / p95 = "
                 + compactNumber(sampleQuantile(fiducialEnergyLossesEv, 0.5))
                 + " / " + compactNumber(sampleQuantile(fiducialEnergyLossesEv, 0.95))
-                + " eV",
-            "Experimental:",
-            "no matching detector-response dataset"
+                + " eV", plot_style::crem()),
+            AnalysisLine("Experimental:", plot_style::experimental()),
+            AnalysisLine("no matching detector-response dataset",
+                plot_style::experimental())
         }, 0.022);
     } else if (!configuration.shortRangeFocus) {
         thirdPanelInformation = std::make_unique<TPaveText>(
@@ -3945,7 +4005,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         thirdPanelInformation->AddText(
             "A narrow E_{out} histogram would display numerical drift");
         thirdPanelInformation->AddText("and is intentionally not drawn");
-        thirdPanelInformation->AddText("Experimental: no matching response dataset");
+        thirdPanelInformation->AddText("Experimental: no matching response dataset")
+            ->SetTextColor(plot_style::experimental());
         thirdPanelInformation->Draw();
     } else {
         thirdPanelInformation = std::make_unique<TPaveText>(
@@ -3956,7 +4017,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
             "No escaped event passed the angular acceptance");
         thirdPanelInformation->AddText(
             "No artificial energy-loss spectrum is drawn");
-        thirdPanelInformation->AddText("Experimental: no matching dataset loaded");
+        thirdPanelInformation->AddText("Experimental: no matching dataset loaded")
+            ->SetTextColor(plot_style::experimental());
         thirdPanelInformation->Draw();
     }
     distributionsPage.cd(4);
@@ -3976,21 +4038,21 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     elasticLine << "#sigma_{fid} = "
                 << crossSectionEstimate(sampledArea, fiducial, runCount, barn)
                 << " barn";
-    summary.AddText(elasticLine.str().c_str());
+    summary.AddText(elasticLine.str().c_str())->SetTextColor(plot_style::crem());
     std::ostringstream referenceLine;
     if (configuration.shortRangeFocus) {
         std::ostringstream cutoffLine;
         cutoffLine << "#sigma_{cutoff} = "
                    << crossSectionEstimate(sampledArea, shortRange, runCount, barn)
                    << " barn";
-        summary.AddText(cutoffLine.str().c_str());
+        summary.AddText(cutoffLine.str().c_str())->SetTextColor(plot_style::crem());
         referenceLine << "pure-Coulomb #sigma_{cutoff} = "
                       << analyticCutoff/barn << " barn";
     } else {
         referenceLine << "Rutherford #sigma_{fid} = "
                       << analyticFiducial/barn << " barn";
     }
-    summary.AddText(referenceLine.str().c_str());
+    summary.AddText(referenceLine.str().c_str())->SetTextColor(plot_style::theory());
     std::ostringstream outcomeLine;
     outcomeLine << "escaped/cutoff/captured/gated/failed = " << escaped << '/'
                 << shortRange << '/' << captured << '/' << unresolved << '/' << failed;
@@ -4130,28 +4192,32 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         std::unique_ptr<TF1> curve = gaussianMleOverlay(
             functionName, fit, histogram, plot_style::crem());
         if (curve) beamAnalysisFunctions.push_back(std::move(curve));
-        std::vector<std::string> lines;
+        std::vector<AnalysisLine> lines;
         if (fit.count == 0) {
             lines = {"Entries: N = 0",
                      "Fit: unavailable - no escaped endpoint pair",
-                     "Experimental:",
-                     "n/a - numerical bookkeeping diagnostic"};
+                     AnalysisLine("Experimental:", plot_style::experimental()),
+                     AnalysisLine("n/a - numerical bookkeeping diagnostic",
+                        plot_style::experimental())};
         } else {
             lines = {
-                "Entries: N = " + std::to_string(fit.count),
-                fit.sigma > 0.0 ? "Fit: Gaussian MLE in plotted variable"
+                AnalysisLine("Entries: N = " + std::to_string(fit.count),
+                    plot_style::crem()),
+                AnalysisLine(fit.sigma > 0.0 ? "Fit: Gaussian MLE in plotted variable"
                                 : "Fit: degenerate Gaussian (#sigma=0)",
-                "#mu = " + compactNumber(fit.mean),
-                "#sigma = " + compactNumber(fit.sigma),
+                    plot_style::crem()),
+                AnalysisLine("#mu = " + compactNumber(fit.mean), plot_style::crem()),
+                AnalysisLine("#sigma = " + compactNumber(fit.sigma), plot_style::crem()),
                 "IDENTITY by construction: E_{bound} is defined",
                 "as the residual that closes this sum;",
                 "this measures roundoff + endpoint interpolation.",
                 "Independent physical residual:",
-                independent.empty()
+                AnalysisLine(independent.empty()
                     ? independentLabel + " = n/a"
                     : independentLabel + " median/p95 = "
                         + compactNumber(sampleQuantile(independent, 0.5))
-                        + " / " + compactNumber(sampleQuantile(independent, 0.95))
+                        + " / " + compactNumber(sampleQuantile(independent, 0.95)),
+                    plot_style::crem())
             };
         }
         drawAnalysisBox(beamAnalysisBoxes, 0.44, 0.55, 0.96, 0.91,
@@ -4540,8 +4606,9 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         outcomeBars.push_back(std::move(bar));
     }
     drawClassLegend(0.13, 0.63, 0.40, 0.90, allSixSlots);
-    std::vector<std::string> summaryLines{
-        "Trajectories: N = " + std::to_string(runCount)};
+    std::vector<AnalysisLine> summaryLines{
+        AnalysisLine("Trajectories: N = " + std::to_string(runCount),
+            plot_style::crem())};
     for (std::size_t slot = 0; slot < 4; ++slot) {
         summaryLines.push_back(std::string(
             interactionOutcomeName(outcomeOrder[slot])) + ": "
@@ -4559,17 +4626,18 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     summaryLines.push_back("Para: parallel #mu (S=0); Ortho: antiparallel #mu");
     summaryLines.push_back(plot_style::key(true, false, false, false));
     summaryLines.push_back("outline = provenance; fill = class, see legend");
-    summaryLines.push_back("all: #LTK_{CM}#GT = "
+    summaryLines.push_back(AnalysisLine("all: #LTK_{CM}#GT = "
         + compactNumber(mean(allEnergies), 4) + " eV, #LTb#GT = "
-        + compactNumber(mean(allImpacts), 4) + " pm");
+        + compactNumber(mean(allImpacts), 4) + " pm", plot_style::sampled()));
     if (!collapseTimesPs.empty()) {
         const auto extremes = std::minmax_element(
             collapseTimesPs.begin(), collapseTimesPs.end());
-        summaryLines.push_back("bound CREM collapse time [ps]:");
-        summaryLines.push_back("  min / mean / max = "
+        summaryLines.push_back(AnalysisLine("bound CREM collapse time [ps]:",
+            plot_style::crem()));
+        summaryLines.push_back(AnalysisLine("  min / mean / max = "
             + compactNumber(*extremes.first, 3) + " / "
             + compactNumber(mean(collapseTimesPs), 3) + " / "
-            + compactNumber(*extremes.second, 3));
+            + compactNumber(*extremes.second, 3), plot_style::crem()));
         summaryLines.push_back("  classical inspiral, not annihilation");
     }
     drawAnalysisBox(analysisBoxes, 0.42, 0.42, 0.96, 0.91, summaryLines, 0.019);
@@ -4635,17 +4703,19 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     const GaussianFitSummary energyMoments =
         gaussianMaximumLikelihood(allEnergies);
     drawAnalysisBox(analysisBoxes, 0.52, 0.60, 0.95, 0.91, {
-        "Sampled: N = " + std::to_string(allEnergies.size()),
-        "per-particle lab input #mu / #sigma = " + compactNumber(meanEnergyEv, 4)
-            + " / " + compactNumber(energySigmaEv, 4) + " eV",
-        "sample K_{CM} #mu / #sigma = " + compactNumber(energyMoments.mean, 4)
-            + " / " + compactNumber(energyMoments.sigma, 4) + " eV",
+        AnalysisLine("Sampled: N = " + std::to_string(allEnergies.size()),
+            plot_style::sampled()),
+        AnalysisLine("per-particle lab input #mu / #sigma = " + compactNumber(meanEnergyEv, 4)
+            + " / " + compactNumber(energySigmaEv, 4) + " eV", plot_style::sampled()),
+        AnalysisLine("sample K_{CM} #mu / #sigma = " + compactNumber(energyMoments.mean, 4)
+            + " / " + compactNumber(energyMoments.sigma, 4) + " eV", plot_style::sampled()),
         plot_style::key(false, true, false, false),
         "orange outline = sampled K_{CM}, fill = class",
-        "bound fraction = " + compactNumber(
-            100.0*boundTotal/std::max(runCount, 1), 3) + "%",
-        "#LTK_{CM}#GT bound = " + compactNumber(mean(boundEnergies), 4)
-            + " eV vs all = " + compactNumber(mean(allEnergies), 4) + " eV"
+        AnalysisLine("bound fraction = " + compactNumber(
+            100.0*boundTotal/std::max(runCount, 1), 3) + "%", plot_style::crem()),
+        AnalysisLine("#LTK_{CM}#GT bound = " + compactNumber(mean(boundEnergies), 4)
+            + " eV vs all = " + compactNumber(mean(allEnergies), 4) + " eV",
+            plot_style::crem())
     }, 0.022);
 
     const double impactUpper = std::max(1.0e-3,
@@ -4684,17 +4754,20 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     impactHistogram.Draw("HIST SAME TEXT0");
     drawClassLegend(0.13, 0.75, 0.40, 0.91, allSixSlots);
     drawAnalysisBox(analysisBoxes, 0.48, 0.58, 0.95, 0.91, {
-        "Sampled: N = " + std::to_string(allImpacts.size()),
-        "b #approx |N(0, " + compactNumber(
+        AnalysisLine("Sampled: N = " + std::to_string(allImpacts.size()),
+            plot_style::sampled()),
+        AnalysisLine("b #approx |N(0, " + compactNumber(
             configuration.impactParameterSigma*1.0e12, 4) + " pm)|"
-            + (impactSigmaPm > 0.0 ? "" : " (auto = l_{C})"),
-        "half-normal, centred on a head-on collision",
-        "#LTb#GT = " + compactNumber(mean(allImpacts), 4)
+            + (impactSigmaPm > 0.0 ? "" : " (auto = l_{C})"), plot_style::sampled()),
+        AnalysisLine("half-normal, centred on a head-on collision",
+            plot_style::sampled()),
+        AnalysisLine("#LTb#GT = " + compactNumber(mean(allImpacts), 4)
             + " pm, median = " + compactNumber(
-                sampleQuantile(allImpacts, 0.5), 4) + " pm",
+                sampleQuantile(allImpacts, 0.5), 4) + " pm", plot_style::sampled()),
         plot_style::key(false, true, false, false),
         "orange outline = sampled input, fill = class",
-        "#LTb#GT bound = " + compactNumber(mean(boundImpacts), 4) + " pm"
+        AnalysisLine("#LTb#GT bound = " + compactNumber(mean(boundImpacts), 4) + " pm",
+            plot_style::crem())
     }, 0.022);
 
     TH1D alignmentHistogram("interaction_dipole_alignment",
@@ -4756,13 +4829,16 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         ? std::numeric_limits<double>::quiet_NaN()
         : sampleQuantile(boundAlignmentSpreads, 0.5);
     drawAnalysisBox(analysisBoxes, 0.13, 0.55, 0.62, 0.91, {
-        "Bound events: N = " + std::to_string(boundAlignments.size()),
+        AnalysisLine("Bound events: N = " + std::to_string(boundAlignments.size()),
+            plot_style::crem()),
         plot_style::key(true, false, false, true),
-        "vermillion dashed: para/ortho threshold at +0.5",
-        "para (#geq0.5) : ortho = " + std::to_string(outcomeCounts[2]) + " : "
-            + std::to_string(outcomeCounts[3]),
-        "isotropic expectation 1 : 3",
-        "median drift within an event = " + compactNumber(medianSpread, 3),
+        AnalysisLine("vermillion dashed: para/ortho threshold at +0.5",
+            plot_style::theory()),
+        AnalysisLine("para (#geq0.5) : ortho = " + std::to_string(outcomeCounts[2]) + " : "
+            + std::to_string(outcomeCounts[3]), plot_style::crem()),
+        AnalysisLine("isotropic expectation 1 : 3", plot_style::theory()),
+        AnalysisLine("median drift within an event = " + compactNumber(medianSpread, 3),
+            plot_style::crem()),
         "Orientation is set at capture: this classical",
         "model has no spin-relaxation channel, so the",
         "label reflects the initial random orientation."
@@ -4834,22 +4910,25 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         }
         drawAnalysisBox(analysisBoxes, 0.38, 0.50, 0.95, 0.91, {
             plot_style::key(true, false, true, false),
-            "Measured data, drawn analytically - no Monte Carlo.",
-            std::string("Applies to the ")
+            AnalysisLine("Measured data, drawn analytically - no Monte Carlo.",
+                plot_style::experimental()),
+            AnalysisLine(std::string("Applies to the ")
                 + interactionOutcomeName(outcomeOrder[slot]) + " class:",
-            "events classified here = "
-                + std::to_string(outcomeCounts[slot]),
-            "#lambda = " + compactNumber(rate.value, 6) + " #pm "
+                plot_style::crem()),
+            AnalysisLine("events classified here = "
+                + std::to_string(outcomeCounts[slot]), plot_style::crem()),
+            AnalysisLine("#lambda = " + compactNumber(rate.value, 6) + " #pm "
                 + compactNumber(rate.totalUncertainty, 2) + " " + rate.unit,
-            "#tau_{exp} = " + compactNumber(lifetime.value) + " #pm "
+                plot_style::experimental()),
+            AnalysisLine("#tau_{exp} = " + compactNumber(lifetime.value) + " #pm "
                 + compactNumber(lifetime.totalUncertainty) + " "
-                + boundUnits[index],
-            boundSources[index],
-            classCollapse.empty()
+                + boundUnits[index], plot_style::experimental()),
+            AnalysisLine(boundSources[index], plot_style::experimental()),
+            AnalysisLine(classCollapse.empty()
                 ? std::string("no CREM collapse time in this class")
                 : "blue dashed: CREM collapse #LTt#GT = "
                     + compactNumber(classCollapseMean, 3) + " "
-                    + boundUnits[index],
+                    + boundUnits[index], plot_style::crem()),
             "Classical inspiral and quantum annihilation are",
             "different processes; this sets the scale."
         }, 0.0185);
