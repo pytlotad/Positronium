@@ -2645,19 +2645,27 @@ struct InteractionConfiguration {
     // for hours.  Exceeding the budget censors the event as Unresolved, the
     // same censoring convention the beam experiments use for their flight gate.
     double eventWallClockBudgetSeconds = 0.0;
-    // Separation at which the trajectory is declared to have collided.  This is
-    // the model's own resolution limit, chargeCloudRestRadius = 0.01*a0 =
-    // 529 fm, not the point-particle boundary nuclearCutoff = 10 fm.
-    //
-    // The point-particle boundary sits BELOW the classical dipole barrier at
-    // r* = 193 fm, where the dipole and Coulomb energies cross, so no
-    // trajectory could ever reach it: they turned around at 170-450 fm and
-    // ground away there, needing steps a thousand times shorter than normal
-    // until the wall-clock budget censored them.  The program was spending its
-    // whole budget resolving a regime the model cannot describe anyway, since
-    // 193 fm is half the reduced Compton wavelength and the charge sector
-    // already assumes a source of radius 529 fm.  Terminating at the model's
-    // own limit ends those trajectories promptly with a meaningful label.
+    // Separation at which the trajectory is declared to have collided.  This
+    // used to be fixed at chargeCloudRestRadius = 0.01*a0 = 529 fm for every
+    // pair, not the point-particle boundary nuclearCutoff = 10 fm -- and, for
+    // e+e-, not the Compton barrier r* = 193.30 fm either, even though that is
+    // the physically meaningful place classical point-particle electrodynamics
+    // stops applying.  The reason used to be practical: trajectories that
+    // approached r* ground away in the stiff region just above it, needing
+    // steps a thousand times shorter than normal until the wall-clock budget
+    // censored them, so 529 fm was picked to terminate BEFORE that region
+    // rather than resolve it. That reasoning no longer holds. It relied on the
+    // same retarded-history/step coupling bug fixed in d164f69, which is also
+    // what caused CREM's ~529 fm floor (see README's floor-lowering
+    // measurement) -- once fixed, a same-seed before/after comparison at 200
+    // events each found the boundary reachable for only ~8.5% more wall clock,
+    // not the "hours" this comment used to warn about, and reclassified nearly
+    // HALF of what had been "Collision" as Scattering or genuine Para/Ortho
+    // captures (e.g. seed 7: Collision 72->42 of 200, bound 13->17), with zero
+    // NumericalFailure either way.  So for e+e- this is now comptonBarrierRadius
+    // below; every other pair keeps collisionBoundaryRadius, since
+    // comptonBarrierRadius is an electron-specific constant and the old
+    // reasoning was never tested for those pairs.
     double collisionRadius = 0.0;
 };
 
@@ -2835,7 +2843,11 @@ InteractionConfiguration makeInteractionConfiguration(
     configuration.boundObservationOrbits = 8.0;
     configuration.boundObservationTimeCap = 2.0e-16;
     configuration.eventWallClockBudgetSeconds = 20.0;
-    configuration.collisionRadius = collisionBoundaryRadius;
+    // See the field comment above: for a captured e+e- pair this is the
+    // physically meaningful Compton barrier, not the pair's charge-cloud
+    // scale, and measured reachable at negligible extra cost.
+    configuration.collisionRadius = isPositronium(activePair)
+        ? comptonBarrierRadius : collisionBoundaryRadius;
     return configuration;
 }
 
@@ -4488,7 +4500,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     }
     summaryLines.push_back("Collision: r reached "
         + compactNumber(configuration.collisionRadius*1.0e12, 3)
-        + " pm (model resolution limit 0.01a_{0})");
+        + " pm (" + (isPositronium(activePair)
+            ? "Compton barrier" : "model resolution limit") + ")");
     summaryLines.push_back("Para: parallel #mu (S=0); Ortho: antiparallel #mu");
     summaryLines.push_back(plot_style::key(true, false, false, false));
     summaryLines.push_back("outline = provenance, fill = class:");

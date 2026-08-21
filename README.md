@@ -362,9 +362,38 @@ dla schwytanej pary e⁺e⁻, `collisionBoundaryRadius` bez zmian dla każdej in
 pary (`comptonBarrierRadius` jest stałą specyficzną dla elektronu, więc
 podmiana na sztywno byłaby fizycznie błędna dla mionium czy protonium).
 Granica, przy której trajektoria jest deklarowana jako dosłowne "Collision"
-(zatrzymanie całkowania mechanicznego, niezależne od tego, czy para się
-związała), zostaje nietknięta — to osobny, ogólny mechanizm numeryczny, nie
-ekstrapolacja czasu kolapsu.
+(zatrzymanie całkowania mechanicznego w czasie rzeczywistym, niezależne od
+tego, czy para się związała) — **pierwotnie zostawiona nietknięta jako osobny,
+ogólny mechanizm numeryczny — okazała się podlegać tej samej chorobie, i to
+mocniej niż ekstrapolacja czasu kolapsu.** Historyczne uzasadnienie 529 fm
+("529 fm" == `chargeCloudRestRadius`-owa `collisionBoundaryRadius`) było
+praktyczne: trajektorie zbliżające się do bariery 193 fm grzęzły w sztywnym
+rejonie tuż nad nią, potrzebując kroków tysiąc razy krótszych, aż budżet
+zegara je cenzurował — więc 529 fm wybrano, żeby kończyć PRZED tym rejonem,
+nie żeby go rozstrzygać. To uzasadnienie opierało się na tym samym błędzie
+sprzężenia siatki historii ze krokiem, naprawionym w `d164f69`.
+
+Zmierzone bezpośrednio: to samo ziarno, 200 zdarzeń, przed/po podmianie celu
+na `comptonBarrierRadius` (warunkowo dla e⁺e⁻, `collisionBoundaryRadius` bez
+zmian dla innych par):
+
+| ziarno | granica | Collision | Scattering | związane (para+orto) |
+|---|---|---|---|---|
+| 7 | 529 fm | 72 (36,0%) | 115 (57,5%) | 13 |
+| 7 | 193,3 fm | 42 (21,0%) | 141 (70,5%) | 17 |
+| 42 | 529 fm | 81 (40,5%) | 107 (53,5%) | 12 |
+| 42 | 193,3 fm | 43 (21,5%) | 141 (70,5%) | 16 |
+
+Zero `NumericalFailure`/`Unresolved` w obu wariantach na obu ziarnach, koszt
+zegara wyższy tylko o ~8,5% — nie "godziny", przed czym ostrzegał stary
+komentarz. Prawie **połowa** zdarzeń dotąd klasyfikowanych jako "Collision"
+to w rzeczywistości trajektorie, które naprawiony integrator potrafi
+rozstrzygnąć dalej: większość wraca jako `Scattering`, część jako prawdziwie
+związane `Para`/`Ortho-Positronium`. To zmiana głównych statystyk wyjściowych
+eksperymentu dla e⁺e⁻, nie kosmetyka — dużo większa niż w CREM, gdzie
+raportowany czas kolapsu prawie się nie zmienił (~0,01%). Poprawka wdrożona
+identycznie: `comptonBarrierRadius` warunkowo dla e⁺e⁻, `collisionBoundaryRadius`
+bez zmian dla każdej innej pary.
 
 ### Wynik audytu kompletności fizycznej
 
