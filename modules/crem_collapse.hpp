@@ -140,11 +140,28 @@ double osculatingPeriapsis(const OsculatingElements& elements,
 // had exactly enough energy to hover there -- and h -> -infinity as r -> 0,
 // so h is monotonically FALLING on (0, r_min) and bisection there finds the
 // one physically relevant root (the true turning point on the way in; the
-// mirror root beyond r_min, if any, is not on the infalling branch).  If
-// h(r_min) itself is not positive, the orbit's energy cannot reach that far
-// down under the clamped force at all (should not happen for an orbit whose
-// naive periapsis was already inside floor, but the fallback keeps this
-// total), and the naive value is returned rather than fabricating a root.
+// mirror root beyond r_min, if any, is not on the infalling branch).
+//
+// If h(r_min) itself is not positive, the naive (E,L) pair has no strictly
+// accessible point below floor at all under the clamped force -- but h is a
+// SMOOTH function of (E,L), so a small negative h(r_min) does not mean no
+// orbit exists there, it means the pair is almost exactly circular AT
+// r_min (h(r_min)=0 is precisely that circular orbit, sitting where the
+// pinned force balances the centrifugal term).  This is the common case in
+// practice: once the secular jump extrapolation has circularized an orbit
+// enough that even its NAIVE apoapsis sits inside floor (a bookkeeping
+// state the unclamped a,e parametrization was never meant to describe, but
+// one the jump scheme can still reach), h(r_min) lands close to zero on
+// whichever side essentially by chance.  Comparing |h(r_min)| against the
+// LOCAL energy scale there (a0*r_min, the specific potential step across
+// the interval, equal to twice the centrifugal term at r_min by r_min's own
+// definition) keeps the margin scale-free rather than an arbitrary absolute
+// number.  Within that margin, r_min is returned.  Beyond it, the mismatch
+// is not marginal -- the clamped force law genuinely cannot supply an orbit
+// with this (E,L) -- and fabricating a root that is not really there would
+// be worse than saying so, so the naive value is returned unchanged (it is
+// no longer a good answer either at that point, but this function's job is
+// the clamped turning point, not repairing an (E,L) pair from further out).
 //
 // This is a closed-form correction, not a fit: it uses nothing about this
 // orbit beyond (E,L,attractionParameter,floor), the same inputs the naive
@@ -162,9 +179,14 @@ double regularizedPeriapsis(const OsculatingElements& elements,
         return elements.specificEnergy+2.0*attractionParameter/floor
             -a0*r-L*L/(2.0*r*r);
     };
-    double lo=std::numeric_limits<double>::min();
     double hi=std::min(rMin,floor);
-    if(!(h(hi)>0.0)) return naive;
+    const double hAtHi=h(hi);
+    if(!(hAtHi>0.0)) {
+        constexpr double marginalRelativeTolerance=0.05;
+        if(hi>0.0&&-hAtHi<=marginalRelativeTolerance*a0*hi) return hi;
+        return naive;
+    }
+    double lo=std::numeric_limits<double>::min();
     for(int i=0;i<80;++i) {
         const double mid=0.5*(lo+hi);
         if(h(mid)>0.0) hi=mid; else lo=mid;
