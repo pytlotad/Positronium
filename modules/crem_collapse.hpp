@@ -613,13 +613,14 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         measureOptions.collectFrames=false;
         measureOptions.observationTime=period;
         measureOptions.terminalSeparation=comptonBarrierRadius;
-        // The secular update below is driven entirely by mechanical
-        // quantities -- conservativeParticleEnergy() and the orbital angular
-        // momentum read off the endpoint states -- and radiatedEnergyTotal is
-        // accumulated from those same differences.  Nothing here reads the
-        // flux bookkeeping, so its quadrature is pure overhead on the two
-        // integrations every checkpoint pays for.
-        measureOptions.radiatedEnergyBookkeeping=false;
+        // The ENERGY side of the secular update reads
+        // finalState.orbitalRadiatedEnergy now, not a
+        // conservativeParticleEnergy() difference (see below), so the flux
+        // quadrature this enables is no longer pure overhead for run -- it
+        // is the measurement.  background still only needs the mechanical
+        // (position, velocity) endpoint for its angular-momentum
+        // subtraction, so its own copy below turns this back off.
+        measureOptions.radiatedEnergyBookkeeping=true;
         // The budget is shared with the whole estimate: a single
         // measurement orbit can itself run into the stiff region near the
         // boundary, so it must be interruptible too.
@@ -692,8 +693,15 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // match run's so the pair of integrations stays comparable (the
             // background subtraction assumes both runs cover the same
             // stretch), and it must clear measurementState's own position.
+            // Its own copy of measureOptions with radiatedEnergyBookkeeping
+            // turned back off: background is only ever read for its
+            // mechanical endpoint (angular momentum), never its
+            // orbitalRadiatedEnergy, so the flux quadrature run buys the
+            // measurement would be pure overhead here.
+            SimulationOptions backgroundOptions=measureOptions;
+            backgroundOptions.radiatedEnergyBookkeeping=false;
             background=runMechanicalTrajectory(
-                measurementState,period,nuclearCutoff,measureOptions,
+                measurementState,period,nuclearCutoff,backgroundOptions,
                 ChargeRadiationReactionModel::disabled);
         }
         const auto measuredDelta=[&](const State& end) {
@@ -718,11 +726,13 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         };
 
         if(run.outcome==SimulationOutcome::ReachedCutoff) {
-            const OsculatingElements realDelta=measuredDelta(run.finalState);
-            const OsculatingElements backgroundDelta=backgroundFor(realDelta);
             result.lifetimeSeconds=simulatedTimeTotal+run.elapsedTime;
-            radiatedEnergyTotal+=
-                (backgroundDelta.specificEnergy-realDelta.specificEnergy)*reducedMass;
+            // Already in real (not specific) Joules, and already exactly the
+            // E1 energy this partial orbit radiated -- no background
+            // subtraction needed (see the full explanation where this same
+            // substitution is made below, for the ordinary ObservationLimit
+            // path this ReachedCutoff path is the truncated-orbit sibling of).
+            radiatedEnergyTotal+=run.finalState.orbitalRadiatedEnergy;
             result.meanRadiatedPowerWatts=result.lifetimeSeconds>0.0
                 ?radiatedEnergyTotal/result.lifetimeSeconds
                 :std::numeric_limits<double>::quiet_NaN();
@@ -748,6 +758,14 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         }
 
         const double measuredElapsed=std::max(run.elapsedTime,1.0e-30);
+        // ANGULAR MOMENTUM only, from here on: realDelta/backgroundDelta's
+        // specificEnergy field is computed (conservativeParticleEnergy(), a
+        // Darwin/near-field approximation) but deliberately not read for the
+        // loss below any more -- see deltaEnergyPerOrbit's own comment.
+        // backgroundEnergyRatio is still computed in the cache refresh
+        // alongside backgroundAngularRatio (the two are cached together),
+        // but nothing downstream reads it either now; it is vestigial,
+        // left rather than split the cache apart, and costs nothing to carry.
         const OsculatingElements realDelta=measuredDelta(run.finalState);
         const OsculatingElements backgroundDelta=backgroundFor(realDelta);
         // Refresh the cache only from an actual measurement, and only when the
@@ -763,8 +781,31 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 energyAtLastBackground=elements.specificEnergy;
             }
         }
+        // orbitalRadiatedEnergy, not a conservativeParticleEnergy()
+        // difference: conservativeParticleEnergy() is the Darwin (static
+        // near-field) approximation, valid only while the orbital period
+        // stays many light-crossing times long, and measured directly to
+        // fail exactly that way -- on seed 4, as period/(separation/c) fell
+        // from ~950 to ~40, the conservativeParticleEnergy-based dE/E grew
+        // from 3.6e-6 (matching the documented ~1e-5 integrator noise floor)
+        // to OVER 100% per "orbit" (checkpoint 24: 1.73), while
+        // orbitalRadiatedEnergy over the SAME stretch stayed smooth and
+        // monotonic throughout (0.042 -> 0.272), only faltering mildly at
+        // the very end.  It is computed from the exact retarded far-zone
+        // Poynting flux (electromagneticFieldFluxRates via
+        // particleMultipoleRadiation), with the M1 (magnetic-dipole/spin)
+        // channel already excluded (see orbitalRadiatedEnergy's own comment
+        // in state.hpp) -- and unlike conservativeParticleEnergy(measure-
+        // mentState), which is a near-zero DIFFERENCE of two large numbers,
+        // orbitalRadiatedEnergy starts at exactly 0 for a fresh
+        // measurementState and accumulates the genuine physical loss
+        // directly, so no background subtraction is needed for it: the
+        // "settling artefact" this whole background machinery exists to
+        // remove is specific to conservativeParticleEnergy's own near-field
+        // bootstrap, not to a directly-measured flux.  Sign matches the
+        // existing convention (negative = orbit binding tighter).
         const double deltaEnergyPerOrbit=
-            realDelta.specificEnergy-backgroundDelta.specificEnergy;
+            -run.finalState.orbitalRadiatedEnergy/reducedMass;
         const double deltaAngularMomentumPerOrbit=
             realDelta.specificAngularMomentum-backgroundDelta.specificAngularMomentum;
         // A secular inspiral cannot shed a large fraction of its own binding
@@ -791,10 +832,9 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         if(const char* debug=std::getenv("CREM_DEBUG");debug) {
             std::cerr<<"  measured dE/E="
                      <<deltaEnergyPerOrbit/elements.specificEnergy
-                     <<" (raw "<<realDelta.specificEnergy/elements.specificEnergy
-                     <<", background "<<backgroundDelta.specificEnergy
-                        /elements.specificEnergy
-                     <<") dL/L="<<deltaAngularMomentumPerOrbit
+                     <<" (orbitalRadiatedEnergy="
+                     <<run.finalState.orbitalRadiatedEnergy
+                     <<"J) dL/L="<<deltaAngularMomentumPerOrbit
                         /elements.specificAngularMomentum<<std::endl;
         }
         // Measured orbital dissipation of this osculating orbit against the
