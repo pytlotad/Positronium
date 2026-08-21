@@ -5358,12 +5358,23 @@ int main(int argc, char** argv) {
     }
     if (selectedPhenomenon < 1 || selectedPhenomenon > maximumPhenomenon) {
         if (selectedMode == 2) {
+            // Measured wall clock, not guessed: one sequential run of all five
+            // at the default N=1000, e+e-, no external field, seed 42, 4
+            // workers -- 1079/1078/396/207/295 s respectively.  Scales
+            // roughly linearly with --runs; 1/2 are the slow ones because
+            // they mechanically resolve every trajectory to the boundary,
+            // not just sample it.
             std::cout << "Choose statistical experiment:\n"
-                      << "1 -> Para-positronium CREM collapse + 2 gamma kinematics\n"
-                      << "2 -> Ortho-positronium CREM collapse + 3 gamma kinematics\n"
-                      << "3 -> e+e- beam: short-range/cutoff channel\n"
-                      << "4 -> e+e- beam: elastic scattering\n"
-                      << "5 -> Interactions: classify collision outcomes\n";
+                      << "1 -> Para-positronium CREM collapse + 2 gamma kinematics"
+                         " (~18 min at 1000 events)\n"
+                      << "2 -> Ortho-positronium CREM collapse + 3 gamma kinematics"
+                         " (~18 min at 1000 events)\n"
+                      << "3 -> e+e- beam: short-range/cutoff channel"
+                         " (~7 min at 1000 events)\n"
+                      << "4 -> e+e- beam: elastic scattering"
+                         " (~3.5 min at 1000 events)\n"
+                      << "5 -> Interactions: classify collision outcomes"
+                         " (~5 min at 1000 events)\n";
         } else {
             std::cout << "Choose phenomenon to simulate:\n"
                       << "1 -> Para-positronium\n"

@@ -395,6 +395,16 @@ raportowany czas kolapsu prawie się nie zmienił (~0,01%). Poprawka wdrożona
 identycznie: `comptonBarrierRadius` warunkowo dla e⁺e⁻, `collisionBoundaryRadius`
 bez zmian dla każdej innej pary.
 
+Produkcyjny przebieg N=1000 (ziarno 42, e⁺e⁻, bez pola zewnętrznego, 4,9
+minuty) potwierdza kierunek na pełnej próbie: `Collision` 191 (19,1%),
+`Scattering` 693 (69,3%), `Para-Positronium` 36 (3,6%), `Ortho-Positronium` 80
+(8,0%), razem związanych 116 — mniej `Collision` niż w tabeli powyżej (193 fm
+zamiast starych 529 fm), co jest spójne z kierunkiem, ale nie liczbowo
+porównywalne 1:1, bo N=1000 to inny rozmiar próby niż N=200 wyżej. Stosunek
+para:orto wynosi 36:80 (\(\approx1{:}2{,}2\)) wobec izotropowego 1:3 — przy
+116 zdarzeniach związanych to wciąż szum statystyczny, nie odchylenie
+systemowe. Zero `NumericalFailure`/`Unresolved` na całej próbie.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
@@ -1521,13 +1531,37 @@ wzajemnej reakcji promieniowania zmierzony czas kolapsu wynosi **33,9 ps** przy
 stanie związanym o energii \(-6{,}3\,\mathrm{eV}\) i \(L=1{,}03\,\hbar\).
 Dla porównania: przy poprzedniej, zbyt ciasnej orbicie było 3,6 ps, a po samej
 poprawce skali — 76 ps, przy czym ta ostatnia wartość zawierała jeszcze
-dwukrotne niedopromieniowanie. Podana wartość pochodzi z przebiegu N=1000
-o pełnej kompletacji (1000/1000 trajektorii dotarło do granicy, zero cenzury),
-przy rozrzucie sigma/średnia = 0,41.
+dwukrotne niedopromieniowanie.
+
+Ponownie zmierzone na produkcyjnym przebiegu N=1000, ziarno 42, e⁺e⁻, bez pola
+zewnętrznego (18 minut na 4 wątkach), już po przełączeniu celu ekstrapolacji z
+`collisionBoundaryRadius` na barierę Comptona (`e0e5b4d`): **1000/1000
+trajektorii dotarło do granicy, zero cenzury**, mediana Kaplana-Meiera
+\(30{,}76\) ps, średnia (= RMST przy pełnej kompletacji) \(33{,}88\pm0{,}44\)
+ps, rozrzut sigma/średnia \(0{,}410\) — nierozróżnialne od wartości sprzed tej
+zmiany co do trzeciej cyfry znaczącej, dokładnie zgodnie z argumentem
+"obcięcie ostatniego odcinka to ~0,1% czasu kolapsu" z sekcji o podłodze CREM.
+Ten sam przebieg dla orto-pozytonium (eksperyment 2, też 18 minut, też
+1000/1000) daje **statystycznie tę samą liczbę**, \(33{,}88\) ps — bezpośrednie
+potwierdzenie zastrzeżenia, że oba kanały różnią się tu jedynie wymuszonym
+wyrównaniem dipoli, którego sprzężenie (\(\approx10^{-5}\) potencjału
+Coulomba) jest za słabe, by rozróżnić klasyczną inspiralę.
+
+Ten sam bieg daje trzy dalsze porównania z zamkniętą elektrodynamiką i
+pomiarem, każde na całej próbie N=1000: stosunek zmierzonego czasu kolapsu do
+zamkniętego wzoru klasycznej inspirali \(\langle t_{\rm CREM}/t_{\rm
+classical}\rangle=1{,}018\pm0{,}014\) (`1_1_3`), stosunek zmierzonej mocy
+promieniowania do wzoru Larmora dla koherentnego dipola elektrycznego
+\(\langle P_{\rm CREM}/P_{\rm Larmor}\rangle=0{,}9927\pm0{,}0116\) (`1_1_4`)
+— oba w granicach 2% jedynki, zero parametrów swobodnych — oraz klasyczne
+sprzężenie dipol-dipol przygotowanej pary \(\langle|U_{dd}|/h\rangle=7{,}875\)
+GHz, pokrywające \(3{,}87\%\) mierzonego rozszczepu nadsubtelnego o-Ps/p-Ps
+\(203{,}3941\) GHz (`1_2_2`) — reszta to anihilacja wirtualna i człon
+kontaktowy Fermiego, których model klasyczny nie niesie.
 
 Zmierzony czas życia p-Ps to 125,1 ps, więc pozostała rozbieżność to czynnik
 \(\approx3{,}7\). Świadomie nie próbujemy jej domknąć: silnik odtwarza teraz
-zamknięty wzór klasycznej inspirali z dokładnością 2%
+zamknięty wzór klasycznej inspirali z dokładnością \(1{,}8\%\)
 (`N_1_3_collapse_time_vs_theory.pdf`), więc dalsze zbliżanie się do 125 ps
 wymagałoby zepsucia elektrodynamiki, a nie jej poprawiania. Klasyczna inspirala
 i anihilacja \(2\gamma\) to różne procesy. Czas życia o-Ps pozostaje poza
@@ -1829,7 +1863,18 @@ daje 6 plików, a 4 daje 5.
 > i \(E_{Schott}=-1{,}5\) eV wobec \(0{,}45\) eV wypromieniowanych.
 >
 > Dla porównania kanał związany (1, 2) i szerokie rozpraszanie (4) są w tych
-> samych miarach czyste, na poziomie \(10^{-4}\) energii orbity.
+> samych miarach czyste, na poziomie \(10^{-4}\) energii orbity: eksperyment 4
+> na produkcyjnym przebiegu N=1000 (ziarno 42, 3,5 minuty) daje 1000/1000
+> trajektorii bez awarii i dopasowanie \(C_R=0{,}966\pm0{,}024\) (95% Wilson
+> \([0{,}918;\,1{,}012]\)) — zgodne z czystym Coulombem w granicach błędu.
+>
+> **Ten sam produkcyjny przebieg N=1000 dla eksperymentu 3 (ziarno 42, 6,6
+> minuty) potwierdza ostrzeżenie wprost**: 8 z 1000 trajektorii stało się
+> numerycznie nieskończone, program **sam odrzucił cały raport przekroju
+> czynnego jako nieważny i nie zapisał żadnego wykresu** dla tego
+> uruchomienia — nie tylko ostrzeżenie w tekście, ale twardy brak wyniku.
+> 40,7% zdarzeń trafiło do kanału `captured` zamiast `escaped`, co samo w
+> sobie jest sygnaturą reżimu, w którym te ostrzeżenia obowiązują.
 >
 > Wartości \(1{,}4\)–\(9{,}4\) pochodzą z pojedynczej trajektorii
 > diagnostycznej. **Zespół wiązkowy wypada łagodniej**, bo dominują w nim
@@ -1993,7 +2038,12 @@ zjawisko:
 W trybie statystycznym te same numery wybierają odpowiednio kolaps CREM dla
 konfiguracji p-Ps i o-Ps wraz z kinematyką fotonów, wiązkowy kanał krótkiego
 zasięgu i elastyczne rozpraszanie
-wiązki e⁺e⁻. Tryb, wybór eksperymentu i ziarno można podać bez interakcji:
+wiązki e⁺e⁻. Interaktywne menu przy każdej pozycji podaje też zmierzony,
+nie zgadnięty, orientacyjny czas przy N=1000: eksperymenty 1/2 (pełne
+mechaniczne całkowanie każdej trajektorii do granicy) ~18 minut każdy,
+eksperyment 3 ~7 minut, 4 ~3,5 minuty, 5 ~5 minut — na 4 wątkach, dla e⁺e⁻ bez
+pola zewnętrznego; skaluje się w przybliżeniu liniowo z `--runs`. Tryb, wybór
+eksperymentu i ziarno można podać bez interakcji:
 
 ```bash
 ./positronium --mode visual --visual-style line --phenomenon 2 --seed 42
