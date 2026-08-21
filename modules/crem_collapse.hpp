@@ -122,6 +122,56 @@ double osculatingPeriapsis(const OsculatingElements& elements,
         /(attractionParameter*(1.0+eccentricity));
 }
 
+// Periapsis under the FORCE-CLAMPED law, for orbits whose naive (pure 1/r)
+// periapsis above falls below floor (separationFloor(), the Compton barrier
+// for e+e-).  Below floor the specific radial force is pinned at the constant
+// value it has AT floor (see clampedSeparationVector in positronium.cpp),
+// a0 = attractionParameter/floor^2, rather than continuing to grow as 1/r^2,
+// so the effective potential turns LINEAR there instead of Coulombic:
+//
+//     u_eff(r) = -attractionParameter/floor + a0*(r-floor) + L^2/(2r^2),  r<floor
+//
+// continuous in both value and slope with the unclamped -attractionParameter/r
+// + L^2/(2r^2) at r=floor, since a0 is exactly the unclamped force there.  The
+// periapsis is where h(r) = specificEnergy - u_eff(r) first reaches zero
+// coming in from floor.  h is concave on (0,floor] with its one interior
+// maximum at r_min = (L^2/a0)^(1/3) -- the radius where the pinned force
+// exactly balances the centrifugal term, i.e. where an orbit would sit if it
+// had exactly enough energy to hover there -- and h -> -infinity as r -> 0,
+// so h is monotonically FALLING on (0, r_min) and bisection there finds the
+// one physically relevant root (the true turning point on the way in; the
+// mirror root beyond r_min, if any, is not on the infalling branch).  If
+// h(r_min) itself is not positive, the orbit's energy cannot reach that far
+// down under the clamped force at all (should not happen for an orbit whose
+// naive periapsis was already inside floor, but the fallback keeps this
+// total), and the naive value is returned rather than fabricating a root.
+//
+// This is a closed-form correction, not a fit: it uses nothing about this
+// orbit beyond (E,L,attractionParameter,floor), the same inputs the naive
+// formula uses, so it costs nothing extra to evaluate and reduces to the
+// naive formula exactly whenever periapsis does not reach the floor.
+double regularizedPeriapsis(const OsculatingElements& elements,
+                            double attractionParameter,double floor) {
+    const double naive=osculatingPeriapsis(elements,attractionParameter);
+    if(!(floor>0.0)||!(naive<floor)) return naive;
+    const double L=elements.specificAngularMomentum;
+    const double a0=attractionParameter/(floor*floor);
+    if(!(a0>0.0)||!(L!=0.0)) return naive;
+    const double rMin=std::cbrt(L*L/a0);
+    const auto h=[&](double r) {
+        return elements.specificEnergy+2.0*attractionParameter/floor
+            -a0*r-L*L/(2.0*r*r);
+    };
+    double lo=std::numeric_limits<double>::min();
+    double hi=std::min(rMin,floor);
+    if(!(h(hi)>0.0)) return naive;
+    for(int i=0;i<80;++i) {
+        const double mid=0.5*(lo+hi);
+        if(h(mid)>0.0) hi=mid; else lo=mid;
+    }
+    return 0.5*(lo+hi);
+}
+
 // Unperturbed Kepler period at the given specific energy; used only to size
 // the one-orbit measurement window, not to compute the reported lifetime.
 double osculatingPeriod(double specificEnergy,double attractionParameter) {
@@ -139,7 +189,18 @@ State osculatingPeriapsisState(const OsculatingElements& elements,
                                double attractionParameter,
                                const Vec3& firstDipole,
                                const Vec3& secondDipole) {
-    const double periapsis=osculatingPeriapsis(elements,attractionParameter);
+    // regularizedPeriapsis(), not the naive formula: below separationFloor()
+    // the naive value systematically overshoots how close the pair can
+    // actually get (it assumes the force keeps growing as 1/r^2 rather than
+    // being pinned), so teleporting a measurement orbit there starts it from
+    // a position/speed pair that is not a real turning point of the clamped
+    // force law -- exactly the mismatch that made the one-orbit measurement
+    // fail outright once periapsis approached the barrier.  Tangential speed
+    // is still L/r at any turning point regardless of the force law (that is
+    // the definition of specific angular momentum at zero radial velocity),
+    // so only the r fed into it needs correcting.
+    const double periapsis=regularizedPeriapsis(
+        elements,attractionParameter,separationFloor());
     const double tangentialSpeed=periapsis>0.0
         ?elements.specificAngularMomentum/periapsis:0.0;
     const Vec3 relativePosition{periapsis,0.0,0.0};
