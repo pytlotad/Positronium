@@ -2331,8 +2331,14 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     return persistenceOk ? 0 : 3;
 }
 
+// Named Collision, not ShortRange, to match the terminal-classification
+// vocabulary experiment 5 already uses for reaching the same kind of
+// point-particle/model-validity boundary (nuclearCutoff here, comptonBarrier-
+// Radius there): same concept, one name across the whole program. The
+// experiment's own identity ("short-range/cutoff channel", --phenomenon 3)
+// is unaffected -- that names what the experiment probes, not this outcome.
 enum class BeamOutcome {
-    Escaped, ShortRange, Captured, Unresolved, NumericalFailure
+    Escaped, Collision, Captured, Unresolved, NumericalFailure
 };
 
 double relativeConservativeParticleEnergy(const State& state);
@@ -2617,8 +2623,8 @@ BeamEvent simulateBeamEvent(
             // got a chance to fire.  Rather than report an undifferentiated
             // failure, ask whether the trajectory's OWN conserved (E, L) at
             // the last resolved state already commit it to a periapsis
-            // inside nuclearCutoff: if so, it was always going to end up in
-            // the ShortRange channel, and losing the last few fm of
+            // inside nuclearCutoff: if so, it was always going to end up
+            // Collision, and losing the last few fm of
             // resolution should not invalidate the whole cross-section over
             // it.  Only while still inbound (!passedClosestApproach): once
             // past periapsis the actual closest approach already happened
@@ -2627,7 +2633,7 @@ BeamEvent simulateBeamEvent(
                 const double periapsis = estimateKeplerPeriapsis(beforeStep);
                 if(std::isfinite(periapsis) && periapsis <= nuclearCutoff) {
                     minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
-                    return makeResult(BeamOutcome::ShortRange,
+                    return makeResult(BeamOutcome::Collision,
                         std::numeric_limits<double>::quiet_NaN(),
                         std::numeric_limits<double>::quiet_NaN(),
                         beforeStep.radiatedEnergy, &beforeStep);
@@ -2651,7 +2657,7 @@ BeamEvent simulateBeamEvent(
                 const double periapsis = estimateKeplerPeriapsis(beforeStep);
                 if(std::isfinite(periapsis) && periapsis <= nuclearCutoff) {
                     minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
-                    return makeResult(BeamOutcome::ShortRange,
+                    return makeResult(BeamOutcome::Collision,
                         std::numeric_limits<double>::quiet_NaN(),
                         std::numeric_limits<double>::quiet_NaN(),
                         beforeStep.radiatedEnergy, &beforeStep);
@@ -2669,7 +2675,7 @@ BeamEvent simulateBeamEvent(
             State cutoffState=interpolateState(
                 beforeStep,state,crossingFraction);
             minimumSeparation=std::min(minimumSeparation,nuclearCutoff);
-            return makeResult(BeamOutcome::ShortRange,
+            return makeResult(BeamOutcome::Collision,
                 std::numeric_limits<double>::quiet_NaN(),
                 std::numeric_limits<double>::quiet_NaN(),
                 cutoffState.radiatedEnergy,&cutoffState);
@@ -3525,7 +3531,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
 
     int escaped = 0;
     int fiducial = 0;
-    int shortRange = 0;
+    int collision = 0;
     int captured = 0;
     int unresolved = 0;
     int failed = 0;
@@ -3541,14 +3547,14 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                          - event.outgoingEnergy) / eCharge);
                 }
                 break;
-            case BeamOutcome::ShortRange: ++shortRange; break;
+            case BeamOutcome::Collision: ++collision; break;
             case BeamOutcome::Captured: ++captured; break;
             case BeamOutcome::Unresolved: ++unresolved; break;
             case BeamOutcome::NumericalFailure: ++failed; break;
         }
     }
     if (failed > 0) {
-        std::cerr << "Outcomes: escaped=" << escaped << ", short-range=" << shortRange
+        std::cerr << "Outcomes: escaped=" << escaped << ", collision=" << collision
                   << ", captured=" << captured
                   << ", unresolved=" << unresolved << ", failed=" << failed << '\n'
                   << "Cross-section report is INVALID because at least one trajectory "
@@ -3672,7 +3678,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         * std::max(0.0, wilsonCenter - wilsonHalfWidth);
     const double rutherfordNormalizationUpper95 = normalizationConversion
         * std::min(1.0, wilsonCenter + wilsonHalfWidth);
-    std::cout << "Outcomes: escaped=" << escaped << ", short-range=" << shortRange
+    std::cout << "Outcomes: escaped=" << escaped << ", collision=" << collision
               << ", captured=" << captured
               << ", unresolved=" << unresolved << ", failed=" << failed << '\n'
               << "Model sigma(theta >= acceptance) = "
@@ -3688,7 +3694,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
               << ", " << rutherfordNormalizationUpper95 << "]\n";
     if (configuration.shortRangeFocus) {
         std::cout << "Model sigma(reach cutoff) = "
-                  << crossSectionEstimate(sampledArea, shortRange, runCount, barn)
+                  << crossSectionEstimate(sampledArea, collision, runCount, barn)
                   << " barn; pure-Coulomb cutoff reference = "
                   << analyticCutoff/barn << " barn\n"
                   << "Important: cutoff reach is not a QED annihilation cross section.\n";
@@ -4103,7 +4109,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     if (configuration.shortRangeFocus) {
         std::ostringstream cutoffLine;
         cutoffLine << "#sigma_{cutoff} = "
-                   << crossSectionEstimate(sampledArea, shortRange, runCount, barn)
+                   << crossSectionEstimate(sampledArea, collision, runCount, barn)
                    << " barn";
         summary.AddText(cutoffLine.str().c_str())->SetTextColor(plot_style::crem());
         referenceLine << "pure-Coulomb #sigma_{cutoff} = "
@@ -4114,8 +4120,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     }
     summary.AddText(referenceLine.str().c_str())->SetTextColor(plot_style::theory());
     std::ostringstream outcomeLine;
-    outcomeLine << "escaped/cutoff/captured/gated/failed = " << escaped << '/'
-                << shortRange << '/' << captured << '/' << unresolved << '/' << failed;
+    outcomeLine << "escaped/collision/captured/gated/failed = " << escaped << '/'
+                << collision << '/' << captured << '/' << unresolved << '/' << failed;
     summary.AddText(outcomeLine.str().c_str());
     summary.AddText("Classical low-v trajectory model");
     if (configuration.shortRangeFocus) {

@@ -1890,14 +1890,14 @@ daje 6 plików, a 4 daje 5.
 > peryapsis Keplera z zachowanej energii i momentu pędu ostatniego
 > rozstrzygniętego stanu (ten sam wzór, którego `crem_collapse.hpp` już używa
 > do decyzji sekularnych z samego \((E,L)\)) — jeśli wynik jest już
-> \(\le\)`nuclearCutoff`, trajektoria i tak była nieuchronnie skazana na kanał
-> `ShortRange`, więc zgubienie ostatnich kilku fm rozdzielczości nie powinno
+> \(\le\)`nuclearCutoff`, trajektoria i tak była nieuchronnie skazana na wynik
+> `Collision`, więc zgubienie ostatnich kilku fm rozdzielczości nie powinno
 > unieważniać całego przekroju czynnego z jej powodu. Zastosowane tylko, gdy
 > trajektoria wciąż leci do środka (`!passedClosestApproach`) — po minięciu
 > peryapsis `minimumSeparation` jest zmierzonym faktem, nie wnioskiem.
 >
 > **Zmierzone po naprawie, ten sam bieg**: `failed: 8 -> 0`,
-> `short-range: 0 -> 8` — te same osiem zdarzeń, poprawnie sklasyfikowane
+> `collision: 0 -> 8` — te same osiem zdarzeń, poprawnie sklasyfikowane
 > zamiast odrzucone. Raport przekroju czynnego jest teraz ważny:
 > \(\sigma(\text{reach cutoff})=26061\pm9177\) barn wobec czysto
 > kulombowskiego odniesienia \(22622\) barn — zgodne w granicach błędu.
