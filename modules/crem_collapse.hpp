@@ -467,8 +467,25 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         measureOptions.stopRequested=[&]() {
             return wallClockSpent()>wallClockBudgetSeconds;
         };
+        // nuclearCutoff, not comptonBarrierRadius: measurementState's own
+        // position is regularizedPeriapsis() (via osculatingPeriapsisState),
+        // which is allowed to sit AT or below comptonBarrierRadius once the
+        // orbit has circularized deep enough (see the r_min branch there) --
+        // passing comptonBarrierRadius here as well would then make this
+        // measurement start already past its own trajectoryCutoff, a
+        // zero-step degenerate case (measured directly: startSep=189.5fm <
+        // cutoff=193.3fm, elapsed=0ps, NumericalFailure).  nuclearCutoff is
+        // the universal, pair-independent "genuine point-particle floor"
+        // already used everywhere else in the codebase for exactly this
+        // role (e.g. lienardWiechertField's "whichever floor is bigger
+        // wins"), and it is always strictly below comptonBarrierRadius, so
+        // this measurement now always starts with room to run regardless of
+        // how deep regularizedPeriapsis has to go.  In the far-from-barrier
+        // regime this changes nothing observable: the measured orbit's
+        // deepest point stays far above either cutoff there, so which one
+        // is configured is moot.
         const MechanicalTrajectoryResult run=runMechanicalTrajectory(
-            measurementState,period,comptonBarrierRadius,measureOptions,
+            measurementState,period,nuclearCutoff,measureOptions,
             activeReactionModel);
 
         // Angular momentum and energy are both read from the measured
@@ -512,8 +529,12 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                  <= backgroundRefreshFraction*std::abs(energyAtLastBackground));
         MechanicalTrajectoryResult background;
         if(refreshBackground) {
+            // Same cutoff as run above, and for the same reason: it must
+            // match run's so the pair of integrations stays comparable (the
+            // background subtraction assumes both runs cover the same
+            // stretch), and it must clear measurementState's own position.
             background=runMechanicalTrajectory(
-                measurementState,period,comptonBarrierRadius,measureOptions,
+                measurementState,period,nuclearCutoff,measureOptions,
                 ChargeRadiationReactionModel::disabled);
         }
         const auto measuredDelta=[&](const State& end) {
