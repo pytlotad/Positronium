@@ -405,6 +405,19 @@ para:orto wynosi 36:80 (\(\approx1{:}2{,}2\)) wobec izotropowego 1:3 — przy
 116 zdarzeniach związanych to wciąż szum statystyczny, nie odchylenie
 systemowe. Zero `NumericalFailure`/`Unresolved` na całej próbie.
 
+Ponownie przeliczone po serii ośmiu poprawek warstwy sekularnej CREM
+(`ecf7380`…`0ebc7d2`: zaciśnięcie prawa siły/energii pod barierą Comptona,
+regularyzowane periapsis/apoapsis/okres, zamknięty wzór na wykładnik momentu
+pędu \(k(e)\) i strumień \(E_1\) jako sygnał energii zamiast przybliżenia
+Darwina) — e⁺e⁻, bez pola zewnętrznego, bez ustalonego ziarna, 4,0 minuty:
+`Collision` 204 (20,4%), `Scattering` 708 (70,8%), `Para-Positronium` 27
+(2,7%), `Ortho-Positronium` 61 (6,1%), razem związanych 88, para:orto 27:61
+(\(\approx1{:}2{,}26\)) — w granicach tego samego szumu statystycznego co
+poprzedni przebieg, zero `NumericalFailure`/`Unresolved`. Ta seria poprawek
+dotyczyła wyłącznie warstwy sekularnej CREM (eksperymenty 1/2), której
+eksperyment 5 nie używa, więc zgodność w granicach błędu jest oczekiwana, nie
+przypadkowa.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
@@ -1558,6 +1571,30 @@ sprzężenie dipol-dipol przygotowanej pary \(\langle|U_{dd}|/h\rangle=7{,}875\)
 GHz, pokrywające \(3{,}87\%\) mierzonego rozszczepu nadsubtelnego o-Ps/p-Ps
 \(203{,}3941\) GHz (`1_2_2`) — reszta to anihilacja wirtualna i człon
 kontaktowy Fermiego, których model klasyczny nie niesie.
+
+Ponownie przeliczone po serii ośmiu poprawek warstwy sekularnej CREM
+(`ecf7380`…`0ebc7d2`, N=1000, e⁺e⁻, bez pola zewnętrznego, bez ustalonego
+ziarna, 16,4 i 16,9 minuty na 4 wątkach dla p-Ps/o-Ps): **1000/1000
+trajektorii dotarło do granicy w obu kanałach, zero cenzury i zero
+`NumericalFailure`/`not decaying`** — pierwszy raz od uruchomienia tego
+przebiegu bez ani jednej awarii numerycznej na całej próbie w obu kanałach
+naraz. Mediana Kaplana-Meiera p-Ps \(31{,}89\) ps, średnia \(34{,}40\pm0{,}44\)
+ps (rozrzut sigma/średnia \(0{,}407\)); o-Ps mediana \(31{,}90\) ps, średnia
+\(34{,}42\pm0{,}44\) ps (rozrzut \(0{,}408\)) — statystycznie ta sama liczba
+w obu kanałach, jak poprzednio, i w granicach szumu innego ziarna
+nierozróżnialne od przebiegu sprzed tej serii poprawek. Trzy dalsze
+porównania: \(\langle t_{\rm CREM}/t_{\rm classical}\rangle=1{,}018\pm0{,}014\)
+w obu kanałach (`1_1_3`), \(\langle P_{\rm CREM}/P_{\rm
+Larmor}\rangle=0{,}9987\pm0{,}012\) (p-Ps) i \(0{,}999\pm0{,}014\) (o-Ps)
+(`1_1_4`), sprzężenie dipol-dipol \(7{,}976\) GHz / \(3{,}92\%\) (p-Ps) i
+\(7{,}655\) GHz / \(3{,}76\%\) (o-Ps) rozszczepu nadsubtelnego (`1_2_2`) —
+wszystko zgodne z poprzednim przebiegiem w granicach 1-2 punktów procentowych,
+dokładnie tego rzędu co różnica losowego ziarna. Poprawki tej serii dotyczyły
+wyłącznie tego, jak głęboko sekularna księgowość CREM potrafi bezpiecznie
+zajść pod barierą Comptona (fundament, warstwa sekularna, sygnał energii),
+nie samej fizyki mierzonej w normalnym zasięgu produkcyjnym — zero awarii na
+1000/1000 w obu kanałach jest bezpośrednim, produkcyjnym potwierdzeniem tej
+poprawy odporności, nie tylko wynikiem diagnostyki opisanej wyżej.
 
 Zmierzony czas życia p-Ps to 125,1 ps, więc pozostała rozbieżność to czynnik
 \(\approx3{,}7\). Świadomie nie próbujemy jej domknąć: silnik odtwarza teraz
