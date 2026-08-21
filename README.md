@@ -1869,12 +1869,44 @@ daje 6 plików, a 4 daje 5.
 > \([0{,}918;\,1{,}012]\)) — zgodne z czystym Coulombem w granicach błędu.
 >
 > **Ten sam produkcyjny przebieg N=1000 dla eksperymentu 3 (ziarno 42, 6,6
-> minuty) potwierdza ostrzeżenie wprost**: 8 z 1000 trajektorii stało się
-> numerycznie nieskończone, program **sam odrzucił cały raport przekroju
-> czynnego jako nieważny i nie zapisał żadnego wykresu** dla tego
-> uruchomienia — nie tylko ostrzeżenie w tekście, ale twardy brak wyniku.
-> 40,7% zdarzeń trafiło do kanału `captured` zamiast `escaped`, co samo w
-> sobie jest sygnaturą reżimu, w którym te ostrzeżenia obowiązują.
+> minuty) najpierw potwierdził ostrzeżenie wprost, dosłownie**: 8 z 1000
+> trajektorii stało się numerycznie nieskończone, program sam odrzucił cały
+> raport przekroju czynnego jako nieważny i nie zapisał żadnego wykresu —
+> nie tylko ostrzeżenie w tekście, ale twardy brak wyniku. 40,7% zdarzeń
+> trafiło do kanału `captured` zamiast `escaped`, co samo w sobie jest
+> sygnaturą reżimu, w którym te ostrzeżenia obowiązują.
+>
+> **Zbadane i naprawione.** Zdiagnozowane bezpośrednio (te same 8 trajektorii,
+> instrumentacja na każdym miejscu awarii): integrator wyczerpuje głębokość
+> podziału kroku (`maximumDepth`, 8 przy pierwszej próbie, 12 przy retry) w
+> trakcie zbliżania, **zanim** istniejący próg `nuclearCutoff` (10 fm,
+> analogiczny do granicy `Collision` w eksperymencie 5) w ogóle dostanie
+> szansę zadziałać — wszystkie 8 awarii nastąpiło przy promieniu 14–27 fm,
+> ciągle *powyżej* 10 fm, ale głębiej niż bariera Comptona (193,3 fm), gdzie
+> CREM już wcześniej wykazał kruchość. Retry z ciaśniejszą tolerancją odzyskał
+> tylko 1 z 9 — to fizyka, nie tolerancja.
+>
+> Naprawa: w miejscu awarii, **zamiast poddać się**, program liczy analitycznie
+> peryapsis Keplera z zachowanej energii i momentu pędu ostatniego
+> rozstrzygniętego stanu (ten sam wzór, którego `crem_collapse.hpp` już używa
+> do decyzji sekularnych z samego \((E,L)\)) — jeśli wynik jest już
+> \(\le\)`nuclearCutoff`, trajektoria i tak była nieuchronnie skazana na kanał
+> `ShortRange`, więc zgubienie ostatnich kilku fm rozdzielczości nie powinno
+> unieważniać całego przekroju czynnego z jej powodu. Zastosowane tylko, gdy
+> trajektoria wciąż leci do środka (`!passedClosestApproach`) — po minięciu
+> peryapsis `minimumSeparation` jest zmierzonym faktem, nie wnioskiem.
+>
+> **Zmierzone po naprawie, ten sam bieg**: `failed: 8 -> 0`,
+> `short-range: 0 -> 8` — te same osiem zdarzeń, poprawnie sklasyfikowane
+> zamiast odrzucone. Raport przekroju czynnego jest teraz ważny:
+> \(\sigma(\text{reach cutoff})=26061\pm9177\) barn wobec czysto
+> kulombowskiego odniesienia \(22622\) barn — zgodne w granicach błędu.
+> Eksperyment 4 (gdzie żadna trajektoria nigdy nie schodzi tak głęboko) daje
+> po tej zmianie bit-w-bit ten sam wynik co przedtem: \(C_R=0{,}965625\pm
+> 0{,}0240074\), zero awarii. Ostrzeżenie o rezerwuarze pola związanego
+> (poniżej) i tak nadal się uruchamia na tym samym przebiegu — poprawka
+> dotyczy klasyfikacji awarii integratora, nie zmienia oceny bilansu
+> energetycznego kanału.
 >
 > Wartości \(1{,}4\)–\(9{,}4\) pochodzą z pojedynczej trajektorii
 > diagnostycznej. **Zespół wiązkowy wypada łagodniej**, bo dominują w nim

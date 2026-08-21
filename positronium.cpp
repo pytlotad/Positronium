@@ -2562,6 +2562,32 @@ BeamEvent simulateBeamEvent(
 
     const double reducedMass = firstMass * secondMass
                                  / (firstMass + secondMass);
+    // The osculating (instantaneous two-body Coulomb) periapsis from a
+    // state's own conserved energy and angular momentum -- same Kepler
+    // formula crem_collapse.hpp already uses to make secular decisions from
+    // (E, L) alone, reused here to make an analytic call about a trajectory
+    // the numerical integrator could not finish.  Ignoring the dipole/
+    // radiation-reaction perturbation is the same approximation CREM's own
+    // orbit-averaged loop already makes between measurements.
+    const double attractionParameter = pairCoulombStrength / reducedMass;
+    const auto estimateKeplerPeriapsis = [&](const State& s) {
+        const Vec3 relativePosition = s.firstPosition - s.secondPosition;
+        const Vec3 relativeVelocity = s.firstVelocity - s.secondVelocity;
+        const double specificEnergy =
+            relativeConservativeParticleEnergy(s) / reducedMass;
+        const double specificAngularMomentum =
+            cross(relativePosition, relativeVelocity).norm();
+        if (!std::isfinite(specificEnergy)
+            || !std::isfinite(specificAngularMomentum)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+        const double eccentricity = std::sqrt(std::max(0.0, 1.0
+            + 2.0 * specificEnergy * specificAngularMomentum
+                * specificAngularMomentum
+                / (attractionParameter * attractionParameter)));
+        return specificAngularMomentum * specificAngularMomentum
+             / (attractionParameter * (1.0 + eccentricity));
+    };
     bool passedClosestApproach = false;
     while (state.time < configuration.maximumFlightTime) {
         const double radius = separation(state);
@@ -2586,6 +2612,27 @@ BeamEvent simulateBeamEvent(
         const State beforeStep = state;
         ++integrationSteps;
         if(!trajectory.advance(state,dt)) {
+            // The integrator gave out in the stiff region approaching a close
+            // encounter, before the ordinary nuclearCutoff check below ever
+            // got a chance to fire.  Rather than report an undifferentiated
+            // failure, ask whether the trajectory's OWN conserved (E, L) at
+            // the last resolved state already commit it to a periapsis
+            // inside nuclearCutoff: if so, it was always going to end up in
+            // the ShortRange channel, and losing the last few fm of
+            // resolution should not invalidate the whole cross-section over
+            // it.  Only while still inbound (!passedClosestApproach): once
+            // past periapsis the actual closest approach already happened
+            // and minimumSeparation is the measured fact, not an inference.
+            if(!passedClosestApproach) {
+                const double periapsis = estimateKeplerPeriapsis(beforeStep);
+                if(std::isfinite(periapsis) && periapsis <= nuclearCutoff) {
+                    minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
+                    return makeResult(BeamOutcome::ShortRange,
+                        std::numeric_limits<double>::quiet_NaN(),
+                        std::numeric_limits<double>::quiet_NaN(),
+                        beforeStep.radiatedEnergy, &beforeStep);
+                }
+            }
             return makeResult(BeamOutcome::NumericalFailure,
                 std::numeric_limits<double>::quiet_NaN(),
                 std::numeric_limits<double>::quiet_NaN(),
@@ -2597,6 +2644,19 @@ BeamEvent simulateBeamEvent(
             state.firstVelocity - state.secondVelocity;
         const double currentRadius = currentRelativePosition.norm();
         if (!(currentRadius > 0.0) || !std::isfinite(currentRadius)) {
+            // Same reasoning as the advance() failure above: the accepted
+            // step itself came back non-finite, but the last RESOLVED state
+            // (beforeStep) is still good, so the same analytic call applies.
+            if(!passedClosestApproach) {
+                const double periapsis = estimateKeplerPeriapsis(beforeStep);
+                if(std::isfinite(periapsis) && periapsis <= nuclearCutoff) {
+                    minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
+                    return makeResult(BeamOutcome::ShortRange,
+                        std::numeric_limits<double>::quiet_NaN(),
+                        std::numeric_limits<double>::quiet_NaN(),
+                        beforeStep.radiatedEnergy, &beforeStep);
+                }
+            }
             return makeResult(BeamOutcome::NumericalFailure,
                 std::numeric_limits<double>::quiet_NaN(),
                 std::numeric_limits<double>::quiet_NaN(),
