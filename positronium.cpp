@@ -1217,6 +1217,23 @@ void styleHistogram(TH1D& histogram, int color) {
     histogram.SetLineWidth(2);
 }
 
+// Prepares a histogram to have its own bin content drawn as an integer label
+// above each occupied bar, via ROOT's "TEXT0" draw option (appended by the
+// caller alongside "HIST"; TEXT0 skips empty bins so a wide, mostly-empty
+// axis does not fill up with zeroes). Used on every histogram in this file
+// whose bins are literal trajectory/event counts -- not on the handful that
+// hold a derived physical quantity (differential cross sections, weighted
+// spectra), where a bin's "count" is not the number being reported.
+void styleBinCounts(TH1D& histogram) {
+    histogram.SetMarkerSize(1.3);
+    // TH1 has no per-histogram text format; ROOT reads it from TStyle at
+    // paint time, so this is a (harmless, idempotent) global style edit.
+    // No leading '%': ROOT prepends its own, and "%.0f" here would paint the
+    // literal string "%.0f" instead of formatting anything (found by looking
+    // at the actual rendered PDF, not just trusting the call compiled).
+    gStyle->SetPaintTextFormat(".0f");
+}
+
 struct GaussianFitSummary {
     double mean = std::numeric_limits<double>::quiet_NaN();
     double sigma = std::numeric_limits<double>::quiet_NaN();
@@ -2118,7 +2135,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     styleHistogram(larmorRatioHistogram, plot_style::crem());
     larmorRatioHistogram.SetStats(false);
     for (double value : larmorRatios) larmorRatioHistogram.Fill(value);
-    larmorRatioHistogram.Draw("HIST");
+    styleBinCounts(larmorRatioHistogram);
+    larmorRatioHistogram.Draw("HIST TEXT0");
     const GaussianFitSummary larmorMoments =
         gaussianMaximumLikelihood(larmorRatios);
     std::unique_ptr<TLine> coherentMarker, incoherentMarker;
@@ -2183,7 +2201,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
 
     diagnosticsPage.cd(1);
     gPad->SetGrid();
-    calibrationPowerHistogram.Draw("HIST");
+    styleBinCounts(calibrationPowerHistogram);
+    calibrationPowerHistogram.Draw("HIST TEXT0");
     drawAnalysisBox(analysisBoxes, 0.50, 0.58, 0.95, 0.91, {
         "Trajectories with a finite power: N = "
             + std::to_string(calibrationPowers.size()),
@@ -2221,7 +2240,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     dipoleCouplingHistogram.SetStats(false);
     for (double value : dipoleCouplingsGHz)
         dipoleCouplingHistogram.Fill(std::abs(value));
-    dipoleCouplingHistogram.Draw("HIST");
+    styleBinCounts(dipoleCouplingHistogram);
+    dipoleCouplingHistogram.Draw("HIST TEXT0");
     std::vector<double> couplingMagnitudes;
     for (double value : dipoleCouplingsGHz)
         couplingMagnitudes.push_back(std::abs(value));
@@ -4094,7 +4114,8 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
 
     diagnosticsPage.cd(1);
     gPad->SetGrid();
-    energyBalanceHistogram.Draw("HIST");
+    styleBinCounts(energyBalanceHistogram);
+    energyBalanceHistogram.Draw("HIST TEXT0");
     // The plotted variable is an algebraic identity of the discrete update:
     // boundField{Energy,Momentum,AngularMomentum} is defined in
     // integrateElectrodynamicStep as exactly the residual that closes it.  The
@@ -4142,13 +4163,15 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                         reactionMismatchFractions);
     diagnosticsPage.cd(2);
     gPad->SetGrid();
-    momentumBalanceHistogram.Draw("HIST");
+    styleBinCounts(momentumBalanceHistogram);
+    momentumBalanceHistogram.Draw("HIST TEXT0");
     drawBeamResidualFit(momentumBalanceHistogram, logMomentumClosures,
                         "beam_momentum_balance_gaussian",
                         "|E_{bound}|/E_{rad}", boundReservoirFractions);
     diagnosticsPage.cd(3);
     gPad->SetGrid();
-    angularMomentumBalanceHistogram.Draw("HIST");
+    styleBinCounts(angularMomentumBalanceHistogram);
+    angularMomentumBalanceHistogram.Draw("HIST TEXT0");
     drawBeamResidualFit(angularMomentumBalanceHistogram,
                         logAngularMomentumClosures,
                         "beam_angular_momentum_balance_gaussian",
@@ -4207,10 +4230,13 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         runInteractionExperiment(seed, configuration, runCount);
 
         // One colour per classification, used consistently in every panel so a
-    // class can be recognised across the whole page without a second legend.
-    // Classification lives in the FILL, in pale tints; the outline carries the
-    // provenance colour, so a panel says both "where these numbers came from"
-    // and "which class each part is" without the two competing.
+    // class can be recognised across the whole page.  Classification lives in
+    // the FILL, in pale tints; the outline carries the provenance colour, so a
+    // panel says both "where these numbers came from" and "which class each
+    // part is" without the two competing.  Each coloured panel below also
+    // draws an actual TLegend mapping colour to class (drawClassLegend just
+    // below) rather than relying on a reader to infer it from the axis labels
+    // of the one panel (pad 1) that happens to have them.
     std::array<int,6> outcomeColours{};
     for (std::size_t slot = 0; slot < outcomeColours.size(); ++slot) {
         outcomeColours[slot] = plot_style::classificationFill(slot);
@@ -4220,6 +4246,32 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         InteractionOutcome::ParaPositronium,
         InteractionOutcome::OrthoPositronium,
         InteractionOutcome::Unresolved, InteractionOutcome::NumericalFailure};
+    // Kept alive for the whole function, like analysisBoxes below: a TLegend
+    // and the dummy swatches it reads its fill colours from must outlive the
+    // canvas Print() that rasterises them.
+    std::vector<std::unique_ptr<TObject>> classLegendStorage;
+    const auto drawClassLegend = [&](double x1, double y1, double x2, double y2,
+                                     const std::vector<std::size_t>& slots,
+                                     int columns = 1) {
+        auto legend = std::make_unique<TLegend>(x1, y1, x2, y2);
+        legend->SetFillColorAlpha(kWhite, 0.88);
+        legend->SetTextSize(0.026);
+        legend->SetTextFont(42);
+        legend->SetHeader("class", "C");
+        if (columns > 1) legend->SetNColumns(columns);
+        for (std::size_t slot : slots) {
+            auto swatch = std::make_unique<TBox>();
+            swatch->SetFillColorAlpha(outcomeColours[slot], 0.95);
+            swatch->SetLineColor(plot_style::crem());
+            legend->AddEntry(swatch.get(),
+                interactionOutcomeName(outcomeOrder[slot]), "f");
+            classLegendStorage.push_back(std::move(swatch));
+        }
+        legend->Draw();
+        classLegendStorage.push_back(std::move(legend));
+    };
+    const std::vector<std::size_t> allSixSlots{0, 1, 2, 3, 4, 5};
+    const std::vector<std::size_t> boundSlotsOnly{2, 3};
     std::array<int,6> outcomeCounts{};
     std::vector<double> allEnergies, allImpacts;
     std::vector<double> boundEnergies, boundImpacts, boundAlignments;
@@ -4470,7 +4522,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     distributionsPage.cd(1);
     gPad->SetGrid();
     gPad->SetBottomMargin(0.16);
-    outcomeHistogram.Draw("HIST");
+    styleBinCounts(outcomeHistogram);
+    outcomeHistogram.Draw("HIST TEXT0");
     // ROOT fills a whole TH1 with a single colour, and a per-class overlay
     // histogram would draw its empty bins as a coloured line along the axis.
     // Plain boxes give one colour per class with no such artefact.
@@ -4486,6 +4539,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         bar->Draw("l");
         outcomeBars.push_back(std::move(bar));
     }
+    drawClassLegend(0.13, 0.63, 0.40, 0.90, allSixSlots);
     std::vector<std::string> summaryLines{
         "Trajectories: N = " + std::to_string(runCount)};
     for (std::size_t slot = 0; slot < 4; ++slot) {
@@ -4504,9 +4558,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             ? "Compton barrier" : "model resolution limit") + ")");
     summaryLines.push_back("Para: parallel #mu (S=0); Ortho: antiparallel #mu");
     summaryLines.push_back(plot_style::key(true, false, false, false));
-    summaryLines.push_back("outline = provenance, fill = class:");
-    summaryLines.push_back("Collision, Scattering, Para, Ortho,");
-    summaryLines.push_back("Unresolved, NumericalFailure (left to right)");
+    summaryLines.push_back("outline = provenance; fill = class, see legend");
     summaryLines.push_back("all: #LTK_{CM}#GT = "
         + compactNumber(mean(allEnergies), 4) + " eV, #LTb#GT = "
         + compactNumber(mean(allImpacts), 4) + " pm");
@@ -4547,6 +4599,10 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     energyHistogram.SetLineWidth(3);
     energyHistogram.SetFillStyle(0);
     for (double value : allEnergies) energyHistogram.Fill(value);
+    // Headroom for the class legend and the per-bin count labels above the
+    // tallest bar: without it the peak bin can butt right up against the pad
+    // edge, and a legend placed in the top band would sit on top of it.
+    energyHistogram.SetMaximum(1.4*std::max(1.0, energyHistogram.GetMaximum()));
     distributionsPage.cd(2);
     gPad->SetGrid();
     energyHistogram.Draw("HIST");
@@ -4570,7 +4626,12 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         energyByClass.push_back(std::move(part));
     }
     if (!energyByClass.empty()) energyStack.Draw("HIST SAME");
-    energyHistogram.Draw("HIST SAME");
+    // Redrawn on top so the outline stays visible over the stack; the count
+    // label goes on THIS draw, since it is the per-bin total across classes
+    // (a stacked THStack has no single "TEXT" option of its own).
+    styleBinCounts(energyHistogram);
+    energyHistogram.Draw("HIST SAME TEXT0");
+    drawClassLegend(0.13, 0.75, 0.40, 0.91, allSixSlots);
     const GaussianFitSummary energyMoments =
         gaussianMaximumLikelihood(allEnergies);
     drawAnalysisBox(analysisBoxes, 0.52, 0.60, 0.95, 0.91, {
@@ -4597,6 +4658,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     impactHistogram.SetLineWidth(3);
     impactHistogram.SetFillStyle(0);
     for (double value : allImpacts) impactHistogram.Fill(value);
+    // Headroom for the class legend and the per-bin count labels, as above.
+    impactHistogram.SetMaximum(1.4*std::max(1.0, impactHistogram.GetMaximum()));
     distributionsPage.cd(3);
     gPad->SetGrid();
     impactHistogram.Draw("HIST");
@@ -4617,7 +4680,9 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         impactByClass.push_back(std::move(part));
     }
     if (!impactByClass.empty()) impactStack.Draw("HIST SAME");
-    impactHistogram.Draw("HIST SAME");
+    styleBinCounts(impactHistogram);
+    impactHistogram.Draw("HIST SAME TEXT0");
+    drawClassLegend(0.13, 0.75, 0.40, 0.91, allSixSlots);
     drawAnalysisBox(analysisBoxes, 0.48, 0.58, 0.95, 0.91, {
         "Sampled: N = " + std::to_string(allImpacts.size()),
         "b #approx |N(0, " + compactNumber(
@@ -4641,6 +4706,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     alignmentHistogram.SetLineWidth(2);
     alignmentHistogram.SetFillStyle(0);
     for (double value : boundAlignments) alignmentHistogram.Fill(value);
+    // Headroom for the class legend and the per-bin count labels, as above.
+    alignmentHistogram.SetMaximum(1.4*std::max(1.0, alignmentHistogram.GetMaximum()));
     distributionsPage.cd(4);
     gPad->SetGrid();
     alignmentHistogram.Draw("HIST");
@@ -4670,7 +4737,11 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     alignmentStack.Add(&orthoAlignmentPart);
     alignmentStack.Add(&paraAlignmentPart);
     alignmentStack.Draw("HIST SAME");
-    alignmentHistogram.Draw("HIST SAME");
+    styleBinCounts(alignmentHistogram);
+    alignmentHistogram.Draw("HIST SAME TEXT0");
+    // Only the two bound classes can appear in this histogram at all -- a
+    // capture is classified para or ortho, never Collision/Scattering/etc.
+    drawClassLegend(0.70, 0.80, 0.93, 0.91, boundSlotsOnly);
     std::unique_ptr<TLine> thresholdLine;
     if (!boundAlignments.empty()) {
         const double lineHeight = std::max(1.0,
