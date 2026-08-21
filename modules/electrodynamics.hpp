@@ -948,8 +948,13 @@ ElectromagneticField retardedElectricDipoleField(
     const double distance=displacement.norm();
     if(!(distance>std::numeric_limits<double>::min())) return {};
     const Vec3 n=displacement/distance;
-    const double inverseDistance=1.0/distance;
-    const double weight=shortRangeFieldWeight(distance);
+    // Magnitude only: n stays the true direction, but every 1/distance power
+    // below reads the floored value, so the field this returns stops
+    // strengthening once the true separation dips under the barrier -- same
+    // "freeze at the barrier" rule as the conservative sector.
+    const double fieldDistance=std::max(distance,separationFloor());
+    const double inverseDistance=1.0/fieldDistance;
+    const double weight=shortRangeFieldWeight(fieldDistance);
     const auto longitudinalPattern=[&](const Vec3& moment) {
         return n*(3.0*dot(n,moment))-moment;
     };
@@ -1001,8 +1006,15 @@ ElectromagneticField retardedMagneticDipoleField(
     const double distance=displacement.norm();
     if(!(distance>std::numeric_limits<double>::min())) return {};
     const Vec3 n=displacement/distance;
-    const double inverseDistance=1.0/distance;
-    const double weight=shortRangeFieldWeight(distance);
+    // Same "freeze at the barrier" floor as retardedElectricDipoleField;
+    // clampedDisplacement additionally feeds the static term below, which
+    // (unlike the induction/radiation terms here) reads a vector, not a
+    // bare magnitude.
+    const Vec3 clampedDisplacement=
+        clampedSeparationVector(displacement,separationFloor());
+    const double fieldDistance=clampedDisplacement.norm();
+    const double inverseDistance=1.0/fieldDistance;
+    const double weight=shortRangeFieldWeight(fieldDistance);
     constexpr double coefficient=mu0/(4.0*pi);
     const auto transversePattern=[&](const Vec3& moment) {
         return n*(3.0*dot(n,moment))-moment;
@@ -1011,7 +1023,7 @@ ElectromagneticField retardedMagneticDipoleField(
     // Retardation adds the induction and radiation pieces of the same
     // potential.  Thus mdot=mddot=0 reproduces regularizedDipoleField bit for
     // bit instead of the former, inconsistent w*B_point approximation.
-    Vec3 magnetic=regularizedDipoleField(displacement,dipole.moment)
+    Vec3 magnetic=regularizedDipoleField(clampedDisplacement,dipole.moment)
                  +(transversePattern(dipole.firstDerivative)
                       *(inverseDistance*inverseDistance/c)
                   +cross(n,cross(n,dipole.secondDerivative))
@@ -1083,14 +1095,14 @@ Vec3 regularizedDipoleForce(const Vec3& sourceToTarget,
 }
 
 MutualForces coulombForces(const State& s) {
-    const PairGeometry geometry = pairGeometry(s);
+    const PairGeometry geometry = clampedPairGeometry(s);
     const Vec3 first = geometry.firstMinusSecond
                         * (-pairCoulombStrength * geometry.inverseDistanceCubed);
     return {first, first * -1.0};
 }
 
 MutualForces mutualForces(const State& s) {
-    const PairGeometry geometry = pairGeometry(s);
+    const PairGeometry geometry = clampedPairGeometry(s);
     const MutualForces electrostatic = coulombForces(s);
     const Vec3 dipoleOnFirst = regularizedDipoleForce(
         geometry.firstMinusSecond, s.firstDipole, s.secondDipole);
@@ -1130,7 +1142,7 @@ Vec3 darwinForceOnFirst(const Vec3& firstVelocity, const Vec3& secondVelocity,
 }
 
 MutualForces darwinForces(const State& s) {
-    const PairGeometry geometry = pairGeometry(s);
+    const PairGeometry geometry = clampedPairGeometry(s);
     const MutualForces leading = coulombForces(s);
     const Vec3 firstLeadingAcceleration = leading.first / firstMass;
     const Vec3 secondLeadingAcceleration = leading.second / secondMass;
@@ -1146,7 +1158,7 @@ MutualForces darwinForces(const State& s) {
 }
 
 double darwinInteractionEnergy(const State& s) {
-    const PairGeometry geometry = pairGeometry(s);
+    const PairGeometry geometry = clampedPairGeometry(s);
     const Vec3 n = geometry.firstMinusSecond * geometry.inverseDistance;
     const double chargeProduct = pairChargeProduct;
     return coulomb * chargeProduct * geometry.inverseDistance / (2.0 * c*c)
@@ -1331,7 +1343,8 @@ ChargeDipolePairForces chargeDipolePairForces(
 
 MutualForces chargeDipoleForces(const State& s, const StateHistory& history) {
     const DipoleDerivatives derivatives = thomasBmtDipoleDerivatives(s, history);
-    const Vec3 firstMinusSecond = s.firstPosition - s.secondPosition;
+    const Vec3 firstMinusSecond = clampedSeparationVector(
+        s.firstPosition - s.secondPosition, separationFloor());
     const Vec3 firstMinusSecondVelocity =
         s.firstVelocity - s.secondVelocity;
 
@@ -1491,7 +1504,7 @@ struct CanonicalMomenta { Vec3 first, second; };
 // q-mu contributions occur with opposite signs on the charge and on the
 // dipole carrier; the Darwin terms do not cancel particle by particle.
 CanonicalMomenta canonicalMomenta(const State& s) {
-    const PairGeometry geometry = pairGeometry(s);
+    const PairGeometry geometry = clampedPairGeometry(s);
     const Vec3 n = geometry.firstMinusSecond * geometry.inverseDistance;
     const double chargeProduct = pairChargeProduct;
     const double darwinCoefficient = coulomb * chargeProduct
@@ -1555,7 +1568,7 @@ Vec3 noetherAngularMomentum(const State& s) {
 }
 
 double conservativeParticleEnergy(const State& state) {
-    const PairGeometry geometry=pairGeometry(state);
+    const PairGeometry geometry=clampedPairGeometry(state);
     const double kinetic=kineticEnergy(state.firstVelocity,firstMass)
         +kineticEnergy(state.secondVelocity,secondMass);
     const double coulombPotential=-pairCoulombStrength

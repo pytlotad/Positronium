@@ -1867,8 +1867,15 @@ int runMaxwellSelfTest() {
     const ElectromagneticField retardedStaticDipole=
         retardedMagneticDipoleField(staticDipoleState.firstPosition,0.0,
             staticDipoleHistory,staticDipoleState,false);
+    // retardedMagneticDipoleField now freezes below separationFloor() (the
+    // Compton barrier for e+e-, see positronium.cpp), so its static limit no
+    // longer matches the RAW regularizedDipoleField at a probe point this
+    // deep (2*nuclearCutoff = 20 fm, well under the 193.3 fm floor) -- it
+    // matches the equally-clamped one, which is what the reference below
+    // must compute for this to still test the intended identity.
     const Vec3 directStaticDipole=regularizedDipoleField(
-        staticDipoleState.firstPosition-staticDipoleState.secondPosition,
+        clampedSeparationVector(staticDipoleState.firstPosition
+            -staticDipoleState.secondPosition,separationFloor()),
         staticDipoleState.secondDipole);
     const double staticDipoleScale=std::max(directStaticDipole.norm(),1.0e-300);
     const double retardedStaticLimitResidual=

@@ -579,6 +579,33 @@ struct SimulationOptions {
     bool radiatedEnergyBookkeeping = true;
 };
 
+// Rescales a source-to-target separation to have magnitude at least `floor`,
+// keeping its direction -- the same regularization idea as gravitational
+// softening in N-body codes, except tied to a physically motivated radius
+// (the Compton barrier for e+e-) instead of an arbitrary softening length.
+// Below the floor every force/field law this feeds evaluates as if the pair
+// were still exactly at the floor, so nothing it computes diverges and the
+// integrator can carry a close encounter through instead of failing on it.
+// True coincidence has no direction to preserve; any fixed one works, since
+// every consumer only reads the clamped MAGNITUDE from it in that case.
+Vec3 clampedSeparationVector(const Vec3& trueSeparation, double floor) {
+    const double trueDistance = trueSeparation.norm();
+    if (!(floor > 0.0) || !(trueDistance < floor)) return trueSeparation;
+    if (!(trueDistance > std::numeric_limits<double>::min())) {
+        return Vec3{floor, 0.0, 0.0};
+    }
+    return trueSeparation * (floor / trueDistance);
+}
+
+// The floor itself: comptonBarrierRadius for e+e-, since it is derived from
+// the electron's mass and g-factor specifically (see physical_constants.hpp)
+// and would not mean the same thing for any other pair. No regularization
+// for other pairs yet -- this is deliberately narrower than "every pair"
+// until an analogous barrier is derived for them.
+double separationFloor() {
+    return isPositronium(activePair) ? comptonBarrierRadius : 0.0;
+}
+
 struct PairGeometry {
     Vec3 firstMinusSecond;
     double distance;
@@ -587,8 +614,30 @@ struct PairGeometry {
     double inverseDistanceFourth;
 };
 
+// TRUE geometry -- used for termination checks, minimumSeparation reporting,
+// step-error normalization, and every other diagnostic that must say where
+// the pair actually is, not where the force laws pretend it is.  Force laws
+// use clampedPairGeometry() below instead; nothing here changes for them.
 PairGeometry pairGeometry(const State& s) {
     const Vec3 firstMinusSecond = s.firstPosition - s.secondPosition;
+    const double distanceSquared = firstMinusSecond.squaredNorm();
+    const double distance = std::sqrt(distanceSquared);
+    const double inverseDistance = 1.0 / distance;
+    const double inverseDistanceSquared = inverseDistance * inverseDistance;
+    return {firstMinusSecond, distance, inverseDistance,
+            inverseDistanceSquared * inverseDistance,
+            inverseDistanceSquared * inverseDistanceSquared};
+}
+
+// Same geometry, but with the separation floored at separationFloor() before
+// any inverse power is taken.  Every CONSERVATIVE force/energy law
+// (Coulomb, Darwin) reads this instead of pairGeometry(), so none of them
+// diverge on a close encounter; termination logic and diagnostics keep
+// reading the true pairGeometry() above so they still report what actually
+// happened.
+PairGeometry clampedPairGeometry(const State& s) {
+    const Vec3 firstMinusSecond = clampedSeparationVector(
+        s.firstPosition - s.secondPosition, separationFloor());
     const double distanceSquared = firstMinusSecond.squaredNorm();
     const double distance = std::sqrt(distanceSquared);
     const double inverseDistance = 1.0 / distance;
@@ -738,7 +787,10 @@ ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
     // Trial stages may cross the declared boundary before the enclosing event
     // locator clips the trajectory.  Never evaluate the singular point-charge
     // formula inside a domain whose result is discarded by the model.
-    const double fieldDistance=std::max(distance,nuclearCutoff);
+    // nuclearCutoff is the pre-existing numerical safety net (kept for every
+    // pair); separationFloor() is the physically motivated one (e+e- only,
+    // and larger, so it dominates there). Whichever is bigger wins.
+    const double fieldDistance=std::max({distance,nuclearCutoff,separationFloor()});
     const Vec3 beta = source.velocity / c;
     const double betaSquared = beta.squaredNorm();
     const double kappa = std::max(1.0e-8, 1.0 - dot(direction, beta));
@@ -2847,7 +2899,7 @@ struct InteractionEvent {
 // (a = -k/2E collapses to 1e-25 m).  The secular collapse model is a Coulomb
 // model, and experiments 1 and 2 calibrate it on exactly this energy.
 double coulombPairEnergy(const State& state) {
-    const PairGeometry geometry = pairGeometry(state);
+    const PairGeometry geometry = clampedPairGeometry(state);
     const two_body::FreeTwoBodyKinematics freePair =
         two_body::freeTwoBodyKinematics(
             state.firstVelocity,firstMass,

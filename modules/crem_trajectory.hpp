@@ -9,12 +9,21 @@
 // positronium.cpp and inside the production #ifndef.  Contains no ROOT.
 
 Frame makeFrame(const State& s) {
+    // TRUE geometry: only for the reported radius below, which must say
+    // where the pair actually is, not where the force laws pretend it is.
     const PairGeometry geometry = pairGeometry(s);
     const double firstKinetic=kineticEnergy(s.firstVelocity,firstMass);
     const double secondKinetic=kineticEnergy(s.secondVelocity,secondMass);
-    const double coulombPotential = -pairCoulombStrength * geometry.inverseDistance;
+    // Clamped geometry for the energy terms: firstMechanicalEnergy +
+    // secondMechanicalEnergy must sum to conservativeNoetherEnergy below,
+    // which already reads the clamped potential through
+    // conservativeParticleEnergy() -- using the true geometry here instead
+    // would silently break that identity below the barrier.
+    const PairGeometry clampedGeometry = clampedPairGeometry(s);
+    const double coulombPotential =
+        -pairCoulombStrength * clampedGeometry.inverseDistance;
     const double dipolePotential = regularizedDipoleInteractionEnergy(
-        geometry.firstMinusSecond,s.firstDipole,s.secondDipole);
+        clampedGeometry.firstMinusSecond,s.firstDipole,s.secondDipole);
     const double darwinEnergy = darwinInteractionEnergy(s);
     const MutualForces forces = allExternalForces(s);
     const Vec3 firstAcceleration = relativisticAcceleration(s.firstVelocity, forces.first, firstMass);
