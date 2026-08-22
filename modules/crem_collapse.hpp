@@ -594,45 +594,6 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             return result;
         }
-        // Stop the orbit-averaged phase exactly AT comptonBarrierRadius --
-        // the same physically meaningful scale ("where classical point-
-        // particle electrodynamics stops applying") already used as the
-        // Collision boundary in experiment 5 (makeInteractionConfiguration),
-        // so "collapsed" now means the same separation there and here rather
-        // than two different numbers that happened to both be called a
-        // stopping point.  This used to be 10x further out (finalApproachMultiple
-        // was 10.0): the one-period measurement window this loop relies on
-        // stopped being a good approximation approaching the barrier under
-        // the OLD hard-clamp force law (a real kink in the force at the
-        // clamp boundary, see f477866), so the loop backed off well before
-        // it rather than chasing an unreliable measurement for a truncation
-        // that (t~a^3 near collapse) only cost 0.1% of the total collapse
-        // time anyway.
-        //
-        // With that force-law kink removed (Plummer softening, f477866) and
-        // the energy signal itself no longer riding on the Darwin
-        // approximation (orbitalRadiatedEnergy, 0ebc7d2), the 10x margin is
-        // no longer needed: measured directly on the same 6 seeds used
-        // throughout this investigation, finalApproachMultiple=1.0 (i.e.
-        // stopping exactly at the barrier) completes cleanly on all six,
-        // zero numerical failures, zero censored.  0.5 (past the barrier)
-        // already is not reliably safe -- 2 of 6 seeds hit NumericalFailure
-        // or exhausted their wall-clock budget there, the boundary this
-        // whole investigation has independently kept finding from the force-
-        // law and Darwin-approximation sides -- so 1.0 is not an arbitrary
-        // round number, it is measured to be the deepest value that is
-        // consistently reachable, and it happens to coincide exactly with
-        // where the model already declares Collision elsewhere.
-        constexpr double finalApproachMultiple=1.0;
-        if(periapsis<=finalApproachMultiple*comptonBarrierRadius) {
-            result.lifetimeSeconds=simulatedTimeTotal;
-            result.meanRadiatedPowerWatts=simulatedTimeTotal>0.0
-                ?radiatedEnergyTotal/simulatedTimeTotal
-                :std::numeric_limits<double>::quiet_NaN();
-            result.calibrationOutcome=SimulationOutcome::ReachedCutoff;
-            result.calibrationSeconds=simulatedTimeTotal;
-            return result;
-        }
 
         const State measurementState=osculatingPeriapsisState(
             elements,attractionParameter,firstDipole,secondDipole);
@@ -644,6 +605,49 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // fixes).
         const double period=regularizedPeriod(
             elements,attractionParameter,separationFloor());
+        // Stop the orbit-averaged phase when EITHER of two independent
+        // physical validity limits is reached, whichever comes first.
+        //
+        // (a) periapsis <= comptonBarrierRadius: the point-particle model-
+        // validity limit ("where classical point-particle electrodynamics
+        // stops applying"), independent of orbit shape -- also the Collision
+        // boundary experiments 3/4/5 already declare (898dc95, 340b67b), so
+        // "collapsed" means the same separation everywhere in the model.
+        //
+        // (b) period/lightCrossingTime <= minimumPeriodToLightCrossingRatio:
+        // the Darwin/retardation-approximation validity limit UNDERLYING the
+        // energy signal itself (conservativeParticleEnergy inside
+        // regularizedPeriod's own turning points, and orbitalRadiatedEnergy
+        // via the far-zone flux quadrature) -- and, unlike (a), NOT a fixed
+        // radius: it is set by how fast the orbit's own geometry changes
+        // relative to the light-crossing time at periapsis, which depends on
+        // L (specific angular momentum), not on r alone.  A fixed stopping
+        // radius cannot capture this: measured directly (N=100 at a fixed
+        // periapsis<=comptonBarrierRadius stopping rule, i.e. condition (a)
+        // alone) every one of 23 genuine NumericalFailures had this ratio
+        // between 37.8 and 71.6 at the point of failure, and roughly half of
+        // them (periapsis 204-676 fm) were still well ABOVE
+        // comptonBarrierRadius when that happened -- low-L (more radial)
+        // orbits reach the ratio limit at a LARGER periapsis than high-L
+        // ones, so condition (a) alone let them run straight into it.
+        // minimumPeriodToLightCrossingRatio=150 keeps a factor ~2 safety
+        // margin over the observed failure range's own upper end.
+        const double periapsisSeparation=(measurementState.firstPosition
+            -measurementState.secondPosition).norm();
+        const double lightCrossingTime=periapsisSeparation/c;
+        const double periodToLightCrossingRatio=(lightCrossingTime>0.0)
+            ?period/lightCrossingTime:std::numeric_limits<double>::infinity();
+        constexpr double minimumPeriodToLightCrossingRatio=150.0;
+        if(periapsis<=comptonBarrierRadius
+           ||periodToLightCrossingRatio<=minimumPeriodToLightCrossingRatio) {
+            result.lifetimeSeconds=simulatedTimeTotal;
+            result.meanRadiatedPowerWatts=simulatedTimeTotal>0.0
+                ?radiatedEnergyTotal/simulatedTimeTotal
+                :std::numeric_limits<double>::quiet_NaN();
+            result.calibrationOutcome=SimulationOutcome::ReachedCutoff;
+            result.calibrationSeconds=simulatedTimeTotal;
+            return result;
+        }
         SimulationOptions measureOptions;
         measureOptions.collectFrames=false;
         measureOptions.observationTime=period;
