@@ -61,6 +61,7 @@
 #include "modules/physical_constants.hpp"
 #include "modules/particle_species.hpp"
 #include "modules/two_body_kinematics.hpp"
+#include "modules/qed_reference.hpp"
 #include "modules/root_export.hpp"
 #include "modules/statistics_archive.hpp"
 
@@ -1250,6 +1251,7 @@ int crem()         { return TColor::GetColor("#0072B2"); }
 int sampled()      { return TColor::GetColor("#E69F00"); }
 int experimental() { return TColor::GetColor("#009E73"); }
 int theory()       { return TColor::GetColor("#D55E00"); }
+int qed()          { return TColor::GetColor("#CC79A7"); }
 
 // Pale classification fills, in the order of InteractionOutcome.
 int classificationFill(std::size_t slot) {
@@ -3920,7 +3922,9 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                  <<": negative-energy outgoing states are a separate bound channel "
                    "and are excluded from escaped/cutoff cross sections.\n";
     }
-    std::cout << "Elastic data are a classical low-velocity model, not Bhabha scattering.\n";
+    std::cout << "Elastic trajectory data are a classical low-velocity model, not Bhabha "
+                 "scattering -- the plotted tree-level QED curve is a reference for "
+                 "comparison, not what the trajectories themselves compute.\n";
     if (unresolved > 0) {
         std::cout << "Warning: " << unresolved
                   << " trajectories did not produce a resolved outgoing endpoint within "
@@ -4091,6 +4095,48 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
         rutherfordHistogram.SetBinContent(bin, binAverage);
         referenceMinimum = std::min(referenceMinimum, binAverage);
     }
+
+    // Tree-level QED reference (Bhabha for a same-species pair, generalized
+    // Mott otherwise -- see modules/qed_reference.hpp), drawn at the beam's
+    // nominal K_CM alongside the classical Rutherford curve above.  No
+    // closed-form bin integral exists for it the way it does for Rutherford
+    // (cot^2), so each bin is bin-averaged by direct quadrature over solid
+    // angle instead, using the same 9-point Simpson rule in cos(theta) for
+    // every bin -- more than adequate given how smooth dsigma/dOmega is
+    // here, and this runs once per production plot, not per trajectory.
+    TH1D qedHistogram("qed_bin_average",
+        "Tree-level QED bin average", configuration.angleBins, angularEdges.data());
+    qedHistogram.SetDirectory(nullptr);
+    qedHistogram.SetLineColor(plot_style::qed());
+    qedHistogram.SetLineWidth(3);
+    qedHistogram.SetLineStyle(3);
+    qedHistogram.SetFillStyle(0);
+    for (int bin = 1; bin <= angularCrossSection.GetNbinsX(); ++bin) {
+        const double thetaLow = angularCrossSection.GetXaxis()->GetBinLowEdge(bin) * pi/180.0;
+        const double thetaHigh = angularCrossSection.GetXaxis()->GetBinUpEdge(bin) * pi/180.0;
+        const double cosHigh = std::cos(thetaHigh);
+        const double cosLow = std::cos(thetaLow);
+        constexpr int simpsonIntervals = 8;
+        double weightedSum = 0.0;
+        for (int step = 0; step <= simpsonIntervals; ++step) {
+            const double fraction = static_cast<double>(step)/simpsonIntervals;
+            const double cosTheta = cosHigh + fraction*(cosLow - cosHigh);
+            const double theta = std::acos(std::clamp(cosTheta, -1.0, 1.0));
+            const double value = qedElasticDifferentialCrossSection(
+                configuration.centreOfMassKineticEnergy, theta,
+                firstSpecies.mass, secondSpecies.mass);
+            const double weight = (step == 0 || step == simpsonIntervals) ? 1.0
+                : (step % 2 == 1 ? 4.0 : 2.0);
+            weightedSum += weight*value;
+        }
+        // Simpson's rule gives the INTEGRAL of dsigma/dOmega over d(cosTheta)
+        // as (step/3)*weightedSum, step=(cosLow-cosHigh)/simpsonIntervals;
+        // dividing that integral by the interval length (cosLow-cosHigh)
+        // to get the bin AVERAGE cancels the interval length entirely,
+        // leaving weightedSum/(3*simpsonIntervals).
+        const double binAverageQed = weightedSum / (3.0*simpsonIntervals) / barn;
+        qedHistogram.SetBinContent(bin, binAverageQed);
+    }
     TH1D fittedRutherfordHistogram(rutherfordHistogram);
     fittedRutherfordHistogram.SetName("rutherford_normalization_fit");
     fittedRutherfordHistogram.SetTitle("Fitted Rutherford-shape normalization");
@@ -4182,11 +4228,13 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     angularCrossSection.SetMinimum(std::max(1.0e-12,
         referenceMinimum * 0.2));
     angularCrossSection.SetMaximum(std::max({rutherfordHistogram.GetMaximum(),
-        fittedRutherfordHistogram.GetMaximum(), angularCrossSection.GetMaximum()}) * 1.5);
+        fittedRutherfordHistogram.GetMaximum(), qedHistogram.GetMaximum(),
+        angularCrossSection.GetMaximum()}) * 1.5);
     angularCrossSection.Draw("E1");
     rutherfordHistogram.Draw("HIST SAME");
     fittedRutherfordHistogram.Draw("HIST SAME");
-    TLegend angularLegend(0.55, 0.69, 0.89, 0.89);
+    qedHistogram.Draw("HIST SAME");
+    TLegend angularLegend(0.55, 0.65, 0.89, 0.89);
     angularLegend.SetFillColorAlpha(kWhite, 0.88);
     angularLegend.AddEntry(&angularCrossSection, "trajectory model", "lep")
         ->SetTextColor(plot_style::crem());
@@ -4195,6 +4243,11 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     angularLegend.AddEntry(&fittedRutherfordHistogram,
                            "C_{R} #times Rutherford fit", "l")
         ->SetTextColor(plot_style::crem());
+    angularLegend.AddEntry(&qedHistogram,
+                           firstSpecies.mass == secondSpecies.mass
+                               ? "tree-level Bhabha (bin average)"
+                               : "tree-level Mott (bin average)", "l")
+        ->SetTextColor(plot_style::qed());
     angularLegend.Draw();
     std::string normalizationEstimate = "C_{R} = "
         + compactNumber(rutherfordNormalization);

@@ -820,6 +820,75 @@ Gaussa jest pomijane przez krótkie spięcie przed jakimkolwiek losowaniem
 więc strumień losowy pozostaje nietknięty — zachowanie domyślne jest
 identyczne co przed tą zmianą.
 
+**Dodana referencja: amplitudy Bhabhy/Motta obok Rutherforda.** Wykres
+różniczkowego przekroju czynnego (eksperymenty 3, 4) od zawsze zestawiał
+model trajektorii z klasyczną formułą Rutherforda i osobno zastrzegał w
+tekście, że dane są "classical low-velocity model, not Bhabha scattering" —
+prawdziwe pytanie, jak daleko klasyczny model faktycznie odbiega od pełnej
+relatywistycznej QED, pozostawało otwarte. Dodana druga, niezależna krzywa
+referencyjna: pełna, drzewowa (jednopętlowa nie, tylko diagramy na poziomie
+drzewa) amplituda QED, obliczona osobno od trajektorii klasycznej i
+narysowana obok Rutherforda, nie zamiast niego.
+
+Dwa różne procesy, zależnie od pary. Dla dwóch RÓŻNYCH gatunków (np.
+e⁻+p̄) istnieje tylko jeden diagram: wymiana fotonu w kanale t między
+dwiema nietożsamymi liniami fermionowymi (uogólnione rozpraszanie Motta) —
+wierzchołek foton-fermion łączy linię fermionową wyłącznie samą ze sobą,
+więc kanał anihilacyjny nie istnieje dla par mieszanych. Dla pary
+cząstka-własna antycząstka (e⁺e⁻, μ⁺μ⁻, p+p̄ — jedyne takie pary, jakie
+program obsługuje, rozpoznawane po `mass1==mass2`, dokładnie warunku, przy
+którym anihilacja do wirtualnego fotonu i z powrotem do tych samych dwóch
+cząstek w stanie końcowym jest w ogóle możliwa) dochodzi drugi diagram —
+anihilacja w kanale s — i oba diagramy interferują, bo kończą się tym samym
+stanem końcowym. e⁺e⁻→e⁺e⁻ konkretnie to właśnie nazwa "rozpraszanie
+Bhabhy"; ta sama struktura dwóch diagramów przenosi się bez zmian na
+μ⁺μ⁻ i p+p̄.
+
+Obie formuły (kwadrat amplitudy, uśredniony po spinach) wyprowadzone ręcznie
+ze standardowej techniki śladów Diraca (Σuū=p̸+m, Σvv̄=p̸−m) i zweryfikowane
+niezależnie: jawny numeryczny rachunek spinorowy (konkretne macierze Diraca,
+konkretne spinory u/v w bazie helicity, siłowa suma po wszystkich 16
+kombinacjach spinów) dla szerokiego skanu mas, energii i kątów — zgodność
+na poziomie \(10^{-9}\) względnie lub lepiej wszędzie. Człon interferencyjny
+to dokładnie ten fragment, który podręczniki zwykle podają bez wyprowadzenia
+— pierwsza ręczna próba była **błędna** (brakujący czynnik podniesiony przy
+kontrakcji przez slash pędu), a to właśnie weryfikacja numeryczna złapała
+błąd, zanim trafił do kodu — dokładnie ta sama dyscyplina audytu, co reszta
+wyprowadzeń fizycznych tego projektu. Obie formuły w granicy bezmasowej
+redukują się do podręcznikowych wyników (rozpraszanie e-μ:
+\(|M|^2=2e^4(s^2+u^2)/t^2\); e⁺e⁻→μ⁺μ⁻: \(|M|^2=2e^4(t^2+u^2)/s^2\);
+interferencja Bhabhy: \(-2\,\mathrm{Re}(M_tM_s^*)=4e^4u^2/(st)\); źródła:
+Peskin i Schroeder, *An Introduction to Quantum Field Theory*, wzór 5.61 i
+wynik e⁺e⁻→μ⁺μ⁻ z rozdziału 5.1; samo rozpraszanie Bhabhy: H.J. Bhabha,
+*Proc. R. Soc. A* 154, 195 (1936)), a przy \(K_{CM}=20\) eV (energia
+produkcyjna wiązki) obie zgadzają się z już istniejącą, klasyczną formułą
+Rutherforda tego kodu na poziomie \(10^{-4}\) — dokładnie rzędu poprawki
+\(\beta^2\sim4\cdot10^{-5}\) spodziewanej przy tej energii, sprawdzone
+zarówno dla pary o równych masach (e⁺e⁻), jak i różnych (e⁻+proton).
+
+Implementacja: nowy moduł `modules/qed_reference.hpp`
+(`qedElasticDifferentialCrossSection`, z dyspozytorem wybierającym Bhabhę
+albo Motta po `mass1==mass2`), zero zależności od reszty silnika poza
+`physical_constants.hpp` — czysto referencyjny, nigdzie nie wpływa na
+całkowanie trajektorii. Krzywa liczona metodą Simpsona (9 punktów na
+koszyk kątowy w `cos(theta)`, bo w przeciwieństwie do Rutherforda QED nie
+ma prostej analitycznej całki koszykowej) i rysowana na panelu 1
+(`3_1_1`/`4_1_1_differential_cross_section.pdf`) trzecim kolorem palety
+Okabe-Ito (`#CC79A7`, czerwonawy fiolet — jedyny z siedmiu jeszcze
+nieużyty), z legendą podpisującą się "tree-level Bhabha" albo "tree-level
+Mott" zależnie od pary. Zastrzeżenie w tekście konsoli poprawione, by nie
+przeczyć nowej krzywej: dane trajektorii nadal są klasyczne, ale QED jest
+teraz obecna na wykresie jako referencja, nie tylko przywoływana w zdaniu
+zaprzeczającym.
+
+Zweryfikowane: kompilacja czysta, `positronium_validation` 33/33 bez zmian.
+Testy dymne `--phenomenon 4 --pair electron,positron` (gałąź Bhabhy) i
+`--phenomenon 4 --pair electron,proton` (gałąź Motta, różne masy) oraz
+`--phenomenon 3` przechodzą bez awarii; wykresy sprawdzone wizualnie —
+krzywa QED pokrywa się z Rutherfordem na tej skali, zgodnie z oczekiwaniem
+przy \(\beta\sim0{,}006\), a legenda poprawnie przełącza etykietę między
+parami.
+
 Relacja moment–spin niosła błąd czynnika \(g\). Model definiuje
 \(\boldsymbol\mu=\gamma\mathbf S\) z \(\gamma=gq/2m\) i przechowuje
 \(|\boldsymbol\mu|=(g/2)\,\text{magneton}\), ale cztery miejsca liczyły
@@ -3020,6 +3089,13 @@ cichu.
     [Phys. Rev. Lett. 90, 203402 (2003)](https://doi.org/10.1103/PhysRevLett.90.203402).
 11. T. C. Chang, C. M. Tang i W. L. Li, eksperymentalny test kontinuum 3γ,
     [Phys. Lett. B 157, 357 (1985)](https://doi.org/10.1016/0370-2693(85)90380-6).
+12. M. E. Peskin i D. V. Schroeder, *An Introduction to Quantum Field
+    Theory* (1995), wzór 5.61 (rozpraszanie t-kanałowe dwóch różnych
+    fermionów) i wynik e⁺e⁻→μ⁺μ⁻ z rozdziału 5.1 — punkty odniesienia
+    użyte do weryfikacji granicy bezmasowej krzywej Bhabhy/Motta.
+13. H. J. Bhabha, *The Scattering of Positrons by Electrons with Exchange
+    on Dirac's Theory of the Positron*,
+    [Proc. R. Soc. A 154, 195 (1936)](https://doi.org/10.1098/rspa.1936.0046).
 
 Literatura uzasadnia użyte elementy elektrodynamiki klasycznej i wejścia
 generatora zaniku, ale nie waliduje fenomenologicznego utożsamienia orientacji
