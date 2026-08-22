@@ -1116,6 +1116,62 @@ int runMaxwellSelfTest() {
             secondCharge/secondMass,secondGFactor));
 
     // ---------------------------------------------------------------------
+    // Diagnostic only, NOT gated into the pass/fail count below: how far the
+    // PRODUCTION dipole-precession path (advanceCovariantBmt, read out
+    // through synchronizeCovariantDipoles exactly the way state.firstDipole
+    // itself is obtained) diverges from thomasBmtEffectiveField's
+    // independently textbook-correct (Jackson 3rd ed. 11.170') 3D lab-time
+    // formula ds/dt=(q/m) s x B_eff, evaluated at the same instantaneous
+    // (v,E,B,g).  Audit finding: at g=2 (no anomalous moment) the two agree
+    // exactly for every beta tried; the gap opens only once g!=2 and grows
+    // with both the anomaly and beta -- 5.8e-8 at (e+e- g, beta~0.007), but
+    // up to 45% for a proton g at beta=0.9.  The tensor readout is the
+    // production-correct comparison: synchronizeCovariantDipoles is exactly
+    // how state.firstDipole is derived from state.firstProperDipole
+    // everywhere else in the code, and using the "bare" four-vector spatial
+    // part instead (properDipoleFromFourVector) gives WORSE agreement, even
+    // at g=2 -- confirming the tensor route is the one to compare, not an
+    // artifact of the comparison method.  Likely the same Wigner-rotation
+    // gap covarianceRepresentabilityGap already measures for a boosted
+    // static dipole, showing up more strongly here because a dynamical
+    // precession rate is a more sensitive probe than a single static
+    // reference tensor.  Root cause NOT yet isolated (needs a from-scratch
+    // rederivation of how a BMT spin four-vector should relate to a lab
+    // dipole TENSOR under acceleration, not just under a single boost) --
+    // this line exists so a future change cannot silently widen the gap
+    // without it showing up here.  No pass/fail threshold yet: it would be
+    // premature to assert what value is "acceptable" before the root cause
+    // is known.
+    const auto bmtEffectiveFieldGap=[&](double betaMagnitude,double gFactorProbe) {
+        const Vec3 velocityProbe{0.0,0.0,betaMagnitude*c};
+        const ElectromagneticField fieldProbe{Vec3{0.0,1.0,0.0},Vec3{1.0,0.0,0.0}};
+        const Vec3 properDipoleProbe{0.0,1.0,0.0};
+        constexpr double probeDt=1.0e-20;
+        const Vec3 evolvedProper=advanceCovariantBmt(properDipoleProbe,
+            velocityProbe,fieldProbe,1.0,probeDt,gFactorProbe);
+        State beforeState,afterState;
+        beforeState.firstVelocity=velocityProbe;
+        afterState.firstVelocity=velocityProbe;
+        beforeState.firstProperDipole=properDipoleProbe;
+        afterState.firstProperDipole=evolvedProper;
+        synchronizeCovariantDipoles(beforeState);
+        synchronizeCovariantDipoles(afterState);
+        const Vec3 productionRate=
+            (afterState.firstDipole-beforeState.firstDipole)/probeDt;
+        const Vec3 effectiveRate=cross(beforeState.firstDipole,
+            thomasBmtEffectiveField(velocityProbe,fieldProbe,gFactorProbe));
+        return (productionRate-effectiveRate).norm()
+            /std::max(effectiveRate.norm(),1.0e-300);
+    };
+    // Two probes: the active pair's own (g, beta~0 orbital scale is far too
+    // small to be informative here, so a representative orbital-ish beta is
+    // used instead) and a synthetic high-anomaly/high-beta point, so this
+    // diagnostic stays informative regardless of which --pair the binary
+    // happens to be built for.
+    const double bmtEffectiveFieldGapActiveG=bmtEffectiveFieldGap(0.1,firstGFactor);
+    const double bmtEffectiveFieldGapHighBeta=bmtEffectiveFieldGap(0.9,5.5857);
+
+    // ---------------------------------------------------------------------
     // Role routing in applyDipolePrecession().
     //
     // The covariance probe above builds its arguments explicitly, so it never
@@ -2449,6 +2505,9 @@ int runMaxwellSelfTest() {
               << covarianceVelocityResidual << '\n'
               << "particle boost D:  " << covarianceDipoleEvolutionResidual << '\n'              << "dipole repr gap:   " << covarianceRepresentabilityGap << '\n'
               << "covariant BMT:    " << covarianceBmtResidual << '\n'
+              << "BMT vs eff field: " << bmtEffectiveFieldGapActiveG << " / "
+                 << bmtEffectiveFieldGapHighBeta
+                 << "  (diagnostic only, no pass/fail yet -- see comment)\n"
               << "role routing:     " << roleRoutingResidual
               << "  (obrot " << roleRoutingTravel << ")\n"
               << "particle boost F/R:" << covarianceForceResidual << " / "

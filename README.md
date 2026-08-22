@@ -2731,6 +2731,29 @@ domyślnej pary e⁺e⁻ przy prędkościach pozytonium to nieistotne; dla cię�
 wysoko-anomalnych par pod `--radiation-reaction automatic` przy
 relatywistycznych prędkościach to nadal otwarte pytanie.
 
+**Dochodzenie kontynuowane.** Sprawdzone bezpośrednio w kodzie: konwersja
+`properDipole`→`state.firstDipole` (`synchronizeCovariantDipoles`,
+[positronium.cpp:926-941](positronium.cpp)) idzie przez boost **tensorowy**
+(`lorentzBoostDipole`), nie przez samą część przestrzenną czterowektora
+(`properDipoleFromFourVector`) — więc porównanie tempa precesji przez odczyt
+tensorowy (ten, którego użyto wyżej) jest metodologicznie poprawne i
+produkcyjnie-relewantne; sprawdzona odwrotna konwencja daje jeszcze gorszą
+zgodność, nawet przy `g=2`. Rozbieżność jest więc realna, nie artefaktem
+metody porównania. Prawdopodobne źródło: to ten sam mechanizm co
+`covarianceRepresentabilityGap` ("dipole repr gap", `<5·10⁻³`, zmierzone
+`0,00386`) — rotacja Wignera przy złożeniu boostu z przyspieszeniem cząstki
+— tylko silniej widoczna w dynamice (tempo precesji) niż w statycznym teście
+jednego wektora. Dodany diagnostyczny (bez progu pass/fail — przedwczesne,
+zanim znane jest źródło) test w `positronium_validation`: `BMT vs eff field`,
+mierzący dokładnie tę rozbieżność dla aktywnej pary przy β=0,1 oraz dla
+syntetycznej sondy proton/β=0,9, żeby przyszła zmiana kodu nie pogorszyła
+tego po cichu. Zmierzone bazowe wartości: `5,8·10⁻⁶` (e⁺e⁻, β=0,1) /
+`0,4538` (syntetyczna sonda) — druga liczba jest stała niezależnie od
+`--pair`, pierwsza rośnie z anomalią pary (`0,0032` dla p+e⁻ przy tym samym
+β=0,1). Naprawa nadal wymaga osobnej derywacji relacji między czterowektorem
+spinu a tensorem dipolowym pod przyspieszeniem przy wszystkich rzędach v/c —
+nie podjęta tutaj.
+
 ## Literatura pomocnicza
 
 1. NIST, *2022 CODATA Recommended Values of the Fundamental Physical
