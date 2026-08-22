@@ -1822,15 +1822,17 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         }
     }
     std::cout << "Model: full CREM mechanical integration under the active "
-                 "--radiation-reaction model, run until the pair's periapsis\n"
-                 "reaches 10x the Compton barrier (1.933 pm) or the per-event "
-                 "wall-clock budget is spent (then censored, not extrapolated)."
-                 "  The last stretch down to\nthe Compton barrier itself "
+                 "--radiation-reaction model, run until EITHER of two\n"
+                 "independent physical limits is reached, whichever comes "
+                 "first: the pair's periapsis reaches the Compton barrier\n"
                  "(193.30 fm, where classical point-particle electrodynamics "
-                 "stops applying) is truncated deliberately:\nwith t ~ a^3 it is "
-                 "0.1% of the collapse time, below the 3% per-jump tolerance, "
-                 "and the one-period measurement window stops being\nvalid "
-                 "there.  External lifetime is comparison only.\n"
+                 "stops applying), or the osculating period/light-crossing-\n"
+                 "time ratio drops to 150 (where the Darwin/retardation "
+                 "approximation breaks down; this bound tracks the pair's\n"
+                 "angular momentum, not its radius, so it can trigger above "
+                 "or below the Compton barrier depending on the orbit) --\n"
+                 "or the per-event wall-clock budget is spent (then censored, "
+                 "not extrapolated).  External lifetime is comparison only.\n"
               << "Caution: the CREM collapse time is a classical inspiral time."
                  " Para and ortho differ here only through the initial dipole\n"
                  "alignment, whose coupling is ~1e-5 of the Coulomb potential,"
@@ -1856,10 +1858,11 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                    "trajectory starts at\nRADIUS a_0 but with a sub-circular "
                    "tangential speed, so its semi-major axis is already below "
                    "a_0 and T is below the\n107.5 as of a circular orbit at "
-                   "a_0.  The run ends when the PERIAPSIS reaches 10x the "
-                   "Compton barrier (1.933 pm).  The revolution count is\n"
-                   "accumulated by the orbit-averaged integrator, resolved and "
-                   "skipped orbits alike.\n";
+                   "a_0.  The run ends when the PERIAPSIS reaches the Compton "
+                   "barrier (193.30 fm) or the period/light-crossing-time\n"
+                   "ratio drops to 150, whichever comes first.  The "
+                   "revolution count is accumulated by the orbit-averaged "
+                   "integrator, resolved and\nskipped orbits alike.\n";
     }
     if(observationLimitCount>0) {
         std::cout<<"Note: "<<observationLimitCount<<" of "<<runCount

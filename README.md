@@ -418,6 +418,87 @@ dotyczyła wyłącznie warstwy sekularnej CREM (eksperymenty 1/2), której
 eksperyment 5 nie używa, więc zgodność w granicach błędu jest oczekiwana, nie
 przypadkowa.
 
+Kolejna, czwarta z rzędu poprawka tej samej warstwy (`f477866`…`ff48f08`)
+usunęła ostatnie źródło niepewności w tym pomiarze: kink w pierwszej pochodnej
+siły dokładnie na granicy zacisku (`clampedSeparationVector`, twardy
+`max(r,floor)`), który blokował adaptacyjny integrator dokładnie tam, gdzie
+orbita pierwszy raz przekraczała podłogę. Zastąpiony gładkim zmiękczeniem
+Plummera (`r_eff=sqrt(r²+floor²)`, ciągłym w pierwszej pochodnej wszędzie) —
+zweryfikowane bezpośrednio: ta sama trajektoria (ziarno 5), która wcześniej
+grzęzła na checkpoincie 27, po zmianie dochodzi do checkpointu 32, trzy razy
+głębiej (\(a=63\) fm).
+
+Usunięcie kinku otworzyło pytanie zadane wprost: skoro integrator już nie
+grzęźnie na granicy, jak głęboko naprawdę bezpiecznie sięga próg
+`finalApproachMultiple` (dotąd \(10\), patrz wyżej), i czy można go
+zunifikować z granicą Collision (`comptonBarrierRadius`) używaną gdzie
+indziej? Zmierzone bezpośrednio na tych samych sześciu ziarnach:
+`finalApproachMultiple=1.0` (zatrzymanie dokładnie na barierze) wychodzi
+czysto na wszystkich sześciu, `0.5` (już za barierą) zawodzi na 2 z 6. `1.0`
+wyglądał więc na zmierzoną granicę bezpieczeństwa, zgodną co do rzędu
+wielkości z granicą Collision — i tak też został zacommitowany (`898dc95`).
+
+Ta sama unifikacja zastosowana do granicy Collision eksperymentów 3/4 (dotąd
+`nuclearCutoff`=10 fm, gola stała bez wyprowadzenia fizycznego, inny rząd
+wielkości niż `comptonBarrierRadius`=193,3 fm) ujawniła po drodze osobny
+błąd: pierwsza próba sprzęgła siatkę próbkowania eksperymentu 3
+(`defaultImpactMaximum`) z tą samą granicą, co poszerzyło pole próbkowania
+~361x i rozcieńczyło wszystkie kategorie wyniku na stałym N (`captured`
+376→6). Naprawione rozdzieleniem: siatka próbkowania zostaje
+`nuclearCutoff`-based (bez zmian, własna decyzja strojenia statystyki),
+granica Collision służy wyłącznie klasyfikacji i referencji analitycznej
+(`340b67b`). Sprawdzone też, czy istnieje bezpieczny punkt pośredni między
+`nuclearCutoff` a `comptonBarrierRadius`: średnia geometryczna (\(44\) fm)
+daje w eksperymencie 3 tylko 2% `collision`, ale ta sama głębokość w CREM
+zawodzi na 1 z 3 przetestowanych ziaren — dokładnie ta sama strefa załamania
+przybliżenia Darwina opisana niżej. Żaden punkt pośredni nie okazał się
+bezpieczny; `comptonBarrierRadius` pozostał jedyną zmierzoną bezpieczną
+wartością.
+
+Pełny bieg produkcyjny N=1000 dla `finalApproachMultiple=1.0` ujawnił jednak,
+że sześć ręcznie wybranych ziaren nie było reprezentatywną próbą: 236 błędów
+numerycznych + 223 cenzurowanych budżetem zegara na 1000 (46% bez czystego
+wyniku) — prawdopodobieństwo trafienia 6/6 czystych przy prawdziwym ~54%
+wskaźniku sukcesu to tylko ~2,6%. Zdiagnozowane wprost (instrumentacja w
+miejscu awarii): wszystkie zmierzone `NumericalFailure` miały stosunek
+okres/czas-przelotu-światła między \(37{,}8\) a \(71{,}6\) — znana strefa
+załamania przybliżenia Darwina — ale około połowa tych awarii wystąpiła
+WYRAŹNIE POWYŻEJ `comptonBarrierRadius` (periapsis \(204\)–\(676\) fm), bo ta
+granica zależy od momentu pędu \(L\) orbity, nie od promienia: orbity o
+niskim \(L\) łamią przybliżenie retardacyjne przy większym \(r\) niż orbity o
+wysokim \(L\). Żaden stały promień nie mógł więc poprawnie uchwycić tej
+granicy dla całej populacji trajektorii.
+
+Naprawione zastąpieniem stałego `finalApproachMultiple` warunkiem podwójnym:
+pętla sekularna zatrzymuje się, gdy KTÓREKOLWIEK z dwóch niezależnych
+ograniczeń zostanie osiągnięte pierwsze — periapsis \(\le\)
+`comptonBarrierRadius` (granica ważności modelu punktowej cząstki) LUB
+okres/czas-przelotu-światła \(\le150\) (granica ważności przybliżenia
+Darwina, zależna od \(L\), margines ~2x nad zmierzonym zakresem awarii)
+(`ff48f08`). Zweryfikowane: N=1000 dla obu kanałów CREM, zero błędów
+numerycznych, zero cenzury w obu — pierwszy raz jednoczesna pełna unifikacja
+granicy Collision między CREM (eksperymenty 1/2) i wszystkimi trzema
+wariantami eksperymentów rozproszeniowych (3/4/5), z każdą trajektorią
+schodzącą tak głęboko, jak jej własny moment pędu na to bezpiecznie pozwala.
+
+Produkcyjny bieg N=1000, wszystkie pięć eksperymentów, e⁺e⁻, bez pola
+zewnętrznego, na finalnym stanie tej serii (`f477866`…`ff48f08`): eksperyment
+1 (p-Ps CREM, 14m47s) 1000/1000 czystych, mediana Kaplana-Meiera \(30{,}76\)
+ps, średnia \(33{,}62\pm0{,}44\) ps; eksperyment 2 (o-Ps CREM, 14m58s)
+1000/1000 czystych, mediana \(31{,}73\) ps, średnia \(34{,}12\pm0{,}44\) ps —
+statystycznie ta sama liczba w obu kanałach, jak poprzednio. Eksperyment 3
+(wiązka, ostry fokus, 5m56s): `escaped`=725, `collision`=137, `captured`=137,
+`unresolved`=1, zero awarii — `sigma(reach cutoff)`=\(446288\pm35421\) barn
+wobec referencji czysto kulombowskiej \(438405\) barn, w granicach błędu.
+Eksperyment 4 (wiązka, szeroki kąt, 2m53s): `escaped`=1000/0/0/0/0, bez zmian
+względem każdego wcześniejszego przebiegu — potwierdza, że cała ta seria
+poprawek nie dotyka geometrii próbkowania eksperymentu 4. Eksperyment 5
+(oddziaływania, 4m26s): `Collision`=230 (23,0%), `Scattering`=654 (65,4%),
+`Para-Positronium`=33 (3,3%), `Ortho-Positronium`=81 (8,1%), `Unresolved`=2 —
+para:orto \(33{:}81\approx1{:}2{,}45\), w granicach szumu statystycznego
+oczekiwanego \(1{:}3\) przy 114 zdarzeniach związanych. Walidacja pól 33/33
+na całej serii.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
@@ -1596,6 +1677,21 @@ nie samej fizyki mierzonej w normalnym zasięgu produkcyjnym — zero awarii na
 1000/1000 w obu kanałach jest bezpośrednim, produkcyjnym potwierdzeniem tej
 poprawy odporności, nie tylko wynikiem diagnostyki opisanej wyżej.
 
+Czwarta poprawka tej serii (`f477866`…`ff48f08`, opisana szczegółowo w
+"Podłoga zasięgu CREM: bariera Comptona zamiast granicy zderzenia" wyżej)
+usunęła kink w pierwszej pochodnej siły na granicy zacisku (zmiękczenie
+Plummera) i zastąpiła stały próg zatrzymania `finalApproachMultiple` warunkiem
+podwójnym: periapsis \(\le\) bariera Comptona LUB okres/czas-przelotu-światła
+\(\le150\), zależnym od momentu pędu orbity, nie od stałego promienia.
+Ponownie zmierzone na produkcyjnym przebiegu N=1000 dla obu kanałów: p-Ps
+1000/1000 czystych (zero błędów, zero cenzury), mediana Kaplana-Meiera
+\(30{,}76\) ps, średnia \(33{,}62\pm0{,}44\) ps; o-Ps 1000/1000 czystych,
+mediana \(31{,}73\) ps, średnia \(34{,}12\pm0{,}44\) ps — statystycznie
+nierozróżnialne od siebie i od przebiegu sprzed tej poprawki, dokładnie jak
+przewiduje argument "ucięty odcinek to ~0,1% czasu kolapsu": zmiana progu
+zatrzymania nie mogła zmienić mierzonej fizyki, tylko jej numeryczną
+niezawodność.
+
 Zmierzony czas życia p-Ps to 125,1 ps, więc pozostała rozbieżność to czynnik
 \(\approx3{,}7\). Świadomie nie próbujemy jej domknąć: silnik odtwarza teraz
 zamknięty wzór klasycznej inspirali z dokładnością \(1{,}8\%\)
@@ -1678,8 +1774,11 @@ Koszyki kąta są dobrane tak, aby w granicy Rutherforda miały porównywalną
 oczekiwaną statystykę. Na wykresach znajduje się krzywa Rutherforda jako
 kontrola granicy małych prędkości. Całkowity przekrój Coulombowski jest
 rozbieżny w przód, dlatego program zawsze raportuje przekrój z jawnym progiem
-kątowym. Zdarzenie dochodzące do \(10^{-14}\,\mathrm m\) trafia do osobnego
-kanału `reach cutoff`; jego przekrój nie jest przekrojem anihilacji QED.
+kątowym. Zdarzenie dochodzące do granicy Collision (`BeamConfiguration::
+collisionRadius`: bariera Comptona \(193{,}3\) fm dla e⁺e⁻, `nuclearCutoff`
+\(=10^{-14}\,\mathrm m\) dla każdej innej pary — ta sama warunkowa reguła co w
+CREM i w eksperymencie 5, ujednolicona w `340b67b`) trafia do osobnego kanału
+`reach cutoff`; jego przekrój nie jest przekrojem anihilacji QED.
 Pełna relatywistyczna interpretacja danych e⁺e⁻ wymaga amplitudy rozpraszania
 Bhabhy, której klasyczny integrator jeszcze nie zawiera.
 
