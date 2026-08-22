@@ -643,8 +643,20 @@ double electricQuadrupoleRadiatedPower(
     const State& state,const StateHistory& history) {
     const ElectricQuadrupole third=
         electricQuadrupoleThirdDerivative(state,history);
-    // SI coefficient for Q_ij=sum q(3 x_i x_j-r^2 delta_ij).
-    return third.squaredNorm()/(180.0*pi*epsilon0*c*c*c*c*c);
+    // SI coefficient for Q_ij=sum q(3 x_i x_j-r^2 delta_ij).  Gaussian-unit
+    // reference (Landau & Lifshitz, Classical Theory of Fields) is
+    // P=D_ij_dddot^2/(180 c^5); converting to SI charges the same way the
+    // neighbouring E1/M1 terms in this file do (q_Gauss^2 -> q_SI^2/4*pi*
+    // epsilon0, e.g. electricCoefficient=1/(4*pi*epsilon0) in
+    // retardedElectricDipoleField) gives 1/(720*pi*epsilon0*c^5), not
+    // 1/(180*pi*epsilon0*c^5) -- audit found this coefficient short a
+    // factor of 4 (missing the 4*pi every other Coulomb-type constant here
+    // carries).  Confirmed inert in production: this power only feeds the
+    // saturated dominanceGate in particleMultipoleRadiation() (automatic
+    // reaction-model blending), never the energy/momentum bookkeeping, and
+    // the measured dominance ratios (~3.5e13 for e+e-, ~3.3e3 for p+e-) are
+    // orders of magnitude clear of the gate's [10,20] threshold either way.
+    return third.squaredNorm()/(720.0*pi*epsilon0*c*c*c*c*c);
 }
 
 MutualForces individualLandauLifshitzSelfForces(

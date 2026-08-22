@@ -2702,6 +2702,35 @@ Przyciski `STOP`/`START` sterują animacją, a `EXIT` zamyka program.
   energii nie wchodzi żadna z nich, a dalsze człony rozwinięcia nie są
   liczone w ogóle.
 
+**Audyt fizyki (przegląd trzech niezależnych torów: pola retardowane, reakcja
+promieniowania, precesja spinu/Darwin/dipol-dipol) znalazł i naprawił jeden
+błąd numeryczny**: `electricQuadrupoleRadiatedPower()` miał współczynnik SI
+`1/(180πε₀c⁵)` zamiast poprawnego `1/(720πε₀c⁵)` (brakujący czynnik `4π`,
+jaki niosą wszystkie sąsiednie stałe typu kulombowskiego w tym pliku) —
+potwierdzone trzema niezależnymi przeliczeniami (Gaussa→SI tą samą metodą co
+już zwalidowane człony E1/M1). Wpływ produkcyjny znikomy: ta moc wchodzi
+wyłącznie do nasyconej bramki `dominance` (próg 10-20, zmierzone wartości
+~3,5·10¹³ dla e⁺e⁻ i ~3,3·10³ dla p+e⁻ — 4× korekta niczego nie przełącza),
+nigdy do bilansu energii. Zweryfikowane po poprawce: `positronium_validation`
+33/33 bez zmian.
+
+**Ten sam audyt znalazł też nierozstrzygniętą jeszcze rozbieżność w precesji
+spinu**, nienaprawioną celowo (wymaga osobnej derywacji, nie zgadywania,
+która strona jest błędna). Kod ma dwie implementacje: `thomasBmtEffectiveField`
+(dokładnie odtwarza wzór Jacksona, ale nie jest wołana z produkcyjnego kroku)
+i `advanceCovariantBmt` (kowariantne równanie tensorowe RK4, faktyczna ścieżka
+produkcyjna). Zmierzone bezpośrednio (niezależna reimplementacja w Pythonie,
+zbieżna po kroku czasowym): przy `g=2` obie zgadzają się dokładnie dla
+każdego β, ale przy `g≠2` rozbieżność rośnie z anomalią i prędkością —
+5,8·10⁻⁸ dla e⁺e⁻ przy orbitalnym β≈0,007 (nieistotne), ale 3,0%/13,8%/45,4%
+dla protonu (`g=5,5857`) przy β=0,3/0,6/0,9. Istniejący test `covariant BMT`
+w `positronium_validation` sprawdza `advanceCovariantBmt` tylko względem
+samego siebie pod boostem (samospójność), nigdy względem niezależnie
+poprawnej `thomasBmtEffectiveField` — 33/33 nic tu nie gwarantuje. Dla
+domyślnej pary e⁺e⁻ przy prędkościach pozytonium to nieistotne; dla ciężkich,
+wysoko-anomalnych par pod `--radiation-reaction automatic` przy
+relatywistycznych prędkościach to nadal otwarte pytanie.
+
 ## Literatura pomocnicza
 
 1. NIST, *2022 CODATA Recommended Values of the Fundamental Physical
