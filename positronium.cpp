@@ -1097,7 +1097,7 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 // in this repository was produced with it.
 [[maybe_unused]] int gIntegratorOrder = 2;
 [[maybe_unused]] ChargeRadiationReactionModel gRadiationReactionModel =
-    ChargeRadiationReactionModel::individualLandauLifshitz;
+    ChargeRadiationReactionModel::stochasticElectricDipole;
 
 #include "modules/crem_engine.hpp"
 

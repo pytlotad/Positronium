@@ -786,6 +786,26 @@ Test na 10 ziarnach: 10/10 trajektorii dochodzi do granicy (100% ukończenia,
 zero cenzury/awarii) — mechanizm jest stabilny, nie tylko poprawny
 punktowo.
 
+**Na wyraźną prośbę: `stochastic` zastąpił `individual` jako domyślny
+model produkcyjny (stały inicjalizator `gRadiationReactionModel` w
+`positronium.cpp`), nie tylko opcjonalny tryb obok niego.** To odwraca
+dotychczasową konwencję tego projektu, w której każdy nowy/eksperymentalny
+mechanizm (`--zpf`, `--beam-energy-sigma-ev`) domyślnie zostawał wyłączony
+— świadoma decyzja, potwierdzona wprost, nie domyślne zachowanie tej
+sesji. Konsekwencja jest realna i warta podkreślenia osobno: **każda
+liczba czasu kolapsu cytowana gdziekolwiek wcześniej w tym dokumencie
+(rzędu 36-40 ps dla e⁺e⁻, i analogiczne dla mionium/protonium) została
+zmierzona pod starym domyślnym `individual`, nie pod obecnym
+`stochastic`.** `./positronium` bez żadnych flag daje dziś medianę rzędu
+149 ps i znacznie szerszy rozkład (sigma/średnia≈1,0) zamiast ciasnych
+~36-40 ps. Stary model nie zniknął — `--radiation-reaction individual`
+odtwarza go bit w bit (zweryfikowane: 35,99 ps, identyczne jak przed tą
+zmianą) — zmienił się wyłącznie *domyślny wybór* dla kogoś, kto nie poda
+żadnej flagi. `positronium_validation` 33/33 niezależnie od tej zmiany
+(sama walidacja pól nie zależy od globalnego domyślnego modelu reakcji);
+wszystkie 5 eksperymentów sprawdzone dymnie pod nowym domyślnym modelem —
+brak awarii, sensowne wyjścia.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
@@ -2739,7 +2759,7 @@ Pięć opcji sterują samą fizyką i kosztem eksperymentów związanych:
 | `--zpf`, `--zpf-band` | `0` (wyłączone) | **Eksperyment, nie część modelu.** Klasyczne pole punktu zerowego elektrodynamiki stochastycznej: losowe fale płaskie o widmie \(\rho(\omega)=\hbar\omega^3/2\pi^2c^3\), 64 mody o równej energii, orientacje i fazy z ziarna `--seed`. `--zpf` skaluje **amplitudę** (1 = poziom fizyczny, moc pochłaniana rośnie jak kwadrat), `--zpf-band lo,hi` ustala pasmo w jednostkach częstości orbitalnej pary (domyślnie `0.3,3`). To jest fluktuacyjna połowa pary fluktuacja–dyssypacja; dyssypacyjną, czyli reakcję promieniowania, model ma od zawsze. Wchodzi w te same trzy miejsca co pole jednorodne, ale próbkowane osobno dla każdej cząstki, bo zależy od położenia i czasu. **Nie odtwarza stanu podstawowego SED — patrz niżej.** |
 | `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
 | `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
-| `--radiation-reaction` | `individual` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki), `automatic` (mieszanka obu) albo `stochastic` (**eksperyment**, patrz niżej — kwantowane, Poissonowskie kopnięcia fotonowe zamiast ciągłego hamowania). Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
+| `--radiation-reaction` | `stochastic` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki), `automatic` (mieszanka obu) albo `stochastic` (domyślny od tego miejsca w historii projektu — kwantowane, Poissonowskie kopnięcia fotonowe zamiast ciągłego hamowania, patrz niżej). **Każda liczba czasu kolapsu cytowana wcześniej w tym README (rzędu 36-40 ps dla e⁺e⁻) została zmierzona pod `individual`, nie pod obecnym domyślnym `stochastic`** — żeby je odtworzyć, trzeba dziś podać `--radiation-reaction individual` jawnie. Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
 | `--beam-energy-sigma-ev` | `0` (wyłączone) | **Tylko eksperymenty 3, 4.** Odchylenie standardowe rozkładu Gaussa, z którego próbkowana jest energia środka masy \(K_{CM}\) każdego zdarzenia wiązki, wokół `--beam-energy-ev`; `0` zachowuje dotychczasową, monochromatyczną wiązkę bit w bit. Próbkowanie odrzuca wyniki \(\le 0\) (do 1000 prób, jak `sampleKinetic` eksperymentu 5), a widmo strat energii liczy się względem faktycznie wylosowanej energii zdarzenia, nie ustalonej średniej. Modeluje skończoną rozdzielczość energetyczną realnej wiązki kosztem rozmycia porównania z formułą Rutherforda, która jest zdefiniowana przy jednym \(K_{CM}\). |
 
 Zasięg `--pair` nie jest jednakowy dla wszystkich eksperymentów.
