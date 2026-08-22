@@ -2566,6 +2566,45 @@ SED wymaga samouzgodnionej odpowiedzi cząstki na pełne widmo, a nie dołożeni
 losowego pola do gotowych równań ruchu; równowaga jest delikatnym skasowaniem,
 nie efektem rzędu wiodącego.
 
+**Sprawdzone wprost, czy to obcięcie po prostu za mało modów, a nie sam
+mechanizm.** Powyższy wynik przy `0.3,300` użył 64 modów. Zmierzone na tym
+samym paśmie i ziarnie (42) przy 64/256/1024 modach: promień końcowy
+232,7/115,1/161,4 pm, zakres [103,0–233,1]/[104,8–150,6]/[104,1–176,0] pm —
+**żadnej zbieżności z liczbą modów**, bo każda liczba modów losuje zupełnie
+nową, niepowiązaną realizację pola (ten sam seed nie zagęszcza poprzedniej
+próby, tylko losuje inną). Powtórzone na dwóch dalszych ziarnach przy 256
+modach (najtańszy koszt spośród testowanych): ziarno 7 daje promień końcowy
+165,6 pm, zakres [105,7–165,6] pm; ziarno 1 daje 98,2 pm, zakres
+[75,3–134,4] pm — ten ostatni przypadek wygląda na mniejszą ucieczkę, ale to
+złudzenie: przewidywane peryapsis tej konkretnej próbkowanej orbity to
+74,7 pm (wobec ~105 pm dla pozostałych ziaren), więc dolna granica to
+naturalne przejście przez peryapsis Keplera, nie efekt pola.
+
+**Wszystkie pięć prób (3 liczby modów × ziarno 42, 2 dodatkowe ziarna przy
+256 modach) kończą się identycznie: `trajectory: FAIL`** — promień
+przekracza apoapsis Keplera startowej orbity o wygodny margines w każdym
+przypadku, bez wyjątku. Szczegółowy kształt (monotoniczna ucieczka jak przy
+ziarnach 42/7, czy nie-monotoniczny wychył jak przy ziarnie 1) zmienia się
+z każdą realizacją, ale kierunek — **żadnej stabilizacji, żadnego
+ograniczonego stanu równowagi** — jest identyczny za każdym razem. To
+domyka sprawę mocniej niż pojedynczy pomiar: gdyby wynik zależał tylko od
+niedopróbkowania wysokich częstości przy 64 modach, zwiększenie rozdzielczości
+16-krotnie powinno było dać zbieżność do jednej liczby. Nie dało — bo
+problem nie jest w rozdzielczości próbkowania, tylko w samej strukturze
+(skończona suma modów, obcięta arbitralnie w paśmie), dokładnie jak
+zdiagnozowano wyżej.
+
+Nie przetestowano wprost pasma sięgającego częstości Comptona
+`ω_C=m_ec²/ħ≈7,76·10²⁰` rad/s — przy startowej częstości orbitalnej
+`ω_orb≈2,07·10¹⁶` rad/s dla p-Ps to krotność `≈37 600`, ponad sto razy
+szersza niż już przetestowane `0.3,300`, a koszt jednego biegu przy `0.3,300`
+i 1024 modach to już rząd godziny. Ekstrapolacja z ustalonego trendu
+(szersze pasmo = więcej energii z modów nierezonansowych = mocniejsza
+ucieczka, nigdy stabilizacja) czyni bieg przy pełnym odcięciu Comptona
+bardzo drogim testem obarczonym niemal pewnym wynikiem — nie uzasadnia to
+kosztu. Wątek SED/`--zpf` jako sposobu na wydłużenie symulowanego czasu
+kolapsu uznaję za zamknięty.
+
 Dwie własności modeli reakcji, które warto znać przed użyciem:
 
 - **`individual` zawiera człon wzajemny i odtwarza koherentne tempo
