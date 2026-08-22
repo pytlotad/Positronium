@@ -584,6 +584,56 @@ jest tu wyłącznie diagnostyczny: potwierdza, że zmiękczenie Plummera
 (`f477866`) i warunek ratio (`ff48f08`) razem dają silnikowi solidny bufor
 poniżej punktu, w którym model i tak przestaje deklarować ważność.
 
+**Ta sama sonda powtórzona z pytaniem "czy da się zejść w stronę 10 fm
+(`nuclearCutoff`)", zamiast tylko notować, gdzie akurat pada.** Cel obu
+warunków zatrzymania retargetowany na `nuclearCutoff` zamiast
+`comptonBarrierRadius` (`separationFloor()` znów bez zmian), z tym samym
+zamiarem diagnostycznym co wyżej — i za pierwszym podejściem wynik był
+identyczny co poprzednio: prawdziwa awaria numeryczna, nie licząc miejsca
+zatrzymania. Ale `maximumDepth` mechanicznego integratora (budżet
+podpodziału kroku w pojedynczej mierzonej orbicie, `crem_trajectory.hpp`)
+od zawsze siedzi na `12`, ustalonym w audycie SPRZED naprawy sprzężenia
+historii retardowanej z krokiem (`d164f69`) — tamten audyt zmierzył, że
+podniesienie tego budżetu kosztuje `445×` czasu i **nadal** kończy się
+awarią, więc nikt nie sprawdził go ponownie po tamtej naprawie.
+
+Sprawdzone teraz: `maximumDepth=20` (z `12`), 10 ziaren, budżet zegarowy do
+250-350 s na próbę. Wynik zaskakująco pozytywny — mediana głębokości, na
+jakiej pojawia się prawdziwa awaria (lub próba wyczerpuje budżet, wciąż w
+trakcie zbiegania, bez żadnej awarii), spadła z \(56\)-\(92\) fm
+(mediana/średnia poprzedniej sondy) do przedziału \(13\)-\(20\) fm na
+wszystkich dziesięciu próbach jednocześnie — \(5\)-\(6\times\) głębiej, i to
+konsekwentnie, nie tylko w najlepszym przypadku. Dwa ziarna dotarły do
+prawdziwej awarii numerycznej przy \(19{,}17\) i \(13{,}47\) fm; dwa
+wyczerpały wewnętrzny budżet zegarowy (nie awaria) przy \(20{,}1\)-\(20{,}3\)
+fm; pozostałych sześć ubiła zewnętrzna granica czasu tego pomiaru w trakcie
+liczenia KOLEJNEGO punktu kontrolnego, z ostatnim zarejestrowanym peryapsis
+\(13{,}4\)-\(17{,}1\) fm i bez żadnego śladu awarii — a więc prawdopodobnie
+zaszłyby jeszcze głębiej z cierpliwszym budżetem. Sprawdzone też: podniesienie
+`maximumDepth` dalej, z `20` na `28`, na najgorszym ziarnie z tej serii nie
+zmieniło NIC — identyczna awaria, identyczna głębokość, co do ostatniej
+cyfry — więc `20` już nasyca to, co ten konkretny budżet może dać; głębsza
+awaria wymagałaby czegoś innego niż więcej podpodziałów. Sprawdzone też
+`--integrator-order 4` na dwóch najgorszych ziarnach: pogorszenie na obu
+(awaria płytsza, czas \(3\)-\(4\times\) dłuższy) — potwierdza wcześniejsze
+ustalenie, że rząd kompozycji nie pomaga tutaj.
+
+Koszt: \(5\)-\(20\times\) więcej czasu na próbę (z \(8\)-\(15\) s do
+\(40\)-\(260\)+ s), bo każdy kolejny punkt kontrolny bliżej dna kosztuje
+więcej niż poprzedni — obserwowane bezpośrednio: jeden punkt kontrolny dla
+ziarna 11 sam zajął \(87\) s. To NADAL nie jest propozycja zmiany czegokolwiek
+produkcyjnego — `comptonBarrierRadius` pozostaje fizyczną, nie numeryczną,
+granicą, a próg \(150\) już ma zerowy koszt produkcyjny przy obecnym
+`maximumDepth=12`. Wynik jest wart odnotowania z innego powodu: silnik,
+po naprawie sprzężenia historii z krokiem, ma jeszcze WIĘCEJ zapasu
+numerycznego niż `4c48ffe` sądziło — jedna nietknięta od dawna stała
+(`maximumDepth`) sama, bez żadnej innej zmiany, przesunęła zmierzoną ścianę
+o rząd wielkości bliżej `nuclearCutoff`, a wcześniejsza ocena tej samej
+gałki ("445× kosztu i nadal pada") była prawdziwa tylko względem
+NIEISTNIEJĄCEGO już bugu, nie samego integratora. Sonda w
+`crem_collapse.hpp`/`crem_trajectory.hpp` cofnięta, `positronium_validation`
+33/33 bez zmian.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**

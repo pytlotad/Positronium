@@ -67,7 +67,11 @@ inline constexpr double hbar = 1.054571817e-34;
 // m_e*c, i.e. where classical point-particle electrodynamics stops applying.
 // r*/r_e = (g/2)/(2*alpha) = 68.60: this is not a regularization choice or
 // anything tunable, it follows from the fine structure constant.  Annihilation
-// happens 137x deeper, at r_e.  Used in crem_collapse.hpp as the depth
+// happens 68.6x deeper, at r_e (was misstated as "137x" here -- that number
+// is the reduced Compton wavelength's own ratio to r_e, 1/alpha, not r*'s;
+// r* is defined above as half that wavelength times g/2, so its own ratio to
+// r_e picks up the extra factor of ~2 that brings 137 down to 68.6).  Used
+// in crem_collapse.hpp as the depth
 // Experiments 1/2 actually resolve the pair's inspiral down to, replacing the
 // unrelated chargeCloudRestRadius-derived collisionBoundaryRadius that used
 // to bound that measurement -- see README's floor-lowering measurement for
