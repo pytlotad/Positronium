@@ -558,6 +558,32 @@ klasyfikacji Collision/Scattering/para/ortho, tylko ekstrapolację czasu
 kolapsu już sklasyfikowanych par). Zero awarii na całej serii, walidacja
 pól 33/33.
 
+Sprawdzone też diagnostycznie (bez zmiany produkcyjnej), gdzie dziś leży
+NASTĘPNA ściana numeryczna mechanicznej pętli CREM, gdyby oba warunki
+zatrzymania (promień i ratio) tymczasowo poluzować do nieosiągalnie
+głębokich wartości, zostawiając samą podłogę zmiękczenia
+(`separationFloor()`) bez zmian, na produkcyjnym `comptonBarrierRadius`. Na
+10 ziarnach pętla dochodzi teraz aż do peryapsis \(23\)–\(383\) fm (mediana
+\(56\) fm, średnia \(92\) fm) i stosunku okres/czas-przelotu-światła
+\(13\)–\(52\) (mediana \(20\), średnia \(23\)) — dopiero tam napotyka
+prawdziwą awarię numeryczną. To \(6\)–\(12\times\) głębiej w skali ratio niż
+produkcyjny próg zatrzymania \(150\): margines, jaki `ff48f08` przyjął
+(~2× nad zmierzonym wtedy zakresem awarii \(37{,}8\)–\(71{,}6\)), okazuje
+się w praktyce jeszcze bardziej konserwatywny niż zakładano — prawdziwa
+ściana integratora leży wyraźnie głębiej niż strefa, w której produkcyjny
+warunek już się zatrzymuje.
+
+To NIE jest propozycja obniżenia progu produkcyjnego. `comptonBarrierRadius`
+nie jest marginesem numerycznym do przycinania jak dawne
+`finalApproachMultiple` — to wyprowadzona fizycznie granica, przy której
+klasyczna elektrodynamika punktowej cząstki przestaje obowiązywać (patrz
+"Podłoga zasięgu CREM" wyżej). Próg \(150\) już dziś nie kosztuje nic
+produkcyjnie (N=1000 dla obu kanałów CREM: zero awarii, zero cenzury), więc
+nie ma powodu go zawężać tylko dlatego, że silnik ma jeszcze zapas. Wynik
+jest tu wyłącznie diagnostyczny: potwierdza, że zmiękczenie Plummera
+(`f477866`) i warunek ratio (`ff48f08`) razem dają silnikowi solidny bufor
+poniżej punktu, w którym model i tak przestaje deklarować ważność.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
