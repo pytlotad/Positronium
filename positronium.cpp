@@ -2406,10 +2406,13 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
 
 // Named Collision, not ShortRange, to match the terminal-classification
 // vocabulary experiment 5 already uses for reaching the same kind of
-// point-particle/model-validity boundary (nuclearCutoff here, comptonBarrier-
-// Radius there): same concept, one name across the whole program. The
-// experiment's own identity ("short-range/cutoff channel", --phenomenon 3)
-// is unaffected -- that names what the experiment probes, not this outcome.
+// point-particle/model-validity boundary. Originally declared at a
+// different radius than experiment 5's (nuclearCutoff here,
+// comptonBarrierRadius there) -- same concept, two numbers, until
+// BeamConfiguration::collisionRadius below unified them onto the one
+// experiment 5 already used. The experiment's own identity
+// ("short-range/cutoff channel", --phenomenon 3) is unaffected -- that names
+// what the experiment probes, not this outcome.
 enum class BeamOutcome {
     Escaped, Collision, Captured, Unresolved, NumericalFailure
 };
@@ -2427,6 +2430,16 @@ struct BeamConfiguration {
     double analyticCutoffImpactParameter;
     int angleBins;
     bool shortRangeFocus;
+    // Separation at which the trajectory is declared Collision. Used to be
+    // nuclearCutoff (10 fm, the universal point-particle safety floor)
+    // unconditionally; now the same physically meaningful boundary
+    // InteractionConfiguration::collisionRadius already uses for experiment
+    // 5 (comptonBarrierRadius for e+e-, collisionBoundaryRadius for every
+    // other pair, since comptonBarrierRadius is electron-specific) -- see
+    // that field's own comment for why nuclearCutoff was never the right
+    // number here either, just the only "how close is too close" scale
+    // available before comptonBarrierRadius existed.
+    double collisionRadius;
 };
 
 struct EndpointDiagnostics {
@@ -2523,8 +2536,31 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
     const double energy = energyEv * eCharge;
     const double coulombStrength = pairCoulombStrength;
     const double coulombLength = coulombStrength / (2.0 * energy);
+    // Same physically meaningful boundary experiment 5 already declares
+    // Collision at (see BeamConfiguration::collisionRadius's own comment).
+    // Used ONLY for the analytic reference cross section below
+    // (analyticCutoffImpactParameter -> "Model sigma(reach cutoff)" vs
+    // "pure-Coulomb cutoff reference"), which must be evaluated at the SAME
+    // radius simulateBeamEvent actually classifies Collision at, or the
+    // comparison is meaningless.  Deliberately NOT used to size the
+    // short-range sampling window below (shortRangeFocus's cutoffImpact-
+    // Parameter, unchanged, still nuclearCutoff-based): coupling that one to
+    // collisionRadius too was tried and measured directly to be wrong --
+    // comptonBarrierRadius is ~19x nuclearCutoff, so tying the sampling
+    // window to it as well widens defaultImpactMaximum by that factor in
+    // radius (~361x in area), and at fixed N that dilutes every OTHER
+    // outcome bucket along with it, not just Collision: same-seed N=1000
+    // run, captured collapsed 376 -> 6 and escaped rose 622 -> 985. The
+    // sampling window is a statistics-tuning choice (how wide to cast the
+    // net for good counts across all outcomes), independent of where
+    // Collision is declared, and moving them together conflates the two.
+    const double collisionRadius = isPositronium(activePair)
+        ? comptonBarrierRadius : collisionBoundaryRadius;
+    const double collisionImpactParameter = std::sqrt(
+        collisionRadius*collisionRadius
+            + coulombStrength*collisionRadius/energy);
     const double cutoffImpactParameter = std::sqrt(
-        nuclearCutoff * nuclearCutoff + coulombStrength * nuclearCutoff / energy);
+        nuclearCutoff*nuclearCutoff + coulombStrength*nuclearCutoff/energy);
     const double requestedTheta = thetaMinimumDegrees * pi / 180.0;
     const double defaultImpactMaximum = shortRangeFocus
         ? 12.0 * cutoffImpactParameter
@@ -2553,8 +2589,8 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
     return {energy, impactMaximum, matchingRadius,
             8.0 * matchingRadius / asymptotic.relativeSpeed,
             std::max(asymptotic.firstSpeed,asymptotic.secondSpeed)/c,
-            analysisThetaMinimum, coulombLength, cutoffImpactParameter,
-            angleBins, shortRangeFocus};
+            analysisThetaMinimum, coulombLength, collisionImpactParameter,
+            angleBins, shortRangeFocus, collisionRadius};
 }
 
 BeamEvent simulateBeamEvent(
@@ -2692,11 +2728,11 @@ BeamEvent simulateBeamEvent(
         ++integrationSteps;
         if(!trajectory.advance(state,dt)) {
             // The integrator gave out in the stiff region approaching a close
-            // encounter, before the ordinary nuclearCutoff check below ever
+            // encounter, before the ordinary collisionRadius check below ever
             // got a chance to fire.  Rather than report an undifferentiated
             // failure, ask whether the trajectory's OWN conserved (E, L) at
             // the last resolved state already commit it to a periapsis
-            // inside nuclearCutoff: if so, it was always going to end up
+            // inside collisionRadius: if so, it was always going to end up
             // Collision, and losing the last few fm of
             // resolution should not invalidate the whole cross-section over
             // it.  Only while still inbound (!passedClosestApproach): once
@@ -2704,8 +2740,10 @@ BeamEvent simulateBeamEvent(
             // and minimumSeparation is the measured fact, not an inference.
             if(!passedClosestApproach) {
                 const double periapsis = estimateKeplerPeriapsis(beforeStep);
-                if(std::isfinite(periapsis) && periapsis <= nuclearCutoff) {
-                    minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
+                if(std::isfinite(periapsis)
+                   && periapsis <= configuration.collisionRadius) {
+                    minimumSeparation = std::min(minimumSeparation,
+                        configuration.collisionRadius);
                     return makeResult(BeamOutcome::Collision,
                         std::numeric_limits<double>::quiet_NaN(),
                         std::numeric_limits<double>::quiet_NaN(),
@@ -2728,8 +2766,10 @@ BeamEvent simulateBeamEvent(
             // (beforeStep) is still good, so the same analytic call applies.
             if(!passedClosestApproach) {
                 const double periapsis = estimateKeplerPeriapsis(beforeStep);
-                if(std::isfinite(periapsis) && periapsis <= nuclearCutoff) {
-                    minimumSeparation = std::min(minimumSeparation, nuclearCutoff);
+                if(std::isfinite(periapsis)
+                   && periapsis <= configuration.collisionRadius) {
+                    minimumSeparation = std::min(minimumSeparation,
+                        configuration.collisionRadius);
                     return makeResult(BeamOutcome::Collision,
                         std::numeric_limits<double>::quiet_NaN(),
                         std::numeric_limits<double>::quiet_NaN(),
@@ -2742,12 +2782,13 @@ BeamEvent simulateBeamEvent(
                 beforeStep.radiatedEnergy, &beforeStep);
         }
         minimumSeparation = std::min(minimumSeparation, currentRadius);
-        if (currentRadius <= nuclearCutoff) {
+        if (currentRadius <= configuration.collisionRadius) {
             const double crossingFraction=separationCrossingFraction(
-                beforeStep,state,nuclearCutoff);
+                beforeStep,state,configuration.collisionRadius);
             State cutoffState=interpolateState(
                 beforeStep,state,crossingFraction);
-            minimumSeparation=std::min(minimumSeparation,nuclearCutoff);
+            minimumSeparation=std::min(minimumSeparation,
+                configuration.collisionRadius);
             return makeResult(BeamOutcome::Collision,
                 std::numeric_limits<double>::quiet_NaN(),
                 std::numeric_limits<double>::quiet_NaN(),
