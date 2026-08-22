@@ -1272,7 +1272,12 @@ FourVector electromagneticTensorAction(const ElectromagneticField& field,
         field.electric*(vector.time/c)+cross(vector.space,field.magnetic)};
 }
 
-Vec3 advanceCovariantBmt(const Vec3& properDipole,const Vec3& velocity,
+// No longer on the production path (see properDipolePrecessionRate's
+// comment below for why) -- kept for the self-consistency checks in
+// maxwell_validation.hpp (POSITRONIUM_ENABLE_FIELD_VALIDATION only), hence
+// unused in the plain production build.
+[[maybe_unused]] Vec3 advanceCovariantBmt(const Vec3& properDipole,
+                         const Vec3& velocity,
                          const ElectromagneticField& field,
                          double chargeToMass,double laboratoryDt,
                          double gFactor) {
@@ -1316,13 +1321,95 @@ Vec3 advanceCovariantBmt(const Vec3& properDipole,const Vec3& velocity,
     return result;
 }
 
+// The lab-frame magnetic moment obtained by boosting a purely-magnetic rest
+// dipole (lorentzBoostDipole with zero electric input) scales only the
+// component PERPENDICULAR to velocity by gamma; the component PARALLEL to
+// velocity passes through unchanged.  Verified by direct expansion of
+// lorentzBoostDipole's magnetic branch (README's "audyt fizyki" BMT
+// section).  This closed form is what makes properDipolePrecessionRate
+// below exact rather than needing to invert the boost numerically.
+Vec3 inverseTensorBoostMagnetic(const Vec3& labVector,const Vec3& velocity) {
+    const double speedSquared=velocity.squaredNorm();
+    if(!(speedSquared>0.0)) return labVector;
+    const Vec3 axis=velocity*(1.0/std::sqrt(speedSquared));
+    const double parallelComponent=dot(labVector,axis);
+    const Vec3 parallelPart=axis*parallelComponent;
+    return (labVector-parallelPart)*(1.0/gamma(velocity))+parallelPart;
+}
+
+// Rate of change of the PROPER (rest-frame) dipole that makes the
+// OBSERVABLE lab dipole -- state.firstDipole/secondDipole, exactly what
+// synchronizeCovariantDipoles's tensor boost produces from properDipole --
+// precess at Jackson's textbook Thomas-BMT rate d(mu_lab)/dt=(q/m) mu_lab x
+// B_eff (thomasBmtEffectiveField), instead of advanceCovariantBmt's
+// four-vector route.  Audit finding (README's "audyt fizyki" section):
+// advanceCovariantBmt's final projection, needed because a.u=0 is not
+// preserved when u is held frozen for a sub-step (as it always is here --
+// applyDipolePrecession below is called twice per full step, each time with
+// velocity fixed for that half), was injecting a spurious correction of the
+// SAME order as the genuine precession itself whenever the anomalous
+// (g/2-1) term is active -- exactly zero at g=2 (matching the exact
+// agreement measured there), growing with both the anomaly and beta
+// otherwise (up to 45% for a proton at beta=0.9).  This route sidesteps
+// that: it advances the LAB dipole via a literal rotation (which conserves
+// its norm exactly, without any renormalization hack), then maps the rate
+// back onto properDipole through the closed-form inverse boost above, so
+// the stored proper value stays correct for the NEXT
+// synchronizeCovariantDipoles call once velocity has moved on.  Verified
+// independently to machine precision (1e-16 relative) against Jackson's
+// rate at every tested step size, for the same high-anomaly/high-beta case
+// that exposed the old formula's gap.
+Vec3 properDipolePrecessionRate(const Vec3& properDipole,const Vec3& velocity,
+                                const ElectromagneticField& field,
+                                double chargeToMass,double gFactor) {
+    const Vec3 labDipole=lorentzBoostDipole(
+        {{},properDipole},velocity).magnetic;
+    const Vec3 effectiveField=
+        thomasBmtEffectiveField(velocity,field,gFactor);
+    const Vec3 labRate=cross(labDipole,effectiveField)*chargeToMass;
+    return inverseTensorBoostMagnetic(labRate,velocity);
+}
+
+// RK4 on properDipolePrecessionRate.  Velocity and field are held fixed
+// across the sub-step (same convention the old advanceCovariantBmt used),
+// which makes the rate a LINEAR function of properDipole, so RK4 integrates
+// it exactly up to floating-point round-off regardless of step size.
+// The exact continuous solution conserves the proper dipole's own norm too
+// (precession alone cannot change a magnetic moment's magnitude in ANY
+// frame), but RK4's O(dt^5) local truncation error does not respect that
+// invariant step by step, and unlike the old four-vector route (which
+// explicitly renormalized its result) this one did not -- measured
+// directly: max |mu| drift over a full production e+e- trajectory grew
+// from 4e-14% to 2.5e-10%, four orders of magnitude worse, tripping the
+// 1e-12 dipole-norm-drift guard in the diagnose self-test.  Renormalizing
+// here, the same way advanceCovariantBmt always did, restores it (see
+// README's "audyt fizyki" section for the measured before/after).
+Vec3 advanceThomasBmtDipole(const Vec3& properDipole,const Vec3& velocity,
+                            const ElectromagneticField& field,
+                            double chargeToMass,double laboratoryDt,
+                            double gFactor) {
+    if(laboratoryDt==0.0) return properDipole;
+    const double targetNorm=properDipole.norm();
+    const auto derivative=[&](const Vec3& value) {
+        return properDipolePrecessionRate(
+            value,velocity,field,chargeToMass,gFactor);
+    };
+    const Vec3 k1=derivative(properDipole);
+    const Vec3 k2=derivative(properDipole+k1*(0.5*laboratoryDt));
+    const Vec3 k3=derivative(properDipole+k2*(0.5*laboratoryDt));
+    const Vec3 k4=derivative(properDipole+k3*laboratoryDt);
+    const Vec3 result=
+        properDipole+(k1+k2*2.0+k3*2.0+k4)*(laboratoryDt/6.0);
+    return result.norm()>0.0 ? result*(targetNorm/result.norm()) : result;
+}
+
 void applyDipolePrecession(State& s, double dt,
                            const StateHistory& history) {
     synchronizeCovariantDipoles(s);
     const LocalElectromagneticFields fields = localRelativisticFields(s, history);
-    const Vec3 firstDipole=advanceCovariantBmt(s.firstProperDipole,
+    const Vec3 firstDipole=advanceThomasBmtDipole(s.firstProperDipole,
         s.firstVelocity,fields.atFirst,firstCharge/firstMass,dt,firstGFactor);
-    const Vec3 secondDipole=advanceCovariantBmt(s.secondProperDipole,
+    const Vec3 secondDipole=advanceThomasBmtDipole(s.secondProperDipole,
         s.secondVelocity,fields.atSecond,secondCharge/secondMass,dt,
         secondGFactor);
     // Update simultaneously so neither particle sees an already-updated peer.

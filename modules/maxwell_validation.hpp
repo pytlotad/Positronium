@@ -1116,38 +1116,48 @@ int runMaxwellSelfTest() {
             secondCharge/secondMass,secondGFactor));
 
     // ---------------------------------------------------------------------
-    // Diagnostic only, NOT gated into the pass/fail count below: how far the
-    // PRODUCTION dipole-precession path (advanceCovariantBmt, read out
-    // through synchronizeCovariantDipoles exactly the way state.firstDipole
-    // itself is obtained) diverges from thomasBmtEffectiveField's
-    // independently textbook-correct (Jackson 3rd ed. 11.170') 3D lab-time
-    // formula ds/dt=(q/m) s x B_eff, evaluated at the same instantaneous
-    // (v,E,B,g).  Audit finding: at g=2 (no anomalous moment) the two agree
-    // exactly for every beta tried; the gap opens only once g!=2 and grows
-    // with both the anomaly and beta -- 5.8e-8 at (e+e- g, beta~0.007), but
-    // up to 45% for a proton g at beta=0.9.  The tensor readout is the
-    // production-correct comparison: synchronizeCovariantDipoles is exactly
-    // how state.firstDipole is derived from state.firstProperDipole
-    // everywhere else in the code, and using the "bare" four-vector spatial
-    // part instead (properDipoleFromFourVector) gives WORSE agreement, even
-    // at g=2 -- confirming the tensor route is the one to compare, not an
-    // artifact of the comparison method.  Likely the same Wigner-rotation
-    // gap covarianceRepresentabilityGap already measures for a boosted
-    // static dipole, showing up more strongly here because a dynamical
-    // precession rate is a more sensitive probe than a single static
-    // reference tensor.  Root cause NOT yet isolated (needs a from-scratch
-    // rederivation of how a BMT spin four-vector should relate to a lab
-    // dipole TENSOR under acceleration, not just under a single boost) --
-    // this line exists so a future change cannot silently widen the gap
-    // without it showing up here.  No pass/fail threshold yet: it would be
-    // premature to assert what value is "acceptable" before the root cause
-    // is known.
+    // Regression guard for the fix below: how far the PRODUCTION
+    // dipole-precession path (advanceThomasBmtDipole, read out through
+    // synchronizeCovariantDipoles exactly the way state.firstDipole itself
+    // is obtained) diverges from thomasBmtEffectiveField's independently
+    // textbook-correct (Jackson 3rd ed. 11.170') 3D lab-time formula
+    // d(mu_lab)/dt=(q/m) mu_lab x B_eff, evaluated at the same instantaneous
+    // (v,E,B,g).
+    //
+    // History: production used to call advanceCovariantBmt (a four-vector
+    // RK4 route) here instead, and this same probe measured a REAL gap that
+    // was exactly zero at g=2 and grew with both anomaly and beta -- up to
+    // 45% for a proton g at beta=0.9, 5.8e-8 at (e+e- g, beta~0.007).  Root
+    // cause, isolated by direct rederivation (README's "audyt fizyki" BMT
+    // section): advanceCovariantBmt holds velocity (hence four-velocity u)
+    // FIXED for the duration of its call, exactly how applyDipolePrecession
+    // always invokes it (twice per full step, once before and once after
+    // the momentum kick, each half using whatever velocity is current at
+    // that instant).  But the continuous covariant equation's own
+    // constraint a.u=0 is only preserved by construction when u co-evolves
+    // via du/dtau=(q/m)F.u -- freezing u breaks that, and the function's
+    // final renormalization step (needed to keep the four-vector valid) was
+    // then injecting a correction of the SAME order as the genuine
+    // precession itself, sourced by exactly the term that vanishes at g=2:
+    // the anomalous (g/2-1) piece.  advanceThomasBmtDipole
+    // (electrodynamics.hpp) sidesteps the four-vector route entirely: it
+    // advances the OBSERVABLE lab dipole via a literal rotation under
+    // thomasBmtEffectiveField (which exactly conserves its norm, no
+    // renormalization needed), then maps the rate back onto properDipole
+    // through a closed-form inverse of synchronizeCovariantDipoles's own
+    // boost, verified independently to machine precision (1e-16 relative)
+    // against Jackson's rate at every tested step size for the same
+    // high-anomaly/high-beta case that exposed the old formula's gap.  The
+    // two probes below should now read at or near round-off; kept here,
+    // still without a formal pass/fail gate, so any future change to
+    // properDipolePrecessionRate/advanceThomasBmtDipole that reopens this
+    // gap shows up immediately instead of silently.
     const auto bmtEffectiveFieldGap=[&](double betaMagnitude,double gFactorProbe) {
         const Vec3 velocityProbe{0.0,0.0,betaMagnitude*c};
         const ElectromagneticField fieldProbe{Vec3{0.0,1.0,0.0},Vec3{1.0,0.0,0.0}};
         const Vec3 properDipoleProbe{0.0,1.0,0.0};
         constexpr double probeDt=1.0e-20;
-        const Vec3 evolvedProper=advanceCovariantBmt(properDipoleProbe,
+        const Vec3 evolvedProper=advanceThomasBmtDipole(properDipoleProbe,
             velocityProbe,fieldProbe,1.0,probeDt,gFactorProbe);
         State beforeState,afterState;
         beforeState.firstVelocity=velocityProbe;
@@ -1178,8 +1188,11 @@ int runMaxwellSelfTest() {
     // executes the call sites and cannot see them hand one particle's g-factor,
     // charge-to-mass ratio or local field to the other.  This check does: it
     // runs the production routine, then recomputes the same step by calling
-    // advanceCovariantBmt() directly with each role's OWN parameters, and
-    // requires the two to agree exactly.
+    // advanceThomasBmtDipole() directly with each role's OWN parameters, and
+    // requires the two to agree exactly.  (advanceCovariantBmt is no longer
+    // the production formula -- see properDipolePrecessionRate's comment in
+    // electrodynamics.hpp -- but the swapped-role failure mode this test
+    // guards against is identical regardless of which formula is wired in.)
     //
     // The state is purpose-built rather than borrowed.  The first attempt
     // reused the covariance state, whose dipoles sit parallel to the local
@@ -1219,11 +1232,11 @@ int runMaxwellSelfTest() {
     synchronizeCovariantDipoles(roleRoutingReference);
     const LocalElectromagneticFields roleRoutingFields=
         localRelativisticFields(roleRoutingReference,roleRoutingHistory);
-    const Vec3 expectedFirstProperDipole=advanceCovariantBmt(
+    const Vec3 expectedFirstProperDipole=advanceThomasBmtDipole(
         roleRoutingReference.firstProperDipole,
         roleRoutingReference.firstVelocity,roleRoutingFields.atFirst,
         firstCharge/firstMass,roleRoutingDt,firstGFactor);
-    const Vec3 expectedSecondProperDipole=advanceCovariantBmt(
+    const Vec3 expectedSecondProperDipole=advanceThomasBmtDipole(
         roleRoutingReference.secondProperDipole,
         roleRoutingReference.secondVelocity,roleRoutingFields.atSecond,
         secondCharge/secondMass,roleRoutingDt,secondGFactor);

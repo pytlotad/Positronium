@@ -2754,6 +2754,62 @@ tego po cichu. Zmierzone bazowe wartości: `5,8·10⁻⁶` (e⁺e⁻, β=0,1) /
 spinu a tensorem dipolowym pod przyspieszeniem przy wszystkich rzędach v/c —
 nie podjęta tutaj.
 
+**Naprawione.** Wyprowadzone od zera (redukcja kowariantnego równania BMT do
+3D, przy prędkości zamrożonej dokładnie tak, jak `applyDipolePrecession`
+faktycznie wywołuje precesję — dwa pół-kroki, każdy przy stałym `v`):
+zredukowane równanie **dokładnie** odtwarza `thomasBmtEffectiveField`
+(zgodność do zera maszynowego, `relerr=0`), potwierdzając, że oba wzory są
+fizycznie poprawne z osobna. Rozbieżność w faktycznej implementacji
+`advanceCovariantBmt` miała inne źródło: więz `a·u=0` (spin czterowektor
+prostopadły do czteroprędkości) jest zachowywany przez ciągłe równanie
+kowariantne **tylko wtedy, gdy `u` współewoluuje** razem ze spinem
+(`du/dτ=(q/m)F·u`) — a `advanceCovariantBmt` z konstrukcji zamraża `v` (i
+`u`) na czas całego wywołania, dokładnie tak jak produkcja go zawsze
+wywoływała. Przy zamrożonym `u` więz **nie jest** zachowywany przez samo
+równanie (`d(a·u)/dτ=-(q/m)Kc²≠0` dla ogólnego `K=a·(F·u)/c²`), a końcowa
+projekcja/renormalizacja (potrzebna, żeby czterowektor zostawić poprawnym)
+wstrzykiwała poprawkę tego samego rzędu co sam sygnał fizyczny — dokładnie
+proporcjonalną do członu anomalnego `(g/2−1)`, stąd zero przy `g=2` i wzrost
+z anomalią/prędkością gdzie indziej.
+
+Naprawa: nowa `advanceThomasBmtDipole`/`properDipolePrecessionRate`
+([modules/electrodynamics.hpp](modules/electrodynamics.hpp)) omija
+czterowektor całkowicie. Zamiast tego: (1) rozwiń zmierzony dipol
+laboratoryjny (`lorentzBoostDipole` — ten sam tensorowy boost, którego
+`synchronizeCovariantDipoles` już używa do wyprowadzenia `state.firstDipole`
+wszędzie indziej w kodzie) z bieżącego `properDipole`; (2) policz jego
+tempo wprost ze wzoru Jacksona, `d(μ_lab)/dt=(q/m)μ_lab×B_eff`
+(`thomasBmtEffectiveField`) — czysta rotacja, więc dokładnie zachowuje normę
+`μ_lab` bez żadnej renormalizacji; (3) odwzoruj to tempo z powrotem na
+`properDipole` przez wyprowadzony w zamkniętej formie odwrotny boost —
+boost tensorowy skaluje czynnikiem γ **wyłącznie** składową prostopadłą do
+`v`, składowa równoległa przechodzi bez zmian, więc odwrotność to po prostu
+podzielenie części prostopadłej przez γ. Zweryfikowane niezależnie w
+Pythonie do precyzji maszynowej (`relerr~10⁻¹⁶`) na całym zakresie kroku
+czasowego, dla tego samego przypadku wysokiej anomalii/prędkości, który
+ujawnił błąd starej formuły.
+
+RK4 po tym torze nie zachowuje dokładnie normy `properDipole` (obcięcie
+O(dt⁵), inaczej niż dla `μ_lab`, który jest chroniony samą strukturą
+rotacji) — zmierzone bezpośrednio: dryf normy dipola na pełnej trajektorii
+e⁺e⁻ skoczył z `4·10⁻¹⁴%` do `2,5·10⁻¹⁰%` bez renormalizacji, przekraczając
+próg samotestu `1·10⁻¹²`. Naprawione dodaniem tej samej jawnej
+renormalizacji `properDipole`, jakiej zawsze używała stara
+`advanceCovariantBmt` — po niej dryf wraca do `2,9·10⁻¹⁴%`, w granicach
+poprzedniego poziomu.
+
+Zweryfikowane: `positronium_validation` 33/33 dla e⁺e⁻ i p+e⁻ (test
+`role-routing`, jedyny bezpośrednio wołający starą funkcję, przełączony na
+nową). Diagnostyka `BMT vs eff field` (dodana wcześniej w tym samym audycie)
+spadła z `5,8·10⁻⁶`/`0,4538` do `2,2·10⁻¹⁶`/`1,7·10⁻¹⁶` (e⁺e⁻) i z `0,0032`
+do `0`/`1,7·10⁻¹⁶` (p+e⁻) — czyste zaokrąglenie maszynowe, dokładnie
+przewidziane przez niezależną weryfikację w Pythonie. `--diagnose` na pięciu
+ziarnach (e⁺e⁻ i p+e⁻) daje `trajectory: PASS` z dryfem normy dipola
+porównywalnym do stanu sprzed całej tej serii poprawek. `advanceCovariantBmt`
+pozostaje w kodzie (oznaczona `[[maybe_unused]]` w zwykłej kompilacji) —
+używana już tylko przez własne testy samospójności pod boostem w
+`maxwell_validation.hpp`, nie przez produkcję.
+
 ## Literatura pomocnicza
 
 1. NIST, *2022 CODATA Recommended Values of the Fundamental Physical
