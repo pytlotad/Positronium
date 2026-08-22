@@ -634,6 +634,62 @@ NIEISTNIEJĄCEGO już bugu, nie samego integratora. Sonda w
 `crem_collapse.hpp`/`crem_trajectory.hpp` cofnięta, `positronium_validation`
 33/33 bez zmian.
 
+**Scharakteryzowane dokładnie, co konkretnie zawodzi na dnie tego przedziału
+(13–20 fm).** Dodana chwilowa instrumentacja rozróżniająca trzy niezależne
+gałęzie awarii w `crem_collapse.hpp` (błędna osculacja na starcie punktu
+kontrolnego, sama mechaniczna orbita pomiarowa, strażnik "nie więcej niż
+50% energii na jedną orbitę") oraz dokładne miejsce poddania się rekursji w
+`ClassicalTrajectoryEngine::advanceAdaptive` (`crem_engine.hpp`). Wynik na
+dwóch niezależnych ziarnach (1, 23): za każdym razem ta sama gałąź —
+mechaniczna orbita pomiarowa zwraca `NumericalFailure`, ale jej stan
+końcowy jest **w pełni skończony** (`runFinalFinite=1`), a poddanie się
+zdarza się niemal natychmiast (`run.elapsedTime~10⁻²³` s, dosłownie na
+pierwszym kroku tej orbity). To NIE jest przepełnienie zmiennoprzecinkowe
+ani rozbieżność fizyki. Strażnik straty energii na orbitę (próg 50%) i
+próg periapsis na starcie punktu kontrolnego — obie inne gałęzie awarii —
+ani razu się nie uruchomiły.
+
+Bezpośredni odczyt z punktu poddania rekursji (ziarno 23, periapsis
+13,3 fm): `depth=20/20` — cały przyznany budżet podpodziału **wyczerpany**
+— przy `error=3,046·10⁻⁵` wobec progu `1·10⁻⁵`: **zaledwie 3× za wysoko**,
+nie o rzędy wielkości. Precyzja zmiennoprzecinkowa nie jest tu winna: krok
+w chwili poddania (`dt=3,28·10⁻³⁰` s) jest wciąż `9·10⁸` razy większy od
+rozdzielczości `double` przy tej wartości czasu symulacji. Przyczyna jest
+prostsza: tuż nad tą głębokością częstość orbitalna \(\omega=\sqrt{k/(\mu
+r^3)}\) rośnie tak szybko, że sam KROK ZEWNĘTRZNY (`2\pi/(128\omega)`)
+kurczy się do rzędu `10⁻²⁴` s, zanim jeszcze zacznie się podpodział — a
+osiągnięcie tolerancji `10⁻⁵` na skomponowanym kroku Yoshidy przy tej
+sztywności wymaga więcej niż 20 połówkowań, nie z powodu jakiejś
+osobliwości, tylko dlatego, że błąd lokalny maleje z krokiem *wolniej* niż
+budżet głębokości rośnie.
+
+Potwierdzone bezpośrednio, że to naprawdę tylko kwestia budżetu, nie
+twardej ściany: `maximumDepth=24` na tym samym ziarnie (23) **przetrwało
+znacznie dłużej** niż `maximumDepth=20` na identycznym punkcie startowym —
+ale kosztem, który eksploduje szybciej niż liniowo: sam JEDEN kolejny
+punkt kontrolny pochłonął ponad 100 s obliczeń (więcej niż cała reszta
+przebiegu do tego miejsca razem wzięta) i nie zdążył się rozstrzygnąć
+nawet przy budżecie zegarowym 500 s, więc próba została przerwana bez
+czystego wyniku. Wcześniejsze zaobserwowane plateau (`28` nie poprawiało
+nic ponad `20` na innym ziarnie, 7) nie jest więc uniwersalną granicą
+integratora — jest specyficzne dla orbity: niektóre podejścia do periapsis
+są "sztywniejsze" od innych i wymagają więcej połówkowań, by osiągnąć tę
+samą tolerancję.
+
+Wniosek: granica 13–20 fm nie jest pojedynczą ścianą fizyczną ani
+numeryczną w konkretnym promieniu — to punkt, w którym koszt utrzymania
+stałej tolerancji `10⁻⁵` metodą czystego połówkowania kroku zaczyna rosnąć
+kombinatorycznie, nie punkt, w którym staje się to dosłownie niemożliwe.
+Głębsze zejście wymagałoby czegoś jakościowo innego niż większy
+`maximumDepth` przy tej samej tolerancji — np. zmiennych regularyzujących
+bliski przelot (podobnie jak `osculatingPeriapsis`/`regularizedPeriod` już
+robią dla samej sekularnej ekstrapolacji) albo tolerancji łagodniejszej w
+tym jednym reżimie — nie jest to jednak zmiana warta wprowadzania: cel
+pozostaje wyłącznie diagnostyczny, `comptonBarrierRadius` (193,3 fm) leży
+z dużym zapasem powyżej całego zbadanego tu przedziału. Cała
+instrumentacja (`crem_collapse.hpp`, `crem_engine.hpp`,
+`crem_trajectory.hpp`) cofnięta, `positronium_validation` 33/33 bez zmian.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
