@@ -2810,6 +2810,36 @@ pozostaje w kodzie (oznaczona `[[maybe_unused]]` w zwykłej kompilacji) —
 używana już tylko przez własne testy samospójności pod boostem w
 `maxwell_validation.hpp`, nie przez produkcję.
 
+**Ostatnie znalezisko tego samego audytu, teraz zmierzone.** Pole
+ładunek-ładunek (`lienardWiechertField`) interpoluje historię retardowaną
+przez Hermite'a (`interpolatedCharge`, rząd zbieżności ~2, zmierzone
+wyżej), ale pole dipolowe (`retardedElectricDipoleField`/
+`retardedMagneticDipoleField`, przez `historicalDipoleKinematics`→
+`historicalSource`) interpoluje pozycję/prędkość źródła **liniowo** — bez
+dopasowania pochodnych. Nie było dotąd dedykowanego testu geometrycznej
+dokładności tej ścieżki na zakrzywionej trajektorii (istniejący test
+dipolowy sprawdzał tylko stencile pochodnych w dokładnych węzłach historii,
+nie samą interpolację między nimi).
+
+Dodany test (`sourceInterpolationErrors`, ta sama syntetyczna trajektoria
+kołowa i ten sam rozstaw, co istniejący test Hermite'a, więc liczby są
+bezpośrednio porównywalne): błąd `historicalSource` wychodzi **dokładnie**
+`0,0012497396` — bit w bit ta sama liczba, co już zmierzony błąd liniowy
+`lienardWiechertField`-owej ścieżki (`interpolationCoarse[0]`/
+`interpolationFine[0]`, drukowane jako `history linear/H`), zbieżny rzędu
+`1,999` (czysto drugiego rzędu, jak oczekiwane dla interpolacji liniowej).
+To **nie jest nowe, ukryte źródło błędu** — to dokładnie ten sam,
+już scharakteryzowany błąd interpolacji liniowej, tylko liczony inną
+ścieżką kodu (`historicalSource` zamiast `linearlyInterpolatedCharge`), i
+z góry ograniczony (Hermite dałby ~3× mniej, `0,000417`, ale sam błąd
+liniowy jest już mały na tej skali czasu i typowe kroki produkcyjne są
+drobniejsze niż testowany rozstaw — `CFL dt` rzędu `10⁻²²` s wobec
+testowanego `10⁻¹⁸`/`0,5·10⁻¹⁸` s). Wynik: asymetria jest realna, ale
+nieszkodliwa w praktyce — udokumentowana i mierzona trwale (`dipole src
+linear` w `positronium_validation`), bez progu pass/fail (jak inne
+diagnostyki w tym audycie), żeby przyszła zmiana nie pogorszyła jej po
+cichu.
+
 ## Literatura pomocnicza
 
 1. NIST, *2022 CODATA Recommended Values of the Fundamental Physical

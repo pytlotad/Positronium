@@ -1926,6 +1926,53 @@ int runMaxwellSelfTest() {
     const double hermiteConvergenceOrder=std::log(
         interpolationCoarse[1]/interpolationFine[1])/std::log(2.0);
 
+    // Audit follow-up (README's "audyt fizyki"): the charge-charge field
+    // (lienardWiechertField) interpolates its retarded source through
+    // interpolatedCharge()'s Hermite stencil, just measured above, but the
+    // DIPOLE field path (retardedElectricDipoleField/
+    // retardedMagneticDipoleField, via historicalDipoleKinematics ->
+    // historicalSource) interpolates position/velocity with a plain LINEAR
+    // blend (historicalSource's own interpolateVector calls, no derivative
+    // matching).  No existing check measured this path's own geometric
+    // accuracy on a curved worldline -- only the derivative STENCILS built
+    // on top of it, at exact history nodes.  Reusing the identical circular
+    // reference trajectory and span as interpolationErrors above, so the
+    // two are directly comparable number for number.
+    const auto sourceInterpolationErrors=[](double span) {
+        constexpr double orbitRadius=bohrRadius;
+        constexpr double angularRate=2.0e17;
+        const auto circularState=[](double time) {
+            constexpr double radius=bohrRadius;
+            constexpr double omega=2.0e17;
+            const double phase=omega*time;
+            State state;
+            state.time=time;
+            state.firstPosition={radius*std::cos(phase),
+                                    radius*std::sin(phase),0};
+            state.firstVelocity={-radius*omega*std::sin(phase),
+                                     radius*omega*std::cos(phase),0};
+            state.firstAcceleration=state.firstPosition*(-omega*omega);
+            return state;
+        };
+        const State older=circularState(0.0);
+        const State newer=circularState(span);
+        const double query=0.5*span;
+        const State exact=circularState(query);
+        const StateHistory sourceHistory{older,newer};
+        const RetardedSourceSample linear=historicalSource(
+            sourceHistory,newer,true,query);
+        return std::max(
+            (linear.position-exact.firstPosition).norm()/orbitRadius,
+            (linear.velocity-exact.firstVelocity).norm()
+                /(orbitRadius*angularRate));
+    };
+    const double sourceInterpolationCoarse=
+        sourceInterpolationErrors(1.0e-18);
+    const double sourceInterpolationFine=
+        sourceInterpolationErrors(0.5e-18);
+    const double sourceInterpolationOrder=std::log(
+        sourceInterpolationCoarse/sourceInterpolationFine)/std::log(2.0);
+
     State staticDipoleState;
     staticDipoleState.firstPosition={2.0*nuclearCutoff,0,0};
     staticDipoleState.secondPosition={0,0,0};
@@ -2630,6 +2677,8 @@ int runMaxwellSelfTest() {
               << "history linear/H:  " << interpolationFine[0] << " / "
               << interpolationFine[1] << '\n'
               << "Hermite order:     " << hermiteConvergenceOrder << '\n'
+              << "dipole src linear: " << sourceInterpolationFine
+                 << "  (order " << sourceInterpolationOrder << ")\n"
               << "dipole static limit:" << retardedStaticLimitResidual << '\n'
               << "reg a=.75/.5/.25 rc:" << regulatorFieldResiduals[0] << " / "
               << regulatorFieldResiduals[1] << " / "
