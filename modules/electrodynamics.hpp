@@ -636,7 +636,42 @@ enum class ChargeRadiationReactionModel {
     automatic,
     coherentElectricDipole,
     individualLandauLifshitz,
-    disabled
+    disabled,
+    // Same E1 dipole power already computed below as
+    // leadingElectricDipolePower, but instead of removing it from the orbit
+    // as a continuous drag force, it is banked as Poissonian HAZARD
+    // (integral of power/hbar*omega_orb) and paid out in discrete,
+    // momentum-conserving kicks of size hbar*omega_orb -- see
+    // applyStochasticDipolePhoton() in crem_trajectory.hpp, the only place
+    // that reads this tag.  Deliberately carries ZERO continuous reaction
+    // force here (same as disabled): between photons the pair moves on the
+    // bare mutual Lorentz-force trajectory, exactly conserving energy, the
+    // same way a real emitter does not lose energy continuously between
+    // quantum jumps.
+    //
+    // KNOWN SCOPE LIMIT, measured directly: the hazard accumulator lives
+    // only inside ONE runMechanicalTrajectory call and is discarded when it
+    // returns.  crem_collapse.hpp's secular estimator calls that function
+    // fresh for a single measured orbit per checkpoint, then analytically
+    // SKIPS up to 200000 more orbits before the next one -- so this mode
+    // only ever gets exposed to a sliver of the real trajectory.  Measured
+    // at a=3.1pm (checkpoint 16 of a seed-42 run): hazard per SINGLE orbit
+    // is ~5.5e-5, so a lone measured orbit essentially never fires, even
+    // though the ~200000 orbits skipped around it would carry ~11 photons
+    // of expected hazard between them.  Confirmed directly: zero photons
+    // fired across an entire --mode statistical run, and zero across an
+    // extended (40 ps) --mode visual window too (too slow to reach small
+    // radius within a practical wall-clock budget, which is exactly why
+    // crem_collapse.hpp's analytic skipping exists in the first place).
+    // The mechanism itself is not in question -- the expected-vs-observed
+    // hazard matches by hand -- only its EXPOSURE within the secular
+    // estimator is currently too small to matter.  Feeding hazard during
+    // the analytically-skipped stretches too (working at the osculating
+    // elements' level, not a raw State) would close this gap; not
+    // attempted here.  An experiment, not a replacement for the continuum
+    // models above -- see its own comment for why this does not, and could
+    // not, resolve the same question --zpf's SED probe left open.
+    stochasticElectricDipole
 };
 
 double electricQuadrupoleRadiatedPower(
@@ -834,7 +869,12 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
         reactionModel==ChargeRadiationReactionModel::coherentElectricDipole
         ||(reactionModel==ChargeRadiationReactionModel::automatic
            &&result.coherentWeight>0.0);
-    if(reactionModel!=ChargeRadiationReactionModel::disabled) {
+    // stochasticElectricDipole carries zero continuous force here, same as
+    // disabled: its whole point is that nothing drags the orbit between
+    // photons.  leadingElectricDipolePower above is still computed
+    // unconditionally, which is all applyStochasticDipolePhotons() needs.
+    if(reactionModel!=ChargeRadiationReactionModel::disabled
+       &&reactionModel!=ChargeRadiationReactionModel::stochasticElectricDipole) {
         if(!needsCoherentReaction) result.chargeReaction=ll;
         else {
             const MutualForces coherent=

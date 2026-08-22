@@ -38,6 +38,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <deque>
 #include <exception>
 #include <future>
@@ -5517,9 +5518,12 @@ int main(int argc, char** argv) {
                         ChargeRadiationReactionModel::individualLandauLifshitz;
                 } else if (model == "automatic") {
                     gRadiationReactionModel = ChargeRadiationReactionModel::automatic;
+                } else if (model == "stochastic") {
+                    gRadiationReactionModel =
+                        ChargeRadiationReactionModel::stochasticElectricDipole;
                 } else {
                     throw std::invalid_argument("--radiation-reaction must be "
-                        "disabled, coherent, individual or automatic");
+                        "disabled, coherent, individual, automatic or stochastic");
                 }
             } else if (argument == "--crem-wallclock-budget-s") {
                 cremWallClockBudgetSeconds = std::stod(requireValue(argument));
@@ -5676,6 +5680,10 @@ int main(int argc, char** argv) {
             : gRadiationReactionModel
                     == ChargeRadiationReactionModel::individualLandauLifshitz
                 ? "individual (reduced-order Landau-Lifshitz per particle)"
+            : gRadiationReactionModel
+                    == ChargeRadiationReactionModel::stochasticElectricDipole
+                ? "stochastic (Poissonian E1-dipole photon kicks, "
+                  "experimental)"
                 : "automatic (blended individual/coherent)";
         std::cout << "Charge radiation reaction: " << reactionModelName << ".\n";
         std::cout << "Trajectory composition order: " << gIntegratorOrder

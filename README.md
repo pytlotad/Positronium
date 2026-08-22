@@ -690,6 +690,73 @@ z dużym zapasem powyżej całego zbadanego tu przedziału. Cała
 instrumentacja (`crem_collapse.hpp`, `crem_engine.hpp`,
 `crem_trajectory.hpp`) cofnięta, `positronium_validation` 33/33 bez zmian.
 
+**Dodany, na stałe: `--radiation-reaction stochastic` — kwantowana emisja
+zamiast ciągłego hamowania.** Odpowiedź na pytanie, czy dyskretyzacja
+promieniowania (fotony zamiast gładkiej mocy Larmora) da się w ogóle wstawić
+do tego silnika. Mechanizm: ta sama moc dipola E1, którą
+`leadingElectricDipolePower` już liczy dla każdego modelu, jest teraz
+bankowana jako HARACZ procesu Poissona (całka `moc/(ħω_orb)dt`, ω_orb —
+ta sama chwilowa częstość oskulacyjna, której już używa dobór kroku) zamiast
+być odejmowana jako ciągła siła. Próg następnego fotonu losowany jest
+metodą odwróconego dystrybuanty (Exp(1) z 64-bitowego strumienia
+`splitMix64`-podobnego, zasianego bitami stanu początkowego — deterministyczne,
+odtwarzalne z `--seed`, bez nowego parametru w sygnaturach funkcji). Między
+fotonami `chargeReaction` tego modelu jest **dokładnie zerowe** — para
+porusza się po gołej trajektorii wzajemnej siły Lorentza, dokładnie
+zachowując energię mechaniczną, tak jak prawdziwy emiter nie traci energii
+w sposób ciągły między skokami kwantowymi. Sam foton to kopnięcie
+zachowujące całkowity pęd pary, usuwające dokładnie `ħω` z energii kinetycznej
+ruchu względnego (ten sam, zredukowanej-masy, dwuciałowy obraz, którego
+`crem_collapse.hpp` już używa dla "energii orbity"); pęd odrzutu fotonu
+(`ħω/c`) nie jest osobno modelowany — przy prędkościach, do których ten tryb
+jest pomyślany, jest o rzędy wielkości mniejszy niż już nakładana zmiana
+prędkości.
+
+**Sprawdzone bezpośrednio, zanim cokolwiek uznano za działające: czy
+podwójnie nie liczy energii.** Pierwsza wersja kredytowała usuniętą energię
+też do `s.radiatedEnergy`/`orbitalRadiatedEnergy` — okazało się to błędem:
+te pola są już, bezwarunkowo i niezależnie od modelu reakcji, wypełniane
+przez kwadraturę strumienia Poyntinga w `integrateElectrodynamicStep`
+(prawdziwy, zmierzony strumień pola tej konkretnej trajektorii — nie
+przestaje płynąć tylko dlatego, że `chargeReaction` jest zerowe: para nadal
+przyspiesza pod samą siłą Lorentza, a równania Maxwella nie wiedzą nic o
+księgowości tego trybu). Naprawione: kopnięcie usuwa WYŁĄCZNIE energię
+mechaniczną; niezależny pomiar strumienia zostaje nietknięty, dokładnie jak
+dla pozostałych modeli, gdzie oba są already porównywane, nie scalane
+(`reaction/flux` diagnostyka).
+
+**Zmierzone bezpośrednio: sam mechanizm działa dokładnie tak, jak
+przewiduje rachunek, ale w obecnej architekturze prawie nigdy nie strzela w
+trybie statystycznym.** Ręcznie policzony haracz dla pojedynczej orbity przy
+a=3,1 pm (checkpoint 16 ziarna 42) wynosi `5,5·10⁻⁵` — więc pojedyncza
+zmierzona orbita praktycznie nigdy nie przekracza progu Exp(1). Problem:
+`crem_collapse.hpp` woła `runMechanicalTrajectory` osobno dla KAŻDEGO
+punktu kontrolnego, licząc tylko JEDNĄ orbitę na pomiar, po czym analitycznie
+PRZESKAKUJE do 200 000 kolejnych — a akumulator haraczu żyje tylko wewnątrz
+jednego wywołania i znika, gdy ono się kończy. Licząc z tej samej stawki,
+200 000 pominiętych orbit niosłoby ~11 fotonów oczekiwanych — ale tryb nigdy
+nie dostaje szansy ich zobaczyć. Potwierdzone empirycznie: zero fotonów na
+całym przebiegu `--mode statistical`, zero też na wydłużonym (40 ps) oknie
+`--mode visual` (zbyt wolne, by w rozsądnym czasie ściany dotrzeć do małego
+promienia — dokładnie dlatego `crem_collapse.hpp` w ogóle ma analityczne
+przeskakiwanie). To nie jest niepewność co do samego mechanizmu — oczekiwany
+i zaobserwowany haracz zgadzają się ręcznie — tylko jego EKSPOZYCJA w
+estymatorze sekularnym jest obecnie za mała, żeby cokolwiek zmienić w
+statystycznym czasie kolapsu. Zasilenie haraczu też podczas analitycznie
+pomijanych odcinków (na poziomie elementów oskulacyjnych, nie surowego
+`State`) domknęłoby tę lukę — nie podjęte tutaj.
+
+Zweryfikowane: kompilacja czysta, `positronium_validation` 33/33 bez zmian.
+Test dymny `--mode statistical --phenomenon 1 --radiation-reaction
+stochastic` daje sensowny, w pełni porównywalny z modelem ciągłym czas
+kolapsu (mediana ~36-40 ps, ten sam rząd co inne modele) — bo sekularny
+kanał energetyczny czyta z tej samej, wspólnej dla wszystkich modeli
+kwadratury strumienia, niezależnej od tego, czy dany model coś tam
+"strzela". Genuinie skokowy efekt (nagłe zmiany L, nie tylko E) byłby
+widoczny wyłącznie w pełnej, nieprzeskakującej trajektorii mechanicznej z
+wystarczającą ekspozycją głęboko w kolapsie — czego obecna architektura
+`crem_collapse.hpp` po prostu nie dostarcza tanio.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
@@ -2643,7 +2710,7 @@ Pięć opcji sterują samą fizyką i kosztem eksperymentów związanych:
 | `--zpf`, `--zpf-band` | `0` (wyłączone) | **Eksperyment, nie część modelu.** Klasyczne pole punktu zerowego elektrodynamiki stochastycznej: losowe fale płaskie o widmie \(\rho(\omega)=\hbar\omega^3/2\pi^2c^3\), 64 mody o równej energii, orientacje i fazy z ziarna `--seed`. `--zpf` skaluje **amplitudę** (1 = poziom fizyczny, moc pochłaniana rośnie jak kwadrat), `--zpf-band lo,hi` ustala pasmo w jednostkach częstości orbitalnej pary (domyślnie `0.3,3`). To jest fluktuacyjna połowa pary fluktuacja–dyssypacja; dyssypacyjną, czyli reakcję promieniowania, model ma od zawsze. Wchodzi w te same trzy miejsca co pole jednorodne, ale próbkowane osobno dla każdej cząstki, bo zależy od położenia i czasu. **Nie odtwarza stanu podstawowego SED — patrz niżej.** |
 | `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
 | `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
-| `--radiation-reaction` | `individual` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki) albo `automatic` (mieszanka obu). Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
+| `--radiation-reaction` | `individual` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki), `automatic` (mieszanka obu) albo `stochastic` (**eksperyment**, patrz niżej — kwantowane, Poissonowskie kopnięcia fotonowe zamiast ciągłego hamowania). Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
 | `--beam-energy-sigma-ev` | `0` (wyłączone) | **Tylko eksperymenty 3, 4.** Odchylenie standardowe rozkładu Gaussa, z którego próbkowana jest energia środka masy \(K_{CM}\) każdego zdarzenia wiązki, wokół `--beam-energy-ev`; `0` zachowuje dotychczasową, monochromatyczną wiązkę bit w bit. Próbkowanie odrzuca wyniki \(\le 0\) (do 1000 prób, jak `sampleKinetic` eksperymentu 5), a widmo strat energii liczy się względem faktycznie wylosowanej energii zdarzenia, nie ustalonej średniej. Modeluje skończoną rozdzielczość energetyczną realnej wiązki kosztem rozmycia porównania z formułą Rutherforda, która jest zdefiniowana przy jednym \(K_{CM}\). |
 
 Zasięg `--pair` nie jest jednakowy dla wszystkich eksperymentów.

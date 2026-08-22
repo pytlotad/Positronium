@@ -62,6 +62,77 @@ Frame makeFrame(const State& s) {
             s.reactionMomentumMismatch,s.reactionAngularMomentumMismatch};
 }
 
+// Local copy of positronium.cpp's splitMix64: that one is defined AFTER this
+// header is included (line ~1213 vs. this header's ~1174), so it is not yet
+// visible here.  Same well-known bit-mixer, just under its own name to avoid
+// masking the later declaration.
+std::uint64_t stochasticPhotonHash64(std::uint64_t value) {
+    value += 0x9e3779b97f4a7c15ULL;
+    value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    value = (value ^ (value >> 27)) * 0x94d049bb133111ebULL;
+    return value ^ (value >> 31);
+}
+
+// Draws one Exp(1) variate (mean 1) from the running 64-bit stream state,
+// advancing it in place.  This is the "next photon's hazard threshold" in
+// the standard thinning/inverse-CDF construction of an inhomogeneous
+// Poisson process: accumulate hazard = integral(rate dt) and fire whenever
+// it crosses a freshly-drawn Exp(1) threshold.
+double drawExponentialUnit(std::uint64_t& streamState) {
+    streamState = stochasticPhotonHash64(streamState);
+    // Upper 53 bits -> a double uniform in (0,1]; excluding 0 keeps log finite.
+    const double uniform =
+        1.0 - static_cast<double>(streamState >> 11) * (1.0 / 9007199254740992.0);
+    return -std::log(uniform);
+}
+
+// Applies one discrete photon emission: removes EXACTLY photonEnergy from
+// the pair's relative-motion kinetic energy (the same reduced-mass,
+// two-body framing crem_collapse.hpp already uses for "the" orbital
+// energy), as an impulsive kick antiparallel to the current relative
+// velocity, split by reduced-mass partition so total momentum is
+// unaffected.  Photon recoil momentum (hbar*omega/c) is not modelled
+// separately -- at the non-relativistic speeds this mode is meant for it is
+// many orders below the velocity change already being applied, and adding
+// it would need a direction (the dipole pattern) this reduced-mass, COM-
+// frame treatment does not carry.
+//
+// If the current relative motion does not carry photonEnergy (the naive
+// quadratic solution below is discriminant-negative -- can happen for a
+// large photon drawn while the pair is near apoapsis, moving slowly), the
+// kick is capped at removing ALL relative kinetic energy instead of the
+// exact requested amount.  This is a known, documented simplification of
+// this experimental mode, not silently absorbed: it is the one place this
+// mode's energy bookkeeping can be inexact.
+// Returns the ACTUAL mechanical energy removed, which is exactly
+// photonEnergy except in the capped edge case above -- callers must credit
+// this (not the nominal photonEnergy) to the radiated-energy ledger, or the
+// two would silently disagree exactly when the cap engages.
+double applyStochasticDipolePhoton(State& s, double photonEnergy,
+                                   double reducedMass) {
+    if(!(photonEnergy>0.0)||!std::isfinite(photonEnergy)) return 0.0;
+    const Vec3 relativeVelocity=s.firstVelocity-s.secondVelocity;
+    const double relativeSpeed=relativeVelocity.norm();
+    if(!(relativeSpeed>0.0)) return 0.0;
+    const Vec3 direction=relativeVelocity*(1.0/relativeSpeed);
+    // (1/2)mu(v-dv)^2 = (1/2)mu v^2 - photonEnergy
+    //   => dv^2 - 2 v dv + 2 photonEnergy/mu = 0
+    const double discriminant=relativeSpeed*relativeSpeed
+        -2.0*photonEnergy/reducedMass;
+    const bool capped=!(discriminant>0.0);
+    const double kickMagnitude=capped
+        ? relativeSpeed
+        : relativeSpeed-std::sqrt(discriminant);
+    const double massSum=firstMass+secondMass;
+    s.firstVelocity=s.firstVelocity
+        -direction*(kickMagnitude*secondMass/massSum);
+    s.secondVelocity=s.secondVelocity
+        +direction*(kickMagnitude*firstMass/massSum);
+    return capped
+        ? 0.5*reducedMass*relativeSpeed*relativeSpeed
+        : photonEnergy;
+}
+
 const char* phenomenonName(Phenomenon phenomenon) {
     switch (phenomenon) {
         case Phenomenon::DirectCollision: return "Direct collision";
@@ -132,6 +203,30 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
         frames.push_back(makeFrame(s));
         if (options.frameReady) options.frameReady(frames.back());
     }
+
+    // Poisson-process bookkeeping for
+    // ChargeRadiationReactionModel::stochasticElectricDipole, unused (and
+    // costing nothing) for every other model.  Seeded from bits of the
+    // INITIAL state, which is already seed-derived and unique per
+    // trajectory/measurement-orbit call upstream -- no new seed parameter
+    // needs threading through this function's signature.  Local to this one
+    // call: correct, because a stochastic reaction-force run always drives
+    // the trajectory through exactly one runMechanicalTrajectory call, never
+    // split across several the way the CREM collapse estimator's checkpoint
+    // loop splits a full collapse into many short measurement orbits.
+    std::uint64_t stochasticPhotonStream=[&]() {
+        std::uint64_t bits=0;
+        auto mix=[&](double value) {
+            std::uint64_t word;
+            std::memcpy(&word,&value,sizeof(word));
+            bits=stochasticPhotonHash64(bits^word);
+        };
+        mix(s.firstPosition.x); mix(s.firstPosition.y); mix(s.firstPosition.z);
+        mix(s.firstVelocity.x); mix(s.secondVelocity.y); mix(s.time);
+        return bits;
+    }();
+    double stochasticHazard=0.0;
+    double stochasticThreshold=drawExponentialUnit(stochasticPhotonStream);
 
     bool reachedObservationCeiling=false;
     while (s.time < observationTime && separation(s) > trajectoryCutoff
@@ -222,6 +317,57 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
             std::max(s.firstVelocity.norm(), s.secondVelocity.norm()) / c);
         elapsedTime = s.time;
         finalRadiatedEnergy = s.radiatedEnergy;
+
+        // Bank this step's classical E1 dipole power as hazard instead of
+        // removing it as a continuous force (that gate already sits in
+        // particleMultipoleRadiation -- this model's chargeReaction is zero
+        // there).  photonEnergy = hbar*omega uses the SAME instantaneous
+        // orbital frequency already computed above for step sizing: the
+        // natural, already-established characteristic frequency of this
+        // orbit, not a new definition invented for this mode.
+        if(reactionModel==ChargeRadiationReactionModel::stochasticElectricDipole) {
+            const MutualForces stepForces=
+                retardedExternalForces(s,trajectory.history());
+            const ParticleMultipoleRadiation stepRadiation=
+                particleMultipoleRadiation(s,stepForces,trajectory.history(),
+                    false,reactionModel);
+            const double photonEnergy=hbar*omega;
+            if(photonEnergy>0.0) {
+                stochasticHazard+=
+                    stepRadiation.leadingElectricDipolePower/photonEnergy*dt;
+                // A while, not an if: a fast step near periapsis can bank
+                // more than one photon's worth of hazard at once.
+                while(stochasticHazard>=stochasticThreshold) {
+                    stochasticHazard-=stochasticThreshold;
+                    // Deliberately NOT also credited to s.radiatedEnergy/
+                    // orbitalRadiatedEnergy here: those are already fed,
+                    // unconditionally and independently of the reaction
+                    // model, by integrateElectrodynamicStep's own flux
+                    // quadrature (the true Poynting flux of whatever
+                    // trajectory results -- see radiatedEnergyIncrement in
+                    // electrodynamics.hpp).  That flux does not stop just
+                    // because chargeReaction is zero between photons: the
+                    // pair is still accelerating under the bare mutual
+                    // Lorentz force, and Maxwell's equations do not know
+                    // about this mode's bookkeeping.  Adding the kick's
+                    // removed energy to the SAME ledger the flux quadrature
+                    // already fills would double-count -- the two are
+                    // meant to be compared (as with every other model's
+                    // "reaction/flux" diagnostics), not merged.  Only the
+                    // MECHANICAL removal (the velocity kick itself) is this
+                    // function's job.
+                    const double removedDebug=
+                        applyStochasticDipolePhoton(s,photonEnergy,reducedMass);
+                    if(std::getenv("CREM_DEBUG"))
+                        std::cerr<<"  PHOTON t="<<s.time*1e12<<"ps r="
+                                 <<separation(s)*1e15<<"fm hbar*omega="
+                                 <<photonEnergy<<"J removed="<<removedDebug
+                                 <<"J"<<std::endl;
+                    stochasticThreshold=
+                        drawExponentialUnit(stochasticPhotonStream);
+                }
+            }
+        }
     }
     // Reaching the simulated-time ceiling and an external stop request (an
     // exhausted wall-clock budget in the CREM collapse estimator, or the
