@@ -674,6 +674,42 @@ Kowariancja i operatory pojedyncze (z `positronium_validation`):
   więc strukturalne, rzędu \(\beta_{boost}\beta_{orb}\), i żadne zagęszczanie
   kroku go nie ruszy.
 
+**Zbadane ponownie i potwierdzone rygorystycznie** (przy okazji audytu
+fizyki, po naprawie precesji BMT — patrz niżej): rozłożone na dwie osobne
+ścieżki i zweryfikowane numerycznie z osobna. Złożenie **dwóch kolejnych**
+boostów samego tensora (`lorentzBoostDipole` wywołane dwa razy — raz
+prędkością orbitalną, raz boostem układu) sprawdza się **dokładnie**
+przeciw pojedynczemu boostowi złożoną (relatywistycznie) prędkością —
+różnica to czyste zaokrąglenie maszynowe (`~10⁻¹⁸`), żadnego śladu obrotu.
+To ma sens: tensor pola/dipola transformuje się jako
+\(F'^{\mu\nu}=\Lambda^\mu_\alpha\Lambda^\nu_\beta F^{\alpha\beta}\) pod
+**dowolnym** złożonym \(\Lambda\), więc dwa kolejne wywołania tej samej
+formuły dają dokładnie poprawną odpowiedź niezależnie od tego, czy złożenie
+dwóch nie-współliniowych boostów samo w sobie "zawiera" rotację. Rozbieżność
+bierze się **wyłącznie** z pośredniego kroku przez czterowektor spinu
+(`dipoleFourVector`→boost→`properDipoleFromFourVector`) — odtworzone
+niezależnie z prawdziwymi stałymi testu, luka wyszła \(0{,}394\%\), tego
+samego rzędu co zmierzone \(0{,}386\%\). Potwierdza to: reprezentacja
+"pojedynczy wektor `properDipole` + jeden czysty boost" jest z definicji
+niezdolna wyrazić każdy tensor osiągalny przez złożenie dwóch
+nie-współliniowych boostów — to nie luka do domknięcia mniejszą poprawką,
+tylko dowiedziona granica wybranej parametryzacji stanu.
+
+**Sprawdzone też wprost, czy to ma jakikolwiek wpływ produkcyjny — nie ma.**
+Operacja "przenieś cały stan symulacji do innej ramki obserwatora"
+(`boostFourVector`/`boostEvent`) istnieje **wyłącznie** wewnątrz tego
+jednego testu w `maxwell_validation.hpp`; żadna ścieżka produkcyjna nigdy
+jej nie wykonuje (symulacja zawsze integruje w jednej, ustalonej ramce
+laboratoryjnej). Prawdziwa naprawa wymagałaby rozszerzenia stanu o jawny
+stopień swobody rotacji (kwaternion lub macierz 3×3 na cząstkę) plus osobnej
+derywacji, jak ta rotacja narasta pod ciągłym, nie-współliniowym
+przyspieszeniem — porównywalnej trudności do derywacji precesji BMT niżej —
+i dotknęłaby rzędu 40 miejsc w kodzie (`properDipole`: 33, `DipoleTensor`/
+`lorentzBoostDipole`: 10, poza samym plikiem walidacyjnym). Przy zerowym
+wpływie na jakikolwiek zgłaszany wynik fizyczny — koszt tej wielkości nie
+jest uzasadniony. Pozostawione jako świadomie zaakceptowane, teraz w pełni
+udowodnione ograniczenie, nie zadanie do zrobienia.
+
 Relacja moment–spin niosła błąd czynnika \(g\). Model definiuje
 \(\boldsymbol\mu=\gamma\mathbf S\) z \(\gamma=gq/2m\) i przechowuje
 \(|\boldsymbol\mu|=(g/2)\,\text{magneton}\), ale cztery miejsca liczyły
