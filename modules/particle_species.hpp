@@ -53,9 +53,9 @@ constexpr double magneticMoment(const ParticleSpecies& species) {
 // proton/antiproton pairs that equality is itself experimentally tested to
 // high precision, and the model has no mechanism that could distinguish them.
 inline constexpr ParticleSpecies electron{
-    "electron",   9.1093837139e-31,  -elementaryCharge, 2.00231930436256};
+    "electron",   9.1093837139e-31,  -elementaryCharge, 2.00231930436092};
 inline constexpr ParticleSpecies positron{
-    "positron",   9.1093837139e-31,  +elementaryCharge, 2.00231930436256};
+    "positron",   9.1093837139e-31,  +elementaryCharge, 2.00231930436092};
 inline constexpr ParticleSpecies muon{
     "muon",       1.883531627e-28,   -elementaryCharge, 2.00233184123};
 inline constexpr ParticleSpecies antimuon{

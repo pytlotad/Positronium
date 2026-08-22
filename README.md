@@ -746,6 +746,35 @@ kod już wcześniej twierdził to samo w kilku miejscach, ale teraz
 prześledzone bezpośrednio przez cały łańcuch wywołań, nie tylko
 zacytowane.
 
+**Sprawdzone też: czy wszędzie są używane rzeczywiście zmierzone momenty
+magnetyczne cząstek.** Architektura już wcześniej broni się przed
+niespójnością tego typu — moment magnetyczny jest wyłącznie **wyprowadzany**
+z g-faktora (`magneticMoment(species) = 0,5·g·magneton(species)`), nigdy
+tabelaryzowany osobno; komentarz przy tym w `particle_species.hpp` wprost
+opisuje wcześniejszy incydent ("g-factor of 2.0023 sitting beside a moment
+of mu_B"). Prześledzone: `firstMagneticMoment`/`secondMagneticMoment` i
+`firstGFactor`/`secondGFactor` mają dokładnie po dwa miejsca przypisania w
+całym kodzie (inicjalizacja statyczna i `applyPairFromOption` przy zmianie
+`--pair`), oba przez tę samą funkcję, żadnej równoległej, potencjalnie
+rozjeżdżającej się wartości nigdzie indziej — zero trafień na literalny
+`g=2,0` czy twardo wpisaną wartość magnetonu poza `physical_constants.hpp`.
+
+Same liczby zweryfikowane bezpośrednio względem physics.nist.gov (CODATA
+2022): masy elektronu, mionu i protonu — **zgodne co do wszystkich
+cytowanych cyfr**. G-faktory mionu (\(2{,}00233184123\)) i protonu
+(\(5{,}5856946893\)) — **zgodne dokładnie**. Bohr magneton — zgodny.
+Jedno realne znalezisko: g-faktor elektronu w kodzie (`2,00231930436256`)
+to wartość CODATA **2018**, nie 2022, jak twierdził komentarz w
+`particle_species.hpp` ("g-factors from the same source"). Aktualna CODATA
+2022 to `2,00231930436092` — przesunięcie o \(8{,}2\cdot10^{-13}\)
+względnie (11.-12. cyfra znacząca), z aktualizacji uwzględniającej pomiar
+Fan/Gabrielse 2023. Naprawione (`physical_constants.hpp`,
+`particle_species.hpp`): stała zaktualizowana, cytat w komentarzu
+poprawiony. Efekt na jakikolwiek zgłaszany wynik: **żaden** — przesunięcie
+jest o rzędy wielkości poniżej najciaśniejszej tolerancji, jaką ten projekt
+gdziekolwiek sprawdza (\(10^{-8}\) i wyżej). Zweryfikowane:
+`positronium_validation` 33/33 bez zmian po poprawce.
+
 Relacja moment–spin niosła błąd czynnika \(g\). Model definiuje
 \(\boldsymbol\mu=\gamma\mathbf S\) z \(\gamma=gq/2m\) i przechowuje
 \(|\boldsymbol\mu|=(g/2)\,\text{magneton}\), ale cztery miejsca liczyły

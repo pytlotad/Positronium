@@ -10,10 +10,18 @@ inline constexpr double elementaryCharge = 1.602176634e-19;
 inline constexpr double electronMass = 9.1093837139e-31;
 inline constexpr double positronMass = electronMass;
 inline constexpr double bohrMagneton = 9.2740100657e-24;
-// Measured electron g-factor (CODATA 2018, |g_e-|=2.00231930436256(35)),
+// Measured electron g-factor (CODATA 2022, |g_e-|=2.00231930436092(36)),
 // used in place of the classical point-dipole value g=1 for the Thomas-BMT
 // precession dynamics.  By CPT the positron g-factor has the same magnitude.
-inline constexpr double electronGFactor = 2.00231930436256;
+// Audit finding: this used to be the CODATA 2018 value (...436256), still
+// correctly cited as such right here, while particle_species.hpp claimed
+// "g-factors from the same source [CODATA 2022]" for this exact number --
+// a stale citation, not a wrong constant (both were genuine measured
+// values; the 2022 adjustment folded in the 2023 Fan/Gabrielse
+// remeasurement).  Verified against physics.nist.gov directly.  The shift
+// is 1.6e-12 absolute, 8.2e-13 relative -- far below every tolerance this
+// project checks against (1e-8 and up), so no simulated result moves.
+inline constexpr double electronGFactor = 2.00231930436092;
 // Magnitude of the electron/positron intrinsic magnetic dipole moment,
 // mu = (g/2) * mu_B evaluated at the measured g above (~9.28476469e-24 J/T),
 // used instead of quoting the bare Bohr magneton as the dipole strength.
