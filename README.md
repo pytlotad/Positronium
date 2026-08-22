@@ -499,6 +499,65 @@ para:orto \(33{:}81\approx1{:}2{,}45\), w granicach szumu statystycznego
 oczekiwanego \(1{:}3\) przy 114 zdarzeniach związanych. Walidacja pól 33/33
 na całej serii.
 
+Pytanie, czy `collisionRadius` jest tym samym promieniem dla dosłownego
+`Collision` i dla par związanych, doprowadziło do znalezienia osobnego,
+głębszego błędu w gałęzi ekstrapolacji czasu kolapsu schwytanych par w
+eksperymencie 5 (blok liczący "Bound-state CREM collapse time"). Wzór
+domknięty \(t=(-E/3P)(1-r_*^3/a^3)\) ekstrapolował, aż PÓŁOŚ WIELKA \(a\)
+osiągnie \(r_*=\)`comptonBarrierRadius`, podczas gdy dosłowne `Collision`
+(i CREM w exp1/2) testują PERYAPSIS. Dla mocno ekscentrycznych schwytanych
+par (zmierzone \(e=0{,}92\)–\(0{,}99995\), mediana \(0{,}9955\) — sam kod
+już to wie, komentarz przy bramce mocy mówi wprost "e ~ 0.999") peryapsis
+\(=a(1-e)\) jest \(180\)–\(20000\times\) mniejsze od \(a\), więc formuła
+kazała czekać, aż \(a\) skurczy się do \(193{,}3\) fm — co odpowiada
+peryapsis rzędu \(0{,}1\)–\(1\) fm, głęboko pod skalą jądrową. Zmierzone
+wprost (N=1000): przy stałym mimośrodzie prawdziwe przecięcie bariery przez
+peryapsis następuje, gdy \(a\) jest jeszcze w zakresie \(2400\)–\(3{,}9\cdot
+10^6\) fm (mediana \(\approx43000\) fm) — para, która realnie by tam
+dotarła, zostałaby wcześniej sklasyfikowana jako `Collision` przez
+niezależny test na bieżącej separacji, więc niepoprawiony wzór liczył czas
+do celu, którego para nigdy dynamicznie by nie osiągnęła.
+
+Naprawione podstawieniem celu w \(a\): \(a_*=r_*/(1-e)\), z \(e\) liczonym
+z bieżących \((E,L)\) pary i zamrożonym na czas ekstrapolacji — to samo
+uproszczenie "zamrożonej orbity", jakie niepoprawiony wzór już stosował dla
+energii (moment pędu też nigdy nie jest ewoluowany, tylko energia). Przy
+okazji zunifikowane wszystkie cztery niezależne miejsca kodu, które osobno
+wypisywały ten sam warunkowy wzór (`isPositronium(pair) ?
+comptonBarrierRadius : collisionBoundaryRadius`) w jeden helper
+`pointParticleBoundaryOf(pair)` (`particle_species.hpp`) — dokładnie ten sam
+wzorzec rozjazdu, który już raz naprawiono w `340b67b`.
+
+Zbadany też osobno warunek ratio okres/czas-przelotu-światła (`ff48f08`)
+chroniący mechaniczny CREM — na próbie N=1000 (89 zdarzeń związanych) żadne
+nie zbliżało się do strefy załamania Darwina przy swoim bieżącym peryapsis
+(zmierzony stosunek minimalny \(1936\), próg \(150\)), więc ten konkretny
+warunek nie jest dziś żywym ryzykiem w tej gałęzi — ryzykiem był cel w
+\(a\), nie brak strażnika ratio. Po naprawie liczba zdarzeń z policzonym
+czasem kolapsu wzrosła z \(3\)–\(4\) do \(8\) na próbie porównywalnej
+wielkości, choć w samym finalnym biegu produkcyjnym (patrz niżej) akurat
+żadne z \(93\) zdarzeń związanych nie przekroczyło pełnego okresu Keplera w
+oknie obserwacji — statystyka tej bramki jest osobna od naprawionego celu i
+zależy od losowego ziarna, nie od tej poprawki.
+
+Ponownie przeliczone na produkcyjnym przebiegu N=1000 dla wszystkich pięciu
+eksperymentów po tej naprawie: eksperyment 1 (p-Ps CREM, 14m26s) 1000/1000
+czystych, mediana Kaplana-Meiera \(30{,}26\) ps, średnia \(33{,}55\pm0{,}44\)
+ps; eksperyment 2 (o-Ps CREM, 15m04s) 1000/1000 czystych, mediana
+\(30{,}78\) ps, średnia \(33{,}51\pm0{,}44\) ps. Eksperyment 3 (5m56s):
+`escaped`=739, `collision`=131, `captured`=129, `unresolved`=1, zero
+awarii — `sigma(reach cutoff)`=\(426742\pm34757\) barn wobec referencji
+czysto kulombowskiej \(438405\) barn. Eksperyment 4 (2m55s):
+`escaped`=1000/0/0/0/0, bez zmian. Eksperyment 5 (4m36s): `Collision`=216
+(21,6%), `Scattering`=690 (69,0%), `Para-Positronium`=17 (1,7%),
+`Ortho-Positronium`=76 (7,6%), `Unresolved`=1 — para:orto
+\(17{:}76\approx1{:}4{,}5\), w granicach szumu statystycznego przy zaledwie
+93 zdarzeniach związanych (mniej niż w poprzednich biegach — losowa
+fluktuacja rozmiaru próby, nie efekt tej poprawki, która nie dotyka
+klasyfikacji Collision/Scattering/para/ortho, tylko ekstrapolację czasu
+kolapsu już sklasyfikowanych par). Zero awarii na całej serii, walidacja
+pól 33/33.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**

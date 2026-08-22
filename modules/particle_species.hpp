@@ -212,6 +212,21 @@ constexpr double collisionBoundaryOf(const ParticlePair& pair) {
 // radius above: --pair reassigns it before anything integrates.
 inline double collisionBoundaryRadius=collisionBoundaryOf(defaultPair);
 
+// Separation at which classical point-particle electrodynamics stops
+// applying: comptonBarrierRadius (physical_constants.hpp) for e+e-, since
+// that scale is derived from the electron's own Compton wavelength and does
+// not generalize to other masses, else the pair's collisionBoundaryOf(pair)
+// above. Three independent call sites (BeamConfiguration/exp3-4,
+// InteractionConfiguration/exp5, and the bound-state collapse-time
+// extrapolation exp5 also does for captured pairs) used to spell this
+// ternary out separately; they drifted out of sync once already (exp3/4
+// still pointed at nuclearCutoff while exp5 had already moved to
+// comptonBarrierRadius, reconciled in 340b67b) before being written here
+// once so they cannot drift again.
+constexpr double pointParticleBoundaryOf(const ParticlePair& pair) {
+    return isPositronium(pair) ? comptonBarrierRadius : collisionBoundaryOf(pair);
+}
+
 // Everything --pair is allowed to name.  Kept next to the species themselves
 // so a new species cannot be added without becoming selectable.
 inline constexpr std::array<const ParticleSpecies*,6> selectableSpecies{

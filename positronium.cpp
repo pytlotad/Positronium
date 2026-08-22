@@ -2557,8 +2557,7 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
     // sampling window is a statistics-tuning choice (how wide to cast the
     // net for good counts across all outcomes), independent of where
     // Collision is declared, and moving them together conflates the two.
-    const double collisionRadius = isPositronium(activePair)
-        ? comptonBarrierRadius : collisionBoundaryRadius;
+    const double collisionRadius = pointParticleBoundaryOf(activePair);
     const double collisionImpactParameter = std::sqrt(
         collisionRadius*collisionRadius
             + coulombStrength*collisionRadius/energy);
@@ -3094,8 +3093,7 @@ InteractionConfiguration makeInteractionConfiguration(
     // See the field comment above: for a captured e+e- pair this is the
     // physically meaningful Compton barrier, not the pair's charge-cloud
     // scale, and measured reachable at negligible extra cost.
-    configuration.collisionRadius = isPositronium(activePair)
-        ? comptonBarrierRadius : collisionBoundaryRadius;
+    configuration.collisionRadius = pointParticleBoundaryOf(activePair);
     return configuration;
 }
 
@@ -3434,12 +3432,55 @@ InteractionEvent simulateInteractionEvent(
                     // floor-lowering measurement).  comptonBarrierRadius is
                     // an electron-specific constant, so it only applies when
                     // the captured pair actually IS positronium; every other
-                    // pair keeps the previous collisionBoundaryRadius target.
-                    const double innerRadius = isPositronium(activePair)
-                        ? comptonBarrierRadius : collisionBoundaryRadius;
-                    if (semiMajorAxis > innerRadius
+                    // pair keeps the previous collisionBoundaryRadius target
+                    // (pointParticleBoundaryOf, particle_species.hpp, the
+                    // same helper BeamConfiguration and InteractionConfig-
+                    // uration's own collisionRadius now read from too).
+                    const double innerRadius = pointParticleBoundaryOf(activePair);
+                    // innerRadius above is a PERIAPSIS target -- the same
+                    // point-particle boundary Collision itself tests against
+                    // a currentRadius a few hundred lines up.  But the power
+                    // law da/dt=-C/a^2 this formula integrates runs in the
+                    // semi-major axis, and these captures are highly
+                    // eccentric (measured e=0.92-0.99995, median 0.9955, see
+                    // the comment above) -- periapsis=a(1-e) sits 180 to
+                    // 20000 times below a itself.  Chasing a all the way down
+                    // to innerRadius therefore extrapolates 2-4 orders of
+                    // magnitude PAST the point where the pair's actual
+                    // periapsis already crossed the barrier; a trajectory
+                    // that really got there would already have been pulled
+                    // out as Collision upstream, so the unfixed formula was
+                    // reporting time to a target the pair would never
+                    // dynamically reach.  Measured directly (N=1000): the
+                    // true a at which periapsis=innerRadius, holding e fixed
+                    // at its current value, is 2400-3.9e6 fm (median ~43000
+                    // fm) versus the literal 193.3 fm the unfixed code chased.
+                    // Fixed by solving the SAME closed form for a target in a
+                    // instead: a_f=innerRadius/(1-e), with e taken from the
+                    // pair's current (E,L) and held fixed for the
+                    // extrapolation -- exactly the same frozen-orbit
+                    // simplification the untouched power-law already makes
+                    // for L (never evolved, only E is).
+                    const Vec3 relativePosition =
+                        state.firstPosition - state.secondPosition;
+                    const Vec3 relativeVelocity =
+                        state.firstVelocity - state.secondVelocity;
+                    const double specificAngularMomentum =
+                        cross(relativePosition, relativeVelocity).norm();
+                    const double specificEnergy = finalEnergy/reducedMass;
+                    const double attractionParameter =
+                        coulombStrength/reducedMass;
+                    const double eccentricity = std::sqrt(std::max(0.0, 1.0
+                        + 2.0*specificEnergy*specificAngularMomentum
+                              *specificAngularMomentum
+                          / (attractionParameter*attractionParameter)));
+                    const double targetSemiMajorAxis = (eccentricity < 1.0)
+                        ? innerRadius/(1.0 - eccentricity)
+                        : std::numeric_limits<double>::infinity();
+                    if (semiMajorAxis > targetSemiMajorAxis
                         && result.boundObservedOrbits >= 1.0) {
-                        const double ratio = innerRadius/semiMajorAxis;
+                        const double ratio =
+                            targetSemiMajorAxis/semiMajorAxis;
                         const double collapse = (-finalEnergy)/(3.0*power)
                             *(1.0 - ratio*ratio*ratio);
                         if (collapse > 0.0 && std::isfinite(collapse)) {
