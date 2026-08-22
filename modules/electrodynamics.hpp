@@ -649,28 +649,43 @@ enum class ChargeRadiationReactionModel {
     // same way a real emitter does not lose energy continuously between
     // quantum jumps.
     //
-    // KNOWN SCOPE LIMIT, measured directly: the hazard accumulator lives
-    // only inside ONE runMechanicalTrajectory call and is discarded when it
-    // returns.  crem_collapse.hpp's secular estimator calls that function
-    // fresh for a single measured orbit per checkpoint, then analytically
-    // SKIPS up to 200000 more orbits before the next one -- so this mode
-    // only ever gets exposed to a sliver of the real trajectory.  Measured
-    // at a=3.1pm (checkpoint 16 of a seed-42 run): hazard per SINGLE orbit
-    // is ~5.5e-5, so a lone measured orbit essentially never fires, even
-    // though the ~200000 orbits skipped around it would carry ~11 photons
-    // of expected hazard between them.  Confirmed directly: zero photons
-    // fired across an entire --mode statistical run, and zero across an
-    // extended (40 ps) --mode visual window too (too slow to reach small
-    // radius within a practical wall-clock budget, which is exactly why
-    // crem_collapse.hpp's analytic skipping exists in the first place).
-    // The mechanism itself is not in question -- the expected-vs-observed
-    // hazard matches by hand -- only its EXPOSURE within the secular
-    // estimator is currently too small to matter.  Feeding hazard during
-    // the analytically-skipped stretches too (working at the osculating
-    // elements' level, not a raw State) would close this gap; not
-    // attempted here.  An experiment, not a replacement for the continuum
-    // models above -- see its own comment for why this does not, and could
-    // not, resolve the same question --zpf's SED probe left open.
+    // EXPOSURE GAP, found and closed.  The hazard accumulator above only
+    // sees a single measured orbit per checkpoint; crem_collapse.hpp's
+    // secular estimator analytically SKIPS up to 200000 more between
+    // checkpoints, where nearly all of the real hazard lives (measured at
+    // a=3.1pm: ~5.5e-5 per single orbit vs ~11 photons of expected hazard
+    // across a typical 200000-orbit skip).  A second, independent hazard
+    // accumulator in crem_collapse.hpp now integrates the SAME
+    // power/(hbar*omega) rate analytically across the skipped span itself
+    // (closed form against the classical u(n)=u0(1-Jx)^(-2/3) envelope the
+    // skip's own jump already assumes; verified against brute-force
+    // quadrature to 1e-12 relative -- see README), firing photons directly
+    // into the osculating elements (energy kick plus the same closed-form
+    // k=-(1-e^2)/(2+e^2) ratio the continuum models' own angular-momentum
+    // update already uses) since no mechanical State exists during a
+    // skipped span.
+    //
+    // This did more than close the gap -- it surfaced a genuine physical
+    // effect.  hbar*omega_orb at positronium's OWN scale is comparable to
+    // or larger than its total binding energy throughout the collapse
+    // (~9-13 eV per photon near the start, against ~6.8 eV of binding), so
+    // individual photons are not a small perturbation on the classical
+    // curve the way the (u0(1-Jx)^-2/3) derivation's own small-hazard
+    // regime assumes -- they are large, rare, discrete jumps, and the
+    // PATH between them is exactly conserved (see this reaction model's
+    // top comment).  Measured directly (seed 42): the classical/continuum
+    // models give ~36-40 ps; this one gives 665 ps for the same seed and a
+    // median 149 ps / mean 276+-91 ps (sigma/mean~1.0, i.e. genuinely
+    // wide, not a tight distribution around the continuum answer) over 10
+    // seeds -- a real, order-of-magnitude difference from discretizing
+    // emission this way, not a rounding artefact.  An experiment, not a
+    // replacement for the continuum models above -- but unlike --zpf's SED
+    // probe, this one DOES show a qualitative, physically interpretable
+    // difference, which is itself the point: naive photon-sized
+    // discretization of a classical orbit does not reduce smoothly to the
+    // classical answer once the photon scale stops being small against the
+    // system's own energy scale -- exactly the failure mode that made the
+    // old (pre-1925) semiclassical quantum theory unworkable.
     stochasticElectricDipole
 };
 

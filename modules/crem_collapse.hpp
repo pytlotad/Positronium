@@ -515,6 +515,22 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     // from here on.
     const ChargeRadiationReactionModel activeReactionModel=gRadiationReactionModel;
 
+    // Poisson-process bookkeeping for stochasticElectricDipole, unused (and
+    // costing nothing) for every other model.  Unlike the analogous state in
+    // runMechanicalTrajectory (reset fresh per call, correct there because a
+    // stochastic MECHANICAL trajectory never spans more than one call), this
+    // one must persist across the WHOLE checkpoint loop below: each checkpoint
+    // measures only one orbit before analytically SKIPPING up to
+    // maxOrbitsSkippedAtOnce more, and it is that skipped span the hazard
+    // needs to see (see this reaction model's own comment in
+    // electrodynamics.hpp for the measurement that this exposure gap is real).
+    // Seeded from this trajectory's own seed, distinctly from anything else
+    // splitMix64(seed) is used for elsewhere in this file.
+    std::uint64_t stochasticSkipStream=
+        splitMix64(seed^0x506f6973736f6e5fULL);
+    double stochasticSkipHazard=0.0;
+    double stochasticSkipThreshold=drawExponentialUnit(stochasticSkipStream);
+
     const auto wallClockStart=std::chrono::steady_clock::now();
     const auto wallClockSpent=[&]() {
         return std::chrono::duration<double>(
@@ -897,7 +913,31 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 ++larmorRatioCount;
             }
         }
-        if(!(deltaEnergyPerOrbit<0.0)||!std::isfinite(deltaEnergyPerOrbit)) {
+        // Closed-form Larmor-orbit-averaged loss rate for the CURRENT
+        // osculating orbit -- the same quantity larmorOrbitAveragedPower()
+        // just above already computed for the Larmor-ratio diagnostic, not
+        // a new formula.  Needed only by stochasticElectricDipole, whose
+        // single measured orbit almost never contains a real photon (see
+        // this reaction model's own comment in electrodynamics.hpp: hazard
+        // per SINGLE orbit near a=3pm measures ~5.5e-5), so
+        // deltaEnergyPerOrbit from that one orbit is noise-dominated and
+        // unusable for sizing the skip -- exactly the envelope the photon
+        // hazard integral below is itself derived against, so this is the
+        // right substitute, not an approximation invented for convenience.
+        const bool isStochastic=activeReactionModel
+            ==ChargeRadiationReactionModel::stochasticElectricDipole;
+        const double expectedLossPerOrbit=isStochastic
+            ?larmorOrbitAveragedPower(
+                  -attractionParameter/(2.0*elements.specificEnergy),
+                  std::sqrt(std::max(0.0,1.0+2.0*elements.specificEnergy
+                      *elements.specificAngularMomentum
+                      *elements.specificAngularMomentum
+                      /(attractionParameter*attractionParameter))))
+                 *period/reducedMass
+            :0.0;
+        if(isStochastic
+           ?!(expectedLossPerOrbit>0.0)
+           :(!(deltaEnergyPerOrbit<0.0)||!std::isfinite(deltaEnergyPerOrbit))) {
             // No measurable energy loss this orbit: with the reaction force
             // disabled (or below numerical noise), the orbit is not
             // secularly decaying, so there is nothing further to observe.
@@ -934,7 +974,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // over that same trajectory, i.e. far steadier than dL/dorbit itself;
         // L then follows L = L0 (u/u0)^k.
         const double energyMagnitude=std::abs(elements.specificEnergy);
-        const double lossPerOrbit=std::abs(deltaEnergyPerOrbit);
+        const double lossPerOrbit=isStochastic
+            ?expectedLossPerOrbit:std::abs(deltaEnergyPerOrbit);
         int orbitsToSkip=1;
         if(lossPerOrbit>0.0&&energyMagnitude>0.0) {
             const double requestedOrbits=maximumJumpParameter*energyMagnitude
@@ -1006,11 +1047,108 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 /(attractionParameter*attractionParameter));
         const double angularExponent=
             -(1.0-eccentricitySquared)/(2.0+eccentricitySquared);
-        radiatedEnergyTotal+=
-            (updatedEnergyMagnitude-energyMagnitude)*reducedMass;
-        elements.specificEnergy=-updatedEnergyMagnitude;
-        elements.specificAngularMomentum*=
-            std::pow(energyGrowth,angularExponent);
+        if(isStochastic) {
+            // Replace the deterministic bulk jump below with the sum of
+            // individually fired, Poisson-timed photons over this same
+            // span -- see stochasticElectricDipole's own comment
+            // (electrodynamics.hpp) for why applying BOTH here would
+            // double the very quantity the photons are meant to
+            // discretize.  jumpParameter/energyGrowth/angularExponent
+            // above still describe the ASSUMED classical envelope this
+            // span's hazard integral (and each photon's individual
+            // energy) is measured against -- inputs to the sampling
+            // below, never applied directly for this model.
+            //
+            // skipHazard = integral(power/(hbar*omega) dt) over the whole
+            // skip, in closed form against that same u(n)=u0(1-Jx)^(-2/3)
+            // envelope (J=jumpParameter, x=n/orbitsToSkip in [0,1]),
+            // T(n)=T0(1-Jx), power(n)=power0*(u(n)/u0)^4, omega(n)=
+            // omega0*(u(n)/u0)^1.5 -- verified against brute-force
+            // numerical quadrature to 1e-12 relative across the full
+            // jumpParameter range this code ever produces (see README).
+            const double photonEnergyReference=hbar*(2.0*pi/period);
+            if(photonEnergyReference>0.0) {
+                const double integralFactor=jumpParameter>1.0e-12
+                    ?(3.0/jumpParameter)
+                        *(1.0-std::pow(1.0-jumpParameter,1.0/3.0))
+                    :1.0;
+                const double skipHazard=lossPerOrbit*reducedMass
+                    /photonEnergyReference
+                    *static_cast<double>(orbitsToSkip)*integralFactor;
+                double hazardConsumedThisSkip=0.0;
+                stochasticSkipHazard+=skipHazard;
+                int photonCountDebug=0;
+                if(std::getenv("CREM_DEBUG"))
+                    std::cerr<<"  SKIP orbitsToSkip="<<orbitsToSkip
+                             <<" jumpParameter="<<jumpParameter
+                             <<" skipHazard="<<skipHazard
+                             <<" cumHazard="<<stochasticSkipHazard
+                             <<" threshold="<<stochasticSkipThreshold
+                             <<" photonEnergyReference="
+                             <<photonEnergyReference<<"J"<<std::endl;
+                while(stochasticSkipHazard>=stochasticSkipThreshold) {
+                    stochasticSkipHazard-=stochasticSkipThreshold;
+                    hazardConsumedThisSkip+=stochasticSkipThreshold;
+                    // Position within [0,1] of this skip where the running
+                    // hazard integral reaches this photon's threshold,
+                    // found by inverting the same closed form above.  A
+                    // threshold consumed mostly out of hazard CARRIED IN
+                    // from the previous skip (hFraction saturating at the
+                    // clamp) is attributed to this skip's own start
+                    // instead -- a boundary approximation, not exact.
+                    const double hFraction=skipHazard>0.0
+                        ?std::clamp(
+                            hazardConsumedThisSkip/skipHazard,0.0,1.0)
+                        :1.0;
+                    const double base=jumpParameter>1.0e-12
+                        ?1.0-std::pow(1.0-jumpParameter,1.0/3.0):1.0;
+                    const double x=jumpParameter>1.0e-12
+                        ?(1.0-std::pow(1.0-hFraction*base,3.0))
+                            /jumpParameter
+                        :hFraction;
+                    const double sAtPhoton=
+                        jumpParameter*std::clamp(x,0.0,1.0);
+                    const double energyRatio=
+                        std::pow(1.0-sAtPhoton,-2.0/3.0);
+                    const double photonEnergy=photonEnergyReference
+                        *std::pow(energyRatio,1.5);
+                    // Eccentricity/k evaluated BEFORE this photon's own
+                    // kick, mirroring the bulk formula's own convention
+                    // (its eccentricitySquared above is likewise the
+                    // pre-jump value).
+                    const double eccentricitySquaredHere=std::max(0.0,1.0
+                        +2.0*elements.specificEnergy
+                            *elements.specificAngularMomentum
+                            *elements.specificAngularMomentum
+                            /(attractionParameter*attractionParameter));
+                    const double kHere=-(1.0-eccentricitySquaredHere)
+                        /(2.0+eccentricitySquaredHere);
+                    const double energyBeforeKick=
+                        std::abs(elements.specificEnergy);
+                    elements.specificEnergy-=photonEnergy/reducedMass;
+                    const double energyAfterKick=
+                        std::abs(elements.specificEnergy);
+                    elements.specificAngularMomentum*=std::pow(
+                        energyAfterKick/energyBeforeKick,kHere);
+                    radiatedEnergyTotal+=photonEnergy;
+                    ++photonCountDebug;
+                    if(std::getenv("CREM_DEBUG"))
+                        std::cerr<<"    PHOTON #"<<photonCountDebug<<" x="<<x
+                                 <<" photonEnergy="<<photonEnergy
+                                 <<"J energyBeforeKick="<<energyBeforeKick
+                                 <<" newE="<<elements.specificEnergy
+                                 <<std::endl;
+                    stochasticSkipThreshold=
+                        drawExponentialUnit(stochasticSkipStream);
+                }
+            }
+        } else {
+            radiatedEnergyTotal+=
+                (updatedEnergyMagnitude-energyMagnitude)*reducedMass;
+            elements.specificEnergy=-updatedEnergyMagnitude;
+            elements.specificAngularMomentum*=
+                std::pow(energyGrowth,angularExponent);
+        }
         simulatedTimeTotal+=measuredElapsed*static_cast<double>(orbitsToSkip)
             *(1.0-0.5*jumpParameter);
         revolutionsTotal+=static_cast<double>(orbitsToSkip);

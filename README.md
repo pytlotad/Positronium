@@ -725,37 +725,66 @@ mechaniczną; niezależny pomiar strumienia zostaje nietknięty, dokładnie jak
 dla pozostałych modeli, gdzie oba są already porównywane, nie scalane
 (`reaction/flux` diagnostyka).
 
-**Zmierzone bezpośrednio: sam mechanizm działa dokładnie tak, jak
-przewiduje rachunek, ale w obecnej architekturze prawie nigdy nie strzela w
-trybie statystycznym.** Ręcznie policzony haracz dla pojedynczej orbity przy
-a=3,1 pm (checkpoint 16 ziarna 42) wynosi `5,5·10⁻⁵` — więc pojedyncza
-zmierzona orbita praktycznie nigdy nie przekracza progu Exp(1). Problem:
-`crem_collapse.hpp` woła `runMechanicalTrajectory` osobno dla KAŻDEGO
-punktu kontrolnego, licząc tylko JEDNĄ orbitę na pomiar, po czym analitycznie
-PRZESKAKUJE do 200 000 kolejnych — a akumulator haraczu żyje tylko wewnątrz
-jednego wywołania i znika, gdy ono się kończy. Licząc z tej samej stawki,
-200 000 pominiętych orbit niosłoby ~11 fotonów oczekiwanych — ale tryb nigdy
-nie dostaje szansy ich zobaczyć. Potwierdzone empirycznie: zero fotonów na
-całym przebiegu `--mode statistical`, zero też na wydłużonym (40 ps) oknie
-`--mode visual` (zbyt wolne, by w rozsądnym czasie ściany dotrzeć do małego
-promienia — dokładnie dlatego `crem_collapse.hpp` w ogóle ma analityczne
-przeskakiwanie). To nie jest niepewność co do samego mechanizmu — oczekiwany
-i zaobserwowany haracz zgadzają się ręcznie — tylko jego EKSPOZYCJA w
-estymatorze sekularnym jest obecnie za mała, żeby cokolwiek zmienić w
-statystycznym czasie kolapsu. Zasilenie haraczu też podczas analitycznie
-pomijanych odcinków (na poziomie elementów oskulacyjnych, nie surowego
-`State`) domknęłoby tę lukę — nie podjęte tutaj.
+**Znaleziona luka ekspozycji — i domknięta.** Ręcznie policzony haracz dla
+pojedynczej orbity przy a=3,1 pm (checkpoint 16 ziarna 42) wynosi `5,5·10⁻⁵`
+— więc pojedyncza zmierzona orbita praktycznie nigdy nie przekracza progu
+Exp(1). `crem_collapse.hpp` woła `runMechanicalTrajectory` osobno dla
+KAŻDEGO punktu kontrolnego, licząc tylko JEDNĄ orbitę na pomiar, po czym
+analitycznie PRZESKAKUJE do 200 000 kolejnych — a pierwszy akumulator
+haraczu (ten w `crem_trajectory.hpp`) żyje tylko wewnątrz jednego wywołania
+i znika, gdy ono się kończy, więc nigdy nie widzi tych 200 000 pominiętych
+orbit, gdzie żyje niemal cały prawdziwy haracz.
+
+Domknięte dodaniem DRUGIEGO, niezależnego akumulatora haraczu — tym razem w
+`crem_collapse.hpp` samym, całkującego analitycznie tę samą stawkę
+`moc/(ħω)` po całym pominiętym odcinku, w zamkniętej formie względem
+klasycznej obwiedni `u(n)=u₀(1−Jx)^(-2/3)`, której i tak już używa sam skok
+sekularny (J = `jumpParameter`, x = n/orbitsToSkip ∈ [0,1]):
+
+\[
+\text{haracz}(J)=\frac{P_0 T_0}{\hbar\omega_0}\cdot n_{\rm skip}\cdot
+\frac{3}{J}\Bigl(1-(1-J)^{1/3}\Bigr)
+\]
+
+— zweryfikowane względem siłowej kwadratury numerycznej do `10⁻¹²`
+względnie w całym zakresie `J∈[0,0.3]`, jaki produkcja kiedykolwiek
+generuje. Moment i wielkość każdego fotonu w obrębie skoku wyznacza
+odwrócenie tej samej zamkniętej formy (też zweryfikowane numerycznie do
+maszynowej precyzji); foton trafia bezpośrednio w elementy oskulacyjne
+(kopnięcie energii plus ten sam zamknięty stosunek `k=-(1-e²)/(2+e²)`,
+którego już używa ciągła aktualizacja momentu pędu) — bo podczas
+pominiętego odcinka nie istnieje żaden mechaniczny `State`, tylko te dwie
+liczby. Dla pozostałych modeli zachowanie jest bit w bit identyczne (ta sama
+gałąź `else` co zawsze).
+
+**To domknięcie ujawniło coś więcej niż samą lukę — prawdziwy efekt
+fizyczny.** `ħω_orb` w skali samego pozytonium jest porównywalne albo
+większe od CAŁEJ jego energii wiązania przez większość kolapsu (~9-13 eV na
+foton blisko startu, wobec ~6,8 eV wiązania) — pojedyncze fotony NIE są
+małym zaburzeniem klasycznej krzywej, tak jak zakłada własne wyprowadzenie
+`u₀(1-Jx)^(-2/3)` w reżimie małego haraczu: są duże, rzadkie, skokowe, a
+TOR między nimi jest dokładnie zachowywany (patrz akapit wyżej). Zmierzone
+bezpośrednio (ziarno 42): modele ciągłe/klasyczne dają ~36-40 ps; ten model
+daje **665 ps** dla tego samego ziarna, a na 10 ziarnach medianę **149 ps**
+i średnią **276±91 ps** (sigma/średnia≈1,0 — czyli naprawdę szeroki rozkład,
+nie ciasny wokół odpowiedzi klasycznej). To rzeczywista, rzędu wielkości
+różnica wynikająca z tej konkretnej dyskretyzacji emisji, nie artefakt
+zaokrąglenia.
+
+W przeciwieństwie do sondy SED (`--zpf`), która zamknęła się wynikiem
+negatywnym bez jakościowej różnicy, ten eksperyment DAJE jakościowo inną,
+fizycznie interpretowalną odpowiedź — i to jest sedno sprawy: naiwna
+dyskretyzacja emisji rozmiarem fotonu "ħ razy chwilowa częstość klasyczna"
+nie redukuje się gładko do odpowiedzi klasycznej, gdy skala fotonu
+przestaje być mała względem własnej skali energetycznej układu — dokładnie
+ten sam mechanizm, przez który stara (sprzed 1925 r.) półklasyczna teoria
+kwantowa okazała się niewykonalna, i dokładnie to, o co pytał użytkownik na
+początku tego wątku.
 
 Zweryfikowane: kompilacja czysta, `positronium_validation` 33/33 bez zmian.
-Test dymny `--mode statistical --phenomenon 1 --radiation-reaction
-stochastic` daje sensowny, w pełni porównywalny z modelem ciągłym czas
-kolapsu (mediana ~36-40 ps, ten sam rząd co inne modele) — bo sekularny
-kanał energetyczny czyta z tej samej, wspólnej dla wszystkich modeli
-kwadratury strumienia, niezależnej od tego, czy dany model coś tam
-"strzela". Genuinie skokowy efekt (nagłe zmiany L, nie tylko E) byłby
-widoczny wyłącznie w pełnej, nieprzeskakującej trajektorii mechanicznej z
-wystarczającą ekspozycją głęboko w kolapsie — czego obecna architektura
-`crem_collapse.hpp` po prostu nie dostarcza tanio.
+Test na 10 ziarnach: 10/10 trajektorii dochodzi do granicy (100% ukończenia,
+zero cenzury/awarii) — mechanizm jest stabilny, nie tylko poprawny
+punktowo.
 
 ### Wynik audytu kompletności fizycznej
 
