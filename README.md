@@ -710,6 +710,42 @@ wpływie na jakikolwiek zgłaszany wynik fizyczny — koszt tej wielkości nie
 jest uzasadniony. Pozostawione jako świadomie zaakceptowane, teraz w pełni
 udowodnione ograniczenie, nie zadanie do zrobienia.
 
+**Sprawdzone osobno: czy w torze produkcyjnym jest gdzieś oddziaływanie
+natychmiastowe (action-at-a-distance) zamiast retardowanego.** Prześledzony
+bezpośrednio cały łańcuch wywołań składający się na siłę faktycznie pchającą
+cząstki w `integrateElectrodynamicStep` (jedyny produkcyjny krok
+integracji): pole ładunek-ładunek (`lienardWiechertField`), pole dipola
+magnetycznego i elektrycznego (`retardedMagneticDipoleField`/
+`retardedElectricDipoleField`), siła gradientowa na własnym dipole
+(`covariantDipoleGradientForce`→`fieldFromOtherParticleAt`, te same trzy
+pola retardowane) i reakcja promieniowania (różnica skończona z
+`retardedExternalForces`, nie `allExternalForces`, w stanach `before`/
+`after`) — wszystkie retardowane, przez `history`. Jedyne nieretardowane
+składniki w torze produkcyjnym to jednorodne pole zewnętrzne
+(`gExternalMagneticField`) i pole punktu zerowego (`gZeroPointField`) — oba
+jawnie udokumentowane jako pola **tła**, nie źródłowane przez żadną z
+cząstek, więc retardacja nie ma tu zastosowania fizycznego (nie ma od kogo
+liczyć opóźnienia).
+
+Jedno miejsce wymagało bliższego sprawdzenia: `chargeDipoleForces` liczy
+siłę wprost z bieżącej, nie retardowanej separacji. Ale ta funkcja ma
+dokładnie jedno wywołanie w całym kodzie — wewnątrz `allExternalForces`
+(natychmiastowej sumy sił) — a `allExternalForces` ma z kolei dokładnie
+trzy wywołania, wszystkie poza dynamiką: `causalInitialHistory`
+(`crem_engine.hpp:50`, jednorazowy zalążek historii przed pierwszym
+prawdziwym krokiem, natychmiast poprawiany iteracją Picarda względem wzoru
+retardowanego), `integrateConservativeMidpoint`
+(`electrodynamics.hpp:2147`, test odwracalności wyłącznie pod
+`POSITRONIUM_ENABLE_FIELD_VALIDATION`) i `makeFrame`
+(`crem_trajectory.hpp:28`, czysto diagnostyczna energia Schotta do raportu,
+nie napędza ruchu).
+
+Wniosek: żadna siła, która faktycznie zmienia pęd cząstki w symulacji
+produkcyjnej, nie jest natychmiastowa. To weryfikacja, nie znalezisko —
+kod już wcześniej twierdził to samo w kilku miejscach, ale teraz
+prześledzone bezpośrednio przez cały łańcuch wywołań, nie tylko
+zacytowane.
+
 Relacja moment–spin niosła błąd czynnika \(g\). Model definiuje
 \(\boldsymbol\mu=\gamma\mathbf S\) z \(\gamma=gq/2m\) i przechowuje
 \(|\boldsymbol\mu|=(g/2)\,\text{magneton}\), ale cztery miejsca liczyły
