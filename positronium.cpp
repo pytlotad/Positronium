@@ -2454,6 +2454,14 @@ struct BeamConfiguration {
     // number here either, just the only "how close is too close" scale
     // available before comptonBarrierRadius existed.
     double collisionRadius;
+    // Zero by default (see makeBeamConfiguration's own comment on
+    // --beam-energy-sigma-ev): experiments 3/4 exist to compare a measured
+    // cross section against the Rutherford formula at a FIXED K_CM, so a
+    // zero-width beam is the deliberate default, not an oversight. Nonzero
+    // opts into sampling K_CM per event from a Gaussian instead, at the
+    // cost of smearing that theory-vs-model comparison, the same way a
+    // real beam's finite energy resolution would smear a real measurement.
+    double centreOfMassKineticEnergySigma = 0.0;
 };
 
 struct EndpointDiagnostics {
@@ -2487,6 +2495,13 @@ struct BeamEvent {
     double scatteringAngle = std::numeric_limits<double>::quiet_NaN();
     double outgoingEnergy = std::numeric_limits<double>::quiet_NaN();
     double radiatedEnergy = std::numeric_limits<double>::quiet_NaN();
+    // The K_CM this SPECIFIC event actually collided at.  Equals
+    // configuration.centreOfMassKineticEnergy exactly whenever
+    // centreOfMassKineticEnergySigma is zero (the default); only diverges
+    // per event once a beam energy spread is opted into, in which case
+    // downstream energy-loss quantities (Delta E = incidentEnergy -
+    // outgoingEnergy) must read THIS, not the configuration's fixed mean.
+    double incidentEnergy = std::numeric_limits<double>::quiet_NaN();
     State initialState;
     State terminalState;
     bool initialStateValid = false;
@@ -2527,9 +2542,15 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
                                         double thetaMinimumDegrees,
                                         int angleBins,
                                         double impactParameterMaximumPm,
-                                        double matchingRadiusPm) {
+                                        double matchingRadiusPm,
+                                        double energySigmaEv = 0.0) {
     if (!(energyEv > 0.0) || !std::isfinite(energyEv)) {
         throw std::invalid_argument("beam energy must be finite and positive");
+    }
+    if (!(energySigmaEv >= 0.0) || !std::isfinite(energySigmaEv)) {
+        throw std::invalid_argument(
+            "beam energy sigma must be finite and non-negative"
+            " (zero selects a monochromatic beam)");
     }
     if (!(thetaMinimumDegrees > 0.0 && thetaMinimumDegrees < 180.0)
         || !std::isfinite(thetaMinimumDegrees)) {
@@ -2603,7 +2624,8 @@ BeamConfiguration makeBeamConfiguration(int selectedPhenomenon,
             8.0 * matchingRadius / asymptotic.relativeSpeed,
             std::max(asymptotic.firstSpeed,asymptotic.secondSpeed)/c,
             analysisThetaMinimum, coulombLength, collisionImpactParameter,
-            angleBins, shortRangeFocus, collisionRadius};
+            angleBins, shortRangeFocus, collisionRadius,
+            energySigmaEv*eCharge};
 }
 
 BeamEvent simulateBeamEvent(
@@ -2611,6 +2633,26 @@ BeamEvent simulateBeamEvent(
     ClassicalTrajectoryEngine::Accuracy accuracy) {
     std::mt19937_64 random(seed);
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    // Zero sigma (the default) reproduces the exact monochromatic beam this
+    // experiment always used; nonzero opts into a per-event Gaussian K_CM,
+    // matching how experiment 5 samples its own beam energy.  Sampling
+    // geometry (impactParameterMaximum, matchingRadius, coulombLength) stays
+    // sized to the MEAN energy, not resampled per event -- same decoupling
+    // already established for collisionRadius (see BeamConfiguration's own
+    // comment): what varies event to event is the physical energy the pair
+    // actually collides at, not how wide a net the sampler casts.
+    const double eventCentreOfMassKineticEnergy = [&]() {
+        if (!(configuration.centreOfMassKineticEnergySigma > 0.0))
+            return configuration.centreOfMassKineticEnergy;
+        std::normal_distribution<double> energyGaussian(
+            configuration.centreOfMassKineticEnergy,
+            configuration.centreOfMassKineticEnergySigma);
+        for (int attempt = 0; attempt < 1000; ++attempt) {
+            const double sampled = energyGaussian(random);
+            if (sampled > 0.0) return sampled;
+        }
+        return configuration.centreOfMassKineticEnergy;
+    }();
     const double impactParameter = configuration.impactParameterMaximum
         * std::sqrt(uniform(random));
     const double azimuth = 2.0 * pi * uniform(random);
@@ -2629,7 +2671,7 @@ BeamEvent simulateBeamEvent(
     const double coulombStrength = pairCoulombStrength;
     const two_body::IncomingTwoBodyKinematics incoming =
         two_body::incomingTwoBodyKinematics(
-            configuration.centreOfMassKineticEnergy,
+            eventCentreOfMassKineticEnergy,
             coulombStrength/configuration.matchingRadius,
             impactParameter,configuration.matchingRadius,
             radialDirection,tangentDirection,
@@ -2637,6 +2679,7 @@ BeamEvent simulateBeamEvent(
     if (!incoming.valid()) {
         BeamEvent result{BeamOutcome::NumericalFailure, seed, impactParameter};
         result.impactAzimuth = azimuth;
+        result.incidentEnergy = eventCentreOfMassKineticEnergy;
         return result;
     }
 
@@ -2675,6 +2718,7 @@ BeamEvent simulateBeamEvent(
         BeamEvent result{outcome, seed, impactParameter, scatteringAngle,
                          outgoingEnergy, emittedEnergy};
         result.impactAzimuth = azimuth;
+        result.incidentEnergy = eventCentreOfMassKineticEnergy;
         result.initialState = initialState;
         result.initialStateValid = true;
         result.integrationSteps = integrationSteps;
@@ -3665,10 +3709,10 @@ std::string crossSectionEstimate(double sampledArea, int count, int total,
 int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                        double beamEnergyEv, double thetaMinimumDegrees,
                        int angleBins, double impactMaximumPm,
-                       double matchingRadiusPm) {
+                       double matchingRadiusPm, double beamEnergySigmaEv) {
     const BeamConfiguration configuration = makeBeamConfiguration(
         selectedPhenomenon, beamEnergyEv, thetaMinimumDegrees, angleBins,
-        impactMaximumPm, matchingRadiusPm);
+        impactMaximumPm, matchingRadiusPm, beamEnergySigmaEv);
     const int workerCount = std::min(runCount,
         static_cast<int>(std::max(1u, std::thread::hardware_concurrency())));
     const double matchingPotentialRatio = pairCoulombStrength
@@ -3681,7 +3725,10 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
               << (runCount == 1 ? " trajectory on " : " trajectories on ")
               << workerCount << " worker"
               << (workerCount == 1 ? "" : "s") << ".\n"
-              << "K_CM = " << beamEnergyEv << " eV, b_max = "
+              << "K_CM = " << beamEnergyEv
+              << (beamEnergySigmaEv > 0.0
+                      ? (" eV (Gaussian sigma = " + std::to_string(beamEnergySigmaEv) + " eV), b_max = ")
+                      : " eV, b_max = ")
               << configuration.impactParameterMaximum * 1.0e12
               << " pm, R_match = " << configuration.matchingRadius * 1.0e12
               << " pm, theta acceptance >= "
@@ -3712,7 +3759,7 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
                 if (event.scatteringAngle >= configuration.analysisThetaMinimum) {
                     ++fiducial;
                     fiducialEnergyLossesEv.push_back(
-                        (configuration.centreOfMassKineticEnergy
+                        (event.incidentEnergy
                          - event.outgoingEnergy) / eCharge);
                 }
                 break;
@@ -5244,7 +5291,8 @@ int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
                             double interactionEnergyEv,
                             double interactionEnergySigmaEv,
                             double interactionImpactSigmaPm,
-                            double cremWallClockBudgetSeconds) {
+                            double cremWallClockBudgetSeconds,
+                            double beamEnergySigmaEv) {
     if (selectedPhenomenon == 5) {
         return showInteractionStatistics(seed, runCount, interactionEnergyEv,
                                          interactionEnergySigmaEv,
@@ -5256,7 +5304,8 @@ int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
     }
     return showBeamStatistics(seed, selectedPhenomenon, runCount,
                               beamEnergyEv, thetaMinimumDegrees,
-                              angleBins, impactMaximumPm, matchingRadiusPm);
+                              angleBins, impactMaximumPm, matchingRadiusPm,
+                              beamEnergySigmaEv);
 }
 #endif
 
@@ -5307,6 +5356,14 @@ int main(int argc, char** argv) {
     // scale as 1/K_CM^2, so this value fixes the axis range of every committed
     // beam plot and must not be retuned along with the experiment-5 energy.
     double beamEnergyEv = 20.0;
+    // Zero by default: unlike experiment 5, experiments 3/4 exist to compare
+    // a measured cross section against the theoretical Rutherford formula at
+    // a FIXED energy, and sigma(theta) is itself defined at one K_CM -- a
+    // zero-width beam is the right default for that comparison, not a gap.
+    // Nonzero opts into modelling a real beam's finite energy resolution
+    // instead, at the cost of smearing the theory-vs-model comparison the
+    // same way real energy spread would smear a real measurement.
+    double beamEnergySigmaEv = 0.0;
     double thetaMinimumDegrees = 5.0;
     int angleBins = 10;
     double impactParameterMaximumPm = 0.0;
@@ -5379,6 +5436,8 @@ int main(int argc, char** argv) {
                     "fixed by the orbit-averaged collapse estimator");
             } else if (argument == "--beam-energy-ev") {
                 beamEnergyEv = std::stod(requireValue(argument));
+            } else if (argument == "--beam-energy-sigma-ev") {
+                beamEnergySigmaEv = std::stod(requireValue(argument));
             } else if (argument == "--theta-min-deg") {
                 thetaMinimumDegrees = std::stod(requireValue(argument));
             } else if (argument == "--angle-bins") {
@@ -5666,7 +5725,8 @@ int main(int argc, char** argv) {
                                            interactionEnergyEv,
                                            interactionEnergySigmaEv,
                                            interactionImpactSigmaPm,
-                                           cremWallClockBudgetSeconds);
+                                           cremWallClockBudgetSeconds,
+                                           beamEnergySigmaEv);
         } catch (const std::exception& error) {
             std::cerr << "Invalid statistical experiment: " << error.what() << '\n';
             return 1;

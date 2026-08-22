@@ -775,6 +775,51 @@ jest o rzędy wielkości poniżej najciaśniejszej tolerancji, jaką ten projekt
 gdziekolwiek sprawdza (\(10^{-8}\) i wyżej). Zweryfikowane:
 `positronium_validation` 33/33 bez zmian po poprawce.
 
+**Sprawdzone też: czy warunki startowe pięciu eksperymentów statystycznych
+odpowiadają praktyce eksperymentalnej.** Losowanie kąta uderzenia w
+przekroju czynnym (eksperymenty 3, 4) i próbki parametru zderzenia po
+`√(losowa liczba)` (jednorodnie po **polu**, nie po promieniu) to poprawna
+technika Monte Carlo dla ekstrakcji przekroju czynnego niezależnie od
+rzeczywistego profilu wiązki — nie jest to uproszczenie do naprawienia.
+Eksperyment 5 już wcześniej próbkuje energię kinetyczną obu cząstek z
+rozkładu Gaussa (`sampleKinetic`) i parametr zderzenia z rozkładu
+półnormalnego \(|\mathcal N(0,\sigma)|\), odzwierciedlając skończoną
+rozdzielczość energetyczną i ogniskowanie realnej wiązki. Eksperymenty 1/2
+(kolaps CREM) startują z ustalonego \(L=\hbar\) na promieniu Bohra pary —
+to nie próbka eksperymentalna, tylko warunek początkowy modelu klasycznego
+odtwarzającego zadaną energię wiązania (patrz komentarz przy
+`positroniumBohrRadius` w `physical_constants.hpp`), więc rozkład tu nie
+ma odpowiednika fizycznego do którego by dążyć.
+
+Jedno realne odstępstwo: eksperymenty 3 i 4 uderzają wiązką o **ustalonej**
+energii środka masy \(K_{CM}\) — zamierzone, bo ich celem jest porównanie
+zmierzonego przekroju czynnego z formułą Rutherforda przy jednej, znanej
+energii (sama \(\sigma(\theta)\) jest zdefiniowana przy ustalonym
+\(K_{CM}\)), ale to jednocześnie odbiega od realnej wiązki, która zawsze ma
+skończoną rozdzielczość energetyczną. Dodana opcjonalna poprawka: nowa
+flaga `--beam-energy-sigma-ev` (domyślnie `0`, zachowując dotychczasowe
+zachowanie bit w bit), która pozwala próbkować \(K_{CM}\) danego zdarzenia
+z rozkładu Gaussa o zadanym \(\sigma\) wokół `--beam-energy-ev`, tym samym
+próbkowaniem odrzucającym co `sampleKinetic` w eksperymencie 5 (odrzuca
+próbki \(\le 0\), do 1000 prób, po czym pada z powrotem na wartość
+średnią). Nowe pole `BeamEvent::incidentEnergy` niesie faktycznie
+wylosowaną energię danego zdarzenia; widmo strat energii
+(`fiducialEnergyLossesEv`, jedyne miejsce liczące \(\Delta E\) wprost)
+poprawione, by liczyć różnicę względem tej rzeczywistej energii zdarzenia,
+nie względem ustalonej średniej konfiguracji — inaczej przy \(\sigma>0\)
+każde zdarzenie dostawałoby błędny, systematyczny offset. Baner startowy
+wypisuje \(\sigma\) obok \(K_{CM}\), gdy jest niezerowa.
+
+Zweryfikowane: kompilacja czysta (zero ostrzeżeń), `positronium_validation`
+33/33 bez zmian. Test dymny `--phenomenon 3 --beam-energy-ev 20
+--beam-energy-sigma-ev 5 --runs 8` przechodzi bez awarii, baner poprawnie
+pokazuje `K_CM = 20 eV (Gaussian sigma = 5 eV)`, widmo strat energii i
+przekrój czynny liczą się dalej. Przy \(\sigma=0\) (domyślnie) próbkowanie
+Gaussa jest pomijane przez krótkie spięcie przed jakimkolwiek losowaniem
+(`if (!(sigma > 0.0)) return configuration.centreOfMassKineticEnergy;`),
+więc strumień losowy pozostaje nietknięty — zachowanie domyślne jest
+identyczne co przed tą zmianą.
+
 Relacja moment–spin niosła błąd czynnika \(g\). Model definiuje
 \(\boldsymbol\mu=\gamma\mathbf S\) z \(\gamma=gq/2m\) i przechowuje
 \(|\boldsymbol\mu|=(g/2)\,\text{magneton}\), ale cztery miejsca liczyły
@@ -2409,9 +2454,14 @@ eksperymentu i ziarno można podać bez interakcji:
 
 Parametry wiązki można dodatkowo kontrolować przez `--bmax-pm` i
 `--matching-radius-pm`; gdy ich nie podano, program dobiera je z energii i
-akceptancji kątowej.
+akceptancji kątowej. Sama energia wiązki `--beam-energy-ev` jest domyślnie
+monochromatyczna (jak wymaga porównania z formułą Rutherforda przy jednym
+\(K_{CM}\)); `--beam-energy-sigma-ev` (domyślnie `0`) opcjonalnie włącza
+próbkowanie \(K_{CM}\) każdego zdarzenia z rozkładu Gaussa o tym
+odchyleniu standardowym, modelując skończoną rozdzielczość energetyczną
+realnej wiązki — patrz audyt warunków startowych wyżej.
 
-Cztery opcje sterują samą fizyką i kosztem eksperymentów związanych:
+Pięć opcji sterują samą fizyką i kosztem eksperymentów związanych:
 
 | Opcja | Domyślnie | Znaczenie |
 | --- | --- | --- |
@@ -2419,6 +2469,7 @@ Cztery opcje sterują samą fizyką i kosztem eksperymentów związanych:
 | `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
 | `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
 | `--radiation-reaction` | `individual` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki) albo `automatic` (mieszanka obu). Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
+| `--beam-energy-sigma-ev` | `0` (wyłączone) | **Tylko eksperymenty 3, 4.** Odchylenie standardowe rozkładu Gaussa, z którego próbkowana jest energia środka masy \(K_{CM}\) każdego zdarzenia wiązki, wokół `--beam-energy-ev`; `0` zachowuje dotychczasową, monochromatyczną wiązkę bit w bit. Próbkowanie odrzuca wyniki \(\le 0\) (do 1000 prób, jak `sampleKinetic` eksperymentu 5), a widmo strat energii liczy się względem faktycznie wylosowanej energii zdarzenia, nie ustalonej średniej. Modeluje skończoną rozdzielczość energetyczną realnej wiązki kosztem rozmycia porównania z formułą Rutherforda, która jest zdefiniowana przy jednym \(K_{CM}\). |
 
 Zasięg `--pair` nie jest jednakowy dla wszystkich eksperymentów.
 Eksperymenty 1 i 2 mierzą klasyczną inspiralę CREM — ta część jest ogólna dla
