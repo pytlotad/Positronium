@@ -2059,7 +2059,7 @@ nadal sprawdzana w `positronium_validation` jako test `annihilation-generator`.
 | Plik | Zawartość |
 | --- | --- |
 | `N_1_1_crem_collapse_time.pdf` | Krzywa przeżycia kolapsu CREM, estymator Kaplana-Meiera. Schodki ze znacznikami cenzury i słupkami Greenwooda; krzywa `exp(-t/τ_exp)` z pomiaru jako odniesienie skali. Oś czasu przełącza się na logarytmiczną dopiero powyżej ~1,3 dekady rozpiętości. |
-| `N_1_2_annihilation_time.pdf` | Widmo czasu anihilacji z **mierzonej** stałej rozpadu, rysowane analitycznie. Pionowa linia = średni czas kolapsu CREM, dla porównania skal. |
+| `N_1_2_collapse_time_distribution.pdf` | Histogram **zmierzonej** próby czasów kolapsu CREM (ten sam surowy `decayTimes`, co panel 1, tu bez cenzury Kaplana-Meiera) na osi liniowej czasu i logarytmicznej liczby zdarzeń — konwencja realnych widm spektroskopii czasu życia pozytonu. Pionowa kropkowana linia = τ_exp, narysowana tylko gdy mieści się w zasięgu osi (dla o-Ps zwykle nie: podpis wtedy mówi "off-scale"); to WYŁĄCZNIE odniesienie skali, nie test predykcji. |
 | `N_1_3_collapse_time_vs_theory.pdf` | **Porównanie z teorią.** Zmierzony czas kolapsu wobec zamkniętego wzoru klasycznej inspirali `da/dt = −C/a²`, `C = 8ke⁴/(6πε₀c³m²)`, uśrednionego czynnikiem **dipolowym** `(1+e²/2)/(1−e²)^{5/2}` przy własnych `a` i `e` każdej trajektorii. Zero parametrów swobodnych, żaden składnik CREM nie wchodzi do odniesienia. Przerywana przekątna = zgodność dokładna. |
 | `N_1_4_radiated_power_vs_larmor.pdf` | **Porównanie z teorią.** Stosunek zmierzonej mocy dysypacji orbitalnej do larmorowskiej mocy koherentnego dipola elektrycznego dla tej samej orbity oskulacyjnej. Linia ciągła przy 1 = dipol koherentny, kropkowana przy 0,5 = dwa ładunki promieniujące niezależnie. |
 | `N_2_1_diagnostic_calibration_power.pdf` | Histogram mocy promieniowania uśrednionej po trajektorii, tylko dla przebiegów zakończonych na granicy. |
@@ -2165,8 +2165,8 @@ daje 6 plików, a 4 daje 5.
 | `5_1_2_collision_energy.pdf` | Wyliczona niezmiennicza energia w układzie środka masy, z zaznaczeniem podpróbki związanej. |
 | `5_1_3_impact_parameter.pdf` | Losowany parametr zderzenia (rozkład półnormalny), z podpróbką związaną. |
 | `5_1_4_dipole_alignment.pdf` | Wyrównanie dipoli w stanach związanych, z progiem para/orto przy `+0,5`. Stosunek 1:3 wynika tu z **geometrii** progu na izotropowej sferze, a nie ze statystyki spinowej — zbieżność liczbowa jest przypadkowa. |
-| `5_1_5_annihilation_time_para.pdf` | Widmo czasu anihilacji z mierzonej stałej rozpadu p-Ps, zawężone do zdarzeń sklasyfikowanych jako para. |
-| `5_1_6_annihilation_time_ortho.pdf` | To samo dla klasy orto. |
+| `5_1_5_collapse_time_distribution_para.pdf` | Histogram zmierzonych czasów kolapsu CREM schwytanych par sklasyfikowanych jako para-Ps (zwykle nieliczne: tylko te, których okno obserwacji pokryło pełny obieg Keplera). Oś prowadzona danymi, τ_exp jako pionowa linia tylko gdy się mieści w zasięgu. |
+| `5_1_6_collapse_time_distribution_ortho.pdf` | To samo dla klasy orto. |
 | `5_2_1_diagnostic_summary.pdf` | Panel tekstowy z medianami residuów bilansu i zastrzeżeniem o definicji `E_bound`. |
 
 **Tryb wizualny** (1 plik na eksperyment, `N` = 1…4)
@@ -2331,7 +2331,8 @@ eksperymenty 1 i 2 są odrzucane dla par innych niż `electron,positron`.
 Eksperymenty 3, 4 i 5 nie mają odniesienia anihilacyjnego w części pomiarowej
 i działają dla dowolnej pary przyciągającej — z zastrzeżeniem, że eksperyment 5
 nadal etykietuje wychwycone stany jako „Para-/Ortho-Positronium" i zapisuje
-panele `annihilation_time_*` z danych pozytonium, co dla innej pary jest mylące.
+panele `collapse_time_distribution_*` z odniesieniem τ_exp z danych
+pozytonium, co dla innej pary jest mylące.
 
 ### Klasyczna gęstość kontaktowa wzdłuż spirali
 

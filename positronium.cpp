@@ -2092,63 +2092,74 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                : "Vallery et al., PRL 90 (2003)", plot_style::experimental())
     }, 0.019);
 
-    // Annihilation-time spectrum built from the MEASURED decay rate, drawn
-    // analytically.  The published rate is real data; turning it into a
-    // spectrum needs no Monte Carlo, because N(t) = exp(-t/tau)/tau is exactly
-    // what an exponential decay law with that rate implies.  Sampling it would
-    // only have added noise to a curve we already know in closed form.
-    const double annihilationUpper = 6.0*experimentalLifetime;
-    TF1 annihilationSpectrum("annihilation_time_spectrum",
-                             "exp(-x/[0])/[0]", 0.0, annihilationUpper);
-    annihilationSpectrum.SetParameter(0, experimentalLifetime);
-    annihilationSpectrum.SetParName(0, "tau");
-    annihilationSpectrum.SetLineColor(plot_style::experimental());
-    annihilationSpectrum.SetLineWidth(3);
-    annihilationSpectrum.SetNpx(600);
-    std::ostringstream annihilationTitle;
-    annihilationTitle << "Annihilation-time spectrum from the measured rate;t ["
-                      << timeUnit << "];(1/N) dN/dt [" << timeUnit << "^{-1}]";
-    annihilationSpectrum.SetTitle(annihilationTitle.str().c_str());
+    // Histogram of the MEASURED classical collapse-time sample (decayTimes,
+    // already in plot units) -- panel 1's own raw sample, shown directly as
+    // a spectrum on linear time / log counts, the standard axes a real
+    // PAL-spectroscopy decay spectrum is plotted on (a pure exponential is a
+    // straight line there).  tau_exp is drawn only as a vertical scale
+    // marker, exactly the role the CREM mean marker used to play on the
+    // now-removed analytic tau_exp curve: classical inspiral and quantum
+    // annihilation are different processes (panel 1's own disclaimer), so
+    // this histogram is never a prediction tested against tau_exp -- only
+    // the model's own spread, on the axes a real spectrum would use.
+    const double collapseHistogramUpper = std::max(lifetimeUpper, 1.0e-300);
+    std::ostringstream collapseHistogramTitle;
+    collapseHistogramTitle << "CREM collapse-time distribution (measured sample);t ["
+                           << timeUnit << "];Trajectories / bin";
+    TH1D collapseHistogram("crem_collapse_time_distribution",
+        collapseHistogramTitle.str().c_str(),
+        histogramBins(decayTimes.size()), 0.0, collapseHistogramUpper);
+    styleHistogram(collapseHistogram, plot_style::crem());
+    collapseHistogram.SetStats(false);
+    for (double value : decayTimes) collapseHistogram.Fill(value);
     distributionsPage.cd(2);
     gPad->SetGrid();
-    annihilationSpectrum.Draw("L");
-    // The classical collapse time is orders of magnitude shorter, so the marker
-    // sits hard against the left edge.  That is the honest picture and the box
-    // gives the ratio in numbers.
-    std::unique_ptr<TLine> collapseMarker;
-    if (collapseMoments.mean > 0.0
-        && collapseMoments.mean < annihilationUpper) {
-        collapseMarker = std::make_unique<TLine>(
-            collapseMoments.mean, 0.0,
-            collapseMoments.mean, 1.0/experimentalLifetime);
-        collapseMarker->SetLineColor(plot_style::crem());
-        collapseMarker->SetLineWidth(2);
-        collapseMarker->SetLineStyle(2);
-        collapseMarker->Draw();
+    const double collapseHistogramMax = collapseHistogram.GetMaximum();
+    if (collapseHistogramMax > 0.0) {
+        gPad->SetLogy();
+        collapseHistogram.SetMinimum(0.5);
     }
-    drawAnalysisBox(analysisBoxes, 0.40, 0.50, 0.95, 0.91, {
+    collapseHistogram.Draw("HIST");
+    // tau_exp does not always fall inside the histogram's own data-driven
+    // range: for o-Ps it is ~1000x past the right edge, and even for p-Ps a
+    // small or right-skewed sample can push it off-panel (measured directly:
+    // N=30 gave a horizon of 73 ps against tau_exp=125 ps).  Draw it only
+    // when it actually lands on the axis, and say so either way instead of
+    // labelling a line that silently is not there.
+    std::unique_ptr<TLine> experimentalMarker;
+    const bool experimentalMarkerOnAxis = experimentalLifetime > 0.0
+        && experimentalLifetime < collapseHistogramUpper;
+    if (experimentalMarkerOnAxis) {
+        experimentalMarker = std::make_unique<TLine>(
+            experimentalLifetime, collapseHistogram.GetMinimum(),
+            experimentalLifetime, collapseHistogramMax);
+        experimentalMarker->SetLineColor(plot_style::experimental());
+        experimentalMarker->SetLineWidth(3);
+        experimentalMarker->SetLineStyle(3);
+        experimentalMarker->Draw();
+    }
+    drawAnalysisBox(analysisBoxes, 0.38, 0.50, 0.95, 0.91, {
         plot_style::key(true, false, true, false),
-        AnalysisLine("Measured data, drawn analytically - no Monte Carlo.",
-            plot_style::experimental()),
-        AnalysisLine("Decay law N(t) #propto exp(-t/#tau) with the published",
-            plot_style::experimental()),
-        AnalysisLine("rate; the spectrum follows in closed form.",
-            plot_style::experimental()),
-        AnalysisLine("#lambda = " + compactNumber(rateReference.value, 6) + " #pm "
+        AnalysisLine("N = " + std::to_string(collapseMoments.count)
+            + " measured classical collapse times", plot_style::crem()),
+        AnalysisLine("mean = " + compactNumber(collapseMoments.mean, 4)
+            + " " + timeUnit + ",  #sigma = "
+            + compactNumber(collapseMoments.sigma, 4) + " " + timeUnit,
+            plot_style::crem()),
+        AnalysisLine((experimentalMarkerOnAxis
+                ? std::string("dotted: #tau_{exp} = ")
+                : std::string("off-scale: #tau_{exp} = "))
+            + compactNumber(experimentalLifetime)
+            + " #pm " + compactNumber(experimentalLifetimeError) + " " + timeUnit
+            + "  (#lambda = " + compactNumber(rateReference.value, 6) + " #pm "
             + compactNumber(rateReference.totalUncertainty, 2) + " "
-            + rateReference.unit, plot_style::experimental()),
-        AnalysisLine("#tau_{exp} = " + compactNumber(experimentalLifetime) + " #pm "
-            + compactNumber(experimentalLifetimeError) + " " + timeUnit,
-            plot_style::experimental()),
+            + rateReference.unit + ")", plot_style::experimental()),
         AnalysisLine(isPara ? "Al-Ramadhan & Gidley, PRL 72 (1994)"
                : "Vallery et al., PRL 90 (2003)", plot_style::experimental()),
-        AnalysisLine("blue dashed: CREM collapse #LTt#GT = "
-            + compactNumber(collapseMoments.mean, 4) + " " + timeUnit,
-            plot_style::crem()),
         "#tau_{exp}/#LTt#GT #approx " + compactNumber(experimentalRatio, 3)
             + ": the classical inspiral is far faster.",
-        "The two are different processes and are not",
-        "expected to agree; this panel sets the scale."
+        "Classical inspiral and quantum annihilation are different",
+        "processes; this is NOT a prediction-vs-measurement test."
     }, 0.0185);
 
     // --- Pad 3: measured collapse time against closed-form electrodynamics ---
@@ -2392,7 +2403,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     canvas.Update();
     std::vector<root_export::NamedPad> plotsToSave{
         {distributionsPage.GetPad(1), 1, 1, "crem_collapse_time"},
-        {distributionsPage.GetPad(2), 1, 2, "annihilation_time"},
+        {distributionsPage.GetPad(2), 1, 2, "collapse_time_distribution"},
         {distributionsPage.GetPad(3), 1, 3, "collapse_time_vs_theory"},
         {distributionsPage.GetPad(4), 1, 4, "radiated_power_vs_larmor"},
         {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_calibration_power"},
@@ -5068,13 +5079,21 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         "label reflects the initial random orientation."
     }, 0.019);
 
-    // Annihilation-time spectrum for each bound classification, drawn from the
-    // MEASURED decay rate of that state.  Experiment 5 decides which of the two
-    // a captured pair is, so each class gets the spectrum that actually applies
-    // to it.  The two lifetimes differ by a factor of about 1135, which is why
-    // they cannot share one axis and get a panel each.
-    std::vector<std::unique_ptr<TF1>> boundSpectra;
-    std::vector<std::unique_ptr<TLine>> boundCollapseMarkers;
+    // Collapse-time distribution for each bound classification, built from
+    // the MEASURED classical collapse times exp5 already computes per
+    // captured pair (the periapsis-target extrapolation fixed in a8dde24).
+    // Same convention as experiments 1/2's own panel: linear time / log
+    // counts, tau_exp drawn only as a vertical scale marker where it
+    // actually lands on the axis, never as a curve to test the sample
+    // against.  The two published lifetimes differ by a factor of about
+    // 1135, so they still cannot share one axis and each class keeps its
+    // own panel.  The sample here is typically tiny (a handful of events
+    // out of the whole bound population: most captures never clear the
+    // "observation window covered a full Kepler orbit" gate), so the
+    // histogram is often sparse -- that sparsity is itself the honest
+    // picture of how rarely this extrapolation applies, not a rendering bug.
+    std::vector<std::unique_ptr<TH1D>> boundHistograms;
+    std::vector<std::unique_ptr<TLine>> boundExperimentalMarkers;
     const std::array<std::size_t,2> boundSlots{2, 3};
     const std::array<const char*,2> boundValueIds{
         "para_lifetime_from_rate", "ortho_lifetime_from_rate"};
@@ -5091,26 +5110,6 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             statistics_archive::scientificValue(boundValueIds[index]);
         const statistics_archive::ScientificValue& rate =
             statistics_archive::scientificValue(boundRateIds[index]);
-        const double upper = 6.0*lifetime.value;
-        auto spectrum = std::make_unique<TF1>(
-            ("interaction_annihilation_" + std::to_string(index)).c_str(),
-            "exp(-x/[0])/[0]", 0.0, upper);
-        spectrum->SetParameter(0, lifetime.value);
-        spectrum->SetLineColor(plot_style::experimental());
-        spectrum->SetLineWidth(3);
-        spectrum->SetNpx(600);
-        std::ostringstream title;
-        title << interactionOutcomeName(outcomeOrder[slot])
-              << " annihilation-time spectrum from the measured rate;t ["
-              << boundUnits[index] << "];(1/N) dN/dt ["
-              << boundUnits[index] << "^{-1}]";
-        spectrum->SetTitle(title.str().c_str());
-        distributionsPage.cd(static_cast<int>(5 + index));
-        gPad->SetGrid();
-        spectrum->Draw("L");
-        // Mean CREM collapse time of the events actually classified into this
-        // class, converted into the panel's time unit.
-        double classCollapseMean = std::numeric_limits<double>::quiet_NaN();
         std::vector<double> classCollapse;
         for (const InteractionEvent& event : events) {
             if (event.outcome != outcomeOrder[slot]) continue;
@@ -5119,44 +5118,73 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
                                         *boundToPlotUnit[index]);
             }
         }
-        if (!classCollapse.empty()) {
-            classCollapseMean = std::accumulate(classCollapse.begin(),
-                classCollapse.end(), 0.0)/classCollapse.size();
-            if (classCollapseMean > 0.0 && classCollapseMean < upper) {
-                auto marker = std::make_unique<TLine>(classCollapseMean, 0.0,
-                    classCollapseMean, 1.0/lifetime.value);
-                marker->SetLineColor(plot_style::crem());
-                marker->SetLineWidth(2);
-                marker->SetLineStyle(2);
-                marker->Draw();
-                boundCollapseMarkers.push_back(std::move(marker));
-            }
+        double classCollapseMax = 0.0;
+        for (double value : classCollapse)
+            classCollapseMax = std::max(classCollapseMax, value);
+        // Axis follows the DATA, not tau_exp: the collapse-time sample sits
+        // many orders of magnitude below tau_exp (o-Ps especially), so a
+        // handful of near-zero points binned across a tau_exp-wide axis
+        // would fill a single coarse bin that visually reaches toward
+        // tau_exp -- misleading exactly the way a bar chart misleads where a
+        // thin marker line would not.  Only fall back to a tau_exp-scaled
+        // frame when there is no data at all to be misled about.
+        const double upper = !classCollapse.empty()
+            ? std::max(1.15*classCollapseMax, 1.0e-300)
+            : std::max(6.0*lifetime.value, 1.0e-300);
+        std::ostringstream title;
+        title << interactionOutcomeName(outcomeOrder[slot])
+              << " collapse-time distribution (measured sample);t ["
+              << boundUnits[index] << "];Events / bin";
+        auto histogram = std::make_unique<TH1D>(
+            ("interaction_collapse_" + std::to_string(index)).c_str(),
+            title.str().c_str(), histogramBins(classCollapse.size()),
+            0.0, upper);
+        styleHistogram(*histogram, plot_style::crem());
+        histogram->SetStats(false);
+        for (double value : classCollapse) histogram->Fill(value);
+        distributionsPage.cd(static_cast<int>(5 + index));
+        gPad->SetGrid();
+        const double histogramMax = histogram->GetMaximum();
+        if (histogramMax > 0.0) {
+            gPad->SetLogy();
+            histogram->SetMinimum(0.5);
+        }
+        histogram->Draw("HIST");
+        const bool markerOnAxis = lifetime.value > 0.0
+            && lifetime.value < upper;
+        std::unique_ptr<TLine> marker;
+        if (markerOnAxis) {
+            marker = std::make_unique<TLine>(lifetime.value,
+                histogram->GetMinimum(), lifetime.value, histogramMax);
+            marker->SetLineColor(plot_style::experimental());
+            marker->SetLineWidth(3);
+            marker->SetLineStyle(3);
+            marker->Draw();
         }
         drawAnalysisBox(analysisBoxes, 0.38, 0.50, 0.95, 0.91, {
             plot_style::key(true, false, true, false),
-            AnalysisLine("Measured data, drawn analytically - no Monte Carlo.",
-                plot_style::experimental()),
             AnalysisLine(std::string("Applies to the ")
                 + interactionOutcomeName(outcomeOrder[slot]) + " class:",
                 plot_style::crem()),
             AnalysisLine("events classified here = "
-                + std::to_string(outcomeCounts[slot]), plot_style::crem()),
+                + std::to_string(outcomeCounts[slot])
+                + ",  with a CREM collapse time = "
+                + std::to_string(classCollapse.size()), plot_style::crem()),
             AnalysisLine("#lambda = " + compactNumber(rate.value, 6) + " #pm "
                 + compactNumber(rate.totalUncertainty, 2) + " " + rate.unit,
                 plot_style::experimental()),
-            AnalysisLine("#tau_{exp} = " + compactNumber(lifetime.value) + " #pm "
+            AnalysisLine((markerOnAxis
+                    ? std::string("dotted: #tau_{exp} = ")
+                    : std::string("off-scale: #tau_{exp} = "))
+                + compactNumber(lifetime.value) + " #pm "
                 + compactNumber(lifetime.totalUncertainty) + " "
                 + boundUnits[index], plot_style::experimental()),
             AnalysisLine(boundSources[index], plot_style::experimental()),
-            AnalysisLine(classCollapse.empty()
-                ? std::string("no CREM collapse time in this class")
-                : "blue dashed: CREM collapse #LTt#GT = "
-                    + compactNumber(classCollapseMean, 3) + " "
-                    + boundUnits[index], plot_style::crem()),
             "Classical inspiral and quantum annihilation are",
             "different processes; this sets the scale."
         }, 0.0185);
-        boundSpectra.push_back(std::move(spectrum));
+        boundHistograms.push_back(std::move(histogram));
+        if (marker) boundExperimentalMarkers.push_back(std::move(marker));
     }
 
     TPaveText diagnosticSummary(0.07, 0.20, 0.93, 0.80, "NDC");
@@ -5197,8 +5225,8 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         {distributionsPage.GetPad(2), 1, 2, "collision_energy"},
         {distributionsPage.GetPad(3), 1, 3, "impact_parameter"},
         {distributionsPage.GetPad(4), 1, 4, "dipole_alignment"},
-        {distributionsPage.GetPad(5), 1, 5, "annihilation_time_para"},
-        {distributionsPage.GetPad(6), 1, 6, "annihilation_time_ortho"},
+        {distributionsPage.GetPad(5), 1, 5, "collapse_time_distribution_para"},
+        {distributionsPage.GetPad(6), 1, 6, "collapse_time_distribution_ortho"},
         {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_summary"}
     }));
     bool persistenceOk = reportArchiveOperation(
