@@ -2773,6 +2773,30 @@ wartością dla PÓŹNIEJSZYCH fotonów w kaskadzie. To osobne pytanie —
 zbadane niżej, i okazało się poważniejsze, niż sugerowałoby "znane,
 udokumentowane przybliżenie brzegowe".
 
+*Ten sam audyt powtórzony dla orto-Ps — te same wnioski, niemal
+identyczne liczby.* To samo ziarno (\(50\)), `--phenomenon 2`, ta sama
+metodologia, pełna precyzja, foton #\(1\):
+\[
+\begin{array}{lcc}
+ & \text{para-Ps} & \text{orto-Ps}\\
+\text{energia (różnica względna)} & 1{,}4\times10^{-9} & 1{,}361\times10^{-9}\\
+\text{pęd liniowy (różnica względna)} & 1{,}4\times10^{-9} & 1{,}361\times10^{-9}\\
+|L_{usunięte}|/|L_{spin}| & 0{,}627 & 0{,}6274\\
+\text{kąt } (L_{usunięte},\,L_{spin}) & 78{,}5° & 78{,}49°
+\end{array}
+\]
+**Rozbieżność momentu pędu (próba 4) nie jest artefaktem kanału para/orto**
+— jest strukturalną cechą samego mechanizmu, obecną niemal identycznie
+(te same \(2\) cyfry znaczące) w obu kanałach. Energia/pęd liniowy
+zachowane z tą samą precyzją w obu — naprawa `hFraction` (punkt E4)
+działa jednakowo, bo mechanizm nigdzie nie odwołuje się do flagi
+para/orto. Sama trajektoria para vs orto (ten sam seed): \(E_{przed}\)
+różni się o \(1{,}895\times10^{-8}\) względnie, `photonEnergy` o
+\(1{,}551\times10^{-8}\) — dokładnie tego samego rzędu, co już ustalone
+sprzężenie dipol-dipol (sondy 3–17, punkt L), rosnące z głębokością
+trajektorii (sonda 16). Żadna nowa asymetria między kanałami się nie
+ujawniła.
+
 **E4. Skala błędu przybliżenia `hFraction`, zmierzona i naprawiona.** Kod już
 miał komentarz ostrzegający: gdy próg pochłaniany jest głównie z hazardu
 "przeniesionego" z poprzednich checkpointów (`hFraction` nasyca się do
