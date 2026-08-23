@@ -965,6 +965,38 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                      <<"J) dL/L="<<deltaAngularMomentumPerOrbit
                         /elements.specificAngularMomentum<<std::endl;
         }
+        // CREDIT THE MEASURED ORBIT ITSELF, for isStochastic only.  This one
+        // orbit was genuinely, mechanically integrated, and genuinely
+        // radiated deltaEnergyPerOrbit via the real retarded-field flux
+        // (orbitalRadiatedEnergy) -- that is Maxwell's equations acting on
+        // the true trajectory, true regardless of which reaction model is
+        // switched on.  For the deterministic branch this measurement seeds
+        // the whole envelope extrapolation below (energyGrowth, hence
+        // updatedEnergyMagnitude, is built directly from lossPerOrbit=
+        // |deltaEnergyPerOrbit|), so it is already accounted for there.  For
+        // isStochastic it was not: elements.specificEnergy there is touched
+        // ONLY inside the photon while-loop below, and that loop's hazard
+        // integral is explicitly scoped to the orbitsToSkip orbits AFTER
+        // this one (see "n_skip" in its own derivation) -- it never covered
+        // this orbit's own, already-measured loss, which was simply
+        // discarded.  Measured directly, not assumed to be negligible: on a
+        // shallow trajectory (seed 42, 37 checkpoints) the total discarded
+        // loss came to ~2e-5 of the energy actually credited via photons
+        // over the whole run -- but on one that spent time at high
+        // eccentricity (seed 107, the trajectory investigated for the
+        // guard fix above) it reached 38.5%, a real violation of energy
+        // conservation, not a rounding error, and one this guard fix makes
+        // easier to reach (a trajectory that would previously have failed
+        // outright can now run on and accumulate it).  Applied here, once
+        // per checkpoint, additively with (not instead of) the photon
+        // credits below: deltaEnergyPerOrbit already carries this loss's
+        // sign by convention (see its own comment), so += is correct, not
+        // -=, and matches the ReachedCutoff branch's use of the same
+        // orbitalRadiatedEnergy field elsewhere in this function.
+        if(isStochastic) {
+            elements.specificEnergy+=deltaEnergyPerOrbit;
+            radiatedEnergyTotal+=run.finalState.orbitalRadiatedEnergy;
+        }
         // Measured orbital dissipation of this osculating orbit against the
         // Larmor rate for the same orbit.  Both sides are orbit averages over
         // the same period, so the ratio is a direct, parameter-free check of

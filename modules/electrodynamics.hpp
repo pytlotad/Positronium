@@ -891,6 +891,57 @@ enum class ChargeRadiationReactionModel {
     // produce -- affects which exit condition a trajectory hits and how
     // soon, and, it turned out, whether an unrelated guard mistakes a
     // real result for a corrupted one.
+    //
+    // ENERGY, a genuine leak found while auditing multipole completeness
+    // (asked: is E1 alone, or E1+M2, the right description of this
+    // system's radiation?  Checked directly: for equal-mass, opposite-
+    // charge pairs the orbital magnetic dipole and electric quadrupole
+    // moments vanish EXACTLY -- Sum q_i(m_j/M)^2(r x v) and Sum q_i
+    // (3rr-r^2) both collapse to a factor of q1+q2 or q1-q2 that is zero
+    // for this mass ratio, checked numerically -- so M2/E3, not the
+    // usually-assumed M1/E2, are the genuine next multipole order after
+    // E1 here.  Estimated at beta^4 relative to E1 (one order beyond the
+    // usual beta^2 for M1/E2, since M2 pays both the "magnetic" and the
+    // "one l higher" penalty): ~3e-9 at a_Ps, growing only to order unity
+    // right at the Compton barrier where the rest of this model already
+    // stops applying -- genuinely negligible, not fixed, and the search
+    // that ruled it out surfaced something that was not negligible.)  The
+    // one mechanically-measured orbit every checkpoint performs
+    // (runMechanicalTrajectory, feeding deltaEnergyPerOrbit/
+    // orbitalRadiatedEnergy above) genuinely radiates via the real
+    // retarded-field flux -- true regardless of reaction model -- but for
+    // isStochastic that measured loss was going nowhere: elements.
+    // specificEnergy there is touched only inside the photon while-loop,
+    // whose hazard integral is scoped explicitly to the orbitsToSkip
+    // orbits AFTER this one, never to this one's own already-measured
+    // loss.  Measured directly, not assumed small the way the M2/E3 gap
+    // above was: on a shallow trajectory (seed 42) the total discarded
+    // loss was ~2e-5 of the energy actually credited via photons over the
+    // whole run, but on one that spent time at high eccentricity (seed
+    // 107, the same trajectory the guard fix above investigated) it
+    // reached 38.5% -- a real violation of energy conservation, not a
+    // rounding error, and one the guard fix directly above makes easier
+    // to reach in practice (a trajectory that previously failed outright
+    // at high eccentricity can now run on and accumulate this leak).
+    // Fixed in crem_collapse.hpp: run.finalState.orbitalRadiatedEnergy is
+    // now credited to elements.specificEnergy and radiatedEnergyTotal
+    // once per checkpoint for isStochastic, additively with (not instead
+    // of) the photon credits below it -- they cover disjoint spans (this
+    // one measured orbit vs. the orbitsToSkip that follow), so this is
+    // closing a bookkeeping gap, not double-counting the way earlier
+    // fixes in this file had to guard against.  For the deterministic
+    // branch this was never a gap: its own energy update is built
+    // directly from this same measurement (lossPerOrbit=
+    // |deltaEnergyPerOrbit| seeds energyGrowth), so crediting it again
+    // here is correctly restricted to isStochastic only.  Verified:
+    // clean compile, positronium_validation 33/33, the same seed-107
+    // trajectory investigated above still completes at the same 172.78 ps
+    // once given enough wall-clock budget (crediting real energy costs
+    // real compute: more checkpoints are needed once eccentricity is
+    // high, since more of the energy budget is now correctly spent per
+    // checkpoint), and a re-run of the seed-99/30-trajectory batch is
+    // unchanged (29/30 reach the boundary, 0 numerical failures, median
+    // 100.653 ps, identical to before this fix).
     stochasticElectricDipole
 };
 

@@ -2577,6 +2577,65 @@ pierwsze wnioski z rzędu, każdy sprawdzony i poprawiony dopiero na
 wyraźne żądanie ponownej weryfikacji, a nie z własnej inicjatywy — warte
 zapisania wprost, nie tylko naprawienia po cichu.
 
+**I. Dalszy audyt spójności, na zadane pytanie "co jeszcze może być
+niespójne" — jedno pytanie doprecyzowujące rozstrzygnięte wprost, jedno
+znalezisko naprawione.**
+
+*Czy dokładniej byłoby to opisać jako dipol elektryczny plus kwadrupol
+magnetyczny?* Sprawdzone wprost, nie na pamięć: dla pary o równych masach
+i przeciwnych ładunkach (e⁺e⁻, ale też μ⁺μ⁻) orbitalny moment dipolowy
+magnetyczny \(\boldsymbol\mu_{orb}=\tfrac12\sum_iq_i(\mathbf r_i\times
+\mathbf v_i)\) i orbitalny moment kwadrupolowy elektryczny
+\(Q_{orb}=\sum_iq_i(3\mathbf r_i\mathbf r_i-r_i^2\mathbb 1)\) znikają
+**dokładnie**, tożsamościowo — współczynnik przy obu sprowadza się do
+\(q_1+q_2=0\) (kwadrupol) lub kombinacji znikającej dla \(m_1=m_2\)
+(dipol magnetyczny), potwierdzone bezpośrednim rachunkiem. To oznacza, że
+zwykle zakładana "następna poprawka po E1" — M1+E2, rzędu \(\beta^2\)
+względem E1 — **znika tu tożsamościowo przez symetrię**, a prawdziwa
+najniższa nietrywialna poprawka to rzeczywiście kwadrupol magnetyczny M2
+(razem z oktupolem elektrycznym E3, tego samego rzędu) — więc tak,
+**opisanie tego jako "dipol elektryczny plus kwadrupol magnetyczny" jest
+fizycznie dokładniejsze** niż zwyczajowe "E1 plus poprawki rzędu
+\(\beta^2\)". Oszacowane: M2/E3 są rzędu \(\beta^4\) względem E1 (płaci
+podwójną karę — "magnetyczny" ORAZ "o jeden rząd \(l\) wyżej"), czyli
+\(\sim3\cdot10^{-9}\) przy \(a_{Ps}\), rosnące do rzędu jedności dopiero
+tuż przy barierze Comptona, gdzie reszta modelu już i tak przestaje
+obowiązywać. Sam ten brak — nienaprawiony, bo prawdopodobnie pomijalny w
+całym praktycznym zakresie modelu — nie był jednak celem tego punktu;
+poszukiwanie go doprowadziło do czegoś poważniejszego.
+
+*Prawdziwy wyciek energii, znaleziony przy okazji.* `deltaEnergyPerOrbit`
+/`orbitalRadiatedEnergy` — prawdziwa, zmierzona strata energii z
+JEDYNEGO mechanicznie całkowanego obiegu na każdym checkpoincie — nigdy
+nie trafiała do `elements.specificEnergy` ani do `radiatedEnergyTotal`
+dla modelu stochastycznego (dla gałęzi deterministycznej owszem: ten sam
+pomiar zasila całą ekstrapolację obwiedni). Zmierzone bezpośrednio na
+dwóch trajektoriach: ziarno \(42\) (płytka, \(37\) checkpointów) —
+pominięta energia stanowiła \(2\cdot10^{-5}\) energii skredytowanej przez
+fotony w całym przebiegu, pomijalne; ziarno \(107\) (ta sama trajektoria
+co w punkcie H, spędzająca czas przy wysokim mimośrodzie) —
+**\(38{,}5\%\)**, realne, niebagatelne złamanie zachowania energii, nie
+błąd zaokrąglenia. Co więcej: to poprzedni fix strażnika (punkt H) czyni
+ten wyciek łatwiejszym do osiągnięcia w praktyce — trajektoria, która
+wcześniej po prostu padała przy wysokim mimośrodzie, teraz biegnie dalej
+i akumuluje ten niekredytowany ubytek.
+
+Naprawione w `crem_collapse.hpp`: `run.finalState.orbitalRadiatedEnergy`
+jest teraz doliczane do `elements.specificEnergy` i `radiatedEnergyTotal`
+raz na checkpoint dla modelu stochastycznego, DODATKOWO do (nie zamiast)
+kredytów fotonowych — te dwa pokrywają rozłączne odcinki (ten jeden
+zmierzony obieg kontra `orbitsToSkip` pominiętych po nim), więc to
+domknięcie luki księgowej, nie podwójne liczenie, przed którym
+wcześniejsze poprawki w tej sekcji musiały się bronić. Zweryfikowane: ta
+sama trajektoria z punktu H (ziarno \(107\)) nadal kończy się w tym samym
+\(172{,}78\) ps, przy wystarczającym budżecie zegara — uczciwe liczenie
+prawdziwej energii kosztuje prawdziwy czas obliczeń (więcej checkpointów
+przy wysokim mimośrodzie, bo więcej budżetu energii jest teraz poprawnie
+wydawane na każdym z nich). Partia \(30\) trajektorii (ziarno \(99\)) bez
+zmian: \(29/30\) dochodzi do granicy, \(0\) awarii numerycznych, mediana
+\(100{,}653\) ps — identycznie jak przed tą poprawką. Czysta kompilacja,
+`positronium_validation` 33/33.
+
 ## Warunki początkowe i klasyfikacja zjawiska
 
 Program losuje kierunki dipoli oraz radialną i styczną składową względnej
