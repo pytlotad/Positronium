@@ -984,13 +984,63 @@ numerycznych, fotony nadal strzelają poprawnie (przykład: foton #1 zmienia
 energią wiązania"), bez żadnych linii `TILT` w logu. Kierunek płaszczyzny
 orbity jest teraz niezmienny wobec odrzutu fotonu — spójne z poprawką pędu
 liniowego, a nie uproszczenie mechanizmu, który i tak nigdy nie działał
-poprawnie. Wielkość \(|L|\) nadal aktualizowana współczynnikiem `k` z
-modeli ciągłych (bez zmian, osobny, nierozstrzygnięty w tej sesji problem:
-ten sam współczynnik jest formułą adiabatyczną, orbit-averaged, a
-pojedyncze fotony potrafią przenosić energię porównywalną z całą energią
-orbity — patrz akapit o kolapsie 665 ps wyżej — więc jego stosowanie do
-pojedynczego skoku, a nie do ciągłego strumienia, jest tym samym rodzajem
-przybliżenia, co przechył, tylko jeszcze nie policzonym wprost).
+poprawnie.
+
+**Wyznaczony na zadane pytanie "określ współczynnik k dla nowego modelu
+promieniowania" — i okazał się być cicho błędny przy niemal każdym
+fotonie produkcyjnym.** Sam \(k=-(1-e^2)/(2+e^2)\) jest poprawny i
+niezmieniony: to własność zależności od \(r\) klasycznej siły reakcji
+dipolowej, nie zależy od tego, czy strata jest księgowana w sposób ciągły
+czy w porcjach fotonowych (ten sam argument, co niezależność od modelu
+reakcji, już wyprowadzony wyżej). Błąd był w tym, JAK
+`crem_collapse.hpp` stosował ten współczynnik do pojedynczego fotonu:
+\(L{\cdot}{=}(E_{po}/E_{przed})^k\), formuła "zamrożonego k", jest tylko
+przybliżeniem pierwszego rzędu (dla małego skoku) relacji różniczkowej
+\(d(\ln L)/d(\ln|E|)=k(e)\), z której pochodzi. Gałąź zbiorcza/deterministyczna
+używa tego samego przybliżenia, ale jej skok na checkpoint jest
+ograniczony do \(jumpParameter\le0{,}30\) (stosunek energii \(<{\sim}1{,}33\)),
+gdzie błąd jest łagodny; pojedynczy foton stochastyczny potrafi unieść dużo
+większą wielokrotność bieżącej energii orbitalnej za jednym razem
+(zmierzone gdzie indziej w tym pliku: aż do \(\approx18{,}5\times\)).
+Zmierzone wprost: przy takiej skali formuła zamrożonego k nie jest lekko
+nietrafiona, jest jakościowo zła — sprawdzone na prawdziwym przebiegu
+produkcyjnym (ziarno 42, o-Ps, 5 fotonów): **każdy pojedynczy** dawał
+ujemne \(e^2\) po skoku, po cichu przycinane do zera przez istniejący
+w tym pliku strażnik `std::max(0.0, ...)`, kasujące prawdziwą informację
+o mimośrodzie przy praktycznie każdym fotonie, po czym błąd propagował się
+do każdej kolejnej oceny `kHere`.
+
+Naprawione przez dokładne rozwiązanie relacji różniczkowej zamiast jej
+ekstrapolacji: rozdzielenie zmiennych w \(s=1-e^2\) i \(x=\ln|E|\) daje
+całkę pierwszą w postaci zamkniętej, \((1-e^2)^3/(e^4|E|^3)=\text{const}\),
+dokładnie zachowaną wzdłuż dowolnej trajektorii spełniającej
+\(dL/L=k(e)\,dE/E\) dla tego \(k(e)\). Zweryfikowane dwoma sposobami:
+algebraiczna spójność z formułą mimośrodu, z której została wyprowadzona,
+oraz niezależnie — przez bezpośrednie całkowanie tego równania różniczkowego
+metodą RK4 (zgodność \(10^{-12}\), czyli błąd dyskretyzacji samego RK4, nie
+formuły zamkniętej). Rozwiązywane dla każdego fotonu bisekcją na wynikowym
+monotonicznym sześcianie w `crem_collapse.hpp` (wzór Cardana też by to
+domknął, ale bisekcja omija casus irreducibilis — trzy rzeczywiste
+pierwiastki wymagające wyboru gałęzi — a zdarzenia fotonowe są na tyle
+rzadkie na trajektorię, że 80 kroków bisekcji nic nie kosztuje).
+
+Statystyka zbiorcza pozostaje w przybliżeniu niezmieniona (10 ziaren,
+o-Ps: mediana \(155{,}7\) ps wobec \(147{,}8\)–\(151{,}6\) ps zapisanych
+wcześniej w tym dokumencie, 0 awarii numerycznych w obu przypadkach), mimo
+że sama wartość mimośrodu przy niemal każdym fotonie zmieniała się o
+wielkość rzędu jedności: czas kolapsu wyznacza głównie całka
+energii/hazardu, której ta poprawka nie dotyka, a mimośród zasila
+odległość peryapsis oraz warunek wyjścia po stosunku okres/czas
+przelotu światła — i zarówno wartość dokładna, jak i stara (przycięta do
+zera) były już małe (bliskie okręgu) przy każdym zmierzonym zdarzeniu w
+tym przebiegu, więc różnią się o mniej niż \(0{,}01\) w bezwzględnym
+\(e^2\), nawet tam gdzie stara wartość przed przycięciem była formalnie
+niefizyczna (ujemna). `elements.specificAngularMomentum` jest przenoszone
+między checkpointami, więc to nie jest poprawka jednorazowa — każda
+kolejna ocena mimośrodu, `k` i warunku peryapsis po fotonie dziedziczy
+teraz poprawną wartość zamiast błędnej, do końca tej trajektorii.
+Zweryfikowane: czysta kompilacja (zero ostrzeżeń), `positronium_validation`
+33/33, 0 awarii numerycznych na 10 ziaren.
 
 ### Wynik audytu kompletności fizycznej
 

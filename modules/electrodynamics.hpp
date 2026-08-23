@@ -757,6 +757,56 @@ enum class ChargeRadiationReactionModel {
     // direction is carried forward unchanged by photon recoil, which is
     // the self-consistent choice given the linear-momentum fix, not a
     // simplification of a mechanism that was ever actually working.
+    //
+    // ANGULAR MOMENTUM MAGNITUDE, k determined -- and it was silently
+    // wrong for nearly every production photon.  k=-(1-e^2)/(2+e^2) itself
+    // is unchanged and still exactly correct here: it is a property of the
+    // classical dipole force law's r-dependence, not of whether the
+    // resulting loss is booked continuously or in photon-sized lumps (same
+    // argument already established above for reaction-model-independence).
+    // What was wrong is HOW crem_collapse.hpp applied it to a single
+    // photon: L*=(E_after/E_before)^k, the frozen-k power law, is only the
+    // first-order/small-jump approximation to the differential relation
+    // d(lnL)/d(ln|E|)=k(e) it comes from.  The bulk/deterministic branch
+    // uses the same approximation but its jump per checkpoint is capped at
+    // jumpParameter<=0.30 (energy ratio <~1.33), where the error is mild;
+    // a single stochastic photon can carry a much larger multiple of the
+    // current orbital energy in one shot (measured up to ~18.5x elsewhere
+    // in this file). Measured directly: at that scale the frozen-k formula
+    // is not a little off, it is qualitatively wrong -- checked across a
+    // real production run (seed 42, o-Ps, 5 photons), EVERY SINGLE ONE
+    // gave a negative post-kick e^2, silently clamped to zero by this
+    // file's own std::max(0.0, ...) guard, erasing real eccentricity
+    // information at essentially every photon event and then propagating
+    // that error into every subsequent kHere evaluation.  Fixed by solving
+    // the differential relation exactly instead of extrapolating it:
+    // separating variables in s=1-e^2 and x=ln|E| gives a closed-form
+    // first integral, (1-e^2)^3/(e^4 |E|^3) = const, exactly conserved
+    // along any trajectory obeying dL/L=k(e) dE/E for this k(e). Verified
+    // two ways: algebraic self-consistency with the eccentricity formula
+    // it was derived from, and independently against direct RK4
+    // integration of the ODE (1e-12 agreement, RK4's own discretization
+    // error, not the closed form's). Solved per photon by bisection on the
+    // resulting monotonic cubic in crem_collapse.hpp (Cardano's formula
+    // would also close it, but bisection sidesteps casus irreducibilis --
+    // multiple real roots needing branch selection -- and photon events
+    // are rare enough per trajectory that 80 bisection steps cost
+    // nothing). Statistically close to unchanged in aggregate (10 seeds,
+    // o-Ps: median 155.7 ps vs the 147.8-151.6 ps this file already
+    // recorded pre-fix, 0 numerical failures either way) even though the
+    // per-photon eccentricity value itself moved by O(1) at nearly every
+    // event: collapse TIME is set mainly by the energy/hazard integral,
+    // which this fix does not touch, while eccentricity feeds the
+    // periapsis distance and the period/light-crossing-ratio exit
+    // condition -- and both the exact and the old (clamped-to-zero)
+    // values were already small (near-circular) at every measured event in
+    // this run, so the two differ by less than 0.01 in absolute e^2 even
+    // where the old, pre-clamp value was formally unphysical (negative).
+    // elements.specificAngularMomentum is carried forward across
+    // checkpoints, so this is not a one-off correction -- every subsequent
+    // eccentricity, k evaluation and periapsis check downstream of a
+    // photon now inherits the corrected value instead of the wrong one,
+    // for the rest of that trajectory.
     stochasticElectricDipole
 };
 

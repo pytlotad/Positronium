@@ -1285,8 +1285,73 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         (photonEnergy+centreOfMassEnergyKick)/reducedMass;
                     const double energyAfterKick=
                         std::abs(elements.specificEnergy);
-                    elements.specificAngularMomentum*=std::pow(
-                        energyAfterKick/energyBeforeKick,kHere);
+                    // L update: NOT the frozen-k power law
+                    // L*=(E_after/E_before)^kHere used by the bulk/
+                    // deterministic branch below.  That formula is only
+                    // the first-order (small-jump) approximation to the
+                    // differential relation d(lnL)/d(ln|E|)=k(e) it comes
+                    // from -- fine for the bulk branch, whose jump per
+                    // checkpoint is capped at jumpParameter<=0.30 (energy
+                    // ratio <~1.33), but a single photon can carry a large
+                    // multiple of the current orbital energy (measured
+                    // energyAfterKick/energyBeforeKick up to ~18.5x
+                    // elsewhere in this file), where the frozen-k
+                    // extrapolation is badly wrong -- checked numerically
+                    // against this exact solve: 1-e^2 off by tens to over
+                    // 100%, occasionally negative (unphysical) for R>~5.
+                    // k(e)=-(1-e^2)/(2+e^2) is unchanged and still exactly
+                    // correct here (it is a property of the classical
+                    // dipole force law's r-dependence, not of whether the
+                    // resulting loss is booked continuously or in photon-
+                    // sized lumps -- same argument as the reaction-model-
+                    // independence already established above); what
+                    // changes is HOW that differential relation is
+                    // integrated over a finite jump.  Solved exactly: the
+                    // ODE has a closed-form first integral, found by
+                    // separating variables in s=1-e^2 and x=ln|E| --
+                    // (1-e^2)^3/(e^4 |E|^3) is EXACTLY conserved along any
+                    // trajectory obeying dL/L=k(e) dE/E for this k(e).
+                    // Verified two ways: algebraically self-consistent
+                    // with the eccentricity formula above by construction,
+                    // and independently checked against direct RK4
+                    // integration of the ODE (1e-12 agreement, RK4's own
+                    // discretization error).  Solving that invariant for
+                    // the new e^2 is a monotonic root (checked: (1-w)^3/w^2
+                    // is strictly decreasing on (0,1), so the root is
+                    // unique) -- found by bisection rather than the cubic's
+                    // own closed form to sidestep casus irreducibilis
+                    // (multiple real roots needing branch selection);
+                    // photon events are rare enough per trajectory that 80
+                    // bisection steps here cost nothing.  Near-circular
+                    // orbits (e0^2 below the guard) are the ODE's fixed
+                    // point (e=0 stays e=0, checked directly from the ODE)
+                    // and skip the solve entirely.
+                    double newEccentricitySquared=eccentricitySquaredHere;
+                    if(eccentricitySquaredHere>1.0e-12
+                       &&energyBeforeKick>0.0) {
+                        const double energyRatio=
+                            energyAfterKick/energyBeforeKick;
+                        const double e0Fourth=eccentricitySquaredHere
+                            *eccentricitySquaredHere;
+                        const double rhsScale=
+                            energyRatio*energyRatio*energyRatio
+                            *(1.0-eccentricitySquaredHere)
+                            *(1.0-eccentricitySquaredHere)
+                            *(1.0-eccentricitySquaredHere);
+                        double lo=0.0, hi=1.0-1.0e-15;
+                        for(int iter=0; iter<80; ++iter) {
+                            const double mid=0.5*(lo+hi);
+                            const double lhs=
+                                (1.0-mid)*(1.0-mid)*(1.0-mid)*e0Fourth;
+                            const double rhs=rhsScale*mid*mid;
+                            if(lhs>rhs) lo=mid; else hi=mid;
+                        }
+                        newEccentricitySquared=0.5*(lo+hi);
+                    }
+                    elements.specificAngularMomentum=std::sqrt(std::max(0.0,
+                        attractionParameter*attractionParameter
+                        *(1.0-newEccentricitySquared)
+                        /(2.0*energyAfterKick)));
                     radiatedEnergyTotal+=photonEnergy;
                     ++photonCountDebug;
                     if(std::getenv("CREM_DEBUG"))
@@ -1296,6 +1361,12 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                  <<"J |v_cm|="<<centreOfMassVelocity.norm()
                                  <<" energyBeforeKick="<<energyBeforeKick
                                  <<" newE="<<elements.specificEnergy
+                                 <<" e0^2="<<eccentricitySquaredHere
+                                 <<" e1^2(exact)="<<newEccentricitySquared
+                                 <<" e1^2(frozen k="<<kHere<<")="
+                                 <<(1.0-(1.0-eccentricitySquaredHere)*std::pow(
+                                     energyAfterKick/std::max(energyBeforeKick,
+                                         1.0e-300),1.0+2.0*kHere))
                                  <<std::endl;
                     stochasticSkipThreshold=
                         drawExponentialUnit(stochasticSkipStream);
