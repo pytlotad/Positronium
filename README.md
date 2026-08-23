@@ -2824,6 +2824,42 @@ niż pojedyncze zdarzenie z ziarna \(50\): rozbieżność momentu pędu
 niezależność od kanału para/orto jest uniwersalna, nie przypadkiem
 jednego pomiaru.
 
+*Co właściwie napędza ten szeroki zakres — sprawdzone wprost, nie
+sprzężenie dipol-dipol.* Rozbite na dwie zmienne wejściowe każdego
+zdarzenia:
+\[
+\begin{array}{cc|ccc}
+\text{ziarno} & \text{zdarz.} & \text{stos.} & \text{kąt} & \cos\theta,\,e^2\\
+1 & 0 & 0{,}9795 & 7{,}35° & -0{,}7683,\ 0{,}0390\\
+12 & 1 & 0{,}6182 & 9{,}20° & -0{,}9523,\ 0{,}0022\\
+7 & 1 & 0{,}7244 & 8{,}34° & 0{,}9431,\ 0{,}0015\\
+5 & 1 & 0{,}6620 & 10{,}08° & 0{,}9354,\ 0{,}0000\\
+10 & 1 & 0{,}5165 & 52{,}23° & -0{,}2514,\ 0{,}0006\\
+3 & 0 & 0{,}8638 & 54{,}32° & -0{,}2138,\ 0{,}0577\\
+1 & 1 & 0{,}5244 & 61{,}28° & 0{,}0735,\ 0{,}0060\\
+2 & 0 & 0{,}7342 & 64{,}60° & 0{,}0722,\ 0{,}0098
+\end{array}
+\]
+**Kąt koreluje bezpośrednio z \(|\cos\theta|\)** (kąt emisji fotonu
+względem osi orbity): blisko osi (\(|\cos\theta|\to1\)) kąt
+"usunięte-vs-spin" jest mały (\(7°\)–\(10°\)); blisko płaszczyzny
+równikowej (\(|\cos\theta|\to0\)) kąt jest duży (\(52°\)–\(65°\)) — czysta
+geometria: gdy spin fotonu jest niemal równoległy do \(L\), przeskalowanie
+wielkości (\(k(e)\)) ledwo odchyla wynik od samego spinu; gdy niemal
+prostopadły, to samo przeskalowanie daje duże odchylenie kątowe.
+**Stosunek koreluje z mimośrodem \(e^2\)** (razem z \(\cos\theta\)) —
+wyższe \(e^2\) daje na ogół wyższy stosunek, bo \(k(e)\) silniej
+zmniejsza cel wielkości przy większym mimośrodzie. Obie te zmienne
+(\(\cos\theta\), \(e^2\)) pochodzą z tego samego strumienia PRNG i tej
+samej klasycznej mechaniki orbity — identycznej w para i orto (stąd
+zgodność \(0{,}000°\) powyżej). **Sprzężenie dipol-dipol nie ma tu
+żadnego udziału** — to dwa całkowicie odrębne źródła zmienności, na
+zupełnie różnych skalach: geometria pojedynczego zdarzenia (\(\cos\theta,
+e^2\)) napędza cały zakres \(0{,}52\)–\(0{,}98\)/\(7°\)–\(65°\)
+MIĘDZY różnymi zdarzeniami; sprzężenie dipol-dipol (\(10^{-8}\)–\(10^{-9}\))
+odpowiada wyłącznie za maleńką resztkową różnicę MIĘDZY kanałami para/orto
+dla TEGO SAMEGO zdarzenia.
+
 **E4. Skala błędu przybliżenia `hFraction`, zmierzona i naprawiona.** Kod już
 miał komentarz ostrzegający: gdy próg pochłaniany jest głównie z hazardu
 "przeniesionego" z poprzednich checkpointów (`hFraction` nasyca się do
