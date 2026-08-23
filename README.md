@@ -806,6 +806,59 @@ zmianą) — zmienił się wyłącznie *domyślny wybór* dla kogoś, kto nie po
 wszystkie 5 eksperymentów sprawdzone dymnie pod nowym domyślnym modelem —
 brak awarii, sensowne wyjścia.
 
+**Pełny przebieg produkcyjny N=1000, wszystkie 5 eksperymentów, e⁺e⁻, bez
+pola zewnętrznego, ziarno 42, ustawienia domyślne (czyli `stochastic`) —
+łącznie ~1 godz. 32 min na 4 wątkach.**
+
+*Eksperymenty 1/2 (kolaps CREM, p-Ps/o-Ps).* 905/1000 (p-Ps) i 899/1000
+(o-Ps) trajektorii dotarło do granicy przy domyślnym budżecie zegarowym
+20 s/zdarzenie — reszta ocenzurowana tym budżetem, zero
+`NumericalFailure` w obu kanałach. Mediana Kaplana-Meiera: p-Ps 118,4 ps,
+o-Ps 119,4 ps — statystycznie ta sama liczba w obu kanałach, jak zawsze.
+Średnia ukończonych/RMST: p-Ps 161,7±5,7 / 183,3±6,8 ps, o-Ps
+162,0±5,7 / 184,5±6,9 ps, rozrzut sigma/średnia ≈1,06 w obu — around
+3-5× szerszy rozkład i 3-5× dłuższy medianowy czas niż pod starym
+domyślnym `individual` (30,8–31,9 ps), dokładnie zgodnie z tym, co
+akapity o `stochastic` wyżej już przewidziały i zmierzyły na mniejszej
+próbie. 90,5%/89,9% kompletacji jest poniżej progu 100%, więc — jak samo
+narzędzie ostrzega — mediana i RMST/średnia obu kanałów to zakres
+wiarygodności, nie liczba bez obciążenia; podniesienie
+`--crem-wallclock-budget-s` powyżej domyślnych 20 s zmniejszyłoby cenzurę
+kosztem dłuższego przebiegu.
+
+*Eksperyment 3 (kanał krótkiego zasięgu).* Escaped 775, collision 138,
+captured 86, unresolved 1, zero `failed`. Dopasowanie kształtu
+Rutherforda \(C_R=0{,}691\pm0{,}015\) (95% Wilson \([0{,}662;\,0{,}719]\))
+— zauważalnie DALEJ od czystego Coulomba niż pod starym domyślnym modelem
+(tam \(C_R\) był bliżej jedynki dla tego kanału). Niezależna reszta
+`|dE_reaction-vs-flux|/E_rad` ma medianę \(0{,}999988\) — praktycznie
+100% rozjazdu. To nie zaskoczenie: ta reszta porównuje pracę modelu
+Landaua-Lifshitza z niezależnie zmierzonym strumieniem, a `stochastic` nie
+używa ciągłej siły LL wcale (`chargeReaction` zerowe między fotonami), więc
+to porównanie mierzy teraz różnicę między dwoma różnymi modelami fizyki,
+nie błąd księgowania — to samo zastrzeżenie o zakresie stosowalności
+eksperymentu 3, który już wcześniej był poza reżimem modelu, dotyczy tu
+tym bardziej.
+
+*Eksperyment 4 (rozpraszanie szerokokątowe).* Czysty: 1000/1000 escaped,
+zero collision/captured/unresolved/failed. \(C_R=0{,}966\pm0{,}024\) (95%
+Wilson \([0{,}918;\,1{,}012]\)) — **statystycznie nierozróżnialne od
+pomiaru pod starym domyślnym `individual`** (tam też \(C_R=0{,}966\pm
+0{,}024\)). Zgodne z oczekiwaniem: przy rozpraszaniu szerokokątowym
+trajektorie nigdy nie schodzą wystarczająco głęboko, by wybór modelu
+reakcji promieniowania cokolwiek zmienił.
+
+*Eksperyment 5 (interakcja/klasyfikacja).* Collision 216 (21,6%),
+Scattering 691 (69,1%), Para-Ps 28 (2,8%), Ortho-Ps 65 (6,5%) — razem 93
+zdarzeń związanych, para:orto = 28:65, blisko izotropowego oczekiwania
+1:3. Rozkład klasyfikacji nie zależy silnie od modelu reakcji (klasyfikacja
+zapada wcześnie, nie podczas długiego kolapsu), więc te udziały procentowe
+pozostają zgodne z wcześniejszymi pomiarami pod `individual` w granicach
+szumu statystycznego jednej próby N=1000.
+
+Wykresy wszystkich pięciu eksperymentów (`distributions/*.pdf`)
+przeliczone i zacommitowane razem z tym akapitem.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
