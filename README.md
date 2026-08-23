@@ -2773,7 +2773,7 @@ wartością dla PÓŹNIEJSZYCH fotonów w kaskadzie. To osobne pytanie —
 zbadane niżej, i okazało się poważniejsze, niż sugerowałoby "znane,
 udokumentowane przybliżenie brzegowe".
 
-**E4. Skala błędu przybliżenia `hFraction`, zmierzona wprost.** Kod już
+**E4. Skala błędu przybliżenia `hFraction`, zmierzona i naprawiona.** Kod już
 miał komentarz ostrzegający: gdy próg pochłaniany jest głównie z hazardu
 "przeniesionego" z poprzednich checkpointów (`hFraction` nasyca się do
 \(1\)), foton jest przypisywany do POCZĄTKU bieżącego skoku zamiast do
@@ -2812,9 +2812,38 @@ próba 4 uczyniła powszechnym. Energia radiowana w takich kaskadach jest
 więc systematycznie ZANIŻANA względem tego, co prawdziwa, ewoluująca
 orbita powinna emitować — nieco spowalniając tempo, w jakim \(|E|\)
 faktycznie się pogłębia w takich seriach, względem poprawnej fizyki.
-Nie sprawdzone jeszcze: jak często takie kaskady występują w pełnej
-partii produkcyjnej i jak duży jest łączny wpływ na czas kolapsu — otwarty,
-teraz precyzyjnie opisany i skwantyfikowany wątek.
+
+**NAPRAWIONE i zweryfikowane, nie tylko zmierzone.** Diagnoza: dla
+PIERWSZEGO fotonu w kaskadzie `period`/`eccentricityHere`/
+`photonEnergyReference` (liczone raz na checkpoint, przed pętlą `while`)
+SĄ bieżącym stanem, bo nic jeszcze go nie ruszyło — błąd dotyczy
+wyłącznie fotonu DRUGIEGO i kolejnych w tej samej pętli, dla których
+`elements.specificEnergy`/`specificAngularMomentum` już zostały
+zaktualizowane przez poprzedni foton, a te trzy wielkości — nie.
+Poprawka: flaga `cascadeStateAlreadyMoved`, ustawiana `true` zaraz po
+pierwszej aktualizacji stanu w danej pętli; dla każdego kolejnego fotonu
+`period` (przez `regularizedPeriod`), mimośród i
+`photonEnergyReference` są przeliczane NA NOWO z bieżącego, już
+zaktualizowanego stanu, z `energyRatio=1` (wartość dokładna nie wymaga
+ekstrapolacji obwiedni). `orbitsToSkip`/`jumpParameter`/`skipHazard`
+(opisujące, ile orbit obejmuje CAŁA całka hazardu tego checkpointu) NIE
+są przeliczane — to osobna księgowość od tego, jakiej referencji
+energii/mimośrodu używa POJEDYNCZY foton przy własnym losowaniu.
+
+*Zweryfikowane na tej samej trajektorii (ziarno \(50\)).* Foton \(2\)
+po poprawce: \(2{,}27463\times10^{-17}\) J — zgadza się co do
+wyświetlanej precyzji z ręcznie wyprowadzoną "poprawną" wartością
+(\(2{,}27\times10^{-17}\) J) sprzed naprawy. Foton \(3\): teraz
+\(2{,}82\times10^{-16}\) J (jeszcze większy niż wcześniejsze ręczne
+oszacowanie \(5{,}29\times10^{-17}\) J, bo referencja dla fotonu \(3\)
+teraz poprawnie startuje z JUŻ poprawionego stanu po fotonie \(2\) —
+błąd kaskadowo się kumulował, więc i poprawka kaskadowo się wzmacnia).
+Energia/pęd liniowy nadal zachowane dokładnie (wzór księgowy niezmieniony,
+zmieniła się tylko wejściowa wartość `photonEnergy`). Partie \(N=20\)
+para/orto: **\(0/20\) awarii numerycznych w obu**, \(0\) ucięć budżetem
+czasowym w obu (wcześniej \(4/20\) i \(6/20\) — trajektorie teraz kończą
+się szybciej, bo poprawnie promieniują więcej energii w kaskadach,
+zamiast być sztucznie spowalniane). `positronium_validation` \(33/33\).
 
 **F. Co model świadomie zostawia otwarte.** (1) Orbitalny moment pędu
 fotonu względem pary jako dosłowny \(\mathbf r\times\mathbf p_\gamma\) —

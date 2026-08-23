@@ -1469,6 +1469,14 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 double hazardConsumedThisSkip=0.0;
                 stochasticSkipHazard+=skipHazard;
                 int photonCountDebug=0;
+                // Whether elements.specificEnergy/specificAngularMomentum
+                // have already been moved by an EARLIER photon within this
+                // same while loop pass -- see the refresh block at the top
+                // of the loop body, README point E4, for why this matters:
+                // period/eccentricityHere/photonEnergyReference above are
+                // all evaluated ONCE, from the state at THIS checkpoint's
+                // own start, before any photon of this cascade has fired.
+                bool cascadeStateAlreadyMoved=false;
                 if(std::getenv("CREM_DEBUG"))
                     std::cerr<<"  SKIP orbitsToSkip="<<orbitsToSkip
                              <<" jumpParameter="<<jumpParameter
@@ -1502,6 +1510,52 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                  <<","<<centreOfMassVelocity.z<<")"
                                  <<std::setprecision(6)<<std::endl;
                     }
+                    // README point E4: photonEnergyReference/eccentricityHere
+                    // above were evaluated ONCE, from this checkpoint's OWN
+                    // starting state, before any photon of this cascade had
+                    // fired -- correct for the first photon (nothing has
+                    // moved yet) but stale for every later one, because
+                    // elements.specificEnergy/specificAngularMomentum below
+                    // ARE updated per photon within this same while loop.
+                    // Measured effect of not refreshing: photons 2 and 3 of
+                    // a 3-photon cascade came out 5.8x and 13.5x too small.
+                    // Fix: for every photon after the first, recompute the
+                    // period/eccentricity/energy-quantum reference from the
+                    // CURRENT state directly (energyRatio=1 -- an exact
+                    // value needs no envelope extrapolation, unlike the
+                    // first photon, which still uses the checkpoint's own
+                    // sAtPhoton/energyRatio machinery below because for it
+                    // period/eccentricityHere ARE still the current state).
+                    // orbitsToSkip/jumpParameter/skipHazard themselves are
+                    // NOT re-derived here: they describe how many orbits
+                    // this checkpoint's hazard integral spans and how the
+                    // Poisson threshold-crossing bookkeeping already in
+                    // flight (stochasticSkipHazard/stochasticSkipThreshold)
+                    // is being consumed, independent of which reference a
+                    // given photon's OWN energy/harmonic draw uses.
+                    double effectivePhotonEnergyReference=photonEnergyReference;
+                    double effectiveEccentricityHere=eccentricityHere;
+                    bool useExactEnergyRatio=false;
+                    if(cascadeStateAlreadyMoved) {
+                        const OsculatingElements currentElements{
+                            elements.specificEnergy,
+                            elements.specificAngularMomentum};
+                        const double refreshedPeriod=regularizedPeriod(
+                            currentElements,attractionParameter,
+                            separationFloor());
+                        effectivePhotonEnergyReference=
+                            hbar*(2.0*pi/refreshedPeriod);
+                        const double refreshedEccentricitySquared=
+                            std::max(0.0,1.0
+                                +2.0*elements.specificEnergy
+                                    *elements.specificAngularMomentum
+                                    *elements.specificAngularMomentum
+                                    /(attractionParameter
+                                        *attractionParameter));
+                        effectiveEccentricityHere=
+                            std::sqrt(refreshedEccentricitySquared);
+                        useExactEnergyRatio=true;
+                    }
                     stochasticSkipHazard-=stochasticSkipThreshold;
                     hazardConsumedThisSkip+=stochasticSkipThreshold;
                     // Position within [0,1] of this skip where the running
@@ -1523,7 +1577,17 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // out 5.8x and 13.5x too small relative to
                     // photonEnergyReference recomputed from their own,
                     // already-updated E -- growing without bound deeper
-                    // into a cascade, not a bounded few-percent effect.
+                    // into a cascade.  FIXED below (README point E4): this
+                    // paragraph still describes the approximation correctly
+                    // for the FIRST photon of a cascade (period/
+                    // eccentricityHere/photonEnergyReference above ARE the
+                    // current state for it, nothing has moved yet) -- the
+                    // cascadeStateAlreadyMoved block a few lines down
+                    // refreshes them from the true current state for every
+                    // photon after the first, instead -- so sAtPhoton/
+                    // energyRatio below now only ever apply to that first
+                    // photon, for which they are exact, not an
+                    // approximation.
                     const double hFraction=skipHazard>0.0
                         ?std::clamp(
                             hazardConsumedThisSkip/skipHazard,0.0,1.0)
@@ -1550,18 +1614,23 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // the scale-invariance-based version this replaced,
                     // every table entry is independently computed at its
                     // own eccentricity, not extrapolated from a
-                    // higher-eccentricity calibration set), at the SAME
-                    // once-per-checkpoint eccentricity the hazard
-                    // suppression used (consistent with jumpParameter/
-                    // angularExponent above also being frozen for the
-                    // whole checkpoint, not re-evaluated per photon).
+                    // higher-eccentricity calibration set).  Uses
+                    // effectiveEccentricityHere, NOT the once-per-checkpoint
+                    // eccentricityHere the hazard-rate/hazardSuppression
+                    // integral above is still (correctly) frozen at -- that
+                    // integral genuinely describes the whole skip in
+                    // aggregate, but THIS specific photon's own harmonic
+                    // should reflect the orbit it actually fired from,
+                    // refreshed above for every photon after the first in
+                    // the same cascade (README point E4).
                     const int harmonicNumber=harmonicCorrection
                         ?std::max(1,static_cast<int>(std::lround(
-                            eccentricOrbitHarmonicNumber(eccentricityHere,
+                            eccentricOrbitHarmonicNumber(
+                                effectiveEccentricityHere,
                                 drawUniformUnit(stochasticSkipStream)))))
                         :1;
-                    const double photonEnergy=photonEnergyReference
-                        *std::pow(energyRatio,1.5)
+                    const double photonEnergy=effectivePhotonEnergyReference
+                        *std::pow(useExactEnergyRatio?1.0:energyRatio,1.5)
                         *static_cast<double>(harmonicNumber);
                     // Photon emission angle relative to the CURRENT orbital
                     // plane normal, drawn from the actual angular pattern of
@@ -1784,6 +1853,11 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         (photonEnergy+centreOfMassEnergyKick)/reducedMass;
                     const double energyAfterKick=
                         std::abs(elements.specificEnergy);
+                    // From here on, any further photon drawn within this
+                    // same while loop pass must refresh its own energy/
+                    // eccentricity reference above rather than reuse this
+                    // checkpoint's stale, pre-cascade one (README point E4).
+                    cascadeStateAlreadyMoved=true;
                     // CLASSICAL magnitude prediction from k(e), exactly
                     // integrated over this finite jump (see this file's own
                     // history/README for the derivation and its own
