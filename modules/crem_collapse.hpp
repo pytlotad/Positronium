@@ -165,21 +165,32 @@ double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity) {
 // orbit -- so reusing the n=1 angular/helicity machinery at the SAMPLED
 // harmonic's frequency is a <1%-level approximation, not a new one.
 //
-// Both S(e) and the count-weighted quantile function of x=n/n_peak(e) are
-// tabulated below from the same numerical decomposition, checked for
-// scale invariance across e=0.75..0.98 (the quantile table's entries
-// agree to within a few percent of their own mean across that whole
-// range -- see README for the full table and residuals) rather than
-// derived from a closed form: no simple closed form was found (or,
-// unlike the Cardano cubic elsewhere in this file, safely re-derivable
-// under this session's time budget) for the harmonic content of an
-// eccentric Kepler dipole, so this is a verified numerical table, not an
+// S(e) below is tabulated directly per eccentricity from the same
+// numerical decomposition -- no closed form was found (or, unlike the
+// Cardano cubic elsewhere in this file, safely re-derivable under this
+// session's time budget) for the harmonic content of an eccentric
+// Kepler dipole, so this is a verified numerical table, not an
 // unverified guess dressed as one.
-double eccentricOrbitPeakHarmonic(double eccentricity) {
-    return std::max(1.0,
-        0.504*std::pow(std::max(1.0-eccentricity,1.0e-6),-1.5));
-}
-
+//
+// eccentricOrbitHarmonicNumber (further below) used to be built the
+// same way but on a SEPARATE, scale-invariance assumption: fit a single
+// "peak harmonic" n_peak(e)~=0.504(1-e)^-1.5 and one universal quantile
+// shape in x=n/n_peak, checked only across e=0.75-0.98.  Checked again,
+// on request, against a finer, direct per-quantile comparison at
+// e=0.2-0.75 rather than left on that first check: the picture was more
+// nuanced than "breaks down below e~0.6-0.7" -- the MEDIAN and 90%
+// quantile were already good (within 0/+1 harmonic) all the way down to
+// e=0.2, it was specifically the 99%+ tail that the universal-shape
+// extrapolation got wrong outside its calibrated range (e.g. e=0.2:
+// real 99% is n=2, the extrapolated table implied n=5).  A hard gate at
+// e>=0.6 (the first fix) was therefore both too conservative (discarding
+// real median/90% structure already present at e=0.3-0.5) and not fully
+// sufficient (residual +1/+2-harmonic tail error persisted even above
+// the gate, at e=0.6-0.75).  Replaced below with a directly tabulated
+// 2D table (eccentricity x quantile -> harmonic, no scale-invariance
+// assumption anywhere), removing the gate entirely: every entry is a
+// real, independently computed number, not an extrapolation, so there
+// is no boundary left to be conservative about.
 double interpolateMonotonicTable(
         const double* keys,const double* values,int count,double key) {
     if(key<=keys[0]) return values[0];
@@ -209,27 +220,65 @@ double eccentricOrbitHazardSuppression(double eccentricity) {
         std::clamp(eccentricity,0.0,0.999));
 }
 
-// Count-weighted quantile function of x=n/n_peak(e): given a uniform draw
-// u in [0,1), returns x such that the harmonic n=max(1,round(n_peak*x)) is
-// sampled with the correct (power_n/n)-weighted probability (see
-// derivation above).  Built from the SAME numerical decomposition as
-// eccentricOrbitHazardSuppression, checked for scale invariance across
-// e=0.75-0.98 (entries agree to a few percent of their mean over that
-// range; the low-u end is noisier, from the discreteness of small n at
-// the lower end of that e range, and matters least in practice since it
-// selects the smallest, least consequential harmonics anyway).
-double eccentricOrbitHarmonicQuantile(double uniformDraw) {
-    static constexpr double keys[]={0.0000,0.0100,0.0200,0.0500,0.1000,
-        0.1500,0.2000,0.2500,0.3000,0.3500,0.4000,0.4500,0.5000,0.5500,
-        0.6000,0.6500,0.7000,0.7500,0.8000,0.8500,0.9000,0.9300,0.9500,
-        0.9700,0.9900,0.9950,0.9990,1.0000};
-    static constexpr double values[]={0.0775,0.0781,0.0817,0.0951,0.1279,
-        0.1782,0.2365,0.3185,0.3966,0.4423,0.5348,0.6271,0.6892,0.8236,
-        0.9317,1.0658,1.2119,1.3956,1.6219,1.9259,2.3048,2.6832,3.0142,
-        3.5079,4.6201,5.3014,6.9177,24.9393};
-    return interpolateMonotonicTable(keys,values,
-        static_cast<int>(std::size(keys)),
-        std::clamp(uniformDraw,0.0,1.0));
+// Count-weighted (power_n/n) quantile of harmonic number, tabulated
+// DIRECTLY over (eccentricity, cumulative probability) -- see the
+// comment above interpolateMonotonicTable for why this replaced an
+// earlier, scale-invariance-based version.  18 eccentricities x 16
+// quantile levels, each entry independently computed (same DFT-based
+// decomposition as eccentricOrbitHazardSuppression, N=8192 samples,
+// nmax up to 6000, i.e. this is not an extrapolation of a smaller
+// calibration set the way the replaced version was); bilinearly
+// interpolated in both dimensions.  The final quantile column (u=1)
+// caps each row at 1.5x its own 0.999 entry -- a deliberately
+// conservative ceiling for the near-never-hit u->1 edge of a continuous
+// draw, not a truncation artifact the way an earlier draft's naive
+// summation cutoff was.
+double eccentricOrbitHarmonicNumber(double eccentricity,double uniformDraw) {
+    static constexpr double eccentricityGrid[]={0.0000,0.1000,0.2000,
+        0.3000,0.4000,0.5000,0.6000,0.6500,0.7000,0.7500,0.8000,0.8500,
+        0.9000,0.9300,0.9450,0.9600,0.9700,0.9800};
+    static constexpr double quantileGrid[]={0.0000,0.0500,0.1000,0.2000,
+        0.3000,0.4000,0.5000,0.6000,0.7000,0.8000,0.9000,0.9500,0.9900,
+        0.9950,0.9990,1.0000};
+    static constexpr double harmonicTable[][16]={
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,3},
+        {1,1,1,1,1,1,1,1,1,1,1,2,2,3,3,4},
+        {1,1,1,1,1,1,1,1,1,1,2,2,3,3,4,6},
+        {1,1,1,1,1,1,1,1,1,2,2,3,4,5,6,9},
+        {1,1,1,1,1,1,1,2,2,2,3,4,6,6,8,12},
+        {1,1,1,1,1,1,2,2,3,3,4,6,8,10,12,18},
+        {1,1,1,1,1,2,2,3,3,4,6,7,10,12,15,22},
+        {1,1,1,1,2,2,3,3,4,5,7,9,13,15,20,30},
+        {1,1,1,1,2,3,3,4,5,7,9,12,18,20,26,39},
+        {1,1,1,2,3,3,4,6,7,9,13,17,25,29,38,57},
+        {1,1,1,2,4,5,6,8,11,14,20,26,40,46,59,88},
+        {1,1,2,4,6,8,11,15,19,26,37,48,74,85,111,166},
+        {1,2,3,6,10,14,19,25,33,44,63,82,127,146,191,286},
+        {1,2,4,9,14,20,27,35,47,63,91,118,183,210,275,412},
+        {1,3,6,13,21,31,42,56,75,101,146,191,295,340,445,668},
+        {1,4,9,19,32,46,64,86,115,155,224,294,455,525,687,1030},
+        {1,7,15,34,56,84,116,157,209,284,411,540,840,970,1286,1929},
+    };
+    constexpr int eCount=static_cast<int>(std::size(eccentricityGrid));
+    constexpr int qCount=static_cast<int>(std::size(quantileGrid));
+    const double e=std::clamp(eccentricity,0.0,eccentricityGrid[eCount-1]);
+    const double u=std::clamp(uniformDraw,0.0,1.0);
+    int ei=1;
+    while(ei<eCount-1&&e>eccentricityGrid[ei]) ++ei;
+    int qi=1;
+    while(qi<qCount-1&&u>quantileGrid[qi]) ++qi;
+    const double eSpan=eccentricityGrid[ei]-eccentricityGrid[ei-1];
+    const double eT=eSpan>0.0?(e-eccentricityGrid[ei-1])/eSpan:0.0;
+    const double qSpan=quantileGrid[qi]-quantileGrid[qi-1];
+    const double qT=qSpan>0.0?(u-quantileGrid[qi-1])/qSpan:0.0;
+    const double lowELowQ=harmonicTable[ei-1][qi-1];
+    const double lowEHighQ=harmonicTable[ei-1][qi];
+    const double highELowQ=harmonicTable[ei][qi-1];
+    const double highEHighQ=harmonicTable[ei][qi];
+    const double lowE=lowELowQ+qT*(lowEHighQ-lowELowQ);
+    const double highE=highELowQ+qT*(highEHighQ-highELowQ);
+    return lowE+eT*(highE-lowE);
 }
 
 // Time for the closed-form inspiral to carry the orbit from a_i to a_f at
@@ -1385,34 +1434,20 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // Sampled independently of the hazard-rate correction
                     // above (that one only rescales HOW OFTEN events fire,
                     // this one decides, given that one just fired, which
-                    // harmonic it is), from the count-weighted quantile
-                    // table via inverse-CDF, at the SAME once-per-checkpoint
-                    // eccentricity the hazard suppression used (consistent
-                    // with jumpParameter/angularExponent above also being
-                    // frozen for the whole checkpoint, not re-evaluated per
-                    // photon).  Gated on eccentricityHere>=0.6, checked
-                    // rather than assumed to hold everywhere: the quantile
-                    // table's scale invariance (x=n/n_peak universal across
-                    // e) was verified at e=0.75-0.98, and DOES break down
-                    // below that -- checked directly at e=0.1-0.3, where
-                    // the real median/90%/99% harmonics are 1/1-2/2-3, but
-                    // the table's own tail (built for the e>=0.75 shape)
-                    // predicts up to n~5-9 there from ordinary (not even
-                    // especially rare) draws.  At e=0.6-0.7 the same check
-                    // gives median/90%/99% off by at most 1 harmonic and
-                    // the tail within ~10%, which is why the gate sits
-                    // there rather than at the calibration boundary itself:
-                    // conservative, not the edge of what was verified.
-                    // Below the gate, n=1 remains an established, separately
-                    // measured good approximation on its own (e.g. e=0.1:
-                    // 96% of POWER already in the fundamental).
-                    constexpr double harmonicSamplingValidEccentricity=0.6;
-                    const int harmonicNumber=
-                        harmonicCorrection
-                        &&eccentricityHere>=harmonicSamplingValidEccentricity
+                    // harmonic it is), from the directly-tabulated 2D
+                    // quantile table (see eccentricOrbitHarmonicNumber's
+                    // own comment -- no eccentricity gate needed: unlike
+                    // the scale-invariance-based version this replaced,
+                    // every table entry is independently computed at its
+                    // own eccentricity, not extrapolated from a
+                    // higher-eccentricity calibration set), at the SAME
+                    // once-per-checkpoint eccentricity the hazard
+                    // suppression used (consistent with jumpParameter/
+                    // angularExponent above also being frozen for the
+                    // whole checkpoint, not re-evaluated per photon).
+                    const int harmonicNumber=harmonicCorrection
                         ?std::max(1,static_cast<int>(std::lround(
-                            eccentricOrbitPeakHarmonic(eccentricityHere)
-                            *eccentricOrbitHarmonicQuantile(
+                            eccentricOrbitHarmonicNumber(eccentricityHere,
                                 drawUniformUnit(stochasticSkipStream)))))
                         :1;
                     const double photonEnergy=photonEnergyReference

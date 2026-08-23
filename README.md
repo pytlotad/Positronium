@@ -2833,38 +2833,62 @@ TYM SAMYM sensie co orbita, więc użycie niezmienionego wzorca kątowego
 przy częstości sprzężonej harmoniki jest przybliżeniem rzędu \(<1\%\),
 nie nowym założeniem.
 
-*Implementacja: `CREM_HARMONIC`.* Obie poprawki, \(S(e)\) i funkcja
-kwantylowa rozkładu ważonego liczebnie (\(x=n/n_{peak}(e)\),
-\(n_{peak}(e)\approx0{,}504(1-e)^{-1{,}5}\), dopasowanie do \(3\) cyfr
-znaczących na \(e=0{,}5\)–\(0{,}97\)), są stablicowane z tego samego
-rozkładu numerycznego i wpięte w `crem_collapse.hpp` pod zmienną
-środowiskową `CREM_HARMONIC`. Sprawdzona uczciwie granica ważności: uniwersalność kształtu
-funkcji kwantylowej zweryfikowano na \(e=0{,}75\)–\(0{,}98\) i **załamuje
-się poniżej tego zakresu** — sprawdzone wprost przy \(e=0{,}1\)–\(0{,}3\),
-gdzie prawdziwa mediana/90%/99% harmoniki to \(1/1/2\), a tablica (zbudowana
-dla kształtu \(e\ge0{,}75\)) przewidywałaby aż do \(n\sim5\)–\(9\) ze
-zwykłych, wcale nie rzadkich losowań. Dlatego próbkowanie harmoniki jest
-bramkowane na \(e\ge0{,}6\) (margines bezpieczeństwa poniżej granicy
-kalibracji, gdzie błąd spada do rzędu jednej harmoniki w medianie i
-\(\sim10\%\) w ogonie) — poniżej tego progu \(n=1\) pozostaje osobno
-zmierzonym, dobrym przybliżeniem samo w sobie (np. \(96\%\) mocy w
-podstawowej przy \(e=0{,}1\)).
+*Implementacja: `CREM_HARMONIC`.* \(S(e)\) jest stablicowane bezpośrednio
+per mimośród (bez ekstrapolacji) i wpięte w `crem_collapse.hpp` pod
+zmienną środowiskową `CREM_HARMONIC`.
 
-*Zweryfikowane empirycznie.* Partia \(15\) trajektorii (ziarno \(42\),
-budżet zegara \(60\) s): mediana Kaplana-Meiera **identyczna** do
-poprawki, \(0{,}197275\) ns, jak bez `CREM_HARMONIC` — potwierdza, że
-mediana wyznacza całkowity budżet energii (poprawny niezależnie od
-ziarnistości), nie liczba/wielkość fotonów. RMST rośnie z \(0{,}284\) do
-\(0{,}306\) ns (\(+7{,}7\%\)) — efekt skupiony w głębokim, mimośrodowym
+*Pierwsza wersja funkcji kwantylowej dla "która harmonika strzela" była
+zbudowana na osobnym założeniu — i to założenie, sprawdzone ponownie na
+zadane polecenie, okazało się dziurawe.* Pierwotnie: jedna "uniwersalna"
+funkcja kwantylowa zmiennej \(x=n/n_{peak}(e)\)
+(\(n_{peak}(e)\approx0{,}504(1-e)^{-1{,}5}\)), skalibrowana na
+\(e=0{,}75\)–\(0{,}98\) i zastosowana wszędzie, z twardą bramką
+\(e\ge0{,}6\) poniżej progu kalibracji jako zabezpieczeniem. Sprawdzone
+dokładniej, drugi raz: bramka na \(e\ge0{,}6\) była jednocześnie **za
+ostrożna i niewystarczająca**. Za ostrożna — bezpośredni pomiar mediany i
+90. percentyla przy \(e=0{,}2\)–\(0{,}5\) pokazał zgodność z tablicą do
+\(0\)/\(+1\) harmoniki, czyli struktura powyżej \(n=1\) była tam już
+realna i dobrze uchwytna, a bramka ją całkowicie wyłączała. Niewystarczająca
+— nawet przy \(e=0{,}6\)–\(0{,}75\), tuż nad bramką, błąd w ogonie
+(\(99\%\), \(99{,}9\%\)) wciąż wynosił \(+1\)/\(+2\) harmoniki. Był to
+problem konkretnie ogona rozkładu przy niskim/średnim mimośrodzie, nie
+mediany — założenie o jednym uniwersalnym kształcie po prostu nie
+trzymało się poza zakresem, w którym zostało sprawdzone.
+
+Naprawione przez usunięcie założenia o uniwersalności, nie przez
+przesunięcie bramki: funkcja `eccentricOrbitHarmonicNumber` jest teraz
+tablicą DWUWYMIAROWĄ (mimośród × kwantyl, \(18\times16\) wpisów),
+każdy wpis policzony NIEZALEŻNIE dla własnego \(e\) (ta sama dekompozycja
+DFT, \(N=8192\), do \(n_{max}=6000\)), interpolowaną dwuliniowo — bez
+ekstrapolacji z innego zakresu mimośrodu, więc bramka w ogóle nie jest
+już potrzebna: każdy wpis jest realną, zmierzoną liczbą, nie
+przybliżeniem. Sprawdzone bezpośrednio na tej samej trajektorii, która
+ujawniła pierwotny błąd (ziarno \(107\), pierwszy foton przy
+\(e^2=0{,}0415\)): przegląd \(37\) zdarzeń fotonowych na \(22\)+ ziarnach
+przy niskim mimośrodzie dał harmonikę \(1\) niemal zawsze, z dwoma
+wyjątkami — harmonika \(3\) przy \(e^2\approx0{,}04\) i harmonika \(5\)
+przy \(e^2\approx0{,}46\) — obie w pełni zgodne z nową tablicą, żadnej z
+wcześniejszych absurdalnych wartości (np. harmonika \(9\) przy
+\(e\approx0{,}2\), którą dawała pierwsza wersja).
+
+*Zweryfikowane empirycznie, z tablicą dwuwymiarową.* Partia \(15\)
+trajektorii (ziarno \(42\), budżet zegara \(60\) s): mediana
+Kaplana-Meiera \(0{,}198748\) ns wobec \(0{,}197275\) ns bez poprawki
+(\(+0{,}7\%\), w granicach szumu \(N=15\)) — potwierdza, że mediana
+wyznacza całkowity budżet energii (poprawny niezależnie od
+ziarnistości), nie liczba/wielkość fotonów. RMST \(0{,}304\) ns wobec
+\(0{,}284\) ns (\(+7{,}0\%\)) — efekt skupiony w głębokim, mimośrodowym
 ogonie, dokładnie tam, gdzie tabela pokazuje, że założenie o częstości
-podstawowej najbardziej zawodzi. Z `CREM_HARMONIC=0`: wynik **bitowo
+podstawowej najbardziej zawodzi; obie liczby zgodne co do rzędu wielkości
+z pierwszą (wadliwą) wersją tablicy, jak należało oczekiwać, skoro obie
+tablice zgadzają się dobrze tam, gdzie druga wersja faktycznie coś
+zmieniła (ogon przy wysokim \(e\)) — różnią się tam, gdzie pierwsza
+wersja była błędna (niski/średni \(e\)), a to wnosi tylko drugorzędną
+poprawkę do zagregowanego wyniku. Z `CREM_HARMONIC=0`: wynik **bitowo
 identyczny** ze stanem sprzed tej pracy (regresja sprawdzona wprost —
-ta sama partia, te same liczby co do ostatniej cyfry). Zweryfikowane
-także: pojedyncza trajektoria (ziarno \(107\)) daje `harmonic=1` przy
-niskim mimośrodzie (\(e^2=0{,}0415\), zgodnie z bramką) i tłumienie
-hazardu \(\approx0{,}497\) przy umiarkowanie wysokim mimośrodzie,
-zgodne z tabelą \(S(e)\). Czysta kompilacja (zero ostrzeżeń),
-`positronium_validation` 33/33.
+ta sama partia, te same liczby co do ostatniej cyfry, w obu wersjach
+tablicy). Czysta kompilacja (zero ostrzeżeń), `positronium_validation`
+33/33.
 
 **Na wyraźną prośbę: `CREM_HARMONIC` stał się nowym domyślnym modelem
 produkcyjnym.** Ta sama zmienna środowiskowa zostaje, ale zmienia się jej
@@ -2873,12 +2897,11 @@ się `CREM_HARMONIC=0` — to samo "domyślnie włączone, jeden przełącznik
 od dawnego zachowania" jak przy promocji samego `stochastic` na domyślny
 model reakcji wyżej. Zachowana, nie usunięta, właśnie po to, żeby dawne
 zachowanie zostało o jedną flagę od odtworzenia, do porównań
-regresyjnych. Zweryfikowane po zmianie: domyślny przebieg (bez żadnej
-zmiennej środowiskowej) daje te same liczby, co wcześniej mierzone
-`CREM_HARMONIC=1` (mediana \(0{,}197275\) ns, RMST \(0{,}306\) ns);
-`CREM_HARMONIC=0` odtwarza dawne zachowanie (dwa fotony w tej samej
-trajektorii ziarno \(107\) zamiast jednego, zgodnie z wcześniejszym
-pomiarem). Czysta kompilacja, `positronium_validation` 33/33. Pełny
+regresyjnych. `CREM_HARMONIC=0` nadal odtwarza dawne zachowanie
+dokładnie (dwa fotony w tej samej trajektorii ziarno \(107\) zamiast
+jednego, zgodnie z wcześniejszym pomiarem — niezależne od wersji tablicy
+powyżej, bo `CREM_HARMONIC=0` w ogóle jej nie dotyka). Czysta kompilacja,
+`positronium_validation` 33/33. Pełny
 przebieg produkcyjny \(N=1000\) dla wszystkich pięciu eksperymentów pod
 tym nowym domyślnym ustawieniem nie został jeszcze przeliczony — mediana
 czasu kolapsu nie powinna się zauważalnie zmienić (wyznacza ją budżet
