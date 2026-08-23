@@ -1218,52 +1218,56 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // an ad hoc correction.
                     const double centreOfMassEnergyKick=
                         centreOfMassEnergyAfterKick-centreOfMassEnergyBeforeKick;
-                    // The recoil's component along the CURRENT angular-
-                    // momentum axis tilts the orbital plane -- exactly
-                    // (specific angular momentum) delta-L = r x delta-v,
-                    // which this elements-only representation cannot
-                    // evaluate exactly because it does not carry the true
-                    // anomaly (where in the orbit this photon fires).
-                    // Standard fix, the same spirit as the k ratio above:
-                    // replace the unknown instantaneous radius with the
-                    // orbit-averaged scale (the semi-major axis), and since
-                    // the azimuthal direction of the tilt is exactly the
-                    // unknown true anomaly too, draw THAT uniformly at
-                    // random instead of pretending to know it -- an
-                    // isotropic random walk of the plane's orientation, not
-                    // a systematic precession, which is the correct
-                    // phase-averaged picture when the phase itself is
-                    // unknown.  (Independent draw from the photon's own
-                    // azimuth above: true anomaly and photon emission angle
-                    // are unrelated unknowns.)
-                    const double semiMajorAxisHere=
-                        attractionParameter/(2.0*std::abs(elements.specificEnergy));
-                    const double outOfPlaneKickSpeed=
-                        std::abs(cosThetaFromAxis)*photonEnergy
-                        /(c*reducedMass);
-                    const double tiltAngle=std::min(pi,
-                        semiMajorAxisHere*outOfPlaneKickSpeed
-                        /std::max(elements.specificAngularMomentum,
-                                 1.0e-300));
-                    if(tiltAngle>0.0) {
-                        const double tiltAzimuth=
-                            2.0*pi*drawUniformUnit(stochasticSkipStream);
-                        const Vec3 tiltAxis=
-                            inPlaneFirst*std::cos(tiltAzimuth)
-                            +inPlaneSecond*std::sin(tiltAzimuth);
-                        // Rodrigues' rotation formula, simplified by
-                        // tiltAxis being exactly perpendicular to the
-                        // vector it rotates (their dot product term drops).
-                        angularMomentumDirection=
-                            angularMomentumDirection*std::cos(tiltAngle)
-                            +cross(tiltAxis,angularMomentumDirection)
-                                *std::sin(tiltAngle);
-                        if(std::getenv("CREM_DEBUG"))
-                            std::cerr<<"    TILT angle="<<tiltAngle
-                                     <<" |L_dir|="
-                                     <<angularMomentumDirection.norm()
-                                     <<std::endl;
-                    }
+                    // ANGULAR MOMENTUM DIRECTION: NOT tilted here, and this
+                    // is a finding, not an omission.  An earlier version of
+                    // this block tilted angularMomentumDirection by
+                    // treating the recoil as an r x delta-v kick to the
+                    // RELATIVE motion (delta-v ~ photonEnergy/(c*reducedMass),
+                    // r ~ semi-major axis).  That is inconsistent with the
+                    // linear-momentum fix directly above: this system's
+                    // bound initial conditions are prepared at r1 = r_rel*
+                    // m2/M, r2 = -r_rel*m1/M (CM at the origin), so
+                    // Sum m_i r_i = 0 identically, and the uniform
+                    // centre-of-mass kick applied above -- m_i*deltaV_cm for
+                    // both particles, the SAME vector -- therefore satisfies
+                    // Sum r_i x (m_i*deltaV_cm) = deltaV_cm x Sum(m_i r_i)
+                    // = 0 EXACTLY, for any mass ratio (checked numerically:
+                    // e+e-, and 1836:1 and 3:1 mass ratios, residual
+                    // 1e-17).  A uniform push through the system's own
+                    // centre of mass cannot torque it.  The removed tilt
+                    // was therefore spending the SAME photon momentum
+                    // twice: once as the centre-of-mass recoil that
+                    // conserves linear momentum (above), and again,
+                    // uncoordinated with it, as an independent kick to the
+                    // relative motion that conservation does not call for.
+                    //
+                    // The genuine remaining source of orbital-plane torque
+                    // is the photon's own angular momentum, and for a real
+                    // photon that is dominated by SPIN (+-hbar along its own
+                    // propagation direction, an exact, universal fact for
+                    // any spin-1 massless boson -- not an orbit-averaged
+                    // estimate the way the orbital piece r x p would be).
+                    // It is not modelled here because it is not a small
+                    // correction: CREM's own starting point is the Bohr/SED
+                    // value L = hbar (see physical_constants.hpp), so
+                    // |L_photon|/|L_orbital| = hbar/hbar = 1 exactly at the
+                    // very first photon, by construction of the initial
+                    // condition, not as a result depending on any computed
+                    // quantity.  Removing one photon's worth of hbar from an
+                    // angular momentum that starts at one hbar is an O(1)
+                    // disruption, every time, not a perturbation the
+                    // orbit-averaged k ratio below (or any classical
+                    // adiabatic treatment) is built to absorb -- this model
+                    // sits exactly at the quantum limit where a real bound
+                    // system's angular momentum is a discrete hbar-spaced
+                    // ladder, not a continuous classical vector, so no
+                    // classical bookkeeping trick closes this gap.  Left
+                    // unmodelled and documented rather than forced in: the
+                    // orbital-plane direction is carried forward unchanged
+                    // by photon recoil (self-consistent with the linear-
+                    // momentum fix above), and the model's magnitude-only
+                    // representation is the honest limit of what this
+                    // architecture can support.
                     // Eccentricity/k evaluated BEFORE this photon's own
                     // kick, mirroring the bulk formula's own convention
                     // (its eccentricitySquared above is likewise the

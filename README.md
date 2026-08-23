@@ -943,12 +943,54 @@ trajektorii) nietknięta w granicach szumu: mediana \(147{,}8\) ps, średnia
 poprawką, jak należało oczekiwać, bo poprawka jest efektem drugiego rzędu
 poza najgłębszą częścią kolapsu. `positronium_validation` 33/33 bez zmian.
 
-Moment pędu pozostaje modelowany, ale niezweryfikowany niezależnie —
-wielkość dziedziczy współczynnik `k` z modeli ciągłych (nie wyprowadzony
-od nowa dla skwantowanej emisji), a kierunek to uśredniony po nieznanej
-fazie przechył. W architekturze samych elementów oskulacyjnych (bez pełnej
-całki strumienia pola) nie ma z czym tego porównać — udokumentowane jako
-otwarte, nie ukryte pod dywan.
+**Zbadano moment pędu — i przechył płaszczyzny orbity okazał się być tym
+samym pędem fotonu liczonym drugi raz.** Wcześniejszy mechanizm przechylał
+`angularMomentumDirection` traktując odrzut jako kopnięcie \(r\times\Delta
+v\) ruchu WZGLĘDNEGO (\(r\sim\) półoś wielka, \(\Delta v\sim
+p_{foton}/\mu\)) — niezależnie od poprawki pędu liniowej powyżej, która
+już równoważy TEN SAM pęd fotonu jednorodnym kopnięciem obu cząstek.
+Sprawdzone wprost (Python, trzy stosunki mas: \(1{:}1\), \(1836{:}1\),
+\(3{:}1\)): jednorodne kopnięcie środka masy daje moment siły
+\(\sum_i r_i\times(m_i\Delta v_{cm})=\Delta v_{cm}\times\sum_i m_ir_i=0\)
+**dokładnie**, bo \(\sum_i m_ir_i=0\) tożsamościowo względem środka masy —
+resztki rzędu \(10^{-17}\), czysty szum numeryczny. Jednorodne pchnięcie
+przez własny środek masy nie może układu skręcić. Przechył wydawał więc
+ten sam pęd fotonu dwa razy: raz jako poprawny odrzut środka masy (wyżej),
+raz jako niezależne, nieskoordynowane z nim kopnięcie ruchu względnego —
+usunięty z kodu jako błąd, nie przeważony na nowo.
+
+Co zostaje jako **prawdziwe** źródło skręcenia płaszczyzny: nie orbitalny
+moment pędu fotonu (ten wymagałby nieznanej anomalii prawdziwej, jak już
+było), tylko jego **spin** — \(\pm\hbar\) wzdłuż własnego kierunku
+propagacji, uniwersalny, dokładny fakt dla dowolnego bezmasowego bozonu
+spinu 1, nie przybliżenie orbit-averaged. Nie zaimplementowany, bo to nie
+mała poprawka: własny punkt startowy CREM to wartość Bohra/SED
+\(L=\hbar\) (`physical_constants.hpp`), więc \(|L_{foton}|/|L_{orbitalny}|
+=\hbar/\hbar=1\) **dokładnie** już przy pierwszym fotonie, z samej
+konstrukcji warunku początkowego — nie zmierzona małość, jak przy
+\(p_{foton}/p_{orbitalny}\) wyżej, tylko przeciwieństwo: zaburzenie rzędu
+jedności za każdym razem, którego żadna klasyczna adiabatyczna księgowość
+(łącznie ze współczynnikiem `k`) nie jest w stanie wchłonąć. Model siedzi
+dokładnie na granicy kwantowej, gdzie moment pędu realnego związanego
+układu jest dyskretną drabiną rozstawioną co \(\hbar\), nie ciągłym
+wektorem klasycznym — żadna sztuczka księgowa tego nie zamyka.
+
+Zweryfikowane po usunięciu przechyłu: czysta kompilacja (zero ostrzeżeń),
+`positronium_validation` 33/33, test dymny (ziarno 7, o-Ps,
+`--radiation-reaction stochastic`) — 3/3 trajektorii kolapsuje bez awarii
+numerycznych, fotony nadal strzelają poprawnie (przykład: foton #1 zmienia
+\(L\) z \(5{,}55\cdot10^{-5}\) na \(1{,}56\cdot10^{-5}\) przez współczynnik
+`k`, zgodnie z wcześniej zmierzonym efektem "energia fotonu porównywalna z
+energią wiązania"), bez żadnych linii `TILT` w logu. Kierunek płaszczyzny
+orbity jest teraz niezmienny wobec odrzutu fotonu — spójne z poprawką pędu
+liniowego, a nie uproszczenie mechanizmu, który i tak nigdy nie działał
+poprawnie. Wielkość \(|L|\) nadal aktualizowana współczynnikiem `k` z
+modeli ciągłych (bez zmian, osobny, nierozstrzygnięty w tej sesji problem:
+ten sam współczynnik jest formułą adiabatyczną, orbit-averaged, a
+pojedyncze fotony potrafią przenosić energię porównywalną z całą energią
+orbity — patrz akapit o kolapsie 665 ps wyżej — więc jego stosowanie do
+pojedynczego skoku, a nie do ciągłego strumienia, jest tym samym rodzajem
+przybliżenia, co przechył, tylko jeszcze nie policzonym wprost).
 
 ### Wynik audytu kompletności fizycznej
 

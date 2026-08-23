@@ -731,6 +731,32 @@ enum class ChargeRadiationReactionModel {
     // kick in crem_trajectory.hpp was NOT given the same fix (see its own
     // updated comment) -- it lacks the position/orientation information
     // this fix needs and is rarely exercised in production regardless.
+    //
+    // ANGULAR MOMENTUM, audited -- and found not fixable the same way.  An
+    // earlier version of the block above also tilted the tracked orbital
+    // plane per photon, treating the recoil as an r x delta-v kick to the
+    // RELATIVE motion (r ~ semi-major axis, delta-v ~ photonEnergy/(c*
+    // reducedMass)).  That double-spent the same photon momentum: the
+    // linear-momentum fix above already balances it as a uniform kick to
+    // BOTH particles, and Sum m_i*r_i=0 about the centre of mass means that
+    // kick alone contributes EXACTLY zero torque (checked numerically for
+    // e+e- and for 1836:1 and 3:1 mass ratios, residual 1e-17) -- a uniform
+    // push through a system's own centre of mass cannot torque it.  The
+    // tilt was removed rather than reweighted, because the genuine
+    // remaining source of torque is not classical at all: a real photon's
+    // angular momentum is dominated by SPIN, +-hbar along its own
+    // propagation direction, an exact universal fact for any massless
+    // spin-1 boson, not an orbit-averaged estimate.  It is not modelled
+    // because CREM's own starting point is the Bohr/SED value L=hbar (see
+    // physical_constants.hpp), so |L_photon|/|L_orbital| = hbar/hbar = 1
+    // exactly at the very first photon, by construction of the initial
+    // condition -- not a measured smallness the way p_photon/p_orbital
+    // above was, but the opposite: an O(1) disruption every time, which no
+    // classical adiabatic bookkeeping (the k ratio included) is built to
+    // absorb.  Left as an open, documented limitation: the orbital-plane
+    // direction is carried forward unchanged by photon recoil, which is
+    // the self-consistent choice given the linear-momentum fix, not a
+    // simplification of a mechanism that was ever actually working.
     stochasticElectricDipole
 };
 
