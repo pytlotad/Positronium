@@ -2856,9 +2856,32 @@ zgodność \(0{,}000°\) powyżej). **Sprzężenie dipol-dipol nie ma tu
 żadnego udziału** — to dwa całkowicie odrębne źródła zmienności, na
 zupełnie różnych skalach: geometria pojedynczego zdarzenia (\(\cos\theta,
 e^2\)) napędza cały zakres \(0{,}52\)–\(0{,}98\)/\(7°\)–\(65°\)
-MIĘDZY różnymi zdarzeniami; sprzężenie dipol-dipol (\(10^{-8}\)–\(10^{-9}\))
-odpowiada wyłącznie za maleńką resztkową różnicę MIĘDZY kanałami para/orto
-dla TEGO SAMEGO zdarzenia.
+MIĘDZY różnymi zdarzeniami; sprzężenie dipol-dipol odpowiada wyłącznie
+za maleńką resztkową różnicę MIĘDZY kanałami para/orto dla TEGO SAMEGO
+zdarzenia.
+
+*Sprawdzone dokładniej, na żądanie, wobec aktualnego stanu modelu (po
+próbie 4 i naprawie `hFraction`): sama skala tej resztkowej różnicy —
+poprzednie \(10^{-8}\)–\(10^{-9}\) było zbyt wąskie.* Policzone na
+tych samych \(14\) zdarzeniach, rozdzielone na pierwszy foton trajektorii
+(zdarzenie \(0\)) i drugi w tej samej kaskadzie (zdarzenie \(1\)):
+\[
+\begin{array}{lc}
+\text{zdarzenie \#0 (pierwszy foton), 8 przypadków} & 7{,}9\times10^{-10}\text{ -- }1{,}0\times10^{-8}\\
+\text{zdarzenie \#1 (drugi foton tej samej kaskady), 6 przypadków} & 6{,}8\times10^{-8}\text{ -- }1{,}17\times10^{-6}
+\end{array}
+\]
+**Pełny zmierzony zakres: \(7{,}9\times10^{-10}\) do \(1{,}17\times10^{-6}\)**
+— drugie zdarzenie w tej samej kaskadzie jest systematycznie \(2\)–\(3\)
+rzędy wielkości większe niż pierwsze. Zgodne z już ustaloną fizyką (sonda
+16: różnica rośnie z liczbą upłynionych orbit/checkpointów przed danym
+zdarzeniem) — ale teraz, po naprawie `hFraction` (punkt E4), kaskady
+poprawnie sięgają głębiej, więc kolejne fotony dziedziczą pełną,
+nieskompresowaną akumulację różnicy sprzed nich, i efekt jest wyraźniej
+widoczny na tych samych, płytkich trajektoriach niż w chwili, gdy sonda
+16 była mierzona. Poprawny opis: **\(10^{-10}\)–\(10^{-6}\), rosnące z
+każdym kolejnym fotonem tej samej kaskady** — nie stały rząd wielkości
+\(10^{-8}\)–\(10^{-9}\).
 
 **E4. Skala błędu przybliżenia `hFraction`, zmierzona i naprawiona.** Kod już
 miał komentarz ostrzegający: gdy próg pochłaniany jest głównie z hazardu
