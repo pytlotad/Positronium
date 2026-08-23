@@ -2755,14 +2755,17 @@ próby 4 (punkt E), teraz zmierzona po raz pierwszy.*
 |\mathbf L_{przed}-\mathbf L_{po}| = 1{,}4527\times10^{-4},\qquad
 |\hbar\cdot h/\mu| = 2{,}3154\times10^{-4}\ (\text{stała}),
 \]
-stosunek \(0{,}627\), kąt między obydwoma wektorami \(78{,}5°\). Usunięty z
-orbity moment pędu NIE jest już równy spinowi pojedynczego fotonu — ani
-co do wielkości (\(63\%\)), ani co do kierunku (\(78°\)!). Bilans wciąż
-się zamyka (\(L_{po}\) jest z definicji tym, co zostaje), ale nazwa
-"moment pędu, jaki niesie foton" przestaje dosłownie odpowiadać
-rzeczywistemu spinowi fotonu — dokładnie taki kompromis, jaki próba 4
-świadomie przyjęła (wielkość z \(k(e)\), kierunek z wektora próbnego), tu
-po raz pierwszy skwantyfikowany na realnym zdarzeniu.
+stosunek \(0{,}627\), kąt między obydwoma wektorami \(78{,}5°\)
+(przykładowa wartość TEGO zdarzenia — sprawdzone niżej na szerszej
+próbie: to nie stała, wielkość waha się \(0{,}52\)–\(0{,}98\) i
+\(7°\)–\(65°\) zależnie od zdarzenia). Usunięty z orbity moment pędu
+NIE jest już równy spinowi pojedynczego fotonu — ani co do wielkości,
+ani co do kierunku. Bilans wciąż się zamyka (\(L_{po}\) jest z definicji
+tym, co zostaje), ale nazwa "moment pędu, jaki niesie foton" przestaje
+dosłownie odpowiadać rzeczywistemu spinowi fotonu — dokładnie taki
+kompromis, jaki próba 4 świadomie przyjęła (wielkość z \(k(e)\), kierunek
+z wektora próbnego), tu po raz pierwszy skwantyfikowany na realnym
+zdarzeniu.
 
 *Zastrzeżenie metodologiczne: punkty 1–2 są częściowo tautologią.*
 Sprawdzenie energii/pędu liniowego weryfikuje, że wzór księgowy się
@@ -2773,29 +2776,53 @@ wartością dla PÓŹNIEJSZYCH fotonów w kaskadzie. To osobne pytanie —
 zbadane niżej, i okazało się poważniejsze, niż sugerowałoby "znane,
 udokumentowane przybliżenie brzegowe".
 
-*Ten sam audyt powtórzony dla orto-Ps — te same wnioski, niemal
-identyczne liczby.* To samo ziarno (\(50\)), `--phenomenon 2`, ta sama
-metodologia, pełna precyzja, foton #\(1\):
+*Ten sam audyt powtórzony dla orto-Ps (ziarno \(50\)) — energia/pęd
+zachowane z tą samą precyzją (\(1{,}361\times10^{-9}\) względnie, wobec
+\(1{,}4\times10^{-9}\) dla para-Ps).* Sama trajektoria para vs orto (ten
+sam seed): \(E_{przed}\) różni się o \(1{,}895\times10^{-8}\) względnie,
+`photonEnergy` o \(1{,}551\times10^{-8}\) — dokładnie tego samego rzędu,
+co już ustalone sprzężenie dipol-dipol (sondy 3–17, punkt L), rosnące z
+głębokością trajektorii (sonda 16). Naprawa `hFraction` (punkt E4)
+działa jednakowo w obu kanałach, bo mechanizm nigdzie nie odwołuje się
+do flagi para/orto.
+
+*Sprawdzone dokładniej, na żądanie: czy "\(63\%\)/\(78°\)" z ziarna
+\(50\) było wartością TYPOWĄ, nie tylko zgodną między kanałami.*
+Odpowiedź: **nie było** — to jeden punkt z szerokiego rozkładu, nie
+charakterystyczna skala. \(14\) niezależnych zdarzeń fotonowych
+(\(10\) ziaren, oba kanały, pełna precyzja):
 \[
-\begin{array}{lcc}
- & \text{para-Ps} & \text{orto-Ps}\\
-\text{energia (różnica względna)} & 1{,}4\times10^{-9} & 1{,}361\times10^{-9}\\
-\text{pęd liniowy (różnica względna)} & 1{,}4\times10^{-9} & 1{,}361\times10^{-9}\\
-|L_{usunięte}|/|L_{spin}| & 0{,}627 & 0{,}6274\\
-\text{kąt } (L_{usunięte},\,L_{spin}) & 78{,}5° & 78{,}49°
+\begin{array}{cc|ccc|ccc}
+\text{ziarno} & \text{zdarz.} & \text{stos. P} & \text{stos. O} & \Delta & \text{kąt P} & \text{kąt O} & \Delta\\
+1 & 0 & 0{,}9795 & 0{,}9795 & {-}1{,}0{\times}10^{-10} & 7{,}35° & 7{,}35° & 0{,}000°\\
+1 & 1 & 0{,}5244 & 0{,}5244 & 2{,}9{\times}10^{-10} & 61{,}28° & 61{,}28° & 0{,}000°\\
+2 & 0 & 0{,}7342 & 0{,}7342 & 1{,}1{\times}10^{-10} & 64{,}60° & 64{,}60° & 0{,}000°\\
+2 & 1 & 0{,}6897 & 0{,}6897 & {-}3{,}5{\times}10^{-8} & 13{,}88° & 13{,}88° & 0{,}000°\\
+3 & 0 & 0{,}8638 & 0{,}8638 & {-}7{,}1{\times}10^{-11} & 54{,}32° & 54{,}32° & 0{,}000°\\
+5 & 0 & 0{,}8793 & 0{,}8793 & 1{,}1{\times}10^{-10} & 25{,}22° & 25{,}22° & 0{,}000°\\
+5 & 1 & 0{,}6620 & 0{,}6620 & 1{,}3{\times}10^{-7} & 10{,}08° & 10{,}08° & 0{,}000°\\
+7 & 0 & 0{,}8835 & 0{,}8835 & 1{,}6{\times}10^{-12} & 28{,}64° & 28{,}64° & 0{,}000°\\
+7 & 1 & 0{,}7244 & 0{,}7244 & {-}5{,}1{\times}10^{-9} & 8{,}34° & 8{,}34° & 0{,}000°\\
+10 & 0 & 0{,}8949 & 0{,}8949 & {-}4{,}1{\times}10^{-12} & 25{,}37° & 25{,}37° & 0{,}000°\\
+10 & 1 & 0{,}5165 & 0{,}5165 & {-}8{,}4{\times}10^{-10} & 52{,}23° & 52{,}23° & 0{,}000°\\
+12 & 0 & 0{,}8590 & 0{,}8590 & 8{,}6{\times}10^{-11} & 24{,}50° & 24{,}50° & 0{,}000°\\
+12 & 1 & 0{,}6182 & 0{,}6182 & 1{,}3{\times}10^{-8} & 9{,}20° & 9{,}20° & 0{,}000°\\
+42 & 0 & 0{,}8903 & 0{,}8903 & 5{,}9{\times}10^{-11} & 31{,}02° & 31{,}02° & 0{,}000°
 \end{array}
 \]
-**Rozbieżność momentu pędu (próba 4) nie jest artefaktem kanału para/orto**
-— jest strukturalną cechą samego mechanizmu, obecną niemal identycznie
-(te same \(2\) cyfry znaczące) w obu kanałach. Energia/pęd liniowy
-zachowane z tą samą precyzją w obu — naprawa `hFraction` (punkt E4)
-działa jednakowo, bo mechanizm nigdzie nie odwołuje się do flagi
-para/orto. Sama trajektoria para vs orto (ten sam seed): \(E_{przed}\)
-różni się o \(1{,}895\times10^{-8}\) względnie, `photonEnergy` o
-\(1{,}551\times10^{-8}\) — dokładnie tego samego rzędu, co już ustalone
-sprzężenie dipol-dipol (sondy 3–17, punkt L), rosnące z głębokością
-trajektorii (sonda 16). Żadna nowa asymetria między kanałami się nie
-ujawniła.
+**Stosunek \(|L_{usunięte}|/|L_{spin}|\) rozciąga się od \(0{,}517\) do
+\(0{,}980\)** (nie stała \(\approx0{,}63\)), a **kąt od \(7°\) do
+\(65°\)** (nie stała \(\approx78°\)) — silnie zależne od mimośrodu i
+geometrii KAŻDEGO zdarzenia z osobna. Ale **niezależnie od tego, jak
+bardzo dane zdarzenie odbiega od "typowej" wartości, para i orto zawsze
+dają dokładnie ten sam wynik dla tego samego zdarzenia** — różnica kąta
+\(0{,}000°\) w każdym z \(14\) przypadków, różnica stosunku na poziomie
+szumu (\(10^{-8}\)–\(10^{-12}\)), nie ograniczona do jednego
+przykładowego ziarna. To mocniejsze i bardziej precyzyjne potwierdzenie
+niż pojedyncze zdarzenie z ziarna \(50\): rozbieżność momentu pędu
+(próba 4) jest realną, zmienną cechą KAŻDEGO zdarzenia, ale jej
+niezależność od kanału para/orto jest uniwersalna, nie przypadkiem
+jednego pomiaru.
 
 **E4. Skala błędu przybliżenia `hFraction`, zmierzona i naprawiona.** Kod już
 miał komentarz ostrzegający: gdy próg pochłaniany jest głównie z hazardu
