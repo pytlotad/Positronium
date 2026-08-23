@@ -1633,6 +1633,14 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     std::vector<double> measuredCollapse, analyticCollapse; // plot units
     std::vector<double> larmorRatios;
     std::vector<double> dipoleCouplingsGHz;
+    // Lab-frame photon kinematics (LabFramePhoton, modules/crem_collapse.hpp)
+    // flattened across every trajectory in the batch and every photon each
+    // one fired -- independent of completion, same reasoning as
+    // larmorRatios/dipoleCouplingsGHz above: a censored trajectory still
+    // fired whatever photons it fired before running out of budget.
+    std::vector<double> labPhotonEnergyEv;
+    std::vector<double> labPhotonFrequencyHz;
+    std::vector<double> labPhotonAngleFromRecoilDeg;
     // Period at both ends of the inspiral and the revolutions between them,
     // collected only from trajectories that ran to the boundary so the three
     // numbers describe the same complete collapses as the lifetime above.
@@ -1675,6 +1683,19 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         }
         if(std::isfinite(estimate.dipoleCouplingHz)) {
             dipoleCouplingsGHz.push_back(estimate.dipoleCouplingHz*1.0e-9);
+        }
+        for(const LabFramePhoton& labPhoton : estimate.labFramePhotons) {
+            if(std::isfinite(labPhoton.energyJoules)
+               && labPhoton.energyJoules>0.0) {
+                labPhotonEnergyEv.push_back(
+                    labPhoton.energyJoules/elementaryCharge);
+                labPhotonFrequencyHz.push_back(
+                    labPhoton.energyJoules/(2.0*pi*hbar));
+            }
+            if(std::isfinite(labPhoton.angleFromRecoilAxisRadians)) {
+                labPhotonAngleFromRecoilDeg.push_back(
+                    labPhoton.angleFromRecoilAxisRadians*180.0/pi);
+            }
         }
         if(std::isfinite(estimate.meanRadiatedPowerWatts)
            && estimate.meanRadiatedPowerWatts > 0.0) {
@@ -1917,19 +1938,33 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                            0.0, 0.0, 1.0, 1.0);
     TPad diagnosticsPage("decay_diagnostics_page", "Numerical closure diagnostics",
                          0.0, 0.0, 1.0, 1.0);
-    for (TPad* page : {&distributionsPage, &diagnosticsPage}) {
+    // Lab-frame photon kinematics for the stochasticElectricDipole model
+    // (modules/electrodynamics.hpp): the two exact photon-kinematics pads
+    // removed below (see the next comment) carried no CREM output because
+    // that model did not exist yet in a form worth plotting.  It does now --
+    // labFramePhotons converts the pair's own emitted photons (computed in
+    // their instantaneous rest frame, self-consistently, see
+    // estimateCremCollapse's own comment) to what a fixed, distant lab
+    // observer would measure, via the standard special-relativistic Doppler/
+    // aberration boost.  README point L, "charakterystyki fotonu".
+    TPad labFramePage("decay_lab_frame_page", "Lab-frame photon kinematics",
+                      0.0, 0.0, 1.0, 1.0);
+    for (TPad* page : {&distributionsPage, &diagnosticsPage, &labFramePage}) {
         page->SetFillColor(kWhite);
         page->SetFillStyle(1001);
     }
     canvas.cd();
     distributionsPage.Draw();
     diagnosticsPage.Draw();
+    labFramePage.Draw();
     // Four distribution pads, down from six: the two exact photon-kinematics
     // pads carried no CREM output at all and the sixth was a text card.
     distributionsPage.cd();
     distributionsPage.Divide(2, 2, 0.006, 0.006);
     diagnosticsPage.cd();
     diagnosticsPage.Divide(1, 2, 0.006, 0.006);
+    labFramePage.cd();
+    labFramePage.Divide(1, 3, 0.006, 0.006);
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
     std::vector<std::unique_ptr<TF1>> analysisFunctions;
 
@@ -2400,6 +2435,96 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         "neither, so this gap is structural, not a fit residual."
     }, 0.020);
 
+    // --- Lab-frame photon kinematics (stochasticElectricDipole only) ---
+    // labPhotonEnergyEv/labPhotonFrequencyHz/labPhotonAngleFromRecoilDeg are
+    // filled above from LabFramePhoton (modules/crem_collapse.hpp), one entry
+    // per photon actually fired across every trajectory in this batch --
+    // already boosted from the pair's own instantaneous rest frame to what a
+    // fixed, distant lab observer would measure.  Empty for a continuous
+    // (non-stochastic) --radiation-reaction model: these three pads then draw
+    // as empty axes rather than failing, the same convention the diagnostics
+    // pads above already use for an empty larmorRatios/dipoleCouplingsGHz.
+    const auto boundsOf = [](const std::vector<double>& values) {
+        double lower = std::numeric_limits<double>::infinity();
+        double upper = -std::numeric_limits<double>::infinity();
+        for (double value : values) {
+            lower = std::min(lower, value);
+            upper = std::max(upper, value);
+        }
+        if (!(lower < upper)) { lower = 0.0; upper = 1.0; }
+        return std::pair<double,double>{lower, upper};
+    };
+
+    labFramePage.cd(1);
+    gPad->SetGrid();
+    const auto [energyLower, energyUpper] = boundsOf(labPhotonEnergyEv);
+    const double energyPadding = 0.05*(energyUpper - energyLower);
+    TH1D labEnergyHistogram("crem_lab_photon_energy",
+        "Photon energy, lab frame (Doppler-boosted from S');"
+        "E_{lab} [eV];Photons",
+        histogramBins(labPhotonEnergyEv.size()),
+        energyLower - energyPadding, energyUpper + energyPadding);
+    styleHistogram(labEnergyHistogram, plot_style::crem());
+    labEnergyHistogram.SetStats(false);
+    for (double value : labPhotonEnergyEv) labEnergyHistogram.Fill(value);
+    styleBinCounts(labEnergyHistogram);
+    labEnergyHistogram.Draw("HIST TEXT0");
+    const GaussianFitSummary labEnergyMoments =
+        gaussianMaximumLikelihood(labPhotonEnergyEv);
+    drawAnalysisBox(analysisBoxes, 0.45, 0.58, 0.95, 0.91, {
+        AnalysisLine("photons: N = " + std::to_string(labPhotonEnergyEv.size()),
+            plot_style::crem()),
+        "#LTE_{lab}#GT = " + compactNumber(labEnergyMoments.mean, 4) + " eV",
+        "One photon per stochastic emission event, every",
+        "trajectory in this batch, boosted to the lab frame."
+    }, 0.021);
+
+    labFramePage.cd(2);
+    gPad->SetGrid();
+    const auto [freqLower, freqUpper] = boundsOf(labPhotonFrequencyHz);
+    const double freqPadding = 0.05*(freqUpper - freqLower);
+    TH1D labFrequencyHistogram("crem_lab_photon_frequency",
+        "Photon frequency, lab frame;#nu_{lab} [Hz];Photons",
+        histogramBins(labPhotonFrequencyHz.size()),
+        freqLower - freqPadding, freqUpper + freqPadding);
+    styleHistogram(labFrequencyHistogram, plot_style::crem());
+    labFrequencyHistogram.SetStats(false);
+    for (double value : labPhotonFrequencyHz) labFrequencyHistogram.Fill(value);
+    styleBinCounts(labFrequencyHistogram);
+    labFrequencyHistogram.Draw("HIST TEXT0");
+    const GaussianFitSummary labFrequencyMoments =
+        gaussianMaximumLikelihood(labPhotonFrequencyHz);
+    drawAnalysisBox(analysisBoxes, 0.45, 0.58, 0.95, 0.91, {
+        "#LT#nu_{lab}#GT = " + compactNumber(labFrequencyMoments.mean, 4) + " Hz",
+        "E = h#nu; the same photons as the energy pad,",
+        "same shape, this axis only for spectroscopic",
+        "comparison in frequency units."
+    }, 0.021);
+
+    labFramePage.cd(3);
+    gPad->SetGrid();
+    const auto [angleLower, angleUpper] = boundsOf(labPhotonAngleFromRecoilDeg);
+    const double anglePadding = 0.05*(angleUpper - angleLower) + 1.0e-6;
+    TH1D labAngleHistogram("crem_lab_photon_angle",
+        "Emission angle from the recoil axis, lab frame (aberration);"
+        "#theta_{lab} [deg];Photons",
+        histogramBins(labPhotonAngleFromRecoilDeg.size()),
+        std::max(0.0, angleLower - anglePadding),
+        std::min(180.0, angleUpper + anglePadding));
+    styleHistogram(labAngleHistogram, plot_style::crem());
+    labAngleHistogram.SetStats(false);
+    for (double value : labPhotonAngleFromRecoilDeg) labAngleHistogram.Fill(value);
+    styleBinCounts(labAngleHistogram);
+    labAngleHistogram.Draw("HIST TEXT0");
+    drawAnalysisBox(analysisBoxes, 0.45, 0.58, 0.95, 0.91, {
+        "angle between the photon's lab-frame direction and",
+        "centreOfMassVelocity at the instant it was emitted.",
+        "Undefined (excluded) at zero recoil speed: the axis",
+        "itself is undefined there, not the angle.",
+        "N = " + std::to_string(labPhotonAngleFromRecoilDeg.size())
+            + " (first photon of every trajectory has none)."
+    }, 0.021);
+
     canvas.cd();
     distributionsPage.Pop();
     canvas.Modified();
@@ -2410,7 +2535,10 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         {distributionsPage.GetPad(3), 1, 3, "collapse_time_vs_theory"},
         {distributionsPage.GetPad(4), 1, 4, "radiated_power_vs_larmor"},
         {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_calibration_power"},
-        {diagnosticsPage.GetPad(2), 2, 2, "dipole_coupling_vs_hyperfine"}
+        {diagnosticsPage.GetPad(2), 2, 2, "dipole_coupling_vs_hyperfine"},
+        {labFramePage.GetPad(1), 3, 1, "lab_frame_photon_energy"},
+        {labFramePage.GetPad(2), 3, 2, "lab_frame_photon_frequency"},
+        {labFramePage.GetPad(3), 3, 3, "lab_frame_photon_angle"}
     };
     reportExports(root_export::saveStatisticalPlots(
         selectedPhenomenon, plotsToSave));

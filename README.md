@@ -2669,6 +2669,73 @@ pomijalny efekt w większości głębokości, jaką model osiąga.
   wyjścia trajektoria trafi i jak szybko. Ta jedyna awaria doczekała się
   własnego, pełnego śledztwa — patrz punkt H.
 
+**E2. Inne charakterystyki fotonu — czy poza spinem/momentem pędu coś jeszcze
+wymaga zbadania.** Przegląd: energia (\(\hbar\omega\), `CREM_HARMONIC`),
+pęd liniowy (odrzut, człon krzyżowy \(v_{cm}\cdot p\)), moment pędu (punkt
+E), kierunek emisji (\((1+\cos^2\theta)\)), polaryzacja kołowa (Stokes V/I)
+i harmonika — wszystkie już zweryfikowane w tej sekcji. Jeden kandydat
+znaleziony i sprawdzony: **czy brak transformacji Lorentza między ramką
+spoczynkową pary a laboratorium przy kolejnych fotonach kaskady psuje
+fizykę.**
+
+*Skala zmierzona wprost, nie oszacowana.* \(355\) zdarzeń fotonowych,
+\(\sim200\) ziaren: \(v_{cm}/c\) rośnie systematycznie z głębokością
+kaskady (mediana \(0{,}002\%\to0{,}014\%\to0{,}20\%\) dla fotonu \(1\to
+2\to3\)), z sufitem \(\sim0{,}35\%\) (globalne maksimum, ziarno \(232\)) —
+rzadkie głębokie kaskady (foton \(4\)+, \(\approx1\%\) trajektorii) nie
+rosną dalej bez ograniczeń, bo sama fizyka (bariera Comptona) kończy
+trajektorię, zanim zdąży się skumulować więcej kopnięć. \(0{,}35\%\) to
+\(\sim5\) rzędów wielkości więcej niż sprzężenie dipol-dipol (\(17\) sond
+w tej samej sekcji) — pierwsze wrażenie: to musi być istotne.
+
+*Sprostowanie po dokładniejszym wyprowadzeniu — pierwszy alarm był
+nietrafiony.* Wielkości orbitalne (`elements.specificEnergy`,
+`specificAngularMomentum`, `period`) opisują ruch WZGLĘDNY, niezmienniczy
+względem doładowania całego układu (nawet nierelatywistycznie, na czym
+stoi mechaniczny rdzeń CREM) — nie zależą od \(v_{cm}\) w ogóle.
+`photonEnergy`/`photonDirection` są więc liczone poprawnie w chwilowej
+ramce spoczynkowej pary (S'), dokładnie tam, gdzie cała reszta już
+zweryfikowanej fizyki (punkty A–E) żyje. Odrzut jest liczony w S' i
+dodawany newtonowsko do zgromadzonego \(v_{cm}\) — poprawka od użycia
+właściwego (relatywistycznego) składania prędkości zamiast newtonowskiego
+jest rzędu \((v_{cm}/c)^2\sim1{,}2\times10^{-5}\) przy skrajnym
+\(v/c=0{,}35\%\), NIE rzędu \(v/c\) — nieistotne. Sprawdzone wprost w
+kodzie: `photonEnergy` z tego mechanizmu nigdy nie trafia do żadnego
+histogramu/wykresu jako wielkość "obserwowana" — panele fotonowe pokazywane
+użytkownikowi pochodzą z zupełnie innego, niezależnego generatora (prawdziwa
+anihilacja \(2\gamma/3\gamma\), jawnie odseparowana, `positronium.cpp:1574`).
+**Wniosek: żadne prawo zachowania ani istniejący wynik nie jest tu
+naruszone** — pierwszy alarm mylił skalę przesunięcia \(v_{cm}\) względem
+oryginalnego \(t{=}0\) z realnym błędem w księgowości fizyki.
+
+*Prawdziwa, węższa potrzeba: nowa diagnostyka, nie poprawka.* Jedyne,
+czego kod nie potrafił: podać, co zmierzyłby odległy, nieruchomy
+obserwator dla energii/częstotliwości/kąta emisji głęboko-kaskadowego
+fotonu — bo taka wielkość nigdy nie była liczona. Zaimplementowane jako
+**nowa strona wykresów** (`--radiation-reaction stochastic`,
+`distributions/1_3_*.pdf`), bez dotykania wewnętrznej fizyki:
+
+```
+E_lab = γ E' (1 + β cosθ')                    (Doppler)
+θ_lab = kąt między p_lab a osią odrzutu β̂     (aberracja, pełny wzór wektorowy)
+```
+
+gdzie \(E',\theta'\) to już istniejące, zweryfikowane `photonEnergy`,
+`photonDirection` w S', a \(\beta=v_{cm}/c\) brane PRZED kopnięciem tego
+konkretnego fotonu (`LabFramePhoton`, `modules/crem_collapse.hpp`).
+Zweryfikowane liczbowo (ziarno \(232\)): przy \(\beta=2\times10^{-4}\),
+\(\Delta E/E\approx-3\times10^{-5}\) — właściwy rząd (\(\sim\beta\)),
+zgodny znak z kątem. Trzy nowe panele
+(`1_3_1_lab_frame_photon_energy.pdf`, `..._frequency.pdf`,
+`..._angle.pdf`): sprawdzone wizualnie — sensowny rozkład energii
+(\(N{=}43\), \(\langle E\rangle=826\) eV, od dziesiątek do
+\(\sim3800\) eV, widoczna struktura kaskadowa), kąt od osi odrzutu
+(\(N{=}28={=}43{-}15\) — dokładnie tyle, bo pierwszy foton każdej
+trajektorii nie ma zdefiniowanej osi odrzutu, zgodnie z projektem).
+Model ciągły (`--radiation-reaction coherent`, gdzie `labFramePhotons`
+jest puste) renderuje bezpiecznie pusty wykres, bez awarii.
+`positronium_validation` \(33/33\), bez regresji.
+
 **F. Co model świadomie zostawia otwarte.** (1) Orbitalny moment pędu
 fotonu względem pary jako dosłowny \(\mathbf r\times\mathbf p_\gamma\) —
 wciąż wymagałby anomalii prawdziwej, niedostępnej w reprezentacji samych

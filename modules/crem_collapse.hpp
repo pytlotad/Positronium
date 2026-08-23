@@ -11,11 +11,39 @@
 // in this file draws anything, and the panels that display these results live
 // in positronium.cpp.
 
+// One stochasticElectricDipole photon (modules/electrodynamics.hpp), recorded
+// as it would be measured by a fixed, distant lab observer rather than in the
+// pair's own instantaneous rest frame S' the emission physics is computed in.
+// Diagnostic/plotting only -- see estimateCremCollapse's own comment at the
+// point these are filled for why the internal energy/momentum/angular-
+// momentum bookkeeping needs no boost (it is already self-consistent in S')
+// and this record exists purely to answer the separate, external question
+// "what spectrum/angles would a lab detector see", per README point L.
+struct LabFramePhoton {
+    double energyJoules=0.0;
+    // Angle between the photon's LAB-FRAME direction and the recoil axis
+    // (direction of centreOfMassVelocity at the instant of emission), radians
+    // in [0,pi] -- the only frame-connecting axis available (there is no
+    // fixed external reference direction in this model otherwise).  NaN when
+    // the recoil speed at emission was too small for that axis to be
+    // meaningful (beta below 1e-9): direction aberration is undefined at
+    // exactly zero recoil, not zero itself.
+    double angleFromRecoilAxisRadians=std::numeric_limits<double>::quiet_NaN();
+    // |centreOfMassVelocity|/c at the instant of emission (pre-kick), kept
+    // for weighting/diagnostics -- e.g. restricting a histogram to the
+    // deep-cascade photons where the lab/source-frame difference is largest.
+    double sourceBeta=0.0;
+};
+
 struct CremCollapseEstimate {
     double lifetimeSeconds=std::numeric_limits<double>::quiet_NaN();
     double calibrationSeconds=0.0;
     double meanRadiatedPowerWatts=std::numeric_limits<double>::quiet_NaN();
     SimulationOutcome calibrationOutcome=SimulationOutcome::NumericalFailure;
+    // Every stochasticElectricDipole photon this trajectory fired, converted
+    // to lab-frame observables.  Empty for continuous (non-stochastic)
+    // radiation-reaction models, and for the mechanical trajectory path.
+    std::vector<LabFramePhoton> labFramePhotons;
     // Distinguishes the two ways a trajectory can end as ObservationLimit.
     // Without it, "the reaction force is switched off, so this orbit will
     // never decay" is indistinguishable from "this orbit is decaying but ran
@@ -1590,6 +1618,74 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                  <<","<<photonDirection.y
                                  <<","<<photonDirection.z<<")"
                                  <<std::setprecision(6)<<std::endl;
+                    }
+                    // LAB-FRAME PHOTON KINEMATICS, diagnostic only.
+                    // Everything above (photonEnergy, photonDirection) and
+                    // everything below (the recoil kick, the orbital-energy/
+                    // angular-momentum updates) is computed correctly in S',
+                    // the pair's instantaneous rest frame at this emission --
+                    // self-consistent internal bookkeeping, unaffected by
+                    // this block.  What follows answers a SEPARATE question,
+                    // "what would a fixed, distant lab observer measure for
+                    // this photon", via the standard special-relativistic
+                    // Doppler/aberration boost from S' (moving with
+                    // centreOfMassVelocity -- the PRE-kick recoil speed
+                    // accumulated from any earlier photons this same
+                    // trajectory already fired) to the lab.  Investigated at
+                    // length before being written (README point L,
+                    // "charakterystyki fotonu"): the internal physics needs
+                    // NO such correction (Newtonian relative-motion
+                    // quantities are boost-independent by construction, and
+                    // the residual from naive vs relativistic velocity
+                    // addition on the recoil kick is O(beta^2), ~1e-5 even
+                    // at the largest recoil speeds measured, ~0.35c%) -- this
+                    // exists purely to populate labFramePhotons for the
+                    // --crem lab-frame spectrum/angle plots, nothing here
+                    // feeds back into the trajectory.
+                    {
+                        const double sourceSpeed=centreOfMassVelocity.norm();
+                        const double sourceBeta=sourceSpeed/c;
+                        LabFramePhoton labPhoton;
+                        labPhoton.sourceBeta=sourceBeta;
+                        labPhoton.energyJoules=photonEnergy;
+                        if(sourceBeta>1.0e-9) {
+                            const double gammaFactor=1.0/std::sqrt(
+                                std::max(1.0e-300,
+                                    1.0-sourceBeta*sourceBeta));
+                            const Vec3 betaHat=
+                                centreOfMassVelocity*(1.0/sourceSpeed);
+                            const double cosThetaSource=
+                                dot(photonDirection,betaHat);
+                            labPhoton.energyJoules=gammaFactor*photonEnergy
+                                *(1.0+sourceBeta*cosThetaSource);
+                            const double photonMomentumSource=photonEnergy/c;
+                            const double pParallelLab=gammaFactor
+                                *photonMomentumSource
+                                *(cosThetaSource+sourceBeta);
+                            const Vec3 pPerpLab=
+                                (photonDirection-betaHat*cosThetaSource)
+                                    *photonMomentumSource;
+                            const Vec3 pLab=betaHat*pParallelLab+pPerpLab;
+                            const double pLabNorm=pLab.norm();
+                            if(pLabNorm>1.0e-300) {
+                                const double cosThetaLabFromRecoil=
+                                    dot(pLab,betaHat)/pLabNorm;
+                                labPhoton.angleFromRecoilAxisRadians=
+                                    std::acos(std::clamp(
+                                        cosThetaLabFromRecoil,-1.0,1.0));
+                            }
+                        }
+                        result.labFramePhotons.push_back(labPhoton);
+                        if(std::getenv("CREM_DEBUG"))
+                            std::cerr<<"    LAB FRAME: beta="<<sourceBeta
+                                     <<" E_source="<<photonEnergy
+                                     <<"J E_lab="<<labPhoton.energyJoules
+                                     <<"J (E_lab/E_source-1)="
+                                     <<(labPhoton.energyJoules
+                                         /photonEnergy-1.0)
+                                     <<" angleFromRecoilAxis="
+                                     <<labPhoton.angleFromRecoilAxisRadians
+                                     <<std::endl;
                     }
                     const double photonMomentum=photonEnergy/c;
                     const Vec3 centreOfMassVelocityKick=
