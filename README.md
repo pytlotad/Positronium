@@ -2533,11 +2533,132 @@ pomijalny efekt w większości głębokości, jaką model osiąga.
   i leżeć w kierunku wyznaczonym przez fizykę energii/polaryzacji fotonu,
   niezwiązaną z wymaganą redukcją \(L\). Domknięcie tej luki naprawdę
   wymagałoby dodatkowego stopnia swobody w kopnięciu — nowej fizyki, nie
-  lepiej dobranej stałej — poza zakresem bezpiecznej, ograniczonej
-  poprawki. Kod pozostaje w pierwotnej, niepoprawionej postaci (sam spin,
-  \(\hbar\)), teraz z tym śledztwem zapisanym wprost w komentarzu obok.
+  lepiej dobranej stałej. W tym momencie kod wracał do pierwotnej,
+  niepoprawionej postaci (sam spin, \(\hbar\)) — **ale ten dodatkowy
+  stopień swobody znalazł się, patrz próba 4 niżej.**
 
-  Zmierzone empirycznie: partia produkcyjna (o-Ps, \(80\) trajektorii, dwa
+  **Ta sama analiza zastosowana do AKTYWNEGO mechanizmu (nie tylko do
+  odrzuconej wersji ×2) ujawnia, że i on siedzi na tej samej granicy.**
+  \(x=\hbar/(\mu L_{przed})\) mieści się w paśmie \(0{,}90\)–\(1{,}08\) na
+  \(10\) niezależnych ziarnach (łagodniejsza wersja tego samego "limitu
+  kwantowego", bo \(\hbar\), nie \(2\hbar\)) — a przy \(x\approx1\) i
+  \(\langle y\rangle=1/2\) prawo cosinusów daje \(\langle L_{po}/
+  L_{przed}\rangle=\sqrt{1+1-1}=1{,}0\): **praktyczny brak sekularnego
+  spadku \(|L|\) na pojedynczym fotonie, tylko losowe błądzenie**.
+  Zmierzone na tych samych \(10\) ziarnach: średnia \(L_{po}/L_{przed}=
+  0{,}9724\) (zgodność z przewidywaniem \(1{,}0\) w granicach fluktuacji
+  próby), \(3/10\) ziaren dało WZROST \(|L|\) zamiast spadku, żadne nie
+  zbliżyło się do celu \(k(e)\) (`L_po/L_klasyczne` zawsze
+  \(1{,}2\)–\(2{,}9\times\)).
+
+  *Czy błądzenie się samokoryguje na dłuższej trajektorii? Sprawdzone
+  wprost, nie założone.* Ziarno \(50\): trzy kolejne fotony w tym samym
+  checkpoincie —
+  \[
+  \begin{array}{lccc}
+   & L_{po}/L_{przed} & L_{po}/L_{klasyczne} & e_0^2\\
+  \text{foton 1} & 1{,}673 & 3{,}34 & 0{,}0286\\
+  \text{foton 2} & 0{,}997 & 4{,}40 & 0{,}0000\\
+  \text{foton 3} & 0{,}667 & 3{,}51 & 0{,}0000
+  \end{array}
+  \]
+  Przestrzelenie NIE zanika przy kolejnych losowaniach (\(3{,}34\to
+  4{,}40\to3{,}51\times\)) — błądzi wokół wartości kilkukrotnie za dużej,
+  bez tendencji powrotu do \(k(e)\).
+
+  **Znaleziony konkretny skutek uboczny: sztuczna cyrkularyzacja.**
+  \(e^2=\max(0,\,1+2EL^2/k_{Coul}^2)\) (\(E<0\)) — gdy \(L\) zostaje za
+  duże (norma, nie wyjątek, bo sam spin z konstrukcji łapie tylko połowę
+  \(k(e)\)), \(|2EL^2|\) przewyższa \(k_{Coul}^2\) i wyrażenie ucina się do
+  DOKŁADNIE zera: orbita staje się sztucznie kołowa, nie z fizyki, tylko z
+  tego, że \(L\) nie skurczyło się wystarczająco. Sprawdzone systematycznie
+  na \(29\) parach kolejnych fotonów (\(24\) różne ziarna):
+  \[
+  \begin{array}{lcc}
+   & e_0^2{=}0 \text{ przy nast. fotonie} & e_0^2{\neq}0\\
+  \text{przestrzelone } (L_{po}/L_{klas}{>}1) & 28 & 0\\
+  \text{niedostrzelone } (L_{po}/L_{klas}{\leq}1) & 0 & 1
+  \end{array}
+  \]
+  **\(29/29\) zgodnych z przewidywaniem, zero wyjątków** — korelacja bez
+  rozmytego pogranicza, bo mechanizm energii/hazardu systematycznie
+  zwiększa \(|E|\) niezależnie od \(L\), więc gdy \(L\) zostanie za duże,
+  \(e^2\) nie tylko lekko spada poniżej zera, tylko głęboko — obcięcie
+  uruchamia się solidnie, nie na granicy. Skoro przestrzelenie jest
+  regułą (nie wyjątkiem), **niemal każda trajektoria, która przeżyje do
+  drugiego fotonu, ma ten i kolejne fotony sztucznie wymuszone na
+  orbicie kołowej** — a wyzerowany `eccentricitySquaredHere` wchodzi z
+  powrotem jako baza zarówno dla `classicalEccentricitySquared`
+  (diagnostyka), jak i dla próbkowania harmoniki
+  (`eccentricOrbitHarmonicNumber(e{=}0,\cdot)` daje harmonikę \(1\) z
+  pewnością) — możliwa pętla samopodtrzymująca, w której raz wyzerowany
+  mimośród nigdy nie ma szansy wrócić, tłumiąc strukturę harmoniczną,
+  którą `CREM_HARMONIC` (punkt K) miał wprowadzać.
+
+  *Próba 4 — rozdzielić wielkość od kierunku, zamiast prosić jeden
+  wektor o oba naraz. UDANA.* Diagnoza wspólna dla prób 2 i 3: winowajcą
+  nigdy nie była WIELKOŚĆ poprawki, tylko to, że jeden wektor "skalar razy
+  ustalony kierunek" miał jeden stopień swobody na dwa zwykle sprzeczne
+  zadania. Rozwiązanie: rozdzielić je między dwa już istniejące, osobno
+  zweryfikowane źródła fizyki —
+  \[
+  \text{wielkość }|L| \leftarrow \texttt{classicalAngularMomentumMagnitude}
+  \quad\text{(dokładna, ODE-scałkowana } k(e)\text{, już zweryfikowana}),
+  \]
+  \[
+  \text{kierunek } \hat{\mathbf L} \leftarrow \text{ten sam wektor spinu}
+  \text{ co dotąd, użyty TYLKO do wyznaczenia nowego kierunku}.
+  \]
+  Czy to podwójne liczenie, którego zakaz z próby 1–3 dotyczył? Nie —
+  ten zakaz mówił o DODAWANIU \(k(e)\) NA WIERZCH pełnego, niezależnego
+  wektora, który TAKŻE ustawia wielkość (kolizja). Tu \(k(e)\)
+  **zastępuje** wielkość, dokładnie tak jak `photonEnergy` zastępuje
+  klasyczne tempo mocy, a spin dostaje rolę (kierunek), której formuły
+  Petersa–Mathewsa z definicji nigdy nie opisywały (są tylko o
+  wielkości) — więc żadna fizyka nie jest liczona dwa razy.
+
+  **Zaimplementowane i zweryfikowane, nie tylko wyprowadzone.** Po drodze
+  znaleziony i naprawiony błąd jednostek (`classicalAngularMomentumMagnitude`
+  jest już w jednostkach specyficznych — pierwsza wersja dzieliła przez
+  `reducedMass` drugi raz, dając wynik zawyżony o \(\sim10^{30}\); ujawnione
+  natychmiast przez rozjazd z sąsiedniej kolumny diagnostycznej w tym samym
+  wierszu logu). Po poprawce, na tych samych \(10\) ziarnach:
+  `L_spec(magnitude=k(e))` zgadza się z `L_spec(classical k)` **dokładnie**,
+  w każdym pojedynczym zdarzeniu, nie tylko średnio. Sztuczna cyrkularyzacja
+  znika: pierwszy i drugi foton dają teraz płynnie malejący, NIEZEROWY
+  mimośród (np. ziarno \(42\): \(0{,}063\to0{,}010\)), zero pojawia się
+  dopiero przy ostatnim, najgłębszym zdarzeniu tuż przed kolapsem — tam,
+  gdzie prawdziwa fizyka też przewiduje niemal-kołową orbitę, nie jako
+  artefakt. Trajektorie idą teraz rutynowo \(3\)+ fotonów głęboko (wcześniej
+  kończyły się po \(1\)), sięgając energii \(10^{14}\)–\(10^{15}\) razy
+  większych niż start.
+
+  Walidacja: `positronium_validation` \(33/33\). Partia PARA \(N=20\):
+  \(16/20\) do granicy, \(4\) ucięte budżetem czasu, **\(0\) awarii
+  numerycznych**, mediana \(117{,}5\) ps. Partia ORTO \(N=20\): \(14/20\)
+  do granicy, \(6\) ucięte, **\(0\) awarii numerycznych**, mediana
+  \(162{,}1\) ps — ten sam rząd wielkości co para, zgodnie z oczekiwaniem.
+  Sprawdzone bezpośrednio pod kątem NaN/Inf w stanie fizycznym na
+  dodatkowych \(14\) trajektoriach — jedyne znalezione "nan" to
+  nieszkodliwy artefakt statystyczny (odchylenie standardowe z próby
+  \(N{=}1\)), nie korupcja fizyki. Sprawdzony ręcznie przypadek brzegowy:
+  `energyAfterKick` w mianowniku mogłoby teoretycznie zejść do zera, gdyby
+  `cmEnergyKick` było ujemne i większe co do wartości bezwzględnej od
+  `photonEnergy` (zaobserwowane raz: `cmEnergyKick=-2,33e-23J` w ziarnie
+  \(50\)) — w praktyce, na wszystkich przetestowanych trajektoriach, nigdy
+  nie doprowadziło to do degeneracji.
+
+  **Zewnętrzna zgodność, nie tylko wewnętrzna spójność**: mediana czasu
+  kolapsu po tej poprawce (\(117\)–\(162\) ps w zależności od kanału)
+  wraca w okolice wartości cytowanej niżej z historii tego pliku sprzed
+  zastąpienia formuły `k` mechanizmem czysto spinowym
+  (\(147{,}8\)–\(151{,}6\) ps) — niezależne potwierdzenie, że naprawa
+  odtwarza fizykę, która była już wcześniej (osobno) zmierzona jako
+  poprawna, a nie tylko wewnętrznie zgodny nowy wynik.
+
+  Zmierzone empirycznie (dawniej, o promocji samego mechanizmu spinowego
+  ponad zamrożone `k` — kontekst historyczny, patrz próba 4 wyżej dla
+  bieżącego stanu): partia produkcyjna (o-Ps, \(80\) trajektorii, dwa
   ziarna) dała \(1\) awarię numeryczną wobec \(0\) awarii, ale \(3\) ucięć
   budżetem czasowym dla tej samej wielkości partii pod poprzednim kodem.
   Czas kolapsu ledwo drgnął (mediana orto \(130\)–\(155\) ps w kilku
@@ -2549,9 +2670,12 @@ pomijalny efekt w większości głębokości, jaką model osiąga.
   własnego, pełnego śledztwa — patrz punkt H.
 
 **F. Co model świadomie zostawia otwarte.** (1) Orbitalny moment pędu
-fotonu względem pary — wymaga anomalii prawdziwej, niedostępnej w
-reprezentacji samych elementów oskulacyjnych; ilościowo to połowa reguły
-\(\Delta m=1\) (punkt E). (2) Ścieżka mechaniczna
+fotonu względem pary jako dosłowny \(\mathbf r\times\mathbf p_\gamma\) —
+wciąż wymagałby anomalii prawdziwej, niedostępnej w reprezentacji samych
+elementów oskulacyjnych. Praktyczny SKUTEK tego braku (wielkość \(L\)
+systematycznie za duża, sztuczna cyrkularyzacja) jest już naprawiony
+inaczej — rozdzieleniem wielkości i kierunku, nie rekonstrukcją \(r\)
+(punkt E, próba 4). (2) Ścieżka mechaniczna
 (`crem_trajectory.hpp`, używana rzadko produkcyjnie — głównie tryb
 wizualny) ma własną, odrębną wersję hazardu i odrzutu fotonu, która NIE
 otrzymała poprawek pędu liniowego ani spinu z tej sekcji: brakuje jej

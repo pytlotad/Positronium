@@ -1678,24 +1678,25 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // CLASSICAL magnitude prediction from k(e), exactly
                     // integrated over this finite jump (see this file's own
                     // history/README for the derivation and its own
-                    // verification) -- kept below ONLY as a diagnostic
-                    // comparison, no longer applied to the state.  Why: k
-                    // comes from the classical reaction TORQUE, and by
-                    // angular-momentum conservation applied to the
-                    // classical field, "torque integrated on the orbit"
-                    // and "what the continuous field carries away" are the
-                    // SAME quantity, not two contributions to add.  Once
-                    // the emission is quantized into a real photon with a
-                    // real, known spin, using this classical number ON TOP
-                    // OF the photon's own angular momentum below would
-                    // double-count that one physical quantity -- the same
-                    // mistake the removed orbital-plane tilt made for
-                    // linear momentum.  So it is superseded here by the
-                    // photon's own quantized angular momentum, exactly the
-                    // same treatment already given to energy (photonEnergy
-                    // replaces the classical rate, not adds to it) and to
-                    // linear momentum (the sampled recoil replaces zero,
-                    // not adds to a classical estimate).
+                    // verification).  History: for a long time this was
+                    // kept ONLY as a diagnostic comparison, never applied to
+                    // the state, on the reasoning that k comes from the
+                    // classical reaction TORQUE, and "torque integrated on
+                    // the orbit" and "what the continuous field carries
+                    // away" are the SAME quantity by angular-momentum
+                    // conservation -- so using this number ON TOP OF an
+                    // independent, ALSO-magnitude-setting photon spin
+                    // vector would double-count it.  That reasoning still
+                    // holds for exactly the failure mode it describes
+                    // (adding this to a full vector kick that separately
+                    // sets magnitude, tried and rejected below, see (2) and
+                    // (3)) -- but it does NOT forbid using this value to
+                    // REPLACE the magnitude outright, the same
+                    // "replace, don't add" relationship photonEnergy
+                    // already has to the classical power rate.  Now used
+                    // that way: see (4) below, in the photon-spin block,
+                    // for the derivation and the numerical verification
+                    // that motivated the switch (README point L).
                     double classicalEccentricitySquared=eccentricitySquaredHere;
                     if(eccentricitySquaredHere>1.0e-12
                        &&energyBeforeKick>0.0) {
@@ -1828,13 +1829,49 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // two generically incompatible constraints (hit the
                     // classical target magnitude; point along a direction
                     // fixed by unrelated energy/polarization physics).
-                    // Closing this gap for real needs an additional degree
-                    // of freedom in the kick, i.e. new physics, not a
-                    // better-chosen constant -- out of scope for this
-                    // block.  Left as in the original, unpatched form
-                    // below, now with this exploration on record so the
-                    // next attempt does not have to rediscover any of the
-                    // three dead ends.
+                    // (4) IMPLEMENTED: decouple magnitude from direction,
+                    // instead of asking one vector to set both.  The root
+                    // cause common to (2) and (3) was never the SIZE of the
+                    // kick, it was that a single scalar-times-fixed-
+                    // direction vector has one degree of freedom serving
+                    // two generically incompatible jobs (hit the classical
+                    // target magnitude; point along a direction fixed by
+                    // unrelated energy/polarization physics).  Splitting
+                    // the jobs removes the conflict instead of trying to
+                    // satisfy it:
+                    //   magnitude <- classicalAngularMomentumMagnitude
+                    //     (the exact-ODE-integrated k(e) result computed
+                    //     above, independently verified to 1-2e-4 against a
+                    //     measured trajectory -- REPLACES the magnitude,
+                    //     exactly the same "replace, don't add" relationship
+                    //     photonEnergy already has to the classical power
+                    //     rate, so this is not the double-counting the
+                    //     comment above (1)-(3) warns against: that warning
+                    //     was about ADDING k(e) on top of an independent
+                    //     full vector that ALSO sets magnitude, not about
+                    //     assigning k(e) the magnitude role outright.
+                    //   direction <- the same spin-vector subtraction as
+                    //     before, used ONLY for its direction (normalized),
+                    //     never for its norm.  Peters-Mathews-style k(e) is
+                    //     a magnitude-only result by construction (derived
+                    //     orbit-averaged with the orbital plane held fixed)
+                    //     -- it says nothing about direction, so assigning
+                    //     the photon's real, Stokes-V-verified spin
+                    //     structure to fill exactly that gap does not
+                    //     double-count anything either.
+                    // This sidesteps all three dead ends above: no r x p
+                    // reconstruction (1), no single-vector geometry forcing
+                    // a magnitude INCREASE for x>=2 (2), no reachability
+                    // constraint on a fixed direction (3) -- because
+                    // magnitude is now assigned, not solved for or read off
+                    // a subtraction's norm.  Side effect, verified below:
+                    // this also removes the spurious e^2->0 clamp
+                    // (README point L) that the old magnitude-from-norm
+                    // approach caused whenever the spin kick left |L| too
+                    // large for the now-more-negative E, since (E,L) after
+                    // this photon are consistent with each other by
+                    // construction (both trace back to the same exact-ODE
+                    // integration).
                     const double helicityPlusProbability=std::clamp(
                         (1.0+cosThetaFromAxis)*(1.0+cosThetaFromAxis)
                         /(2.0*(1.0+cosThetaFromAxis*cosThetaFromAxis)),
@@ -1847,18 +1884,21 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     const Vec3 orbitalAngularMomentumBefore=
                         angularMomentumDirection
                             *(elements.specificAngularMomentum*reducedMass);
-                    const Vec3 orbitalAngularMomentumAfter=
+                    const Vec3 directionTrial=
                         orbitalAngularMomentumBefore-photonSpinAngularMomentum;
-                    const double newAngularMomentumMagnitude=
-                        orbitalAngularMomentumAfter.norm();
-                    if(newAngularMomentumMagnitude>1.0e-300) {
-                        elements.specificAngularMomentum=
-                            newAngularMomentumMagnitude/reducedMass;
-                        angularMomentumDirection=orbitalAngularMomentumAfter
-                            *(1.0/newAngularMomentumMagnitude);
-                    } else {
-                        elements.specificAngularMomentum=0.0;
+                    const double directionTrialNorm=directionTrial.norm();
+                    if(directionTrialNorm>1.0e-300) {
+                        angularMomentumDirection=
+                            directionTrial*(1.0/directionTrialNorm);
                     }
+                    // else: keep the previous direction rather than an
+                    // undefined one -- the same fallback the old norm-based
+                    // branch used (leaving specificAngularMomentum at its
+                    // prior value in that branch); here the magnitude line
+                    // below still runs regardless, so only direction is
+                    // affected by this edge case.
+                    elements.specificAngularMomentum=
+                        classicalAngularMomentumMagnitude;
                     radiatedEnergyTotal+=photonEnergy;
                     ++photonCountDebug;
                     if(std::getenv("CREM_DEBUG"))
@@ -1871,7 +1911,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                  <<" newE="<<elements.specificEnergy
                                  <<" e0^2="<<eccentricitySquaredHere
                                  <<" helicity="<<helicity
-                                 <<" L_spec(spin)="
+                                 <<" L_spec(magnitude=k(e))="
                                  <<elements.specificAngularMomentum
                                  <<" L_spec(classical k)="
                                  <<classicalAngularMomentumMagnitude
