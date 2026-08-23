@@ -2910,6 +2910,142 @@ RMST) tak, więc historyczne liczby rozkładu gdzie indziej w tym
 dokumencie pozostają zmierzone pod poprzednim ustawieniem, dopóki ten
 przebieg nie zostanie powtórzony.
 
+**L. Para kontra orto-pozytonium: czy któreś zasługuje na inną
+harmonikę — zbadane sondami, nie wyargumentowane z fotela.**
+
+*Pytanie wyjściowe.* Skoro para-Ps i orto-Ps różnią się realnie
+istniejącym zjawiskiem kwantowym (2γ kontra 3γ), czy ten sam podział
+mógłby uzasadniać różne traktowanie harmonik promieniowania orbitalnego
+w tym klasycznym modelu?
+
+*Sonda 1 — identyczne warunki startowe.* Dla tego samego ziarna, para i
+orto dostają dokładnie te same \(E\), \(L\) na starcie (sprawdzone
+bezpośrednio, `checkpoint 0` identyczny co do wyświetlanej precyzji) —
+różnią się więc wyłącznie dynamiką, nie próbkowaniem warunków
+początkowych.
+
+*Sonda 2 — namierzenie miejsca i skali rozbieżności.* Prześledzone
+checkpoint po checkpoincie (ziarno \(42\)): para i orto są **bitowo
+identyczne przez pierwsze \(29\) checkpointów**, potem pojawia się
+prawdziwa, mikroskopijna różnica (\(E\) różni się o \(\sim6\cdot10^{-6}\)
+względnie). Zweryfikowane w kodzie: `runMechanicalTrajectory` używa
+pełnego silnika (`ClassicalTrajectoryEngine`), który rzeczywiście
+uwzględnia sprzężenie dipol-dipol — jedyną fizyczną różnicę między para
+(momenty równoległe) a orto (przeciwrównoległe) w tym modelu.
+
+*Sonda 3 — czy sprzężenie dipol-dipol mogłoby dać strukturę \(3\omega\)
+zamiast \(2\omega\).* Rozłożona na harmoniczne (DFT) energia
+\(U\propto\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2-3(\boldsymbol\mu_1\!\cdot\!\hat{\mathbf r})(\boldsymbol\mu_2\!\cdot\!\hat{\mathbf r})\)
+dla wirującego \(\hat{\mathbf r}(t)\):
+
+```
+PARA (równoległe):        DC=-0,5000  h1=0  h2=0,7500  h3=0  h4=0
+ORTO (przeciwrównoległe):  DC=+0,5000  h1=0  h2=0,7500  h3=0  h4=0
+```
+
+Obie konfiguracje dają **dokładnie ten sam** wzorzec — brak pierwszej i
+trzeciej harmonicznej, ta sama amplituda drugiej, różny tylko znak
+składowej stałej. To nie przypadek: sprzężenie dipol-dipol jest
+dwuliniowe w \(\hat{\mathbf r}\) (iloczyn dwóch rzutów na ten sam wirujący
+wektor), a taki iloczyn matematycznie daje tylko składową stałą i drugą
+harmoniczną — nigdy trzecią, do której potrzebny byłby człon trójliniowy,
+którego w tym oddziaływaniu nie ma. **Nie ma więc naturalnego podziału
+"2 dla para, 3 dla orto"** — a podobieństwo liczb 2 i 3 do prawdziwej
+liczby fotonów anihilacji (2γ/3γ) jest numerologicznym zbiegiem
+okoliczności, nie związkiem fizycznym: reguła wyboru 2γ/3γ pochodzi z
+zachowania parzystości ładunkowej w zupełnie innym, kwantowym procesie
+(anihilacji), którego CREM w ogóle nie modeluje.
+
+*Sonda 4 — czy "zgodny, podwójny" moment magnetyczny należy do orto (jak
+podejrzewano), czy do para.* Sprawdzony warunek próbkowania w
+`crem_trajectory.hpp`:
+
+```cpp
+} while ((sampledScenario == 2 && dot(firstDipole,secondDipole)/(mu1*mu2) < 0.5)    // PARA: wymusza cos>=0.5
+      || (sampledScenario == 3 && dot(firstDipole,secondDipole)/(mu1*mu2) >= 0.5)); // ORTO: wymusza cos<0.5
+```
+
+To **para** (nie orto) jest wymuszana na kąt \(\le60°\) między momentami
+— bliżej zgodnych, "podwójny" moment. Orto dostaje kąt \(>60°\), od
+prostopadłych po całkowicie przeciwne. Sens fizyczny: przeciwne ładunki
+odwracają naiwną korelację spin–moment, więc antyrównoległe spiny (para,
+\(S=0\)) dają zgodne momenty magnetyczne, a równoległe spiny (orto,
+\(S=1\)) — przeciwne.
+
+*Sonda 5 — koherentne promieniowanie M1, i dlaczego mimo to nie wraca do
+orbity.* Moc dipola magnetycznego jest liczona koherentnie, nie
+niezależnie dla każdej cząstki:
+
+```cpp
+const Vec3 totalSecondDerivative = first.secondDerivative + second.secondDerivative;
+result.power = coefficient * totalSecondDerivative.squaredNorm();
+```
+
+Dwa zgodne źródła (para) dają \(4P_1\) (interferencja konstruktywna),
+dwa przeciwne (orto) — moc bliską zeru (destrukcyjna) — to realny,
+zweryfikowany w walidatorze mechanizm. Ale jego energia jest świadomie
+i architektonicznie odcięta od orbity: księgowana do
+`dipoleConstraintEnergy`, osobnego rezerwuaru, nigdy nie wchodzi do
+budżetu energii orbitalnej ani do doboru harmoniki.
+
+*Sonda 6 — czy moment siły reakcji M1 mógłby wracać do orbity inną
+drogą, przez ewolucję samych wektorów dipola.* Sprawdzone w kodzie:
+`state.firstProperDipole += reaction.firstDipoleTorque * (gyro*dt)` —
+moment siły reakcji (koherentny, wrażliwy na wyrównanie) **rzeczywiście**
+obraca wektory momentu magnetycznego, które z kolei wchodzą do siły
+dipol-dipol napędzającej orbitę. Ścieżka istnieje naprawdę — ale
+policzona ilościowo, z prawdziwymi stałymi przy \(a_{Ps}\):
+
+```
+Omega_BMT (precesja)                = 5,51e+11 rad/s
+Omega_reaction (od reakcji M1)      = 6,26e-33 rad/s
+stosunek Omega_reaction/Omega_BMT   = 1,14e-44
+```
+
+\(44\) rzędy wielkości słabsza niż sama precesja — formalnie istnieje,
+fizycznie martwa.
+
+*Sonda 7 — czy \(6\cdot10^{-6}\) z sondy 2 rzeczywiście pochodzi z
+dipol-dipol, i z której jego części.* Tu poprzednia odpowiedź (w tej
+samej pracy) była nieprecyzyjna — poprawiona na miejscu: **czysta
+oscylacja \(2\omega\) uśrednia się do zera po każdej orbicie, więc nie
+może dawać narastającej rozbieżności.** Za rozbieżność odpowiada
+składowa STAŁA (DC) sprzężenia — a ta ma przeciwny znak dla para i orto
+(\(-0{,}5\) i \(+0{,}5\) w jednostkach znormalizowanych z sondy 3), czyli
+działa jak stała, dodatkowa poprawka do potencjału: przyciągająca dla
+para, odpychająca dla orto. Policzone ilościowo, z prawdziwymi stałymi:
+
+```
+U_coulomb (a_Ps)                      = 13,61 eV
+U_dd (skala)                          = 4,53e-05 eV
+przewidywana różnica względna (para-orto) = 3,33e-06
+zmierzona rozbieżność (checkpoint 29)     = ~6e-06
+```
+
+Zgodność co do rzędu wielkości (czynnik \(\sim1{,}8\), w granicach
+przybliżenia: \(g\approx2\) zamiast zmierzonego \(2{,}00232\), czynniki
+geometryczne rzędu jedności z konkretnej orientacji dipoli, \(a_{Ps}\)
+jako przybliżenie promienia oskulacyjnego w chwili checkpointu \(29\)
+zamiast dokładnej wartości) — to już nie wniosek przez eliminację, tylko
+bezpośrednia, ilościowa zgodność przewidywania z pomiarem.
+
+*Sonda 8 — czy ta mikroskopijna rozbieżność kiedykolwiek zmienia
+harmonikę lub wynik, w praktyce.* Partia \(N=30\) dopasowanych
+trajektorii para/orto (to samo ziarno): **identyczny rozkład wyników**
+(\(26/30\) dotarło do granicy, \(4\) ucięte, w obu przypadkach),
+identyczna mediana i RMST Kaplana-Meiera, i **\(44/44\) zdarzeń
+fotonowych dało harmonikę \(1\) w OBU przypadkach**, z rozkładami \(e^2\)
+zgodnymi do \(5\)–\(6\) cyfr znaczących przy każdym pojedynczym zdarzeniu.
+
+*Wniosek końcowy.* Sprzężenie dipol-dipol jest realne, mierzalne
+(bezpośrednio zweryfikowana zgodność ilościowa) i różni się między para
+i orto co do znaku — ale jego skala (\(\sim10^{-6}\) energii Coulomba) i
+struktura (tylko DC i \(2\omega\), nigdy \(3\omega\)) nie dają żadnej
+podstawy do różnego traktowania harmonik promieniowania E1 między
+kanałami. Prawdziwa różnica 2γ/3γ jest odrębnym procesem kwantowym poza
+zasięgiem tego modelu. Osiem niezależnych sond, każda ilościowo
+zweryfikowana — nie jeden pobieżny test.
+
 ## Warunki początkowe i klasyfikacja zjawiska
 
 Program losuje kierunki dipoli oraz radialną i styczną składową względnej
