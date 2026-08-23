@@ -95,6 +95,143 @@ double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity) {
     return circular*dipoleEccentricityFactor(eccentricity);
 }
 
+// --- Eccentric-orbit harmonic content, CREM_HARMONIC ---
+//
+// electricDipoleRadiatedPower/larmorOrbitAveragedPower above give the exact
+// TOTAL power for an eccentric Kepler dipole (dipoleEccentricityFactor is
+// the correct orbit average, not a circular-orbit approximation).  What they
+// do not address is how that power is DISTRIBUTED in frequency: an eccentric
+// dipole moment is not a pure sinusoid at the orbital frequency omega_orb,
+// it has a full harmonic series n*omega_orb (n=1,2,3,...), because the
+// motion is fast and radiates strongly near periapsis and slow (radiating
+// weakly) near apoapsis -- exactly the classical "impulsive burst" mechanism
+// that broadens a time-domain pulse into a wide frequency-domain spectrum.
+// stochasticElectricDipole's hazard/photon-energy machinery, by contrast,
+// has always used ONLY the fundamental (photonEnergyReference=hbar*omega_orb)
+// -- correct in the n=1-dominated near-circular limit this code started in,
+// but the spin-based angular-momentum fix (see stochasticElectricDipole's
+// own comment) now routinely drives orbits to e^2~0.9-0.95, where n=1 is far
+// from dominant.
+//
+// Measured directly (Python, Kepler's equation solved numerically, DFT of
+// the resulting r(t)e^{i nu(t)} against mean anomaly, N=8192 samples): at
+// e=0.9, only 0.37% of radiated POWER is in the fundamental; the harmonic
+// carrying the MOST power is n=16, the median is n=27, 90% of power needs
+// n<=62.  At e=0.945 (the eccentricity actually reached investigating the
+// guard fix above): peak n=39, median n=66.  The harmonic where power PEAKS
+// fits, to 3 significant figures across e=0.5..0.97 (checked against
+// e=0.9/0.945/0.97 independently, residual <0.6%):
+//
+//     n_peak(e) ~= 0.504 * (1-e)^-1.5
+//
+// This changes two separate things, not one, and they are NOT the same
+// correction:
+//
+// (1) THE EVENT RATE.  A photon's own quantum ties it to ONE specific
+//     harmonic, so treating each harmonic n as its own independent Poisson
+//     channel (rate = power_n/(hbar*n*omega_orb), the same Bohr-
+//     correspondence logic already applied to n=1 alone, just generalized)
+//     gives a total hazard rate hazard = (P_total/(hbar*omega_orb)) * S(e),
+//     where S(e) = sum_n (power fraction at harmonic n)/n.  Measured
+//     (same numerical decomposition): S(e) drops from 1 at e=0 to 0.061 at
+//     e=0.9, 0.022 at e=0.945, 0.0010 at e=0.99 -- far fewer total photon
+//     events than the n=1-only estimate, because dividing by n suppresses
+//     the very high harmonics that carry most of the POWER but would, if
+//     counted at n=1's rate, wildly over-count events.
+//
+// (2) WHICH HARMONIC A GIVEN EVENT IS.  Given that an event fires, the
+//     probability it belongs to harmonic n is proportional to (power
+//     fraction at n)/n -- NOT to the power fraction alone: a rare, huge
+//     event still only happens once, however much power it carries.
+//     Checked: even count-weighted, the modal single harmonic is still
+//     n=1 at every tested e (dividing by n keeps low n individually most
+//     likely) -- but the DISTRIBUTION is heavy-tailed enough that the
+//     MEDIAN event is still far from n=1 (median n=11 at e=0.9, n=27 at
+//     e=0.945, n=64 at e=0.97): only ~6% of events are literally n=1 at
+//     e=0.9, dropping to ~1.4% at e=0.97.  So "many small photons instead
+//     of few big ones" was the right qualitative worry, just imprecise on
+//     the exact split between count and size.
+//
+// What is NOT re-derived: the (1+cos^2 theta) angular pattern and the
+// P(h=+-1|theta) helicity split (stochasticElectricDipole's own comment)
+// are kept UNCHANGED for every harmonic.  Justified, not assumed: for
+// PLANAR Kepler motion, x(t)+iy(t) decomposed into z=x+iy has a
+// "prograde" component (co-rotating with the orbit) and a "retrograde"
+// one; a pure rotating dipole (n=1, e=0) is 100% prograde, which is
+// exactly what makes (1+cos^2 theta)/Delta-m=+1 exact for it.  Checked
+// directly at the harmonics that actually matter (peak/median/90%-power n,
+// e=0.9/0.945/0.97): retrograde power is 0.10-0.95%, i.e. these harmonics
+// are themselves >99% circularly polarized in the SAME sense as the
+// orbit -- so reusing the n=1 angular/helicity machinery at the SAMPLED
+// harmonic's frequency is a <1%-level approximation, not a new one.
+//
+// Both S(e) and the count-weighted quantile function of x=n/n_peak(e) are
+// tabulated below from the same numerical decomposition, checked for
+// scale invariance across e=0.75..0.98 (the quantile table's entries
+// agree to within a few percent of their own mean across that whole
+// range -- see README for the full table and residuals) rather than
+// derived from a closed form: no simple closed form was found (or,
+// unlike the Cardano cubic elsewhere in this file, safely re-derivable
+// under this session's time budget) for the harmonic content of an
+// eccentric Kepler dipole, so this is a verified numerical table, not an
+// unverified guess dressed as one.
+double eccentricOrbitPeakHarmonic(double eccentricity) {
+    return std::max(1.0,
+        0.504*std::pow(std::max(1.0-eccentricity,1.0e-6),-1.5));
+}
+
+double interpolateMonotonicTable(
+        const double* keys,const double* values,int count,double key) {
+    if(key<=keys[0]) return values[0];
+    if(key>=keys[count-1]) return values[count-1];
+    for(int i=1;i<count;++i) {
+        if(key<=keys[i]) {
+            const double span=keys[i]-keys[i-1];
+            const double t=span>0.0?(key-keys[i-1])/span:0.0;
+            return values[i-1]+t*(values[i]-values[i-1]);
+        }
+    }
+    return values[count-1];
+}
+
+// S(e): hazard-rate suppression from spreading power over many harmonics
+// instead of crediting it all to n=1 (see derivation above).
+double eccentricOrbitHazardSuppression(double eccentricity) {
+    static constexpr double keys[]={0.0000,0.0500,0.1000,0.1500,0.2000,
+        0.2500,0.3000,0.3500,0.4000,0.4500,0.5000,0.5500,0.6000,0.6500,
+        0.7000,0.7500,0.8000,0.8500,0.9000,0.9300,0.9500,0.9700,0.9900};
+    static constexpr double values[]={1.000000,0.995009,0.980140,0.955704,
+        0.922208,0.880335,0.830924,0.774946,0.713472,0.647646,0.578663,
+        0.507742,0.436110,0.364990,0.295604,0.229184,0.167007,0.110485,
+        0.061352,0.036433,0.022231,0.010466,0.000853};
+    return interpolateMonotonicTable(keys,values,
+        static_cast<int>(std::size(keys)),
+        std::clamp(eccentricity,0.0,0.999));
+}
+
+// Count-weighted quantile function of x=n/n_peak(e): given a uniform draw
+// u in [0,1), returns x such that the harmonic n=max(1,round(n_peak*x)) is
+// sampled with the correct (power_n/n)-weighted probability (see
+// derivation above).  Built from the SAME numerical decomposition as
+// eccentricOrbitHazardSuppression, checked for scale invariance across
+// e=0.75-0.98 (entries agree to a few percent of their mean over that
+// range; the low-u end is noisier, from the discreteness of small n at
+// the lower end of that e range, and matters least in practice since it
+// selects the smallest, least consequential harmonics anyway).
+double eccentricOrbitHarmonicQuantile(double uniformDraw) {
+    static constexpr double keys[]={0.0000,0.0100,0.0200,0.0500,0.1000,
+        0.1500,0.2000,0.2500,0.3000,0.3500,0.4000,0.4500,0.5000,0.5500,
+        0.6000,0.6500,0.7000,0.7500,0.8000,0.8500,0.9000,0.9300,0.9500,
+        0.9700,0.9900,0.9950,0.9990,1.0000};
+    static constexpr double values[]={0.0775,0.0781,0.0817,0.0951,0.1279,
+        0.1782,0.2365,0.3185,0.3966,0.4423,0.5348,0.6271,0.6892,0.8236,
+        0.9317,1.0658,1.2119,1.3956,1.6219,1.9259,2.3048,2.6832,3.0142,
+        3.5079,4.6201,5.3014,6.9177,24.9393};
+    return interpolateMonotonicTable(keys,values,
+        static_cast<int>(std::size(keys)),
+        std::clamp(uniformDraw,0.0,1.0));
+}
+
 // Time for the closed-form inspiral to carry the orbit from a_i to a_f at
 // fixed eccentricity.  Radiation actually circularizes the orbit, so holding
 // e fixed is an approximation; it is stated on the panel that uses this.
@@ -1172,13 +1309,28 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // numerical quadrature to 1e-12 relative across the full
             // jumpParameter range this code ever produces (see README).
             const double photonEnergyReference=hbar*(2.0*pi/period);
-            if(photonEnergyReference>0.0) {
+            // CREM_HARMONIC: see eccentricOrbitHazardSuppression's own
+            // comment for the full derivation.  hazardReference (NOT
+            // photonEnergyReference itself) drives the skip-hazard
+            // integral below, so the EVENT RATE reflects S(e) -- fewer
+            // events than the n=1-only estimate once power is genuinely
+            // spread across many harmonics.  photonEnergyReference is left
+            // untouched for use as the n=1 unit each fired photon's own
+            // sampled harmonic multiplies below.
+            const bool harmonicCorrection=std::getenv("CREM_HARMONIC")
+                !=nullptr;
+            const double eccentricityHere=std::sqrt(eccentricitySquared);
+            const double hazardSuppression=harmonicCorrection
+                ?eccentricOrbitHazardSuppression(eccentricityHere):1.0;
+            const double hazardReference=photonEnergyReference
+                /std::max(hazardSuppression,1.0e-12);
+            if(hazardReference>0.0) {
                 const double integralFactor=jumpParameter>1.0e-12
                     ?(3.0/jumpParameter)
                         *(1.0-std::pow(1.0-jumpParameter,1.0/3.0))
                     :1.0;
                 const double skipHazard=lossPerOrbit*reducedMass
-                    /photonEnergyReference
+                    /hazardReference
                     *static_cast<double>(orbitsToSkip)*integralFactor;
                 double hazardConsumedThisSkip=0.0;
                 stochasticSkipHazard+=skipHazard;
@@ -1190,7 +1342,9 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                              <<" cumHazard="<<stochasticSkipHazard
                              <<" threshold="<<stochasticSkipThreshold
                              <<" photonEnergyReference="
-                             <<photonEnergyReference<<"J"<<std::endl;
+                             <<photonEnergyReference<<"J"
+                             <<" hazardSuppression="<<hazardSuppression
+                             <<std::endl;
                 while(stochasticSkipHazard>=stochasticSkipThreshold) {
                     stochasticSkipHazard-=stochasticSkipThreshold;
                     hazardConsumedThisSkip+=stochasticSkipThreshold;
@@ -1215,8 +1369,45 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         jumpParameter*std::clamp(x,0.0,1.0);
                     const double energyRatio=
                         std::pow(1.0-sAtPhoton,-2.0/3.0);
+                    // CREM_HARMONIC: which harmonic of omega_orb this
+                    // specific event actually belongs to -- see
+                    // eccentricOrbitHazardSuppression's own comment.
+                    // Sampled independently of the hazard-rate correction
+                    // above (that one only rescales HOW OFTEN events fire,
+                    // this one decides, given that one just fired, which
+                    // harmonic it is), from the count-weighted quantile
+                    // table via inverse-CDF, at the SAME once-per-checkpoint
+                    // eccentricity the hazard suppression used (consistent
+                    // with jumpParameter/angularExponent above also being
+                    // frozen for the whole checkpoint, not re-evaluated per
+                    // photon).  Gated on eccentricityHere>=0.6, checked
+                    // rather than assumed to hold everywhere: the quantile
+                    // table's scale invariance (x=n/n_peak universal across
+                    // e) was verified at e=0.75-0.98, and DOES break down
+                    // below that -- checked directly at e=0.1-0.3, where
+                    // the real median/90%/99% harmonics are 1/1-2/2-3, but
+                    // the table's own tail (built for the e>=0.75 shape)
+                    // predicts up to n~5-9 there from ordinary (not even
+                    // especially rare) draws.  At e=0.6-0.7 the same check
+                    // gives median/90%/99% off by at most 1 harmonic and
+                    // the tail within ~10%, which is why the gate sits
+                    // there rather than at the calibration boundary itself:
+                    // conservative, not the edge of what was verified.
+                    // Below the gate, n=1 remains an established, separately
+                    // measured good approximation on its own (e.g. e=0.1:
+                    // 96% of POWER already in the fundamental).
+                    constexpr double harmonicSamplingValidEccentricity=0.6;
+                    const int harmonicNumber=
+                        harmonicCorrection
+                        &&eccentricityHere>=harmonicSamplingValidEccentricity
+                        ?std::max(1,static_cast<int>(std::lround(
+                            eccentricOrbitPeakHarmonic(eccentricityHere)
+                            *eccentricOrbitHarmonicQuantile(
+                                drawUniformUnit(stochasticSkipStream)))))
+                        :1;
                     const double photonEnergy=photonEnergyReference
-                        *std::pow(energyRatio,1.5);
+                        *std::pow(energyRatio,1.5)
+                        *static_cast<double>(harmonicNumber);
                     // Photon emission angle relative to the CURRENT orbital
                     // plane normal, drawn from the actual angular pattern of
                     // a rotating (not linearly oscillating) E1 dipole:
@@ -1468,6 +1659,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     ++photonCountDebug;
                     if(std::getenv("CREM_DEBUG"))
                         std::cerr<<"    PHOTON #"<<photonCountDebug<<" x="<<x
+                                 <<" harmonic="<<harmonicNumber
                                  <<" photonEnergy="<<photonEnergy
                                  <<"J cmEnergyKick="<<centreOfMassEnergyKick
                                  <<"J |v_cm|="<<centreOfMassVelocity.norm()

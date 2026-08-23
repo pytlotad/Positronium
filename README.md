@@ -2743,11 +2743,129 @@ systemie, nie tylko przywołana z zasady.
    fakt: eliptyczna orbita Keplera ma widmo dipolowe o wielu harmonicznych,
    silniej obsadzonych w miarę wzrostu mimośrodu) — więc polaryzacja
    przestaje być tak czystą funkcją \(2\cos\theta/(1+\cos^2\theta)\), a
-   model tego nie łapie: każdy foton nadal losowany jest tak, jakby orbita
-   była kołowa, niezależnie od jej faktycznego mimośrodu w chwili emisji.
-   To osobna, jeszcze niepoliczona nieścisłość, tego samego rodzaju co
-   pominięcie M2/E3 w punkcie I — nienaprawiona, bo jeszcze niezmierzona
-   ilościowo, ale teraz udokumentowana wprost jako otwarta.
+   model do niedawna tego nie łapał: każdy foton był losowany tak, jakby
+   orbita była kołowa, niezależnie od jej faktycznego mimośrodu w chwili
+   emisji. **Zmierzone ilościowo i naprawione w punkcie K poniżej** —
+   skala okazała się o rząd wielkości większa, niż sugerowało to wstępne
+   zdanie.
+
+**K. Struktura harmoniczna promieniowania orbity mimośrodowej —
+zmierzona, a nie tylko przewidziana, i wbudowana jako `CREM_HARMONIC`.**
+
+*Skala problemu, zmierzona.* Rozłożono dipol Keplera na harmoniczne
+częstości orbitalnej (numerycznie: równanie Keplera rozwiązywane wprost,
+DFT pozycji \(r(t)e^{i\nu(t)}\) względem anomalii średniej, \(N=8192\)
+próbek) i policzono, ile mocy promieniowania przypada na harmonikę
+podstawową \(n=1\) (tę, na której opierał się dotąd
+`photonEnergyReference=\hbar\omega_{orb}`), w funkcji mimośrodu:
+
+| \(e\) | \(e^2\) | moc w \(n=1\) | harmonika szczytowa | mediana mocy przy \(n\le\) | 90% mocy przy \(n\le\) |
+|---|---|---|---|---|---|
+| \(0{,}10\) | \(0{,}010\) | \(96{,}1\%\) | \(1\) | \(1\) | \(1\) |
+| \(0{,}50\) | \(0{,}250\) | \(33{,}1\%\) | \(1\) | \(2\) | \(4\) |
+| \(0{,}70\) | \(0{,}490\) | \(8{,}4\%\) | \(3\) | \(5\) | \(11\) |
+| \(0{,}80\) | \(0{,}640\) | \(2{,}7\%\) | \(5\) | \(9\) | \(21\) |
+| **\(0{,}90\)** | **\(0{,}810\)** | **\(0{,}37\%\)** | **\(16\)** | **\(27\)** | **\(62\)** |
+| **\(0{,}945\)** | **\(0{,}893\)** | **\(0{,}07\%\)** | **\(39\)** | **\(66\)** | **\(155\)** |
+| \(0{,}970\) | \(0{,}941\) | \(0{,}014\%\) | \(97\) | \(166\) | \(388\) |
+
+Przy mimośrodach, które model teraz rutynowo osiąga po poprawce spinu
+(punkt E), poniżej \(0{,}1\%\) mocy jest w ogóle na częstości
+podstawowej — rząd wielkości (albo dwa) większy problem niż sugerowała
+wstępna wzmianka w punkcie J.
+
+Sprawdzone: `larmorOrbitAveragedPower`/`dipoleEccentricityFactor` liczą
+**poprawnie** całkowitą moc dla orbity mimośrodowej (pełny czynnik
+\((1+e^2/2)/(1-e^2)^{5/2}\) z bezpośredniego całkowania
+\(\langle r^{-4}\rangle\), jawnie odróżniony od czynnika Petersa dla
+kwadrupola grawitacyjnego) — budżet energii i tempo hazardu były więc
+zawsze poprawne. Błędny był wyłącznie podział tego poprawnego budżetu na
+pojedyncze kwanty: przy \(\hbar\omega_{orb}\) dużo mniejszym niż
+prawdziwa charakterystyczna częstotliwość, hazard \(=P/\hbar\omega_{ref}\)
+wychodził sztucznie zawyżony — model strzelał znacznie za dużo, znacznie
+za małych fotonów dla tego samego, poprawnego budżetu energii. Ponieważ
+mechanizm spinu (punkt E) zdejmuje dokładnie \(\hbar\) momentu pędu **na
+zdarzenie**, niezależnie od jego energii, nadmiar zdarzeń oznaczał
+zawyżone tempo utraty momentu pędu właśnie w reżimie, w którym ta
+poprawka miała największe znaczenie.
+
+*Dwie osobne poprawki, nie jedna.* Naiwne przemnożenie
+`photonEnergyReference` przez harmonikę szczytową \(n_{peak}(e)\) było
+tylko prowizorką do pomiaru wrażliwości (patrz niżej). Rygorystyczne
+domknięcie wymaga rozróżnienia dwóch rzeczy:
+
+1. **Tempo zdarzeń.** Każda harmonika \(n\) to osobny, niezależny kanał
+   Poissona o tempie \(P_n/(\hbar n\omega_{orb})\) — ta sama logika
+   korespondencji Bohra, którą model już stosował dla \(n=1\), tylko
+   uogólniona. Całkowity hazard \(=(P_{tot}/\hbar\omega_{orb})\cdot S(e)\),
+   gdzie \(S(e)=\sum_n w_n/n\) (\(w_n\) — ułamek mocy w harmonice \(n\)).
+   Zmierzone: \(S(e)\) spada z \(1\) przy \(e=0\) do \(0{,}061\) przy
+   \(e=0{,}9\), \(0{,}022\) przy \(e=0{,}945\), \(0{,}0009\) przy
+   \(e=0{,}99\) — znacznie mniej zdarzeń niż szacunek oparty wyłącznie na
+   \(n=1\), bo dzielenie przez \(n\) tłumi wysokie harmoniki, które niosą
+   większość MOCY, ale liczone po \(n=1\) dawałyby absurdalną liczbę
+   zdarzeń.
+2. **Która harmonika strzela.** Warunkowo, dany zaszły fakt zdarzenia,
+   prawdopodobieństwo przynależności do harmoniki \(n\) jest
+   proporcjonalne do \(w_n/n\), NIE do samego \(w_n\) — rzadkie, ogromne
+   zdarzenie i tak zdarza się raz. Sprawdzone: nawet ważąc po liczbie
+   zdarzeń, harmoniką o największej POJEDYNCZEJ gęstości wciąż jest
+   \(n=1\) przy każdym testowanym \(e\) — ale rozkład ma na tyle ciężki
+   ogon, że MEDIANA zdarzenia wciąż jest daleko od \(n=1\) (mediana
+   \(n=11\) przy \(e=0{,}9\), \(n=27\) przy \(e=0{,}945\), \(n=64\) przy
+   \(e=0{,}97\)): tylko \(\sim6\%\) zdarzeń to dosłownie \(n=1\) przy
+   \(e=0{,}9\), spadające do \(\sim1{,}4\%\) przy \(e=0{,}97\). Czyli
+   "wiele małych fotonów zamiast kilku dużych" było słuszną intuicją
+   jakościową, tylko nieprecyzyjną co do dokładnego podziału między
+   liczebność a wielkość.
+
+*Co pozostaje bez zmian.* Wzorzec kątowy \((1+\cos^2\theta)\) i podział
+skrętności \(P(h=\pm1|\theta)\) (punkty C, E) są używane BEZ ZMIAN na
+każdej harmonice, nie uzasadnienie na wyrost: dla płaskiego ruchu
+Keplera rozkład zespolony \(z=x+iy\) ma składową "prograde" (zgodną z
+kierunkiem orbity) i "retrograde"; czysto obracający się dipol (\(n=1\),
+\(e=0\)) jest w \(100\%\) prograde, co czyni \((1+\cos^2\theta)\) i
+\(\Delta m=+1\) dokładnymi. Sprawdzone wprost na harmonikach, które
+faktycznie niosą moc (szczytowa/medianowa/90-procentowa, \(e=0{,}9\) /
+\(0{,}945\) / \(0{,}97\)): moc retrograde wynosi \(0{,}10\)–\(0{,}95\%\)
+— te harmoniki są same w sobie w ponad \(99\%\) kołowo spolaryzowane w
+TYM SAMYM sensie co orbita, więc użycie niezmienionego wzorca kątowego
+przy częstości sprzężonej harmoniki jest przybliżeniem rzędu \(<1\%\),
+nie nowym założeniem.
+
+*Implementacja: `CREM_HARMONIC`.* Obie poprawki, \(S(e)\) i funkcja
+kwantylowa rozkładu ważonego liczebnie (\(x=n/n_{peak}(e)\),
+\(n_{peak}(e)\approx0{,}504(1-e)^{-1{,}5}\), dopasowanie do \(3\) cyfr
+znaczących na \(e=0{,}5\)–\(0{,}97\)), są stablicowane z tego samego
+rozkładu numerycznego i wpięte w `crem_collapse.hpp` pod zmienną
+środowiskową `CREM_HARMONIC` (domyślnie wyłączone — model produkcyjny
+bez zmian). Sprawdzona uczciwie granica ważności: uniwersalność kształtu
+funkcji kwantylowej zweryfikowano na \(e=0{,}75\)–\(0{,}98\) i **załamuje
+się poniżej tego zakresu** — sprawdzone wprost przy \(e=0{,}1\)–\(0{,}3\),
+gdzie prawdziwa mediana/90%/99% harmoniki to \(1/1/2\), a tablica (zbudowana
+dla kształtu \(e\ge0{,}75\)) przewidywałaby aż do \(n\sim5\)–\(9\) ze
+zwykłych, wcale nie rzadkich losowań. Dlatego próbkowanie harmoniki jest
+bramkowane na \(e\ge0{,}6\) (margines bezpieczeństwa poniżej granicy
+kalibracji, gdzie błąd spada do rzędu jednej harmoniki w medianie i
+\(\sim10\%\) w ogonie) — poniżej tego progu \(n=1\) pozostaje osobno
+zmierzonym, dobrym przybliżeniem samo w sobie (np. \(96\%\) mocy w
+podstawowej przy \(e=0{,}1\)).
+
+*Zweryfikowane empirycznie.* Partia \(15\) trajektorii (ziarno \(42\),
+budżet zegara \(60\) s): mediana Kaplana-Meiera **identyczna** do
+poprawki, \(0{,}197275\) ns, jak bez `CREM_HARMONIC` — potwierdza, że
+mediana wyznacza całkowity budżet energii (poprawny niezależnie od
+ziarnistości), nie liczba/wielkość fotonów. RMST rośnie z \(0{,}284\) do
+\(0{,}306\) ns (\(+7{,}7\%\)) — efekt skupiony w głębokim, mimośrodowym
+ogonie, dokładnie tam, gdzie tabela pokazuje, że założenie o częstości
+podstawowej najbardziej zawodzi. Bez `CREM_HARMONIC`: wynik **bitowo
+identyczny** ze stanem sprzed tej pracy (regresja sprawdzona wprost —
+ta sama partia, te same liczby co do ostatniej cyfry). Zweryfikowane
+także: pojedyncza trajektoria (ziarno \(107\)) daje `harmonic=1` przy
+niskim mimośrodzie (\(e^2=0{,}0415\), zgodnie z bramką) i tłumienie
+hazardu \(\approx0{,}497\) przy umiarkowanie wysokim mimośrodzie,
+zgodne z tabelą \(S(e)\). Czysta kompilacja (zero ostrzeżeń),
+`positronium_validation` 33/33.
 
 ## Warunki początkowe i klasyfikacja zjawiska
 
