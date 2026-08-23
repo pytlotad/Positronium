@@ -2291,6 +2291,212 @@ efektywnego pola bliskiego. Diagnostyka porównuje teraz sumy
 strumieniami tensora Maxwella przez front kontrolny. Wartości te służą
 diagnostyce oraz wykresom PDF; program nie zapisuje już archiwów ROOT.
 
+### 9. Stochastyczne (skwantowane) promieniowanie dipolowe elektryczne
+
+Sekcje 1–8 opisują **ciągłe** modele reakcji radiacyjnej: siła działa na
+każdym kroku integratora, energia i pęd znikają płynnie. `--radiation-
+reaction stochastic` (`ChargeRadiationReactionModel::stochasticElectricDipole`,
+domyślny model produkcyjny) to inny wybór modelowania tego samego zjawiska:
+promieniowanie jest emitowane w dyskretnych kwantach \(\hbar\omega\), zgodnie
+z tym, jak rzeczywiście przenosi je pole — nie ciągły strumień, tylko
+strumień fotonów. Continuous force jest tu wyłączona całkowicie
+(`particleMultipoleRadiation` nie nakłada reakcji dla tego modelu); cała
+fizyka poniżej żyje w sekularnym estymatorze `estimateCremCollapse`
+(`modules/crem_collapse.hpp`), tym samym, który dla modeli ciągłych na
+zmianę mierzy jeden obieg mechanicznie i analitycznie pomija do
+\(200\,000\) kolejnych po zamkniętej obwiedni
+
+\[
+u(n)=u_0(1-Jx)^{-2/3},\qquad x=n/n_{skip}\in[0,1],\qquad J\le0{,}30,
+\]
+
+gdzie \(u=|E|\) (patrz "Związane pozytonium" wyżej dla tej samej techniki
+elementów oskulacyjnych w modelach ciągłych). Poniższe podpunkty opisują,
+co dokładnie ten model dokłada do tej wspólnej infrastruktury.
+
+**A. Kiedy strzela foton: proces Poissona i luka ekspozycji.** Klasyczna moc
+promieniowania \(P_{E1}(a,e)\) (ta sama `electricDipoleRadiatedPower`, na
+której opiera się dipol koherentny) definiuje hazard \(\lambda=P/\hbar
+\omega_{orb}\), gdzie \(\hbar\omega_{orb}=\hbar\cdot2\pi/T\) jest energią
+"referencyjnego" fotonu przy bieżącej częstości orbitalnej — odpowiednik
+korespondencyjny Bohra, nie założenie o konkretnym przejściu kwantowym.
+Fotony są rozmieszczane techniką *thinning*: akumulowana jest całka
+hazardu \(\int\lambda\,dt\), a zdarzenie następuje, gdy przekroczy ona
+świeżo wylosowany próg \(\mathrm{Exp}(1)\) (metoda odwrotnej dystrybuanty).
+Naiwna wersja — akumulator zerowany przy każdym pomiarze mechanicznym,
+widzący tylko JEDEN zmierzony obieg na checkpoint — nie strzelała
+**wcale**: hazard pojedynczego obiegu (\(\sim5{,}5\cdot10^{-5}\) przy
+\(a=3{,}1\) pm) prawie nigdy nie przekracza progu, podczas gdy
+\(200\,000\) pomijanych obiegów (których akumulator nigdy nie widział)
+niosłoby \(\sim11\) fotonów oczekiwanego hazardu. Domknięte drugim,
+niezależnym akumulatorem, całkującym hazard analitycznie po całym
+pomijanym odcinku wzdłuż tej samej obwiedni \(u(n)\):
+
+\[
+\text{hazard}(J)=\frac{P_0T_0}{\hbar\omega_0}\,n_{skip}\,
+\frac{3}{J}\Bigl(1-(1-J)^{1/3}\Bigr),
+\]
+
+zweryfikowane wobec siłowej kwadratury numerycznej (Python) do
+\(10^{-12}\) względnie w całym zakresie \(J\), jaki kod kiedykolwiek
+produkuje. Pozycja fotonu WEWNĄTRZ pomijanego odcinka (ułamek \(x\), a
+stąd chwilowa energia orbity w chwili emisji) jest odzyskiwana odwróceniem
+tej samej całki w zamkniętej formie.
+
+**B. Energia fotonu.** \(E_\gamma=\hbar\omega_{orb}\cdot
+(u(n_\gamma)/u_0)^{3/2}\) — referencyjny kwant przeskalowany do chwilowej
+częstości orbitalnej w miejscu emisji. Odejmowana jest dokładnie z
+budżetu orbitalnego i dokładnie tyle samo trafia do `radiatedEnergyTotal` —
+zamknięty rachunek, sprawdzony na starcie tej pracy pod kątem podwójnego
+liczenia: `radiatedEnergy`/`orbitalRadiatedEnergy` są już wypełniane
+bezwarunkowo przez kwadraturę strumienia (`integrateElectrodynamicStep`),
+bo para wciąż przyspiesza pod gołą siłą Coulomba nawet przy wyłączonej
+reakcji — ręczny, dodatkowy zapis tej samej energii został znaleziony i
+usunięty. Zmierzone bezpośrednio: pojedynczy foton potrafi nieść energię
+porównywalną lub większą od całej bieżącej energii orbity (do
+\(\approx18{,}5\times\) w zmierzonych przebiegach) — studnia kulombowska
+jest bezdenna, więc to czyni orbitę głębiej związaną, nie łamie zachowania
+energii, ale unieważnia każde przybliżenie zakładające mały skok (patrz
+punkt E).
+
+**C. Kierunek emisji.** Kąt \(\theta\) względem osi \(\hat{\mathbf L}\)
+(orbitalny moment pędu, **nie** oś spinu kwantowego — to była wyjściowa
+wątpliwość, która uruchomiła tę pracę) losowany jest z fizycznego wzorca
+**wirującego** dipola elektrycznego,
+
+\[
+\frac{dP}{d\Omega}\propto1+\cos^2\theta,
+\]
+
+nie ze wzorca \(\sin^2\theta\) pojedynczego dipola liniowego (maksimum w
+płaszczyźnie) — para krążąca po orbicie to dipol wirujący, nie oscylujący
+liniowo. Odwrócenie dystrybuanty tego wzorca sprowadza się do sześcianu
+zredukowanego \(\mu^3+3\mu+(4-8u)=0\) (\(\mu=\cos\theta\)), rozwiązywanego
+w postaci zamkniętej wzorem Cardana; zweryfikowane numerycznie wobec
+dystrybuanty do \(10^{-15}\) bezwzględnie. Azymut jest niezależnym losowaniem
+jednostajnym; wspólna baza ortonormalna prostopadła do \(\hat{\mathbf L}\)
+jest budowana raz i użyta zarówno dla kierunku fotonu, jak i (patrz E) dla
+azymutu skrętności.
+
+**D. Pęd liniowy i odrzut.** Foton niesie realny pęd \(\hbar\omega/c\).
+Ponieważ warunki początkowe CREM są przygotowywane przy dokładnie zerowym
+pędzie całkowitym (rozkład prędkości względnej wg stosunku mas), a każdy
+model ciągły utrzymuje to zero z konstrukcji, zachowanie pędu sprowadza
+się do jednorodnego kopnięcia całego układu: pełny, próbkowany w C
+kierunek fotonu przesuwa trwałą prędkość środka masy
+(`centreOfMassVelocity`), a wynikająca stąd zmiana energii kinetycznej CM
+(\(v_{cm}\!\cdot\!p_\gamma+p_\gamma^2/(2M)\), policzona dokładnie, nie
+odrzucona jako drugi rząd) jest doliczana do budżetu orbitalnego ponad
+energię samego fotonu, żeby energia całkowita nadal spadała dokładnie o
+\(E_\gamma\). Zmierzone: stosunek \(p_\gamma/p_{orbitalny}\) wychodzi
+dokładnie jako (zredukowana długość fali Comptona pary)/\(a\), niezależnie
+od prędkości — \(0{,}007\) na starcie orbity, ale już \(0{,}25\) przy
+\(a=3{,}1\) pm i \(>1\) poniżej \(\approx0{,}77\) pm, więc realny, nie
+pomijalny efekt w większości głębokości, jaką model osiąga.
+
+**E. Moment pędu.** Dwie osobne wielkości, kierunek i wartość bezwzględna
+\(|\mathbf L|\), są dziś aktualizowane JEDNYM mechanizmem, nie dwoma:
+
+- *Odrzucony pierwszy pomysł (przechył orbitalny).* Wcześniejsza wersja
+  przechylała \(\hat{\mathbf L}\) traktując odrzut jako kopnięcie
+  \(r\times\Delta v\) ruchu względnego, niezależnie od odrzutu środka masy
+  z punktu D. Sprawdzone numerycznie (trzy stosunki mas): jednorodne
+  kopnięcie środka masy daje **dokładnie zerowy** moment siły
+  (\(\sum_im_i\mathbf r_i=0\) względem środka masy, tożsamościowo) —
+  jednorodne pchnięcie przez własny środek masy nie może układu skręcić.
+  Przechył liczył więc ten sam pęd fotonu dwa razy; usunięty.
+- *Odrzucone drugie podejście (współczynnik `k` z modeli ciągłych).*
+  Klasyczny, orbitalnie uśredniony związek między tempem strat energii i
+  momentu pędu dla reakcji dipolowej E1,
+  \(k(e)=-(1-e^2)/(2+e^2)\) (metodą Petersa 1964, zaadaptowaną dla dipola
+  EM), dawał \(L\mathrel{{*}{=}}(E_{po}/E_{przed})^{k}\) — przybliżenie
+  pierwszego rzędu relacji różniczkowej \(d(\ln L)/d(\ln|E|)=k(e)\), z
+  której pochodzi. Poprawione najpierw *w ramach tego samego podejścia*:
+  rozdzielenie zmiennych w \(s=1-e^2\), \(x=\ln|E|\) daje całkę pierwszą w
+  postaci zamkniętej, \((1-e^2)^3/(e^4|E|^3)=\mathrm{const}\), dokładnie
+  zachowaną wzdłuż trajektorii — zweryfikowaną algebraicznie i niezależnie
+  całkowaniem RK4 tego samego równania różniczkowego (zgodność
+  \(10^{-12}\)). To ujawniło, że stara, zamrożona formuła dawała **ujemne**
+  \(e^2\) po niemal każdym fotonie produkcyjnym (foton potrafi unieść do
+  \(18{,}5\times\) bieżącej energii, gdzie przybliżenie małego skoku jest
+  jakościowo złe), po cichu przycinane do zera przez istniejący strażnik.
+  Mimo poprawienia, formuła `k` została ostatecznie odrzucona jako
+  mechanizm STOSOWANY do stanu (zostaje tylko jako diagnostyka w logu
+  `CREM_DEBUG`): moment siły reakcji scałkowany po orbicie i to, co unosi
+  ciągłe pole, to ta sama wielkość z zachowania momentu pędu — łączenie jej
+  z realnym momentem pędu skwantowanego fotonu (niżej) byłoby ponownie
+  podwójnym liczeniem.
+- *Zastosowany mechanizm: spin fotonu.* Foton to bezmasowy bozon spinu 1,
+  więc niesie dokładnie \(\pm\hbar\) momentu pędu wzdłuż WŁASNEGO kierunku
+  propagacji \(\hat{\mathbf n}\) (ten sam `photonDirection` z punktu C) —
+  fakt uniwersalny, nie oszacowanie orbitalnie uśrednione. Skrętność
+  \(h=\pm1\) losowana jest z rozkładu warunkowego (względem już
+  wylosowanego \(\theta\)) dla standardowego przejścia dipolowego
+  \(\Delta m=\pm1\):
+  \[
+  P(h{=}{+}1\,|\,\theta)=\frac{(1+\cos\theta)^2}{2(1+\cos^2\theta)},\qquad
+  P(h{=}{-}1\,|\,\theta)=\frac{(1-\cos\theta)^2}{2(1+\cos^2\theta)},
+  \]
+  które sumują się dokładnie do wzorca \(1+\cos^2\theta\) z punktu C — nie
+  nowe założenie, tylko jego rozdzielczość polaryzacyjna (sprawdzone: przy
+  \(\theta=0\) i \(\theta=\pi\) skrętność w połączeniu z kierunkiem fotonu
+  ZAWSZE daje wektor wzdłuż osi orbitalnej, zgodnie z \(\Delta m=1\); przy
+  \(\theta=\pi/2\) to równy rozkład 50/50 w płaszczyźnie orbity).
+  Zastosowane jako rzeczywiste kopnięcie wektorowe na pełnym (nie
+  specyficznym) wektorze momentu pędu pary,
+  \[
+  \mathbf L_{para}\mathrel{-{=}}h\hbar\,\hat{\mathbf n},
+  \]
+  po czym wynik jest rozkładany z powrotem na wielkość
+  \(|\mathbf L|\) i kierunek \(\hat{\mathbf L}\) — jeden mechanizm
+  aktualizujący oba naraz, zamiast dwóch osobnych.
+
+  Czego to NIE łapie: orbitalnego momentu pędu fotonu względem pary
+  (\(\mathbf r\times\mathbf p_\gamma\), potrzebna nieznana anomalia
+  prawdziwa — ta sama luka informacyjna reprezentacji samych elementów
+  oskulacyjnych, która wykluczyła przechył). Sprawdzone wprost: wartość
+  oczekiwana składowej osiowej \(\langle h\cos\theta\rangle\) po całym
+  rozkładzie kątowym wynosi \(1/2\), nie \(1\) — sam spin odzyskuje więc
+  średnio tylko połowę reguły wyboru \(\Delta m=1\); reszta jest
+  niedostępna w tej architekturze.
+
+  Zmierzone empirycznie: partia produkcyjna (o-Ps, \(80\) trajektorii, dwa
+  ziarna) dała \(1\) awarię numeryczną (orbita, przez pojedyncze duże
+  kopnięcie spinowe, robi się na tyle mimośrodowa, że opuszcza reżim
+  związany — prawdziwa konsekwencja zaburzenia rzędu jedności, nie błąd)
+  wobec \(0\) awarii, ale \(3\) ucięć budżetem czasowym dla tej samej
+  wielkości partii pod poprzednim kodem. Czas kolapsu ledwo drgnął
+  (mediana orto \(130\)–\(155\) ps w kilku ziarnach, wobec
+  \(147{,}8\)–\(151{,}6\) ps zmierzonych wcześniej z formułą `k`) — czas
+  kolapsu wyznacza głównie całka energii/hazardu z punktów A–B, której ten
+  mechanizm nie dotyka; mimośród (teraz naprawdę osiągający wartości jak
+  \(e^2\approx0{,}9\)) wpływa na to, KTÓRY warunek wyjścia trajektoria
+  trafi i jak szybko, nie na to, czy w ogóle trafi.
+
+**F. Co model świadomie zostawia otwarte.** (1) Orbitalny moment pędu
+fotonu względem pary — wymaga anomalii prawdziwej, niedostępnej w
+reprezentacji samych elementów oskulacyjnych; ilościowo to połowa reguły
+\(\Delta m=1\) (punkt E). (2) Ścieżka mechaniczna
+(`crem_trajectory.hpp`, używana rzadko produkcyjnie — głównie tryb
+wizualny) ma własną, odrębną wersję hazardu i odrzutu fotonu, która NIE
+otrzymała poprawek pędu liniowego ani spinu z tej sekcji: brakuje jej
+pozycji/orientacji, jakiej te poprawki wymagają, i jest rzadko ćwiczona
+produkcyjnie. (3) Zamrożone `k` pozostaje mechanizmem STOSOWANYM (nie
+tylko diagnostyką) dla modeli ciągłych i dla gałęzi zbiorczej tego samego
+estymatora (jej skok na checkpoint jest ograniczony do \(30\%\) energii,
+gdzie błąd przybliżenia jest łagodny) — poprawka z punktu E dotyczy
+wyłącznie pojedynczych zdarzeń fotonowych.
+
+**G. Niezależna weryfikacja zastosowana na każdym etapie:** siłowa
+kwadratura numeryczna w Pythonie dla całki hazardu (\(10^{-12}\)
+względnie); porównanie z dystrybuantą dla odwrócenia Cardana kąta emisji
+(\(10^{-15}\) bezwzględnie); całkowanie RK4 niezależne od wyprowadzenia
+algebraicznego dla całki pierwszej \(k(e)\) (\(10^{-12}\)); sprawdzenie
+trzech stosunków mas dla tożsamości \(\sum m_i\mathbf r_i=0\)
+(\(10^{-17}\), szum numeryczny); partie produkcyjne po \(30\)–\(80\)
+trajektorii mierzące rzeczywisty wskaźnik awarii, nie tylko argument
+teoretyczny; `positronium_validation` 33/33 po każdej zmianie.
+
 ## Warunki początkowe i klasyfikacja zjawiska
 
 Program losuje kierunki dipoli oraz radialną i styczną składową względnej
