@@ -1641,6 +1641,11 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     std::vector<double> labPhotonEnergyEv;
     std::vector<double> labPhotonFrequencyHz;
     std::vector<double> labPhotonAngleFromRecoilDeg;
+    // One entry per trajectory (not per photon): how many stochastic
+    // inspiral photons it fired in total, independent of completion --
+    // same reasoning as the vectors above, a censored trajectory still
+    // fired whatever photons it fired before running out of budget.
+    std::vector<double> photonCountPerTrajectory;
     // Period at both ends of the inspiral and the revolutions between them,
     // collected only from trajectories that ran to the boundary so the three
     // numbers describe the same complete collapses as the lifetime above.
@@ -1697,6 +1702,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                     labPhoton.angleFromRecoilAxisRadians*180.0/pi);
             }
         }
+        photonCountPerTrajectory.push_back(
+            static_cast<double>(estimate.labFramePhotons.size()));
         if(std::isfinite(estimate.meanRadiatedPowerWatts)
            && estimate.meanRadiatedPowerWatts > 0.0) {
             calibrationPowers.push_back(estimate.meanRadiatedPowerWatts);
@@ -1964,7 +1971,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     diagnosticsPage.cd();
     diagnosticsPage.Divide(1, 2, 0.006, 0.006);
     labFramePage.cd();
-    labFramePage.Divide(1, 3, 0.006, 0.006);
+    labFramePage.Divide(2, 2, 0.006, 0.006);
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
     std::vector<std::unique_ptr<TF1>> analysisFunctions;
 
@@ -2525,6 +2532,39 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             + " (first photon of every trajectory has none)."
     }, 0.021);
 
+    labFramePage.cd(4);
+    gPad->SetGrid();
+    // Integer-valued, typically small (0-few): one bin per count, centred on
+    // the integer, rather than histogramBins()'s continuous-distribution
+    // binning -- a trajectory that fired 0 photons is a real, countable
+    // outcome here (a continuous --radiation-reaction model, or a stochastic
+    // one censored before its first photon), included like every other
+    // entry in this vector (filled unconditionally above, one per
+    // trajectory).
+    int maxPhotonCount = 0;
+    for (double value : photonCountPerTrajectory)
+        maxPhotonCount = std::max(maxPhotonCount, static_cast<int>(value));
+    TH1D labPhotonCountHistogram("crem_lab_photon_count",
+        "Stochastic inspiral photons fired per trajectory;"
+        "photons fired;Trajectories",
+        maxPhotonCount + 1, -0.5, maxPhotonCount + 0.5);
+    styleHistogram(labPhotonCountHistogram, plot_style::crem());
+    labPhotonCountHistogram.SetStats(false);
+    for (double value : photonCountPerTrajectory)
+        labPhotonCountHistogram.Fill(value);
+    styleBinCounts(labPhotonCountHistogram);
+    labPhotonCountHistogram.Draw("HIST TEXT0");
+    const GaussianFitSummary photonCountMoments =
+        gaussianMaximumLikelihood(photonCountPerTrajectory);
+    drawAnalysisBox(analysisBoxes, 0.45, 0.58, 0.95, 0.91, {
+        AnalysisLine("trajectories: N = "
+            + std::to_string(photonCountPerTrajectory.size()), plot_style::crem()),
+        "#LTphotons#GT = " + compactNumber(photonCountMoments.mean, 3),
+        "0 for a continuous (non-stochastic) --radiation-reaction",
+        "model, or a stochastic trajectory censored before its",
+        "first photon -- a real, countable outcome, not excluded."
+    }, 0.021);
+
     canvas.cd();
     distributionsPage.Pop();
     canvas.Modified();
@@ -2538,7 +2578,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         {diagnosticsPage.GetPad(2), 2, 2, "dipole_coupling_vs_hyperfine"},
         {labFramePage.GetPad(1), 3, 1, "lab_frame_photon_energy"},
         {labFramePage.GetPad(2), 3, 2, "lab_frame_photon_frequency"},
-        {labFramePage.GetPad(3), 3, 3, "lab_frame_photon_angle"}
+        {labFramePage.GetPad(3), 3, 3, "lab_frame_photon_angle"},
+        {labFramePage.GetPad(4), 3, 4, "photon_count_per_trajectory"}
     };
     reportExports(root_export::saveStatisticalPlots(
         selectedPhenomenon, plotsToSave));
