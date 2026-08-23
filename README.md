@@ -2636,6 +2636,119 @@ zmian: \(29/30\) dochodzi do granicy, \(0\) awarii numerycznych, mediana
 \(100{,}653\) ps — identycznie jak przed tą poprawką. Czysta kompilacja,
 `positronium_validation` 33/33.
 
+**J. Skąd bierze się foton, i czy jego produkcja mogłaby być wyzwalana —
+dwa pytania koncepcyjne, obie odpowiedzi sprawdzone, nie tylko
+wyargumentowane.**
+
+*Czy foton rodzi się w środku masy?* W samej architekturze modelu —
+efektywnie tak, i to z konieczności: reprezentacja `crem_collapse.hpp`
+(same elementy oskulacyjne — `specificEnergy`, `specificAngularMomentum`)
+nie niesie żadnej informacji o pozycji, a mechanizm odrzutu
+(`centreOfMassVelocity`, punkt D) explicite traktuje emisję jako
+jednorodne kopnięcie całego układu, dokładnie równoważne przypisaniu
+źródła do środka masy. Fizycznie to jest standardowe przybliżenie dipola
+punktowego, i akurat dla pozytonium (obojętnego elektrycznie,
+\(q_1+q_2=0\)) wygodne: moment dipolowy elektryczny takiego układu jest
+**niezależny od wyboru początku układu współrzędnych**, więc "w środku
+masy" nie jest ani lepszym, ani gorszym wyborem niż jakikolwiek inny, o
+ile mówimy tylko o samym momencie dipolowym. Ale prawdziwym źródłem są
+przyspieszające ładunki, poruszające się po ruchu WZGLĘDNYM, nie po ruchu
+środka masy — jednorodnie poruszający się obojętny układ w ogóle nie
+promieniuje E1 (ta sama tożsamość \(\sum m_i\mathbf r_i=0\), która
+domknęła poprawkę momentu pędu w punkcie E). Więc ściślej: foton pochodzi
+z oscylacji/rotacji separacji ładunków (orbity), a przypisanie go do
+środka masy to wygodna konwencja matematyczna przybliżenia dalekiego
+pola, nie twierdzenie o realnym, zlokalizowanym punkcie emisji — to ta
+sama luka informacyjna (brak anomalii prawdziwej), która już wykluczyła
+domknięcie orbitalnej części momentu pędu fotonu w punkcie E.
+
+*Czy generacja jest losowa, czy dałoby się znaleźć wyzwalacz w
+konfiguracji pola?* Tak jak zaimplementowano: czysto losowa (proces
+Poissona, próg \(\mathrm{Exp}(1)\), zero warunku wyzwalającego związanego
+z konfiguracją pola). W ortodoksyjnej (kopenhaskiej) elektrodynamice
+kwantowej to nie jest uproszczenie modelu, tylko własność natury: emisja
+spontaniczna jest tam nieredukowalnie losowa, bez ukrytej zmiennej, którą
+dałoby się z zasady odnaleźć. Istnieje jednak alternatywa —
+elektrodynamika stochastyczna (SED) — w której pole punktu zerowego
+traktowane jest jako realne, klasyczne (choć nieznane w szczególe) pole
+losowe; dla USTALONEJ konkretnej realizacji tego pola odpowiedź cząstki
+byłaby w zasadzie w pełni deterministyczna, więc formalnie dałoby się
+zdefiniować "wyzwalacz" (konkretna realizacja pola plus faza orbity
+przekraczająca próg) — losowość przesuwałaby się tylko do warunku
+początkowego samego pola, nie znikałaby. Ten wątek jest w tym repozytorium
+już zbadany i zamknięty z wynikiem negatywnym (`--zpf`, patrz niżej
+"Wynik eksperymentu z polem punktu zerowego"): sprzężenie klasycznego
+pola stochastycznego do orbity nie dało samouzgodnionej równowagi —
+pasmo rezonansowe nie robi praktycznie nic, szersze pasma tylko pompują
+energię i powodują ucieczkę orbity, nigdy stabilizację. To nie jest
+bezpośredni test "czy ZPF wyzwala pojedyncze zdarzenia emisji
+deterministycznie", ale pokazuje, że próba samouzgodnionego domknięcia
+tej pętli w tej architekturze już się nie powiodła — więc obecny wybór
+(czysta losowość Poissona) jest zgodny z główną gałęzią fizyki, nie
+arbitralnym uproszczeniem, a głębsza, deterministyczna reformulacja
+pozostaje otwartym, trudnym problemem badawczym.
+
+*Jaka konfiguracja pól pozytonium odpowiada polu fotonu — sprawdzone
+wprost, nie tylko przez analogię.* Pełne pole Liénarda–Wiecherta
+(sekcja 5) rozpada się na człon prędkościowy (\(\propto1/R^2\), bliskie,
+quasi-statyczne, księgowane osobno jako energia Schotta) i człon
+przyspieszeniowy (\(\propto1/R\), dalekie, poprzeczne, propagujące) — to
+ten drugi, w granicy korespondencji klasyczno-kwantowej, staje się
+fotonem; to dokładnie ten sam człon, którego strumień Poyntinga daje
+`orbitalRadiatedEnergy`. Sprawdzone dalej, konkretniej: czy stan
+polaryzacji tego klasycznego pola dalekiego odpowiada rozkładowi
+skrętności fotonu już zaimplementowanemu w punkcie E. Policzone
+numerycznie (niezależnie od wyprowadzenia w punkcie E, z surowych pól
+\(\mathbf E\) wirującego dipola, nie z gotowej formuły): parametr Stokesa
+\(V/I\) (stopień polaryzacji kołowej) w funkcji kąta \(\theta\) od osi
+wirowania —
+
+| \(\theta\) | \(V/I\) zmierzone | \(2\cos\theta/(1+\cos^2\theta)\) | różnica |
+|---|---|---|---|
+| \(0°\) | \(1{,}000000\) | \(1{,}000000\) | \(0\) |
+| \(30°\) | \(0{,}989743\) | \(0{,}989743\) | \(-1{,}1\cdot10^{-16}\) |
+| \(45°\) | \(0{,}942809\) | \(0{,}942809\) | \(-2{,}2\cdot10^{-16}\) |
+| \(60°\) | \(0{,}800000\) | \(0{,}800000\) | \(-1{,}1\cdot10^{-16}\) |
+| \(90°\) | \(0{,}000000\) | \(0{,}000000\) | \(-4{,}9\cdot10^{-32}\) |
+
+zgodność do precyzji maszynowej, w całym zakresie kąta. To dokładnie ta
+sama formuła \(2\cos\theta/(1+\cos^2\theta)\), którą punkt E wyprowadza
+niezależnie jako kwantową wartość oczekiwaną skrętności
+\(\langle h|\theta\rangle\) dla przejścia dipolowego \(\Delta m=\pm1\) —
+nie przypadek, tylko standardowa zasada korespondencji (klasyczny
+parametr Stokesa V fali EM = kwantowa wartość oczekiwana spinu fotonu w
+granicy klasycznej), tutaj zweryfikowana wprost na tym konkretnym
+systemie, nie tylko przywołana z zasady.
+
+**Wnioski, jakie z tego wynikają:**
+
+1. Wzorzec kątowy \((1+\cos^2\theta)\) (punkt C) i rozkład skrętności
+   (punkt E) NIE są dwiema osobno zgadniętymi formułami, które akurat
+   dobrze ze sobą współpracują — są dwiema twarzami tej samej klasycznej
+   konfiguracji pola dalekiego, wzajemnie zweryfikowanymi do precyzji
+   maszynowej. To niezależne potwierdzenie poprawności obu mechanizmów
+   już zaimplementowanych, nie nowa fizyka.
+2. Zarówno "gdzie" (środek masy jako wygodna konwencja, nie realny punkt
+   źródłowy), jak i "brak wyzwalacza" (losowość zgodna z ortodoksyjną
+   QED, nie uproszczenie) mają solidne uzasadnienie fizyczne — żadne z
+   tych dwóch pytań nie ujawniło nowej niespójności modelu, w
+   przeciwieństwie do audytu w punkcie I.
+3. **Zastrzeżenie, uczciwie:** cała ta weryfikacja polaryzacji jest
+   dokładna wyłącznie dla CZYSTO KOŁOWEJ orbity — to samo założenie, na
+   którym stoi wzorzec \((1+\cos^2\theta)\) w punkcie C. Dla orbity
+   mimośrodowej (a te teraz naprawdę występują, po poprawce spinu fotonu
+   w punkcie E, sięgając \(e^2\approx0{,}9\)) prawdziwe pole dalekie
+   niesie dodatkową strukturę harmoniczną — moc na wielokrotnościach
+   częstości orbitalnej podstawowej, nie tylko na niej samej (klasyczny
+   fakt: eliptyczna orbita Keplera ma widmo dipolowe o wielu harmonicznych,
+   silniej obsadzonych w miarę wzrostu mimośrodu) — więc polaryzacja
+   przestaje być tak czystą funkcją \(2\cos\theta/(1+\cos^2\theta)\), a
+   model tego nie łapie: każdy foton nadal losowany jest tak, jakby orbita
+   była kołowa, niezależnie od jej faktycznego mimośrodu w chwili emisji.
+   To osobna, jeszcze niepoliczona nieścisłość, tego samego rodzaju co
+   pominięcie M2/E3 w punkcie I — nienaprawiona, bo jeszcze niezmierzona
+   ilościowo, ale teraz udokumentowana wprost jako otwarta.
+
 ## Warunki początkowe i klasyfikacja zjawiska
 
 Program losuje kierunki dipoli oraz radialną i styczną składową względnej
