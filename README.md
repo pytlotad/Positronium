@@ -3037,14 +3037,112 @@ identyczna mediana i RMST Kaplana-Meiera, i **\(44/44\) zdarzeń
 fotonowych dało harmonikę \(1\) w OBU przypadkach**, z rozkładami \(e^2\)
 zgodnymi do \(5\)–\(6\) cyfr znaczących przy każdym pojedynczym zdarzeniu.
 
-*Wniosek końcowy.* Sprzężenie dipol-dipol jest realne, mierzalne
-(bezpośrednio zweryfikowana zgodność ilościowa) i różni się między para
-i orto co do znaku — ale jego skala (\(\sim10^{-6}\) energii Coulomba) i
-struktura (tylko DC i \(2\omega\), nigdy \(3\omega\)) nie dają żadnej
-podstawy do różnego traktowania harmonik promieniowania E1 między
-kanałami. Prawdziwa różnica 2γ/3γ jest odrębnym procesem kwantowym poza
-zasięgiem tego modelu. Osiem niezależnych sond, każda ilościowo
-zweryfikowana — nie jeden pobieżny test.
+*Sonda 9 — czy składowa DC działa jako precesja apsyd, ściśle
+sprawdzone.* Na zadane pytanie, czy sekularna część sprzężenia mogłaby
+wzmacniać/osłabiać mimośród (a więc harmonikę) jednego kanału względem
+drugiego: zbudowany probierz — orbita Keplera z dodatkowym małym
+zaburzeniem centralnym \(\propto1/r^3\) (dokładnie taka postać ma
+sekularna część sprzężenia dipol-dipol), scałkowana RK4 przez wiele
+orbit. Równanie Bineta dla \(F(r)=-GM/r^2-C/r^3\),
+\(u''(\phi)+u(1-C/L^2)=GM/L^2\), jest **dokładnie liniowe niezależnie od
+mimośrodu** — rozwiązanie ścisłe \(u(\phi)=\frac{GM}{L^2\Omega^2}
+[1+e\cos(\Omega(\phi-\phi_0))]\), \(\Omega=\sqrt{1-C/L^2}\), z precesją
+peryhelium **dokładnie** \(2\pi(1/\Omega-1)\) na orbitę — nie
+przybliżeniem, tylko ścisłym wynikiem dla tej postaci siły. Pierwszy
+pomiar numeryczny (pośredni, przez kierunek wektora Laplace'a-Rungego-Lenza,
+który dla zaburzonego problemu nie jest ściśle zachowany) dał zły wynik:
+\(-0{,}00528\) rad/orbitę, złego znaku i o czynnik \(\sim2\) różny od
+przewidywania. **Błąd znaleziony i naprawiony**: wadliwe rozwijanie kąta
+(unwrapping) w kodzie pomiarowym. Naprawione przez bezpośrednie
+wykrywanie przejść przez peryhelium (lokalne minima \(r(t)\)):
+
+```
+przewidywanie analityczne (ścisłe) = 0,01038258 rad/orbitę
+zmierzone (400 przejść przez peryhelium, poprawiona metoda) = 0,01038079 rad/orbitę
+zgodność: 99,98%
+```
+
+Skoro równanie Bineta jest ściśle liniowe, amplituda oscylacji
+\(u(\phi)\) — mimośród — jest ścisłą stałą całkowania: orbita precesuje
+ze stałym tempem, jej kształt **nie zmienia się wcale**, do żadnego rzędu
+w \(C\). Siła centralna nie wywiera momentu siły (moment pędu zachowany
+dokładnie) i pozostaje zachowawcza (energia całkowita, z doliczonym
+potencjałem zaburzenia, zachowana dokładnie) — mimośród, będący funkcją
+tylko tych dwóch wielkości, nie ma więc żadnej drogi do dryfu.
+
+*Sonda 10 — czy rozbieżność ma charakter skokowy, sprawdzone na surowych
+danych.* Rozbita rozbieżność \(E\) checkpoint po checkpoincie (pełna
+precyzja, nie \(6\) cyfr wyświetlanych domyślnie): checkpointy \(0\)–\(28\)
+identyczne co do wyświetlanej precyzji, w tym przez PIERWSZE zdarzenie
+fotonowe (checkpoint \(24\)) — rozbieżność pojawia się dopiero przy
+DRUGIM zdarzeniu fotonowym (checkpoint \(29\)), i to w konkretnej
+wielkości pochodnej (`cmEnergyKick` różni się o \(11\%\), mimo że
+`photonEnergy` jest identyczna) — co wskazywałoby na różny kierunek
+próbkowania drugiego fotonu, nie na inną jego wielkość. Wyglądało to na
+potwierdzenie: skokowy, nie gładki charakter, dokładnie przy zdarzeniu
+progowym procesu Poissona.
+
+*Sonda 11 — sprawdzone jeszcze dokładniej, na żądanie, i obraz okazał
+się bardziej subtelny niż sonda 10 sugerowała.* Wyciągnięta
+`orbitalRadiatedEnergy` (rzeczywisty wynik całki strumienia pola dla
+KAŻDEJ pojedynczej zmierzonej orbity, nie tylko zaokrąglone \(E\)) z
+każdego checkpointu:
+
+```
+checkpoint 0: para=2,14536e-24J  ortho=2,14550e-24J  różnica względna=6,53e-05
+checkpointy 1-24: ta sama różnica względna, konsekwentnie ~6,1-6,5e-05, KAŻDY checkpoint
+```
+
+**To obala wniosek sondy 10** — checkpointy \(0\)–\(24\) NIE są bitowo
+identyczne, różnią się od samego początku, konsekwentnie, w tym samym
+kierunku. Po prostu różnica jest zbyt mała, by być widoczna na \(6\)
+cyfrach wyświetlanego `E=`, którego wartość bezwzględna jest dużo
+większa. Zsumowana skumulowana różnica (dokładnie tak, jak wchodzi do
+`elements.specificEnergy` przez kredytowanie energii zmierzonej orbity,
+patrz punkt I) do checkpointu \(28\): \(3{,}45\cdot10^{-27}\) J, czyli
+\(\approx7570\) J/kg w jednostkach `specificEnergy` — względnie
+\(\approx4\cdot10^{-9}\). **To \(4\)–\(5\) rzędów wielkości za mało**,
+żeby wytłumaczyć zmierzoną rozbieżność \(5{,}6\cdot10^{-6}\) przy
+checkpoincie \(29\).
+
+*Stan na teraz, uczciwie: częściowo rozstrzygnięte, częściowo otwarte.*
+Ustalone na pewno: (a) sprzężenie dipol-dipol daje ścisłą precesję apsyd
+bez zmiany kształtu orbity (sonda 9, zweryfikowane do \(99{,}98\%\)); (b)
+mimo to `orbitalRadiatedEnergy` mierzy realną, systematycznie
+podpisaną różnicę między para i orto, obecną od checkpointu \(0\) (sonda
+11) — więc sprzężenie NIE jest fizycznie martwe dla tej wielkości, wbrew
+naiwnemu argumentowi "siła centralna nie zmienia \(E\)" (który dotyczy
+\(E\) UŚREDNIONEGO po wielu orbitach, nie pojedynczego zmierzonego
+przebiegu, który nie jest dokładnie zamkniętą orbitą); (c) ta ciągła,
+zmierzona różnica jest za mała o \(4\)–\(5\) rzędów wielkości, żeby
+samodzielnie wytłumaczyć skok w próbkowaniu drugiego fotonu. Niepewne:
+dokładny mechanizm, którym ta mała, ciągła asymetria zamienia się w
+znacznie większą różnicę kierunku próbkowania konkretnego fotonu —
+najbardziej prawdopodobne wyjaśnienie to nieliniowe wzmocnienie przy
+odwracaniu dystrybuanty (z natury czułym na drobne przesunięcia
+argumentu blisko progu), ale nie zostało to jeszcze prześledzone do
+pojedynczego bitu. Zostawione jako jawnie otwarte, nie domknięte na
+siłę — dalsza instrumentacja (pełne składowe wektorowe `v_cm`, akumulator
+hazardu z większą liczbą cyfr) mogłaby to rozstrzygnąć, ale wymaga
+osobnej sesji.
+
+*Wniosek końcowy — praktyczny wynik nietknięty przez to doprecyzowanie.*
+Sprzężenie dipol-dipol jest realne, mierzalne, różni się między para i
+orto co do znaku, i — jak teraz wiadomo dokładniej — działa poprzez
+precesję orientacji orbity (nie zmianę jej kształtu) PLUS jakiś
+niecałkowicie jeszcze prześledzony, nieliniowy mechanizm wzmacniający to
+w próbkowaniu pojedynczych fotonów. Ale jego całkowita skala
+(\(\sim10^{-6}\) energii Coulomba u źródła) i struktura (tylko DC i
+\(2\omega\), nigdy \(3\omega\), sonda 3) nadal nie dają żadnej podstawy
+do SYSTEMATYCZNIE różnego traktowania harmonik promieniowania E1 między
+kanałami — potwierdzone empirycznie na partii \(N=30\) (sonda 8:
+identyczny rozkład harmonik, \(44/44\) zdarzeń dało \(n=1\) w obu
+kanałach). Prawdziwa różnica 2γ/3γ jest odrębnym procesem kwantowym poza
+zasięgiem tego modelu. Jedenaście niezależnych sond, każda ilościowo
+zweryfikowana, w tym dwie własne pomyłki znalezione i skorygowane w
+trakcie (sonda 9: błąd rozwijania kąta; sonda 10→11: przedwczesny
+wniosek o skokowym charakterze) — nie jeden pobieżny test podający
+gładką historię.
 
 ## Warunki początkowe i klasyfikacja zjawiska
 
