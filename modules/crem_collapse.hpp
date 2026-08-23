@@ -1511,6 +1511,19 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // from the previous skip (hFraction saturating at the
                     // clamp) is attributed to this skip's own start
                     // instead -- a boundary approximation, not exact.
+                    // Measured, not just flagged (README point E4): in a
+                    // 3-photon cascade within one skip call, all three got
+                    // an IDENTICAL photonEnergy despite |E| growing by an
+                    // order of magnitude between them, because the
+                    // threshold was large enough that hFraction saturated
+                    // for every one of them -- sAtPhoton pins to
+                    // jumpParameter (the approximation's own ceiling)
+                    // regardless of how much further the true state has
+                    // already moved.  Photons 2 and 3 in that cascade came
+                    // out 5.8x and 13.5x too small relative to
+                    // photonEnergyReference recomputed from their own,
+                    // already-updated E -- growing without bound deeper
+                    // into a cascade, not a bounded few-percent effect.
                     const double hFraction=skipHazard>0.0
                         ?std::clamp(
                             hazardConsumedThisSkip/skipHazard,0.0,1.0)

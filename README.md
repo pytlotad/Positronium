@@ -2736,6 +2736,86 @@ Model ciągły (`--radiation-reaction coherent`, gdzie `labFramePhotons`
 jest puste) renderuje bezpiecznie pusty wykres, bez awarii.
 `positronium_validation` \(33/33\), bez regresji.
 
+**E3. Audyt zasad zachowania na konkretnym zdarzeniu para-Ps.** Pełna
+precyzja (\(17\) cyfr), stan przed/po pierwszym fotonie trajektorii
+(ziarno \(50\), para-Ps), wszystkie trzy prawa sprawdzone niezależnie i
+liczbowo, nie założone.
+
+*Energia — zachowana do szumu numerycznego.* Przewidywana zmiana \(E\)
+(z \(photonEnergy+cmEnergyKick\)) wobec rzeczywistej: różnica względna
+\(1{,}4\times10^{-9}\).
+
+*Pęd liniowy — zachowany do szumu numerycznego.* Przewidywane \(v_{cm}\)
+po odrzucie (z pędu fotonu w S') wobec rzeczywistego: różnica względna
+\(1{,}4\times10^{-9}\).
+
+*Moment pędu — realna, ilościowa rozbieżność, świadoma konsekwencja
+próby 4 (punkt E), teraz zmierzona po raz pierwszy.*
+\[
+|\mathbf L_{przed}-\mathbf L_{po}| = 1{,}4527\times10^{-4},\qquad
+|\hbar\cdot h/\mu| = 2{,}3154\times10^{-4}\ (\text{stała}),
+\]
+stosunek \(0{,}627\), kąt między obydwoma wektorami \(78{,}5°\). Usunięty z
+orbity moment pędu NIE jest już równy spinowi pojedynczego fotonu — ani
+co do wielkości (\(63\%\)), ani co do kierunku (\(78°\)!). Bilans wciąż
+się zamyka (\(L_{po}\) jest z definicji tym, co zostaje), ale nazwa
+"moment pędu, jaki niesie foton" przestaje dosłownie odpowiadać
+rzeczywistemu spinowi fotonu — dokładnie taki kompromis, jaki próba 4
+świadomie przyjęła (wielkość z \(k(e)\), kierunek z wektora próbnego), tu
+po raz pierwszy skwantyfikowany na realnym zdarzeniu.
+
+*Zastrzeżenie metodologiczne: punkty 1–2 są częściowo tautologią.*
+Sprawdzenie energii/pędu liniowego weryfikuje, że wzór księgowy się
+zamyka — a on zamknie się ZAWSZE, bo `elements.specificEnergy` i
+`centreOfMassVelocity` są aktualizowane właśnie TYMI wzorami. Nie
+sprawdza, czy `photonEnergy` sam w sobie jest fizycznie poprawną
+wartością dla PÓŹNIEJSZYCH fotonów w kaskadzie. To osobne pytanie —
+zbadane niżej, i okazało się poważniejsze, niż sugerowałoby "znane,
+udokumentowane przybliżenie brzegowe".
+
+**E4. Skala błędu przybliżenia `hFraction`, zmierzona wprost.** Kod już
+miał komentarz ostrzegający: gdy próg pochłaniany jest głównie z hazardu
+"przeniesionego" z poprzednich checkpointów (`hFraction` nasyca się do
+\(1\)), foton jest przypisywany do POCZĄTKU bieżącego skoku zamiast do
+właściwego miejsca — "przybliżenie brzegowe, nie dokładne". Nigdy nie
+zmierzone ilościowo. W kaskadzie trzech kolejnych fotonów (ziarno \(50\),
+ta sama trajektoria co E3) wszystkie trzy dostały **identyczną** energię
+(\(3{,}9314042382173936\times10^{-18}\) J co do wszystkich \(17\) cyfr),
+mimo że \(|E|\) urosło między nimi o rząd wielkości. Przyczyna
+zlokalizowana: `hFraction` nasyca się do \(1\) już przy pierwszym
+fotonie (próg \(1{,}6633\) był wielokrotnie większy niż `skipHazard`
+\(0{,}0978\) tego jednego checkpointu), więc `sAtPhoton` przypina się do
+\(\text{jumpParameter}\) — maksimum, jakie przybliżenie w ogóle
+dopuszcza — dla wszystkich trzech, niezależnie od tego, jak daleko orbita
+faktycznie zdążyła się zapaść między nimi.
+
+*Skala, skalibrowana wprost z danych trajektorii (nie założona).*
+Wyprowadzone \(\omega(E)=(2|E|)^{1{,}5}/\text{attractionParameter}\) z
+`photonEnergyReference` checkpointu \(17\) (sprawdzone na checkpoincie
+\(16\): zgodność do \(6\) cyfr), zastosowane do PRAWDZIWEGO stanu \(E\)
+tuż przed fotonem \(2\) i \(3\):
+\[
+\begin{array}{lccc}
+ & \text{u\.zyta } photonEnergy & \text{"poprawna" (z prawdziwego } E) & \text{niedoszacowanie}\\
+\text{foton 2} & 3{,}93\times10^{-18}\text{ J} & 2{,}27\times10^{-17}\text{ J} & 83\%\\
+\text{foton 3} & 3{,}93\times10^{-18}\text{ J} & 5{,}29\times10^{-17}\text{ J} & 93\%
+\end{array}
+\]
+**Nie kilka procent — czynnik \(5{,}8\times\) i \(13{,}5\times\) za
+mało.** Przybliżenie jest ograniczone z góry przez
+\((1-\text{jumpParameter})^{-1}\) (\(\approx1{,}43\times\) przy
+\(\text{jumpParameter}\approx0{,}3\)) niezależnie od tego, jak daleko
+poza ten jeden checkpoint prawdziwy stan już się oddalił — więc błąd
+**rośnie bez ograniczenia z każdym kolejnym fotonem tej samej
+kaskady**, właśnie w reżimie (szybkie, wielofotonowe kaskady), który
+próba 4 uczyniła powszechnym. Energia radiowana w takich kaskadach jest
+więc systematycznie ZANIŻANA względem tego, co prawdziwa, ewoluująca
+orbita powinna emitować — nieco spowalniając tempo, w jakim \(|E|\)
+faktycznie się pogłębia w takich seriach, względem poprawnej fizyki.
+Nie sprawdzone jeszcze: jak często takie kaskady występują w pełnej
+partii produkcyjnej i jak duży jest łączny wpływ na czas kolapsu — otwarty,
+teraz precyzyjnie opisany i skwantyfikowany wątek.
+
 **F. Co model świadomie zostawia otwarte.** (1) Orbitalny moment pędu
 fotonu względem pary jako dosłowny \(\mathbf r\times\mathbf p_\gamma\) —
 wciąż wymagałby anomalii prawdziwej, niedostępnej w reprezentacji samych
