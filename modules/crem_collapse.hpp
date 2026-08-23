@@ -1277,56 +1277,34 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             *elements.specificAngularMomentum
                             *elements.specificAngularMomentum
                             /(attractionParameter*attractionParameter));
-                    const double kHere=-(1.0-eccentricitySquaredHere)
-                        /(2.0+eccentricitySquaredHere);
                     const double energyBeforeKick=
                         std::abs(elements.specificEnergy);
                     elements.specificEnergy-=
                         (photonEnergy+centreOfMassEnergyKick)/reducedMass;
                     const double energyAfterKick=
                         std::abs(elements.specificEnergy);
-                    // L update: NOT the frozen-k power law
-                    // L*=(E_after/E_before)^kHere used by the bulk/
-                    // deterministic branch below.  That formula is only
-                    // the first-order (small-jump) approximation to the
-                    // differential relation d(lnL)/d(ln|E|)=k(e) it comes
-                    // from -- fine for the bulk branch, whose jump per
-                    // checkpoint is capped at jumpParameter<=0.30 (energy
-                    // ratio <~1.33), but a single photon can carry a large
-                    // multiple of the current orbital energy (measured
-                    // energyAfterKick/energyBeforeKick up to ~18.5x
-                    // elsewhere in this file), where the frozen-k
-                    // extrapolation is badly wrong -- checked numerically
-                    // against this exact solve: 1-e^2 off by tens to over
-                    // 100%, occasionally negative (unphysical) for R>~5.
-                    // k(e)=-(1-e^2)/(2+e^2) is unchanged and still exactly
-                    // correct here (it is a property of the classical
-                    // dipole force law's r-dependence, not of whether the
-                    // resulting loss is booked continuously or in photon-
-                    // sized lumps -- same argument as the reaction-model-
-                    // independence already established above); what
-                    // changes is HOW that differential relation is
-                    // integrated over a finite jump.  Solved exactly: the
-                    // ODE has a closed-form first integral, found by
-                    // separating variables in s=1-e^2 and x=ln|E| --
-                    // (1-e^2)^3/(e^4 |E|^3) is EXACTLY conserved along any
-                    // trajectory obeying dL/L=k(e) dE/E for this k(e).
-                    // Verified two ways: algebraically self-consistent
-                    // with the eccentricity formula above by construction,
-                    // and independently checked against direct RK4
-                    // integration of the ODE (1e-12 agreement, RK4's own
-                    // discretization error).  Solving that invariant for
-                    // the new e^2 is a monotonic root (checked: (1-w)^3/w^2
-                    // is strictly decreasing on (0,1), so the root is
-                    // unique) -- found by bisection rather than the cubic's
-                    // own closed form to sidestep casus irreducibilis
-                    // (multiple real roots needing branch selection);
-                    // photon events are rare enough per trajectory that 80
-                    // bisection steps here cost nothing.  Near-circular
-                    // orbits (e0^2 below the guard) are the ODE's fixed
-                    // point (e=0 stays e=0, checked directly from the ODE)
-                    // and skip the solve entirely.
-                    double newEccentricitySquared=eccentricitySquaredHere;
+                    // CLASSICAL magnitude prediction from k(e), exactly
+                    // integrated over this finite jump (see this file's own
+                    // history/README for the derivation and its own
+                    // verification) -- kept below ONLY as a diagnostic
+                    // comparison, no longer applied to the state.  Why: k
+                    // comes from the classical reaction TORQUE, and by
+                    // angular-momentum conservation applied to the
+                    // classical field, "torque integrated on the orbit"
+                    // and "what the continuous field carries away" are the
+                    // SAME quantity, not two contributions to add.  Once
+                    // the emission is quantized into a real photon with a
+                    // real, known spin, using this classical number ON TOP
+                    // OF the photon's own angular momentum below would
+                    // double-count that one physical quantity -- the same
+                    // mistake the removed orbital-plane tilt made for
+                    // linear momentum.  So it is superseded here by the
+                    // photon's own quantized angular momentum, exactly the
+                    // same treatment already given to energy (photonEnergy
+                    // replaces the classical rate, not adds to it) and to
+                    // linear momentum (the sampled recoil replaces zero,
+                    // not adds to a classical estimate).
+                    double classicalEccentricitySquared=eccentricitySquaredHere;
                     if(eccentricitySquaredHere>1.0e-12
                        &&energyBeforeKick>0.0) {
                         const double energyRatio=
@@ -1346,12 +1324,72 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             const double rhs=rhsScale*mid*mid;
                             if(lhs>rhs) lo=mid; else hi=mid;
                         }
-                        newEccentricitySquared=0.5*(lo+hi);
+                        classicalEccentricitySquared=0.5*(lo+hi);
                     }
-                    elements.specificAngularMomentum=std::sqrt(std::max(0.0,
-                        attractionParameter*attractionParameter
-                        *(1.0-newEccentricitySquared)
-                        /(2.0*energyAfterKick)));
+                    const double classicalAngularMomentumMagnitude=
+                        std::sqrt(std::max(0.0,
+                            attractionParameter*attractionParameter
+                            *(1.0-classicalEccentricitySquared)
+                            /(2.0*energyAfterKick)));
+                    // PHOTON SPIN, applied for real: a photon is a massless
+                    // spin-1 boson, so it carries EXACTLY +-hbar of angular
+                    // momentum along its own propagation direction
+                    // (photonDirection, already sampled above) -- not an
+                    // orbit-averaged estimate, an exact per-photon fact,
+                    // same status as photonEnergy=hbar*omega.  The
+                    // conditional helicity distribution given the emission
+                    // angle theta (cosThetaFromAxis, already sampled) is
+                    // the standard result for a Delta-m=+-1 (circular)
+                    // dipole transition: P(+|theta)=(1+cos theta)^2 /
+                    // [2(1+cos^2 theta)], P(-|theta)=(1-cos theta)^2 /
+                    // [2(1+cos^2 theta)] -- these sum to exactly the
+                    // (1+cos^2 theta) pattern the emission angle itself was
+                    // already drawn from, so this is not a new assumption
+                    // layered on top, it is the polarization-resolved
+                    // refinement of the SAME distribution (checked: at
+                    // theta=0 and theta=pi the two poles give a helicity
+                    // that, combined with photonDirection, ALWAYS points
+                    // the actual angular-momentum vector h*hbar*n along the
+                    // orbital axis, matching Delta-m=+1 exactly; at
+                    // theta=pi/2 it is an even 50/50 mix in the orbital
+                    // plane).  What this does NOT capture: the photon's
+                    // ORBITAL angular momentum relative to the pair (r x p,
+                    // r being the true anomaly this elements-only
+                    // representation does not carry) -- checked by taking
+                    // the expectation of the axial component over the full
+                    // (1+cos^2 theta) distribution, <h cos theta> = 1/2,
+                    // not 1, so spin alone recovers exactly half of the
+                    // Delta-m=1 selection rule on average, the other half
+                    // being the same true-anomaly-dependent piece the
+                    // removed tilt could not evaluate either.  Left as an
+                    // acknowledged, unavoidable shortfall of this
+                    // architecture rather than patched with an arbitrary
+                    // factor of 2, which would misrepresent an unverified
+                    // guess as a measured correction.
+                    const double helicityPlusProbability=std::clamp(
+                        (1.0+cosThetaFromAxis)*(1.0+cosThetaFromAxis)
+                        /(2.0*(1.0+cosThetaFromAxis*cosThetaFromAxis)),
+                        0.0,1.0);
+                    const double helicity=
+                        drawUniformUnit(stochasticSkipStream)
+                            <helicityPlusProbability?1.0:-1.0;
+                    const Vec3 photonSpinAngularMomentum=
+                        photonDirection*(helicity*hbar);
+                    const Vec3 orbitalAngularMomentumBefore=
+                        angularMomentumDirection
+                            *(elements.specificAngularMomentum*reducedMass);
+                    const Vec3 orbitalAngularMomentumAfter=
+                        orbitalAngularMomentumBefore-photonSpinAngularMomentum;
+                    const double newAngularMomentumMagnitude=
+                        orbitalAngularMomentumAfter.norm();
+                    if(newAngularMomentumMagnitude>1.0e-300) {
+                        elements.specificAngularMomentum=
+                            newAngularMomentumMagnitude/reducedMass;
+                        angularMomentumDirection=orbitalAngularMomentumAfter
+                            *(1.0/newAngularMomentumMagnitude);
+                    } else {
+                        elements.specificAngularMomentum=0.0;
+                    }
                     radiatedEnergyTotal+=photonEnergy;
                     ++photonCountDebug;
                     if(std::getenv("CREM_DEBUG"))
@@ -1362,11 +1400,12 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                  <<" energyBeforeKick="<<energyBeforeKick
                                  <<" newE="<<elements.specificEnergy
                                  <<" e0^2="<<eccentricitySquaredHere
-                                 <<" e1^2(exact)="<<newEccentricitySquared
-                                 <<" e1^2(frozen k="<<kHere<<")="
-                                 <<(1.0-(1.0-eccentricitySquaredHere)*std::pow(
-                                     energyAfterKick/std::max(energyBeforeKick,
-                                         1.0e-300),1.0+2.0*kHere))
+                                 <<" helicity="<<helicity
+                                 <<" L_spec(spin)="
+                                 <<elements.specificAngularMomentum
+                                 <<" L_spec(classical k)="
+                                 <<classicalAngularMomentumMagnitude
+                                 <<" |L_dir|="<<angularMomentumDirection.norm()
                                  <<std::endl;
                     stochasticSkipThreshold=
                         drawExponentialUnit(stochasticSkipStream);

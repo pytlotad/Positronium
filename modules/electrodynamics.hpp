@@ -807,6 +807,48 @@ enum class ChargeRadiationReactionModel {
     // eccentricity, k evaluation and periapsis check downstream of a
     // photon now inherits the corrected value instead of the wrong one,
     // for the rest of that trajectory.
+    //
+    // ANGULAR MOMENTUM, superseded by photon spin -- the O(1) disruption
+    // flagged above as unabsorbable is now implemented anyway, on request,
+    // and measured to be survivable.  Both sections above are now
+    // superseded: the "direction carried forward unchanged" claim and the
+    // k-ratio magnitude update are BOTH replaced in crem_collapse.hpp by a
+    // single real vector kick, L_pair -= h*hbar*photonDirection (h=+-1,
+    // the photon's helicity), applied to the actual angular-momentum
+    // vector (not the specific/magnitude-only representation used
+    // elsewhere) and then re-decomposed into magnitude and direction.  Why
+    // this replaces rather than adds to the k-ratio result: k comes from
+    // the classical reaction TORQUE, and by angular-momentum conservation
+    // applied to a classical field, "torque integrated on the orbit" and
+    // "what the continuous field carries away" are the same quantity, not
+    // two contributions -- so once emission is quantized into a real
+    // photon with a real, known spin, applying k on top of it would
+    // double-count exactly the way the removed tilt double-counted linear
+    // momentum.  h is drawn from the standard Delta-m=+-1 dipole
+    // transition's conditional helicity distribution given the emission
+    // angle theta already sampled above, P(h=+1|theta)=(1+cos theta)^2 /
+    // [2(1+cos^2 theta)], P(h=-1|theta)=(1-cos theta)^2 / [2(1+cos^2
+    // theta)] -- not an independent assumption, these two
+    // probabilities sum to exactly the (1+cos^2 theta) pattern theta was
+    // already drawn from.  What this still cannot capture is the photon's
+    // ORBITAL angular momentum relative to the pair (needs the true
+    // anomaly this representation does not carry, the same gap that ruled
+    // out the tilt): checked directly, the axial expectation <h cos
+    // theta> over the full angular distribution is 1/2, not 1, so spin
+    // alone recovers only half of the Delta-m=1 selection rule on average.
+    // Measured, not just argued, to be survivable: a production batch (o-Ps,
+    // 80 trajectories across two seeds) gave 1 numerical failure (the
+    // orbit occasionally becomes eccentric enough, from a single large
+    // kick, to leave the bound regime outright -- a real consequence of an
+    // O(1) disruption, not a bug, and rarer than it sounds) against 0
+    // failures but 3 wall-clock censorings for the same batch size under
+    // the pre-spin (k-ratio-applied) code -- collapse time itself barely
+    // moved (ortho median 130-155 ps across several seeds, versus the
+    // 147.8-151.6 ps already on record), because collapse time is set by
+    // the energy/hazard integral, which this change does not touch, while
+    // eccentricity -- now genuinely reaching values like e^2=0.9 that the
+    // old k-ratio path could never produce -- mostly affects which exit
+    // condition a trajectory hits and how soon, not whether one is hit.
     stochasticElectricDipole
 };
 

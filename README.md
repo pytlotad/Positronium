@@ -1042,6 +1042,55 @@ teraz poprawną wartość zamiast błędnej, do końca tej trajektorii.
 Zweryfikowane: czysta kompilacja (zero ostrzeżeń), `positronium_validation`
 33/33, 0 awarii numerycznych na 10 ziaren.
 
+**Podjęte na zadane polecenie: wstawiony spin fotonu, wcześniej opisany
+jako zaburzenie rzędu jedności, którego "żadna klasyczna adiabatyczna
+księgowość nie wchłonie" — i zmierzony jako przeżywalny.** Obie sekcje
+wyżej (kierunek "niezmienny wobec odrzutu" i wielkość aktualizowana
+współczynnikiem `k`) są teraz zastąpione jednym, prawdziwym kopnięciem
+wektorowym: \(L_{para}\mathrel{-}=h\hbar\,\hat n_{foton}\) (\(h=\pm1\) to
+skrętność fotonu), nakładanym na rzeczywisty (nie tylko specyficzny)
+wektor momentu pędu pary i rozkładanym z powrotem na wielkość i kierunek.
+Dlaczego to ZASTĘPUJE, a nie DODAJE do wyniku ze współczynnika `k`: `k`
+pochodzi z klasycznego momentu siły reakcji, a z zachowania momentu pędu
+zastosowanego do klasycznego pola "moment siły scałkowany po orbicie" i
+"to, co unosi ciągłe pole" to ta sama wielkość, nie dwa oddzielne wkłady —
+więc po skwantowaniu emisji w prawdziwy foton o znanym spinie, doliczanie
+`k` na dodatek podwajałoby dokładnie to, co już policzone, tym samym
+błędem, którym był usunięty wcześniej przechył dla pędu liniowego.
+
+Skrętność \(h\) losowana jest z warunkowego (względem już wylosowanego
+kąta emisji \(\theta\)) rozkładu standardowego dla przejścia dipolowego
+\(\Delta m=\pm1\): \(P(h{=}{+}1|\theta)=(1+\cos\theta)^2/[2(1+\cos^2\theta)]\),
+\(P(h{=}{-}1|\theta)=(1-\cos\theta)^2/[2(1+\cos^2\theta)]\)
+— nie nowe założenie, te dwa prawdopodobieństwa sumują się dokładnie do
+wzorca \((1+\cos^2\theta)\), z którego \(\theta\) było już losowane
+(sprawdzone: przy \(\theta=0\) i \(\theta=\pi\) skrętność w połączeniu z
+kierunkiem fotonu ZAWSZE daje wektor momentu pędu wzdłuż osi orbitalnej,
+zgodnie z \(\Delta m=1\); przy \(\theta=\pi/2\) to równy rozkład 50/50 w
+płaszczyźnie orbity). Czego ten mechanizm NIE łapie: orbitalnego momentu
+pędu fotonu względem pary (potrzebna nieznana anomalia prawdziwa — ta sama
+luka, która wykluczyła przechył). Sprawdzone wprost: wartość oczekiwana
+składowej osiowej \(\langle h\cos\theta\rangle\) po całym rozkładzie
+kątowym wynosi \(1/2\), nie \(1\) — sam spin odzyskuje więc średnio tylko
+połowę reguły wyboru \(\Delta m=1\), reszta to ta sama niedostępna część
+orbitalna.
+
+Zmierzone, nie tylko wyargumentowane, że jest to przeżywalne: partia
+produkcyjna (o-Ps, 80 trajektorii na dwóch ziarnach) dała 1 awarię
+numeryczną (orbita czasem robi się, przez pojedyncze duże kopnięcie,
+na tyle mimośrodowa, że opuszcza reżim związany — prawdziwa konsekwencja
+zaburzenia rzędu jedności, nie błąd, i rzadsza niż mogłoby się wydawać) —
+wobec 0 awarii, ale 3 ucięć budżetem czasowym dla tej samej wielkości
+partii pod starym kodem (z zastosowanym `k`). Sam czas kolapsu ledwo
+drgnął (mediana orto \(130\)–\(155\) ps w kilku ziarnach, wobec
+\(147{,}8\)–\(151{,}6\) ps już zapisanych wcześniej), bo czas kolapsu
+wyznacza całka energii/hazardu, której ta zmiana nie dotyka, a mimośród —
+teraz naprawdę osiągający wartości jak \(e^2=0{,}9\), których stara ścieżka
+z `k` nigdy nie produkowała — wpływa głównie na to, KTÓRY warunek wyjścia
+trajektoria trafi i jak szybko, nie na to, czy w ogóle trafi.
+Zweryfikowane: czysta kompilacja (zero ostrzeżeń), `positronium_validation`
+33/33.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
