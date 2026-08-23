@@ -651,13 +651,53 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     // (an in-plane reaction force never tilts the plane, so the direction
     // would just sit there unread) but not for individual photon kicks,
     // whose emission angle relative to this axis is physical, not
-    // arbitrary.  noetherAngularMomentum is the already-computed, exactly
-    // conserved (Noether) angular momentum of the prepared state -- reused
-    // rather than recomputing cross(relativePosition,relativeVelocity) by
-    // hand, and correct even though it is not PURELY orbital, because the
-    // dipole/spin contribution to it is already documented elsewhere as
-    // ~1e-5 of the orbital term.
-    Vec3 angularMomentumDirection=seedRun.frames.front().noetherAngularMomentum;
+    // arbitrary.
+    //
+    // FIXED: used to be seedRun.frames.front().noetherAngularMomentum,
+    // normalized, on the claim (in this very comment) that "the dipole/spin
+    // contribution to it is already documented elsewhere as ~1e-5 of the
+    // orbital term".  That claim was never actually checked here and was
+    // wrong: it confused two different ~1e-5-ish numbers (the DIPOLE-DIPOLE
+    // INTERACTION ENERGY's ratio to the Coulomb energy, which genuinely is
+    // that small -- see stochasticElectricDipole's own comment -- against
+    // the SPIN CONTRIBUTION TO ANGULAR MOMENTUM, which is not).  The spin
+    // angular momentum per particle is mu/gyromagneticRatio ~ hbar/2 -- the
+    // SAME order as the orbital L this state starts at (L=hbar, the Bohr/SED
+    // value -- see physical_constants.hpp), not five orders smaller.  Found
+    // investigating why para and ortho positronium (same seed, same orbital
+    // sampling, differing only in dipole alignment) gave measurably
+    // different photon emission directions from the very first photon:
+    // instrumented angularMomentumDirection directly and found it was a
+    // COMPLETELY different vector between the two channels (not a small
+    // tilt), present before any photon had fired, because
+    // noetherAngularMomentum includes the mu_e/gamma_e+mu_p/gamma_p spin
+    // term, and para/ortho sample genuinely different (not just
+    // sign-flipped) dipole vectors under the rejection condition that
+    // defines them.  Every stochastic-model trajectory, not only the
+    // para/ortho comparison, was sampling photon direction relative to a
+    // spin-contaminated axis instead of the true orbital plane normal.
+    //
+    // Fixed by computing the orbital angular momentum direction directly,
+    // the way the comment this replaces said it was avoiding: cross(r0,r1)
+    // from the two frames seedOptions above already requests (frameCount=2,
+    // observationTime=1e-24s, i.e. two position samples a near-instant
+    // apart on the true trajectory).  For r1=r0+v*dt at small dt,
+    // cross(r0,r1)=cross(r0,r0)+dt*cross(r0,v)=dt*cross(r0,v) exactly to
+    // leading order -- proportional to the true orbital angular momentum
+    // direction, with no spin contamination at all, and no dependence on
+    // any particular sampling convention (unlike hard-coding the z-axis,
+    // which happens to be right for how this file's own bound-state sampler
+    // places the initial separation along x with velocity confined to the
+    // xy-plane, but would silently break for any other caller). Checked
+    // directly (this exact seed): normalizes to (0, 2e-13, 1) -- the z-axis
+    // recovered to floating-point noise, not the O(1) difference the spin
+    // contamination was producing.
+    const Vec3 firstRelativePosition=
+        seedRun.frames.front().first-seedRun.frames.front().second;
+    const Vec3 secondRelativePosition=
+        seedRun.frames.back().first-seedRun.frames.back().second;
+    Vec3 angularMomentumDirection=
+        cross(firstRelativePosition,secondRelativePosition);
     angularMomentumDirection=angularMomentumDirection.squaredNorm()>0.0
         ?angularMomentumDirection*(1.0/angularMomentumDirection.norm())
         :Vec3{0.0,0.0,1.0};
@@ -816,6 +856,13 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                      <<"ps E="<<elements.specificEnergy<<" L="
                      <<elements.specificAngularMomentum<<" wall="
                      <<wallClockSpent()<<"s"<<std::endl;
+        }
+        if(std::getenv("CREM_DEBUG_PRECISE")) {
+            std::cerr<<std::setprecision(17)
+                     <<"  PRECISE checkpoint "<<checkpoint<<": E="
+                     <<elements.specificEnergy<<" L="
+                     <<elements.specificAngularMomentum
+                     <<std::setprecision(6)<<std::endl;
         }
         if(wallClockSpent()>wallClockBudgetSeconds) {
             result.calibrationOutcome=SimulationOutcome::ObservationLimit;
@@ -1405,6 +1452,28 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                              <<" hazardSuppression="<<hazardSuppression
                              <<std::endl;
                 while(stochasticSkipHazard>=stochasticSkipThreshold) {
+                    // TEMPORARY, investigation-only: full round-trip
+                    // precision (setprecision(17)) state dump, gated on a
+                    // separate env var so it never disturbs CREM_DEBUG's
+                    // existing output. Exists purely to trace the exact
+                    // bit-level origin of the para/ortho divergence
+                    // documented in README point L, sondy 9-11.
+                    if(std::getenv("CREM_DEBUG_PRECISE")) {
+                        std::cerr<<std::setprecision(17)
+                                 <<"    PRECISE pre-draw: stream="
+                                 <<stochasticSkipStream
+                                 <<" hazard="<<stochasticSkipHazard
+                                 <<" threshold="<<stochasticSkipThreshold
+                                 <<" E="<<elements.specificEnergy
+                                 <<" L="<<elements.specificAngularMomentum
+                                 <<" Ldir=("<<angularMomentumDirection.x
+                                 <<","<<angularMomentumDirection.y
+                                 <<","<<angularMomentumDirection.z<<")"
+                                 <<" vcm=("<<centreOfMassVelocity.x
+                                 <<","<<centreOfMassVelocity.y
+                                 <<","<<centreOfMassVelocity.z<<")"
+                                 <<std::setprecision(6)<<std::endl;
+                    }
                     stochasticSkipHazard-=stochasticSkipThreshold;
                     hazardConsumedThisSkip+=stochasticSkipThreshold;
                     // Position within [0,1] of this skip where the running
@@ -1509,6 +1578,19 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         +(inPlaneFirst*std::cos(photonAzimuth)
                           +inPlaneSecond*std::sin(photonAzimuth))
                             *sinThetaFromAxis;
+                    if(std::getenv("CREM_DEBUG_PRECISE")) {
+                        std::cerr<<std::setprecision(17)
+                                 <<"    PRECISE draws: harmonicNumber="
+                                 <<harmonicNumber
+                                 <<" cardanoQ="<<cardanoQ
+                                 <<" cosThetaFromAxis="<<cosThetaFromAxis
+                                 <<" photonAzimuth="<<photonAzimuth
+                                 <<" photonEnergy="<<photonEnergy
+                                 <<" photonDirection=("<<photonDirection.x
+                                 <<","<<photonDirection.y
+                                 <<","<<photonDirection.z<<")"
+                                 <<std::setprecision(6)<<std::endl;
+                    }
                     const double photonMomentum=photonEnergy/c;
                     const Vec3 centreOfMassVelocityKick=
                         photonDirection*(-photonMomentum/totalMass);

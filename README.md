@@ -3105,44 +3105,101 @@ patrz punkt I) do checkpointu \(28\): \(3{,}45\cdot10^{-27}\) J, czyli
 żeby wytłumaczyć zmierzoną rozbieżność \(5{,}6\cdot10^{-6}\) przy
 checkpoincie \(29\).
 
-*Stan na teraz, uczciwie: częściowo rozstrzygnięte, częściowo otwarte.*
-Ustalone na pewno: (a) sprzężenie dipol-dipol daje ścisłą precesję apsyd
-bez zmiany kształtu orbity (sonda 9, zweryfikowane do \(99{,}98\%\)); (b)
-mimo to `orbitalRadiatedEnergy` mierzy realną, systematycznie
-podpisaną różnicę między para i orto, obecną od checkpointu \(0\) (sonda
-11) — więc sprzężenie NIE jest fizycznie martwe dla tej wielkości, wbrew
-naiwnemu argumentowi "siła centralna nie zmienia \(E\)" (który dotyczy
-\(E\) UŚREDNIONEGO po wielu orbitach, nie pojedynczego zmierzonego
-przebiegu, który nie jest dokładnie zamkniętą orbitą); (c) ta ciągła,
-zmierzona różnica jest za mała o \(4\)–\(5\) rzędów wielkości, żeby
-samodzielnie wytłumaczyć skok w próbkowaniu drugiego fotonu. Niepewne:
-dokładny mechanizm, którym ta mała, ciągła asymetria zamienia się w
-znacznie większą różnicę kierunku próbkowania konkretnego fotonu —
-najbardziej prawdopodobne wyjaśnienie to nieliniowe wzmocnienie przy
-odwracaniu dystrybuanty (z natury czułym na drobne przesunięcia
-argumentu blisko progu), ale nie zostało to jeszcze prześledzone do
-pojedynczego bitu. Zostawione jako jawnie otwarte, nie domknięte na
-siłę — dalsza instrumentacja (pełne składowe wektorowe `v_cm`, akumulator
-hazardu z większą liczbą cyfr) mogłaby to rozstrzygnąć, ale wymaga
-osobnej sesji.
+*Sonda 12 — głębsza instrumentacja (pełna precyzja podwójna, stan
+strumienia PRNG, wektory pośrednie) w poszukiwaniu dokładnego mechanizmu
+— i mechanizm znaleziony, ale zupełnie inny niż sondy 9–11 sugerowały.*
+Dodana tymczasowa diagnostyka (`CREM_DEBUG_PRECISE`): pełna precyzja
+`setprecision(17)` dla \(E\), \(L\), stanu strumienia losowego, oraz
+bezpośredni wydruk `angularMomentumDirection` i każdego losowania
+(`cardanoQ`, `cosThetaFromAxis`, `photonAzimuth`, `photonDirection`)
+tuż przed każdym zdarzeniem fotonowym. Wynik, dla drugiego fotonu
+(checkpoint \(29\), ziarno \(42\)):
 
-*Wniosek końcowy — praktyczny wynik nietknięty przez to doprecyzowanie.*
-Sprzężenie dipol-dipol jest realne, mierzalne, różni się między para i
-orto co do znaku, i — jak teraz wiadomo dokładniej — działa poprzez
-precesję orientacji orbity (nie zmianę jej kształtu) PLUS jakiś
-niecałkowicie jeszcze prześledzony, nieliniowy mechanizm wzmacniający to
-w próbkowaniu pojedynczych fotonów. Ale jego całkowita skala
-(\(\sim10^{-6}\) energii Coulomba u źródła) i struktura (tylko DC i
-\(2\omega\), nigdy \(3\omega\), sonda 3) nadal nie dają żadnej podstawy
-do SYSTEMATYCZNIE różnego traktowania harmonik promieniowania E1 między
-kanałami — potwierdzone empirycznie na partii \(N=30\) (sonda 8:
-identyczny rozkład harmonik, \(44/44\) zdarzeń dało \(n=1\) w obu
-kanałach). Prawdziwa różnica 2γ/3γ jest odrębnym procesem kwantowym poza
-zasięgiem tego modelu. Jedenaście niezależnych sond, każda ilościowo
-zweryfikowana, w tym dwie własne pomyłki znalezione i skorygowane w
-trakcie (sonda 9: błąd rozwijania kąta; sonda 10→11: przedwczesny
-wniosek o skokowym charakterze) — nie jeden pobieżny test podający
-gładką historię.
+```
+PARA:  Ldir = ( 0,2359,  0,1797,  0,9550)   [PRZED pierwszym fotonem!]
+ORTO:  Ldir = (-0,3180, -0,4810,  0,8170)
+```
+
+Mimo że `cosThetaFromAxis` i `photonAzimuth` (te same losowania!) są
+bit w bit identyczne, `photonDirection` wychodzi kompletnie różny — bo
+opiera się na innej osi. **To nie subtelny efekt sekularny — to zupełnie
+inny wektor, obecny już przed pierwszym fotonem.**
+
+Źródło znalezione w komentarzu kodu, który sam siebie obalił:
+`angularMomentumDirection` był inicjalizowany z
+`seedRun.frames.front().noetherAngularMomentum` — **pełnej** wielkości
+Noethera, na twierdzeniu "wkład spinu/dipola do niej jest już
+udokumentowany gdzie indziej jako \(\sim10^{-5}\) wyrazu orbitalnego".
+To twierdzenie nigdy nie zostało bezpośrednio sprawdzone — i jest
+**fałszywe**: myli dwie różne wielkości \(\sim10^{-5}\)-podobne —
+prawdziwie małą (energię sprzężenia dipol-dipol względem energii
+Coulomba) z zupełnie inną, sporo większą (wkład spinu do momentu pędu).
+Wkład spinu na cząstkę to \(\mu/\gamma_{gyro}=S\approx\hbar/2\) — **tego
+samego rzędu**, co orbitalny \(L\approx\hbar\) (wartość Bohra/SED, patrz
+`physical_constants.hpp`), nie pięć rzędów mniejszy. Para i orto losują
+GENUINE różne (nie tylko przeciwnie skierowane) wektory
+\(\boldsymbol\mu_1,\boldsymbol\mu_2\) pod warunkiem odrzucania, który je
+definiuje — więc `angularMomentumDirection` wychodzi kompletnie różny,
+dla KAŻDEJ pojedynczej trajektorii, nie tylko w porównaniu para/orto.
+
+*Sonda 13 — naprawa i weryfikacja.* Poprawka: zamiast pełnej wielkości
+Noethera, `angularMomentumDirection` liczony bezpośrednio z geometrii,
+używając dwóch klatek, które `seedOptions` i tak już żąda
+(`frameCount=2`, `observationTime=10^{-24}` s — dwie próbki położenia
+niemal w tej samej chwili na prawdziwej trajektorii):
+
+```cpp
+const Vec3 firstRelativePosition = frames.front().first-frames.front().second;
+const Vec3 secondRelativePosition = frames.back().first-frames.back().second;
+Vec3 angularMomentumDirection = cross(firstRelativePosition, secondRelativePosition);
+```
+
+Uzasadnienie: dla \(r_1=r_0+v\,dt\) przy małym \(dt\),
+\(r_0\times r_1=r_0\times r_0+dt\,(r_0\times v)=dt\,(r_0\times v)\) —
+dokładnie proporcjonalne do prawdziwego kierunku orbitalnego momentu
+pędu, bez żadnego zanieczyszczenia spinem, i bez zależności od
+konkretnej konwencji próbkowania (w przeciwieństwie do zakodowania na
+sztywno osi \(z\), co akurat działałoby dla sposobu, w jaki TEN plik
+próbkuje stany związane, ale cicho zawiodłoby dla każdego innego
+wywołania). Sprawdzone bezpośrednio (to samo ziarno): normalizuje się do
+\((0,\,2\cdot10^{-13},\,1)\) — oś \(z\) odzyskana do szumu
+zmiennoprzecinkowego, nie do różnicy rzędu jedności, jaką dawało
+zanieczyszczenie spinem.
+
+**Weryfikacja po naprawie — kompletna zgodność:**
+
+```
+Ldir przed fotonem #1:    PARA=(0,-1,2e-13,1)  ORTO=(-0,1,7e-13,1)  [oba ~oś z]
+photonDirection foton #1: identyczny do 10+ cyfr znaczących w OBU kanałach
+cmEnergyKick foton #1:    1,28403e-23J w OBU (wcześniej: identyczne już i tak)
+Ldir przed fotonem #2:    identyczny do wielu cyfr w OBU kanałach
+photonDirection foton #2: identyczny do wielu cyfr w OBU kanałach
+cmEnergyKick foton #2:    5,46842e-22J w OBU (wcześniej: 5,40e-22 vs 5,99e-22!)
+```
+
+Partia \(N=30\) (to samo ziarno co wcześniej): mediana i RMST Kaplana-Meiera
+bez zmian względem sprzed naprawy — zgodnie z oczekiwaniem, bo poprawka
+dotyczy KIERUNKU pojedynczych fotonów (uśrednia się w statystyce
+zbiorczej), nie budżetu energii. `positronium_validation` 33/33.
+
+*Wniosek końcowy — mechanizm w pełni zidentyfikowany i naprawiony, nie
+tylko domknięty w statystyce.* Poprzednia hipoteza (precesja apsyd,
+sondy 9–11) była matematycznie poprawna jako ZJAWISKO OGÓLNE, ale nie
+była właściwym mechanizmem TEJ rozbieżności — prawdziwą przyczyną było
+zanieczyszczenie osi emisji fotonu przez losowo próbkowany spin,
+niezwiązane z sekularnym sprzężeniem dipol-dipol wcale. Naprawione, nie
+tylko udokumentowane: `angularMomentumDirection` liczony teraz z
+czystej geometrii orbitalnej, poprawnie dla KAŻDEJ trajektorii
+stochastycznego modelu, nie tylko w porównaniu para/orto. Sprzężenie
+dipol-dipol (sondy 3, 9, 11) pozostaje realne, małe
+(\(\sim10^{-6}\) energii Coulomba) i o strukturze DC+\(2\omega\) —
+wciąż bez podstaw do systematycznie różnych harmonik między kanałami,
+teraz bez domieszki znacznie większego, niepowiązanego artefaktu.
+Trzynaście niezależnych sond, w tym trzy własne pomyłki znalezione i
+skorygowane w trakcie (sonda 9: błąd rozwijania kąta; sonda 10→11:
+przedwczesny wniosek o skokowym charakterze; a samo `noetherAngularMomentum`
+z sondy 12 — błąd sprzed wielu sesji, wykryty dopiero teraz) — dokładnie
+taki proces, jaki ta cała sekcja miała demonstrować.
 
 ## Warunki początkowe i klasyfikacja zjawiska
 
