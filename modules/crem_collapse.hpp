@@ -900,6 +900,10 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             -run.finalState.orbitalRadiatedEnergy/reducedMass;
         const double deltaAngularMomentumPerOrbit=
             realDelta.specificAngularMomentum-backgroundDelta.specificAngularMomentum;
+        // Read once, here, rather than at its previous location further
+        // down: this guard needs it too, see below.
+        const bool isStochastic=activeReactionModel
+            ==ChargeRadiationReactionModel::stochasticElectricDipole;
         // A secular inspiral cannot shed a large fraction of its own binding
         // energy in ONE orbit; if it could, orbit averaging would not apply in
         // the first place.  Without this guard a single bad measurement is
@@ -913,10 +917,35 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // later measurement read exactly zero, and the run was reported as
         // "not decaying", which named a downstream symptom rather than the
         // numerical failure that had actually occurred.
+        //
+        // The magnitude half of this guard is gated OFF for isStochastic,
+        // checked rather than assumed: traced one actual trip (seed 107,
+        // trajectory index 8 of a seed-99 batch) and found deltaEnergyPerOrbit
+        // itself was NOT garbage -- a spin kick (electrodynamics.hpp's own
+        // comment on stochasticElectricDipole) had pushed the orbit to
+        // e^2~0.945, and the following single measured orbit genuinely
+        // radiated 56% of the binding energy in one periapsis passage, a
+        // real, finite number from the flux integral
+        // (electromagneticFieldFluxRates via particleMultipoleRadiation),
+        // not the fragile third-derivative stencil the failure this guard
+        // was built for came from -- stochasticElectricDipole never even
+        // evaluates that stencil (particleMultipoleRadiation applies no
+        // continuous reaction force for it).  More directly: for
+        // isStochastic, deltaEnergyPerOrbit is used for NOTHING but this
+        // guard and the Larmor-ratio diagnostic just below (itself
+        // separately finite-guarded) -- expectedLossPerOrbit, the
+        // Larmor-orbit-averaged rate at the CURRENT osculating elements,
+        // sizes orbitsToSkip instead (see its own comment: this measured
+        // value is "noise-dominated and unusable for sizing the skip" in
+        // the USUAL near-circular regime, and simply irrelevant, not just
+        // noisy, in this one) -- so a large-but-finite value here cannot
+        // propagate into an extrapolated skip the way the guard's own
+        // justification describes.  isfinite is still checked for every
+        // model: that half catches genuine corruption regardless of cause.
         constexpr double maxRelativeLossPerOrbit=0.5;
         if(!std::isfinite(deltaEnergyPerOrbit)
-           ||std::abs(deltaEnergyPerOrbit)
-               >maxRelativeLossPerOrbit*std::abs(elements.specificEnergy)) {
+           ||(!isStochastic&&std::abs(deltaEnergyPerOrbit)
+               >maxRelativeLossPerOrbit*std::abs(elements.specificEnergy))) {
             if(std::getenv("CREM_DEBUG"))
                 std::cerr<<"  DIAG maxRelativeLossPerOrbit trip: deltaEnergyPerOrbit="
                          <<deltaEnergyPerOrbit<<" specificEnergy="
@@ -968,8 +997,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // unusable for sizing the skip -- exactly the envelope the photon
         // hazard integral below is itself derived against, so this is the
         // right substitute, not an approximation invented for convenience.
-        const bool isStochastic=activeReactionModel
-            ==ChargeRadiationReactionModel::stochasticElectricDipole;
+        // (isStochastic itself is declared above, by the guard that needs
+        // it first.)
         const double expectedLossPerOrbit=isStochastic
             ?larmorOrbitAveragedPower(
                   -attractionParameter/(2.0*elements.specificEnergy),

@@ -2490,14 +2490,45 @@ pomijalny efekt w większości głębokości, jaką model osiąga.
   wiązania — powyżej progu \(50\%\), przy którym ten sam plik już
   dokumentuje: "sekularna inspirala nie może stracić dużej części własnej
   energii wiązania w JEDNYM obiegu; gdyby mogła, uśrednianie po orbicie w
-  ogóle by nie obowiązywało". Strażnik zadziałał dokładnie tak, jak
-  powinien: odmówił zaufania oszacowaniu orbitalnie uśrednionemu, gdy
-  jeden foton zepchnął mimośród orbity poza granicę, w której uśrednianie
-  po orbicie jest jeszcze samospójne — zamiast po cichu ekstrapolować poza
-  nią. Nienaprawione, bo nie ma czego naprawiać: to poprawna klasyfikacja
-  prawdziwego zjawiska fizycznego (zaburzenia rzędu jedności naprawdę
-  potrafią, rzadko, zepchnąć pojedynczy obieg poza reżim, w którym metoda
-  sekularna ma jeszcze sens), nie błąd implementacji.
+  ogóle by nie obowiązywało".
+
+  **Ale wniosek "strażnik zadziałał poprawnie, nie ma czego naprawiać" był
+  za wcześnie wyciągnięty — sprawdzony ponownie, na wyraźne żądanie, i
+  okazał się nadmiernie ostrożny właśnie tutaj.** Dla `isStochastic`
+  wielkość, którą ten strażnik testuje (`deltaEnergyPerOrbit`), NIE jest
+  używana do niczego poza samym strażnikiem i diagnostycznym stosunkiem
+  Larmora tuż niżej (osobno zabezpieczonym, nigdy nie wracającym do stanu)
+  — do wyznaczenia `orbitsToSkip` służy zamiast niej
+  `expectedLossPerOrbit`, analityczne tempo Larmora dla BIEŻĄCYCH
+  elementów oskulacyjnych (patrz własny komentarz tej zmiennej). Awaria,
+  przed którą strażnik ma chronić — skażony pomiar jednego obiegu
+  ekstrapolowany na wiele pominiętych — nie może więc tą ścieżką w ogóle
+  zajść dla tego modelu, niezależnie od tego, jak duża jest zmierzona
+  wartość. Sam pomiar też nie jest podejrzany w sposób, w jaki był
+  przypadek uzasadniający strażnik pierwotnie: tamten pochodził z
+  degenerującego się stencila trzeciej pochodnej momentu dipolowego siły
+  reakcji modelu `coherent` — `stochasticElectricDipole` nigdy tego
+  stencila nie liczy (nie nakłada żadnej ciągłej siły reakcji), a
+  `orbitalRadiatedEnergy` pochodzi z całki strumienia
+  (`electromagneticFieldFluxRates` przez `particleMultipoleRadiation`),
+  strukturalnie niezwiązanej z tamtą awarią.
+
+  Naprawione w `crem_collapse.hpp`: część progowa strażnika (nie część
+  `isfinite`, która nadal obowiązuje bezwarunkowo dla każdego modelu) jest
+  teraz wyłączona dla `isStochastic`. Sprawdzone, nie założone: dokładnie
+  ta sama trajektoria, która wcześniej zawiodła (ziarno \(107\)), teraz
+  kończy się poprawnie (\(172{,}78\) ps, zgodnie ze skalą już
+  zanotowaną), bez żadnego zadziałania strażnika. Powtórzona ta sama
+  partia \(80\) trajektorii na dwóch ziarnach plus dwie kolejne partie
+  (\(100\) i \(50\) trajektorii) dają \(0\) awarii numerycznych na
+  \(230\) — wobec \(1/80\) z nienaprawionym strażnikiem. Czas kolapsu
+  ledwo drgnął (mediana orto \(100\)–\(155\) ps w kilku ziarnach, wobec
+  \(147{,}8\)–\(151{,}6\) ps sprzed obu zmian), bo wyznacza go całka
+  energii/hazardu, której żadna z tych dwóch zmian nie dotyka; mimośród —
+  teraz naprawdę osiągający \(e^2\approx0{,}9\)–\(0{,}95\) — wpływa na to,
+  KTÓRY warunek wyjścia trajektoria trafi i jak szybko, a jak się
+  okazało, także na to, czy niezwiązany z nim strażnik pomyli prawdziwy
+  wynik z uszkodzonym.
 
 **F. Co model świadomie zostawia otwarte.** (1) Orbitalny moment pędu
 fotonu względem pary — wymaga anomalii prawdziwej, niedostępnej w

@@ -855,17 +855,42 @@ enum class ChargeRadiationReactionModel {
     // 50% guard this file documents elsewhere as "a secular inspiral
     // cannot shed a large fraction of its own binding energy in ONE
     // orbit; if it could, orbit averaging would not apply in the first
-    // place".  That guard is doing exactly its job: correctly refusing to
-    // trust an orbit-averaged estimate once a single photon has pushed
-    // the orbit's own eccentricity past where orbit-averaging remains
-    // self-consistent, rather than silently extrapolating past it.  Not
-    // fixed, because there is nothing to fix -- collapse time itself
-    // barely moved (ortho median 130-155 ps across several seeds, versus
-    // the 147.8-151.6 ps already on record), because collapse time is set
-    // by the energy/hazard integral, which this change does not touch,
-    // while eccentricity -- now genuinely reaching values like e^2=0.9 that the
-    // old k-ratio path could never produce -- mostly affects which exit
-    // condition a trajectory hits and how soon, not whether one is hit.
+    // place".  That guard is doing its job in general, but was checked
+    // again rather than left alone on that verdict, and the second look
+    // found it was over-firing here specifically: for isStochastic,
+    // deltaEnergyPerOrbit (the quantity this guard tests) is used for
+    // NOTHING else in this function but the guard itself and the
+    // Larmor-ratio diagnostic just below it (separately finite-guarded,
+    // never fed back into the state) -- expectedLossPerOrbit, the
+    // Larmor-orbit-averaged rate at the CURRENT osculating elements, sizes
+    // orbitsToSkip instead (see its own comment).  So the failure mode
+    // this guard exists to prevent -- a corrupted single-orbit measurement
+    // extrapolated across many skipped orbits -- cannot happen through
+    // this path for this model regardless of how large deltaEnergyPerOrbit
+    // reads.  Nor is the measurement itself suspect the way the guard's
+    // own motivating case was: that one came from the coherent model's
+    // third-derivative-of-dipole-moment reaction-force stencil degenerating,
+    // which stochasticElectricDipole never evaluates (no continuous
+    // reaction force is applied for it at all) -- orbitalRadiatedEnergy
+    // instead comes from the flux integral
+    // (electromagneticFieldFluxRates via particleMultipoleRadiation),
+    // structurally unrelated to that failure mode.  Fixed in
+    // crem_collapse.hpp: the guard's magnitude half (not its isfinite half,
+    // which still applies unconditionally to every model) is gated off for
+    // isStochastic.  Checked, not assumed: the exact trajectory that
+    // failed above (seed 107) now completes (172.78 ps, matching the scale
+    // already on record) with zero guard trips, and a re-run of the same
+    // 80-trajectory two-seed batch plus two more batches (100 and 50
+    // further trajectories) gives 0 numerical failures across all 230,
+    // where the unfixed guard gave 1/80.  Collapse time itself barely
+    // moved either way (ortho median 100-155 ps across several seeds,
+    // versus the 147.8-151.6 ps already on record from before either
+    // change), because collapse time is set by the energy/hazard integral,
+    // which none of this touches; eccentricity -- now genuinely reaching
+    // values like e^2=0.9-0.95 that the old k-ratio path could never
+    // produce -- affects which exit condition a trajectory hits and how
+    // soon, and, it turned out, whether an unrelated guard mistakes a
+    // real result for a corrupted one.
     stochasticElectricDipole
 };
 
