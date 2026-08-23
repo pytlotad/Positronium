@@ -3958,6 +3958,54 @@ pomyłka o czynnik \(1000\) w ręcznym szacunku `vcm`, złapana natychmiast
 przeliczeniem) — dokładnie taki proces, jaki ta cała sekcja miała
 demonstrować.
 
+**M. Walidacja produkcyjna, pełna skala: wszystkie pięć eksperymentów
+statystycznych, \(N=1000\), e⁺e⁻, bez zewnętrznego pola magnetycznego.**
+Domknięcie punktów A–L: nie na przykładach czy próbkach po kilkadziesiąt
+trajektorii, tylko na pełnej, produkcyjnej partii każdego eksperymentu
+(`--mode statistical`, ziarno \(42\) — to samo, którego użył autor kodu
+do własnych pomiarów czasu wykonania w komentarzu), po próbie 4 i
+naprawie `hFraction`. Łączny czas: \(1\) h \(25\) min (`--phenomenon 1`:
+\(35\) min \(47\) s; `2`: \(36\) min \(17\) s; `3`: \(5\) min \(49\) s;
+`4`: \(2\) min \(47\) s; `5`: \(4\) min \(17\) s — dłużej niż
+udokumentowane w kodzie orientacyjne \(\sim51\) min, prawdopodobnie inna
+liczba rdzeni na tej maszynie niż przy oryginalnym pomiarze).
+
+*Eksperymenty 1–2 (CREM, para/orto-Ps) — najsilniejsza dotychczasowa
+walidacja tej sekcji.* **Zero awarii numerycznych na \(2000\) łącznie
+zmierzonych trajektoriach** (\(1000\) para + \(1000\) orto), obie z
+identyczną liczbą ukończeń (\(926/1000\)) i ucięć budżetem czasowym
+(\(74/1000\)):
+\[
+\begin{array}{lcc}
+ & \text{para-Ps} & \text{orto-Ps}\\
+\text{mediana Kaplana-Meiera} & 119{,}843\text{ ps} & 120{,}843\text{ ps}\\
+\text{RMST} & 187{,}428\pm7{,}13\text{ ps} & 187{,}449\pm7{,}14\text{ ps}
+\end{array}
+\]
+Mediany różnią się o \(\approx0{,}83\%\), RMST praktycznie identyczne —
+zgodne co do rzędu wielkości z tym, co cała sekcja L już ustaliła
+(para/orto nierozróżnialne w granicach tego mechanizmu), teraz
+potwierdzone na pełnej próbie produkcyjnej, nie tylko na garści
+przykładów. Panele lab-frame (punkt E2): para-Ps dała \(2735\) fotonów
+na \(1000\) trajektorii (\(\langle\text{fotony}\rangle=2{,}73\); rozkład
+\(2\) z \(1\) fotonem, \(266\) z \(2\), \(727\) z \(3\), \(5\) z \(4\) —
+kaskady \(2\)–\(3\)-fotonowe to teraz norma, \(99{,}3\%\) trajektorii),
+\(\langle E_{lab}\rangle=738{,}1\) eV, rozkład silnie prawoskośny (ogon
+do \(\sim90\) keV) — zgodne z ustaloną w punkcie E4 fizyką kaskad
+(kolejne fotony niosą coraz więcej energii).
+
+*Eksperymenty 3–5 (wiązka, poza zakresem tej sekcji, ale ta sama partia
+produkcyjna) — dla kompletności.* Eksperyment \(5\) (klasyfikacja
+zderzeń, \(N=1000\)): \(216\) kolizji bezpośrednich (\(21{,}6\%\)),
+\(691\) rozproszeń (\(69{,}1\%\)), \(93\) stany związane — \(28\)
+para-Ps, \(65\) orto-Ps (stosunek \(28{:}65\), oczekiwanie izotropowe
+\(1{:}3\) dałoby \(23{:}70\) na tej samej próbie — zgodne w granicach
+szumu statystycznego \(N=93\)). Eksperymenty \(3\)–\(4\) (wiązka,
+kanał krótkozasięgowy i rozpraszanie sprężyste): własne, niezależne od
+CREM diagnostyki rezerwuaru energii (`|E_bound|/|E_rel|`) zakończone bez
+awarii, \(0/1000\) przypadków przekraczających energię orbity w
+eksperymencie \(4\).
+
 ## Warunki początkowe i klasyfikacja zjawiska
 
 Program losuje kierunki dipoli oraz radialną i styczną składową względnej
