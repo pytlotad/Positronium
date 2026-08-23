@@ -2726,7 +2726,7 @@ konkretnego fotonu (`LabFramePhoton`, `modules/crem_collapse.hpp`).
 Zweryfikowane liczbowo (ziarno \(232\)): przy \(\beta=2\times10^{-4}\),
 \(\Delta E/E\approx-3\times10^{-5}\) — właściwy rząd (\(\sim\beta\)),
 zgodny znak z kątem. Trzy nowe panele
-(`1_3_1_lab_frame_photon_energy.pdf`, `..._frequency.pdf`,
+(`1_3_b_1_lab_frame_photon_energy.pdf`, `..._frequency.pdf`,
 `..._angle.pdf`): sprawdzone wizualnie — sensowny rozkład energii
 (\(N{=}43\), \(\langle E\rangle=826\) eV, od dziesiątek do
 \(\sim3800\) eV, widoczna struktura kaskadowa), kąt od osi odrzutu
@@ -4458,15 +4458,28 @@ bliskiego i interferencyjnego. Residuum LL–strumień jest raportowane osobno.
 
 Każdy rzeczywisty wykres (bez paneli zawierających wyłącznie tekst) jest
 automatycznie zapisywany do katalogu `distributions`. Nazwa ma kolejno numer
-eksperymentu, numer ekranu, numer padu i opis, rozdzielone znakami `_`, na
-przykład:
+eksperymentu, numer ekranu, literę `a`/`b`, numer padu i opis, rozdzielone
+znakami `_`, na przykład:
 
 ```text
-distributions/1_1_1_crem_collapse_time.pdf
-distributions/2_1_4_three_photon_dalitz.pdf
-distributions/3_1_3_energy_loss_cross_section.pdf
-distributions/4_1_1_differential_cross_section.pdf
+distributions/1_1_b_1_crem_collapse_time.pdf
+distributions/1_2_a_2_dipole_coupling_vs_hyperfine.pdf
+distributions/3_1_b_3_energy_loss_cross_section.pdf
+distributions/4_1_b_1_differential_cross_section.pdf
 ```
+
+Litera rozróżnia charakter danych: `a` — rozkład danych WEJŚCIOWYCH
+(cechy przygotowanego/wylosowanego stanu, zanim zadziała na nie dynamika:
+np. sprzężenie dipol-dipol przygotowanej pary, próbkowana energia
+zderzenia, parametr zderzenia, ustawienie dipoli), `b` — rozkład danych
+WYJŚCIOWYCH (cokolwiek symulacja faktycznie wyprodukowała lub zmierzyła:
+czasy kolapsu, przekroje czynne, residua praw zachowania, widma fotonów).
+Klasyfikacja jest jawna w kodzie przy każdym wykresie z osobna
+(`root_export::NamedPad::inputOrOutput`), nie domyślna — świadoma decyzja
+przy dodawaniu każdego panelu, nie odziedziczony domyślny wybór.
+Zrzut ekranu trybu wizualnego (`{N}_1_1_visual_simulation.pdf`) nie
+przechodzi przez ten mechanizm i nie ma litery — to migawka całego stanu
+symulacji, nie rozkład statystyczny.
 
 Diagnostyki drugiej strony również są zapisywane jako osobne pliki. Każdy PDF
 zawiera dokładnie jeden pad i jeden odpowiadający mu rozkład; plik nazwany

@@ -2570,16 +2570,19 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     canvas.Modified();
     canvas.Update();
     std::vector<root_export::NamedPad> plotsToSave{
-        {distributionsPage.GetPad(1), 1, 1, "crem_collapse_time"},
-        {distributionsPage.GetPad(2), 1, 2, "collapse_time_distribution"},
-        {distributionsPage.GetPad(3), 1, 3, "collapse_time_vs_theory"},
-        {distributionsPage.GetPad(4), 1, 4, "radiated_power_vs_larmor"},
-        {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_calibration_power"},
-        {diagnosticsPage.GetPad(2), 2, 2, "dipole_coupling_vs_hyperfine"},
-        {labFramePage.GetPad(1), 3, 1, "lab_frame_photon_energy"},
-        {labFramePage.GetPad(2), 3, 2, "lab_frame_photon_frequency"},
-        {labFramePage.GetPad(3), 3, 3, "lab_frame_photon_angle"},
-        {labFramePage.GetPad(4), 3, 4, "photon_count_per_trajectory"}
+        {distributionsPage.GetPad(1), 1, 'b', 1, "crem_collapse_time"},
+        {distributionsPage.GetPad(2), 1, 'b', 2, "collapse_time_distribution"},
+        {distributionsPage.GetPad(3), 1, 'b', 3, "collapse_time_vs_theory"},
+        {distributionsPage.GetPad(4), 1, 'b', 4, "radiated_power_vs_larmor"},
+        {diagnosticsPage.GetPad(1), 2, 'b', 1, "diagnostic_calibration_power"},
+        // 'a': dipole-dipole coupling of the PREPARED pair, before any
+        // dynamics -- an input/sampled characteristic, not a simulation
+        // result.
+        {diagnosticsPage.GetPad(2), 2, 'a', 2, "dipole_coupling_vs_hyperfine"},
+        {labFramePage.GetPad(1), 3, 'b', 1, "lab_frame_photon_energy"},
+        {labFramePage.GetPad(2), 3, 'b', 2, "lab_frame_photon_frequency"},
+        {labFramePage.GetPad(3), 3, 'b', 3, "lab_frame_photon_angle"},
+        {labFramePage.GetPad(4), 3, 'b', 4, "photon_count_per_trajectory"}
     };
     reportExports(root_export::saveStatisticalPlots(
         selectedPhenomenon, plotsToSave));
@@ -4755,15 +4758,15 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     canvas.Modified();
     canvas.Update();
     std::vector<root_export::NamedPad> plotsToSave{
-        {distributionsPage.GetPad(1), 1, 1, "differential_cross_section"},
-        {distributionsPage.GetPad(2), 1, 2, "cumulative_cross_section"},
-        {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_energy_balance"},
-        {diagnosticsPage.GetPad(2), 2, 2, "diagnostic_momentum_balance"},
-        {diagnosticsPage.GetPad(3), 2, 3, "diagnostic_angular_momentum_balance"}
+        {distributionsPage.GetPad(1), 1, 'b', 1, "differential_cross_section"},
+        {distributionsPage.GetPad(2), 1, 'b', 2, "cumulative_cross_section"},
+        {diagnosticsPage.GetPad(1), 2, 'b', 1, "diagnostic_energy_balance"},
+        {diagnosticsPage.GetPad(2), 2, 'b', 2, "diagnostic_momentum_balance"},
+        {diagnosticsPage.GetPad(3), 2, 'b', 3, "diagnostic_angular_momentum_balance"}
     };
     if (energyLossSpectrum) {
         plotsToSave.push_back(
-            {distributionsPage.GetPad(3), 1, 3, "energy_loss_cross_section"});
+            {distributionsPage.GetPad(3), 1, 'b', 3, "energy_loss_cross_section"});
     }
     reportExports(root_export::saveStatisticalPlots(
         selectedPhenomenon, plotsToSave));
@@ -5491,13 +5494,17 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     canvas.Modified();
     canvas.Update();
     reportExports(root_export::saveStatisticalPlots(5, {
-        {distributionsPage.GetPad(1), 1, 1, "outcome_summary"},
-        {distributionsPage.GetPad(2), 1, 2, "collision_energy"},
-        {distributionsPage.GetPad(3), 1, 3, "impact_parameter"},
-        {distributionsPage.GetPad(4), 1, 4, "dipole_alignment"},
-        {distributionsPage.GetPad(5), 1, 5, "collapse_time_distribution_para"},
-        {distributionsPage.GetPad(6), 1, 6, "collapse_time_distribution_ortho"},
-        {diagnosticsPage.GetPad(1), 2, 1, "diagnostic_summary"}
+        {distributionsPage.GetPad(1), 1, 'b', 1, "outcome_summary"},
+        // 'a': K_CM/impact parameter/dipole alignment are drawn or prepared
+        // BEFORE classification acts on them -- input/sampled beam and pair
+        // characteristics, broken down by the outcome class they led to,
+        // not results the dynamics produced.
+        {distributionsPage.GetPad(2), 1, 'a', 2, "collision_energy"},
+        {distributionsPage.GetPad(3), 1, 'a', 3, "impact_parameter"},
+        {distributionsPage.GetPad(4), 1, 'a', 4, "dipole_alignment"},
+        {distributionsPage.GetPad(5), 1, 'b', 5, "collapse_time_distribution_para"},
+        {distributionsPage.GetPad(6), 1, 'b', 6, "collapse_time_distribution_ortho"},
+        {diagnosticsPage.GetPad(1), 2, 'b', 1, "diagnostic_summary"}
     }));
     bool persistenceOk = reportArchiveOperation(
         statistics_archive::writeScientificReferencesText(),

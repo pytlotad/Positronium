@@ -43,6 +43,16 @@ struct ExportResult {
 struct NamedPad {
     TVirtualPad* pad = nullptr; // non-owning; must outlive saveStatisticalPlots()
     int screenNumber = 0;
+    // 'a' for a plot of INPUT/sampled data (properties of the prepared or
+    // drawn state, before any dynamics act on it -- e.g. a dipole coupling
+    // computed from the prepared pair's moments, or a beam parameter drawn
+    // for the trial), 'b' for a plot of OUTPUT/result data (anything the
+    // simulation itself produced or measured -- collapse times, cross
+    // sections, conservation-law residuals, photon spectra).  Required, not
+    // defaulted: every call site names it explicitly so a plot's
+    // classification is a decision made at the point it is added, not an
+    // silently-inherited default.
+    char inputOrOutput = '\0';
     int padNumber = 0;
     std::string_view plotName;
 };
@@ -237,6 +247,12 @@ inline std::vector<ExportResult> saveStatisticalPlots(
                 "screen and pad numbers must be positive"});
             continue;
         }
+        if (plot.inputOrOutput != 'a' && plot.inputOrOutput != 'b') {
+            results.push_back({outputDirectory,
+                "inputOrOutput must be 'a' (input/sampled data) or 'b' "
+                "(output/result data), set explicitly at the call site"});
+            continue;
+        }
         if (!isAsciiFileStem(plot.plotName)) {
             results.push_back({outputDirectory,
                 "plot name must contain only lowercase ASCII letters, digits, and underscores"});
@@ -244,6 +260,7 @@ inline std::vector<ExportResult> saveStatisticalPlots(
         }
         const std::string filename = std::to_string(selectedPhenomenon) + "_"
             + std::to_string(plot.screenNumber) + "_"
+            + std::string(1, plot.inputOrOutput) + "_"
             + std::to_string(plot.padNumber) + "_"
             + std::string(plot.plotName) + ".pdf";
         results.push_back(
