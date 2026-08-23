@@ -546,6 +546,21 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         splitMix64(seed^0x506f6973736f6e5fULL);
     double stochasticSkipHazard=0.0;
     double stochasticSkipThreshold=drawExponentialUnit(stochasticSkipStream);
+    // Recoil bookkeeping, same lifetime/gating as the hazard state above.
+    // CREM's bound initial conditions are always prepared at EXACTLY zero
+    // total momentum (crem_trajectory.hpp splits the sampled relative
+    // velocity by mass ratio: firstMass*v1+secondMass*v2=0 identically),
+    // and every continuous reaction-force model keeps it that way -- a
+    // classical self-force is, by construction, Newton's-third-law
+    // consistent with its own radiated field. A photon carrying real
+    // momentum away and NOT being balanced by an equal and opposite recoil
+    // on the pair is exactly the gap the note in crem_trajectory.hpp's
+    // applyStochasticDipolePhoton documents (and that comment's own
+    // "negligible" claim, measured directly, was wrong for most of this
+    // model's depth range).  centreOfMassVelocity starts at the true
+    // zero and only ever moves because a photon kicked it.
+    const double totalMass=firstMass+secondMass;
+    Vec3 centreOfMassVelocity{0.0,0.0,0.0};
 
     const auto wallClockStart=std::chrono::steady_clock::now();
     const auto wallClockSpent=[&]() {
@@ -1151,6 +1166,58 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     const double cosThetaFromAxis=
                         signedCbrt(-cardanoQ/2.0+cardanoSqrt)
                         +signedCbrt(-cardanoQ/2.0-cardanoSqrt);
+                    // Shared orthonormal basis (e1,e2) perpendicular to the
+                    // current orbital-plane normal -- reused below for both
+                    // the photon's own emission azimuth (real recoil) and
+                    // the tilt axis (unknown-phase random walk).  Nothing
+                    // physical ties a "reference" azimuth to either use, so
+                    // one basis serves both.
+                    const Vec3 seedAxis=
+                        std::abs(angularMomentumDirection.z)<0.9
+                            ?Vec3{0.0,0.0,1.0}:Vec3{1.0,0.0,0.0};
+                    Vec3 inPlaneFirst=cross(angularMomentumDirection,seedAxis);
+                    inPlaneFirst=inPlaneFirst*(1.0/inPlaneFirst.norm());
+                    const Vec3 inPlaneSecond=
+                        cross(angularMomentumDirection,inPlaneFirst);
+                    const double sinThetaFromAxis=std::sqrt(std::max(0.0,
+                        1.0-cosThetaFromAxis*cosThetaFromAxis));
+                    // Linear-momentum recoil, the fix this whole block
+                    // exists for.  CREM's bound initial conditions are
+                    // prepared at EXACTLY zero total momentum (see this
+                    // function's own comment on centreOfMassVelocity), and
+                    // every continuous model keeps that true by
+                    // construction; only this discrete-photon model had
+                    // been letting the photon carry momentum away
+                    // unbalanced.  The photon's FULL 3D direction (not just
+                    // its angle from the axis) is needed here, unlike for
+                    // the tilt below, because the recoil is a real vector
+                    // kick, not an averaged magnitude.
+                    const double photonAzimuth=
+                        2.0*pi*drawUniformUnit(stochasticSkipStream);
+                    const Vec3 photonDirection=
+                        angularMomentumDirection*cosThetaFromAxis
+                        +(inPlaneFirst*std::cos(photonAzimuth)
+                          +inPlaneSecond*std::sin(photonAzimuth))
+                            *sinThetaFromAxis;
+                    const double photonMomentum=photonEnergy/c;
+                    const Vec3 centreOfMassVelocityKick=
+                        photonDirection*(-photonMomentum/totalMass);
+                    const double centreOfMassEnergyBeforeKick=
+                        0.5*totalMass*centreOfMassVelocity.squaredNorm();
+                    centreOfMassVelocity=
+                        centreOfMassVelocity+centreOfMassVelocityKick;
+                    const double centreOfMassEnergyAfterKick=
+                        0.5*totalMass*centreOfMassVelocity.squaredNorm();
+                    // What the CM motion itself absorbed (usually positive:
+                    // recoil speeds the CM up from rest) must come out of
+                    // the ORBITAL budget on top of the photon's own energy,
+                    // or total (orbital+CM) energy would drop by more than
+                    // the radiatedEnergyTotal credited below -- this is
+                    // exactly the v_cm.p_photon + p_photon^2/(2M) term
+                    // relativistic photon-recoil kinematics requires, not
+                    // an ad hoc correction.
+                    const double centreOfMassEnergyKick=
+                        centreOfMassEnergyAfterKick-centreOfMassEnergyBeforeKick;
                     // The recoil's component along the CURRENT angular-
                     // momentum axis tilts the orbital plane -- exactly
                     // (specific angular momentum) delta-L = r x delta-v,
@@ -1166,7 +1233,9 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // isotropic random walk of the plane's orientation, not
                     // a systematic precession, which is the correct
                     // phase-averaged picture when the phase itself is
-                    // unknown.
+                    // unknown.  (Independent draw from the photon's own
+                    // azimuth above: true anomaly and photon emission angle
+                    // are unrelated unknowns.)
                     const double semiMajorAxisHere=
                         attractionParameter/(2.0*std::abs(elements.specificEnergy));
                     const double outOfPlaneKickSpeed=
@@ -1177,14 +1246,6 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         /std::max(elements.specificAngularMomentum,
                                  1.0e-300));
                     if(tiltAngle>0.0) {
-                        const Vec3 seedAxis=
-                            std::abs(angularMomentumDirection.z)<0.9
-                                ?Vec3{0.0,0.0,1.0}:Vec3{1.0,0.0,0.0};
-                        Vec3 inPlaneFirst=cross(
-                            angularMomentumDirection,seedAxis);
-                        inPlaneFirst=inPlaneFirst*(1.0/inPlaneFirst.norm());
-                        const Vec3 inPlaneSecond=
-                            cross(angularMomentumDirection,inPlaneFirst);
                         const double tiltAzimuth=
                             2.0*pi*drawUniformUnit(stochasticSkipStream);
                         const Vec3 tiltAxis=
@@ -1216,7 +1277,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         /(2.0+eccentricitySquaredHere);
                     const double energyBeforeKick=
                         std::abs(elements.specificEnergy);
-                    elements.specificEnergy-=photonEnergy/reducedMass;
+                    elements.specificEnergy-=
+                        (photonEnergy+centreOfMassEnergyKick)/reducedMass;
                     const double energyAfterKick=
                         std::abs(elements.specificEnergy);
                     elements.specificAngularMomentum*=std::pow(
@@ -1226,7 +1288,9 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     if(std::getenv("CREM_DEBUG"))
                         std::cerr<<"    PHOTON #"<<photonCountDebug<<" x="<<x
                                  <<" photonEnergy="<<photonEnergy
-                                 <<"J energyBeforeKick="<<energyBeforeKick
+                                 <<"J cmEnergyKick="<<centreOfMassEnergyKick
+                                 <<"J |v_cm|="<<centreOfMassVelocity.norm()
+                                 <<" energyBeforeKick="<<energyBeforeKick
                                  <<" newE="<<elements.specificEnergy
                                  <<std::endl;
                     stochasticSkipThreshold=

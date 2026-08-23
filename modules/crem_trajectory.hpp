@@ -99,11 +99,20 @@ double drawUniformUnit(std::uint64_t& streamState) {
 // two-body framing crem_collapse.hpp already uses for "the" orbital
 // energy), as an impulsive kick antiparallel to the current relative
 // velocity, split by reduced-mass partition so total momentum is
-// unaffected.  Photon recoil momentum (hbar*omega/c) is not modelled
-// separately -- at the non-relativistic speeds this mode is meant for it is
-// many orders below the velocity change already being applied, and adding
-// it would need a direction (the dipole pattern) this reduced-mass, COM-
-// frame treatment does not carry.
+// unaffected -- i.e. total LINEAR MOMENTUM CONSERVATION IS NOT ENFORCED
+// for the (pair + photon) system: the photon's own recoil momentum
+// hbar*omega/c is never subtracted from anything.  This was originally
+// (wrongly) written off here as "many orders below the velocity change
+// already being applied" -- measured directly and that is false. The
+// ratio p_photon/p_orbital works out to exactly (reduced Compton
+// wavelength of the pair)/a, independent of speed or energy: ~0.007 at
+// the starting radius, but already ~0.25 by a=3.1pm and >1 below
+// ~0.77pm -- well inside comptonBarrierRadius=193.3fm, i.e. genuinely
+// significant, not negligible, for most of the depth this mode actually
+// reaches.  Left unmodelled anyway: fixing it needs a real photon
+// direction (which the elements-only crem_collapse.hpp path now has,
+// via angularMomentumDirection) to know which way the missing recoil
+// should go, and this purely-mechanical kick has no such information.
 //
 // If the current relative motion does not carry photonEnergy (the naive
 // quadratic solution below is discriminant-negative -- can happen for a

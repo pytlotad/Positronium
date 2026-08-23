@@ -705,6 +705,32 @@ enum class ChargeRadiationReactionModel {
     // alignment/annihilation selection rules elsewhere in this model, and
     // is a different axis from the classical orbital angular momentum
     // this emission pattern actually depends on.
+    //
+    // LINEAR MOMENTUM, fixed.  Every kick above balanced energy exactly but
+    // let the photon's own momentum hbar*omega/c vanish -- unlike the
+    // continuous models, whose self-force is Newton's-third-law consistent
+    // with the field it radiates by construction.  Measured directly (not
+    // asserted): this omission is NOT the "many orders of magnitude
+    // negligible" simplification the mechanical-loop version of this kick
+    // (crem_trajectory.hpp) still describes -- the ratio p_photon/p_orbital
+    // equals exactly (reduced Compton wavelength of the pair)/a, ~0.007 at
+    // the starting radius but already ~0.25 by a=3.1pm and >1 below
+    // ~0.77pm, i.e. genuinely significant for most of the depth this model
+    // reaches, well inside comptonBarrierRadius.  Fixed in
+    // crem_collapse.hpp: the photon's now-sampled full 3D direction gives a
+    // real recoil, applied as a uniform velocity shift to BOTH particles
+    // (centreOfMassVelocity) -- correct because CREM's bound initial
+    // conditions are prepared at EXACTLY zero total momentum and every
+    // continuous model keeps that true, so momentum conservation reduces
+    // to "give the whole system a common kick", not a differential one.
+    // The resulting CM kinetic-energy change (v_cm.p_photon +
+    // p_photon^2/(2M), computed exactly rather than dropped as
+    // second-order) is charged to the orbital budget on top of the
+    // photon's own energy, so total energy still drops by exactly the
+    // photon energy credited to radiatedEnergyTotal.  The mechanical-loop
+    // kick in crem_trajectory.hpp was NOT given the same fix (see its own
+    // updated comment) -- it lacks the position/orientation information
+    // this fix needs and is rarely exercised in production regardless.
     stochasticElectricDipole
 };
 

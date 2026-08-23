@@ -898,6 +898,58 @@ zmiany) — jak oczekiwano, bo kierunek jest ortogonalny do już istniejącej
 fizyki wielkości E/L, tylko dodaje spójną orientację, której wcześniej nie
 było wcale. `positronium_validation` 33/33 bez zmian.
 
+**Sprawdzone na zadane pytanie "czy wszystkie prawa zachowania są tu
+spełnione": nie, i pęd liniowy naprawiony.** Energia — tak, dokładnie
+(zamknięty rachunek, każdy foton usuwa dokładnie \(\hbar\omega\) z energii
+mechanicznej i dokładnie tyle trafia do `radiatedEnergyTotal`). Pęd
+liniowy — **nie był w ogóle egzekwowany**, i przy okazji złapany błąd we
+własnym komentarzu: kod twierdził, że pęd fotonu \(\hbar\omega/c\) jest "o
+rzędy wielkości mniejszy" niż już nakładana zmiana prędkości. Zmierzone
+wprost: stosunek \(p_{foton}/p_{orbitalny}\) wychodzi dokładnie jako
+(zredukowana długość fali Comptona pary)/\(a\), niezależnie od prędkości —
+\(0{,}007\) na starcie orbity, ale już \(0{,}25\) przy \(a=3{,}1\) pm i
+\(>1\) poniżej \(\approx0{,}77\) pm — czyli realny, znaczący ułamek na
+większości głębokości, jaką ten model osiąga, w dodatku dobrze wewnątrz
+własnej zadeklarowanej granicy ważności (`comptonBarrierRadius`). Nieprawdziwy
+komentarz poprawiony na miejscu.
+
+Naprawione w `crem_collapse.hpp` (nie w wersji mechanicznej
+`crem_trajectory.hpp` — ta nie ma pozycji/orientacji potrzebnej do tej
+poprawki i rzadko jest ćwiczona produkcyjnie). Warunki początkowe CREM są
+przygotowywane przy dokładnie zerowym pędzie całkowitym (rozkład prędkości
+względnej wg stosunku mas daje \(m_1v_1+m_2v_2=0\) tożsamościowo), a każdy
+model ciągły utrzymuje to zero z konstrukcji (siła własna klasycznego
+dipola jest zgodna z trzecią zasadą Newtona względem pola, które sama
+promieniuje) — więc zachowanie pędu sprowadza się tu do prostszego pytania:
+czy cały układ dostaje jednorodne kopnięcie równe i przeciwne do pędu
+fotonu. Teraz dostaje: pełny trójwymiarowy kierunek fotonu (już
+próbkowany dla przechyłu płaszczyzny, teraz też użyty do samego odrzutu)
+przesuwa nowo dodaną, trwałą prędkość środka masy (`centreOfMassVelocity`,
+start dokładnie w zerze), a wynikająca stąd zmiana energii kinetycznej
+środka masy (\(v_{cm}\!\cdot\!p_{foton}+p_{foton}^2/(2M)\), policzona
+dokładnie, nie odrzucona jako wyraz drugiego rzędu) jest doliczana do
+budżetu orbitalnego ponad samą energię fotonu — żeby energia całkowita
+(orbitalna+CM) nadal spadała dokładnie o tyle, ile trafia do
+`radiatedEnergyTotal`.
+
+Zweryfikowane bezpośrednio: na tej samej trajektorii (ziarno 42, p-Ps) 3
+fotony, `cmEnergyKick/photonEnergy` rośnie z głębokością (\(6{,}3\cdot
+10^{-6}\to4{,}2\cdot10^{-5}\to5{,}3\cdot10^{-4}\)) — mały, ale rosnący
+efekt, dokładnie zgodny z policzonym wyżej stosunkiem pędów.
+\(|v_{cm}|\) rośnie od zera do \(\approx298\) km/s (wciąż nierelatywistyczne,
+\(\approx0{,}001c\)) po trzecim fotonie. Statystyka zbiorcza (10
+trajektorii) nietknięta w granicach szumu: mediana \(147{,}8\) ps, średnia
+\(272{,}9\pm91{,}8\) ps — statystycznie ta sama liczba co przed tą
+poprawką, jak należało oczekiwać, bo poprawka jest efektem drugiego rzędu
+poza najgłębszą częścią kolapsu. `positronium_validation` 33/33 bez zmian.
+
+Moment pędu pozostaje modelowany, ale niezweryfikowany niezależnie —
+wielkość dziedziczy współczynnik `k` z modeli ciągłych (nie wyprowadzony
+od nowa dla skwantowanej emisji), a kierunek to uśredniony po nieznanej
+fazie przechył. W architekturze samych elementów oskulacyjnych (bez pełnej
+całki strumienia pola) nie ma z czym tego porównać — udokumentowane jako
+otwarte, nie ukryte pod dywan.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
