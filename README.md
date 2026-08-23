@@ -4006,6 +4006,60 @@ CREM diagnostyki rezerwuaru energii (`|E_bound|/|E_rel|`) zakończone bez
 awarii, \(0/1000\) przypadków przekraczających energię orbity w
 eksperymencie \(4\).
 
+**N. Konwersja czasu kolapsu i mocy promieniowania (CREM, eksp. \(1\)/\(2\))
+do układu laboratoryjnego.** Audyt wykazał, że wykresy/statystyki
+oznaczone literą `b` (dane wyjściowe) dla CREM — czas kolapsu, moc
+promieniowania — były liczone w \(S'\), chwilowym układzie spoczynkowym
+pary, a nie w układzie laboratoryjnym, w którym faktycznie następuje ich
+pomiar. Dla wewnętrznej fizyki (bilanse energii/pędu/momentu pędu, punkt
+L) \(S'\) jest poprawnym i wystarczającym układem — ale sam czas trwania
+trajektorii i uśredniona moc promieniowania to wielkości makroskopowe,
+którym lab-frame się należy, skoro `centreOfMassVelocity` realnie rośnie z
+każdym odrzutem fotonu.
+
+*Implementacja.* `simulatedTimeTotal` (czas własny \(S'\)) ma teraz
+odpowiednik `labFrameTimeTotal`, całkowany z tym samym przyrostem na
+checkpoint, ale ważony przez \(\gamma(\beta)\) osobno dla każdego
+odcinka stałej \(\beta\) między kolejnymi odrzutami fotonu w tym samym
+checkpoincie — pozycja `sAtPhoton` każdego fotonu (już liczona dla
+kaskady, punkt E4) dzieli czas trwania checkpointu na segmenty w
+zamkniętej formie \(T(s)=T_0\,n\,(s/s_{max})(1-s/2)\), a każdy segment
+mnożony jest przez \(\gamma\) prędkości CM, jaka obowiązywała PRZED
+kolejnym odrzutem. `CremCollapseEstimate` zyskał `lifetimeSecondsLab`,
+`meanRadiatedPowerWattsLab` i `calibrationSecondsLab` (ten ostatni — dla
+prawoucinanych/nieudanych przebiegów, żeby estymator Kaplana-Meiera nie
+mieszał układów między obserwacjami dopełnionymi a cenzurowanymi).
+`decayTimes`/`survivalSample`/`calibrationPowers` w `positronium.cpp`
+(zasilające `crem_collapse_time`, `collapse_time_distribution`,
+`diagnostic_calibration_power`) przełączone na te pola.
+
+*Co świadomie zostało w \(S'\), mimo litery `b`:* `collapse_time_vs_theory`
+(panel \(3\)) porównuje zmierzony czas z `classicalInspiralSeconds` —
+zamkniętą, beznadziejnie sparametryzowaną (zero parametrów swobodnych)
+formułą liczoną wprost z elementów oskulacyjnych, bez pojęcia prędkości
+odrzutu do doboostowania; przeliczenie tylko jednej strony porównania
+wprowadziłoby sztuczne, niefizyczne przesunięcie. `radiated_power_vs_larmor`
+(panel \(4\), `larmorPowerRatio`) to stosunek dwóch wielkości chwilowych z
+TEGO SAMEGO checkpointu (zmierzona strata na jednej orbicie vs Larmor dla
+tej samej elipsy oskulacyjnej) — nie ma tu żadnego "czasu trwania" do
+dylatacji, więc lab-frame nie ma zastosowania.
+
+*Zmierzony efekt.* Zweryfikowane na kilkunastu ziarnach (`CREM_DEBUG=1`,
+precyzja `setprecision(12)`): \(t_{lab}/t_{S'}-1\) mieści się w
+\(10^{-11}\)–\(10^{-12}\) nawet dla trajektorii z pełną \(3\)-fotonową
+kaskadą i szczytową prędkością odrzutu \(\beta\sim0{,}35\%\) (np. ziarno
+\(5\): \(t_{S'}=287{,}308925168\) ps, \(t_{lab}=287{,}308925171\) ps).
+Przyczyna: podwyższona \(\beta\) utrzymuje się tylko przez znikomy
+ułamek całkowitego czasu trajektorii (ostatnie checkpointy tuż przed
+kolapsem trwają femtosekundy, podczas gdy cała trajektoria to setki
+pikosekund) — ważona czasem poprawka jest więc o rzędy wielkości
+mniejsza niż sam szczytowy \(\gamma-1\sim6\times10^{-6}\) sugerowałby.
+Efekt jest zatem realny i poprawnie policzony, ale wielokrotnie poniżej
+szumu Monte Carlo próby (\(N=1000\)): wykresy/statystyki z punktu M,
+wygenerowane przed tą poprawką, pozostają aktualne — ponowny bieg
+produkcyjny nie zmieniłby żadnej cyfry w granicach precyzji, w jakiej są
+raportowane. `positronium_validation`: \(33/33\) bez regresji.
+
 ## Warunki początkowe i klasyfikacja zjawiska
 
 Program losuje kierunki dipoli oraz radialną i styczną składową względnej

@@ -39,6 +39,28 @@ struct CremCollapseEstimate {
     double lifetimeSeconds=std::numeric_limits<double>::quiet_NaN();
     double calibrationSeconds=0.0;
     double meanRadiatedPowerWatts=std::numeric_limits<double>::quiet_NaN();
+    // Lab-frame counterparts of the two fields above.  lifetimeSeconds/
+    // meanRadiatedPowerWatts are accumulated in S', the pair's own
+    // instantaneous rest frame -- correct and self-consistent for internal
+    // bookkeeping (see LabFramePhoton's own comment), but centreOfMassVelocity
+    // genuinely grows over a stochastic trajectory's photon cascade, and a
+    // fixed lab observer's clock runs slow relative to S' by gamma(beta)
+    // while that recoil speed is nonzero.  These two fields integrate that
+    // dilation through however many discrete recoil kicks occurred, so that
+    // "what a lab clock/power-meter would read" (README point N) does not
+    // have to be re-derived by consumers of this struct from beta alone --
+    // NaN/0 for the continuous (non-stochastic) radiation-reaction models
+    // and the mechanical trajectory path, where centreOfMassVelocity never
+    // moves and these are identical to the S'-frame fields anyway.
+    double lifetimeSecondsLab=std::numeric_limits<double>::quiet_NaN();
+    double meanRadiatedPowerWattsLab=std::numeric_limits<double>::quiet_NaN();
+    // Lab-frame counterpart of calibrationSeconds, tracked at every exit
+    // point that one is (including the censored/failed ones): the
+    // right-censored survival sample needs its "still bound as of" bound in
+    // the SAME frame convention as the completed-collapse observations
+    // (lifetimeSecondsLab) it is combined with, or the Kaplan-Meier estimate
+    // would silently mix frames.
+    double calibrationSecondsLab=0.0;
     SimulationOutcome calibrationOutcome=SimulationOutcome::NumericalFailure;
     // Every stochasticElectricDipole photon this trajectory fired, converted
     // to lab-frame observables.  Empty for continuous (non-stochastic)
@@ -821,6 +843,15 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         return std::chrono::duration<double>(
             std::chrono::steady_clock::now()-wallClockStart).count();
     };
+    // gamma(beta), reused everywhere below that converts an S'-frame
+    // duration into what a fixed lab clock reads for the same stretch of
+    // proper time.  Same 1e-9 floor as the LabFramePhoton block below: pure
+    // noise from a subnormal 1-beta^2 is worse than just calling it 1.
+    const auto gammaFromBeta=[](double beta) {
+        return beta>1.0e-9
+            ?1.0/std::sqrt(std::max(1.0e-300,1.0-beta*beta))
+            :1.0;
+    };
     // Size of one analytic jump, as the dimensionless s = (3/2) n du0/u0 of
     // the resummed solution below.  s must stay strictly under 1, where the
     // closed form reaches complete collapse.
@@ -848,6 +879,16 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // a factor 100 in |E|; this is a generous safety margin, not a
         // normal stopping point.
     double simulatedTimeTotal=0.0;
+    // Lab-frame counterpart of simulatedTimeTotal (README point N):
+    // accumulated with the SAME per-checkpoint increments, each weighted by
+    // gamma(beta) for whichever constant-beta segment it covers -- see the
+    // single increment point below (the stochastic photon while-loop can
+    // fire several kicks within one checkpoint, splitting its elapsed proper
+    // time at each one's own sAtPhoton) for the actual integration. Equal to
+    // simulatedTimeTotal whenever centreOfMassVelocity never leaves zero
+    // (every continuous/non-stochastic model), diverging only once photon
+    // recoil has actually accumulated a nonzero pair velocity.
+    double labFrameTimeTotal=0.0;
     double radiatedEnergyTotal=0.0;
     // Revolutions completed so far.  Every orbit the loop accounts for is
     // counted here exactly once: the resolved measurement orbit is the first
@@ -895,6 +936,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         if(wallClockSpent()>wallClockBudgetSeconds) {
             result.calibrationOutcome=SimulationOutcome::ObservationLimit;
             result.calibrationSeconds=simulatedTimeTotal;
+            result.calibrationSecondsLab=labFrameTimeTotal;
             return result;
         }
         const double periapsis=osculatingPeriapsis(elements,attractionParameter);
@@ -952,8 +994,23 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.meanRadiatedPowerWatts=simulatedTimeTotal>0.0
                 ?radiatedEnergyTotal/simulatedTimeTotal
                 :std::numeric_limits<double>::quiet_NaN();
+            result.lifetimeSecondsLab=labFrameTimeTotal;
+            result.meanRadiatedPowerWattsLab=labFrameTimeTotal>0.0
+                ?radiatedEnergyTotal/labFrameTimeTotal
+                :std::numeric_limits<double>::quiet_NaN();
             result.calibrationOutcome=SimulationOutcome::ReachedCutoff;
             result.calibrationSeconds=simulatedTimeTotal;
+            result.calibrationSecondsLab=labFrameTimeTotal;
+            if(std::getenv("CREM_DEBUG"))
+                std::cerr<<std::setprecision(12)
+                         <<"  FINAL (periapsis/light-crossing cutoff): t_S'="
+                         <<simulatedTimeTotal*1e12<<"ps t_lab="
+                         <<labFrameTimeTotal*1e12<<"ps ratio="
+                         <<(simulatedTimeTotal>0.0
+                             ?labFrameTimeTotal/simulatedTimeTotal:1.0)
+                         <<" P_S'="<<result.meanRadiatedPowerWatts
+                         <<"W P_lab="<<result.meanRadiatedPowerWattsLab
+                         <<"W"<<std::setprecision(6)<<std::endl;
             return result;
         }
         SimulationOptions measureOptions;
@@ -1083,8 +1140,28 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.meanRadiatedPowerWatts=result.lifetimeSeconds>0.0
                 ?radiatedEnergyTotal/result.lifetimeSeconds
                 :std::numeric_limits<double>::quiet_NaN();
+            // This partial measurement orbit fires no photon (the recoil
+            // while-loop lives in the skip/jump branch below, not here), so
+            // centreOfMassVelocity -- and therefore beta/gamma -- is exactly
+            // constant across the whole of run.elapsedTime.
+            result.lifetimeSecondsLab=labFrameTimeTotal
+                +gammaFromBeta(centreOfMassVelocity.norm()/c)*run.elapsedTime;
+            result.meanRadiatedPowerWattsLab=result.lifetimeSecondsLab>0.0
+                ?radiatedEnergyTotal/result.lifetimeSecondsLab
+                :std::numeric_limits<double>::quiet_NaN();
+            if(std::getenv("CREM_DEBUG"))
+                std::cerr<<"  FINAL (mid-orbit cutoff): t_S'="
+                         <<result.lifetimeSeconds*1e12<<"ps t_lab="
+                         <<result.lifetimeSecondsLab*1e12<<"ps ratio="
+                         <<(result.lifetimeSeconds>0.0
+                             ?result.lifetimeSecondsLab
+                                 /result.lifetimeSeconds:1.0)
+                         <<" P_S'="<<result.meanRadiatedPowerWatts
+                         <<"W P_lab="<<result.meanRadiatedPowerWattsLab
+                         <<"W"<<std::endl;
             result.calibrationOutcome=SimulationOutcome::ReachedCutoff;
             result.calibrationSeconds=result.lifetimeSeconds;
+            result.calibrationSecondsLab=result.lifetimeSecondsLab;
             // The measurement orbit ran into the boundary partway round, so
             // only the fraction of a revolution it actually covered counts.
             result.revolutions=revolutionsTotal
@@ -1102,11 +1179,20 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                          <<elements.specificAngularMomentum<<std::endl;
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             result.calibrationSeconds=simulatedTimeTotal+run.elapsedTime;
+            // No photon fires during this single measurement orbit (the
+            // recoil while-loop lives in the skip/jump branch below), so
+            // beta is exactly centreOfMassVelocity's current, constant value
+            // across the whole of run.elapsedTime -- same reasoning as the
+            // ReachedCutoff sibling of this exit, above.
+            result.calibrationSecondsLab=labFrameTimeTotal
+                +gammaFromBeta(centreOfMassVelocity.norm()/c)*run.elapsedTime;
             return result;
         }
         if(wallClockSpent()>wallClockBudgetSeconds) {
             result.calibrationOutcome=SimulationOutcome::ObservationLimit;
             result.calibrationSeconds=simulatedTimeTotal+run.elapsedTime;
+            result.calibrationSecondsLab=labFrameTimeTotal
+                +gammaFromBeta(centreOfMassVelocity.norm()/c)*run.elapsedTime;
             return result;
         }
 
@@ -1216,6 +1302,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                          <<elements.specificAngularMomentum<<std::endl;
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             result.calibrationSeconds=simulatedTimeTotal+measuredElapsed;
+            result.calibrationSecondsLab=labFrameTimeTotal
+                +gammaFromBeta(centreOfMassVelocity.norm()/c)*measuredElapsed;
             return result;
         }
         if(const char* debug=std::getenv("CREM_DEBUG");debug) {
@@ -1309,6 +1397,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // secularly decaying, so there is nothing further to observe.
             result.calibrationOutcome=SimulationOutcome::ObservationLimit;
             result.calibrationSeconds=simulatedTimeTotal+measuredElapsed;
+            result.calibrationSecondsLab=labFrameTimeTotal
+                +gammaFromBeta(centreOfMassVelocity.norm()/c)*measuredElapsed;
             result.secularLossAbsent=true;
             return result;
         }
@@ -1413,6 +1503,15 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 /(attractionParameter*attractionParameter));
         const double angularExponent=
             -(1.0-eccentricitySquared)/(2.0+eccentricitySquared);
+        // (sAtPhoton, beta immediately BEFORE that photon's own kick) for
+        // every photon fired within this checkpoint's while loop below,
+        // read back after the loop to gamma-weight labFrameTimeTotal's own
+        // increment per constant-beta segment (README point N).  Stays
+        // empty -- and the increment below collapses to the simple
+        // gamma(beta-entering-this-checkpoint) case -- for checkpoints that
+        // fire no photon, and for the deterministic (non-stochastic) branch
+        // entirely.
+        std::vector<std::pair<double,double>> photonTimingsThisCheckpoint;
         if(isStochastic) {
             // Replace the deterministic bulk jump below with the sum of
             // individually fired, Poisson-timed photons over this same
@@ -1727,6 +1826,13 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     {
                         const double sourceSpeed=centreOfMassVelocity.norm();
                         const double sourceBeta=sourceSpeed/c;
+                        // Recorded PRE-kick, same convention as labPhoton
+                        // below: this segment of the checkpoint's elapsed
+                        // time -- up to and including this photon's own
+                        // sAtPhoton position -- happened at the recoil speed
+                        // the pair had BEFORE this photon's momentum kick.
+                        photonTimingsThisCheckpoint.emplace_back(
+                            sAtPhoton,sourceBeta);
                         LabFramePhoton labPhoton;
                         labPhoton.sourceBeta=sourceBeta;
                         labPhoton.energyJoules=photonEnergy;
@@ -2113,6 +2219,46 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         }
         simulatedTimeTotal+=measuredElapsed*static_cast<double>(orbitsToSkip)
             *(1.0-0.5*jumpParameter);
+        // Lab-frame counterpart (README point N): the checkpoint's elapsed
+        // proper time as a function of position s in [0,jumpParameter]
+        // through its envelope (period shrinks linearly over the
+        // orbitsToSkip orbits, so integrating the per-orbit period from 0 to
+        // s/jumpParameter gives this closed form -- it reduces to the
+        // formula immediately above at s=jumpParameter exactly).  Guarded at
+        // jumpParameter<=1e-12 for the same reason sAtPhoton's own formula
+        // is (README point E4): in that regime sAtPhoton is forced to ~0 for
+        // every photon regardless of hFraction, so "time elapsed up to
+        // there" is correctly ~0 too, and the whole checkpoint collapses to
+        // one segment at the LATEST beta below.
+        const auto properTimeUpToS=[&](double s) {
+            if(jumpParameter<=1.0e-12) return 0.0;
+            return measuredElapsed*static_cast<double>(orbitsToSkip)
+                *(s/jumpParameter)*(1.0-0.5*s);
+        };
+        {
+            double labIncrement=0.0;
+            double previousS=0.0;
+            for(const auto& timing:photonTimingsThisCheckpoint) {
+                const double sAtThisPhoton=timing.first;
+                const double betaBeforeThisPhoton=timing.second;
+                labIncrement+=gammaFromBeta(betaBeforeThisPhoton)
+                    *(properTimeUpToS(sAtThisPhoton)
+                        -properTimeUpToS(previousS));
+                previousS=sAtThisPhoton;
+            }
+            // Tail segment: from the last photon fired this checkpoint (or
+            // the very start, if none fired) to the checkpoint's own end, at
+            // the recoil speed left behind by whichever photons already
+            // fired -- exactly centreOfMassVelocity's current value, since
+            // nothing else moves it.
+            const double totalProperThisCheckpoint=
+                measuredElapsed*static_cast<double>(orbitsToSkip)
+                *(1.0-0.5*jumpParameter);
+            const double tailBeta=centreOfMassVelocity.norm()/c;
+            labIncrement+=gammaFromBeta(tailBeta)
+                *(totalProperThisCheckpoint-properTimeUpToS(previousS));
+            labFrameTimeTotal+=labIncrement;
+        }
         revolutionsTotal+=static_cast<double>(orbitsToSkip);
         firstDipole=run.finalState.firstDipole;
         secondDipole=run.finalState.secondDipole;
@@ -2121,11 +2267,13 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
            ||!std::isfinite(elements.specificAngularMomentum)) {
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             result.calibrationSeconds=simulatedTimeTotal;
+            result.calibrationSecondsLab=labFrameTimeTotal;
             return result;
         }
     }
     result.calibrationOutcome=SimulationOutcome::ObservationLimit;
     result.calibrationSeconds=simulatedTimeTotal;
+    result.calibrationSecondsLab=labFrameTimeTotal;
     return result;
 }
 

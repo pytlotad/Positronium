@@ -1662,8 +1662,22 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     for (int index = 0; index < runCount; ++index) {
         const CremCollapseEstimate& estimate =
             collapseEstimates[static_cast<size_t>(index)];
-        if(std::isfinite(estimate.lifetimeSeconds))
-            decayTimes.push_back(estimate.lifetimeSeconds*timeScale);
+        // Lab-frame (README point N): decayTimes/survivalSample below feed
+        // the collapse-time survival curve and histogram (both 'b'/output
+        // plots), i.e. exactly the "when would this be measured" quantity a
+        // fixed lab clock -- not the pair's own instantaneous rest frame --
+        // actually reads.  lifetimeSecondsLab/calibrationSecondsLab integrate
+        // gamma(beta) through however many photon-recoil kicks a trajectory
+        // fired (see crem_collapse.hpp's own comment at their definition);
+        // they equal the S'-frame fields whenever centreOfMassVelocity never
+        // leaves zero and diverge from them by ~1e-11 relative even for the
+        // most photon-heavy trajectories measured, since the elevated recoil
+        // speed only persists for a vanishing fraction of a multi-ps
+        // trajectory's total duration (README point N) -- genuinely
+        // converted, not merely relabelled, even though the correction is
+        // far below this sample's own statistical noise.
+        if(std::isfinite(estimate.lifetimeSecondsLab))
+            decayTimes.push_back(estimate.lifetimeSecondsLab*timeScale);
         if(estimate.calibrationOutcome==SimulationOutcome::ReachedCutoff) {
             if(std::isfinite(estimate.initialPeriodSeconds))
                 initialPeriods.push_back(estimate.initialPeriodSeconds);
@@ -1671,6 +1685,17 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                 finalPeriods.push_back(estimate.finalPeriodSeconds);
             if(std::isfinite(estimate.revolutions))
                 revolutionCounts.push_back(estimate.revolutions);
+            // Deliberately S'-frame on BOTH sides, not lab-converted like
+            // decayTimes above: analyticCollapseSeconds is a zero-free-
+            // parameter closed-form prediction from the trajectory's own
+            // osculating elements (classicalInspiralSeconds), with no
+            // recoil-velocity concept to boost in the first place -- "does
+            // the engine reproduce this theory" is a statement about S'
+            // dynamics either way, and boosting only the measured side would
+            // manufacture a mismatch (~1e-11 relative, see README point N)
+            // this panel's actual, far larger systematic offset does not
+            // need and this reference cannot be given a matching lab-frame
+            // counterpart to compare against.
             if(std::isfinite(estimate.lifetimeSeconds)
                &&std::isfinite(estimate.analyticCollapseSeconds)
                &&estimate.analyticCollapseSeconds>0.0) {
@@ -1682,6 +1707,16 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         // Independent of completion: both are properties of the prepared
         // orbit and of orbits actually resolved, so a censored run still
         // contributes a valid measurement of them.
+        //
+        // larmorPowerRatio is deliberately NOT lab-converted: it is a
+        // per-CHECKPOINT ratio of two same-orbit, same-instant quantities
+        // (measured orbital loss over one resolved orbit vs the Larmor rate
+        // for that same osculating ellipse), both evaluated locally in S'
+        // with no elapsed-trajectory duration or centreOfMassVelocity
+        // history involved -- there is no "lab observer's clock" for a
+        // single instantaneous orbit-shape comparison to run against, unlike
+        // decayTimes/calibrationPowers, which integrate over a whole
+        // trajectory's actual elapsed time (README point N).
         if(std::isfinite(estimate.larmorPowerRatio)
            && estimate.larmorPowerRatio > 0.0) {
             larmorRatios.push_back(estimate.larmorPowerRatio);
@@ -1704,30 +1739,38 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         }
         photonCountPerTrajectory.push_back(
             static_cast<double>(estimate.labFramePhotons.size()));
-        if(std::isfinite(estimate.meanRadiatedPowerWatts)
-           && estimate.meanRadiatedPowerWatts > 0.0) {
-            calibrationPowers.push_back(estimate.meanRadiatedPowerWatts);
+        // Lab-frame (README point N): this whole-trajectory mean power
+        // (radiated energy / elapsed time) is exactly the "radiated power"
+        // half of the user-facing pair alongside collapse time, so it uses
+        // the same gamma(beta)-integrated denominator as decayTimes above.
+        if(std::isfinite(estimate.meanRadiatedPowerWattsLab)
+           && estimate.meanRadiatedPowerWattsLab > 0.0) {
+            calibrationPowers.push_back(estimate.meanRadiatedPowerWattsLab);
         }
         switch(estimate.calibrationOutcome) {
             case SimulationOutcome::ReachedCutoff:
                 ++reachedCutoffCount;
-                if(std::isfinite(estimate.lifetimeSeconds)) {
+                if(std::isfinite(estimate.lifetimeSecondsLab)) {
                     survivalSample.push_back(
-                        {estimate.lifetimeSeconds*timeScale,true});
+                        {estimate.lifetimeSecondsLab*timeScale,true});
                 }
                 break;
             case SimulationOutcome::ObservationLimit:
                 // Both stopped states are right-censored: the pair was still
                 // bound when observation ended, so the collapse time is known
                 // only to exceed the simulated time reached.  A non-decaying
-                // trajectory is the limiting case of that.
+                // trajectory is the limiting case of that.  Lab-converted
+                // (calibrationSecondsLab), same reasoning as the completed-
+                // collapse branch above -- mixing an S'-frame bound into a
+                // lab-frame observed sample would corrupt the Kaplan-Meier
+                // estimate that combines them.
                 survivalSample.push_back(
-                    {estimate.calibrationSeconds*timeScale,false});
+                    {estimate.calibrationSecondsLab*timeScale,false});
                 if(estimate.secularLossAbsent) { ++noSecularLossCount; break; }
                 ++observationLimitCount;
                 censoredSimulatedTimeMax=std::max(
-                    censoredSimulatedTimeMax,estimate.calibrationSeconds);
-                censoredSimulatedTimeSum+=estimate.calibrationSeconds;
+                    censoredSimulatedTimeMax,estimate.calibrationSecondsLab);
+                censoredSimulatedTimeSum+=estimate.calibrationSecondsLab;
                 break;
             case SimulationOutcome::NumericalFailure:
                 // Excluded outright: a non-finite state carries no bound on
