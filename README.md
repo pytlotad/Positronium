@@ -3130,17 +3130,59 @@ inny wektor, obecny już przed pierwszym fotonem.**
 `seedRun.frames.front().noetherAngularMomentum` — **pełnej** wielkości
 Noethera, na twierdzeniu "wkład spinu/dipola do niej jest już
 udokumentowany gdzie indziej jako \(\sim10^{-5}\) wyrazu orbitalnego".
-To twierdzenie nigdy nie zostało bezpośrednio sprawdzone — i jest
-**fałszywe**: myli dwie różne wielkości \(\sim10^{-5}\)-podobne —
-prawdziwie małą (energię sprzężenia dipol-dipol względem energii
-Coulomba) z zupełnie inną, sporo większą (wkład spinu do momentu pędu).
-Wkład spinu na cząstkę to \(\mu/\gamma_{gyro}=S\approx\hbar/2\) — **tego
-samego rzędu**, co orbitalny \(L\approx\hbar\) (wartość Bohra/SED, patrz
-`physical_constants.hpp`), nie pięć rzędów mniejszy. Para i orto losują
-GENUINE różne (nie tylko przeciwnie skierowane) wektory
-\(\boldsymbol\mu_1,\boldsymbol\mu_2\) pod warunkiem odrzucania, który je
-definiuje — więc `angularMomentumDirection` wychodzi kompletnie różny,
-dla KAŻDEJ pojedynczej trajektorii, nie tylko w porównaniu para/orto.
+To twierdzenie nigdy nie zostało bezpośrednio sprawdzone. Sprawdzone
+teraz, dokładniej, na osobne żądanie — i wynik jest mocniejszy, niż
+wstępnie sądzono: to nie przybliżenie "tego samego rzędu", tylko
+precyzyjnie namierzalna pomyłka, z policzoną liczbą i znalezionym
+źródłem.
+
+*Dokładna wielkość wkładu spinu — nie oszacowanie, tylko odczytana
+tożsamość już istniejąca w kodzie.* Funkcja `noetherAngularMomentum`
+liczy `intrinsic = firstDipole/firstGyromagneticRatio +
+secondDipole/secondGyromagneticRatio` — dokładnie \(\mu/\gamma_{gyro}\)
+na cząstkę. `positronium.cpp`, przy funkcji `gyromagneticRatio`, ma już
+istniejący (sprzed tej sesji, z zupełnie innej poprawki — brakującego
+czynnika \(g\) w czterech miejscach kodu) komentarz:
+
+```cpp
+// The model carries |mu| = (g/2) * magneton, so the correct ratio returns
+// S = hbar/2 exactly, as a spin-1/2 particle must.
+```
+
+Czyli \(\mu/\gamma_{gyro}=S=\hbar/2\) **dokładnie**, nie w przybliżeniu —
+niezależnie ustalone przy zupełnie innej naprawie, teraz tylko odczytane
+na nowo. Zestawione z rzeczywistym (nie specyficznym) orbitalnym
+momentem pędu tej konkretnej trajektorii
+(\(L_{orb}=0{,}00025761469604537469\times\mu_{red}\approx
+1{,}1735\cdot10^{-34}\,\text{kg·m}^2/\text{s}\approx1{,}11\,\hbar\)):
+
+```
+wkład spinu (2 cząstki, w pełni wyrównane) = 2×(hbar/2) = hbar = 1,0546e-34 kg·m^2/s
+L_orbitalny (ta trajektoria)                            ≈ 1,1735e-34 kg·m^2/s
+stosunek = hbar / L_orbitalny ≈ 0,90
+```
+
+**Nie "tego samego rzędu wielkości" ogólnikowo — wkład spinu sięga aż
+\(90\%\) wielkości orbitalnego momentu pędu**, gdy momenty są w pełni
+wyrównane (przypadek para).
+
+*Dokładne źródło błędnej liczby "\(\sim10^{-5}\)" — namierzone, nie
+domyślane.* `positronium.cpp:1841` ma już istniejące, **poprawne**
+zdanie: `"alignment, whose coupling is ~1e-5 of the Coulomb potential"`
+— opisujące zupełnie INNĄ wielkość: stosunek energii sprzężenia
+dipol-dipol do energii potencjalnej Coulomba (niezależnie zweryfikowany
+wcześniej w sondach 3/7/9/11 jako rząd \(10^{-6}\)–\(10^{-5}\)). Pisząc
+komentarz przy `angularMomentumDirection` przywołano najwyraźniej tę
+samą liczbę "\(\sim10^{-5}\)" z pamięci, zastosowaną do **innego
+pytania** (wkład spinu do momentu pędu) bez osobnej weryfikacji — dwie
+różne wielkości fizyczne (energia kontra moment pędu), przypadkowo
+skojarzone przez tę samą cyfrę zamiast osobno policzone.
+
+Para i orto losują GENUINE różne (nie tylko przeciwnie skierowane)
+wektory \(\boldsymbol\mu_1,\boldsymbol\mu_2\) pod warunkiem odrzucania,
+który je definiuje — więc `angularMomentumDirection` wychodzi
+kompletnie różny, dla KAŻDEJ pojedynczej trajektorii, nie tylko w
+porównaniu para/orto.
 
 *Sonda 13 — naprawa i weryfikacja.* Poprawka: zamiast pełnej wielkości
 Noethera, `angularMomentumDirection` liczony bezpośrednio z geometrii,
