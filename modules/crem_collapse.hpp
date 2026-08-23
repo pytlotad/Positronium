@@ -1317,8 +1317,18 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // spread across many harmonics.  photonEnergyReference is left
             // untouched for use as the n=1 unit each fired photon's own
             // sampled harmonic multiplies below.
-            const bool harmonicCorrection=std::getenv("CREM_HARMONIC")
-                !=nullptr;
+            // Production default since this commit: the harmonic
+            // correction is now ON unless explicitly disabled
+            // (CREM_HARMONIC=0), the same on-by-default/opt-out shape as
+            // the stochasticElectricDipole promotion itself.  The env var
+            // is kept, not removed, specifically so the pre-harmonic
+            // behaviour stays one flag away for regression comparison --
+            // see this file's own README section (point K) for the
+            // measurement (median unchanged, RMST +7.7%) that justified
+            // promoting it.
+            const char* harmonicEnv=std::getenv("CREM_HARMONIC");
+            const bool harmonicCorrection=
+                !harmonicEnv||std::strcmp(harmonicEnv,"0")!=0;
             const double eccentricityHere=std::sqrt(eccentricitySquared);
             const double hazardSuppression=harmonicCorrection
                 ?eccentricOrbitHazardSuppression(eccentricityHere):1.0;

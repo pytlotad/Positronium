@@ -2838,8 +2838,7 @@ kwantylowa rozkładu ważonego liczebnie (\(x=n/n_{peak}(e)\),
 \(n_{peak}(e)\approx0{,}504(1-e)^{-1{,}5}\), dopasowanie do \(3\) cyfr
 znaczących na \(e=0{,}5\)–\(0{,}97\)), są stablicowane z tego samego
 rozkładu numerycznego i wpięte w `crem_collapse.hpp` pod zmienną
-środowiskową `CREM_HARMONIC` (domyślnie wyłączone — model produkcyjny
-bez zmian). Sprawdzona uczciwie granica ważności: uniwersalność kształtu
+środowiskową `CREM_HARMONIC`. Sprawdzona uczciwie granica ważności: uniwersalność kształtu
 funkcji kwantylowej zweryfikowano na \(e=0{,}75\)–\(0{,}98\) i **załamuje
 się poniżej tego zakresu** — sprawdzone wprost przy \(e=0{,}1\)–\(0{,}3\),
 gdzie prawdziwa mediana/90%/99% harmoniki to \(1/1/2\), a tablica (zbudowana
@@ -2858,7 +2857,7 @@ mediana wyznacza całkowity budżet energii (poprawny niezależnie od
 ziarnistości), nie liczba/wielkość fotonów. RMST rośnie z \(0{,}284\) do
 \(0{,}306\) ns (\(+7{,}7\%\)) — efekt skupiony w głębokim, mimośrodowym
 ogonie, dokładnie tam, gdzie tabela pokazuje, że założenie o częstości
-podstawowej najbardziej zawodzi. Bez `CREM_HARMONIC`: wynik **bitowo
+podstawowej najbardziej zawodzi. Z `CREM_HARMONIC=0`: wynik **bitowo
 identyczny** ze stanem sprzed tej pracy (regresja sprawdzona wprost —
 ta sama partia, te same liczby co do ostatniej cyfry). Zweryfikowane
 także: pojedyncza trajektoria (ziarno \(107\)) daje `harmonic=1` przy
@@ -2866,6 +2865,27 @@ niskim mimośrodzie (\(e^2=0{,}0415\), zgodnie z bramką) i tłumienie
 hazardu \(\approx0{,}497\) przy umiarkowanie wysokim mimośrodzie,
 zgodne z tabelą \(S(e)\). Czysta kompilacja (zero ostrzeżeń),
 `positronium_validation` 33/33.
+
+**Na wyraźną prośbę: `CREM_HARMONIC` stał się nowym domyślnym modelem
+produkcyjnym.** Ta sama zmienna środowiskowa zostaje, ale zmienia się jej
+domyślna wartość: poprawka jest teraz WŁĄCZONA, chyba że jawnie ustawi
+się `CREM_HARMONIC=0` — to samo "domyślnie włączone, jeden przełącznik
+od dawnego zachowania" jak przy promocji samego `stochastic` na domyślny
+model reakcji wyżej. Zachowana, nie usunięta, właśnie po to, żeby dawne
+zachowanie zostało o jedną flagę od odtworzenia, do porównań
+regresyjnych. Zweryfikowane po zmianie: domyślny przebieg (bez żadnej
+zmiennej środowiskowej) daje te same liczby, co wcześniej mierzone
+`CREM_HARMONIC=1` (mediana \(0{,}197275\) ns, RMST \(0{,}306\) ns);
+`CREM_HARMONIC=0` odtwarza dawne zachowanie (dwa fotony w tej samej
+trajektorii ziarno \(107\) zamiast jednego, zgodnie z wcześniejszym
+pomiarem). Czysta kompilacja, `positronium_validation` 33/33. Pełny
+przebieg produkcyjny \(N=1000\) dla wszystkich pięciu eksperymentów pod
+tym nowym domyślnym ustawieniem nie został jeszcze przeliczony — mediana
+czasu kolapsu nie powinna się zauważalnie zmienić (wyznacza ją budżet
+energii, którego ta poprawka nie dotyka), ale rozkład (zwłaszcza ogon,
+RMST) tak, więc historyczne liczby rozkładu gdzie indziej w tym
+dokumencie pozostają zmierzone pod poprzednim ustawieniem, dopóki ten
+przebieg nie zostanie powtórzony.
 
 ## Warunki początkowe i klasyfikacja zjawiska
 
