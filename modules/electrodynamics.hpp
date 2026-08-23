@@ -686,6 +686,25 @@ enum class ChargeRadiationReactionModel {
     // classical answer once the photon scale stops being small against the
     // system's own energy scale -- exactly the failure mode that made the
     // old (pre-1925) semiclassical quantum theory unworkable.
+    //
+    // DIRECTION, added.  Every kick above was originally isotropic in
+    // effect (only |E| and |L| moved; OsculatingElements itself has no
+    // orientation).  Real E1 radiation from an orbiting pair is a
+    // ROTATING, not linearly oscillating, dipole, whose angular pattern is
+    // dP/dOmega proportional to (1+cos^2(theta)) from the orbital angular
+    // momentum axis (maximal along the axis, not the sin^2(theta)
+    // in-plane-maximal pattern a single linear dipole would give) -- see
+    // crem_collapse.hpp's photon-firing loop for the closed-form (Cardano)
+    // sampling of theta and the orbit-averaged treatment of the resulting
+    // plane tilt (the true anomaly at firing time is unknowable in this
+    // elements-only representation, so the tilt's azimuth is drawn
+    // uniformly at random instead of guessed -- an isotropic random walk
+    // of the orbital plane, not a systematic precession, which is the
+    // correct phase-averaged picture).  Not tied to spin: positronium's
+    // quantum spin (S=0 para, S=1 ortho) already governs dipole
+    // alignment/annihilation selection rules elsewhere in this model, and
+    // is a different axis from the classical orbital angular momentum
+    // this emission pattern actually depends on.
     stochasticElectricDipole
 };
 

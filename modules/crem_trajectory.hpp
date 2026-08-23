@@ -86,6 +86,14 @@ double drawExponentialUnit(std::uint64_t& streamState) {
     return -std::log(uniform);
 }
 
+// Draws one uniform variate in [0,1) from the same stream, advancing it in
+// place.  Same bit construction as drawExponentialUnit's own intermediate
+// uniform, just returned directly instead of being fed through -log().
+double drawUniformUnit(std::uint64_t& streamState) {
+    streamState = stochasticPhotonHash64(streamState);
+    return static_cast<double>(streamState >> 11) * (1.0 / 9007199254740992.0);
+}
+
 // Applies one discrete photon emission: removes EXACTLY photonEnergy from
 // the pair's relative-motion kinetic energy (the same reduced-mass,
 // two-body framing crem_collapse.hpp already uses for "the" orbital

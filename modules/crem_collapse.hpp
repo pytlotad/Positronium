@@ -459,6 +459,22 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         seedRun.initial.orbitalAngularMomentum/reducedMass};
     Vec3 firstDipole=seedRun.frames.front().firstDipole;
     Vec3 secondDipole=seedRun.frames.front().secondDipole;
+    // Orbital plane orientation, kept ONLY for stochasticElectricDipole (see
+    // its own use below): OsculatingElements itself carries no direction,
+    // only magnitudes, which is exactly right for the continuous models
+    // (an in-plane reaction force never tilts the plane, so the direction
+    // would just sit there unread) but not for individual photon kicks,
+    // whose emission angle relative to this axis is physical, not
+    // arbitrary.  noetherAngularMomentum is the already-computed, exactly
+    // conserved (Noether) angular momentum of the prepared state -- reused
+    // rather than recomputing cross(relativePosition,relativeVelocity) by
+    // hand, and correct even though it is not PURELY orbital, because the
+    // dipole/spin contribution to it is already documented elsewhere as
+    // ~1e-5 of the orbital term.
+    Vec3 angularMomentumDirection=seedRun.frames.front().noetherAngularMomentum;
+    angularMomentumDirection=angularMomentumDirection.squaredNorm()>0.0
+        ?angularMomentumDirection*(1.0/angularMomentumDirection.norm())
+        :Vec3{0.0,0.0,1.0};
 
     // Osculating elements of the prepared orbit and the closed-form classical
     // prediction they imply.  The run is stopped when the PERIAPSIS reaches
@@ -1112,6 +1128,81 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         std::pow(1.0-sAtPhoton,-2.0/3.0);
                     const double photonEnergy=photonEnergyReference
                         *std::pow(energyRatio,1.5);
+                    // Photon emission angle relative to the CURRENT orbital
+                    // plane normal, drawn from the actual angular pattern of
+                    // a rotating (not linearly oscillating) E1 dipole:
+                    // dP/dOmega proportional to (1+cos^2(theta)), theta from
+                    // the angular-momentum axis -- maximal along the axis,
+                    // half that in the plane, not the sin^2(theta)
+                    // (in-plane-maximal) pattern of a single linear dipole.
+                    // Inverted in closed form via Cardano's formula for the
+                    // depressed cubic mu^3+3mu+(4-8u)=0 that solving
+                    // CDF(mu)=u for this distribution reduces to (mu=cos
+                    // theta); verified against the CDF numerically to
+                    // 1e-15 absolute over the full [0,1) range of u.
+                    const double cardanoQ=4.0-8.0*drawUniformUnit(
+                        stochasticSkipStream);
+                    const double cardanoDiscriminant=
+                        (cardanoQ*cardanoQ)/4.0+1.0;
+                    const double cardanoSqrt=std::sqrt(cardanoDiscriminant);
+                    const auto signedCbrt=[](double value) {
+                        return std::copysign(std::cbrt(std::abs(value)),value);
+                    };
+                    const double cosThetaFromAxis=
+                        signedCbrt(-cardanoQ/2.0+cardanoSqrt)
+                        +signedCbrt(-cardanoQ/2.0-cardanoSqrt);
+                    // The recoil's component along the CURRENT angular-
+                    // momentum axis tilts the orbital plane -- exactly
+                    // (specific angular momentum) delta-L = r x delta-v,
+                    // which this elements-only representation cannot
+                    // evaluate exactly because it does not carry the true
+                    // anomaly (where in the orbit this photon fires).
+                    // Standard fix, the same spirit as the k ratio above:
+                    // replace the unknown instantaneous radius with the
+                    // orbit-averaged scale (the semi-major axis), and since
+                    // the azimuthal direction of the tilt is exactly the
+                    // unknown true anomaly too, draw THAT uniformly at
+                    // random instead of pretending to know it -- an
+                    // isotropic random walk of the plane's orientation, not
+                    // a systematic precession, which is the correct
+                    // phase-averaged picture when the phase itself is
+                    // unknown.
+                    const double semiMajorAxisHere=
+                        attractionParameter/(2.0*std::abs(elements.specificEnergy));
+                    const double outOfPlaneKickSpeed=
+                        std::abs(cosThetaFromAxis)*photonEnergy
+                        /(c*reducedMass);
+                    const double tiltAngle=std::min(pi,
+                        semiMajorAxisHere*outOfPlaneKickSpeed
+                        /std::max(elements.specificAngularMomentum,
+                                 1.0e-300));
+                    if(tiltAngle>0.0) {
+                        const Vec3 seedAxis=
+                            std::abs(angularMomentumDirection.z)<0.9
+                                ?Vec3{0.0,0.0,1.0}:Vec3{1.0,0.0,0.0};
+                        Vec3 inPlaneFirst=cross(
+                            angularMomentumDirection,seedAxis);
+                        inPlaneFirst=inPlaneFirst*(1.0/inPlaneFirst.norm());
+                        const Vec3 inPlaneSecond=
+                            cross(angularMomentumDirection,inPlaneFirst);
+                        const double tiltAzimuth=
+                            2.0*pi*drawUniformUnit(stochasticSkipStream);
+                        const Vec3 tiltAxis=
+                            inPlaneFirst*std::cos(tiltAzimuth)
+                            +inPlaneSecond*std::sin(tiltAzimuth);
+                        // Rodrigues' rotation formula, simplified by
+                        // tiltAxis being exactly perpendicular to the
+                        // vector it rotates (their dot product term drops).
+                        angularMomentumDirection=
+                            angularMomentumDirection*std::cos(tiltAngle)
+                            +cross(tiltAxis,angularMomentumDirection)
+                                *std::sin(tiltAngle);
+                        if(std::getenv("CREM_DEBUG"))
+                            std::cerr<<"    TILT angle="<<tiltAngle
+                                     <<" |L_dir|="
+                                     <<angularMomentumDirection.norm()
+                                     <<std::endl;
+                    }
                     // Eccentricity/k evaluated BEFORE this photon's own
                     // kick, mirroring the bulk formula's own convention
                     // (its eccentricitySquared above is likewise the

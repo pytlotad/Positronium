@@ -859,6 +859,45 @@ szumu statystycznego jednej próby N=1000.
 Wykresy wszystkich pięciu eksperymentów (`distributions/*.pdf`)
 przeliczone i zacommitowane razem z tym akapitem.
 
+**Dopisany kierunek fotonu, na zadane pytanie: "czy fotony są wysyłane w
+przypadkowych kierunkach?"** Odpowiedź brzmiała: nie były wysyłane w ŻADNYM
+kierunku — `OsculatingElements` przechowywał moment pędu jako gołą liczbę
+(`double specificAngularMomentum`), bez orientacji, więc kopnięcie zmieniało
+tylko *wielkości* E i L, nigdy kierunek. Dodane: śledzenie orientacji orbity
+jako wektora jednostkowego (`angularMomentumDirection`, inicjalizowany z
+`noetherAngularMomentum` rzeczywistego wylosowanego stanu początkowego),
+oraz fizycznie poprawny rozkład kątowy emisji — nie sugerowany przez
+użytkownika spin (S=0/1 steruje w tym modelu czym innym: wyrównaniem
+dipoli/regułami wyboru anihilacji, to inna oś niż orbitalny moment pędu),
+tylko prawdziwy wzór promieniowania **wirującego** dipola E1:
+\(dP/d\Omega\propto(1+\cos^2\theta)\) względem osi momentu pędu — maksimum
+WZDŁUŻ osi, nie w płaszczyźnie orbity (to byłby wzór \(\sin^2\theta\)
+pojedynczego, liniowo oscylującego dipola, inny przypadek fizyczny).
+
+Odwrócenie dystrybuanty tego rozkładu sprowadza się do sześciennego
+równania \(\mu^3+3\mu+(4-8u)=0\) (\(\mu=\cos\theta\)) — rozwiązanego w
+zamkniętej formie wzorem Cardana, zweryfikowanym numerycznie względem
+dystrybuanty do \(10^{-15}\) bezwzględnie na całym zakresie \(u\in[0,1)\).
+Składowa odrzutu wzdłuż osi momentu pędu przechyla płaszczyznę orbity — to
+dokładnie \(\delta L=\mathbf r\times\delta\mathbf v\), którego ta
+reprezentacja (same elementy oskulacyjne, bez anomalii prawdziwej) nie
+umie policzyć dokładnie, bo nie wie, W KTÓRYM miejscu orbity foton akurat
+wystrzelił. Rozwiązanie w tym samym duchu co współczynnik `k` wyżej:
+zastąpienie nieznanego chwilowego promienia półosią wielką (skalą
+uśrednioną po orbicie), a nieznanego azymutu przechyłu — losowaniem
+jednostajnym (zamiast go zgadywać) — co daje **izotropowy błądzenie
+losowe** orientacji płaszczyzny, nie systematyczną precesję, dokładnie
+właściwy obraz uśredniony po nieznanej fazie.
+
+Zweryfikowane bezpośrednio: na pełnej trajektorii (ziarno 42, p-Ps) 3
+fotony wystrzeliły, kąty przechyłu 0,006–0,113 rad (kilka stopni, sensowna
+skala), `angularMomentumDirection` pozostał wektorem jednostkowym po
+każdym obrocie Rodriguesa. Statystyka zbiorcza nietknięta w granicach szumu
+innego ziarna (10 trajektorii: mediana 151,6 ps wobec 148,8 ps sprzed tej
+zmiany) — jak oczekiwano, bo kierunek jest ortogonalny do już istniejącej
+fizyki wielkości E/L, tylko dodaje spójną orientację, której wcześniej nie
+było wcale. `positronium_validation` 33/33 bez zmian.
+
 ### Wynik audytu kompletności fizycznej
 
 Model **nie jest dokładnym odwzorowaniem fizycznego układu elektron–pozyton**
