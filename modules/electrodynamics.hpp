@@ -837,16 +837,33 @@ enum class ChargeRadiationReactionModel {
     // theta> over the full angular distribution is 1/2, not 1, so spin
     // alone recovers only half of the Delta-m=1 selection rule on average.
     // Measured, not just argued, to be survivable: a production batch (o-Ps,
-    // 80 trajectories across two seeds) gave 1 numerical failure (the
-    // orbit occasionally becomes eccentric enough, from a single large
-    // kick, to leave the bound regime outright -- a real consequence of an
-    // O(1) disruption, not a bug, and rarer than it sounds) against 0
+    // 80 trajectories across two seeds) gave 1 numerical failure against 0
     // failures but 3 wall-clock censorings for the same batch size under
-    // the pre-spin (k-ratio-applied) code -- collapse time itself barely
-    // moved (ortho median 130-155 ps across several seeds, versus the
-    // 147.8-151.6 ps already on record), because collapse time is set by
-    // the energy/hazard integral, which this change does not touch, while
-    // eccentricity -- now genuinely reaching values like e^2=0.9 that the
+    // the pre-spin (k-ratio-applied) code.  Root-caused rather than
+    // guessed at (an earlier version of this comment guessed "leaves the
+    // bound regime outright", i.e. specificEnergy>=0 -- checked directly
+    // and that guess was wrong): reproduced the exact failing trajectory
+    // (crem_collapse.hpp's own per-index seed derivation, splitMix64
+    // (masterSeed+index), makes any trajectory in a batch replayable
+    // singly) and traced it to crem_collapse.hpp's maxRelativeLossPerOrbit
+    // guard, not to specificEnergy going non-negative: a spin kick had
+    // just driven the orbit to e^2~0.945, and the SINGLE mechanically-
+    // measured orbit that follows (the same one every reaction model
+    // relies on for its dE/dt, drawn from the real retarded-field flux,
+    // independent of which reaction model is active) then genuinely
+    // radiated 56% of the binding energy in that one orbit -- over the
+    // 50% guard this file documents elsewhere as "a secular inspiral
+    // cannot shed a large fraction of its own binding energy in ONE
+    // orbit; if it could, orbit averaging would not apply in the first
+    // place".  That guard is doing exactly its job: correctly refusing to
+    // trust an orbit-averaged estimate once a single photon has pushed
+    // the orbit's own eccentricity past where orbit-averaging remains
+    // self-consistent, rather than silently extrapolating past it.  Not
+    // fixed, because there is nothing to fix -- collapse time itself
+    // barely moved (ortho median 130-155 ps across several seeds, versus
+    // the 147.8-151.6 ps already on record), because collapse time is set
+    // by the energy/hazard integral, which this change does not touch,
+    // while eccentricity -- now genuinely reaching values like e^2=0.9 that the
     // old k-ratio path could never produce -- mostly affects which exit
     // condition a trajectory hits and how soon, not whether one is hit.
     stochasticElectricDipole

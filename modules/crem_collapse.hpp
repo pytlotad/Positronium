@@ -833,6 +833,12 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         if(run.outcome!=SimulationOutcome::ObservationLimit
            ||!isFinite(run.finalState)
            ||(refreshBackground&&!isFinite(background.finalState))) {
+            if(std::getenv("CREM_DEBUG"))
+                std::cerr<<"  DIAG mechanical-measurement trip: run.outcome="
+                         <<static_cast<int>(run.outcome)<<" finiteFinal="
+                         <<isFinite(run.finalState)<<" specificEnergy="
+                         <<elements.specificEnergy<<" specificAngularMomentum="
+                         <<elements.specificAngularMomentum<<std::endl;
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             result.calibrationSeconds=simulatedTimeTotal+run.elapsedTime;
             return result;
@@ -911,6 +917,13 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         if(!std::isfinite(deltaEnergyPerOrbit)
            ||std::abs(deltaEnergyPerOrbit)
                >maxRelativeLossPerOrbit*std::abs(elements.specificEnergy)) {
+            if(std::getenv("CREM_DEBUG"))
+                std::cerr<<"  DIAG maxRelativeLossPerOrbit trip: deltaEnergyPerOrbit="
+                         <<deltaEnergyPerOrbit<<" specificEnergy="
+                         <<elements.specificEnergy<<" ratio="
+                         <<deltaEnergyPerOrbit/elements.specificEnergy
+                         <<" specificAngularMomentum="
+                         <<elements.specificAngularMomentum<<std::endl;
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             result.calibrationSeconds=simulatedTimeTotal+measuredElapsed;
             return result;

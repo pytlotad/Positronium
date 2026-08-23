@@ -2461,17 +2461,43 @@ pomijalny efekt w większości głębokości, jaką model osiąga.
   niedostępna w tej architekturze.
 
   Zmierzone empirycznie: partia produkcyjna (o-Ps, \(80\) trajektorii, dwa
-  ziarna) dała \(1\) awarię numeryczną (orbita, przez pojedyncze duże
-  kopnięcie spinowe, robi się na tyle mimośrodowa, że opuszcza reżim
-  związany — prawdziwa konsekwencja zaburzenia rzędu jedności, nie błąd)
-  wobec \(0\) awarii, ale \(3\) ucięć budżetem czasowym dla tej samej
-  wielkości partii pod poprzednim kodem. Czas kolapsu ledwo drgnął
-  (mediana orto \(130\)–\(155\) ps w kilku ziarnach, wobec
-  \(147{,}8\)–\(151{,}6\) ps zmierzonych wcześniej z formułą `k`) — czas
-  kolapsu wyznacza głównie całka energii/hazardu z punktów A–B, której ten
-  mechanizm nie dotyka; mimośród (teraz naprawdę osiągający wartości jak
-  \(e^2\approx0{,}9\)) wpływa na to, KTÓRY warunek wyjścia trajektoria
-  trafi i jak szybko, nie na to, czy w ogóle trafi.
+  ziarna) dała \(1\) awarię numeryczną wobec \(0\) awarii, ale \(3\) ucięć
+  budżetem czasowym dla tej samej wielkości partii pod poprzednim kodem.
+  Czas kolapsu ledwo drgnął (mediana orto \(130\)–\(155\) ps w kilku
+  ziarnach, wobec \(147{,}8\)–\(151{,}6\) ps zmierzonych wcześniej z
+  formułą `k`) — czas kolapsu wyznacza głównie całka energii/hazardu z
+  punktów A–B, której ten mechanizm nie dotyka; mimośród (teraz naprawdę
+  osiągający wartości jak \(e^2\approx0{,}9\)) wpływa na to, KTÓRY warunek
+  wyjścia trajektoria trafi i jak szybko, nie na to, czy w ogóle trafi.
+
+  **Ta jedna awaria zbadana do końca, na zadane polecenie, zamiast
+  zostawiona jako odhaczone ryzyko.** Pierwsze zdanie w tym akapicie
+  (wersja robocza tego dokumentu) zgadywało przyczynę: "orbita opuszcza
+  reżim związany". Sprawdzone bezpośrednio i **ta zgadywanka była błędna**.
+  Konkretna trajektoria jest odtwarzalna pojedynczo (`crem_collapse.hpp`
+  wyprowadza ziarno każdego indeksu partii jako
+  `splitMix64(masterSeed+index)`, więc dowolne zdarzenie z partii da się
+  powtórzyć osobnym przebiegiem `--runs 1`) — dla partii ziarno \(99\),
+  zawiodła trajektoria indeks \(8\) (ziarno \(107\)). Prześledzona z
+  dodaną diagnostyką: to NIE `elements.specificEnergy>=0` (orbita "opuszcza
+  reżim związany"), tylko istniejący wcześniej strażnik
+  `maxRelativeLossPerOrbit=0{,}5` w `crem_collapse.hpp` — pojedynczy
+  kop spinowy zepchnął orbitę do \(e^2\approx0{,}945\), a NASTĘPNY,
+  pojedynczy zmierzony mechanicznie obieg (ten sam pomiar, z którego
+  każdy model reakcji czerpie swoje tempo strat, oparty na prawdziwym
+  strumieniu retardowanego pola, niezależny od tego, który model reakcji
+  jest aktywny) wypromieniował w TYM JEDNYM obiegu \(56\%\) energii
+  wiązania — powyżej progu \(50\%\), przy którym ten sam plik już
+  dokumentuje: "sekularna inspirala nie może stracić dużej części własnej
+  energii wiązania w JEDNYM obiegu; gdyby mogła, uśrednianie po orbicie w
+  ogóle by nie obowiązywało". Strażnik zadziałał dokładnie tak, jak
+  powinien: odmówił zaufania oszacowaniu orbitalnie uśrednionemu, gdy
+  jeden foton zepchnął mimośród orbity poza granicę, w której uśrednianie
+  po orbicie jest jeszcze samospójne — zamiast po cichu ekstrapolować poza
+  nią. Nienaprawione, bo nie ma czego naprawiać: to poprawna klasyfikacja
+  prawdziwego zjawiska fizycznego (zaburzenia rzędu jedności naprawdę
+  potrafią, rzadko, zepchnąć pojedynczy obieg poza reżim, w którym metoda
+  sekularna ma jeszcze sens), nie błąd implementacji.
 
 **F. Co model świadomie zostawia otwarte.** (1) Orbitalny moment pędu
 fotonu względem pary — wymaga anomalii prawdziwej, niedostępnej w
