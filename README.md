@@ -2460,6 +2460,83 @@ pomijalny efekt w większości głębokości, jaką model osiąga.
   średnio tylko połowę reguły wyboru \(\Delta m=1\); reszta jest
   niedostępna w tej architekturze.
 
+  **Domodelowanie tego brakującego orbitalnego momentu pędu — trzy próby,
+  wszystkie odrzucone, udokumentowane, żeby następna próba nie musiała
+  odkrywać tych samych ślepych zaułków od nowa.**
+
+  *Próba 1 — dosłowne \(r\times p\) z próbkowanej anomalii prawdziwej.*
+  Losowanie \(\nu\) jednostajnie w anomalii średniej (blok pominiętych
+  orbit obejmuje ich nieznaną liczbę, więc "jednostajnie w czasie" jest
+  jedynym nieuprzedzonym założeniem), rekonstrukcja \(r\) przez
+  standardowe równanie Keplera \(r(E)=a(1-e\cos E)\), iloczyn wektorowy z
+  już wylosowanym pędem fotonu. **Odrzucona przed wpięciem do stanu**:
+  \(|r\times p_\gamma|\sim a\cdot(\hbar\omega_\gamma/c)=\hbar n(v_{orbita}/c)\)
+  — standardowe tłumienie multipolowe wkładu orbitalnego względem skali
+  \(\hbar\). Dla pozytonium \(v/c\sim10^{-3}\), czyli o **trzy rzędy
+  wielkości za mało**, żeby domknąć lukę rzędu \(\hbar\), niezależnie od
+  tego, jak dokładnie próbkuje się \(\nu\).
+
+  *Próba 2 — przeskalowanie istniejącego mechanizmu ×2, skalibrowane do
+  \(k(e)\) w średniej zespołowej.* Wymagana średnia usunięta wartość
+  osiowa na foton, żeby odtworzyć niezależnie zweryfikowaną klasyczną
+  formułę \(k(e)=-(1-e^2)/(2+e^2)\) (zgodność \(10^{-4}\) z mierzoną
+  trajektorią), w zamkniętej postaci: \(\text{target}(e)=2|k(e)|
+  \sqrt{1-e^2}/S(e)\). Policzone na pełnej tabeli \(S(e)\): stosunek
+  target/(sam spin, \(\hbar/2\)) wynosi \(2{,}000\) przy \(e=0\), dryfując
+  tylko do \(1{,}867\) przy \(e=0{,}97\) — niemal uniwersalna stała \(2\),
+  nie poprawka zależna od \(e\). To nie numerologia: to podręcznikowy
+  wynik dla jednostajnie wirującego klasycznego dipola — strumień momentu
+  pędu dzieli się po połowie między "spin" i "orbitalny" wkład fali
+  kołowo spolaryzowanej.
+
+  **Zaimplementowana, zmierzona, wycofana**: na \(10\) niezależnych
+  ziarnach \(|L|\) po pierwszym fotonie wyszło \(2{,}3\)–\(4{,}5\times\)
+  celu klasycznego — GORZEJ niż niepoprawiona wersja (dla ziarna \(42\):
+  z \(1{,}84\times\) na \(2{,}97\times\)). Przyczyna znaleziona i
+  udowodniona ściśle (prawo cosinusów dla odejmowania wektorów):
+  \[
+  |L_{po}| = |L_{przed}|\sqrt{1+x^2-2xy},\qquad
+  x=\frac{R}{|L_{przed}|},\quad y=\cos\theta\cdot h\in[-1,1].
+  \]
+  \(R=2\hbar/\mu\) jest, z tej samej konwencji Bohra/SED, na której stoi
+  własny warunek początkowy tego modelu (\(L_{początkowe}=\hbar/\mu\)),
+  niemal dokładnie DWUKROTNOŚCIĄ własnej charakterystycznej skali momentu
+  pędu modelu — więc \(x\) wychodzi \(1{,}8\)–\(2{,}2\) na KAŻDEJ
+  sprawdzonej trajektorii, nie przez przypadek, tylko z konstrukcji.
+  Przy \(x\geq2\) minimum \(\sqrt{1+x^2-2xy}\) po WSZYSTKICH możliwych
+  \(y\) wynosi \(|x-1|\geq1\): zmniejszenie wielkości jest geometrycznie
+  NIEMOŻLIWE dla każdego pojedynczego losowania fotonu, nie tylko mało
+  prawdopodobne. Żadne jednorodne przeskalowanie pojedynczego kopnięcia
+  rzędu \(\hbar\) nie może tego ominąć, bo moment pędu pozytonium z
+  konstrukcji modelu żyje w skali \(\hbar\) przez całą trajektorię, nie
+  tylko blisko pierwszego fotonu.
+
+  *Próba 3 — rozwiązanie ścisłe (nie w średniej), dla magnitudy \(R\)
+  wzdłuż JUŻ wylosowanego kierunku fotonu, trafiającej dokładnie w
+  `classicalAngularMomentumMagnitude` dla TEGO jednego zdarzenia.*
+  \(|\mathbf L_{przed}+R\hat{\mathbf n}|^2=\text{cel}^2\) to kwadrat
+  względem \(R\), z rozwiązaniem rzeczywistym tylko gdy
+  \(\text{cel}\geq|L_{przed}|\sin\theta\) — geometryczna podłoga
+  osiągalna przez ruch wzdłuż USTALONEGO kierunku. Sprawdzone na tych
+  samych \(10\) ziarnach, każdy z własnym wylosowanym \(\theta\):
+  **\(10/10\) NIEOSIĄGALNYCH** (cel zawsze poniżej podłogi, bo \(k(e)\)
+  typowo żąda spadku wielkości o \(\sim45\)–\(50\%\) na jednym fotonie —
+  te same duże, dyskretne skoki, dla których i energia skacze o rząd
+  wielkości — a tylko \(\approx19\%\) kierunków ważonych
+  \((1+\cos^2\theta)\) leży wystarczająco blisko osi, żeby taki spadek w
+  ogóle był osiągalny przy jakiejkolwiek magnitudzie).
+
+  **To wynik rozstrzygający.** Nie chodzi o dobór właściwego \(R\) —
+  ścisłego czy przybliżonego. Wektor "skalar razy ustalony kierunek" ma
+  JEDEN stopień swobody, a musi jednocześnie spełnić dwa na ogół
+  niezgodne wymagania: trafić we właściwą KOŃCOWĄ wielkość (z \(k(e)\))
+  i leżeć w kierunku wyznaczonym przez fizykę energii/polaryzacji fotonu,
+  niezwiązaną z wymaganą redukcją \(L\). Domknięcie tej luki naprawdę
+  wymagałoby dodatkowego stopnia swobody w kopnięciu — nowej fizyki, nie
+  lepiej dobranej stałej — poza zakresem bezpiecznej, ograniczonej
+  poprawki. Kod pozostaje w pierwotnej, niepoprawionej postaci (sam spin,
+  \(\hbar\)), teraz z tym śledztwem zapisanym wprost w komentarzu obok.
+
   Zmierzone empirycznie: partia produkcyjna (o-Ps, \(80\) trajektorii, dwa
   ziarna) dała \(1\) awarię numeryczną wobec \(0\) awarii, ale \(3\) ucięć
   budżetem czasowym dla tej samej wielkości partii pod poprzednim kodem.
@@ -3224,24 +3301,252 @@ bez zmian względem sprzed naprawy — zgodnie z oczekiwaniem, bo poprawka
 dotyczy KIERUNKU pojedynczych fotonów (uśrednia się w statystyce
 zbiorczej), nie budżetu energii. `positronium_validation` 33/33.
 
+*Sonda 14 — charakter skokowy zbadany PONOWNIE, po naprawie, żeby
+wykluczyć, że sondy 10–11 były same zafałszowane przez błąd sondy 12.*
+Zasadne pytanie: skoro `angularMomentumDirection` był kontaminowany
+spinem PRZEZ CAŁY CZAS (nie tylko w chwili losowania fotonu), to czy
+wniosek sondy 11 („rozbieżność ciągła od checkpointu 0, ale o \(4\)–\(5\)
+rzędów wielkości za mała") sam nie był zniekształcony przez ten sam błąd?
+Powtórzone od zera na naprawionym kodzie (`CREM_DEBUG_PRECISE`, ziarna
+\(42\) i \(7\)), rozbita `measured dE/E` (rzeczywiste tempo strat
+zmierzone na pojedynczej orbicie, wielkość napędzająca hazard) checkpoint
+po checkpoincie, jako stosunek orto/para:
+
+```
+ziarno 42, checkpointy 0-17 (przed fotonem #1): stosunek = 1,000065  (stała wartość na wszystkich 18)
+ziarno 42, checkpointy 18-24 (przed fotonem #1): stosunek = 1,000062  (gładki, monotoniczny dryf w dół)
+ziarno 42, checkpointy 25-28 (po fotonie #1):    stosunek = 1,000009  (nowe, znów stałe plateau)
+ziarno 7,  checkpointy 0-3:                      stosunek ≈ 1,000068  (stałe, ta sama skala)
+```
+
+Żadnego skoku — gładki, ciągły, powoli dryfujący ułamkowy offset od samego
+początku, dokładnie taki, jakiego oczekuje się po stałym, sekularnym
+zaburzeniu \(1/r^3\) (sonda 9), nie po zdarzeniu progowym. Same akty
+fotonowe są teraz, po naprawie, niemal identyczne między kanałami:
+`cardanoQ`, `cosThetaFromAxis`, `photonAzimuth`, `harmonicNumber`
+identyczne co do bitu, `photonDirection` zgodny do \(10\)+ cyfr, a **czas
+kolapsu Kaplana-Meiera identyczny w obu kanałach dla tego samego ziarna**
+(\(757{,}471\) ps dla ziarna \(42\), \(81{,}7338\) ps dla ziarna \(7\)) —
+czego przed naprawą nie było. Wniosek: hipoteza „skoku dokładnie przy
+zdarzeniu fotonowym" z sondy 10 była w całości artefaktem błędu z sondy
+12 — sam błąd był obecny od \(t=0\) (zły, ale STAŁY kierunek osi),
+lecz pozostawał niewidoczny, dopóki nie został wciągnięty do próbkowanej
+wielkości (kąt Cardano, azymut) w dyskretnym akcie losowania fotonu; stąd
+złudzenie skoku. Prawdziwe sprzężenie dipol-dipol takiego mechanizmu nie
+ma — jest, i zawsze było, czysto ciągłe.
+
+*Sonda 15 — sam akt emisji rozbity na część losową i część fizyczną.*
+Na żądanie: gdzie dokładnie w akcie emisji (nie tylko w tempie strat
+między aktami) jest jakakolwiek różnica para/orto? Rozbite osobno:
+
+Część losowa/dyskretna aktu (który harmonik, pod jakim kątem) —
+**identyczna co do bitu** w obu zdarzeniach fotonowych: `threshold`,
+`harmonicNumber` (\(1=1\)), `cardanoQ`, `cosThetaFromAxis`,
+`photonAzimuth`. Wynika to wprost z architektury: przy tym samym ziarnie
+stan strumienia PRNG (`stream=`) jest identyczny w obu kanałach w chwili
+każdego losowania, a rozkład kątowy \((1+\cos^2\theta)\), z którego
+losowanie korzysta, nie zależy od parametrów orbity ani spinu.
+
+Część ciągła/fizyczna (\(E\), hazard, energia fotonu, `vcm`) różni się —
+ale zawsze o ten sam mały, gładko narastający rząd wielkości, policzone
+dokładnie (nie na oko: pierwszy ręczny szacunek dla `vcm` dawał
+błędnie \(\sim3{,}5\cdot10^{-6}\) — pomyłka o czynnik \(1000\) w
+przesunięciu przecinka, wykryta przy przeliczeniu skryptem):
+
+```
+                          zdarzenie 1 (chk 24)   zdarzenie 2 (chk 28)
+E (różnica względna)          4,16e-09               3,69e-09
+hazard (różnica względna)     4,28e-10               7,44e-09
+photonEnergy (różn. wzgl.)    3,50e-09               7,91e-09
+vcm, każda składowa           -  (=0 przed 1. fotonem)  3,50e-09
+Ldir (różnica względna)       ~1e-13 (szum)          ~1e-12 do 1e-16 (szum)
+```
+
+`vcm` przy drugim zdarzeniu różni się o dokładnie tyle, ile w tej samej
+chwili wynosi różnica \(E\) — bo kopnięcie od fotonu #1 dziedziczy jego
+energię, a ta dziedziczy \(E\) orbity w chwili emisji; żadnego
+niezależnego, dodatkowego mechanizmu przy `vcm` nie ma. `Ldir` zostaje na
+poziomie czystego szumu numerycznego w obu zdarzeniach, potwierdzając, że
+naprawa rzeczywiście usunęła zależność kierunku od spinu. Wniosek: sam
+**akt** emisji (które zdarzenie, w jakim kierunku względem osi) nie niesie
+żadnej niezależnej różnicy para/orto — cała różnica, jaka jest, to
+odziedziczona, jedna i ta sama, ciągle rosnąca wartość \(E\), obecna od
+\(t=0\) (sonda 11, teraz potwierdzona sondą 14 jako niezafałszowana przez
+błąd sondy 12), bez żadnego skoku przypisanego samemu momentowi losowania.
+
+*Sonda 16 — czy ta różnica rośnie w miarę zbliżania się do granicy
+kolapsu, sprawdzone na dłuższej trajektorii.* Ziarno \(23\): \(68\)
+checkpointów, \(2\) zdarzenia fotonowe, \(|E|\) rosnące (a więc orbita
+kurcząca się) niemal \(29\)-krotnie zanim trajektoria dotrze do bariery
+Comptona. Skumulowana różnica względna \(E\) między kanałami, cała
+trajektoria:
+
+```
+checkpoint  0  (start):                    różnica = 0
+checkpoint 42  (tuż przed fotonem #1):      różnica = 6,69e-08   |E| ×1,0002
+  --- FOTON #1 ---
+checkpoint 43  (tuż po fotonie #1):         różnica = 6,06e-08   |E| ×4,05
+checkpoint 66  (tuż przed fotonem #2):      różnica = 7,46e-08   |E| ×4,05 (bez zmian)
+  --- FOTON #2 ---
+checkpoint 67  (bariera Comptona, koniec):  różnica = 1,49e-07   |E| ×28,9
+```
+
+Rośnie, ale nie jednorodnie — dwa osobne mechanizmy, rozdzielone
+pomiarem: **(a)** wewnątrz jednej fazy (między fotonami) narasta liniowo z
+liczbą zmierzonych orbit niemal niezależnie od kurczenia się orbity
+(orbita w obrębie fazy ledwo się zmienia — to kumulacja czasu ekspozycji,
+nie efekt zbliżania się do bariery); **(b)** sam wewnętrzny offset tempa
+strat (`measured dE/E`, oczyszczony z efektu kumulacji czasu) rośnie
+naprawdę, ale skromnie: \(|1-\text{stosunek orto/para}|\) idzie z
+\(3{,}70\cdot10^{-4}\) (faza \(1\), duża orbita) do \(4{,}67\cdot10^{-4}\)
+(faza \(2\), orbita \(4{,}05\times\) mniejsza) — wzrost o \(26\%\) przy
+\(4\times\) skurczeniu, dużo mniej, niż sugerowałoby naiwne skalowanie
+\(U_{dd}/U_{Coulomb}\sim1/r^2\) (które przewidywałoby \(\sim16\times\)).
+**(c)** Same skoki przy fotonach dominują nad powolnym narastaniem
+sekularnym: przy fotonie #2 różnica podwoiła się niemal dokładnie
+(\(7{,}46\to14{,}9\cdot10^{-8}\)) — nowo wyemitowany foton składa
+dotychczasowy skumulowany offset w nową, znacznie większą bazę \(|E|\);
+to artefakt dyskretnej architektury kwantyzacji Poissona, nie ciągłego
+wzmocnienia fizyki sprzężenia. Wniosek: różnica rośnie w stronę kolapsu
+(łącznie o \(\sim2\) rzędy wielkości na całej trajektorii tutaj), ale
+wzrost jest zdominowany przez strukturę zdarzeń fotonowych i kumulację
+czasu, nie przez gwałtowne wzmocnienie sprzężenia dipol-dipol —
+"czysto fizyczny" składnik rośnie realnie, lecz znacznie wolniej, niż
+naiwna skala \(1/r^2\) sugerowałaby. Nawet tuż przy barierze Comptona
+różnica pozostaje rzędu \(10^{-7}\)–\(10^{-9}\) zależnie od trajektorii —
+wciąż o wiele rzędów wielkości za mało, by wpłynąć na wybór harmoniki czy
+jakikolwiek obserwowalny wynik (sonda 8).
+
+*Sonda 17 — czy dyskretność emisji (proces Poissona) i narastanie
+sprzężenia mogą się ze sobą sprzęgać, dając PRAWDZIWY skok — zbadane
+wprost, nie tylko oszacowane.* Zasadne pytanie: hazard, który decyduje,
+W KTÓRYM checkpoincie strzeli foton, sam jest zbudowany z \(E\), więc
+niesie tę samą maleńką różnicę sprzężenia. Gdyby skumulowany hazard
+kiedykolwiek wylądował bliżej progu niż wynosi to zaburzenie, próg
+zostałby przekroczony w INNYM checkpoincie w jednym kanale niż w
+drugim — prawdziwy, duży, nieciągły skok, jakościowo różny od
+wszystkiego dotąd zaobserwowanego, i genetycznie związany ze sprzężeniem
+(bo to ono decydowałoby o przechyleniu), nie z samą architekturą.
+
+*Metoda.* Zamiast szacować, przeszukane **\(959\) rzeczywistych zdarzeń
+fotonowych** (setki ziaren, jeden kanał): dla każdego margines do progu
+(`próg − cumHazard tuż przed odpaleniem`), znormalizowany przez wielkość
+przyrostu hazardu na checkpoint (`skipHazard`). Jeśli miejsce
+przekroczenia progu wewnątrz przyrostu jest z grubsza losowe, minimum z
+\(N\) takich prób powinno skalować się jak \(1/N\) — sprawdzalna
+predykcja, nie założenie:
+
+```
+N = 959 zdarzeń
+zmierzone minimum (margines/skipHazard) = 5,20×10⁻⁴
+przewidywanie z rozkładu jednostajnego (1/N) = 1,04×10⁻³
+```
+
+Zgodność co do rzędu wielkości (czynnik \(\sim2\)) potwierdza model.
+Najciaśniejszy znaleziony przypadek (ziarno \(520\), zdarzenie fotonowe
+\(\#2\)): margines \(2{,}75\times10^{-5}\) absolutnie, \(0{,}041\%\)
+progu — **przetestowany wprost**, pełne porównanie para/ortho z
+`CREM_DEBUG_PRECISE`:
+
+```
+para:  foton #2 odpala checkpoint 10->11
+ortho: foton #2 odpala checkpoint 10->11   <- TEN SAM checkpoint
+photonEnergy, cmEnergyKick: identyczne co do wyświetlanej precyzji w obu kanałach
+```
+
+Żadnego przechylenia — ale zmierzone bezpośrednio zaburzenie hazardu w
+tym miejscu (\(\sim3\)–\(7\times10^{-9}\) absolutnie) jest wciąż
+\(\sim10^4\) razy mniejsze od marginesu, nie \(\sim10^6\), jak sugerował
+pierwszy, luźniejszy szacunek z sondy poprzedniej.
+
+*Sprawdzone jeszcze dokładniej, na żądanie — i znaleziony realny błąd
+jednostek w pierwszym szacunku.* Pierwsza wersja dzieliła zaburzenie
+WZGLĘDNE (unormowane do lokalnej skali hazardu, która waha się od
+\(0{,}067\) do \(4{,}16\) między zdarzeniami) przez `skipHazard` tak, jakby
+hazard wszędzie miał skalę \(\approx1\) — niespójne jednostki. Poprawka:
+liczyć \(P(\text{przechylenie})=|\text{hazard}_{orto}-\text{hazard}_{para}|
+/\text{skipHazard}\) bezpośrednio z wielkości bezwzględnych, zdarzenie po
+zdarzeniu, na wszystkich \(9\) zmierzonych dotąd zdarzeniach (\(6\)
+ziaren):
+
+```
+zdarzenie          hazard    próg      skipHazard   zaburzenie(abs)   P(przechylenie)
+seed10 ev1        0,687625  0,641708   0,114606      3,04e-10          2,65e-09
+seed12 ev1        0,702371  0,653267   0,100341      5,59e-10          5,57e-09
+seed42 ev1        2,832412  2,781617   0,113302      1,21e-09          1,07e-08
+seed23 ev1        4,252913  4,156797   0,098919      2,77e-09          2,80e-08
+seed520 ev1       1,011772  0,998010   0,101180      3,45e-09          3,41e-08
+seed42 ev2        0,326824  0,307550   0,069007      2,43e-09          3,52e-08
+seed15 ev1        3,061136  2,961908   0,102045      1,40e-08          1,37e-07
+seed520 ev2       0,119592  0,066704   0,052916      7,87e-09          1,49e-07
+seed23 ev2        1,349880  1,322060   0,052241      1,02e-07          1,95e-06
+
+min = 2,65e-09    mediana = 3,41e-08    max = 1,95e-06    rozrzut = ×738
+```
+
+**Odkrycie, którego pierwszy szacunek nie złapał: to nie jest jedna
+stała.** Pogrupowane wg tego, czy to pierwszy czy drugi foton danej
+trajektorii — "zdarzenie #1" (\(6\) pomiarów): \(2{,}65\times10^{-9}\)
+do \(1{,}37\times10^{-7}\), mediana \(\approx1{,}9\times10^{-8}\);
+"zdarzenie #2" (\(3\) pomiary): \(3{,}52\times10^{-8}\) do
+\(1{,}95\times10^{-6}\), systematycznie wyżej. Drugie zdarzenia fotonowe
+(dłużej wystawione na skumulowane sprzężenie) mają wyraźnie wyższe
+\(P(\text{przechylenie})\) niż pierwsze — dokładnie zgodnie z sondą 16
+(różnica rośnie w stronę kolapsu). Ryzyko bifurkacji więc **rośnie z
+każdym kolejnym fotonem tej samej trajektorii**, nie jest płaskie.
+
+*Wniosek, dwukrotnie poprawiony względem pierwszego szacunku.* Poprawny
+zakres: \(P(\text{przechylenie})\sim3\times10^{-9}\) (wczesne fotony) do
+\(\sim2\times10^{-6}\) (późne fotony, bliżej kolapsu), mediana
+\(\sim3\times10^{-8}\) — dolna granica niżej, a rozrzut (\(\times738\),
+nie \(\times154\)) szerszy, niż sugerował poprzedni, luźniej policzony
+przedział \(10^{-8}\)–\(10^{-6}\). Walidacja order-statystyką (zgodność
+minimum marginesu z \(1/N\), czynnik \(\sim2\)) pozostaje słuszna co do
+rzędu wielkości, ale to sprawdzian pojedynczej liczby (minimum), nie
+pełny test kształtu rozkładu — traktowane jako przybliżona zgodność, nie
+dowód ścisły. Mechanizm jest **potwierdzony jako realny i ilościowo
+spójny** (bezpośredni test najciaśniejszego z \(959\) przypadków nie dał
+przechylenia, dokładnie zgodnie z przewidywaniem \(\sim10^4\)-krotnego
+marginesu w tamtym konkretnym przypadku) — ale nieobserwowany w żadnym z
+\(959\)+ sprawdzonych zdarzeń ani w partii \(N=30\) (sonda 8). To osobny
+od sondy 14 wniosek: sama fizyka sprzężenia jest gładka i ciągła
+(sonda 14), ale **architektura kwantyzacji Poissona, w którą jest wpięta,
+wprowadza osobny, rzadki, ale niezerowy, wprost zmierzony i systematycznie
+rosnący w stronę kolapsu mechanizm bifurkacji** — próg, nie sprzężenie,
+jest źródłem potencjalnego skoku, gdyby kiedykolwiek doszło do
+wystarczająco ciasnego trafienia.
+
 *Wniosek końcowy — mechanizm w pełni zidentyfikowany i naprawiony, nie
 tylko domknięty w statystyce.* Poprzednia hipoteza (precesja apsyd,
 sondy 9–11) była matematycznie poprawna jako ZJAWISKO OGÓLNE, ale nie
-była właściwym mechanizmem TEJ rozbieżności — prawdziwą przyczyną było
-zanieczyszczenie osi emisji fotonu przez losowo próbkowany spin,
-niezwiązane z sekularnym sprzężeniem dipol-dipol wcale. Naprawione, nie
-tylko udokumentowane: `angularMomentumDirection` liczony teraz z
+była właściwym mechanizmem OBSERWOWANEJ rozbieżności — prawdziwą
+przyczyną była kontaminacja osi emisji fotonu przez losowo próbkowany
+spin, niezwiązana z sekularnym sprzężeniem dipol-dipol wcale. Naprawione,
+nie tylko udokumentowane: `angularMomentumDirection` liczony teraz z
 czystej geometrii orbitalnej, poprawnie dla KAŻDEJ trajektorii
 stochastycznego modelu, nie tylko w porównaniu para/orto. Sprzężenie
-dipol-dipol (sondy 3, 9, 11) pozostaje realne, małe
-(\(\sim10^{-6}\) energii Coulomba) i o strukturze DC+\(2\omega\) —
-wciąż bez podstaw do systematycznie różnych harmonik między kanałami,
+dipol-dipol (sondy 3, 9, 11, potwierdzone ponownie sondami 14–16) pozostaje
+realne, małe (\(\sim10^{-6}\) energii Coulomba, \(\sim10^{-9}\)–\(10^{-7}\)
+w skumulowanej różnicy \(E\), rosnącej w stronę kolapsu głównie przez
+strukturę zdarzeń fotonowych, nie przez gwałtowne wzmocnienie samego
+sprzężenia — sonda 16), o strukturze DC+\(2\omega\), i — teraz zbadane
+wprost na naprawionym kodzie — **samo w sobie bez żadnego charakteru
+skokowego, całkowicie gładkie i ciągłe od \(t=0\)** (sonda 14). Jedyny
+znaleziony kanał, przez który mogłoby to się zmienić w skok, jest
+architektoniczny, nie fizyczny: rezonans ze skończonym progiem procesu
+Poissona (sonda 17) — mechanizm realny i ilościowo zmierzony
+(\(P\sim3\times10^{-9}\)–\(2\times10^{-6}\) na zdarzenie fotonowe, rosnąco
+z każdym kolejnym fotonem tej samej trajektorii), ale w \(959\)
+sprawdzonych zdarzeniach i partii \(N=30\) (sonda 8) nigdy nieaktywowany.
+Wciąż bez podstaw do systematycznie różnych harmonik między kanałami,
 teraz bez domieszki znacznie większego, niepowiązanego artefaktu.
-Trzynaście niezależnych sond, w tym trzy własne pomyłki znalezione i
+Siedemnaście niezależnych sond, w tym cztery własne pomyłki znalezione i
 skorygowane w trakcie (sonda 9: błąd rozwijania kąta; sonda 10→11:
-przedwczesny wniosek o skokowym charakterze; a samo `noetherAngularMomentum`
-z sondy 12 — błąd sprzed wielu sesji, wykryty dopiero teraz) — dokładnie
-taki proces, jaki ta cała sekcja miała demonstrować.
+przedwczesny wniosek o skokowym charakterze; `noetherAngularMomentum` z
+sondy 12 — błąd sprzed wielu sesji, wykryty dopiero teraz; sonda 15:
+pomyłka o czynnik \(1000\) w ręcznym szacunku `vcm`, złapana natychmiast
+przeliczeniem) — dokładnie taki proces, jaki ta cała sekcja miała
+demonstrować.
 
 ## Warunki początkowe i klasyfikacja zjawiska
 

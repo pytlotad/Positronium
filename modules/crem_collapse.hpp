@@ -1758,6 +1758,83 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // architecture rather than patched with an arbitrary
                     // factor of 2, which would misrepresent an unverified
                     // guess as a measured correction.
+                    //
+                    // THREE attempts made at closing this gap, all tried
+                    // and REJECTED before touching the state below (see
+                    // README point L, "orbitalny moment pędu fotonu" for
+                    // the full, numbered writeup):
+                    //
+                    // (1) Literal r x p from a sampled true anomaly
+                    // (uniform in mean anomaly, Kepler-solved r(E)=a(1-e
+                    // cosE)): parametrically too small.  For dipole
+                    // radiation from a point-like source, |r x p_photon| ~
+                    // a*(hbar*omega_photon/c) = hbar*n*(v_orbit/c), the
+                    // standard multipole suppression of an orbital
+                    // contribution relative to the intrinsic-hbar scale.
+                    // v_orbit/c ~ 1e-3 for positronium, three orders of
+                    // magnitude too small to close a factor-of-2 gap,
+                    // whatever r is sampled to.
+                    //
+                    // (2) Uniformly doubling the spin vector
+                    // (photonDirection*2*helicity*hbar), calibrated to
+                    // exactly reproduce the classical
+                    // k(e)=-(1-e^2)/(2+e^2) secular rate in ENSEMBLE
+                    // AVERAGE (closed form: required average axial removal
+                    // per photon is 2*|k(e)|*sqrt(1-e^2)/S(e), which the
+                    // doubled term matches to within 7% for e in [0,0.97]
+                    // -- not numerology, the textbook 50/50 spin/orbital
+                    // split for a uniformly rotating classical dipole).
+                    // IMPLEMENTED, MEASURED, REVERTED: on 10 independent
+                    // seeds the resulting |L| after the first photon came
+                    // out 2.3x-4.5x the classical target, not closer to it
+                    // -- WORSE than the unpatched spin-only version.  Root
+                    // cause, found and proven exactly (law of cosines):
+                    // |L_after| = |L_before|*sqrt(1+x^2-2xy), x = R/|
+                    // L_before|, y = cos(theta)*helicity in [-1,1].  R =
+                    // 2*hbar/reducedMass is, by the SAME Bohr/SED
+                    // convention this model's own initial condition uses
+                    // (L_initial = hbar/reducedMass), almost exactly TWICE
+                    // the model's own characteristic angular-momentum
+                    // scale -- so x sits at 1.8-2.2 on every trajectory
+                    // tested, not by chance but by construction.  At
+                    // x>=2 the minimum of sqrt(1+x^2-2xy) over ALL possible
+                    // y is |x-1|>=1: a magnitude DECREASE is geometrically
+                    // impossible for every single photon draw, not merely
+                    // unlikely.  Any uniform rescaling of a single ~hbar-
+                    // scale vector kick hits this same wall, because
+                    // positronium's own L lives at the hbar scale by
+                    // construction, for the entire trajectory, not just
+                    // near the first photon.
+                    //
+                    // (3) Solve exactly (not calibrate in average) for the
+                    // magnitude R along the ALREADY-SAMPLED photonDirection
+                    // that hits classicalAngularMomentumMagnitude exactly
+                    // for THIS one photon: |L_before + R*n_hat|^2 = target^2
+                    // is a quadratic in R with a real solution only if
+                    // target >= |L_before|*sin(theta) (the geometric floor
+                    // reachable by moving along a FIXED direction).  Tested
+                    // on the same 10 seeds using each one's own sampled
+                    // theta: 10/10 UNREACHABLE (target strictly below the
+                    // floor in every case, because k(e) typically demands
+                    // a ~45-50% magnitude drop per photon -- these are
+                    // large discrete jumps, same reason photonEnergy itself
+                    // jumps energy by O(1) -- while only ~19% of
+                    // (1+cos^2 theta)-weighted directions land close enough
+                    // to axis to reach that big a drop from any magnitude
+                    // at all).  This is the decisive result: it is not a
+                    // question of finding the right R, exact or otherwise
+                    // -- a single scalar-times-fixed-direction vector has
+                    // one degree of freedom and is being asked to satisfy
+                    // two generically incompatible constraints (hit the
+                    // classical target magnitude; point along a direction
+                    // fixed by unrelated energy/polarization physics).
+                    // Closing this gap for real needs an additional degree
+                    // of freedom in the kick, i.e. new physics, not a
+                    // better-chosen constant -- out of scope for this
+                    // block.  Left as in the original, unpatched form
+                    // below, now with this exploration on record so the
+                    // next attempt does not have to rediscover any of the
+                    // three dead ends.
                     const double helicityPlusProbability=std::clamp(
                         (1.0+cosThetaFromAxis)*(1.0+cosThetaFromAxis)
                         /(2.0*(1.0+cosThetaFromAxis*cosThetaFromAxis)),
