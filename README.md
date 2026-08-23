@@ -2468,67 +2468,8 @@ pomijalny efekt w większości głębokości, jaką model osiąga.
   formułą `k`) — czas kolapsu wyznacza głównie całka energii/hazardu z
   punktów A–B, której ten mechanizm nie dotyka; mimośród (teraz naprawdę
   osiągający wartości jak \(e^2\approx0{,}9\)) wpływa na to, KTÓRY warunek
-  wyjścia trajektoria trafi i jak szybko, nie na to, czy w ogóle trafi.
-
-  **Ta jedna awaria zbadana do końca, na zadane polecenie, zamiast
-  zostawiona jako odhaczone ryzyko.** Pierwsze zdanie w tym akapicie
-  (wersja robocza tego dokumentu) zgadywało przyczynę: "orbita opuszcza
-  reżim związany". Sprawdzone bezpośrednio i **ta zgadywanka była błędna**.
-  Konkretna trajektoria jest odtwarzalna pojedynczo (`crem_collapse.hpp`
-  wyprowadza ziarno każdego indeksu partii jako
-  `splitMix64(masterSeed+index)`, więc dowolne zdarzenie z partii da się
-  powtórzyć osobnym przebiegiem `--runs 1`) — dla partii ziarno \(99\),
-  zawiodła trajektoria indeks \(8\) (ziarno \(107\)). Prześledzona z
-  dodaną diagnostyką: to NIE `elements.specificEnergy>=0` (orbita "opuszcza
-  reżim związany"), tylko istniejący wcześniej strażnik
-  `maxRelativeLossPerOrbit=0{,}5` w `crem_collapse.hpp` — pojedynczy
-  kop spinowy zepchnął orbitę do \(e^2\approx0{,}945\), a NASTĘPNY,
-  pojedynczy zmierzony mechanicznie obieg (ten sam pomiar, z którego
-  każdy model reakcji czerpie swoje tempo strat, oparty na prawdziwym
-  strumieniu retardowanego pola, niezależny od tego, który model reakcji
-  jest aktywny) wypromieniował w TYM JEDNYM obiegu \(56\%\) energii
-  wiązania — powyżej progu \(50\%\), przy którym ten sam plik już
-  dokumentuje: "sekularna inspirala nie może stracić dużej części własnej
-  energii wiązania w JEDNYM obiegu; gdyby mogła, uśrednianie po orbicie w
-  ogóle by nie obowiązywało".
-
-  **Ale wniosek "strażnik zadziałał poprawnie, nie ma czego naprawiać" był
-  za wcześnie wyciągnięty — sprawdzony ponownie, na wyraźne żądanie, i
-  okazał się nadmiernie ostrożny właśnie tutaj.** Dla `isStochastic`
-  wielkość, którą ten strażnik testuje (`deltaEnergyPerOrbit`), NIE jest
-  używana do niczego poza samym strażnikiem i diagnostycznym stosunkiem
-  Larmora tuż niżej (osobno zabezpieczonym, nigdy nie wracającym do stanu)
-  — do wyznaczenia `orbitsToSkip` służy zamiast niej
-  `expectedLossPerOrbit`, analityczne tempo Larmora dla BIEŻĄCYCH
-  elementów oskulacyjnych (patrz własny komentarz tej zmiennej). Awaria,
-  przed którą strażnik ma chronić — skażony pomiar jednego obiegu
-  ekstrapolowany na wiele pominiętych — nie może więc tą ścieżką w ogóle
-  zajść dla tego modelu, niezależnie od tego, jak duża jest zmierzona
-  wartość. Sam pomiar też nie jest podejrzany w sposób, w jaki był
-  przypadek uzasadniający strażnik pierwotnie: tamten pochodził z
-  degenerującego się stencila trzeciej pochodnej momentu dipolowego siły
-  reakcji modelu `coherent` — `stochasticElectricDipole` nigdy tego
-  stencila nie liczy (nie nakłada żadnej ciągłej siły reakcji), a
-  `orbitalRadiatedEnergy` pochodzi z całki strumienia
-  (`electromagneticFieldFluxRates` przez `particleMultipoleRadiation`),
-  strukturalnie niezwiązanej z tamtą awarią.
-
-  Naprawione w `crem_collapse.hpp`: część progowa strażnika (nie część
-  `isfinite`, która nadal obowiązuje bezwarunkowo dla każdego modelu) jest
-  teraz wyłączona dla `isStochastic`. Sprawdzone, nie założone: dokładnie
-  ta sama trajektoria, która wcześniej zawiodła (ziarno \(107\)), teraz
-  kończy się poprawnie (\(172{,}78\) ps, zgodnie ze skalą już
-  zanotowaną), bez żadnego zadziałania strażnika. Powtórzona ta sama
-  partia \(80\) trajektorii na dwóch ziarnach plus dwie kolejne partie
-  (\(100\) i \(50\) trajektorii) dają \(0\) awarii numerycznych na
-  \(230\) — wobec \(1/80\) z nienaprawionym strażnikiem. Czas kolapsu
-  ledwo drgnął (mediana orto \(100\)–\(155\) ps w kilku ziarnach, wobec
-  \(147{,}8\)–\(151{,}6\) ps sprzed obu zmian), bo wyznacza go całka
-  energii/hazardu, której żadna z tych dwóch zmian nie dotyka; mimośród —
-  teraz naprawdę osiągający \(e^2\approx0{,}9\)–\(0{,}95\) — wpływa na to,
-  KTÓRY warunek wyjścia trajektoria trafi i jak szybko, a jak się
-  okazało, także na to, czy niezwiązany z nim strażnik pomyli prawdziwy
-  wynik z uszkodzonym.
+  wyjścia trajektoria trafi i jak szybko. Ta jedyna awaria doczekała się
+  własnego, pełnego śledztwa — patrz punkt H.
 
 **F. Co model świadomie zostawia otwarte.** (1) Orbitalny moment pędu
 fotonu względem pary — wymaga anomalii prawdziwej, niedostępnej w
@@ -2550,9 +2491,91 @@ względnie); porównanie z dystrybuantą dla odwrócenia Cardana kąta emisji
 (\(10^{-15}\) bezwzględnie); całkowanie RK4 niezależne od wyprowadzenia
 algebraicznego dla całki pierwszej \(k(e)\) (\(10^{-12}\)); sprawdzenie
 trzech stosunków mas dla tożsamości \(\sum m_i\mathbf r_i=0\)
-(\(10^{-17}\), szum numeryczny); partie produkcyjne po \(30\)–\(80\)
+(\(10^{-17}\), szum numeryczny); odtwarzanie pojedynczej trajektorii z
+partii przez jej własne ziarno (punkt H) do namierzenia rzadkich awarii
+zamiast zgadywania ich przyczyny; partie produkcyjne po \(30\)–\(230\)
 trajektorii mierzące rzeczywisty wskaźnik awarii, nie tylko argument
 teoretyczny; `positronium_validation` 33/33 po każdej zmianie.
+
+**H. Jedyna awaria numeryczna z partii testowej punktu E: znaleziona,
+błędnie wyjaśniona za pierwszym razem, i naprawiona za drugim.** Historia
+w trzech krokach, każdy zmierzony, żaden założony.
+
+*Krok 1 — namierzenie konkretnej trajektorii.* Partia \(80\) trajektorii
+(punkt E) dała \(1\) awarię, bez wskazania, która. `runCremCollapseExperiment`
+wyprowadza ziarno trajektorii o indeksie \(i\) w partii jako
+`splitMix64(masterSeed+i)` (`crem_collapse.hpp`), więc dowolne pojedyncze
+zdarzenie z wielowątkowej partii — inaczej nie do odróżnienia w
+przeplatanym logu wielu wątków naraz — daje się odtworzyć osobnym,
+jednowątkowym przebiegiem `--runs 1 --seed (masterSeed+i)`. Przeszukanie
+\(30\) wartości \(i\) dla partii ziarno \(99\) namierzyło winowajcę:
+indeks \(8\), czyli ziarno \(107\).
+
+*Krok 2 — pierwsze wyjaśnienie, zgadnięte, a nie zmierzone, i błędne.*
+Pierwsza wersja tego dokumentu przypisała awarię temu, że "orbita, przez
+pojedyncze duże kopnięcie spinowe, robi się na tyle mimośrodowa, że
+opuszcza reżim związany" — czyli `elements.specificEnergy>=0`. Brzmiało
+prawdopodobnie (kopnięcie spinowe jest w końcu zaburzeniem rzędu
+jedności), ale nie zostało sprawdzone bezpośrednio na miejscu.
+
+*Krok 3 — sprawdzone bezpośrednio, i inne.* Dodana diagnostyka
+(`CREM_DEBUG`, dwa punkty `DIAG`, ciche bez tej zmiennej środowiskowej)
+pokazała, że `elements.specificEnergy` w chwili awarii wynosiło
+\(-1{,}1508\cdot10^{13}\) — głęboko ujemne, nie w pobliżu zera. Awarię
+wywoływał inny, wcześniej istniejący strażnik:
+`maxRelativeLossPerOrbit=0{,}5` w `crem_collapse.hpp`. Pojedynczy kop
+spinowy zepchnął orbitę do \(e^2\approx0{,}945\); następny, pojedynczy
+zmierzony mechanicznie obieg (ten sam pomiar, z którego każdy model
+reakcji czerpie swoje tempo strat, oparty na prawdziwym strumieniu
+retardowanego pola, niezależny od tego, który model reakcji jest
+aktywny) wypromieniował w TYM JEDNYM obiegu \(56\%\) energii wiązania —
+powyżej progu \(50\%\), przy którym ten sam plik już dokumentuje:
+"sekularna inspirala nie może stracić dużej części własnej energii
+wiązania w JEDNYM obiegu; gdyby mogła, uśrednianie po orbicie w ogóle by
+nie obowiązywało".
+
+*Krok 4 — pierwszy wniosek z kroku 3, też sprawdzony ponownie, na
+wyraźne żądanie, i też okazał się za wcześnie wyciągnięty.* "Strażnik
+zadziałał poprawnie, nie ma czego naprawiać" było naturalnym, ale
+niesprawdzonym wnioskiem z samego faktu, że strażnik zareagował na
+prawdziwe, duże, fizyczne zjawisko (a nie na jawny NaN). Sprawdzone,
+co strażnik faktycznie CHRONI: dla `isStochastic` wielkość, którą testuje
+(`deltaEnergyPerOrbit`), nie jest używana do NICZEGO poza samym
+strażnikiem i osobno zabezpieczonym, nigdy niewracającym do stanu
+diagnostycznym stosunkiem Larmora tuż niżej — do wyznaczenia
+`orbitsToSkip` (czyli do ekstrapolacji na wiele pominiętych obiegów, to,
+przed czym strażnik ma chronić) służy zamiast niej `expectedLossPerOrbit`,
+analityczne tempo Larmora dla BIEŻĄCYCH elementów oskulacyjnych. Awaria,
+przed którą strażnik chroni — skażony pomiar jednego obiegu
+ekstrapolowany na wiele pominiętych — nie może więc tą ścieżką w ogóle
+zajść dla tego modelu, niezależnie od wielkości zmierzonej straty. Sam
+pomiar też nie jest podejrzany w sposób, w jaki był przypadek uzasadniający
+strażnik pierwotnie (`--radiation-reaction coherent`, degenerujący się
+stencil trzeciej pochodnej momentu dipolowego siły reakcji, dE/E o
+\(22\) rzędy wielkości w jednym checkpoincie) — `stochasticElectricDipole`
+nigdy tego stencila nie liczy (nie nakłada żadnej ciągłej siły reakcji,
+patrz punkt A), a `orbitalRadiatedEnergy` pochodzi ze strukturalnie
+niezwiązanej całki strumienia (`electromagneticFieldFluxRates` przez
+`particleMultipoleRadiation`).
+
+*Naprawa i weryfikacja.* Część progowa strażnika (nie część `isfinite`,
+która nadal obowiązuje bezwarunkowo, dla każdego modelu, jako ochrona
+przed prawdziwym uszkodzeniem numerycznym) jest teraz wyłączona dla
+`isStochastic`. Sprawdzone, nie założone: dokładnie ta sama trajektoria
+co w kroku 1 (ziarno \(107\)) teraz kończy się poprawnie
+(\(172{,}78\) ps, zgodnie ze skalą już zanotowaną), bez żadnego
+zadziałania strażnika. Powtórzona ta sama partia \(80\) trajektorii na
+dwóch ziarnach, plus dwie kolejne partie (\(100\) i \(50\) trajektorii,
+inne ziarna) dają \(0\) awarii numerycznych na \(230\) — wobec \(1/80\)
+z nienaprawionym strażnikiem. Czas kolapsu ledwo drgnął (mediana orto
+\(100\)–\(155\) ps w kilku ziarnach, wobec \(147{,}8\)–\(151{,}6\) ps
+sprzed obu zmian z punktu E), bo wyznacza go całka energii/hazardu,
+której żadna z tych zmian nie dotyka.
+
+*Co z tego wynika ogólniej, poza tym jednym strażnikiem.* Dwa błędne
+pierwsze wnioski z rzędu, każdy sprawdzony i poprawiony dopiero na
+wyraźne żądanie ponownej weryfikacji, a nie z własnej inicjatywy — warte
+zapisania wprost, nie tylko naprawienia po cichu.
 
 ## Warunki początkowe i klasyfikacja zjawiska
 
