@@ -2062,6 +2062,98 @@ int runMaxwellSelfTest() {
         trajectoryResidual(startupCase8.early,startupCase16.early));
     const double startupSettledSensitivity=std::max(
         startupHistoryResidual4,startupHistoryResidual8);
+
+    // Parameter-sensitivity scans use actual trajectories rather than merely
+    // evaluating the cutoff/profile formulas.  The cutoff probe is a common
+    // radial plunge stopped on three terminal surfaces.  The regulator probe
+    // advances one common short-range dipolar state with three smoothing
+    // radii, restoring the run-global radius immediately afterwards.
+    const std::array<double,3> cutoffFractions{0.004,0.005,0.006};
+    std::array<double,3> cutoffArrivalTimes{};
+    std::array<double,3> cutoffEventResiduals{};
+    const double sensitivityOrbitRadius=pairBohrRadius(activePair);
+    const double sensitivityStartRadius=0.02*sensitivityOrbitRadius;
+    const double sensitivityFirstShare=secondMass/(firstMass+secondMass);
+    const double sensitivitySecondShare=firstMass/(firstMass+secondMass);
+    const double sensitivityRadialSpeed=0.25*std::sqrt(
+        pairCoulombStrength/(pairReducedMass*sensitivityStartRadius));
+    State cutoffInitial;
+    cutoffInitial.firstPosition={sensitivityFirstShare*sensitivityStartRadius,0,0};
+    cutoffInitial.secondPosition={-sensitivitySecondShare*sensitivityStartRadius,0,0};
+    cutoffInitial.firstVelocity={-sensitivityFirstShare*sensitivityRadialSpeed,0,0};
+    cutoffInitial.secondVelocity={sensitivitySecondShare*sensitivityRadialSpeed,0,0};
+    cutoffInitial.firstDipole={0,0,firstMagneticMoment};
+    cutoffInitial.secondDipole={0,0,secondMagneticMoment};
+    synchronizeCovariantDipoles(cutoffInitial);
+    for(std::size_t index=0;index<cutoffFractions.size();++index) {
+        const double cutoff=cutoffFractions[index]*sensitivityOrbitRadius;
+        State value=cutoffInitial;
+        ClassicalTrajectoryEngine engine(value,
+            {.relativeTolerance=1.0e-6,.maximumDepth=12,
+             .compositionOrder=2,
+             .reactionModel=ChargeRadiationReactionModel::disabled,
+             .computeOutwardFlux=false});
+        bool advanced=true;
+        State before=value;
+        for(int step=0;step<4096&&separation(value)>cutoff&&advanced;++step) {
+            before=value;
+            const double radius=separation(value);
+            const double omega=std::sqrt(
+                pairCoulombStrength/(pairReducedMass*radius*radius*radius));
+            advanced=engine.advance(value,2.0*pi/(256.0*omega));
+        }
+        if(advanced&&separation(value)<=cutoff) {
+            const double fraction=separationCrossingFraction(before,value,cutoff);
+            cutoffArrivalTimes[index]=before.time
+                +fraction*(value.time-before.time);
+            const State event=interpolateState(before,value,fraction);
+            cutoffEventResiduals[index]=std::abs(separation(event)-cutoff)/cutoff;
+        } else {
+            cutoffArrivalTimes[index]=std::numeric_limits<double>::quiet_NaN();
+            cutoffEventResiduals[index]=std::numeric_limits<double>::infinity();
+        }
+    }
+
+    const std::array<double,3> regularizationRadiusFactors{0.5,1.0,2.0};
+    std::array<State,3> regularizationScanStates{};
+    const double savedRegularizationRadius=magneticRegularizationRadius;
+    const double regulatorProbeSeparation=4.0*savedRegularizationRadius;
+    const double regulatorProbeSpeed=std::sqrt(
+        pairCoulombStrength/(pairReducedMass*regulatorProbeSeparation));
+    const double regulatorProbePeriod=2.0*pi*std::sqrt(
+        pairReducedMass*regulatorProbeSeparation*regulatorProbeSeparation
+            *regulatorProbeSeparation/pairCoulombStrength);
+    State regulatorInitial;
+    regulatorInitial.firstPosition={
+        sensitivityFirstShare*regulatorProbeSeparation,0,0};
+    regulatorInitial.secondPosition={
+        -sensitivitySecondShare*regulatorProbeSeparation,0,0};
+    regulatorInitial.firstVelocity={0,sensitivityFirstShare*regulatorProbeSpeed,0};
+    regulatorInitial.secondVelocity={0,-sensitivitySecondShare*regulatorProbeSpeed,0};
+    regulatorInitial.firstDipole={0,0,firstMagneticMoment};
+    regulatorInitial.secondDipole={0,0,secondMagneticMoment};
+    regulatorInitial.firstProperDipole=regulatorInitial.firstDipole;
+    regulatorInitial.secondProperDipole=regulatorInitial.secondDipole;
+    for(std::size_t index=0;index<regularizationRadiusFactors.size();++index) {
+        magneticRegularizationRadius=
+            savedRegularizationRadius*regularizationRadiusFactors[index];
+        State value=regulatorInitial;
+        ClassicalTrajectoryEngine engine(value,
+            {.relativeTolerance=1.0e-6,.maximumDepth=12,
+             .compositionOrder=2,
+             .reactionModel=ChargeRadiationReactionModel::disabled,
+             .computeOutwardFlux=false});
+        bool advanced=true;
+        for(int step=0;step<32&&advanced;++step)
+            advanced=engine.advance(value,regulatorProbePeriod/512.0);
+        if(!advanced) value.time=std::numeric_limits<double>::quiet_NaN();
+        regularizationScanStates[index]=value;
+    }
+    magneticRegularizationRadius=savedRegularizationRadius;
+    const std::array<double,3> regularizationTrajectoryResiduals{
+        trajectoryResidual(regularizationScanStates[0],regularizationScanStates[1]),
+        0.0,
+        trajectoryResidual(regularizationScanStates[2],regularizationScanStates[1])};
     const StateHistory startupHistory=causalInitialHistory(yeeCoupledState);
     const double startupCoverage=(yeeCoupledState.time-startupHistory.front().time)
         /(separation(yeeCoupledState)/c);
@@ -2655,6 +2747,21 @@ int runMaxwellSelfTest() {
         &&startupSettledSensitivity
             <2.0*std::max(startupEarlySensitivity,1.0e-15)
         &&startupSettledSensitivity<1.0e-5;
+    const bool parameterSensitivityScanOk=
+        std::ranges::all_of(cutoffArrivalTimes,
+            [](double value){return std::isfinite(value)&&value>0.0;})
+        &&cutoffArrivalTimes[2]<cutoffArrivalTimes[1]
+        &&cutoffArrivalTimes[1]<cutoffArrivalTimes[0]
+        &&std::ranges::all_of(cutoffEventResiduals,
+            [](double value){return std::isfinite(value)&&value<1.0e-10;})
+        &&std::ranges::all_of(regularizationScanStates,
+            [](const State& value){return isFinite(value);})
+        &&std::ranges::all_of(regularizationTrajectoryResiduals,
+            [](double value){return std::isfinite(value)&&value<1.0;})
+        // Guards against a scan that accidentally stops routing the mutable
+        // radius into the force law and returns three bit-identical outcomes.
+        &&regularizationTrajectoryResiduals[0]>1.0e-12
+        &&regularizationTrajectoryResiduals[2]>1.0e-12;
     const bool retardedInterpolationOk=
         std::isfinite(hermiteConvergenceOrder)
         &&interpolationFine[1]<interpolationFine[0]
@@ -2902,6 +3009,16 @@ int runMaxwellSelfTest() {
               << "history construct early/settled: "
               << startupEarlySensitivity << " / "
               << startupSettledSensitivity << '\n'
+              << "cutoff scan f=0.004/5/6 time: "
+              << cutoffArrivalTimes[0] << " / " << cutoffArrivalTimes[1]
+              << " / " << cutoffArrivalTimes[2] << " s\n"
+              << "cutoff event residuals: " << cutoffEventResiduals[0]
+              << " / " << cutoffEventResiduals[1] << " / "
+              << cutoffEventResiduals[2] << '\n'
+              << "reg-radius scan .5/1/2 residual: "
+              << regularizationTrajectoryResiduals[0] << " / "
+              << regularizationTrajectoryResiduals[1] << " / "
+              << regularizationTrajectoryResiduals[2] << '\n'
               << "history linear/H:  " << interpolationFine[0] << " / "
               << interpolationFine[1] << '\n'
               << "Hermite order:     " << hermiteConvergenceOrder << '\n'
@@ -2948,7 +3065,7 @@ int runMaxwellSelfTest() {
         const char* name;
         bool passed;
     };
-    const std::array<ValidationCheck,35> regressionChecks{{
+    const std::array<ValidationCheck,36> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -2982,6 +3099,7 @@ int runMaxwellSelfTest() {
         {ValidationSection::NumericalRegression,"adaptive-depth-rejection",adaptiveDepthRejectionOk},
         {ValidationSection::Convergence,"causal-startup",causalStartupOk},
         {ValidationSection::Convergence,"history-construction-sensitivity",historyConstructionSensitivityOk},
+        {ValidationSection::PhysicalDomain,"cutoff-and-regularization-scan",parameterSensitivityScanOk},
         {ValidationSection::Convergence,"retarded-interpolation",retardedInterpolationOk},
         {ValidationSection::NumericalRegression,"short-range-regularization",shortRangeRegularizationOk}
     }};
