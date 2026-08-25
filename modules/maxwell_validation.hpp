@@ -807,6 +807,55 @@ int runMaxwellSelfTest() {
         -noetherAngularMomentum(yeeCoupledState)
         -yeeCoupledState.radiatedAngularMomentum).norm()
         /std::max(sharedInitialTotalAngular.norm(),hbar);
+
+    // A discrete stochastic photon must close the full four-momentum, not
+    // merely remove the requested energy from relative motion.  Probe a
+    // drifting, unequal-direction state so neither zero-COM symmetry nor an
+    // axis-aligned kick can make the check pass accidentally.
+    State photonRecoilState=yeeCoupledState;
+    photonRecoilState.firstVelocity+=Vec3{0.031*c,-0.007*c,0.004*c};
+    photonRecoilState.secondVelocity+=Vec3{0.031*c,-0.007*c,0.004*c};
+    const auto photonFirstBefore=two_body::fourMomentumFromVelocity(
+        photonRecoilState.firstVelocity,firstMass);
+    const auto photonSecondBefore=two_body::fourMomentumFromVelocity(
+        photonRecoilState.secondVelocity,secondMass);
+    const double photonIncomingEnergy=
+        photonFirstBefore.energy+photonSecondBefore.energy;
+    const Vec3 photonIncomingMomentum=
+        photonFirstBefore.momentum+photonSecondBefore.momentum;
+    const Vec3 photonIncomingComVelocity=photonIncomingMomentum
+        *(c*c/photonIncomingEnergy);
+    Vec3 photonProbeDirection{0.31,-0.47,0.826};
+    photonProbeDirection=photonProbeDirection
+        *(1.0/photonProbeDirection.norm());
+    const double photonProbeEnergy=0.25*eCharge;
+    const StochasticPhotonRecoil photonRecoil=applyStochasticDipolePhoton(
+        photonRecoilState,photonProbeEnergy,photonProbeDirection);
+    const auto photonFirstAfter=two_body::fourMomentumFromVelocity(
+        photonRecoilState.firstVelocity,firstMass);
+    const auto photonSecondAfter=two_body::fourMomentumFromVelocity(
+        photonRecoilState.secondVelocity,secondMass);
+    const auto photonLab=two_body::boostFourMomentum(
+        {photonProbeEnergy,photonProbeDirection*(photonProbeEnergy/c)},
+        photonIncomingComVelocity);
+    const double photonFourEnergyResidual=photonRecoil.emitted
+        ?std::abs(photonFirstAfter.energy+photonSecondAfter.energy
+            +photonLab.energy-photonIncomingEnergy)/photonProbeEnergy
+        :std::numeric_limits<double>::infinity();
+    const double photonFourMomentumResidual=photonRecoil.emitted
+        ?(photonFirstAfter.momentum+photonSecondAfter.momentum
+            +photonLab.momentum-photonIncomingMomentum).norm()
+            /(photonProbeEnergy/c)
+        :std::numeric_limits<double>::infinity();
+    State forbiddenPhotonState=yeeCoupledState;
+    const State forbiddenPhotonBefore=forbiddenPhotonState;
+    const StochasticPhotonRecoil forbiddenPhoton=applyStochasticDipolePhoton(
+        forbiddenPhotonState,1.0e9*eCharge,photonProbeDirection);
+    const double forbiddenPhotonMutation=std::max(
+        (forbiddenPhotonState.firstVelocity
+            -forbiddenPhotonBefore.firstVelocity).norm()/c,
+        (forbiddenPhotonState.secondVelocity
+            -forbiddenPhotonBefore.secondVelocity).norm()/c);
     const double reactionMismatchFraction=std::abs(
         sharedEngineVisualState.reactionEnergyMismatch)
         /std::max(std::abs(sharedEngineVisualState.radiatedEnergy),1.0e-300);
@@ -2348,6 +2397,11 @@ int runMaxwellSelfTest() {
         &&sharedRawMomentumResidual<3.0e-3
         &&std::isfinite(sharedRawAngularResidual)
         &&sharedRawAngularResidual<3.0e-3
+        &&std::isfinite(photonFourEnergyResidual)
+        &&photonFourEnergyResidual<1.0e-8
+        &&std::isfinite(photonFourMomentumResidual)
+        &&photonFourMomentumResidual<1.0e-8
+        &&!forbiddenPhoton.emitted&&forbiddenPhotonMutation==0.0
         &&std::isfinite(reactionMismatchFraction)
         // Was isfinite alone.  llValidity is the Landau-Lifshitz validity
         // parameter and has to be far below one for the reduced-order form to
@@ -2612,6 +2666,8 @@ int runMaxwellSelfTest() {
               << sharedRawMomentumResidual << " / " << sharedRawAngularResidual
               << "  (IDENTITY closes by construction; raw is the measurement)"
               << '\n'
+              << "photon recoil dE/dP: " << photonFourEnergyResidual << " / "
+              << photonFourMomentumResidual << '\n'
               << "reaction/flux dE:   " << reactionMismatchFraction << '\n'
               << "LL validity |F|:    " << llValidity << '\n'
               << "reaction raw off/LL/C:" << reactionDisabled.rawEnergyResidual

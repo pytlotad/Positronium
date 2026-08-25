@@ -1171,9 +1171,9 @@ LegendreFitSummary fitSecondLegendreAnisotropy(
 }
 #endif
 
-#ifndef POSITRONIUM_VALIDATION_EXECUTABLE
 #include "modules/crem_trajectory.hpp"
 
+#ifndef POSITRONIUM_VALIDATION_EXECUTABLE
 std::string formatTableValue(double value) {
     std::ostringstream out;
     out << std::fixed << std::setprecision(2) << value;

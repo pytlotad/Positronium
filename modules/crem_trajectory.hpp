@@ -94,60 +94,119 @@ double drawUniformUnit(std::uint64_t& streamState) {
     return static_cast<double>(streamState >> 11) * (1.0 / 9007199254740992.0);
 }
 
-// Applies one discrete photon emission: removes EXACTLY photonEnergy from
-// the pair's relative-motion kinetic energy (the same reduced-mass,
-// two-body framing crem_collapse.hpp already uses for "the" orbital
-// energy), as an impulsive kick antiparallel to the current relative
-// velocity, split by reduced-mass partition so total momentum is
-// unaffected -- i.e. total LINEAR MOMENTUM CONSERVATION IS NOT ENFORCED
-// for the (pair + photon) system: the photon's own recoil momentum
-// hbar*omega/c is never subtracted from anything.  This was originally
-// (wrongly) written off here as "many orders below the velocity change
-// already being applied" -- measured directly and that is false. The
-// ratio p_photon/p_orbital works out to exactly (reduced Compton
-// wavelength of the pair)/a, independent of speed or energy: ~0.007 at
-// the starting radius, but already ~0.25 by a=3.1pm and >1 below
-// ~0.77pm -- well inside comptonBarrierRadius=193.3fm, i.e. genuinely
-// significant, not negligible, for most of the depth this mode actually
-// reaches.  Left unmodelled anyway: fixing it needs a real photon
-// direction (which the elements-only crem_collapse.hpp path now has,
-// via angularMomentumDirection) to know which way the missing recoil
-// should go, and this purely-mechanical kick has no such information.
+// Direction of one photon from a circularly rotating E1 dipole.  Relative to
+// the orbital normal its density is proportional to 1+cos^2(theta).  The
+// cubic inverse below is the same closed-form sampler used by the secular
+// collapse path; keeping it here makes the mechanical and skipped-orbit paths
+// consume the same physical angular law.
+Vec3 sampleRotatingDipolePhotonDirection(const Vec3& orbitalNormal,
+                                         std::uint64_t& streamState) {
+    Vec3 axis=orbitalNormal;
+    const double axisNorm=axis.norm();
+    axis=axisNorm>1.0e-300&&std::isfinite(axisNorm)
+        ?axis*(1.0/axisNorm):Vec3{0.0,0.0,1.0};
+    const double q=4.0-8.0*drawUniformUnit(streamState);
+    const double root=std::sqrt(0.25*q*q+1.0);
+    const double cosine=std::cbrt(-0.5*q+root)+std::cbrt(-0.5*q-root);
+    const double sine=std::sqrt(std::max(0.0,1.0-cosine*cosine));
+    const Vec3 seed=std::abs(axis.z)<0.9?Vec3{0,0,1}:Vec3{1,0,0};
+    Vec3 first=cross(axis,seed);
+    first=first*(1.0/first.norm());
+    const Vec3 second=cross(axis,first);
+    const double azimuth=2.0*pi*drawUniformUnit(streamState);
+    return axis*cosine
+        +(first*std::cos(azimuth)+second*std::sin(azimuth))*sine;
+}
+
+struct StochasticPhotonRecoil {
+    bool emitted=false;
+    double energy=0.0;       // photon energy in the pre-emission pair COM
+    Vec3 direction;          // photon direction in that frame
+};
+
+// Emit a photon in the instantaneous centre-of-momentum frame and reconstruct
+// the remaining two-particle state exactly on both mass shells.  If P is the
+// incoming pair four-momentum and k=(E_gamma/c,E_gamma*n/c), the result obeys
+// p1'+p2'+k=P (up to floating-point roundoff).  The residual pair has
+// invariant energy W'=sqrt(W^2-2 W E_gamma); its internal momentum keeps the
+// pre-emission direction, while its COM carries the full recoil -k.
 //
-// If the current relative motion does not carry photonEnergy (the naive
-// quadratic solution below is discriminant-negative -- can happen for a
-// large photon drawn while the pair is near apoapsis, moving slowly), the
-// kick is capped at removing ALL relative kinetic energy instead of the
-// exact requested amount.  This is a known, documented simplification of
-// this experimental mode, not silently absorbed: it is the one place this
-// mode's energy bookkeeping can be inexact.
-// Returns the ACTUAL mechanical energy removed, which is exactly
-// photonEnergy except in the capped edge case above -- callers must credit
-// this (not the nominal photonEnergy) to the radiated-energy ledger, or the
-// two would silently disagree exactly when the cap engages.
-double applyStochasticDipolePhoton(State& s, double photonEnergy,
-                                   double reducedMass) {
-    if(!(photonEnergy>0.0)||!std::isfinite(photonEnergy)) return 0.0;
-    const Vec3 relativeVelocity=s.firstVelocity-s.secondVelocity;
-    const double relativeSpeed=relativeVelocity.norm();
-    if(!(relativeSpeed>0.0)) return 0.0;
-    const Vec3 direction=relativeVelocity*(1.0/relativeSpeed);
-    // (1/2)mu(v-dv)^2 = (1/2)mu v^2 - photonEnergy
-    //   => dv^2 - 2 v dv + 2 photonEnergy/mu = 0
-    const double discriminant=relativeSpeed*relativeSpeed
-        -2.0*photonEnergy/reducedMass;
-    const bool capped=!(discriminant>0.0);
-    const double kickMagnitude=capped
-        ? relativeSpeed
-        : relativeSpeed-std::sqrt(discriminant);
-    const double massSum=firstMass+secondMass;
-    s.firstVelocity=s.firstVelocity
-        -direction*(kickMagnitude*secondMass/massSum);
-    s.secondVelocity=s.secondVelocity
-        +direction*(kickMagnitude*firstMass/massSum);
-    return capped
-        ? 0.5*reducedMass*relativeSpeed*relativeSpeed
-        : photonEnergy;
+// A draw that would put W' below (m1+m2)c^2 is kinematically forbidden and is
+// rejected without modifying the state.  This replaces the old capped kick,
+// which could remove all relative kinetic energy while still crediting an
+// unrelated photon and did not conserve the pair+photon momentum.
+StochasticPhotonRecoil applyStochasticDipolePhoton(
+    State& s,double photonEnergy,const Vec3& photonDirection) {
+    StochasticPhotonRecoil result;
+    if(!(photonEnergy>0.0)||!std::isfinite(photonEnergy)) return result;
+    const double directionNorm=photonDirection.norm();
+    if(!(directionNorm>0.0)||!std::isfinite(directionNorm)) return result;
+    const Vec3 direction=photonDirection*(1.0/directionNorm);
+    const auto firstLab=two_body::fourMomentumFromVelocity(
+        s.firstVelocity,firstMass);
+    const auto secondLab=two_body::fourMomentumFromVelocity(
+        s.secondVelocity,secondMass);
+    if(!firstLab.valid()||!secondLab.valid()) return result;
+    const double incomingEnergy=firstLab.energy+secondLab.energy;
+    const Vec3 incomingMomentum=firstLab.momentum+secondLab.momentum;
+    const Vec3 incomingComVelocity=incomingMomentum*(c*c/incomingEnergy);
+    if(!(incomingComVelocity.squaredNorm()<c*c)) return result;
+    const auto firstCom=two_body::boostFourMomentum(
+        firstLab,incomingComVelocity*(-1.0));
+    const auto secondCom=two_body::boostFourMomentum(
+        secondLab,incomingComVelocity*(-1.0));
+    if(!firstCom.valid()||!secondCom.valid()) return result;
+
+    const long double W=static_cast<long double>(firstCom.energy)
+        +static_cast<long double>(secondCom.energy);
+    const long double Eg=photonEnergy;
+    const long double cL=c;
+    const long double rest1=static_cast<long double>(firstMass)*cL*cL;
+    const long double rest2=static_cast<long double>(secondMass)*cL*cL;
+    const long double W2=W*W-2.0L*W*Eg;
+    const long double threshold=(rest1+rest2)*(rest1+rest2);
+    if(!(W2>=threshold)||!std::isfinite(static_cast<double>(W2))) return result;
+    const long double residualW=std::sqrt(W2);
+    const long double firstEnergy=(W2+rest1*rest1-rest2*rest2)
+        /(2.0L*residualW);
+    const long double momentumEnergySquared=std::max(0.0L,
+        (firstEnergy-rest1)*(firstEnergy+rest1));
+    const double relativeMomentum=static_cast<double>(
+        std::sqrt(momentumEnergySquared)/cL);
+    Vec3 relativeDirection=firstCom.momentum-secondCom.momentum;
+    const double relativeNorm=relativeDirection.norm();
+    if(!(relativeNorm>1.0e-300)||!std::isfinite(relativeNorm)) {
+        relativeDirection=cross(direction,Vec3{0,0,1});
+        if(relativeDirection.squaredNorm()<1.0e-24)
+            relativeDirection=cross(direction,Vec3{0,1,0});
+    }
+    relativeDirection=relativeDirection*(1.0/relativeDirection.norm());
+    const auto firstResidualRest=two_body::fourMomentumFromMomentum(
+        relativeDirection*relativeMomentum,firstMass);
+    const auto secondResidualRest=two_body::fourMomentumFromMomentum(
+        relativeDirection*(-relativeMomentum),secondMass);
+    const double residualEnergyInOldCom=static_cast<double>(W-Eg);
+    const Vec3 residualMomentumInOldCom=direction*(-photonEnergy/c);
+    const Vec3 residualComVelocity=residualMomentumInOldCom
+        *(c*c/residualEnergyInOldCom);
+    const auto firstOldCom=two_body::boostFourMomentum(
+        firstResidualRest,residualComVelocity);
+    const auto secondOldCom=two_body::boostFourMomentum(
+        secondResidualRest,residualComVelocity);
+    const auto firstFinal=two_body::boostFourMomentum(
+        firstOldCom,incomingComVelocity);
+    const auto secondFinal=two_body::boostFourMomentum(
+        secondOldCom,incomingComVelocity);
+    if(!firstFinal.valid()||!secondFinal.valid()) return result;
+    const Vec3 firstVelocity=two_body::velocityFromFourMomentum(firstFinal);
+    const Vec3 secondVelocity=two_body::velocityFromFourMomentum(secondFinal);
+    if(!isFinite(firstVelocity)||!isFinite(secondVelocity)) return result;
+    s.firstVelocity=firstVelocity;
+    s.secondVelocity=secondVelocity;
+    result.emitted=true;
+    result.energy=photonEnergy;
+    result.direction=direction;
+    return result;
 }
 
 const char* phenomenonName(Phenomenon phenomenon) {
@@ -373,13 +432,28 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                     // "reaction/flux" diagnostics), not merged.  Only the
                     // MECHANICAL removal (the velocity kick itself) is this
                     // function's job.
-                    const double removedDebug=
-                        applyStochasticDipolePhoton(s,photonEnergy,reducedMass);
+                    const Vec3 separationVector=
+                        s.firstPosition-s.secondPosition;
+                    const Vec3 relativeMomentum=
+                        momentum(s.firstVelocity,firstMass)
+                        * (secondMass/(firstMass+secondMass))
+                        -momentum(s.secondVelocity,secondMass)
+                        * (firstMass/(firstMass+secondMass));
+                    const Vec3 orbitalNormal=cross(
+                        separationVector,relativeMomentum);
+                    const Vec3 photonDirection=
+                        sampleRotatingDipolePhotonDirection(
+                            orbitalNormal,stochasticPhotonStream);
+                    const StochasticPhotonRecoil recoil=
+                        applyStochasticDipolePhoton(
+                            s,photonEnergy,photonDirection);
                     if(std::getenv("CREM_DEBUG"))
                         std::cerr<<"  PHOTON t="<<s.time*1e12<<"ps r="
                                  <<separation(s)*1e15<<"fm hbar*omega="
-                                 <<photonEnergy<<"J removed="<<removedDebug
-                                 <<"J"<<std::endl;
+                                 <<photonEnergy<<"J emitted="<<recoil.emitted
+                                 <<" n=("<<photonDirection.x<<','
+                                 <<photonDirection.y<<','
+                                 <<photonDirection.z<<')'<<std::endl;
                     stochasticThreshold=
                         drawExponentialUnit(stochasticPhotonStream);
                 }

@@ -1814,15 +1814,10 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // accumulated from any earlier photons this same
                     // trajectory already fired) to the lab.  Investigated at
                     // length before being written (README point L,
-                    // "charakterystyki fotonu"): the internal physics needs
-                    // NO such correction (Newtonian relative-motion
-                    // quantities are boost-independent by construction, and
-                    // the residual from naive vs relativistic velocity
-                    // addition on the recoil kick is O(beta^2), ~1e-5 even
-                    // at the largest recoil speeds measured, ~0.35c%) -- this
-                    // exists purely to populate labFramePhotons for the
-                    // --crem lab-frame spectrum/angle plots, nothing here
-                    // feeds back into the trajectory.
+                    // "charakterystyki fotonu").  The exact four-momentum
+                    // subtraction below independently uses this same S'
+                    // photon and boost to update the pair; this block records
+                    // the already-determined lab observables for plots.
                     {
                         const double sourceSpeed=centreOfMassVelocity.norm();
                         const double sourceBeta=sourceSpeed/c;
@@ -1875,25 +1870,52 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                      <<labPhoton.angleFromRecoilAxisRadians
                                      <<std::endl;
                     }
-                    const double photonMomentum=photonEnergy/c;
-                    const Vec3 centreOfMassVelocityKick=
-                        photonDirection*(-photonMomentum/totalMass);
-                    const double centreOfMassEnergyBeforeKick=
-                        0.5*totalMass*centreOfMassVelocity.squaredNorm();
-                    centreOfMassVelocity=
-                        centreOfMassVelocity+centreOfMassVelocityKick;
-                    const double centreOfMassEnergyAfterKick=
-                        0.5*totalMass*centreOfMassVelocity.squaredNorm();
-                    // What the CM motion itself absorbed (usually positive:
-                    // recoil speeds the CM up from rest) must come out of
-                    // the ORBITAL budget on top of the photon's own energy,
-                    // or total (orbital+CM) energy would drop by more than
-                    // the radiatedEnergyTotal credited below -- this is
-                    // exactly the v_cm.p_photon + p_photon^2/(2M) term
-                    // relativistic photon-recoil kinematics requires, not
-                    // an ad hoc correction.
-                    const double centreOfMassEnergyKick=
-                        centreOfMassEnergyAfterKick-centreOfMassEnergyBeforeKick;
+                    // Exact composite four-momentum recoil.  The osculating
+                    // path does not retain the two instantaneous particle
+                    // momenta, but it does retain exactly what is needed for
+                    // the pair as a bound composite: its invariant energy
+                    // W=M c^2+E_orbit and its lab velocity.  In the incoming
+                    // rest frame P'=(W/c,0) and k'=(E_gamma/c,E_gamma*n/c),
+                    // hence W_f^2=W^2-2 W E_gamma.  Boost P' and k' to the
+                    // lab, subtract them, and read the new COM velocity from
+                    // c^2 p_f/E_f.  This remains exact at every accumulated
+                    // recoil speed and replaces the former Newtonian
+                    // -p_gamma/M velocity increment plus kinetic correction.
+                    const double restEnergy=totalMass*c*c;
+                    const double invariantEnergyBefore=
+                        restEnergy+reducedMass*elements.specificEnergy;
+                    const long double invariantSquaredAfter=
+                        static_cast<long double>(invariantEnergyBefore)
+                            *invariantEnergyBefore
+                        -2.0L*invariantEnergyBefore*photonEnergy;
+                    if(!(invariantSquaredAfter>0.0L)) {
+                        stochasticSkipThreshold=
+                            drawExponentialUnit(stochasticSkipStream);
+                        continue;
+                    }
+                    const double invariantEnergyAfter=static_cast<double>(
+                        std::sqrt(invariantSquaredAfter));
+                    const two_body::ParticleFourMomentum pairRestBefore{
+                        invariantEnergyBefore,{0,0,0}};
+                    const two_body::ParticleFourMomentum photonRest{
+                        photonEnergy,photonDirection*(photonEnergy/c)};
+                    const auto pairLabBefore=two_body::boostFourMomentum(
+                        pairRestBefore,centreOfMassVelocity);
+                    const auto photonLabFour=two_body::boostFourMomentum(
+                        photonRest,centreOfMassVelocity);
+                    const two_body::ParticleFourMomentum pairLabAfter{
+                        pairLabBefore.energy-photonLabFour.energy,
+                        pairLabBefore.momentum-photonLabFour.momentum};
+                    const Vec3 recoiledVelocity=
+                        two_body::velocityFromFourMomentum(pairLabAfter);
+                    if(!isFinite(recoiledVelocity)) {
+                        stochasticSkipThreshold=
+                            drawExponentialUnit(stochasticSkipStream);
+                        continue;
+                    }
+                    centreOfMassVelocity=recoiledVelocity;
+                    const double recoiledSpecificEnergy=
+                        (invariantEnergyAfter-restEnergy)/reducedMass;
                     // ANGULAR MOMENTUM DIRECTION: NOT tilted here, and this
                     // is a finding, not an omission.  An earlier version of
                     // this block tilted angularMomentumDirection by
@@ -1955,8 +1977,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             /(attractionParameter*attractionParameter));
                     const double energyBeforeKick=
                         std::abs(elements.specificEnergy);
-                    elements.specificEnergy-=
-                        (photonEnergy+centreOfMassEnergyKick)/reducedMass;
+                    elements.specificEnergy=recoiledSpecificEnergy;
                     const double energyAfterKick=
                         std::abs(elements.specificEnergy);
                     // From here on, any further photon drawn within this
@@ -2194,7 +2215,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         std::cerr<<"    PHOTON #"<<photonCountDebug<<" x="<<x
                                  <<" harmonic="<<harmonicNumber
                                  <<" photonEnergy="<<photonEnergy
-                                 <<"J cmEnergyKick="<<centreOfMassEnergyKick
+                                 <<"J W_after="<<invariantEnergyAfter
                                  <<"J |v_cm|="<<centreOfMassVelocity.norm()
                                  <<" energyBeforeKick="<<energyBeforeKick
                                  <<" newE="<<elements.specificEnergy
