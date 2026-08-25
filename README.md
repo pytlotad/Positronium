@@ -180,13 +180,19 @@ zderzenia e⁺e⁻ parametr Landaua–Lifshitza wynosi \(\tau\omega=3{,}7\cdot
 \(\omega=5{,}9\cdot10^{19}\) rad/s, a \(\beta=0{,}10\). Rozwinięcie
 siły własnej jest tam znakomicie zbieżne.
 
-Nie jest też **brakującym członem interferencyjnym**.
-`individualLandauLifshitzSelfForces` zwraca `firstSelf+firstMutual`, gdzie
-część wzajemna to dokładnie wyraz \(2q_1q_2\,\mathbf a_1\!\cdot\!\mathbf
-a_2\); ta droga jest więc algebraicznie tożsama z reakcją dipola koherentnego
-\(q_i\dddot{\mathbf d}/\mathrm{norm}\). Człon w kodzie jest.
+Nie jest też **brakującym członem interferencyjnym**. Niezależny test dwóch
+pełnych orbit wykazał rzecz przeciwną: pełne pole Liénarda–Wiecherta partnera
+już niesie wzajemną część radiacyjną, więc dodanie na nim `firstMutual` albo
+pełnego \(q_i\dddot{\mathbf d}\) liczy ją drugi raz. Zmierzone reszty
+\((\Delta E_{mech}+E_{far}+\Delta E_S)/E_{far}\) wynoszą 0,0088 dla
+Coulomb–Darwin + pełna reakcja koherentna, −0,0594 dla pola retardowanego +
+tylko self LL i −0,5101 dla błędnego pola retardowanego + pełna reakcja
+koherentna. Produkcja używa więc członów wzajemnych wyłącznie z
+nieretardowanym polem Coulomba–Darwina; z `retardedExternalForces` dokłada
+tylko reakcję własną.
 
-Rozkład wzdłuż kolapsu (e⁺e⁻, ziarno 12345, w eV): strumień retardowany 0,422,
+Historyczny rozkład sprzed usunięcia podwójnego liczenia, wzdłuż kolapsu
+(e⁺e⁻, ziarno 12345, w eV): strumień retardowany 0,422,
 E1 koherentny 0,527, suma indywidualnych 0,268, **interferencja 0,259**, praca
 reakcji **+2,071**. Kontrola instrumentacji: E1/indywidualny = 1,97 wobec
 dokładnie 2 wymaganych dla pary symetrycznej. Interferencja jest więc
@@ -201,7 +207,7 @@ nie złamanie zachowania — jest więc główną jej częścią, a właściwa c
 promienista (strumień − \(P_{E1}=-0{,}105\) eV) to mniej więcej poprawka
 retardacyjna przy \(\beta=0{,}1\).
 
-Sama `individualLandauLifshitzSelfForces` jest **poprawna**. Sprawdzona
+Sama część własna `individualLandauLifshitzSelfForces` jest **poprawna**. Sprawdzona
 lokalnie, krok po kroku, jej tożsamość \(W=-\Delta E_S^{\rm koh}-P_{E1}dt\)
 domyka się do 2,5–10%, a e⁺e⁻ i µ⁺µ⁻ zgadzają się na cztery cyfry przy równym
 \(r/r_{\rm coll}\) (0,0255 wobec 0,0254) — sektor reakcji jest niezmienniczy

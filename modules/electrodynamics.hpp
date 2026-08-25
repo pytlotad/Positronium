@@ -636,6 +636,7 @@ enum class ChargeRadiationReactionModel {
     automatic,
     coherentElectricDipole,
     individualLandauLifshitz,
+    individualLandauLifshitzSelfOnly,
     disabled,
     // Same E1 dipole power already computed below as
     // leadingElectricDipolePower, but instead of removing it from the orbit
@@ -967,7 +968,7 @@ double electricQuadrupoleRadiatedPower(
 
 MutualForces individualLandauLifshitzSelfForces(
     const State& state, const MutualForces& external,
-    const StateHistory& history);
+    const StateHistory& history,bool includeMutual=true);
 
 DipoleRadiationReaction coherentMagneticDipoleRadiationReaction(
     const RetardedDipoleKinematics& first,
@@ -1050,7 +1051,8 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
     const State& state, const MutualForces& externalForces,
     const StateHistory& history,bool computeOutwardFlux=true,
     ChargeRadiationReactionModel reactionModel=
-        ChargeRadiationReactionModel::individualLandauLifshitz) {
+        ChargeRadiationReactionModel::individualLandauLifshitz,
+    bool mutualRadiationAlreadyRetarded=false) {
     ParticleMultipoleRadiation result;
     // Only the automatic model consults the blending gates, and only the two
     // coherent models need the coherent reaction force itself.  Under the
@@ -1063,7 +1065,10 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
     const bool needsBlendingGates=
         reactionModel==ChargeRadiationReactionModel::automatic;
     const MutualForces ll=individualLandauLifshitzSelfForces(
-        state,externalForces,history);
+        state,externalForces,history,
+        !mutualRadiationAlreadyRetarded
+            &&reactionModel
+                !=ChargeRadiationReactionModel::individualLandauLifshitzSelfOnly);
     result.landauLifshitzValidity=std::max(
         ll.first.norm()/std::max(externalForces.first.norm(),1.0e-300),
         ll.second.norm()/std::max(externalForces.second.norm(),1.0e-300));
@@ -1146,7 +1151,14 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
     // unconditionally, which is all applyStochasticDipolePhotons() needs.
     if(reactionModel!=ChargeRadiationReactionModel::disabled
        &&reactionModel!=ChargeRadiationReactionModel::stochasticElectricDipole) {
-        if(!needsCoherentReaction) result.chargeReaction=ll;
+        // retardedExternalForces already carries the partner's acceleration
+        // field.  Adding the mutual part of LL or q_i*d''' on top counts that
+        // radiative exchange twice.  In that configuration every continuous
+        // model therefore contributes only the particle self terms.  The full
+        // coherent reaction remains correct and available with the
+        // non-retarded Coulomb-Darwin external force.
+        if(mutualRadiationAlreadyRetarded||!needsCoherentReaction)
+            result.chargeReaction=ll;
         else {
             const MutualForces coherent=
                 coherentElectricDipoleReaction(state,history);
@@ -2029,7 +2041,7 @@ Vec3 reducedOrderSelfForce(const Vec3& velocity,
 
 MutualForces individualLandauLifshitzSelfForces(
     const State& s, const MutualForces& external,
-    const StateHistory& history) {
+    const StateHistory& history,bool includeMutual) {
     const Vec3 firstAcceleration = relativisticAcceleration(s.firstVelocity, external.first,
                                                                 firstMass);
     const Vec3 secondAcceleration = relativisticAcceleration(s.secondVelocity, external.second,
@@ -2079,12 +2091,13 @@ MutualForces individualLandauLifshitzSelfForces(
     //
     //     |q_1 a_1 + q_2 a_2|^2 = |q_1 a_1|^2 + |q_2 a_2|^2 + 2 q_1 q_2 a_1.a_2
     //
-    // the self forces above reproduce only the first two terms.  For e+e- the
-    // interference term equals their sum, so leaving it out cost exactly a
-    // factor of two in the orbital energy loss -- measured independently three
-    // ways before this was added: the orbit-averaged power against Larmor
-    // (0.4984), the reaction work against Larmor (0.4944), and the
-    // energy-balance residual |dE_LL-vs-flux|/E_rad (0.501).
+    // the self forces above reproduce only the first two terms.  These explicit
+    // mutual terms are required only when the external force is the
+    // non-retarded Coulomb-Darwin approximation.  With full Lienard-Wiechert
+    // mutual fields the partner's radiation field is already present and
+    // includeMutual must be false; the independent two-period balance measures
+    // 0.88% residual for Darwin+coherent, 5.94% for retarded+self-only, and
+    // 51.0% for the incorrect retarded+full-coherent combination.
     //
     // The partner's contribution is the same object evaluated with the
     // PARTNER's four-force and mass, and with q_i q_j as its charge coupling
@@ -2100,7 +2113,33 @@ MutualForces individualLandauLifshitzSelfForces(
         fourForce(after.firstVelocity, afterForces.first),
         derivativeStep, firstMass, pairChargeProduct);
 
-    return {firstSelf+firstMutual, secondSelf+secondMutual};
+    return includeMutual
+        ?MutualForces{firstSelf+firstMutual,secondSelf+secondMutual}
+        :MutualForces{firstSelf,secondSelf};
+}
+
+// Explicit reversible near-field energy paired with the coherent charge
+// radiation reaction.  For d=sum(q_i r_i), the reduced-order reaction work is
+//
+//   Wdot = C d''' . d' = C d/dt(d'' . d') - C |d''|^2,
+//
+// so E_S=-C d'' . d' is the Schott energy that makes
+// dE_mech/dt + P_far + dE_S/dt vanish in the electric-dipole limit.  This is
+// evaluated directly from the external-force accelerations; it does not read
+// boundFieldEnergy or any residual accumulator and can therefore serve as an
+// independent balance diagnostic.
+[[maybe_unused]] double explicitChargeSchottEnergy(
+    const State& state,const MutualForces& externalForces) {
+    const Vec3 firstAcceleration=relativisticAcceleration(
+        state.firstVelocity,externalForces.first,firstMass);
+    const Vec3 secondAcceleration=relativisticAcceleration(
+        state.secondVelocity,externalForces.second,secondMass);
+    const Vec3 dipoleVelocity=state.firstVelocity*firstCharge
+        +state.secondVelocity*secondCharge;
+    const Vec3 dipoleAcceleration=firstAcceleration*firstCharge
+        +secondAcceleration*secondCharge;
+    return -dot(dipoleAcceleration,dipoleVelocity)
+        /(6.0*pi*epsilon0*c*c*c);
 }
 
 // Relativistic predictor-corrector update with mutually retarded fields and
@@ -2109,7 +2148,8 @@ void integrateElectrodynamicStep(State& s, double dt,
                                  const StateHistory& history,
                                  bool computeOutwardFlux=true,
                                  ChargeRadiationReactionModel reactionModel=
-                                    ChargeRadiationReactionModel::individualLandauLifshitz) {
+                                    ChargeRadiationReactionModel::individualLandauLifshitz,
+                                 bool useRetardedExternalForces=true) {
     const State balanceStart=s;
     const double initialMechanicalEnergy=conservativeParticleEnergy(balanceStart);
     const CanonicalMomenta initialCanonical=canonicalMomenta(balanceStart);
@@ -2117,10 +2157,12 @@ void integrateElectrodynamicStep(State& s, double dt,
     const Vec3 initialMechanicalAngularMomentum=
         noetherAngularMomentum(balanceStart,initialCanonical);
     applyDipolePrecession(s, 0.5 * dt, history);
-    MutualForces forces = retardedExternalForces(s, history);
+    MutualForces forces = useRetardedExternalForces
+        ?retardedExternalForces(s,history):allExternalForces(s);
     const ParticleMultipoleRadiation radiation =
         particleMultipoleRadiation(
-            s,forces,history,computeOutwardFlux,reactionModel);
+            s,forces,history,computeOutwardFlux,reactionModel,
+            useRetardedExternalForces);
     if (!finiteRadiationResponse(radiation)) {
         s.time = std::numeric_limits<double>::quiet_NaN();
         return;
@@ -2141,10 +2183,12 @@ void integrateElectrodynamicStep(State& s, double dt,
     trial.firstAcceleration = relativisticAcceleration(trial.firstVelocity, forces.first, firstMass);
     trial.secondAcceleration = relativisticAcceleration(trial.secondVelocity, forces.second, secondMass);
 
-    const MutualForces trialForces = retardedExternalForces(trial, history);
+    const MutualForces trialForces = useRetardedExternalForces
+        ?retardedExternalForces(trial,history):allExternalForces(trial);
     const ParticleMultipoleRadiation trialRadiation =
         particleMultipoleRadiation(
-            trial,trialForces,history,computeOutwardFlux,reactionModel);
+            trial,trialForces,history,computeOutwardFlux,reactionModel,
+            useRetardedExternalForces);
     if (!finiteRadiationResponse(trialRadiation)) {
         s.time = std::numeric_limits<double>::quiet_NaN();
         return;
@@ -2349,10 +2393,10 @@ void appendStateHistory(StateHistory& history, const State& state) {
     // (tau = 2 r_e/3c = 6.26e-24 s, omega = 5.9e19 rad/s) and beta = 0.10, so
     // the self-force expansion is nowhere near its limit.
     //
-    // It is NOT a missing interference term either.  individualLandau-
-    // LifshitzSelfForces already returns firstSelf+firstMutual, where the
-    // mutual part is exactly the 2 q1 q2 a1.a2 cross term, so that route is
-    // algebraically the coherent dipole reaction q_i d'''/norm.
+    // It is NOT a missing interference term either.  The mutual retardation
+    // already carries that exchange.  Adding firstMutual on top was later
+    // isolated by the independent long-horizon balance as double counting;
+    // production now retains only firstSelf/secondSelf with retarded fields.
     //
     // Decomposed along the collapse (e+e-, seed 12345, eV): true retarded
     // flux 0.422, coherent E1 Larmor 0.527, sum of individual 0.268,

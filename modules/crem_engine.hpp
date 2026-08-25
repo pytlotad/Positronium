@@ -88,6 +88,11 @@ public:
         // bit-identical.  Callers that do not report a radiated energy can
         // therefore turn it off outright.
         bool computeOutwardFlux = true;
+        // Validation-only diagnostic switch.  Production keeps the default
+        // retarded mutual fields; false isolates the conservative
+        // Coulomb-Darwin force while leaving the selected reaction and the
+        // independently measured far flux unchanged.
+        bool useRetardedExternalForces = true;
     };
     explicit ClassicalTrajectoryEngine(const State& initial)
         :history_(causalInitialHistory(initial)) {}
@@ -152,7 +157,7 @@ private:
                       bool computeFlux) {
         if(accuracy_.compositionOrder<4) {
             integrateElectrodynamicStep(state,dt,history,computeFlux,
-                accuracy_.reactionModel);
+                accuracy_.reactionModel,accuracy_.useRetardedExternalForces);
             return;
         }
         const double cubeRootTwo=std::cbrt(2.0);
@@ -161,7 +166,7 @@ private:
         const double weights[3]={outer,inner,outer};
         for(const double weight:weights) {
             integrateElectrodynamicStep(state,weight*dt,history,computeFlux,
-                accuracy_.reactionModel);
+                accuracy_.reactionModel,accuracy_.useRetardedExternalForces);
             if(!isFinite(state)) return;
         }
     }

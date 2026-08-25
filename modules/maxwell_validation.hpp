@@ -1668,6 +1668,22 @@ int runMaxwellSelfTest() {
     double larmorNormalizationRatio=std::numeric_limits<double>::quiet_NaN();
     double larmorProductionRatio=std::numeric_limits<double>::quiet_NaN();
     double larmorAccumulationRatio=std::numeric_limits<double>::quiet_NaN();
+    double longHorizonBalanceResidual=
+        std::numeric_limits<double>::quiet_NaN();
+    double longHorizonRadiatedEnergy=
+        std::numeric_limits<double>::quiet_NaN();
+    double longHorizonSchottChange=
+        std::numeric_limits<double>::quiet_NaN();
+    struct BalanceDiagnostic {
+        const char* name="";
+        double mechanicalOverFlux=std::numeric_limits<double>::quiet_NaN();
+        double schottOverFlux=std::numeric_limits<double>::quiet_NaN();
+        double signedResidual=std::numeric_limits<double>::quiet_NaN();
+        double fluxEnergy=std::numeric_limits<double>::quiet_NaN();
+        double schottChange=std::numeric_limits<double>::quiet_NaN();
+        bool advanced=false;
+    };
+    std::array<BalanceDiagnostic,4> balanceDiagnostics{};
     {
         const double larmorProbeRadius=pairBohrRadius(activePair);
         const double larmorReducedMass=pairReducedMass;
@@ -1747,6 +1763,90 @@ int runMaxwellSelfTest() {
                 (accumulationState.radiatedEnergy-accumulationStart)
                 /(analyticLarmorPower*accumulationElapsed);
         }
+
+        // Independent long-horizon balance.  Unlike pair-field IDENTITY this
+        // never reads boundFieldEnergy: mechanical energy comes from the
+        // conservative Noether expression, radiation from the actual retarded
+        // far-sphere Poynting integral accumulated by the engine, and the
+        // reversible near-field endpoint term from explicitChargeSchottEnergy.
+        // Two complete orbital periods are long compared with the one-step
+        // reaction probes above while keeping the validator practical.
+        const double balanceRadius=0.2*larmorProbeRadius;
+        const double balanceRelativeSpeed=std::sqrt(
+            pairCoulombStrength/(larmorReducedMass*balanceRadius));
+        const double balancePeriod=2.0*pi*std::sqrt(
+            larmorReducedMass*balanceRadius*balanceRadius*balanceRadius
+            /pairCoulombStrength);
+        // The coherent reaction needs enough retained history nodes for its
+        // third derivative.  period/512 is below the retarded-history spacing
+        // ceiling at this radius; the production-like period/128 step leaves
+        // only about three nodes and would intentionally gate that force off.
+        constexpr int balancePeriods=2;
+        constexpr int balanceStepsPerPeriod=512;
+        const auto runBalance=[&](const char* name,
+                                  ChargeRadiationReactionModel reaction,
+                                  bool retarded) {
+            BalanceDiagnostic diagnostic;
+            diagnostic.name=name;
+            State state;
+            state.firstPosition={firstShare*balanceRadius,0,0};
+            state.secondPosition={-secondShare*balanceRadius,0,0};
+            state.firstVelocity={0,firstShare*balanceRelativeSpeed,0};
+            state.secondVelocity={0,-secondShare*balanceRelativeSpeed,0};
+            ClassicalTrajectoryEngine engine(state,
+                {.relativeTolerance=1.0e-6,.maximumDepth=12,
+                 .compositionOrder=2,.reactionModel=reaction,
+                 .computeOutwardFlux=true,
+                 .useRetardedExternalForces=retarded});
+            const double mechanicalStart=conservativeParticleEnergy(state);
+            const double fluxStart=state.radiatedEnergy;
+            const MutualForces initialExternal=retarded
+                ?retardedExternalForces(state,engine.history())
+                :allExternalForces(state);
+            const double schottStart=explicitChargeSchottEnergy(
+                state,initialExternal);
+            bool advanced=true;
+            for(int step=0;step<balancePeriods*balanceStepsPerPeriod
+                &&advanced;++step) {
+                advanced=engine.advance(
+                    state,balancePeriod/balanceStepsPerPeriod);
+            }
+            diagnostic.advanced=advanced&&isFinite(state);
+            if(!diagnostic.advanced) return diagnostic;
+            const MutualForces finalExternal=retarded
+                ?retardedExternalForces(state,engine.history())
+                :allExternalForces(state);
+            const double mechanicalChange=
+                conservativeParticleEnergy(state)-mechanicalStart;
+            const double flux=state.radiatedEnergy-fluxStart;
+            const double schott=explicitChargeSchottEnergy(state,finalExternal)
+                -schottStart;
+            diagnostic.fluxEnergy=flux;
+            diagnostic.schottChange=schott;
+            diagnostic.mechanicalOverFlux=mechanicalChange
+                /std::max(std::abs(flux),1.0e-300);
+            diagnostic.schottOverFlux=schott
+                /std::max(std::abs(flux),1.0e-300);
+            diagnostic.signedResidual=(mechanicalChange+flux+schott)
+                /std::max(std::abs(flux),1.0e-300);
+            return diagnostic;
+        };
+        balanceDiagnostics={{
+            runBalance("retarded + no reaction",
+                ChargeRadiationReactionModel::disabled,true),
+            runBalance("Darwin + coherent reaction",
+                ChargeRadiationReactionModel::coherentElectricDipole,false),
+            runBalance("retarded + self-only LL",
+                ChargeRadiationReactionModel::individualLandauLifshitzSelfOnly,true),
+            runBalance("retarded + coherent reaction",
+                ChargeRadiationReactionModel::coherentElectricDipole,true)}};
+        const BalanceDiagnostic& productionBalance=balanceDiagnostics.back();
+        if(productionBalance.advanced) {
+            longHorizonBalanceResidual=
+                std::abs(productionBalance.signedResidual);
+            longHorizonRadiatedEnergy=productionBalance.fluxEnergy;
+            longHorizonSchottChange=productionBalance.schottChange;
+        }
     }
 
     // 1% band around unity.  The measured deviation is 7e-5, so this leaves a
@@ -1773,6 +1873,16 @@ int runMaxwellSelfTest() {
         // in dt by construction.  Still far tighter than the 34% it used to be
         // out by.
         &&std::abs(larmorAccumulationRatio-1.0)<0.02;
+    const bool longHorizonBalanceOk=
+        std::isfinite(longHorizonBalanceResidual)
+        &&std::isfinite(longHorizonRadiatedEnergy)
+        &&longHorizonRadiatedEnergy>0.0
+        &&std::isfinite(longHorizonSchottChange)
+        // Ten percent is already generous compared with the probe's
+        // retardation parameter and beta corrections.  The currently measured
+        // ~0.51 is intentionally allowed to FAIL rather than being normalized
+        // away or hidden in boundFieldEnergy.
+        &&longHorizonBalanceResidual<0.1;
 
     const std::array<double,3> farControlRadii{
         1.0e4*bohrRadius,1.0e5*bohrRadius,1.0e6*bohrRadius};
@@ -2717,6 +2827,26 @@ int runMaxwellSelfTest() {
               << " (radiation-only) / " << larmorProductionRatio
               << " (production sampling)\n"
               << "Larmor accumulation:" << larmorAccumulationRatio << '\n'
+              << "long balance dE/Efar:" << longHorizonBalanceResidual
+              << "  (Efar=" << longHorizonRadiatedEnergy/eCharge
+              << " eV, dE_S=" << longHorizonSchottChange/eCharge << " eV)\n"
+              << "balance matrix M/F,S/F,R:\n"
+              << "  retarded + none: "
+              << balanceDiagnostics[0].mechanicalOverFlux << " / "
+              << balanceDiagnostics[0].schottOverFlux << " / "
+              << balanceDiagnostics[0].signedResidual << '\n'
+              << "  Darwin + coherent:"
+              << balanceDiagnostics[1].mechanicalOverFlux << " / "
+              << balanceDiagnostics[1].schottOverFlux << " / "
+              << balanceDiagnostics[1].signedResidual << '\n'
+              << "  retarded + self: "
+              << balanceDiagnostics[2].mechanicalOverFlux << " / "
+              << balanceDiagnostics[2].schottOverFlux << " / "
+              << balanceDiagnostics[2].signedResidual << '\n'
+              << "  retarded + coher:"
+              << balanceDiagnostics[3].mechanicalOverFlux << " / "
+              << balanceDiagnostics[3].schottOverFlux << " / "
+              << balanceDiagnostics[3].signedResidual << '\n'
               << "near R=1e4/5/6 a0:  " << farNearFieldContamination[0] << " / "
               << farNearFieldContamination[1] << " / "
               << farNearFieldContamination[2] << '\n'
@@ -2768,6 +2898,7 @@ int runMaxwellSelfTest() {
         AlgebraicIdentity,
         NumericalRegression,
         Convergence,
+        IndependentBalance,
         PhysicalDomain
     };
     struct ValidationCheck {
@@ -2775,7 +2906,7 @@ int runMaxwellSelfTest() {
         const char* name;
         bool passed;
     };
-    const std::array<ValidationCheck,33> regressionChecks{{
+    const std::array<ValidationCheck,34> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -2803,6 +2934,7 @@ int runMaxwellSelfTest() {
         {ValidationSection::AlgebraicIdentity,"coherent-magnetic-dipole",coherentMagneticDipoleOk},
         {ValidationSection::Convergence,"far-field-convergence",farFieldConvergenceOk},
         {ValidationSection::Convergence,"larmor-normalization",larmorNormalizationOk},
+        {ValidationSection::IndependentBalance,"long-horizon-radiative-balance",longHorizonBalanceOk},
         {ValidationSection::AlgebraicIdentity,"role-routing",roleRoutingOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"adaptive-depth-rejection",adaptiveDepthRejectionOk},
@@ -2818,6 +2950,8 @@ int runMaxwellSelfTest() {
                 return "numerical regressions";
             case ValidationSection::Convergence:
                 return "convergence checks";
+            case ValidationSection::IndependentBalance:
+                return "independent balances";
             case ValidationSection::PhysicalDomain:
                 return "physical-domain guards";
         }
@@ -2827,6 +2961,7 @@ int runMaxwellSelfTest() {
         ValidationSection::AlgebraicIdentity,
         ValidationSection::NumericalRegression,
         ValidationSection::Convergence,
+        ValidationSection::IndependentBalance,
         ValidationSection::PhysicalDomain};
     int failedChecks=0;
     std::cout<<"\nCategorized validation verdict\n";
