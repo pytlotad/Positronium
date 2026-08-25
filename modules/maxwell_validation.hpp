@@ -2757,57 +2757,105 @@ int runMaxwellSelfTest() {
               << "steps per ps:       " << estimatedStepsPerPicosecond << '\n'
               << "estimated s/ps:     " << estimatedSecondsPerPicosecond << '\n';
 
-    // Single source of truth for the regression verdict.  This used to be one
-    // 26-term conjunction written out twice -- once for the printed verdict and
-    // once for the exit status -- so a check added to only one of them would
-    // have silently made the two disagree.  Listing the checks once also lets
-    // the harness name the ones that actually failed instead of collapsing
-    // everything into a single PASS/FAIL with sixty unlabelled numbers above it.
-    const std::array<std::pair<const char*,bool>,33> regressionChecks{{
-        {"two-body-role-invariance",   twoBodyRoleOk},
-        {"two-body-lorentz-boost",     twoBodyBoostOk},
-        {"two-body-causality",         twoBodyCausalOk},
-        {"charge",                     chargeOk},
-        {"gauss",                      gaussOk},
-        {"divergence",                 divergenceOk},
-        {"energy",                     energyOk},
-        {"coupling",                   couplingOk},
-        {"balance-finite",             balanceFinite},
-        {"boundary",                   boundaryOk},
-        {"validation",                 validationOk},
-        {"moving-amr",                 movingAmrOk},
-        {"covariance",                 covarianceOk},
-        {"particle-covariance",        particleCovarianceOk},
-        {"dipole-tensor-covariance",   dipoleTensorCovarianceOk},
-        {"mass-and-self-force",        massAndSelfForceOk},
-        {"bound-current",              boundCurrentOk},
-        {"retarded-initialization",    retardedInitializationOk},
-        {"convergence-and-boost",      convergenceAndBoostOk},
-        {"production-geometry",        productionGeometryOk},
-        {"branch-coupling",            branchCouplingOk},
-        {"yee-and-esirkepov",          yeeAndEsirkepovOk},
-        {"shared-classical-engine",    sharedClassicalEngineOk},
-        {"reaction-models",            reactionModelsOk},
-        {"coherent-magnetic-dipole",   coherentMagneticDipoleOk},
-        {"far-field-convergence",      farFieldConvergenceOk},
-        {"larmor-normalization",       larmorNormalizationOk},
-        {"role-routing",               roleRoutingOk},
-        {"trajectory-convergence",     trajectoryConvergenceOk},
-        {"adaptive-depth-rejection",   adaptiveDepthRejectionOk},
-        {"causal-startup",             causalStartupOk},
-        {"retarded-interpolation",     retardedInterpolationOk},
-        {"short-range-regularization", shortRangeRegularizationOk}
+    // One source of truth for both the categorized report and exit status.
+    // A section is semantic, not cosmetic: identities establish algebraic
+    // wiring, regressions protect numerical behaviour, convergence checks
+    // compare resolutions, and physical-domain guards only assert that a
+    // documented approximation remains inside its declared validity band.
+    // In particular a PASS in the last section is not experimental validation
+    // of CREM or QED.
+    enum class ValidationSection {
+        AlgebraicIdentity,
+        NumericalRegression,
+        Convergence,
+        PhysicalDomain
+    };
+    struct ValidationCheck {
+        ValidationSection section;
+        const char* name;
+        bool passed;
+    };
+    const std::array<ValidationCheck,33> regressionChecks{{
+        {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
+        {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
+        {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
+        {ValidationSection::AlgebraicIdentity,"charge",chargeOk},
+        {ValidationSection::NumericalRegression,"gauss",gaussOk},
+        {ValidationSection::AlgebraicIdentity,"divergence",divergenceOk},
+        {ValidationSection::NumericalRegression,"energy",energyOk},
+        {ValidationSection::NumericalRegression,"coupling",couplingOk},
+        {ValidationSection::NumericalRegression,"balance-finite",balanceFinite},
+        {ValidationSection::NumericalRegression,"boundary",boundaryOk},
+        {ValidationSection::NumericalRegression,"validation",validationOk},
+        {ValidationSection::NumericalRegression,"moving-amr",movingAmrOk},
+        {ValidationSection::AlgebraicIdentity,"covariance",covarianceOk},
+        {ValidationSection::PhysicalDomain,"particle-covariance",particleCovarianceOk},
+        {ValidationSection::AlgebraicIdentity,"dipole-tensor-covariance",dipoleTensorCovarianceOk},
+        {ValidationSection::NumericalRegression,"mass-and-self-force",massAndSelfForceOk},
+        {ValidationSection::AlgebraicIdentity,"bound-current",boundCurrentOk},
+        {ValidationSection::NumericalRegression,"retarded-initialization",retardedInitializationOk},
+        {ValidationSection::Convergence,"convergence-and-boost",convergenceAndBoostOk},
+        {ValidationSection::AlgebraicIdentity,"production-geometry",productionGeometryOk},
+        {ValidationSection::NumericalRegression,"branch-coupling",branchCouplingOk},
+        {ValidationSection::AlgebraicIdentity,"yee-and-esirkepov",yeeAndEsirkepovOk},
+        {ValidationSection::NumericalRegression,"shared-classical-engine",sharedClassicalEngineOk},
+        {ValidationSection::PhysicalDomain,"reaction-models",reactionModelsOk},
+        {ValidationSection::AlgebraicIdentity,"coherent-magnetic-dipole",coherentMagneticDipoleOk},
+        {ValidationSection::Convergence,"far-field-convergence",farFieldConvergenceOk},
+        {ValidationSection::Convergence,"larmor-normalization",larmorNormalizationOk},
+        {ValidationSection::AlgebraicIdentity,"role-routing",roleRoutingOk},
+        {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
+        {ValidationSection::NumericalRegression,"adaptive-depth-rejection",adaptiveDepthRejectionOk},
+        {ValidationSection::Convergence,"causal-startup",causalStartupOk},
+        {ValidationSection::Convergence,"retarded-interpolation",retardedInterpolationOk},
+        {ValidationSection::NumericalRegression,"short-range-regularization",shortRangeRegularizationOk}
     }};
+    const auto sectionName=[](ValidationSection section) {
+        switch(section) {
+            case ValidationSection::AlgebraicIdentity:
+                return "algebraic identities";
+            case ValidationSection::NumericalRegression:
+                return "numerical regressions";
+            case ValidationSection::Convergence:
+                return "convergence checks";
+            case ValidationSection::PhysicalDomain:
+                return "physical-domain guards";
+        }
+        return "unknown";
+    };
+    constexpr std::array sections{
+        ValidationSection::AlgebraicIdentity,
+        ValidationSection::NumericalRegression,
+        ValidationSection::Convergence,
+        ValidationSection::PhysicalDomain};
     int failedChecks=0;
-    for(const auto& [name,ok]:regressionChecks) {
-        if(!ok) {
-            ++failedChecks;
-            std::cout<<"FAILED check:      "<<name<<'\n';
+    std::cout<<"\nCategorized validation verdict\n";
+    for(const ValidationSection section:sections) {
+        int passed=0,total=0;
+        for(const ValidationCheck& check:regressionChecks) {
+            if(check.section!=section) continue;
+            ++total;
+            if(check.passed) ++passed;
+        }
+        std::cout<<"  "<<sectionName(section)<<": "<<passed<<'/'<<total
+                 <<' '<<(passed==total?"PASS":"FAIL")<<'\n';
+        for(const ValidationCheck& check:regressionChecks) {
+            if(check.section==section&&!check.passed) {
+                ++failedChecks;
+                std::cout<<"    FAILED: "<<check.name<<'\n';
+            }
         }
     }
-    std::cout<<"checks passed:      "
+    std::cout<<"\nInformational diagnostics (no pass/fail criterion)\n"
+             <<"  BMT vs effective-field comparison\n"
+             <<"  flux-normalized reaction residual across heavy pairs\n"
+             <<"  pair-field balance identities closed by boundField*\n"
+             <<"  performance, memory and wall-clock estimates\n";
+    std::cout<<"\nEnforced checks:     "
              <<(regressionChecks.size()-static_cast<std::size_t>(failedChecks))
-             <<"/"<<regressionChecks.size()<<'\n'
-             <<"numerical regression:"<<(failedChecks==0?"PASS":"FAIL")<<'\n';
+             <<'/'<<regressionChecks.size()<<'\n'
+             <<"validation verdict: "<<(failedChecks==0?"PASS":"FAIL")<<'\n'
+             <<"scope: regression and declared-domain validation; "
+                "not a QED validation\n";
     return failedChecks==0?0:1;
 }
