@@ -1920,6 +1920,30 @@ make validation-small
 make validation-publication
 ```
 
+Przenośny profil publikacyjny nie używa `-march=native`, usuwa bezwzględną
+ścieżkę źródeł z artefaktu i ustala ziarno kompilatora. Osobne binaria nie
+nadpisują szybkiego buildu lokalnego:
+
+```bash
+make reproducible
+make reproducible-validation
+```
+
+Wersje narzędzi użyte dla bieżącego punktu odniesienia są zapisane w
+`toolchain-versions.txt`; `make toolchain-info` wypisuje wersje aktualnego
+środowiska. Profile AddressSanitizer i UndefinedBehaviorSanitizer buduje się
+i uruchamia poleceniem:
+
+```bash
+make sanitizers-check
+```
+
+ASan ma wyłączone wykrywanie wycieków, ponieważ proces ładuje ROOT; nadal
+sprawdza błędy dostępu do pamięci. UBSan zatrzymuje test przy pierwszym
+wykrytym niezdefiniowanym zachowaniu. Sanitizatory domyślnie korzystają z
+`clang++` (niezależnie od produkcyjnego GCC); można to zmienić przez
+`SANITIZER_CXX=...`.
+
 Tryb raportuje ograniczenia Gaussa, ciągłości i \(\nabla\cdot\mathbf B\), pełne
 bilanse cząstka–pole, test magnetyzacji, zbieżność przestrzenną, pochłanianie
 granicy oraz koszt obliczeń. Dla bieżącej konfiguracji na testowej maszynie

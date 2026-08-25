@@ -1,0 +1,7 @@
+CREM reproducible-build reference toolchain
+Recorded: 2026-08-25
+Compiler: g++ (GCC) 16.2.1 20260819 (Red Hat 16.2.1-2)
+Sanitizer compiler: clang version 22.1.8 (Fedora 22.1.8-4.fc44)
+ROOT: 6.40.02
+GNU Make: 4.4.1
+Language mode: C++20 (provided by root-config --cflags)

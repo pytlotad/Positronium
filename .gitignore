@@ -2,6 +2,10 @@
 # tracked: every rebuild would otherwise add a ~400 kB blob to the history.
 /positronium
 /positronium_validation
+/positronium_reproducible
+/positronium_validation_reproducible
+/positronium_validation_asan
+/positronium_validation_ubsan
 *.o
 *.d
 
