@@ -1909,6 +1909,17 @@ make validation
 ./positronium_validation
 ```
 
+Walidacja zawiera dwa deterministyczne profile statystyczne. Mały profil
+(`N=4096`) służy do codziennych regresji, a profil publikacyjny (`N=1000000`)
+sprawdza te same momenty rozkładu kierunku fotonu E1 i rozkładu wykładniczego
+procesu Poissona z ostrzejszymi tolerancjami. Oba używają stałych, wbudowanych
+ziaren i kontrolują bitowo dokładne odtworzenie próbki:
+
+```bash
+make validation-small
+make validation-publication
+```
+
 Tryb raportuje ograniczenia Gaussa, ciągłości i \(\nabla\cdot\mathbf B\), pełne
 bilanse cząstka–pole, test magnetyzacji, zbieżność przestrzenną, pochłanianie
 granicy oraz koszt obliczeń. Dla bieżącej konfiguracji na testowej maszynie

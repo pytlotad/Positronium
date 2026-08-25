@@ -5597,13 +5597,32 @@ int main(int argc, char** argv) {
     // The suite honours --pair too.  Sweeping pairs used to mean editing
     // defaultPair in the header and rebuilding for each one, which is three
     // minutes per pair and a working tree that has to be put back afterwards.
+    StatisticalValidationProfile statisticalProfile=
+        StatisticalValidationProfile::Small;
     try {
         for (int i = 1; i < argc; ++i) {
             const std::string argument = argv[i];
-            if (argument != "--pair") continue;
-            if (i + 1 >= argc)
-                throw std::invalid_argument("missing value for --pair");
-            applyPairFromOption(argv[++i]);
+            if (argument == "--pair") {
+                if (i + 1 >= argc)
+                    throw std::invalid_argument("missing value for --pair");
+                applyPairFromOption(argv[++i]);
+            } else if(argument == "--statistics-profile") {
+                if (i + 1 >= argc)
+                    throw std::invalid_argument(
+                        "missing value for --statistics-profile");
+                const std::string profile=argv[++i];
+                if(profile=="small") {
+                    statisticalProfile=StatisticalValidationProfile::Small;
+                } else if(profile=="publication") {
+                    statisticalProfile=
+                        StatisticalValidationProfile::Publication;
+                } else {
+                    throw std::invalid_argument(
+                        "--statistics-profile must be small or publication");
+                }
+            } else {
+                throw std::invalid_argument("unknown option "+argument);
+            }
         }
     } catch (const std::exception& error) {
         std::cerr << "Invalid command-line option: " << error.what() << '\n';
@@ -5611,7 +5630,7 @@ int main(int argc, char** argv) {
     }
     std::cout << "Pair: " << firstSpecies.name << " + " << secondSpecies.name
               << '\n';
-    return runMaxwellSelfTest();
+    return runMaxwellSelfTest(statisticalProfile);
 #else
     std::random_device seedSource;
     std::uint64_t seed = (static_cast<std::uint64_t>(seedSource()) << 32) ^ seedSource();

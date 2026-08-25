@@ -7,13 +7,19 @@ VALIDATION_TARGET := positronium_validation
 SRC := positronium.cpp
 HEADERS := $(wildcard modules/*.hpp)
 
-.PHONY: all build validation run clean
+.PHONY: all build validation validation-small validation-publication run clean
 
 all: run
 
 build: $(TARGET)
 
 validation: $(VALIDATION_TARGET)
+
+validation-small: $(VALIDATION_TARGET)
+	./$(VALIDATION_TARGET) --statistics-profile small
+
+validation-publication: $(VALIDATION_TARGET)
+	./$(VALIDATION_TARGET) --statistics-profile publication
 
 run: $(TARGET)
 	./$(TARGET)

@@ -2,8 +2,78 @@
 
 // End-to-end numerical validation of the optional Maxwell field backend.
 
-int runMaxwellSelfTest() {
+enum class StatisticalValidationProfile { Small, Publication };
+
+int runMaxwellSelfTest(
+        StatisticalValidationProfile statisticalProfile=
+            StatisticalValidationProfile::Small) {
     const auto benchmarkStart=std::chrono::steady_clock::now();
+
+    // Fixed-seed distribution checks for the stochastic photon sector.  The
+    // small profile is cheap enough for every regression run; publication is
+    // deliberately much larger and tightens the tolerances approximately as
+    // sqrt(N).  Neither profile accepts a user seed: changing the random
+    // sample must be an explicit reviewable source change, not ambient state.
+    const bool publicationStatistics=
+        statisticalProfile==StatisticalValidationProfile::Publication;
+    const std::uint64_t statisticalSampleCount=
+        publicationStatistics?1000000ULL:4096ULL;
+    std::uint64_t directionStream=0x4352454d5f45315fULL;
+    std::uint64_t exponentialStream=0x4352454d5f504f49ULL;
+    double cosineSum=0.0;
+    double cosineSquaredSum=0.0;
+    double azimuthCosineSum=0.0;
+    double azimuthSineSum=0.0;
+    double exponentialSum=0.0;
+    double exponentialSquaredSum=0.0;
+    for(std::uint64_t sample=0;sample<statisticalSampleCount;++sample) {
+        const Vec3 direction=sampleRotatingDipolePhotonDirection(
+            Vec3{0.0,0.0,1.0},directionStream);
+        cosineSum+=direction.z;
+        cosineSquaredSum+=direction.z*direction.z;
+        azimuthCosineSum+=direction.x;
+        azimuthSineSum+=direction.y;
+        const double exponential=drawExponentialUnit(exponentialStream);
+        exponentialSum+=exponential;
+        exponentialSquaredSum+=exponential*exponential;
+    }
+    const double inverseStatisticalSampleCount=
+        1.0/static_cast<double>(statisticalSampleCount);
+    const double photonCosineMean=cosineSum*inverseStatisticalSampleCount;
+    const double photonCosineSecondMoment=
+        cosineSquaredSum*inverseStatisticalSampleCount;
+    const double photonAzimuthVectorMean=std::hypot(
+        azimuthCosineSum,azimuthSineSum)*inverseStatisticalSampleCount;
+    const double exponentialMean=
+        exponentialSum*inverseStatisticalSampleCount;
+    const double exponentialVariance=
+        exponentialSquaredSum*inverseStatisticalSampleCount
+        -exponentialMean*exponentialMean;
+    std::uint64_t replayA=0x4352454d5f524550ULL;
+    std::uint64_t replayB=replayA;
+    bool statisticalReplayExact=true;
+    for(int sample=0;sample<1024;++sample) {
+        const Vec3 a=sampleRotatingDipolePhotonDirection(
+            Vec3{0.0,0.0,1.0},replayA);
+        const Vec3 b=sampleRotatingDipolePhotonDirection(
+            Vec3{0.0,0.0,1.0},replayB);
+        statisticalReplayExact=statisticalReplayExact
+            &&a.x==b.x&&a.y==b.y&&a.z==b.z;
+    }
+    const double cosineMeanTolerance=publicationStatistics?0.004:0.065;
+    const double cosineSecondMomentTolerance=
+        publicationStatistics?0.002:0.032;
+    const double azimuthMeanTolerance=publicationStatistics?0.002:0.035;
+    const double exponentialMeanTolerance=publicationStatistics?0.006:0.10;
+    const double exponentialVarianceTolerance=
+        publicationStatistics?0.012:0.20;
+    const bool stochasticStatisticsOk=statisticalReplayExact
+        &&std::abs(photonCosineMean)<cosineMeanTolerance
+        &&std::abs(photonCosineSecondMoment-0.4)
+            <cosineSecondMomentTolerance
+        &&photonAzimuthVectorMean<azimuthMeanTolerance
+        &&std::abs(exponentialMean-1.0)<exponentialMeanTolerance
+        &&std::abs(exponentialVariance-1.0)<exponentialVarianceTolerance;
 
     // Cheap production-kinematics regressions.  These call the same builders
     // as experiments 3--5, so they detect role-dependent energy splits and a
@@ -3041,6 +3111,16 @@ int runMaxwellSelfTest() {
               << "CFL dt:             " << cflStep << " s\n"
               << "field storage:      "
               << static_cast<double>(hierarchyBytes)/(1024.0*1024.0) << " MiB\n"
+              << "statistics profile: "
+              << (publicationStatistics?"publication":"small")
+              << " (N=" << statisticalSampleCount << ")\n"
+              << "photon <cos>/<cos2>:" << photonCosineMean << " / "
+              << photonCosineSecondMoment << " (expected 0 / 0.4)\n"
+              << "photon azimuth mean:" << photonAzimuthVectorMean << '\n'
+              << "Poisson Exp mean/var:" << exponentialMean << " / "
+              << exponentialVariance << " (expected 1 / 1)\n"
+              << "statistics replay:  "
+              << (statisticalReplayExact?"exact":"MISMATCH") << '\n'
               << "validation wall:    " << benchmarkSeconds << " s\n"
               << "field-step rate:    " << fieldStepsPerSecond << " steps/s\n"
               << "steps per ps:       " << estimatedStepsPerPicosecond << '\n'
@@ -3065,7 +3145,7 @@ int runMaxwellSelfTest() {
         const char* name;
         bool passed;
     };
-    const std::array<ValidationCheck,36> regressionChecks{{
+    const std::array<ValidationCheck,37> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -3101,7 +3181,8 @@ int runMaxwellSelfTest() {
         {ValidationSection::Convergence,"history-construction-sensitivity",historyConstructionSensitivityOk},
         {ValidationSection::PhysicalDomain,"cutoff-and-regularization-scan",parameterSensitivityScanOk},
         {ValidationSection::Convergence,"retarded-interpolation",retardedInterpolationOk},
-        {ValidationSection::NumericalRegression,"short-range-regularization",shortRangeRegularizationOk}
+        {ValidationSection::NumericalRegression,"short-range-regularization",shortRangeRegularizationOk},
+        {ValidationSection::NumericalRegression,"stochastic-distributions",stochasticStatisticsOk}
     }};
     const auto sectionName=[](ValidationSection section) {
         switch(section) {
