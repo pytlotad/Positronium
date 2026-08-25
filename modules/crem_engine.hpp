@@ -11,7 +11,8 @@
 // Contains no ROOT.
 
 StateHistory causalInitialHistory(const State& initial,double spanFactor=8.0,
-                                  int intervalCount=64) {
+                                  int intervalCount=64,
+                                  int picardIterations=2) {
     State endpoint=initial;
     synchronizeCovariantDipoles(endpoint);
     const double lightCrossingTime=separation(endpoint)/c;
@@ -56,7 +57,8 @@ StateHistory causalInitialHistory(const State& initial,double spanFactor=8.0,
     // Two inexpensive Picard updates make the hidden past consistent with
     // the same retarded interaction used at t=0 instead of freezing the
     // instantaneous Coulomb acceleration into the whole preparation span.
-    for(int iteration=0;iteration<2;++iteration) {
+    picardIterations=std::max(picardIterations,0);
+    for(int iteration=0;iteration<picardIterations;++iteration) {
         const MutualForces retarded=retardedExternalForces(endpoint,history);
         firstAcceleration=relativisticAcceleration(
             endpoint.firstVelocity,retarded.first,firstMass);

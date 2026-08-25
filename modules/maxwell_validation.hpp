@@ -2018,23 +2018,50 @@ int runMaxwellSelfTest() {
         depthResolvedState.time-depthLimitInitial.time-depthLimitDt)
         /depthLimitDt;
 
-    const auto integrateHistoryCase=[&](double spanFactor,int intervals) {
+    struct HistorySensitivityCase { State early,settled; bool advanced=false; };
+    const auto integrateHistoryCase=[&](double spanFactor,int intervals,
+                                        int picardIterations) {
         State value=yeeCoupledState;
         ClassicalTrajectoryEngine engine(
-            causalInitialHistory(value,spanFactor,intervals),{1.0e-7,14});
+            causalInitialHistory(value,spanFactor,intervals,picardIterations),
+            {.relativeTolerance=1.0e-7,.maximumDepth=14,
+             .compositionOrder=2,
+             .reactionModel=ChargeRadiationReactionModel::disabled,
+             .computeOutwardFlux=false});
         bool advanced=true;
-        for(int step=0;step<2;++step)
-            advanced=engine.advance(value,1.0e-20)&&advanced;
+        advanced=engine.advance(value,trajectoryProbeDt)&&advanced;
+        const State early=value;
+        // By eight probe steps the retained window has been replaced by
+        // accepted positive-time states.  Any remaining difference is a
+        // dynamical memory of the preparation, not direct interpolation of
+        // different hidden-past nodes.
+        for(int step=1;step<8&&advanced;++step)
+            advanced=engine.advance(value,trajectoryProbeDt)&&advanced;
         if(!advanced) value.time=std::numeric_limits<double>::quiet_NaN();
-        return value;
+        return HistorySensitivityCase{early,value,advanced};
     };
-    const State startupHistory4=integrateHistoryCase(4.0,32);
-    const State startupHistory8=integrateHistoryCase(8.0,64);
-    const State startupHistory16=integrateHistoryCase(16.0,128);
+    // Deliberately vary three independent construction choices together:
+    // retained span, node density and self-consistency iteration count.  The
+    // coarse history uses only the instantaneous-acceleration seed (0 Picard
+    // updates); the reference uses four updates, twice the production count.
+    const HistorySensitivityCase startupCase4=
+        integrateHistoryCase(4.0,32,0);
+    const HistorySensitivityCase startupCase8=
+        integrateHistoryCase(8.0,64,2);
+    const HistorySensitivityCase startupCase16=
+        integrateHistoryCase(16.0,128,4);
+    const State& startupHistory4=startupCase4.settled;
+    const State& startupHistory8=startupCase8.settled;
+    const State& startupHistory16=startupCase16.settled;
     const double startupHistoryResidual4=trajectoryResidual(
         startupHistory4,startupHistory16);
     const double startupHistoryResidual8=trajectoryResidual(
         startupHistory8,startupHistory16);
+    const double startupEarlySensitivity=std::max(
+        trajectoryResidual(startupCase4.early,startupCase16.early),
+        trajectoryResidual(startupCase8.early,startupCase16.early));
+    const double startupSettledSensitivity=std::max(
+        startupHistoryResidual4,startupHistoryResidual8);
     const StateHistory startupHistory=causalInitialHistory(yeeCoupledState);
     const double startupCoverage=(yeeCoupledState.time-startupHistory.front().time)
         /(separation(yeeCoupledState)/c);
@@ -2616,6 +2643,18 @@ int runMaxwellSelfTest() {
         &&std::abs(startupHistory.back().time-yeeCoupledState.time)<1.0e-30
         &&startupHistoryResidual4<1.0e-5
         &&startupHistoryResidual8<1.0e-6;
+    const bool historyConstructionSensitivityOk=
+        startupCase4.advanced&&startupCase8.advanced&&startupCase16.advanced
+        &&std::isfinite(startupEarlySensitivity)
+        &&std::isfinite(startupSettledSensitivity)
+        // The hidden nodes disappear, but the small phase perturbation they
+        // launched need not contract in a Hamiltonian orbit.  Require that it
+        // remain bounded rather than falsely demanding dissipation: less than
+        // twofold amplification over the replacement interval, plus the
+        // independent absolute accuracy ceiling below.
+        &&startupSettledSensitivity
+            <2.0*std::max(startupEarlySensitivity,1.0e-15)
+        &&startupSettledSensitivity<1.0e-5;
     const bool retardedInterpolationOk=
         std::isfinite(hermiteConvergenceOrder)
         &&interpolationFine[1]<interpolationFine[0]
@@ -2860,6 +2899,9 @@ int runMaxwellSelfTest() {
               << "history span r/c:   " << startupCoverage << '\n'
               << "history 4/8 vs 16: " << startupHistoryResidual4 << " / "
               << startupHistoryResidual8 << '\n'
+              << "history construct early/settled: "
+              << startupEarlySensitivity << " / "
+              << startupSettledSensitivity << '\n'
               << "history linear/H:  " << interpolationFine[0] << " / "
               << interpolationFine[1] << '\n'
               << "Hermite order:     " << hermiteConvergenceOrder << '\n'
@@ -2906,7 +2948,7 @@ int runMaxwellSelfTest() {
         const char* name;
         bool passed;
     };
-    const std::array<ValidationCheck,34> regressionChecks{{
+    const std::array<ValidationCheck,35> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -2939,6 +2981,7 @@ int runMaxwellSelfTest() {
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"adaptive-depth-rejection",adaptiveDepthRejectionOk},
         {ValidationSection::Convergence,"causal-startup",causalStartupOk},
+        {ValidationSection::Convergence,"history-construction-sensitivity",historyConstructionSensitivityOk},
         {ValidationSection::Convergence,"retarded-interpolation",retardedInterpolationOk},
         {ValidationSection::NumericalRegression,"short-range-regularization",shortRangeRegularizationOk}
     }};
