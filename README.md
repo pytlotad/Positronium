@@ -2268,10 +2268,28 @@ do zachowanego orbitalnego momentu pędu, czyli stały, więc \(\ddot{\mathbf m}
 i nie promieniuje. (Człon M1 w sumie powyżej to moment **wewnętrzny**, inny
 obiekt.)
 
-M2/E3 leży na poziomie \(\beta^4\) względem E1 — o rząd dalej niż zwykłe
-\(\beta^2\), bo M2 płaci jednocześnie karę „magnetyczną" i „o jedno l wyżej".
-Na promieniu Bohra pary \(\beta=\alpha\) dokładnie, więc jest to
-\(2{,}84\cdot10^{-9}\).
+To, które multipole elektryczne w ogóle istnieją, rozstrzyga **reguła
+parzystości** — warto ją zapisać raz, bo odpowiada na całą nieskończoną
+rodzinę, a nie na jeden szczebel. Pisząc \(\mathbf r_1=(m_2/M)\mathbf d\) i
+\(\mathbf r_2=-(m_1/M)\mathbf d\), moment rzędu \(l\) niesie
+
+\[
+\kappa_l=\frac{q_1m_2^l+(-1)^lq_2m_1^l}{M^l},
+\]
+
+co dla pary **masowo symetrycznej** zwija się do \([q_1+(-1)^lq_2]/2^l\):
+proporcjonalne do \(q_1+q_2=0\) dla \(l\) parzystego i do \(q_1-q_2=-2e\)
+dla nieparzystego. Neutralna para symetryczna nie ma więc **żadnego**
+parzystego multipola elektrycznego i ma **wszystkie** nieparzyste. Zmierzone
+dla e⁺e⁻: \(\kappa_1=-1{,}000\,e\), \(\kappa_2=0\),
+\(\kappa_3=-0{,}250\,e\), \(\kappa_4=0\), \(\kappa_5=-0{,}0625\,e\).
+
+**E3 nie znika zatem dla pozytonium tak, jak znika E2** — jest tam wiodącą
+poprawką do E1, razem z M2. Oba leżą na poziomie \(\beta^4\) względem E1
+(\(E_l\) skaluje się jak \(\beta^{2(l-1)}\), \(M_l\) jak \(\beta^{2l}\)) —
+o rząd dalej niż zwykłe \(\beta^2\), bo M2 płaci jednocześnie karę
+„magnetyczną" i „o jedno l wyżej". Na promieniu Bohra pary \(\beta=\alpha\)
+dokładnie, więc jest to \(2{,}84\cdot10^{-9}\).
 
 Dla porównania, próg pomiarowy samego modelu: \(6{,}9\cdot10^{-5}\) (zgodność
 kwadratury dalekiego pola z analitycznym Larmorem) i w najlepszym razie
@@ -2280,8 +2298,9 @@ kontrolnej). **M2 leży cztery rzędy poniżej szumu wszystkiego, z czym można 
 je porównać** — i kosztowałoby kolejny komplet stencyli historii.
 
 To jest różnica wobec E2, które dla p+e⁻ wynosi \(1{,}09\cdot10^{-4}\), czyli
-**powyżej** tego progu, a nie promieniowało wcale. E2 było realną luką; M2 nie
-jest.
+**powyżej** tego progu, a nie promieniowało wcale. E2 było realną luką; M2 i
+E3 nie są. Ten sam werdykt obejmuje E5 na poziomie \(\beta^8=8\cdot10^{-18}\),
+o które nie trzeba już pytać.
 
 Nie brakuje go też w **bilansie energii**: kwadratura Poyntinga w strefie
 dalekiej nie jest rozwinięciem obciętym — kierunkowa retardacja w poprzek pary

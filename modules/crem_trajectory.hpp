@@ -452,8 +452,25 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                 // order, whatever kappa is.  (The M1 term summed above is
                 // the INTRINSIC moment's, a different object.)
                 //
-                // M2/E3 sits at beta^4 relative to E1, one order beyond the
-                // usual beta^2, since M2 pays both the magnetic and the
+                // Which electric multipoles survive at all is fixed by a
+                // parity rule, worth stating once because it answers the
+                // whole infinite family rather than one rung.  Writing
+                // r1 = (m2/M) d and r2 = -(m1/M) d, the l-th moment carries
+                //
+                //     kappa_l = [ q1 m2^l + (-1)^l q2 m1^l ] / M^l,
+                //
+                // which for a MASS-SYMMETRIC pair collapses to
+                // [q1 + (-1)^l q2]/2^l: proportional to q1+q2 = 0 for even l,
+                // and to q1-q2 = -2e for odd l.  So a neutral symmetric pair
+                // has NO even electric multipole and every odd one.  Measured
+                // for e+e-: kappa_1 = -1.000 e, kappa_2 = 0, kappa_3 =
+                // -0.250 e, kappa_4 = 0, kappa_5 = -0.0625 e.
+                //
+                // E3 therefore does NOT vanish for positronium the way E2
+                // does -- it is the leading correction to E1 there, together
+                // with M2.  Both sit at beta^4 relative to E1 (E_l scales as
+                // beta^(2(l-1)), M_l as beta^(2l)), one order beyond the
+                // usual beta^2, M2 paying both the magnetic and the
                 // one-l-higher penalty.  At the pair Bohr radius beta = alpha
                 // exactly, so that is 2.84e-9 -- against which the model's
                 // own radiation measurement has a floor of 6.9e-5 (the
@@ -461,7 +478,9 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                 // at best, 1.9e-8 (near-field contamination of the production
                 // control sphere).  Adding M2 would inject a term four orders
                 // below the noise of everything it would be compared against,
-                // and cost another set of history stencils to do it.
+                // and cost another set of history stencils to do it.  The
+                // same verdict covers E3, and E5 at beta^8 = 8e-18 is not a
+                // question anyone needs to ask twice.
                 //
                 // Nor is it missing from the model's ENERGY bookkeeping: the
                 // far-zone Poynting quadrature is not a truncated expansion
