@@ -2258,6 +2258,39 @@ E2 = \(9{,}3\cdot10^{-25}\) (szum zaokrągleń) dla e⁺e⁻ wobec
 \(1{,}09\cdot10^{-4}\) dla p+e⁻ — tam jest to **największy** kanał
 podwiodący, około trzy rzędy wielkości powyżej M1.
 
+#### Gdzie kończy się drabina multipoli
+
+Następnym rzędem po E1 jest **M2/E3, a nie M1/E2**. Orbitalny dipol
+magnetyczny niesie ten sam czynnik \(\kappa\) co kwadrupol, więc znika razem
+z nim dla pary symetrycznej — ale znika też dla **każdej** pary, bo
+\(\mathbf m=(\kappa/2)(\mathbf d\times\dot{\mathbf d})\) jest proporcjonalny
+do zachowanego orbitalnego momentu pędu, czyli stały, więc \(\ddot{\mathbf m}=0\)
+i nie promieniuje. (Człon M1 w sumie powyżej to moment **wewnętrzny**, inny
+obiekt.)
+
+M2/E3 leży na poziomie \(\beta^4\) względem E1 — o rząd dalej niż zwykłe
+\(\beta^2\), bo M2 płaci jednocześnie karę „magnetyczną" i „o jedno l wyżej".
+Na promieniu Bohra pary \(\beta=\alpha\) dokładnie, więc jest to
+\(2{,}84\cdot10^{-9}\).
+
+Dla porównania, próg pomiarowy samego modelu: \(6{,}9\cdot10^{-5}\) (zgodność
+kwadratury dalekiego pola z analitycznym Larmorem) i w najlepszym razie
+\(1{,}9\cdot10^{-8}\) (zanieczyszczenie polem bliskim produkcyjnej powierzchni
+kontrolnej). **M2 leży cztery rzędy poniżej szumu wszystkiego, z czym można by
+je porównać** — i kosztowałoby kolejny komplet stencyli historii.
+
+To jest różnica wobec E2, które dla p+e⁻ wynosi \(1{,}09\cdot10^{-4}\), czyli
+**powyżej** tego progu, a nie promieniowało wcale. E2 było realną luką; M2 nie
+jest.
+
+Nie brakuje go też w **bilansie energii**: kwadratura Poyntinga w strefie
+dalekiej nie jest rozwinięciem obciętym — kierunkowa retardacja w poprzek pary
+zachowuje E3, M2, człony toroidalne i ich interferencję dokładnie
+(`electromagneticFieldFluxRates`). Obcięcie dotyczy wyłącznie **analitycznej
+sumy hazardu**, której zadaniem jest chwilowe tempo; strumień tego zadania
+pełnić nie może, bo jest opóźniony o promień kontrolny, \(1{,}8\cdot10^{-13}\) s,
+czyli dłużej, niż trwają niektóre przebiegi.
+
 Moc E2 jest liczona tylko wtedy, gdy ktoś ją czyta: w modelu `automatic` (dla
 bramki dominacji) i w trybie skwantowanym (dla hazardu). Modele ciągłe jej nie
 liczą, bo wyrzuciłyby wynik razem z kosztem stencyli historii.

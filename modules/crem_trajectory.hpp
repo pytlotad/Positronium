@@ -441,6 +441,37 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                 // identically zero for every mass-symmetric pair (see
                 // needsQuadrupolePower in electrodynamics.hpp) and carries
                 // the channel only for asymmetric ones such as p+e-.
+                //
+                // WHERE THE LADDER STOPS, and why here rather than one rung
+                // further.  The next order is M2/E3, not M1/E2: the ORBITAL
+                // magnetic dipole carries the same kappa as the quadrupole
+                // above, so it vanishes with it for a mass-symmetric pair,
+                // and for any pair it is m = (kappa/2)(d x d-dot), which is
+                // proportional to the conserved orbital angular momentum --
+                // constant, hence m-ddot = 0 and no radiation, to leading
+                // order, whatever kappa is.  (The M1 term summed above is
+                // the INTRINSIC moment's, a different object.)
+                //
+                // M2/E3 sits at beta^4 relative to E1, one order beyond the
+                // usual beta^2, since M2 pays both the magnetic and the
+                // one-l-higher penalty.  At the pair Bohr radius beta = alpha
+                // exactly, so that is 2.84e-9 -- against which the model's
+                // own radiation measurement has a floor of 6.9e-5 (the
+                // far-field quadrature's agreement with analytic Larmor) and,
+                // at best, 1.9e-8 (near-field contamination of the production
+                // control sphere).  Adding M2 would inject a term four orders
+                // below the noise of everything it would be compared against,
+                // and cost another set of history stencils to do it.
+                //
+                // Nor is it missing from the model's ENERGY bookkeeping: the
+                // far-zone Poynting quadrature is not a truncated expansion
+                // at all -- directional retardation across the pair keeps E3,
+                // M2, toroidal terms and their interference exactly (see
+                // electromagneticFieldFluxRates in electrodynamics.hpp).  The
+                // truncation is confined to THIS analytic sum, whose job is
+                // an instantaneous hazard rate; the flux cannot serve that
+                // job, being retarded by the control radius, 1.8e-13 s, which
+                // is longer than some runs last.
                 const double quantizedPower=
                     stepRadiation.leadingElectricDipolePower
                     +stepRadiation.magneticDipoleFlux.energy
