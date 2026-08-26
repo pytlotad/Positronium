@@ -3122,10 +3122,10 @@ BeamEvent simulateBeamEvent(
 }
 
 // ---------------------------------------------------------------------------
-// Experiment 5 "Interactions": an first and a second are fired at each
-// other with a Gaussian centre-of-mass energy and a Gaussian impact parameter
-// centred on a head-on collision, both dipoles randomly oriented in space.
-// Every trajectory is classified by what actually happens to it.
+// Experiment 5 "Interactions": a first and a second particle are fired at
+// each other with a Gaussian centre-of-mass energy and a Gaussian impact
+// parameter centred on a head-on collision, both dipoles randomly oriented
+// in space.  Every trajectory is classified by what actually happens to it.
 // ---------------------------------------------------------------------------
 
 enum class InteractionOutcome {

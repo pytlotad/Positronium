@@ -7,7 +7,7 @@
 // is spherical in the instantaneous rest frame.  In the laboratory it is
 // Lorentz-contracted along the velocity and multiplied by gamma, so its
 // spatial integral remains exactly q.  The radius is a numerical UV cutoff,
-// not a claim about the physical size of an first.
+// not a claim about the physical size of the particle.
 struct RelativisticChargeCloud {
     double charge = 0.0;
     double restRadius = chargeCloudRestRadius;
