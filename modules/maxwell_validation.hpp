@@ -1235,70 +1235,145 @@ int runMaxwellSelfTest(
             secondCharge/secondMass,secondGFactor));
 
     // ---------------------------------------------------------------------
-    // Regression guard for the fix below: how far the PRODUCTION
-    // dipole-precession path (advanceThomasBmtDipole, read out through
-    // synchronizeCovariantDipoles exactly the way state.firstDipole itself
-    // is obtained) diverges from thomasBmtEffectiveField's independently
-    // textbook-correct (Jackson 3rd ed. 11.170') 3D lab-time formula
-    // d(mu_lab)/dt=(q/m) mu_lab x B_eff, evaluated at the same instantaneous
-    // (v,E,B,g).
+    // Two probes on the PRODUCTION dipole-precession path
+    // (advanceThomasBmtDipole -> properDipolePrecessionRate ->
+    // thomasBmtEffectiveField).  They answer different questions, and the
+    // history of this spot is the reason both are needed.
     //
-    // History: production used to call advanceCovariantBmt (a four-vector
-    // RK4 route) here instead, and this same probe measured a REAL gap that
-    // was exactly zero at g=2 and grew with both anomaly and beta -- up to
-    // 45% for a proton g at beta=0.9, 5.8e-8 at (e+e- g, beta~0.007).  Root
-    // cause, isolated by direct rederivation (README's "audyt fizyki" BMT
-    // section): advanceCovariantBmt holds velocity (hence four-velocity u)
-    // FIXED for the duration of its call, exactly how applyDipolePrecession
-    // always invokes it (twice per full step, once before and once after
-    // the momentum kick, each half using whatever velocity is current at
-    // that instant).  But the continuous covariant equation's own
-    // constraint a.u=0 is only preserved by construction when u co-evolves
-    // via du/dtau=(q/m)F.u -- freezing u breaks that, and the function's
-    // final renormalization step (needed to keep the four-vector valid) was
-    // then injecting a correction of the SAME order as the genuine
-    // precession itself, sourced by exactly the term that vanishes at g=2:
-    // the anomalous (g/2-1) piece.  advanceThomasBmtDipole
-    // (electrodynamics.hpp) sidesteps the four-vector route entirely: it
-    // advances the OBSERVABLE lab dipole via a literal rotation under
-    // thomasBmtEffectiveField (which exactly conserves its norm, no
-    // renormalization needed), then maps the rate back onto properDipole
-    // through a closed-form inverse of synchronizeCovariantDipoles's own
-    // boost, verified independently to machine precision (1e-16 relative)
-    // against Jackson's rate at every tested step size for the same
-    // high-anomaly/high-beta case that exposed the old formula's gap.  The
-    // two probes below should now read at or near round-off; kept here,
-    // still without a formal pass/fail gate, so any future change to
-    // properDipolePrecessionRate/advanceThomasBmtDipole that reopens this
-    // gap shows up immediately instead of silently.
+    // History.  Production first used advanceCovariantBmt, a four-vector RK4
+    // route.  A probe here measured a real gap against Jackson's 3D lab-time
+    // formula: exactly zero at g=2, growing with anomaly and beta, up to 45%
+    // for a proton g at beta=0.9.  Root cause: advanceCovariantBmt holds the
+    // four-velocity u FIXED for its call (exactly how applyDipolePrecession
+    // invokes it), but the covariant equation preserves its own constraint
+    // a.u=0 only when u co-evolves; the final renormalization then injected
+    // a correction of the same order as the precession, sourced by the
+    // (g/2-1) term that vanishes at g=2.
+    //
+    // The replacement over-corrected.  It expanded properDipole into the LAB
+    // dipole, applied Jackson's rate to that, and mapped back through an
+    // inverse boost -- but Jackson 11.170 governs the REST-FRAME moment, so
+    // the composition was not a rotation of properDipole and quietly failed
+    // to conserve its norm at the relative level gamma-1.  The probe that
+    // certified it compared d(mu_LAB)/dt against mu_lab x B_eff, which is
+    // precisely the identity that implementation was built to satisfy: it
+    // read machine zero by construction and could not have reported
+    // otherwise.  A check whose subject and reference are the same equation
+    // measures nothing.
+    //
+    // Hence the split below.  The first probe is a wiring check and is
+    // frankly near-tautological -- it re-derives the production rate from
+    // the same formula production calls, so it can only catch a mis-wired
+    // argument (wrong g, wrong q/m, wrong field) or a broken RK4, not a
+    // wrong choice of equation.  The second is not: orthogonality of the
+    // rate to the moment is an INVARIANT of precession, independent of which
+    // formula is wired in, so it stays meaningful however the sector is
+    // rewritten.  It is the one gated, because it is the one that has
+    // discriminating power -- it reads 4.3e-3 at beta=0.1 and 0.63 at
+    // beta=0.9 against the lab-dipole route, and round-off against a genuine
+    // precession.
+    // Solver against specification.  advanceThomasBmtDipole now returns a
+    // closed-form rotation; properDipolePrecessionRate is the equation that
+    // rotation is supposed to solve.  Integrating the specification
+    // numerically to a FINITE angle and comparing gives a real check with a
+    // well-conditioned subtraction -- it catches a wrong rotation axis, a
+    // flipped sign or a dropped factor, none of which the old
+    // first-order-difference form could see (it took a step so short that
+    // the closed form and the reference agreed trivially).
     const auto bmtEffectiveFieldGap=[&](double betaMagnitude,double gFactorProbe) {
         const Vec3 velocityProbe{0.0,0.0,betaMagnitude*c};
         const ElectromagneticField fieldProbe{Vec3{0.0,1.0,0.0},Vec3{1.0,0.0,0.0}};
-        const Vec3 properDipoleProbe{0.0,1.0,0.0};
-        constexpr double probeDt=1.0e-20;
-        const Vec3 evolvedProper=advanceThomasBmtDipole(properDipoleProbe,
-            velocityProbe,fieldProbe,1.0,probeDt,gFactorProbe);
-        State beforeState,afterState;
-        beforeState.firstVelocity=velocityProbe;
-        afterState.firstVelocity=velocityProbe;
-        beforeState.firstProperDipole=properDipoleProbe;
-        afterState.firstProperDipole=evolvedProper;
-        synchronizeCovariantDipoles(beforeState);
-        synchronizeCovariantDipoles(afterState);
-        const Vec3 productionRate=
-            (afterState.firstDipole-beforeState.firstDipole)/probeDt;
-        const Vec3 effectiveRate=cross(beforeState.firstDipole,
-            thomasBmtEffectiveField(velocityProbe,fieldProbe,gFactorProbe));
-        return (productionRate-effectiveRate).norm()
-            /std::max(effectiveRate.norm(),1.0e-300);
+        const Vec3 properDipoleProbe{0.3,0.5,0.81};
+        constexpr double chargeToMassProbe=1.0;
+        // Turn through a finite angle, so the comparison is not dominated by
+        // round-off in the difference.
+        const Vec3 effectiveField=thomasBmtEffectiveField(
+            velocityProbe,fieldProbe,gFactorProbe);
+        const double angularSpeed=
+            (effectiveField*chargeToMassProbe).norm();
+        if(!(angularSpeed>0.0)) return 0.0;
+        const double totalDt=0.1/angularSpeed;   // 0.1 rad of precession
+        const Vec3 closedForm=advanceThomasBmtDipole(properDipoleProbe,
+            velocityProbe,fieldProbe,chargeToMassProbe,totalDt,gFactorProbe);
+        // Reference: RK4 on the specification in many small substeps, whose
+        // O((dt/N)^4) error at N=4096 is far below the quantity compared.
+        constexpr int substeps=4096;
+        const double substepDt=totalDt/substeps;
+        Vec3 reference=properDipoleProbe;
+        for(int step=0;step<substeps;++step) {
+            const auto derivative=[&](const Vec3& value) {
+                return properDipolePrecessionRate(value,velocityProbe,
+                    fieldProbe,chargeToMassProbe,gFactorProbe);
+            };
+            const Vec3 k1=derivative(reference);
+            const Vec3 k2=derivative(reference+k1*(0.5*substepDt));
+            const Vec3 k3=derivative(reference+k2*(0.5*substepDt));
+            const Vec3 k4=derivative(reference+k3*substepDt);
+            reference=reference+(k1+k2*2.0+k3*2.0+k4)*(substepDt/6.0);
+        }
+        return (closedForm-reference).norm()
+            /std::max(reference.norm(),1.0e-300);
     };
-    // Two probes: the active pair's own (g, beta~0 orbital scale is far too
-    // small to be informative here, so a representative orbital-ish beta is
-    // used instead) and a synthetic high-anomaly/high-beta point, so this
-    // diagnostic stays informative regardless of which --pair the binary
-    // happens to be built for.
+    // Fraction of the SPECIFICATION's rate that points along the moment
+    // instead of across it.  Zero for any precession; this is the quantity
+    // the lab-dipole route got wrong, and the one no norm-drift guard could
+    // see back when advanceThomasBmtDipole still repaired the norm by
+    // rescaling.  It no longer does, so the two probes are independent: this
+    // one gates the equation, bmtNormConservation below gates the solver.
+    const auto bmtPrecessionOrthogonality=[&](double betaMagnitude,
+                                              double gFactorProbe) {
+        const Vec3 velocityProbe{0.0,0.0,betaMagnitude*c};
+        const ElectromagneticField fieldProbe{Vec3{0.0,1.0,0.0},Vec3{1.0,0.0,0.0}};
+        const Vec3 properDipoleProbe{0.3,0.5,0.81};
+        const Vec3 rate=properDipolePrecessionRate(properDipoleProbe,
+            velocityProbe,fieldProbe,1.0,gFactorProbe);
+        const double scale=properDipoleProbe.norm()*rate.norm();
+        return scale>0.0 ? std::abs(dot(properDipoleProbe,rate))/scale : 0.0;
+    };
+    // Norm conservation of the PRODUCTION routine, over a large angle and
+    // with no renormalization left anywhere to arrange the answer.  Large on
+    // purpose: a rotation is exact at any angle, so anything that is not a
+    // rotation has nowhere to hide at 2 rad.
+    const auto bmtNormConservation=[&](double betaMagnitude,
+                                       double gFactorProbe) {
+        const Vec3 velocityProbe{0.0,0.0,betaMagnitude*c};
+        const ElectromagneticField fieldProbe{Vec3{0.0,1.0,0.0},Vec3{1.0,0.0,0.0}};
+        const Vec3 properDipoleProbe{0.3,0.5,0.81};
+        const double angularSpeed=thomasBmtEffectiveField(
+            velocityProbe,fieldProbe,gFactorProbe).norm();
+        if(!(angularSpeed>0.0)) return 0.0;
+        double worst=0.0;
+        Vec3 value=properDipoleProbe;
+        for(int step=0;step<64;++step) {
+            value=advanceThomasBmtDipole(value,velocityProbe,fieldProbe,
+                1.0,2.0/angularSpeed,gFactorProbe);
+            worst=std::max(worst,std::abs(value.norm()
+                /properDipoleProbe.norm()-1.0));
+        }
+        return worst;
+    };
+    // Two probes: the active pair's own g (beta~0 at the orbital scale is far
+    // too small to be informative, so a representative orbital-ish beta is
+    // used instead) and a synthetic high-anomaly/high-beta point, so these
+    // stay informative regardless of which --pair the binary is built for.
     const double bmtEffectiveFieldGapActiveG=bmtEffectiveFieldGap(0.1,firstGFactor);
     const double bmtEffectiveFieldGapHighBeta=bmtEffectiveFieldGap(0.9,5.5857);
+    const double bmtOrthogonalityActiveG=
+        bmtPrecessionOrthogonality(0.1,firstGFactor);
+    const double bmtOrthogonalityHighBeta=
+        bmtPrecessionOrthogonality(0.9,5.5857);
+    const double bmtNormDriftActiveG=bmtNormConservation(0.1,firstGFactor);
+    const double bmtNormDriftHighBeta=bmtNormConservation(0.9,5.5857);
+    // Round-off bands.  A precession is orthogonal and norm-preserving
+    // exactly; the tolerances admit float noise only, and sit six orders
+    // below the 4.3e-3 the lab-dipole route produced at the same beta.  The
+    // solver-vs-specification gap carries the reference RK4's own truncation
+    // as well, hence the looser band there.
+    const bool bmtPrecessionOk=bmtOrthogonalityActiveG<1.0e-12
+        && bmtOrthogonalityHighBeta<1.0e-12
+        && bmtNormDriftActiveG<1.0e-12 && bmtNormDriftHighBeta<1.0e-12
+        && bmtEffectiveFieldGapActiveG<1.0e-9
+        && bmtEffectiveFieldGapHighBeta<1.0e-9;
 
     // ---------------------------------------------------------------------
     // Role routing in applyDipolePrecession().
@@ -2947,7 +3022,13 @@ int runMaxwellSelfTest(
               << "covariant BMT:    " << covarianceBmtResidual << '\n'
               << "BMT vs eff field: " << bmtEffectiveFieldGapActiveG << " / "
                  << bmtEffectiveFieldGapHighBeta
-                 << "  (diagnostic only, no pass/fail yet -- see comment)\n"
+                 << "  (closed form vs integrated specification)\n"
+              << "BMT precession:   " << bmtOrthogonalityActiveG << " / "
+                 << bmtOrthogonalityHighBeta
+                 << "  (mu.dmu/dt, must be 0 for a precession)\n"
+              << "BMT norm (2 rad): " << bmtNormDriftActiveG << " / "
+                 << bmtNormDriftHighBeta
+                 << "  (production routine, no renormalization)\n"
               << "role routing:     " << roleRoutingResidual
               << "  (obrot " << roleRoutingTravel << ")\n"
               << "particle boost F/R:" << covarianceForceResidual << " / "
@@ -3145,7 +3226,7 @@ int runMaxwellSelfTest(
         const char* name;
         bool passed;
     };
-    const std::array<ValidationCheck,37> regressionChecks{{
+    const std::array<ValidationCheck,38> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -3175,6 +3256,7 @@ int runMaxwellSelfTest(
         {ValidationSection::Convergence,"larmor-normalization",larmorNormalizationOk},
         {ValidationSection::IndependentBalance,"long-horizon-radiative-balance",longHorizonBalanceOk},
         {ValidationSection::AlgebraicIdentity,"role-routing",roleRoutingOk},
+        {ValidationSection::AlgebraicIdentity,"bmt-precession-invariant",bmtPrecessionOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"adaptive-depth-rejection",adaptiveDepthRejectionOk},
         {ValidationSection::Convergence,"causal-startup",causalStartupOk},

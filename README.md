@@ -2162,11 +2162,16 @@ Bilans obejmuje także konwekcyjny pęd promieniowania dipolowego i wynoszony
 moment pędu.
 
 \[
-\frac{d\boldsymbol\mu_i}{dt}
-=\frac{q_i}{m_i}\boldsymbol\mu_i\times\mathbf B_{\mathrm{BMT},i},
+\frac{d\boldsymbol\mu_i^{\rm proper}}{dt}
+=\frac{q_i}{m_i}\boldsymbol\mu_i^{\rm proper}\times\mathbf B_{\mathrm{BMT},i},
 \]
 
-gdzie, dla \(a=(g-2)/2\),
+gdzie \(\boldsymbol\mu_i^{\rm proper}\) jest momentem w **chwilowym układzie
+spoczynkowym** cząstki (`state.firstProperDipole`), bo to jego dotyczy
+równanie Jacksona 11.170 — moment laboratoryjny `state.firstDipole` jest
+z niego wyprowadzany boostem tensorowym i **nie** spełnia tego równania.
+Pomylenie tych dwóch wektorów było błędem naprawionym w drugim audycie
+(patrz „audyt fizyki" niżej). Dla \(a=(g-2)/2\),
 
 \[
 \mathbf B_{\mathrm{BMT}}=
@@ -2181,8 +2186,13 @@ Model używa mierzonej wartości \(g\) danego gatunku, czyli
 \(a=(g-2)/2=+0{,}00115965\) dla elektronu, a nie klasycznego \(g=1\)
 (\(a=-1/2\)). Uwzględnia precesję Thomasa, wpływ pola elektrycznego i podłużnej
 składowej pola magnetycznego. Znaki precesji elektronu i pozytonu są przeciwne.
-Obrót jest wykonywany wzorem Rodriguesa w dwóch symetrycznych półkrokach
-i zachowuje \(|\boldsymbol\mu_i|=(g/2)\mu_B\).
+Ponieważ w każdym półkroku \(\mathbf B_{\rm BMT}\) jest zamrożone, równanie
+ma postać \(\dot{\boldsymbol\mu}=\boldsymbol\omega\times\boldsymbol\mu\)
+ze stałym \(\boldsymbol\omega=-(q/m)\mathbf B_{\rm BMT}\), więc obrót jest
+wykonywany **wzorem Rodriguesa w dwóch symetrycznych półkrokach** — jest to
+rozwiązanie ścisłe, nie całkowanie numeryczne, dla dowolnej długości kroku.
+Zachowuje \(|\boldsymbol\mu_i|=(g/2)\mu_B\) z samej konstrukcji, bez
+renormalizacji.
 
 Niskoprędkościowym punktem odniesienia dla sprzężenia poruszającego się
 ładunku z poruszającym się dipolem drugiej cząstki jest człon lagrangianu
@@ -5342,43 +5352,138 @@ wstrzykiwała poprawkę tego samego rzędu co sam sygnał fizyczny — dokładni
 proporcjonalną do członu anomalnego `(g/2−1)`, stąd zero przy `g=2` i wzrost
 z anomalią/prędkością gdzie indziej.
 
-Naprawa: nowa `advanceThomasBmtDipole`/`properDipolePrecessionRate`
-([modules/electrodynamics.hpp](modules/electrodynamics.hpp)) omija
-czterowektor całkowicie. Zamiast tego: (1) rozwiń zmierzony dipol
-laboratoryjny (`lorentzBoostDipole` — ten sam tensorowy boost, którego
-`synchronizeCovariantDipoles` już używa do wyprowadzenia `state.firstDipole`
-wszędzie indziej w kodzie) z bieżącego `properDipole`; (2) policz jego
-tempo wprost ze wzoru Jacksona, `d(μ_lab)/dt=(q/m)μ_lab×B_eff`
-(`thomasBmtEffectiveField`) — czysta rotacja, więc dokładnie zachowuje normę
-`μ_lab` bez żadnej renormalizacji; (3) odwzoruj to tempo z powrotem na
-`properDipole` przez wyprowadzony w zamkniętej formie odwrotny boost —
-boost tensorowy skaluje czynnikiem γ **wyłącznie** składową prostopadłą do
-`v`, składowa równoległa przechodzi bez zmian, więc odwrotność to po prostu
-podzielenie części prostopadłej przez γ. Zweryfikowane niezależnie w
-Pythonie do precyzji maszynowej (`relerr~10⁻¹⁶`) na całym zakresie kroku
-czasowego, dla tego samego przypadku wysokiej anomalii/prędkości, który
-ujawnił błąd starej formuły.
+Naprawa (pierwsze podejście, **też błędna** — opis i korekta niżej): nowa
+`advanceThomasBmtDipole`/`properDipolePrecessionRate`
+([modules/electrodynamics.hpp](modules/electrodynamics.hpp)) omijała
+czterowektor całkowicie. Zamiast tego: (1) rozwiń dipol laboratoryjny
+(`lorentzBoostDipole`) z bieżącego `properDipole`; (2) policz jego tempo ze
+wzoru Jacksona zastosowanego do `μ_lab`; (3) odwzoruj tempo z powrotem na
+`properDipole` odwrotnym boostem w zamkniętej formie.
 
-RK4 po tym torze nie zachowuje dokładnie normy `properDipole` (obcięcie
-O(dt⁵), inaczej niż dla `μ_lab`, który jest chroniony samą strukturą
-rotacji) — zmierzone bezpośrednio: dryf normy dipola na pełnej trajektorii
-e⁺e⁻ skoczył z `4·10⁻¹⁴%` do `2,5·10⁻¹⁰%` bez renormalizacji, przekraczając
-próg samotestu `1·10⁻¹²`. Naprawione dodaniem tej samej jawnej
-renormalizacji `properDipole`, jakiej zawsze używała stara
-`advanceCovariantBmt` — po niej dryf wraca do `2,9·10⁻¹⁴%`, w granicach
-poprzedniego poziomu.
+**Korekta drugiego audytu: krok (2) stosował równanie Jacksona do
+niewłaściwego wektora.** Jackson (3. wyd., 11.170) definiuje `s` jako spin
+**w układzie spoczynkowym**; `state.firstProperDipole` *jest* tym momentem
+spoczynkowym ([modules/state.hpp](modules/state.hpp)), a `state.firstDipole`
+to dopiero jego boost. Równanie należało więc zastosować wprost do
+`properDipole`, bez żadnego boostu w żadną stronę. Złożenie
+`L⁻¹[L(μ)×B_eff]` nie jest rotacją `μ_proper`: zmierzone
+`μ_proper·dμ_proper/dt` było niezerowe na poziomie względnym `γ−1` —
+`2,3·10⁻⁵` przy β pozytonium, `4,3·10⁻³` przy β=0,1, `0,63` przy β=0,9 —
+**niezależnie od `g`**, więc w odróżnieniu od błędu czterowektorowego
+**nie znikało przy g=2**.
 
-Zweryfikowane: `positronium_validation` 33/33 dla e⁺e⁻ i p+e⁻ (test
-`role-routing`, jedyny bezpośrednio wołający starą funkcję, przełączony na
-nową). Diagnostyka `BMT vs eff field` (dodana wcześniej w tym samym audycie)
-spadła z `5,8·10⁻⁶`/`0,4538` do `2,2·10⁻¹⁶`/`1,7·10⁻¹⁶` (e⁺e⁻) i z `0,0032`
-do `0`/`1,7·10⁻¹⁶` (p+e⁻) — czyste zaokrąglenie maszynowe, dokładnie
-przewidziane przez niezależną weryfikację w Pythonie. `--diagnose` na pięciu
-ziarnach (e⁺e⁻ i p+e⁻) daje `trajectory: PASS` z dryfem normy dipola
-porównywalnym do stanu sprzed całej tej serii poprawek. `advanceCovariantBmt`
-pozostaje w kodzie (oznaczona `[[maybe_unused]]` w zwykłej kompilacji) —
-używana już tylko przez własne testy samospójności pod boostem w
-`maxwell_validation.hpp`, nie przez produkcję.
+Dryf normy, jaki to wytwarzało, był pochłaniany co krok przez renormalizację
+w `advanceThomasBmtDipole` i opisany tam jako obcięcie RK4 `O(dt⁵)`. To było
+błędne rozpoznanie: po usunięciu renormalizacji dryf **na jednostkę czasu
+jest stały**, `7,16·10⁸ 1/s`, płaski dla `dt` od `10⁻¹⁸` do `10⁻²²` (pięć
+dekad), podczas gdy człon `O(dt⁵)` spadałby `10⁴×` na dekadę. Był to dryf
+pierwszego rzędu, czyli człon fizycznej wielkości, a nie błąd numeryczny.
+Przy jednym `dt` obie rzeczy wyglądają identycznie — rozróżnia je dopiero
+skan po `dt`, którego sam próg dryfu normy wykonać nie mógł.
+
+Naprawa właściwa: `properDipolePrecessionRate` to teraz dosłownie
+
+\[
+\frac{d\boldsymbol\mu_{\rm proper}}{dt}
+=\frac{q}{m}\,\boldsymbol\mu_{\rm proper}\times\mathbf B_{\rm BMT},
+\]
+
+czyli iloczyn wektorowy z `thomasBmtEffectiveField` i nic więcej — bez
+czterowektora, bez boostu, bez projekcji. Jest to precesja z samej
+konstrukcji, więc zachowuje `|μ_proper|` dokładnie, tak jak norma momentu
+spoczynkowego zachowywać się musi. Renormalizacja w `advanceThomasBmtDipole`
+zostaje, ale teraz jest już wyłącznie ubezpieczeniem od rzeczywistego
+obcięcia RK4: bez niej dryf normy schodzi do `1,1·10⁻¹⁶` przy `dt=10⁻¹⁸` i do
+zera maszynowego niżej.
+
+**Test certyfikujący poprzednią „naprawę" był tautologią.** `BMT vs eff
+field` porównywał `d(state.firstDipole)/dt` z `μ_lab×B_eff` — dokładnie tę
+tożsamość, którą ówczesna implementacja była zbudowana spełniać. Zwracał
+zero maszynowe z konstrukcji i nie mógł zwrócić niczego innego; spadek
+`5,8·10⁻⁶ → 2,2·10⁻¹⁶` nie był potwierdzeniem poprawki. Sprawdzenie, którego
+podmiot i odniesienie są tym samym równaniem, nie mierzy niczego.
+
+Zastąpiony parą sond w [modules/maxwell_validation.hpp](modules/maxwell_validation.hpp):
+`BMT vs eff field` zostaje jako jawnie oznaczone sprawdzenie okablowania
+(łapie podmienione `g`, `q/m`, pole albo zepsute RK4 — nie wybór równania),
+a nowy, **bramkowany** test `bmt-precession-invariant` mierzy
+`|μ·dμ/dt|/(|μ||dμ/dt|)`, czyli ortogonalność tempa do momentu. To
+niezmiennik precesji, niezależny od tego, jaki wzór jest podpięty, więc
+zachowuje moc rozróżniającą po dowolnym przepisaniu sektora: dla trasy przez
+dipol laboratoryjny czytałby `4,3·10⁻³` (β=0,1) i `0,63` (β=0,9), dla
+poprawnej precesji czyta zero maszynowe.
+
+Zweryfikowane po korekcie: `positronium_validation` **38/38** (`bmt-precession-invariant`
+dodany do sekcji „algebraic identities"), `BMT precession: 0 / 0`,
+`BMT vs eff field: 0 / 0`. Niezależne potwierdzenie z testu, którego nie
+dotykano: residuum `covariant BMT` — mierzące kowariancję Lorentza ewolucji
+dipola przez `advanceCovariantBmt`, czyli zupełnie inne sformułowanie
+(czterowektorowe), zasilane polami z historii **ewoluowanych produkcyjnie** —
+spadło z `2,7568153·10⁻⁷` do `7,7877557·10⁻¹¹`, czyli 3540×. Gdyby zmiana
+szła w złą stronę, ta liczba by wzrosła. `--diagnose` (e⁺e⁻, seed 12345)
+daje `trajectory: PASS`, a trajektoria jest praktycznie nietknięta —
+zmiany na poziomie `10⁻⁹` względnie, zgodnie z oczekiwaniem: przy β≈0,0037
+pary e⁺e⁻ czynnik `γ−1≈6,7·10⁻⁶`, a kanał dipolowy jest i tak podrzędny.
+**Żaden opublikowany wynik e⁺e⁻ się nie zmienia**; poprawka ma znaczenie dla
+par relatywistycznych i wysoko-anomalnych (`--pair` z protonami, sondy β=0,9)
+oraz blisko kolapsu. `advanceCovariantBmt` pozostaje w kodzie (oznaczona
+`[[maybe_unused]]`), podobnie jak `inverseTensorBoostMagnetic`, której
+produkcja już nie używa — obie służą testom samospójności pod boostem w
+`maxwell_validation.hpp`.
+
+**Domknięcie: całkowanie zastąpione rozwiązaniem ścisłym.** Po naprawie
+zostało pytanie, skąd bierze się resztkowy dryf normy `μ_proper` na pełnej
+trajektorii (`max |mu| drift`, mierzony w `--diagnose` względem stałej
+`(g/2)·magneton`). Odpowiedź: nie z fizyki i nie z obcięcia RK4, lecz z samej
+**renormalizacji**. `advanceThomasBmtDipole` kończył się przeskalowaniem
+`result*(targetNorm/result.norm())`, czyli pierwiastkiem i dzieleniem w każdym
+podkroku; ich zaokrąglenia kumulują się przez ~10⁶ podkroków trajektorii
+szybciej niż zaokrąglenia samego obrotu.
+
+Ponieważ `applyDipolePrecession` zamraża prędkość i pole na czas całego
+wywołania, `B_eff` jest w podkroku **wektorem stałym**, więc równanie to
+\(\dot{\boldsymbol\mu}=\boldsymbol\omega\times\boldsymbol\mu\) ze stałym
+\(\boldsymbol\omega\), którego rozwiązaniem ścisłym jest sztywny obrót o kąt
+\(|\boldsymbol\omega|\,dt\). `advanceThomasBmtDipole` liczy teraz ten obrót
+wzorem Rodriguesa zamiast całkować go RK4. Zmierzone:
+
+| kąt kroku | RK4 + renormalizacja | wzór Rodriguesa |
+|---|---|---|
+| 10⁻⁵ rad (skala produkcyjna) | 1,49·10⁻¹³ | 1,49·10⁻¹³ |
+| 0,1 rad | 7,92·10⁻⁸ | 4,25·10⁻¹² |
+| 1 rad | 5,60·10⁻³ | 4,13·10⁻¹³ |
+| 2 rad | 1,00·10⁻¹ | 1,57·10⁻¹² |
+
+Przy kątach, które produkcja faktycznie wykonuje, obie metody są nierozróżnialne
+(obie na poziomie zaokrąglenia) — dawny komentarz twierdzący, że RK4 jest tu
+„dokładne niezależnie od długości kroku", był więc praktycznie prawdziwy, choć
+formalnie nie. Różnica pojawia się dopiero przy dużych kątach, gdzie RK4 myli
+się o 10%, a obrót pozostaje ścisły; to zapas bezpieczeństwa, nie bieżąca
+poprawka. Realne zyski są trzy:
+
+- `max |mu| drift` na trajektorii produkcyjnej: `2,55·10⁻¹²%` → `1,73·10⁻¹²%`
+  (1,47×). Skromnie, bo w produkcji renormalizacja nie jest jedynym źródłem
+  zaokrągleń; w długim teście syntetycznym (2·10⁶ kroków) różnica to 15×
+  (`4,24·10⁻¹¹` → `2,79·10⁻¹²`).
+- Koszt: **2,1× szybciej** (2·10⁷ wywołań: 4,79 s → 2,25 s) — jedno wyliczenie
+  `thomasBmtEffectiveField` zamiast czterech, bez pierwiastka i dzielenia
+  renormalizacji.
+- Najważniejsze, strukturalnie: **norma jest zachowana z konstrukcji, a nie
+  naprawiana.** Renormalizacja była dokładnie tym, co ukryło pierwotny błąd —
+  pochłaniała co krok człon pierwszego rzędu. Bez niej każdy przyszły defekt
+  strukturalny w tym sektorze musi ujawnić się jako dryf, zamiast zostać po
+  cichu usunięty.
+
+`properDipolePrecessionRate` zostaje (`[[maybe_unused]]`) jako **specyfikacja**
+tego, co obrót ma rozwiązywać, i to ona jest podmiotem testów. Dzięki temu
+`BMT vs eff field` przestał być tautologią: porównuje teraz rozwiązanie
+zamknięte z numerycznym scałkowaniem specyfikacji przez 0,1 rad (4096
+podkroków RK4), co wychwyci błędną oś obrotu, przekręcony znak albo zgubiony
+czynnik — czego wariant różnicowy pierwszego rzędu wychwycić nie mógł, bo brał
+krok tak krótki, że obie strony zgadzały się trywialnie. Zmierzone
+`2,36·10⁻¹⁵`. Dołożony `BMT norm (2 rad)`: 64 obroty po 2 rad, bez żadnej
+renormalizacji, dryf `1,33·10⁻¹⁵`. Oba wchodzą do bramki
+`bmt-precession-invariant`.
 
 **Ostatnie znalezisko tego samego audytu, teraz zmierzone.** Pole
 ładunek-ładunek (`lienardWiechertField`) interpoluje historię retardowaną

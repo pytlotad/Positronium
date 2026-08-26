@@ -1649,9 +1649,17 @@ FourVector electromagneticTensorAction(const ElectromagneticField& field,
 // component PERPENDICULAR to velocity by gamma; the component PARALLEL to
 // velocity passes through unchanged.  Verified by direct expansion of
 // lorentzBoostDipole's magnetic branch (README's "audyt fizyki" BMT
-// section).  This closed form is what makes properDipolePrecessionRate
-// below exact rather than needing to invert the boost numerically.
-Vec3 inverseTensorBoostMagnetic(const Vec3& labVector,const Vec3& velocity) {
+// section).
+//
+// Nothing calls this any more.  properDipolePrecessionRate below used to
+// route Jackson's rate through this inverse boost, and that routing was
+// exactly the bug (see its comment); with the rate applied to the rest-frame
+// moment directly, no inverse boost is needed anywhere.  Kept, rather than
+// deleted, only because the gamma-perpendicular/unity-parallel property it
+// states is what makes synchronizeCovariantDipoles's forward boost readable,
+// and it is the cheapest place to record it.  Delete it freely if that stops
+// being worth a function.
+[[maybe_unused]] Vec3 inverseTensorBoostMagnetic(const Vec3& labVector,const Vec3& velocity) {
     const double speedSquared=velocity.squaredNorm();
     if(!(speedSquared>0.0)) return labVector;
     const Vec3 axis=velocity*(1.0/std::sqrt(speedSquared));
@@ -1660,70 +1668,110 @@ Vec3 inverseTensorBoostMagnetic(const Vec3& labVector,const Vec3& velocity) {
     return (labVector-parallelPart)*(1.0/gamma(velocity))+parallelPart;
 }
 
-// Rate of change of the PROPER (rest-frame) dipole that makes the
-// OBSERVABLE lab dipole -- state.firstDipole/secondDipole, exactly what
-// synchronizeCovariantDipoles's tensor boost produces from properDipole --
-// precess at Jackson's textbook Thomas-BMT rate d(mu_lab)/dt=(q/m) mu_lab x
-// B_eff (thomasBmtEffectiveField), instead of advanceCovariantBmt's
-// four-vector route.  Audit finding (README's "audyt fizyki" section):
-// advanceCovariantBmt's final projection, needed because a.u=0 is not
-// preserved when u is held frozen for a sub-step (as it always is here --
-// applyDipolePrecession below is called twice per full step, each time with
-// velocity fixed for that half), was injecting a spurious correction of the
-// SAME order as the genuine precession itself whenever the anomalous
-// (g/2-1) term is active -- exactly zero at g=2 (matching the exact
-// agreement measured there), growing with both the anomaly and beta
-// otherwise (up to 45% for a proton at beta=0.9).  This route sidesteps
-// that: it advances the LAB dipole via a literal rotation (which conserves
-// its norm exactly, without any renormalization hack), then maps the rate
-// back onto properDipole through the closed-form inverse boost above, so
-// the stored proper value stays correct for the NEXT
-// synchronizeCovariantDipoles call once velocity has moved on.  Verified
-// independently to machine precision (1e-16 relative) against Jackson's
-// rate at every tested step size, for the same high-anomaly/high-beta case
-// that exposed the old formula's gap.
-Vec3 properDipolePrecessionRate(const Vec3& properDipole,const Vec3& velocity,
+// Rate of change of the PROPER (rest-frame) dipole, which is what Jackson's
+// Thomas-BMT equation governs:
+//
+//     d(mu_proper)/dt = (q/m) mu_proper x B_eff,   B_eff as in 11.170,
+//
+// with B_eff supplied by thomasBmtEffectiveField and t the LABORATORY time.
+// Jackson 11.170 states the equation for the rest-frame spin s; mu_proper is
+// (g q / 2m) s with all three factors constant, so it obeys the same
+// equation.  state.firstProperDipole/secondProperDipole ARE that rest-frame
+// moment (see state.hpp), so the rate applies to them directly and nothing
+// needs boosting either way.
+//
+// Two earlier routes are gone, for two different reasons.
+//
+// advanceCovariantBmt's four-vector route: its final projection, needed
+// because a.u=0 is not preserved when u is held frozen for a sub-step (as it
+// always is here -- applyDipolePrecession below is called twice per full
+// step, each time with velocity fixed for that half), injected a spurious
+// correction of the SAME order as the genuine precession whenever the
+// anomalous (g/2-1) term is active: exactly zero at g=2, growing with both
+// the anomaly and beta otherwise (up to 45% for a proton at beta=0.9).
+//
+// Its replacement then over-corrected in the other direction: it expanded
+// mu_proper into the LAB dipole, applied Jackson's rate to THAT, and mapped
+// the result back through inverseTensorBoostMagnetic above.  Jackson's mu is
+// the rest-frame moment, not the lab one, so that composition L^-1[L(mu) x
+// B_eff] is not a rotation of mu_proper at all: mu_proper.d(mu_proper)/dt
+// came out non-zero at the relative level gamma-1 (2.3e-5 at positronium's
+// own beta, 4.3e-3 at beta=0.1, 0.63 at beta=0.9), independent of g -- so
+// unlike the four-vector bug it did NOT vanish at g=2.  The norm drift it
+// produced was absorbed step by step by advanceThomasBmtDipole's
+// renormalization and misread there as RK4 truncation; measured with the
+// renormalization removed, the drift per unit time is CONSTANT at 7.16e8/s
+// across dt from 1e-18 down to 1e-22, i.e. first order in dt, where an
+// O(dt^5) truncation term would fall by 1e4 per decade.
+//
+// The form below is a literal cross product, so it is a pure precession by
+// construction: it conserves |mu_proper| exactly, as a rest-frame moment's
+// magnitude must be conserved under precession in ANY frame, and it needs no
+// inverse boost, no four-vector and no projection.
+// Not called by production any more -- advanceThomasBmtDipole below solves
+// this equation in closed form rather than integrating it.  It remains the
+// SPECIFICATION of what that closed form must solve, and the validation
+// suite checks the solver against it, so it is deliberately kept rather
+// than folded into the solver.
+[[maybe_unused]] Vec3 properDipolePrecessionRate(const Vec3& properDipole,const Vec3& velocity,
                                 const ElectromagneticField& field,
                                 double chargeToMass,double gFactor) {
-    const Vec3 labDipole=lorentzBoostDipole(
-        {{},properDipole},velocity).magnetic;
-    const Vec3 effectiveField=
-        thomasBmtEffectiveField(velocity,field,gFactor);
-    const Vec3 labRate=cross(labDipole,effectiveField)*chargeToMass;
-    return inverseTensorBoostMagnetic(labRate,velocity);
+    return cross(properDipole,
+                 thomasBmtEffectiveField(velocity,field,gFactor))
+        *chargeToMass;
 }
 
-// RK4 on properDipolePrecessionRate.  Velocity and field are held fixed
-// across the sub-step (same convention the old advanceCovariantBmt used),
-// which makes the rate a LINEAR function of properDipole, so RK4 integrates
-// it exactly up to floating-point round-off regardless of step size.
-// The exact continuous solution conserves the proper dipole's own norm too
-// (precession alone cannot change a magnetic moment's magnitude in ANY
-// frame), but RK4's O(dt^5) local truncation error does not respect that
-// invariant step by step, and unlike the old four-vector route (which
-// explicitly renormalized its result) this one did not -- measured
-// directly: max |mu| drift over a full production e+e- trajectory grew
-// from 4e-14% to 2.5e-10%, four orders of magnitude worse, tripping the
-// 1e-12 dipole-norm-drift guard in the diagnose self-test.  Renormalizing
-// here, the same way advanceCovariantBmt always did, restores it (see
-// README's "audyt fizyki" section for the measured before/after).
+// Closed-form solution of the precession over the sub-step, not a numerical
+// integration of it.
+//
+// applyDipolePrecession holds velocity and field fixed for the whole call
+// (two half-steps per full step, each at the velocity current for that
+// half), so B_eff = thomasBmtEffectiveField(v,field,g) is a CONSTANT vector
+// here.  The equation is then d(mu)/dt = omega x mu with a fixed
+// omega = -(q/m) B_eff, whose exact solution is a rigid rotation of mu about
+// omega by the angle |omega|*dt.  Rodrigues' formula gives that rotation
+// directly, for any step size, with no truncation of any order.
+//
+// This replaces an RK4 pass followed by an explicit renormalization.  RK4's
+// own truncation was never the problem -- at the step angles production
+// actually takes (|omega|*dt ~ 2e-5 rad) its O(theta^5) error sits below
+// round-off, measured identical to the closed form to 1e-16 -- but the
+// renormalization that followed it was, for two reasons.
+//
+// Round-off: rescaling by targetNorm/result.norm() costs a sqrt and a
+// division every sub-step, and their round-off accumulates over the ~1e6
+// sub-steps of a trajectory faster than the rotation's own does.  Measured
+// over 2e6 steps at production parameters: max |mu| drift 4.24e-11 for
+// RK4-plus-rescale against 2.79e-12 for the rotation below, a factor of 15.
+//
+// Structure, which matters more.  A rescale REPAIRS the norm, and a repair
+// is indistinguishable from there being nothing to repair.  That is exactly
+// how this sector's previous bug hid: while properDipolePrecessionRate
+// routed the rate through the lab dipole it was not a rotation of
+// properDipole at all, and the rescale silently absorbed a first-order,
+// physical-size error every step (see that function's comment).  A rotation
+// conserves the norm BY CONSTRUCTION, so nothing is left that could mask a
+// future structural defect: any such defect now has to show up as drift
+// instead of being quietly removed.  The validation suite's
+// bmt-precession-invariant check guards the same property from the other
+// side.
 Vec3 advanceThomasBmtDipole(const Vec3& properDipole,const Vec3& velocity,
                             const ElectromagneticField& field,
                             double chargeToMass,double laboratoryDt,
                             double gFactor) {
     if(laboratoryDt==0.0) return properDipole;
-    const double targetNorm=properDipole.norm();
-    const auto derivative=[&](const Vec3& value) {
-        return properDipolePrecessionRate(
-            value,velocity,field,chargeToMass,gFactor);
-    };
-    const Vec3 k1=derivative(properDipole);
-    const Vec3 k2=derivative(properDipole+k1*(0.5*laboratoryDt));
-    const Vec3 k3=derivative(properDipole+k2*(0.5*laboratoryDt));
-    const Vec3 k4=derivative(properDipole+k3*laboratoryDt);
-    const Vec3 result=
-        properDipole+(k1+k2*2.0+k3*2.0+k4)*(laboratoryDt/6.0);
-    return result.norm()>0.0 ? result*(targetNorm/result.norm()) : result;
+    // Angular velocity of the precession.  d(mu)/dt = (q/m) mu x B_eff is
+    // omega x mu with omega = -(q/m) B_eff; the sign lives here so that the
+    // rotation below is a rotation about omega in the usual sense.
+    const Vec3 angularVelocity=
+        thomasBmtEffectiveField(velocity,field,gFactor)*(-chargeToMass);
+    const double angularSpeed=angularVelocity.norm();
+    if(!(angularSpeed>0.0)) return properDipole;
+    const Vec3 axis=angularVelocity/angularSpeed;
+    const double angle=angularSpeed*laboratoryDt;
+    const double cosine=std::cos(angle),sine=std::sin(angle);
+    return properDipole*cosine+cross(axis,properDipole)*sine
+        +axis*(dot(axis,properDipole)*(1.0-cosine));
 }
 
 void applyDipolePrecession(State& s, double dt,
