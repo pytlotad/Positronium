@@ -2383,6 +2383,69 @@ sekularną (hazard mechanicznej to \(\sim5{,}5\cdot10^{-5}\) na obieg, a
 przebieg `--mode 2` z instrumentacją w tym miejscu zanotował **zero
 wywołań**).
 
+#### Tryb wzbudzony: `--level n` i kaskada po drabinie Bohra
+
+Pomiar, który ten tryb uzasadnia. Na drabinie Bohra sufit kinematyczny emisji
+przez chwilowe kopnięcie wynosi **dokładnie**
+
+\[
+\frac{\hbar\omega}{E_{\rm kin}}=\frac{2}{n}
+\]
+
+(z twierdzenia o wiriale energia kinetyczna orbity kołowej równa się energii
+wiązania), więc foton \(\hbar\omega\) nie mieści się przy \(n=1\) ani
+\(n=2\), a mieści się od \(n=3\) w górę. Zmierzone w produkcji: model nigdy
+nie opuszcza \(n\le1{,}09\) — 115 próbek z przebiegów związanych daje
+\(n_{\rm eff}\in[0{,}184;\,1{,}090]\), a zjawiska niezwiązane (zderzenie,
+rozpraszanie) nie dają stanów związanych w ogóle: **zero próbek z
+\(n\ge2\)** w którymkolwiek z czterech zjawisk.
+
+Stąd dwa wnioski. Sufit kinematyczny nie jest przypadkiem brzegowym, tylko
+obowiązuje w **całej** dotychczasowej dziedzinie modelu. I różnica poziomów
+nie miałaby tam na czym działać — dlatego wariant hybrydowy dostaje sens
+dopiero razem z przygotowaniem pary wyżej na drabinie.
+
+`--level n` przygotowuje parę na \(a_n=n^2a_{\rm pary}\). Pasmo prędkości
+stycznej jest podawane w jednostkach prędkości kołowej **przy tej
+separacji**, więc rozrzut \(L/(n\hbar)\) pozostaje niezmieniony i przesuwa
+się wyłącznie poziom. Energia fotonu podąża wtedy za **odstępem poziomów**
+\(\Delta E(n\to n-1)\), dopóki \(n\ge2\), a poniżej wraca do
+\(\hbar\omega\).
+
+To rozróżnienie ma znaczenie tylko przy małych \(n\): zmierzone
+\(\Delta E/\hbar\omega\) wynosi \(1{,}0152\) przy \(n=100\),
+\(1{,}0523\) przy \(n=30\), \(1{,}1728\) przy \(n=10\), ale **3,0000**
+przy \(n=2\) — czyli zasada korespondencji działa asymptotycznie, a przy
+dnie drabiny \(\hbar\omega\) myli się trzykrotnie.
+
+Sprawdzone przeciw wzorowi analitycznemu
+\(\Delta E/\hbar\omega=n(2n-1)/(2(n-1)^2)\):
+
+| `--level` | \(n\) startowe | zmierzone | wzór |
+|---|---|---|---|
+| 2 | 2,0994 | 2,778 | 2,778 |
+| 3 | 3,1492 | 1,806 | 1,806 |
+
+Kaskada faktycznie schodzi przez drabinę: przy `--level 2` szesnaście
+kolejnych emisji korzysta z \(\Delta E\), po czym orbita spada poniżej
+\(n=2\) i pozostałe pięćdziesiąt jeden wraca do \(\hbar\omega\); przy
+`--level 3` jest to odpowiednio 53 i 25.
+
+**Czego ten tryb nie robi.** Nie kwantyzuje energii orbitalnej —
+\(\Delta E\) jest liczone przy **ciągłym** \(n\), więc po emisji para nie
+ląduje dokładnie na niższym poziomie. Pełna kwantyzacja byłaby inną zmianą,
+która przy domyślnym \(n=1\) zabroniłaby emisji orbitalnej w ogóle, a więc
+usunęłaby z modelu badany kolaps.
+
+**Koszt.** Czas kolapsu skaluje się jak \(a^3\), czyli \(n^6\): `--level 3`
+jest około \(729\times\) dłuższy niż domyślny, a `--level 8` około
+\(2{,}6\cdot10^5\times\) — przy standardowym budżecie wszystkie trajektorie
+wychodzą ocenzurowane. Startowy komunikat podaje ten mnożnik i przypomina o
+`--crem-wallclock-budget-s`.
+
+`--level 1` jest domyślne i **bit-identyczne** z zachowaniem sprzed tej
+zmiany, co jest sprawdzane przez porównanie `--diagnose` z budową HEAD.
+
 #### Skala hazardu w stanie podstawowym wobec czasu życia para-Ps
 
 Wielkość zmierzona przy okazji analizy progów i warta utrwalenia, bo nie
@@ -5286,6 +5349,7 @@ Pięć opcji sterują samą fizyką i kosztem eksperymentów związanych:
 | --- | --- | --- |
 | `--zpf`, `--zpf-band` | `0` (wyłączone) | **Eksperyment, nie część modelu.** Klasyczne pole punktu zerowego elektrodynamiki stochastycznej: losowe fale płaskie o widmie \(\rho(\omega)=\hbar\omega^3/2\pi^2c^3\), 64 mody o równej energii, orientacje i fazy z ziarna `--seed`. `--zpf` skaluje **amplitudę** (1 = poziom fizyczny, moc pochłaniana rośnie jak kwadrat), `--zpf-band lo,hi` ustala pasmo w jednostkach częstości orbitalnej pary (domyślnie `0.3,3`). To jest fluktuacyjna połowa pary fluktuacja–dyssypacja; dyssypacyjną, czyli reakcję promieniowania, model ma od zawsze. Wchodzi w te same trzy miejsca co pole jednorodne, ale próbkowane osobno dla każdej cząstki, bo zależy od położenia i czasu. **Nie odtwarza stanu podstawowego SED — patrz niżej.** |
 | `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
+| `--level` | `1` | **Tryb wzbudzony.** Główna liczba kwantowa, na której przygotowywana jest para związana: \(a_n=n^2a_{\rm pary}\), pasmo prędkości stycznej niezmienione względem prędkości kołowej przy tej separacji. Energia fotonu podąża wtedy za odstępem poziomów \(\Delta E(n\to n-1)\), dopóki \(n\ge2\), a poniżej wraca do \(\hbar\omega\). Czas kolapsu rośnie jak \(n^6\), więc dla \(n\ge3\) trzeba podnieść `--crem-wallclock-budget-s`. Wartość `1` jest bit-identyczna z zachowaniem sprzed wprowadzenia opcji. Patrz „Tryb wzbudzony" wyżej. |
 | `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
 | `--radiation-reaction` | `stochastic` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki), `automatic` (mieszanka obu) albo `stochastic` (domyślny od tego miejsca w historii projektu — kwantowane, Poissonowskie kopnięcia fotonowe zamiast ciągłego hamowania, patrz niżej). **Każda liczba czasu kolapsu cytowana wcześniej w tym README (rzędu 36-40 ps dla e⁺e⁻) została zmierzona pod `individual`, nie pod obecnym domyślnym `stochastic`** — żeby je odtworzyć, trzeba dziś podać `--radiation-reaction individual` jawnie. Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
 | `--beam-energy-sigma-ev` | `0` (wyłączone) | **Tylko eksperymenty 3, 4.** Odchylenie standardowe rozkładu Gaussa, z którego próbkowana jest energia środka masy \(K_{CM}\) każdego zdarzenia wiązki, wokół `--beam-energy-ev`; `0` zachowuje dotychczasową, monochromatyczną wiązkę bit w bit. Próbkowanie odrzuca wyniki \(\le 0\) (do 1000 prób, jak `sampleKinetic` eksperymentu 5), a widmo strat energii liczy się względem faktycznie wylosowanej energii zdarzenia, nie ustalonej średniej. Modeluje skończoną rozdzielczość energetyczną realnej wiązki kosztem rozmycia porównania z formułą Rutherforda, która jest zdefiniowana przy jednym \(K_{CM}\). |

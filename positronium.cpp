@@ -1099,6 +1099,28 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 [[maybe_unused]] ChargeRadiationReactionModel gRadiationReactionModel =
     ChargeRadiationReactionModel::stochasticElectricDipole;
 
+// Principal level the bound scenarios are PREPARED on.  One is the historical
+// behaviour and the default: the pair starts at the pair Bohr radius, which
+// is the L = hbar orbit, and every committed result in this repository was
+// produced there.
+//
+// Raising it exists because of a measurement.  On the Bohr ladder the
+// instantaneous-kick emission ceiling is exactly
+//
+//     hbar*omega / E_kinetic = 2/n
+//
+// (virial: a circular orbit's kinetic energy is its binding energy), so a
+// photon of hbar*omega cannot be paid for at n=1 or n=2 and fits from n=3 up.
+// Measured across all four phenomena, the model never leaves n <= 1.09 --
+// which is why that ceiling covers its whole operating range, and why the
+// level-difference photon energy below has nothing to act on at the default.
+// Preparing the pair higher up the ladder is what gives both a domain.
+//
+// a_n = n^2 a_pair and the tangential band is quoted in units of the circular
+// speed AT that separation, so the sampled spread in L/(n hbar) is unchanged
+// and only the level moves.
+inline int gInitialPrincipalLevel = 1;
+
 #include "modules/crem_engine.hpp"
 
 
@@ -5708,6 +5730,14 @@ int main(int argc, char** argv) {
             } else if (argument == "--no-gui") {
                 // Retained for command-line compatibility. Statistical mode
                 // is always batch-only and never opens a window.
+            } else if (argument == "--level") {
+                const std::string value = requireValue(argument);
+                const int level = std::stoi(value);
+                if (level < 1 || level > 1000) {
+                    throw std::invalid_argument(
+                        "--level must be a principal quantum number in [1,1000]");
+                }
+                gInitialPrincipalLevel = level;
             } else if (argument == "--pair") {
                 applyPairFromOption(requireValue(argument));
             } else if (argument == "--seed") {
@@ -5933,6 +5963,24 @@ int main(int argc, char** argv) {
                   << pairReducedMass/electronMass << " m_e, Bohr radius "
                   << pairBohrRadius(activePair)/bohrRadius << " a0, binding "
                   << pairBindingEnergy(activePair)/eCharge << " eV).\n";
+        if (gInitialPrincipalLevel != 1) {
+            const double levelSquared =
+                static_cast<double>(gInitialPrincipalLevel)
+                * static_cast<double>(gInitialPrincipalLevel);
+            std::cout << "Initial principal level: n = "
+                      << gInitialPrincipalLevel
+                      << " (a_n = " << levelSquared << " a_pair = "
+                      << levelSquared*pairBohrRadius(activePair)*1.0e12
+                      << " pm, binding "
+                      << pairBindingEnergy(activePair)/levelSquared/eCharge
+                      << " eV).  Photon energy follows the level spacing "
+                         "dE(n->n-1) while n >= 2 and reverts to hbar*omega "
+                         "below, where the ladder has no lower rung.\n"
+                      << "  Collapse time scales as a^3, so this run is about "
+                      << levelSquared*levelSquared*levelSquared
+                      << "x longer than --level 1; raise "
+                         "--crem-wallclock-budget-s accordingly.\n";
+        }
     }
     if (selectedMode == 0) {
         std::cout << "Choose simulation mode:\n"

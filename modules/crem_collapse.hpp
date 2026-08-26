@@ -1531,7 +1531,41 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // omega0*(u(n)/u0)^1.5 -- verified against brute-force
             // numerical quadrature to 1e-12 relative across the full
             // jumpParameter range this code ever produces (see README).
-            const double photonEnergyReference=hbar*(2.0*pi/period);
+            // Photon energy: the LEVEL DIFFERENCE where the Bohr ladder has
+            // a rung below, and hbar*omega where it has not.
+            //
+            // hbar*omega is the correspondence-principle value and it is the
+            // right one asymptotically -- measured, dE(n->n-1)/hbar*omega is
+            // 1.0152 at n=100, 1.0523 at n=30, 1.1728 at n=10 -- but it is
+            // wrong by a factor of three at n=2, where the ladder's spacing is
+            // nothing like the local orbital frequency.  Using the spacing
+            // itself is what the emission physically is: the pair drops a
+            // level and the photon carries what the drop released.
+            //
+            // Below n=2 there is no lower rung and the expression would
+            // diverge as n->1, so the fallback is the historical hbar*omega.
+            // That is not a patch over an awkward limit: the model's own
+            // domain sits at n<=1.09 (measured across all four phenomena),
+            // i.e. AT or BELOW the ground state, where a level difference is
+            // not defined at all and the classical continuum is the only
+            // description available.  The default --level 1 therefore never
+            // reaches this branch and is bit-identical to before.
+            const double photonEnergyReference=[&]{
+                const double classical=hbar*(2.0*pi/period);
+                const double bindingScale=pairBindingEnergy(activePair);
+                const double orbitalEnergy=
+                    reducedMass*std::abs(elements.specificEnergy);
+                if(!(orbitalEnergy>0.0)||!(bindingScale>0.0)) return classical;
+                const double level=std::sqrt(bindingScale/orbitalEnergy);
+                if(!(level>=2.0)) return classical;
+                // R(1/(n-1)^2 - 1/n^2), finite for every n >= 2 (0.75 R at
+                // n=2 and falling), evaluated at the continuous level rather
+                // than snapped to an integer: the orbital energy here is a
+                // continuum, and pretending otherwise would quantize the
+                // dynamics, which this mode deliberately does not do.
+                const double lower=level-1.0;
+                return bindingScale*(1.0/(lower*lower)-1.0/(level*level));
+            }();
             // CREM_HARMONIC: see eccentricOrbitHazardSuppression's own
             // comment for the full derivation.  hazardReference (NOT
             // photonEnergyReference itself) drives the skip-hazard
