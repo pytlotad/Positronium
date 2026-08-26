@@ -394,13 +394,38 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
         elapsedTime = s.time;
         finalRadiatedEnergy = s.radiatedEnergy;
 
-        // Bank this step's classical E1 dipole power as hazard instead of
-        // removing it as a continuous force (that gate already sits in
-        // particleMultipoleRadiation -- this model's chargeReaction is zero
-        // there).  photonEnergy = hbar*omega uses the SAME instantaneous
-        // orbital frequency already computed above for step sizing: the
-        // natural, already-established characteristic frequency of this
-        // orbit, not a new definition invented for this mode.
+        // Bank this step's TOTAL classical radiated power as hazard instead
+        // of removing any of it as a continuous force.  One photon stream
+        // carries every channel: the E1 charge power and the M1 magnetic
+        // dipole power are summed before the division, so nothing in this
+        // mode radiates continuously.  The charge sector's gate sits in
+        // particleMultipoleRadiation (chargeReaction is zero there); the
+        // magnetic sector's two continuous sinks -- the reaction torque and
+        // the dipoleConstraintEnergy drain -- are gated in
+        // integrateElectrodynamicStep, or the M1 energy would leave both
+        // continuously and as photons.
+        //
+        // photonEnergy = hbar*omega uses the SAME instantaneous orbital
+        // frequency already computed above for step sizing: the natural,
+        // already-established characteristic frequency of this orbit, not a
+        // new definition invented for this mode.  Applying it to the M1
+        // power too is the deliberate cost of a single unified channel: M1
+        // is actually emitted near the spin-precession rate, which is
+        // roughly four orders of magnitude BELOW omega_orb here, so its
+        // quanta come out fewer and individually larger than that rate
+        // would give.  What this does NOT change is the mean radiated
+        // energy: the hazard rate is P/(hbar*omega) and each photon removes
+        // hbar*omega, so the expected energy per unit time is P for ANY
+        // choice of omega.  Only the granularity and the shot statistics
+        // depend on it.
+        //
+        // The secular estimator in crem_collapse.hpp stays E1-only, and
+        // cannot be otherwise: it integrates the hazard analytically across
+        // skipped orbits from the osculating elements alone, which carry no
+        // spin state for an M1 power to be reconstructed from.  That is not
+        // a gap in practice -- the bound phenomena that path runs measure
+        // M1 identically zero, because the pair's two moments enter the
+        // coherent M1 amplitude as m1+m2 and cancel.
         if(reactionModel==ChargeRadiationReactionModel::stochasticElectricDipole) {
             const MutualForces stepForces=
                 retardedExternalForces(s,trajectory.history());
@@ -409,8 +434,10 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                     false,reactionModel);
             const double photonEnergy=hbar*omega;
             if(photonEnergy>0.0) {
-                stochasticHazard+=
-                    stepRadiation.leadingElectricDipolePower/photonEnergy*dt;
+                const double quantizedPower=
+                    stepRadiation.leadingElectricDipolePower
+                    +stepRadiation.magneticDipoleFlux.energy;
+                stochasticHazard+=quantizedPower/photonEnergy*dt;
                 // A while, not an if: a fast step near periapsis can bank
                 // more than one photon's worth of hazard at once.
                 while(stochasticHazard>=stochasticThreshold) {

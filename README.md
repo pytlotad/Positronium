@@ -2154,7 +2154,9 @@ Liénarda–Wiecherta drugiego ładunku. Precesja jest opisana relatywistycznym
 równaniem Thomasa–BMT. W czasie laboratoryjnym ma ono postać
 
 Promieniowanie zmiennego momentu jest księgowane z mocą
-\(P_\mu=\mu_0|\ddot{\boldsymbol\mu}|^2/(6\pi c^3)\). Odpowiadający mu
+\(P_\mu=\mu_0|\ddot{\boldsymbol\mu}|^2/(6\pi c^3)\). W trybie
+`--radiation-reaction stochastic` (domyślnym) ta moc **nie jest** odprowadzana
+w sposób ciągły — patrz „Kwantyzacja wszystkich kanałów" niżej. Odpowiadający mu
 moment reakcyjny jest wyznaczany z \(\boldsymbol\mu\times
 \dddot{\boldsymbol\mu}\), działa na orientację dipola, a energia jest
 jednocześnie przenoszona z sektora wewnętrznego do energii promieniowania.
@@ -2193,6 +2195,68 @@ wykonywany **wzorem Rodriguesa w dwóch symetrycznych półkrokach** — jest to
 rozwiązanie ścisłe, nie całkowanie numeryczne, dla dowolnej długości kroku.
 Zachowuje \(|\boldsymbol\mu_i|=(g/2)\mu_B\) z samej konstrukcji, bez
 renormalizacji.
+
+### Kwantyzacja wszystkich kanałów promieniowania
+
+W trybie `stochastic` (domyślnym, `gRadiationReactionModel`) **żaden** kanał
+promieniowania nie odprowadza energii w sposób ciągły. Cała moc klasyczna —
+sektor ładunkowy E1 **oraz** magnetyczny dipol M1 — jest sumowana i bankowana
+jako jeden strumień hazardu Poissona, wypłacany dyskretnymi kwantami
+\(\hbar\omega\):
+
+\[
+\frac{d\Lambda}{dt}=\frac{P_{E1}+P_{M1}}{\hbar\omega_{\rm orb}} .
+\]
+
+Wcześniej skwantowany był wyłącznie E1. M1 miał **dwa** ujścia ciągłe, w
+dodatku bez żadnej bramki na model reakcji: moment siły reakcyjnej
+(`applyDipoleRadiationTorque`) oraz drenaż wewnętrznego rezerwuaru
+(`dipoleConstraintEnergy`). Oba są teraz wyłączane w trybie skwantowanym —
+inaczej energia M1 wychodziłaby dwa razy, raz ciągle i raz jako fotony.
+
+Wspólna częstość \(\omega_{\rm orb}\) to świadomy koszt jednego kanału: M1
+jest w rzeczywistości emitowany blisko tempa precesji spinu, o kilka rzędów
+**niższego** niż \(\omega_{\rm orb}\), więc jego kwanty wychodzą rzadsze i
+większe, niż dałoby tamto tempo. Nie zmienia to jednak **średniej** energii
+wypromieniowanej: tempo hazardu wynosi \(P/\hbar\omega\), a każdy foton unosi
+\(\hbar\omega\), więc oczekiwana energia na jednostkę czasu równa się \(P\)
+dla **dowolnego** \(\omega\). Od wyboru zależy tylko ziarnistość i statystyka
+zliczeń.
+
+Konsekwencja, którą trzeba wypowiedzieć wprost: energia M1 opuszcza teraz układ
+przez orbitalny odrzut fotonu, a nie przez tłumienie sektora spinowego. Przy
+zmierzonych udziałach M1 (poniżej) jest to praktycznie nieobserwowalne, ale jest
+to realna zmiana drogi przepływu energii.
+
+`radiatedEnergy` pozostaje **ciągłą** całką Poyntinga i pełni rolę diagnostyki
+porównawczej, nie sumy wyemitowanych kwantów — tak jak dla E1 od początku.
+
+Zmierzone udziały M1 w hazardzie (seed 12345): ortopozytonium \(1{,}5\cdot10^{-24}\)
+(przy zewnętrznym polu \(10^9\,\mu\)T rośnie do \(1{,}7\cdot10^{-14}\), co
+potwierdza, że kanał jest podpięty i reaguje na wymuszenie precesji), zderzenie
+czołowe \(6{,}0\cdot10^{-5}\). M1 jest więc wszędzie kanałem marginalnym.
+
+Sprostowanie wcześniejszego zapisu: „zderzenie czołowe promieniuje w 100%
+kanałem M1" było **artefaktem przyczynowości**, nie własnością fizyczną.
+`radiatedEnergy` zbiera strumień z powierzchni kontrolnej oddalonej o
+\(1{,}8\cdot10^{-13}\) s świetlnych, a ten przebieg trwa \(3{,}3\cdot10^{-17}\) s
+— front E1 po prostu jeszcze tam nie dotarł, podczas gdy moc M1 jest liczona
+natychmiastowo. Chwilowe moce dają M1/E1 = \(6\cdot10^{-5}\).
+
+Estymator sekularny w `crem_collapse.hpp` pozostaje E1-only i inaczej być nie
+może: całkuje hazard analitycznie przez pomijane orbity, mając do dyspozycji
+wyłącznie elementy oskulacyjne, w których nie ma stanu spinowego pozwalającego
+odtworzyć moc M1. W praktyce nie jest to luka — stany związane, które ta
+ścieżka liczy, mają M1 dokładnie zero, bo oba momenty wchodzą do koherentnej
+amplitudy M1 jako \(\mathbf m_1+\mathbf m_2\) i się znoszą.
+
+Bramka regresyjna `quantized-radiation-drain` pilnuje tego wprost: w trybie
+skwantowanym ciągła siła reakcji ładunku i drenaż rezerwuaru dipolowego muszą
+być **dokładnie** zerowe. Test ma moc rozróżniającą — na budowie z przywróconym
+ciągłym drenażem M1 czyta \(3{,}19\cdot10^{-13}\) i oblewa. Wcześniej żaden
+wymuszany test nie wykonywał w ogóle ścieżki stochastycznej, więc pomyłka w
+bramkowaniu (albo jej brak, czyli podwójne liczenie energii kanału) była
+niewidoczna.
 
 Niskoprędkościowym punktem odniesienia dla sprzężenia poruszającego się
 ładunku z poruszającym się dipolem drugiej cząstki jest człon lagrangianu

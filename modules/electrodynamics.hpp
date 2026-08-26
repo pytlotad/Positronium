@@ -2220,6 +2220,16 @@ void integrateElectrodynamicStep(State& s, double dt,
                                     ChargeRadiationReactionModel::individualLandauLifshitz,
                                  bool useRetardedExternalForces=true) {
     const State balanceStart=s;
+    // Under stochasticElectricDipole every radiation channel leaves as
+    // discrete quanta (crem_trajectory.hpp banks the TOTAL E1+M1 power as
+    // one photon stream), so both of the M1 sector's CONTINUOUS sinks below
+    // -- the reaction torque and the dipoleConstraintEnergy drain -- have to
+    // be switched off here.  Leaving them on would remove the magnetic
+    // dipole's radiated energy twice: once continuously here and once as
+    // photon energy there.  The charge sector already had this treatment;
+    // its chargeReaction is zeroed inside particleMultipoleRadiation.
+    const bool quantizedRadiation=
+        reactionModel==ChargeRadiationReactionModel::stochasticElectricDipole;
     const double initialMechanicalEnergy=conservativeParticleEnergy(balanceStart);
     const CanonicalMomenta initialCanonical=canonicalMomenta(balanceStart);
     const Vec3 initialMechanicalMomentum=noetherMomentum(initialCanonical);
@@ -2236,7 +2246,7 @@ void integrateElectrodynamicStep(State& s, double dt,
         s.time = std::numeric_limits<double>::quiet_NaN();
         return;
     }
-    applyDipoleRadiationTorque(s,radiation,0.5*dt);
+    if(!quantizedRadiation) applyDipoleRadiationTorque(s,radiation,0.5*dt);
     Vec3 firstMomentum = momentum(s.firstVelocity, firstMass)
         + (forces.first + radiation.chargeReaction.first) * (0.5 * dt);
     Vec3 secondMomentum = momentum(s.secondVelocity, secondMass)
@@ -2269,7 +2279,8 @@ void integrateElectrodynamicStep(State& s, double dt,
     trial.firstVelocity = velocityFromMomentum(firstMomentum, firstMass);
     trial.secondVelocity = velocityFromMomentum(secondMomentum, secondMass);
     applyDipolePrecession(trial, 0.5 * dt, history);
-    applyDipoleRadiationTorque(trial,trialRadiation,0.5*dt);
+    if(!quantizedRadiation)
+        applyDipoleRadiationTorque(trial,trialRadiation,0.5*dt);
     trial.firstAcceleration = relativisticAcceleration(trial.firstVelocity, trialForces.first, firstMass);
     trial.secondAcceleration = relativisticAcceleration(trial.secondVelocity, trialForces.second, secondMass);
     // Flux bookkeeping is accumulated from the COMMITTED state only, never
@@ -2353,7 +2364,10 @@ void integrateElectrodynamicStep(State& s, double dt,
     // its near-field (Schott) term.
     const double dipoleRadiatedEnergy=trapezoid(
         radiation.magneticDipoleFlux.energy,s.previousDipoleFluxEnergy);
-    trial.dipoleConstraintEnergy-=dipoleRadiatedEnergy;
+    // Diagnostic split below still subtracts the M1 rate unconditionally --
+    // orbitalRadiatedEnergy is a decomposition of the measured Poynting flux
+    // and is not a sink.  Only the mechanical drain is gated.
+    if(!quantizedRadiation) trial.dipoleConstraintEnergy-=dipoleRadiatedEnergy;
     // E1-only, M1 excluded: valid by linearity of the trapezoid rule in its
     // rate argument, so this is exactly trapezoid(outwardFlux-
     // magneticDipoleFlux, previousFluxEnergy-previousDipoleFluxEnergy)

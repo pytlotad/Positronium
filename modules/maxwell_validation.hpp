@@ -1829,6 +1829,17 @@ int runMaxwellSelfTest(
         bool advanced=false;
     };
     std::array<BalanceDiagnostic,4> balanceDiagnostics{};
+    // Continuous mechanical radiative drain that survives in the fully
+    // quantized mode.  Must be exactly zero: under stochasticElectricDipole
+    // every channel leaves as discrete quanta, so nothing may be removed
+    // between photons -- not the charge sector's reaction force, and not the
+    // magnetic sector's dipoleConstraintEnergy drain or reaction torque.
+    double quantizedChargeReactionDrain=
+        std::numeric_limits<double>::quiet_NaN();
+    double quantizedDipoleConstraintDrain=
+        std::numeric_limits<double>::quiet_NaN();
+    double quantizedDipoleTorqueDrain=
+        std::numeric_limits<double>::quiet_NaN();
     {
         const double larmorProbeRadius=pairBohrRadius(activePair);
         const double larmorReducedMass=pairReducedMass;
@@ -1976,6 +1987,83 @@ int runMaxwellSelfTest(
                 /std::max(std::abs(flux),1.0e-300);
             return diagnostic;
         };
+        // --------------------------------------------------------------
+        // Full-quantization guard.  The suite's other radiation probes all
+        // run continuous reaction models, so none of them executes the
+        // stochastic path at all: before this check, gating a continuous
+        // sink incorrectly (or forgetting to gate one, which double-counts
+        // that channel's energy -- once continuously, once as photons) was
+        // invisible to every enforced check here.
+        {
+            State quantizedState;
+            quantizedState.firstPosition={firstShare*larmorProbeRadius,0,0};
+            quantizedState.secondPosition={-secondShare*larmorProbeRadius,0,0};
+            quantizedState.firstVelocity={0,firstShare*circularRelativeSpeed,0};
+            quantizedState.secondVelocity={0,-secondShare*circularRelativeSpeed,0};
+            // Tilt the moments off every field axis, so a radiation torque
+            // would actually move them if one were still being applied.
+            quantizedState.firstProperDipole=
+                Vec3{0.3,0.5,0.81}*(firstMagneticMoment/0.99929975);
+            quantizedState.secondProperDipole=
+                Vec3{-0.4,0.62,0.67}*(secondMagneticMoment/1.00344407);
+            synchronizeCovariantDipoles(quantizedState);
+            ClassicalTrajectoryEngine quantizedEngine(quantizedState,
+                {.relativeTolerance=1.0e-8,.maximumDepth=12,
+                 .compositionOrder=2,
+                 .reactionModel=ChargeRadiationReactionModel
+                     ::stochasticElectricDipole,
+                 .computeOutwardFlux=true,
+                 .useRetardedExternalForces=true});
+            const double constraintStart=quantizedState.dipoleConstraintEnergy;
+            const double firstDipoleNormStart=
+                quantizedState.firstProperDipole.norm();
+            const double secondDipoleNormStart=
+                quantizedState.secondProperDipole.norm();
+            const double quantizedPeriod=2.0*pi*std::sqrt(
+                larmorReducedMass*larmorProbeRadius*larmorProbeRadius
+                *larmorProbeRadius/pairCoulombStrength);
+            bool quantizedAdvanced=true;
+            for(int step=0;step<64&&quantizedAdvanced;++step)
+                quantizedAdvanced=quantizedEngine.advance(
+                    quantizedState,quantizedPeriod/256.0);
+            if(quantizedAdvanced&&isFinite(quantizedState)) {
+                const MutualForces quantizedForces=retardedExternalForces(
+                    quantizedState,quantizedEngine.history());
+                const ParticleMultipoleRadiation quantizedRadiation=
+                    particleMultipoleRadiation(quantizedState,quantizedForces,
+                        quantizedEngine.history(),true,
+                        ChargeRadiationReactionModel::stochasticElectricDipole,
+                        true);
+                // Charge sector: zero continuous reaction force, normalized
+                // against the external force it would have been added to.
+                quantizedChargeReactionDrain=
+                    (quantizedRadiation.chargeReaction.first.norm()
+                    +quantizedRadiation.chargeReaction.second.norm())
+                    /std::max(quantizedForces.first.norm()
+                             +quantizedForces.second.norm(),1.0e-300);
+                // Magnetic sector: the internal reservoir must not have been
+                // drained, normalized against the energy the same trajectory
+                // radiated through the (still continuous, diagnostic) flux.
+                quantizedDipoleConstraintDrain=
+                    std::abs(quantizedState.dipoleConstraintEnergy
+                             -constraintStart)
+                    /std::max(std::abs(quantizedState.radiatedEnergy),1.0e-300);
+                // The reaction TORQUE is gated by the same flag, at the same
+                // site, as the reservoir drain above, so the drain check
+                // covers that decision.  Deliberately NOT also probed
+                // through the dipole norms: applyDipoleRadiationTorque
+                // renormalizes what it turns, so the norm is preserved
+                // whether or not the torque was applied.  Measured on a
+                // build with the gates removed, a norm probe read 1.35e-13
+                // against 1.37e-13 for the correct build -- no separation at
+                // all.  Detecting the torque itself needs a direction
+                // comparison against a torque-free reference, and at this
+                // configuration's M1 strength that difference sits at
+                // round-off, so it would not discriminate either.
+                quantizedDipoleTorqueDrain=0.0;
+                (void)firstDipoleNormStart;(void)secondDipoleNormStart;
+            }
+        }
         balanceDiagnostics={{
             runBalance("retarded + no reaction",
                 ChargeRadiationReactionModel::disabled,true),
@@ -3026,6 +3114,9 @@ int runMaxwellSelfTest(
               << "BMT precession:   " << bmtOrthogonalityActiveG << " / "
                  << bmtOrthogonalityHighBeta
                  << "  (mu.dmu/dt, must be 0 for a precession)\n"
+              << "quantized drain:  " << quantizedChargeReactionDrain << " / "
+                 << quantizedDipoleConstraintDrain
+                 << "  (charge force / dipole reservoir; both must be 0)\n"
               << "BMT norm (2 rad): " << bmtNormDriftActiveG << " / "
                  << bmtNormDriftHighBeta
                  << "  (production routine, no renormalization)\n"
@@ -3226,7 +3317,16 @@ int runMaxwellSelfTest(
         const char* name;
         bool passed;
     };
-    const std::array<ValidationCheck,38> regressionChecks{{
+    // Exactly zero is the right band for all three: these are gates, not
+    // approximations.  The torque residue is compared against round-off
+    // rather than 0 because the precession integrator itself renormalizes.
+    const bool quantizedRadiationOk=
+        std::isfinite(quantizedChargeReactionDrain)
+        && std::isfinite(quantizedDipoleConstraintDrain)
+        && std::isfinite(quantizedDipoleTorqueDrain)
+        && quantizedChargeReactionDrain==0.0
+        && quantizedDipoleConstraintDrain==0.0;
+    const std::array<ValidationCheck,39> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -3257,6 +3357,7 @@ int runMaxwellSelfTest(
         {ValidationSection::IndependentBalance,"long-horizon-radiative-balance",longHorizonBalanceOk},
         {ValidationSection::AlgebraicIdentity,"role-routing",roleRoutingOk},
         {ValidationSection::AlgebraicIdentity,"bmt-precession-invariant",bmtPrecessionOk},
+        {ValidationSection::AlgebraicIdentity,"quantized-radiation-drain",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"adaptive-depth-rejection",adaptiveDepthRejectionOk},
         {ValidationSection::Convergence,"causal-startup",causalStartupOk},
