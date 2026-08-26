@@ -2259,6 +2259,41 @@ nie spada.
 Raportowane jest też samo wzmocnienie (`balance amplification`), żeby liczby
 z tej macierzy nie dało się już odczytać bez kontekstu.
 
+#### Przemiatanie promienia orbity
+
+Żeby żaden z tych wniosków nie był przypadkiem jednego promienia, ten sam
+bilans jest liczony w trzech punktach rozpiętych na czynnik 16, każdy w obu
+dyskretyzacjach:
+
+| \(R/a_{\rm pary}\) | wzmocnienie | zgrubnie | zagęszczone |
+|---|---|---|---|
+| 0,05 | 1 718 | 7,24% | 2,61% |
+| 0,2 | 13 741 | 5,94% | 0,98% |
+| 0,8 | 109 912 | 23,6% | 6,77% |
+
+Dwie rzeczy naraz.
+
+**Residuum maleje po zagęszczeniu na każdym promieniu**, nie tylko na tym, z
+którego cytowana jest liczba nagłówkowa. Zauważmy też, że samo residuum
+zgrubne **nie skaluje się z \(\beta\)** — idzie 7,2%, 5,9%, 23,6% — tylko
+podąża za wzmocnieniem, dokładnie jak dla artefaktu kondycjonowania.
+
+**Wzmocnienie podąża za prawem \(R^{3/2}\)** — i to jest test fizyczny, nie
+księgowy. Ponieważ \(E_{\rm mech}\propto1/R\), a z Larmora
+\(E_{\rm far}\) na orbitę \(\propto R^{-5/2}\), iloraz musi rosnąć jak
+\(R^{3/2}\), czyli 8,0 na czterokrotność promienia. Zmierzone: **7,997 i
+7,998**. Sprawdzenie to obowiązuje z pasmem 2%, więc wyłapuje złamanie prawa
+potęgowego inspiralu, którego żadna sonda jednopunktowa tu nie widzi.
+
+Moc rozróżniająca sprawdzona przez wstrzyknięcie fałszywej zależności
+promieniowanej energii od promienia: ilorazy spadają do 7,766 i 7,171
+(odchyłki 2,9% i 10,4%) i test oblewa. Uczciwe zastrzeżenie — ta konkretna
+wada trafia również w `larmor-normalization`; unikalna wartość przemiatania
+dotyczy wad **poprawnie skalibrowanych na jednym promieniu, a źle
+skalujących się**.
+
+Koszt: +2,8 s.
+
 ### Kwantyzacja wszystkich kanałów promieniowania
 
 W trybie `stochastic` (domyślnym, `gRadiationReactionModel`) **żaden** kanał

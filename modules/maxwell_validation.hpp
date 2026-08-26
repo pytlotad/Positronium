@@ -1839,6 +1839,23 @@ int runMaxwellSelfTest(
     // in the mechanical energy is magnified in the residual.
     double longHorizonBalanceAmplification=
         std::numeric_limits<double>::quiet_NaN();
+    // The same balance swept across a factor of 16 in orbit radius, each
+    // point measured coarse and refined.  Two things at once.
+    //
+    // The conditioning claim is not specific to one radius: the amplification
+    // is |E_mech|/E_far with E_mech proportional to 1/R and, by Larmor,
+    // E_far per orbit proportional to R^(-5/2), so it must grow as R^(3/2).
+    // Checking that the MEASURED amplification follows that law is therefore
+    // a check on the radiated energy's own scaling, across a decade and a
+    // half of radius, and not merely bookkeeping about the probe.
+    //
+    // And the residual must shrink under refinement at EVERY radius, not
+    // just at the one the headline number is quoted from.
+    struct BalanceRadiusPoint {
+        double factor=0.0,amplification=0.0,coarse=0.0,refined=0.0;
+        bool advanced=false;
+    };
+    std::array<BalanceRadiusPoint,3> balanceRadiusSweep{};
     // Continuous mechanical radiative drain that survives in the fully
     // quantized mode.  Must be exactly zero: under stochasticElectricDipole
     // every channel leaves as discrete quanta, so nothing may be removed
@@ -1937,12 +1954,8 @@ int runMaxwellSelfTest(
         // reversible near-field endpoint term from explicitChargeSchottEnergy.
         // Two complete orbital periods are long compared with the one-step
         // reaction probes above while keeping the validator practical.
+        double balanceRadiusFactor=0.2;
         const double balanceRadius=0.2*larmorProbeRadius;
-        const double balanceRelativeSpeed=std::sqrt(
-            pairCoulombStrength/(larmorReducedMass*balanceRadius));
-        const double balancePeriod=2.0*pi*std::sqrt(
-            larmorReducedMass*balanceRadius*balanceRadius*balanceRadius
-            /pairCoulombStrength);
         // The coherent reaction needs enough retained history nodes for its
         // third derivative.  period/512 is below the retarded-history spacing
         // ceiling at this radius; the production-like period/128 step leaves
@@ -1956,11 +1969,16 @@ int runMaxwellSelfTest(
                                   bool retarded) {
             BalanceDiagnostic diagnostic;
             diagnostic.name=name;
+            const double sweptRadius=balanceRadiusFactor*larmorProbeRadius;
+            const double sweptSpeed=std::sqrt(pairCoulombStrength
+                /(larmorReducedMass*sweptRadius));
+            const double sweptPeriod=2.0*pi*std::sqrt(larmorReducedMass
+                *sweptRadius*sweptRadius*sweptRadius/pairCoulombStrength);
             State state;
-            state.firstPosition={firstShare*balanceRadius,0,0};
-            state.secondPosition={-secondShare*balanceRadius,0,0};
-            state.firstVelocity={0,firstShare*balanceRelativeSpeed,0};
-            state.secondVelocity={0,-secondShare*balanceRelativeSpeed,0};
+            state.firstPosition={firstShare*sweptRadius,0,0};
+            state.secondPosition={-secondShare*sweptRadius,0,0};
+            state.firstVelocity={0,firstShare*sweptSpeed,0};
+            state.secondVelocity={0,-secondShare*sweptSpeed,0};
             ClassicalTrajectoryEngine engine(state,
                 {.relativeTolerance=balanceTolerance,.maximumDepth=14,
                  .compositionOrder=2,.reactionModel=reaction,
@@ -1977,7 +1995,7 @@ int runMaxwellSelfTest(
             for(int step=0;step<balancePeriodCount*balanceStepsPerPeriod
                 &&advanced;++step) {
                 advanced=engine.advance(
-                    state,balancePeriod/balanceStepsPerPeriod);
+                    state,sweptPeriod/balanceStepsPerPeriod);
             }
             diagnostic.advanced=advanced&&isFinite(state);
             if(!diagnostic.advanced) return diagnostic;
@@ -2116,6 +2134,37 @@ int runMaxwellSelfTest(
             if(refined.advanced)
                 longHorizonBalanceRefined=std::abs(refined.signedResidual);
         }
+        // Radius sweep.  Three points spanning a factor of 16, each measured
+        // at both discretizations.  R=0.2 is deliberately one of them, so the
+        // headline numbers above appear inside the sweep too.
+        {
+            constexpr std::array<double,3> sweptFactors{0.05,0.2,0.8};
+            for(std::size_t index=0;index<sweptFactors.size();++index) {
+                balanceRadiusFactor=sweptFactors[index];
+                balanceTolerance=1.0e-6;
+                balancePeriodCount=2;
+                const BalanceDiagnostic coarse=runBalance("sweep coarse",
+                    ChargeRadiationReactionModel::coherentElectricDipole,true);
+                balanceTolerance=1.0e-8;
+                balancePeriodCount=1;
+                const BalanceDiagnostic fine=runBalance("sweep refined",
+                    ChargeRadiationReactionModel::coherentElectricDipole,true);
+                BalanceRadiusPoint& point=balanceRadiusSweep[index];
+                point.factor=sweptFactors[index];
+                point.advanced=coarse.advanced&&fine.advanced
+                    &&coarse.fluxEnergy>0.0;
+                if(!point.advanced) continue;
+                point.amplification=
+                    (pairCoulombStrength
+                     /(2.0*sweptFactors[index]*larmorProbeRadius))
+                    /coarse.fluxEnergy;
+                point.coarse=std::abs(coarse.signedResidual);
+                point.refined=std::abs(fine.signedResidual);
+            }
+            balanceRadiusFactor=0.2;
+            balanceTolerance=1.0e-6;
+            balancePeriodCount=balancePeriods;
+        }
     }
 
     // 1% band around unity.  The measured deviation is 7e-5, so this leaves a
@@ -2198,7 +2247,36 @@ int runMaxwellSelfTest(
         // reaction-sector error of roughly ten percent and up; it is not a
         // fine measurement of conservation, and nothing here should be read
         // as one.
-        &&longHorizonBalanceRefined<0.05;
+        &&longHorizonBalanceRefined<0.05
+        // Same two requirements across the sweep, so neither conclusion is an
+        // accident of the single radius the headline is quoted from.
+        &&std::ranges::all_of(balanceRadiusSweep,
+            [](const BalanceRadiusPoint& point) {
+                return point.advanced
+                    &&std::isfinite(point.coarse)
+                    &&std::isfinite(point.refined)
+                    &&point.refined<=std::max(point.coarse,1.0e-3);
+            })
+        // And the measured amplification must follow R^(3/2).  E_mech goes as
+        // 1/R and Larmor puts E_far per orbit at R^(-5/2), so this is a check
+        // on the radiated energy's own scaling across a factor of 16 in
+        // radius -- it fails on any break of the inspiral power law, which no
+        // single-radius probe here can see.  Two percent is loose against the
+        // 0.1% the ratios actually hold to, and tight against the factor of
+        // 2.83 per doubling being tested.
+        &&[&]{
+            for(std::size_t index=1;index<balanceRadiusSweep.size();++index) {
+                const BalanceRadiusPoint& previous=balanceRadiusSweep[index-1];
+                const BalanceRadiusPoint& current=balanceRadiusSweep[index];
+                if(!(previous.amplification>0.0)) return false;
+                const double predicted=std::pow(
+                    current.factor/previous.factor,1.5);
+                const double measured=
+                    current.amplification/previous.amplification;
+                if(!(std::abs(measured/predicted-1.0)<0.02)) return false;
+            }
+            return true;
+        }();
 
     const std::array<double,3> farControlRadii{
         1.0e4*bohrRadius,1.0e5*bohrRadius,1.0e6*bohrRadius};
@@ -3305,6 +3383,20 @@ int runMaxwellSelfTest(
               << "  (tol 1e-8; discretization shrinks, a real leak does not)\n"
               << "balance amplification:" << longHorizonBalanceAmplification
               << "  (|E_mech|/E_far: gain on any dE_mech error)\n"
+              << "balance radius sweep (R/a_pair: amplif / coarse / refined):\n"
+              << "  " << balanceRadiusSweep[0].factor << ": "
+              << balanceRadiusSweep[0].amplification << " / "
+              << balanceRadiusSweep[0].coarse << " / "
+              << balanceRadiusSweep[0].refined << '\n'
+              << "  " << balanceRadiusSweep[1].factor << ": "
+              << balanceRadiusSweep[1].amplification << " / "
+              << balanceRadiusSweep[1].coarse << " / "
+              << balanceRadiusSweep[1].refined << '\n'
+              << "  " << balanceRadiusSweep[2].factor << ": "
+              << balanceRadiusSweep[2].amplification << " / "
+              << balanceRadiusSweep[2].coarse << " / "
+              << balanceRadiusSweep[2].refined
+              << "   (amplification must follow R^1.5)\n"
               << "balance matrix M/F,S/F,R:\n"
               << "  retarded + none: "
               << balanceDiagnostics[0].mechanicalOverFlux << " / "
