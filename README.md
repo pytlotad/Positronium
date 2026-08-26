@@ -2334,6 +2334,124 @@ to realna zmiana drogi przepływu energii.
 `radiatedEnergy` pozostaje **ciągłą** całką Poyntinga i pełni rolę diagnostyki
 porównawczej, nie sumy wyemitowanych kwantów — tak jak dla E1 od początku.
 
+#### Zgodność harmonik z progami energetycznymi
+
+Dwie ścieżki emisji mają **różne** progi kinematyczne, i to jest poprawne —
+różnią się rodzajem emisji, nie jakością niezmiennika.
+
+| ścieżka | niezmiennik | warunek |
+|---|---|---|
+| sekularna (`crem_collapse.hpp`) | \(W=(m_1+m_2)c^2+\mu\varepsilon\) | \(W^2-2WE_\gamma>0\), czyli \(E_\gamma<W/2\approx511\) keV |
+| mechaniczna (`applyStochasticDipolePhoton`) | \(W=\gamma_1m_1c^2+\gamma_2m_2c^2\) | \(W^2-2WE_\gamma\ge(m_1c^2+m_2c^2)^2\), czyli \(E_\gamma\le\) energia kinetyczna w CM |
+
+Ścieżka mechaniczna zmienia wyłącznie prędkości — pozycje, a więc i energia
+potencjalna, są w chwili emisji nietknięte. Zatem \(KE'=KE-E_\gamma\) i foton
+**może** czerpać tylko z energii kinetycznej. Ścieżka sekularna operuje na
+elementach oskulacyjnych, czyli na wielkości uśrednionej po orbicie, której
+rezerwuarem jest energia wiązania; para związana ma \(W<(m_1+m_2)c^2\) z
+definicji i emisja po prostu wiąże ją głębiej.
+
+**Ten sufit realnie tnie.** Twierdzenie o wiriale daje energię kinetyczną
+orbity kołowej równą energii wiązania, podczas gdy
+\(\hbar\omega/E_{\rm wiąz}=2\sqrt{a_{Ps}/a}\) — dwa na promieniu Bohra pary
+i gorzej w miarę zapadania. Ułamek **okresu**, na którym foton \(n\hbar\omega\)
+w ogóle się mieści:
+
+| \(e\) | \(n=1\) | \(n=5\) | \(n=16\) | \(n=27\) |
+|---|---|---|---|---|
+| 0 | **0** | 0 | 0 | 0 |
+| 0,3 | **0** | 0 | 0 | 0 |
+| 0,5 | 0,149 | 0 | 0 | 0 |
+| 0,9 | 0,113 | 0,017 | **0** | 0 |
+| 0,97 | 0,098 | 0,015 | 0,003 | 0,001 |
+
+Orbita kołowa lub słabo mimośrodowa **nie może wyemitować podstawowej nigdzie
+na swoim okresie**.
+
+**Dwie oczywiste naprawy są obie błędne** — stąd ten opis zamiast łatki.
+Zachowanie zbankowanego hazardu i ponowienie próby w późniejszym kroku
+**zakleszcza się** dla \(e\lesssim0{,}3\): hazard rośnie bez ograniczeń i foton
+nie pada nigdy. Rozluźnienie bramki do warunku sekularnego **nie jest
+ujednoliceniem**, tylko przeniesieniem warunku między dwoma różnymi rodzajami
+emisji.
+
+Zostaje realne ograniczenie dziedziny: **prescription \(\hbar\omega_{\rm orb}\)
+i model emisji jako chwilowego kopnięcia są wzajemnie niespójne na orbicie
+bliskiej kołowej**, a pogodzenie ich wymaga innego modelu emisji, nie innego
+progu. Produkcja tego nie dotyka: praktycznie każdy foton pada ścieżką
+sekularną (hazard mechanicznej to \(\sim5{,}5\cdot10^{-5}\) na obieg, a
+przebieg `--mode 2` z instrumentacją w tym miejscu zanotował **zero
+wywołań**).
+
+#### Skala hazardu w stanie podstawowym wobec czasu życia para-Ps
+
+Wielkość zmierzona przy okazji analizy progów i warta utrwalenia, bo nie
+występowała dotąd nigdzie w tej dokumentacji.
+
+Klasyczny hazard fotonowy w stanie podstawowym, liczony **wzorem samego
+projektu** (`larmorOrbitAveragedPower`, \(|\ddot d|=|q_{\rm eff}|k|q_1q_2|/(\mu a^2)\),
+co dla e⁺e⁻ daje \(q_{\rm eff}=e\), \(\mu=m_e/2\)) przy \(a=a_{Ps}\):
+
+\[
+P=1{,}16732208\cdot10^{-8}\,\mathrm{W},\qquad
+\lambda=\frac{P}{\hbar\omega}=5{,}355\cdot10^{9}\,\mathrm{s^{-1}} .
+\]
+
+Wyrażone w naturalnej jednostce obie liczby są **wymierne i dokładne**:
+
+\[
+\hbar\omega\big|_{a_{Ps}}=\tfrac12\alpha^2m_ec^2,\qquad
+\lambda=\tfrac13\,\frac{\alpha^5m_ec^2}{\hbar},\qquad
+\Gamma_{\rm para}^{\rm LO}=\tfrac12\,\frac{\alpha^5m_ec^2}{\hbar}.
+\]
+
+Zmierzone w kodzie: \(0{,}50000000\) i \(0{,}33333333\). Stąd
+
+\[
+\frac{\tau_{\rm kl}}{\tau_{\rm para}}=\frac{1/2}{1/3}=\frac32
+\quad\Longrightarrow\quad
+186{,}74\ \mathrm{ps}\ \text{wobec}\ 124{,}49\ \mathrm{ps}.
+\]
+
+**Czym to jest.** Klasyczne tempo emisji E1 w stanie podstawowym i wiodące
+tempo anihilacji parapozytonium mają **tę samą potęgę \(\alpha\)** i różnią
+się tylko liczbą wymierną rzędu jedności. Po stronie klasycznej ma to
+strukturalne wyjaśnienie — tempo radiacyjne orbity Bohra idzie jak
+\(\alpha^3\omega\), a \(\omega=\alpha^2m_ec^2/2\hbar\), więc
+\(\alpha^3\cdot\alpha^2=\alpha^5\). Po stronie QED \(\alpha^5\) bierze się
+z zupełnie innego rachunku. **Zgodność współczynnika \(O(1)\) (1/3 wobec 1/2)
+nie ma w tym modelu wyjaśnienia** i nie jest wyprowadzeniem anihilacji: to
+różne procesy, jeden emituje kwanty \(13{,}6\) eV, drugi dwa po \(511\) keV,
+czyli \(3{,}75\cdot10^4\) razy większe.
+
+Warto zestawić z mierzoną medianą kolapsu w trybie stochastycznym,
+\(149\) ps (10 ziaren), która leży **pomiędzy** tymi dwiema liczbami.
+
+**Dlaczego to zamyka pewien kierunek.** Nasuwa się propozycja, żeby w stanie
+podstawowym czerpać z energii całkowitej, a fotony podstawowe uznać za
+anihilacyjne — co usunęłoby sufit kinematyczny opisany wyżej. Sprawdzone
+liczbowo: przy niezmienionej mocy klasycznej podmiana kwantu z
+\(\hbar\omega\) na \(m_ec^2\) dzieli tempo przez \(2/\alpha^2\approx3{,}8\cdot10^4\),
+dając czas życia \(7{,}0\) µs zamiast \(125\) ps — **cztery do pięciu rzędów
+wielkości za długo**:
+
+| kwant | czas życia | wobec 124,5 ps |
+|---|---|---|
+| \(\hbar\omega=13{,}6\) eV | 186,7 ps | ×1,50 |
+| \(m_ec^2=511\) keV | 7,01 µs | ×5,6·10⁴ |
+| \(2m_ec^2\) | 14,0 µs | ×1,1·10⁵ |
+
+Sufitu kinematycznego **nie wolno więc naprawiać przez podniesienie energii
+kwantu**. Część intuicji o rezerwuarze jest natomiast zgodna z kodem: ścieżka
+sekularna już liczy \(W=(m_1+m_2)c^2+\mu\varepsilon\), czyli ma masę
+spoczynkową w niezmienniku, i dlatego nie ma tam tego problemu.
+
+Osobno warto pamiętać o ostrzeżeniu z sekcji o dipolach: podobieństwo liczb
+\(2/3\) w sektorze dipolowym do \(2\gamma/3\gamma\) jest tam nazwane
+numerologicznym zbiegiem okoliczności. Ta sekcja nie twierdzi nic więcej niż
+zgodność skali — anihilacja pozostaje w CREM osobnym, jawnie oznaczonym
+generatorem opartym na zmierzonych czasach życia.
+
 #### Kwadrupol E2 i dlaczego znika dla pozytonium
 
 Kwadrupol pary wynosi \(Q_{ij}=\kappa\,(3d_id_j-d^2\delta_{ij})\) z

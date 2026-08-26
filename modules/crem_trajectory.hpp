@@ -529,6 +529,56 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                     const Vec3 photonDirection=
                         sampleRotatingDipolePhotonDirection(
                             orbitalNormal,stochasticPhotonStream);
+                    // KINEMATIC CEILING, and why nothing here tries to
+                    // raise it.  applyStochasticDipolePhoton moves only the
+                    // velocities: the positions, and therefore the potential
+                    // energy, are untouched at the emission instant.  So the
+                    // photon can be paid for out of the CM KINETIC energy and
+                    // nothing else, and its own guard refuses anything larger.
+                    //
+                    // That ceiling bites hard, because hbar*omega_orb is not
+                    // small against it.  The virial theorem puts the kinetic
+                    // energy of a circular orbit at exactly the binding
+                    // energy, while hbar*omega/E_bind = 2 sqrt(a_Ps/a) -- two
+                    // at the pair Bohr radius and worse as the orbit tightens.
+                    // Measured as a fraction of the orbital PERIOD on which a
+                    // photon of n hbar*omega fits at all:
+                    //
+                    //     e      n=1      n=5      n=16
+                    //     0      0        0        0
+                    //     0.3    0        0        0
+                    //     0.5    0.149    0        0
+                    //     0.9    0.113    0.017    0
+                    //     0.97   0.098    0.015    0.003
+                    //
+                    // A circular or mildly eccentric orbit cannot emit the
+                    // fundamental ANYWHERE on its period.
+                    //
+                    // Two "obvious" repairs are both wrong, which is the
+                    // reason for this comment rather than a patch.  Keeping
+                    // the banked hazard and retrying on a later step
+                    // deadlocks outright for e <~ 0.3: the hazard grows
+                    // without bound and no photon ever fires.  Relaxing the
+                    // guard to the secular path's own condition (W^2-2 W E >
+                    // 0, i.e. E < W/2 ~ 511 keV) is not a unification either
+                    // -- crem_collapse.hpp can afford that because it removes
+                    // the energy from the osculating ELEMENTS, an
+                    // orbit-averaged quantity whose reservoir is the binding
+                    // energy, whereas an instantaneous kick at fixed position
+                    // has only the kinetic energy to draw on.  The two guards
+                    // differ because the two emissions differ in kind, not
+                    // because one of them is built on the wrong invariant.
+                    //
+                    // What is left is a real domain limit: the correspondence
+                    // prescription hbar*omega_orb and the instantaneous-kick
+                    // emission model are mutually inconsistent on a
+                    // near-circular orbit, and reconciling them needs a
+                    // different emission model, not a different threshold.
+                    // Production does not meet this: essentially every photon
+                    // fires through the secular path (this one's hazard is
+                    // ~5.5e-5 per orbit, and a --mode 2 run instrumented at
+                    // this call site recorded zero calls).  Refusals are
+                    // reported below through recoil.emitted.
                     const StochasticPhotonRecoil recoil=
                         applyStochasticDipolePhoton(
                             s,photonEnergy,photonDirection);
