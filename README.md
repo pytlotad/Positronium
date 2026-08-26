@@ -2204,6 +2204,34 @@ L_{q\mu}=q\,(\mathbf v_q-\mathbf v_\mu)\cdot\mathbf A_\mu,
 w(r)\frac{\boldsymbol\mu\times\mathbf r}{r^3}.
 \]
 
+Prędkość **względna** nie jest tu symetryzacją narzuconą po to, by siły się
+równoważyły — jest ścisła w tym rzędzie. Dipol magnetyczny poruszający się z
+\(\mathbf v_\mu\) niesie motoryczny dipol **elektryczny**
+\(\mathbf p=(\mathbf v_\mu\times\boldsymbol\mu)/c^2\), a jego potencjał
+skalarny wnosi do lagranżjanu ładunku dokładnie
+
+\[
+-q\varphi_p=-\frac{q}{4\pi\varepsilon_0}w(r)\frac{\mathbf p\cdot\mathbf r}{r^3}
+=-q\,\frac{\mu_0}{4\pi}w(r)\frac{\mathbf v_\mu\cdot(\boldsymbol\mu\times\mathbf r)}{r^3}
+=-q\,\mathbf v_\mu\cdot\mathbf A_\mu,
+\]
+
+gdzie skorzystano z \((\mathbf a\times\mathbf b)\cdot\mathbf c
+=\mathbf a\cdot(\mathbf b\times\mathbf c)\) oraz
+\(1/(4\pi\varepsilon_0c^2)=\mu_0/4\pi\). Zatem
+\(q\mathbf v_q\!\cdot\!\mathbf A_\mu-q\varphi_p\) **jest**
+\(q(\mathbf v_q-\mathbf v_\mu)\!\cdot\!\mathbf A_\mu\): to zwykłe
+sprzężenie jednocząstkowe \(q\mathbf v_q\!\cdot\!\mathbf A\) z już
+uwzględnionym własnym polem elektrycznym poruszającego się dipola, a nie jego
+przybliżenie. Równość akcji i reakcji **wynika** stąd (lagranżjan zależy tylko
+od \(\mathbf r\) i \(\mathbf v_q-\mathbf v_\mu\), więc niezmienniczość
+translacyjna wymusza przeciwne wariacje), a nie jest powodem wyboru tej formy.
+Ponieważ motoryczny dipol elektryczny jest tu już zawarty, członu tego nie
+wolno sumować z `retardedElectricDipoleField`, opisującym tę samą fizykę przez
+`state.firstElectricDipole`; i nie jest — `allExternalForces` używa jednego,
+`retardedExternalForces` drugiego, a obie sumy sił są wariantami, nigdy nie
+dodawanymi razem.
+
 W aktualnej ścieżce ruchu nie jest to jednak samodzielny, dokładny lagrangian
 całego układu. Siła Lorentza korzysta z pól retardowanych, a siła nośnika
 dipola z gradientu energii w jego chwilowym układzie spoczynkowym. Człon
