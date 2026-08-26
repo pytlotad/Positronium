@@ -32,7 +32,7 @@ accessed=2026-08-11
 
 [source:ore_powell_1949]
 authors=A. Ore; J. L. Powell
-title=Three-Photon Annihilation of an First-Second Pair
+title=Three-Photon Annihilation of an Electron-Positron Pair
 publication=Physical Review 75, 1696-1699
 year=1949
 doi=10.1103/PhysRev.75.1696

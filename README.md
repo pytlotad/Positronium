@@ -1944,6 +1944,25 @@ wykrytym niezdefiniowanym zachowaniu. Sanitizatory domyślnie korzystają z
 `clang++` (niezależnie od produkcyjnego GCC); można to zmienić przez
 `SANITIZER_CXX=...`.
 
+Metadane bibliograficzne z niepustym DOI można porównać automatycznie z
+Crossref. Kontrola sprawdza składnię DOI, kanoniczny adres `doi.org`, istnienie
+rekordu oraz zgodność tytułu po normalizacji Unicode i interpunkcji. Tytuł
+z Crossref jest wcześniej oczyszczany z formatowania wydawcy: znaczników HTML,
+numeru artykułu starszych czasopism (`LXXIX.` dla Rutherforda 1911) oraz
+zapisu greckimi literami tam, gdzie katalog używa nazwy litery (`α` = `alpha`):
+
+```bash
+make references-check
+```
+
+Test wymaga dostępu do sieci; rekordy źródeł internetowych bez DOI są jawnie
+raportowane jako pominięte, a nie uznawane za zweryfikowane. Dwa rodzaje
+niepowodzenia są rozróżniane kodem wyjścia: `1` oznacza rzeczywistą niezgodność
+metadanych z Crossref (błędny tytuł, adres niekanoniczny, DOI niezarejestrowany),
+a `2` — że kontroli nie dało się przeprowadzić, bo katalog jest nieczytelny albo
+Crossref nieosiągalny. Kod `2` nigdy nie twierdzi, że bibliografia jest błędna;
+mówi tylko, że pozostała niezweryfikowana.
+
 Tryb raportuje ograniczenia Gaussa, ciągłości i \(\nabla\cdot\mathbf B\), pełne
 bilanse cząstka–pole, test magnetyzacji, zbieżność przestrzenną, pochłanianie
 granicy oraz koszt obliczeń. Dla bieżącej konfiguracji na testowej maszynie

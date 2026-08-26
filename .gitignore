@@ -19,3 +19,8 @@
 # leave one behind.
 .*.tmp_*
 distributions/.*.tmp_*.pdf
+
+# Bytecode cache of the reference validator in tools/.  Written whenever the
+# module is imported rather than run as a script.
+__pycache__/
+*.pyc

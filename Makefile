@@ -25,7 +25,7 @@ HEADERS := $(wildcard modules/*.hpp)
 
 .PHONY: all build validation validation-small validation-publication \
 	reproducible reproducible-validation sanitizers sanitizers-check \
-	toolchain-info run clean
+	references-check toolchain-info run clean
 
 all: run
 
@@ -54,6 +54,9 @@ toolchain-info:
 	@$(SANITIZER_CXX) --version | head -n 1
 	@root-config --version
 	@$(MAKE) --version | head -n 1
+
+references-check:
+	python3 tools/validate_references.py ScientificalReferences.txt
 
 run: $(TARGET)
 	./$(TARGET)
