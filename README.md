@@ -2196,6 +2196,69 @@ rozwiązanie ścisłe, nie całkowanie numeryczne, dla dowolnej długości kroku
 Zachowuje \(|\boldsymbol\mu_i|=(g/2)\mu_B\) z samej konstrukcji, bez
 renormalizacji.
 
+### Bilans energii: co naprawdę mierzy 5,9%
+
+Macierz bilansu długiego horyzontu raportowała dla ścieżki produkcyjnej
+(retardowana + sama siła własna) residuum **5,9%**, i przez długi czas
+figurowało to jako jakość domknięcia bilansu energii przez model. **Nie jest
+to własność fizyczna modelu, tylko błąd dyskretyzacji wzmocniony przez
+kondycjonowanie samego pomiaru.**
+
+Residuum dzieli różnicę dwóch energii mechanicznych przez energię pola
+dalekiego, mniejszą o cztery rzędy. Na promieniu sondy energia wiązania pary
+wynosi 34,0 eV, a wypromieniowana przez dwa okresy 2,475·10⁻³ eV, więc
+**każdy** względny błąd energii mechanicznej jest przed zaraportowaniem
+mnożony przez
+
+\[
+\frac{|E_{\rm mech}|}{E_{\rm far}}\approx 1{,}37\cdot10^{4}.
+\]
+
+Przy tym wzmocnieniu błąd 4,3·10⁻⁶ — czyli dokładnie skala tolerancji
+integratora, \(10^{-6}\) — daje odczyt 5,9%. Nie trzeba więc szukać
+brakującej fizyki: sam dryf integratora w pełni tłumaczy tę liczbę.
+
+Trzy niezależne pomiary mówią to samo:
+
+- **Sektor reakcji jest poprawny do trzech cyfr.** Siła Landaua–Lifshitza
+  oddaje 0,4997–0,4998 strumienia dalekiego wobec teoretycznych 0,5000 dla
+  tej pary (przy \(\mathbf a_1=-\mathbf a_2\) moc koherentna
+  \(|q_1\mathbf a_1+q_2\mathbf a_2|^2\) jest dokładnie dwukrotnością sumy
+  członów własnych).
+- **Zbieżne jest to, co fizyczne, a błądzi to, co numeryczne.** \(E_{\rm far}\)
+  jest zbieżne do 2·10⁻⁵ przez cztery dekady tolerancji, podczas gdy różnica
+  mechaniczna waha się w tym samym zakresie o 12%.
+- **Zagęszczanie dyskretyzacji przepycha residuum przez zero.** Rząd 2 przy
+  \(10^{-8}\) daje −1,0%, rząd 4 przy \(10^{-10}\) daje +2,9%, wobec −5,9%
+  przy ustawieniu produkcyjnym. Prawdziwy wyciek nie zmienia znaku przy
+  poprawianiu numeryki.
+
+Próba naprawy przez podniesienie rzędu interpolacji historii retardowanej —
+kubiczny Hermite (pozycja, prędkość; przyspieszenie odtwarzane przez dwukrotne
+różniczkowanie, więc \(O(h^2)\)) na **kwintyczny** (dopasowujący także
+zapisane przyspieszenia, \(O(h^4)\)) — została wykonana i **cofnięta**. Rząd
+zbieżności faktycznie wzrósł z 1,999 do 3,999 na analitycznej linii świata,
+ale residuum bilansu **pogorszyło się** do −17,4%, a zbieżność trajektorii
+przy tolerancji \(10^{-7}\) się załamała. Powód: zapisane przyspieszenia są
+wzajemnie spójne z próbkami pozycji i prędkości tylko na tyle, na ile czyni je
+integrator rzędu drugiego, więc interpolant klasy \(C^2\) je przetrenowuje.
+Rząd interpolacji nie jest tu wąskim gardłem.
+
+Zamiast tego bramka `long-horizon-radiative-balance` została przeformułowana
+na stwierdzenie o **zbieżności**, a nie o zachowaniu energii: obok odczytu
+zgrubnego liczony jest ten sam bilans o krok gęstszy (tolerancja \(10^{-8}\)),
+i wymaga się, żeby zagęszczenie nie pogorszyło wyniku i zeszło poniżej 5%.
+Zmierzone: **5,94% → 0,98%** po jednym kroku zagęszczenia, koszt 1,5 s.
+
+Test ma moc rozróżniającą — sprawdzone przez wstrzyknięcie **realnego** błędu
+fizycznego (siła reakcji zawyżona o 10%): residuum zgrubne 10,9%, po
+zagęszczeniu 5,98%, czyli **nie znika**, tylko zostaje na skali wstrzykniętego
+błędu, i test oblewa. Błąd dyskretyzacji spada sześciokrotnie; realny wyciek
+nie spada.
+
+Raportowane jest też samo wzmocnienie (`balance amplification`), żeby liczby
+z tej macierzy nie dało się już odczytać bez kontekstu.
+
 ### Kwantyzacja wszystkich kanałów promieniowania
 
 W trybie `stochastic` (domyślnym, `gRadiationReactionModel`) **żaden** kanał

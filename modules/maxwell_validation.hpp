@@ -1829,6 +1829,16 @@ int runMaxwellSelfTest(
         bool advanced=false;
     };
     std::array<BalanceDiagnostic,4> balanceDiagnostics{};
+    // Same balance, same trajectory, one refinement step finer.  The residual
+    // this probe reports is not a physical imbalance but a discretization
+    // error amplified by the measurement's own conditioning (see
+    // longHorizonBalanceAmplification below), so the number is meaningless
+    // without knowing whether it shrinks when the discretization does.
+    double longHorizonBalanceRefined=std::numeric_limits<double>::quiet_NaN();
+    // |E_mech| / E_far for this probe: the factor by which ANY relative error
+    // in the mechanical energy is magnified in the residual.
+    double longHorizonBalanceAmplification=
+        std::numeric_limits<double>::quiet_NaN();
     // Continuous mechanical radiative drain that survives in the fully
     // quantized mode.  Must be exactly zero: under stochasticElectricDipole
     // every channel leaves as discrete quanta, so nothing may be removed
@@ -1939,6 +1949,8 @@ int runMaxwellSelfTest(
         // only about three nodes and would intentionally gate that force off.
         constexpr int balancePeriods=2;
         constexpr int balanceStepsPerPeriod=512;
+        double balanceTolerance=1.0e-6;
+        int balancePeriodCount=balancePeriods;
         const auto runBalance=[&](const char* name,
                                   ChargeRadiationReactionModel reaction,
                                   bool retarded) {
@@ -1950,7 +1962,7 @@ int runMaxwellSelfTest(
             state.firstVelocity={0,firstShare*balanceRelativeSpeed,0};
             state.secondVelocity={0,-secondShare*balanceRelativeSpeed,0};
             ClassicalTrajectoryEngine engine(state,
-                {.relativeTolerance=1.0e-6,.maximumDepth=12,
+                {.relativeTolerance=balanceTolerance,.maximumDepth=14,
                  .compositionOrder=2,.reactionModel=reaction,
                  .computeOutwardFlux=true,
                  .useRetardedExternalForces=retarded});
@@ -1962,7 +1974,7 @@ int runMaxwellSelfTest(
             const double schottStart=explicitChargeSchottEnergy(
                 state,initialExternal);
             bool advanced=true;
-            for(int step=0;step<balancePeriods*balanceStepsPerPeriod
+            for(int step=0;step<balancePeriodCount*balanceStepsPerPeriod
                 &&advanced;++step) {
                 advanced=engine.advance(
                     state,balancePeriod/balanceStepsPerPeriod);
@@ -2079,6 +2091,30 @@ int runMaxwellSelfTest(
                 std::abs(productionBalance.signedResidual);
             longHorizonRadiatedEnergy=productionBalance.fluxEnergy;
             longHorizonSchottChange=productionBalance.schottChange;
+            // Conditioning of this probe, stated so the residual above can be
+            // read at all.  The pair's binding energy at the probe radius is
+            // the scale of conservativeParticleEnergy; the residual divides a
+            // difference of two such numbers by the far-field energy, which
+            // is four orders smaller.  Any relative error in the mechanical
+            // energy -- the integrator's own secular drift included -- is
+            // magnified by exactly this factor before it is reported.
+            const double bindingScale=pairCoulombStrength/(2.0*balanceRadius);
+            longHorizonBalanceAmplification=
+                bindingScale/std::max(productionBalance.fluxEnergy,1.0e-300);
+            // One refinement step.  A physical imbalance would sit still; a
+            // discretization error shrinks.  A single period is enough
+            // because the residual is period-independent (measured flat to
+            // three digits over 1..32 periods), and halves the cost of the
+            // tighter tolerance.
+            balanceTolerance=1.0e-8;
+            balancePeriodCount=1;
+            const BalanceDiagnostic refined=runBalance(
+                "retarded + coherent reaction, refined",
+                ChargeRadiationReactionModel::coherentElectricDipole,true);
+            balanceTolerance=1.0e-6;
+            balancePeriodCount=balancePeriods;
+            if(refined.advanced)
+                longHorizonBalanceRefined=std::abs(refined.signedResidual);
         }
     }
 
@@ -2106,16 +2142,63 @@ int runMaxwellSelfTest(
         // in dt by construction.  Still far tighter than the 34% it used to be
         // out by.
         &&std::abs(larmorAccumulationRatio-1.0)<0.02;
+    // What this gates, and what it deliberately does not.
+    //
+    // The residual is NOT a measurement of how well the model conserves
+    // energy.  It divides a difference of two mechanical energies by a
+    // far-field energy four orders smaller, so it magnifies any relative
+    // error in the former by longHorizonBalanceAmplification -- about 1.4e4
+    // at the probe's own radius.  At that gain the integrator's own secular
+    // drift, at the 1e-6 tolerance it runs, accounts for the whole reading:
+    // 4.3e-6 of relative mechanical-energy error is exactly the measured
+    // 5.9%.
+    //
+    // Three independent measurements say the same thing.  The
+    // Landau-Lifshitz self-force delivers 0.4997-0.4998 of the far-field
+    // flux against a theoretical 0.5000 for this pair (a1 = -a2 makes the
+    // coherent |q1 a1 + q2 a2|^2 exactly twice the sum of the individual
+    // terms), so the reaction sector is right to three digits.  The far-field
+    // energy itself is converged to 2e-5 across four decades of tolerance,
+    // while the mechanical difference wanders by 12% over the same range.
+    // And refining the discretization moves the residual toward zero and
+    // through it -- order 2 at 1e-8 gives -1.0%, order 4 at 1e-10 gives
+    // +2.9%, against -5.9% at the production setting -- which a real leak
+    // could not do.  (Raising the retarded-history interpolation from cubic
+    // to quintic Hermite, tried and reverted, moved it the WRONG way, to
+    // -17%: the stored accelerations are only as mutually consistent with
+    // the position/velocity samples as the second-order integrator makes
+    // them, so a C^2 interpolant over-fits them.)
+    //
+    // So the gate below is a CONVERGENCE statement, not a conservation one:
+    // the refined probe must be no worse than the coarse one, and must land
+    // inside a band the coarse setting is not expected to reach.  The 10%
+    // ceiling on the coarse value is kept as a blunt guard against the
+    // probe breaking outright.
     const bool longHorizonBalanceOk=
         std::isfinite(longHorizonBalanceResidual)
         &&std::isfinite(longHorizonRadiatedEnergy)
         &&longHorizonRadiatedEnergy>0.0
         &&std::isfinite(longHorizonSchottChange)
-        // Ten percent is already generous compared with the probe's
-        // retardation parameter and beta corrections.  The currently measured
-        // ~0.51 is intentionally allowed to FAIL rather than being normalized
-        // away or hidden in boundFieldEnergy.
-        &&longHorizonBalanceResidual<0.1;
+        &&std::isfinite(longHorizonBalanceRefined)
+        &&longHorizonBalanceResidual<0.1
+        // Refinement must not make things worse -- but only where there is
+        // something to improve.  Once both readings are at the probe's own
+        // noise (p+e- measures 7.1e-5 coarse against 1.5e-4 refined, both
+        // four orders inside the band below) which of them is larger is
+        // decided by round-off, and demanding an ordering there fails a
+        // perfectly healthy pair.  The floor makes the comparison bite only
+        // when the coarse reading is genuinely above the noise.
+        &&longHorizonBalanceRefined
+            <=std::max(longHorizonBalanceResidual,1.0e-3)
+        // The band that actually catches a physical imbalance.  Measured
+        // against an injected 10% error in the radiation-reaction
+        // coefficient: the residual does NOT converge away, going 10.9% ->
+        // 6.0%, and lands here.  Discretization at the production setting
+        // goes 5.9% -> 0.98% and clears it fivefold.  So this resolves a
+        // reaction-sector error of roughly ten percent and up; it is not a
+        // fine measurement of conservation, and nothing here should be read
+        // as one.
+        &&longHorizonBalanceRefined<0.05;
 
     const std::array<double,3> farControlRadii{
         1.0e4*bohrRadius,1.0e5*bohrRadius,1.0e6*bohrRadius};
@@ -3218,6 +3301,10 @@ int runMaxwellSelfTest(
               << "long balance dE/Efar:" << longHorizonBalanceResidual
               << "  (Efar=" << longHorizonRadiatedEnergy/eCharge
               << " eV, dE_S=" << longHorizonSchottChange/eCharge << " eV)\n"
+              << "long balance refined:" << longHorizonBalanceRefined
+              << "  (tol 1e-8; discretization shrinks, a real leak does not)\n"
+              << "balance amplification:" << longHorizonBalanceAmplification
+              << "  (|E_mech|/E_far: gain on any dE_mech error)\n"
               << "balance matrix M/F,S/F,R:\n"
               << "  retarded + none: "
               << balanceDiagnostics[0].mechanicalOverFlux << " / "
