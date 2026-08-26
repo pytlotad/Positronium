@@ -396,9 +396,9 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
 
         // Bank this step's TOTAL classical radiated power as hazard instead
         // of removing any of it as a continuous force.  One photon stream
-        // carries every channel: the E1 charge power and the M1 magnetic
-        // dipole power are summed before the division, so nothing in this
-        // mode radiates continuously.  The charge sector's gate sits in
+        // carries every channel: the E1 charge power, the M1 magnetic dipole
+        // power and the E2 charge quadrupole power are summed before the
+        // division, so nothing in this mode radiates continuously.  The charge sector's gate sits in
         // particleMultipoleRadiation (chargeReaction is zero there); the
         // magnetic sector's two continuous sinks -- the reaction torque and
         // the dipoleConstraintEnergy drain -- are gated in
@@ -434,9 +434,17 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                     false,reactionModel);
             const double photonEnergy=hbar*omega;
             if(photonEnergy>0.0) {
+                // Every channel the model computes, summed before the
+                // division: E1 charge, M1 magnetic dipole, E2 charge
+                // quadrupole.  Multipole powers are orthogonal at this
+                // order, so this is a sum and not a double count.  E2 is
+                // identically zero for every mass-symmetric pair (see
+                // needsQuadrupolePower in electrodynamics.hpp) and carries
+                // the channel only for asymmetric ones such as p+e-.
                 const double quantizedPower=
                     stepRadiation.leadingElectricDipolePower
-                    +stepRadiation.magneticDipoleFlux.energy;
+                    +stepRadiation.magneticDipoleFlux.energy
+                    +stepRadiation.electricQuadrupolePower;
                 stochasticHazard+=quantizedPower/photonEnergy*dt;
                 // A while, not an if: a fast step near periapsis can bank
                 // more than one photon's worth of hazard at once.

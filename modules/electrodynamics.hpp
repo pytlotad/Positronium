@@ -1064,6 +1064,24 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
         ||reactionModel==ChargeRadiationReactionModel::automatic;
     const bool needsBlendingGates=
         reactionModel==ChargeRadiationReactionModel::automatic;
+    // The E2 power is needed by two unrelated consumers: the automatic
+    // model's dominance gate, and the quantized mode's hazard, which sums
+    // every channel before dividing by hbar*omega.  It stays off for the
+    // continuous models, where nothing reads it and the history stencils it
+    // costs would be thrown away.
+    //
+    // For the default pair this is free in the only sense that matters: the
+    // pair quadrupole is Q = kappa (3 d d - d^2 delta) with
+    // kappa = (q1 m2^2 + q2 m1^2)/(m1+m2)^2, which is EXACTLY zero for any
+    // mass-symmetric neutral pair -- e+e-, mu+mu- and p+pbar alike, and
+    // exactly in floating point, the two masses being the same literal.  The
+    // channel is real only for an asymmetric pair, where the centre of mass
+    // and the centre of charge differ: kappa = -0.9989 e for p+e-, i.e.
+    // essentially full strength, and until now that pair radiated no E2 at
+    // all in any mode.
+    const bool needsQuadrupolePower=needsBlendingGates
+        ||reactionModel
+            ==ChargeRadiationReactionModel::stochasticElectricDipole;
     const MutualForces ll=individualLandauLifshitzSelfForces(
         state,externalForces,history,
         !mutualRadiationAlreadyRetarded
@@ -1084,7 +1102,7 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
     result.leadingElectricDipolePower =
         electricDipoleSecondDerivative.squaredNorm()
         / (6.0*pi*epsilon0*c*c*c);
-    if(needsBlendingGates) {
+    if(needsQuadrupolePower) {
         result.electricQuadrupolePower =
             electricQuadrupoleRadiatedPower(state,history);
     }

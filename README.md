@@ -2205,10 +2205,15 @@ jako jeden strumień hazardu Poissona, wypłacany dyskretnymi kwantami
 \(\hbar\omega\):
 
 \[
-\frac{d\Lambda}{dt}=\frac{P_{E1}+P_{M1}}{\hbar\omega_{\rm orb}} .
+\frac{d\Lambda}{dt}=\frac{P_{E1}+P_{M1}+P_{E2}}{\hbar\omega_{\rm orb}} .
 \]
 
-Wcześniej skwantowany był wyłącznie E1. M1 miał **dwa** ujścia ciągłe, w
+Moce multipolowe są w tym rzędzie ortogonalne, więc jest to suma, a nie
+podwójne liczenie.
+
+Wcześniej skwantowany był wyłącznie E1, a E2 **nie promieniowało w ogóle**,
+w żadnym trybie: jego moc zasilała jedynie bramkę dominacji modelu
+`automatic` i nigdzie nie wchodziła do bilansu. M1 miał **dwa** ujścia ciągłe, w
 dodatku bez żadnej bramki na model reakcji: moment siły reakcyjnej
 (`applyDipoleRadiationTorque`) oraz drenaż wewnętrznego rezerwuaru
 (`dipoleConstraintEnergy`). Oba są teraz wyłączane w trybie skwantowanym —
@@ -2230,6 +2235,32 @@ to realna zmiana drogi przepływu energii.
 
 `radiatedEnergy` pozostaje **ciągłą** całką Poyntinga i pełni rolę diagnostyki
 porównawczej, nie sumy wyemitowanych kwantów — tak jak dla E1 od początku.
+
+#### Kwadrupol E2 i dlaczego znika dla pozytonium
+
+Kwadrupol pary wynosi \(Q_{ij}=\kappa\,(3d_id_j-d^2\delta_{ij})\) z
+
+\[
+\kappa=\frac{q_1m_2^2+q_2m_1^2}{(m_1+m_2)^2},\qquad \mathbf d=\mathbf r_1-\mathbf r_2 .
+\]
+
+Dla pary **masowo symetrycznej** \(\kappa\equiv0\) — i to dokładnie, także w
+arytmetyce zmiennoprzecinkowej, bo obie masy są tym samym literałem.
+Zmierzone: \(\kappa=0\) dla e⁺e⁻, μ⁺μ⁻ i p+p̄, ale \(\kappa=-0{,}9989\,e\)
+dla p+e⁻, czyli praktycznie pełna siła kanału. Powód jest geometryczny:
+kanał E2 żyje z rozjechania się środka masy ze środkiem ładunku, a dla pary
+cząstka–antycząstka te punkty się pokrywają.
+
+Dlatego włączenie E2 do kwantu **nic nie zmienia dla pary domyślnej** (i dla
+każdej symetrycznej), a dla p+e⁻ dokłada kanał, którego wcześniej po prostu
+nie było. Zmierzone udziały w hazardzie (ortopozytonium/p+e⁻, seed 12345):
+E2 = \(9{,}3\cdot10^{-25}\) (szum zaokrągleń) dla e⁺e⁻ wobec
+\(1{,}09\cdot10^{-4}\) dla p+e⁻ — tam jest to **największy** kanał
+podwiodący, około trzy rzędy wielkości powyżej M1.
+
+Moc E2 jest liczona tylko wtedy, gdy ktoś ją czyta: w modelu `automatic` (dla
+bramki dominacji) i w trybie skwantowanym (dla hazardu). Modele ciągłe jej nie
+liczą, bo wyrzuciłyby wynik razem z kosztem stencyli historii.
 
 Zmierzone udziały M1 w hazardzie (seed 12345): ortopozytonium \(1{,}5\cdot10^{-24}\)
 (przy zewnętrznym polu \(10^9\,\mu\)T rośnie do \(1{,}7\cdot10^{-14}\), co
