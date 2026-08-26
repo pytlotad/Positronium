@@ -5976,10 +5976,42 @@ int main(int argc, char** argv) {
                       << " eV).  Photon energy follows the level spacing "
                          "dE(n->n-1) while n >= 2 and reverts to hbar*omega "
                          "below, where the ladder has no lower rung.\n"
-                      << "  Collapse time scales as a^3, so this run is about "
-                      << levelSquared*levelSquared*levelSquared
-                      << "x longer than --level 1; raise "
-                         "--crem-wallclock-budget-s accordingly.\n";
+                      << "  Cost: ";
+            // How much longer this run takes, which is NOT one power law for
+            // both reaction families and was briefly documented as if it were.
+            //
+            // Continuum models: dE/dt ~ a^-4 against E ~ -1/a integrates to
+            // t ~ a^3, hence n^6.
+            //
+            // The stochastic default is set by the hazard instead, and the
+            // hazard reads the photon ENERGY as well as the power.  With
+            // P ~ a^-4 ~ n^-8 and hbar*omega ~ a^-3/2 ~ n^-3 the waiting time
+            // would go as n^5; the level-spacing branch above then divides
+            // the rate by dE/hbar*omega = n(2n-1)/(2(n-1)^2), which is 2.78 at
+            // n=2 and falls to 1 as n grows.  Measured directly from the
+            // hazard rate (no Poisson noise): 88.9x, 438.9x and 1554.2x at
+            // n = 2, 3 and 4, which the expression below reproduces to every
+            // digit printed.  So the true asymptotic power is n^5, not n^6.
+            const double levelValue=static_cast<double>(gInitialPrincipalLevel);
+            const double spacingOverClassical=levelValue>=2.0
+                ? levelValue*(2.0*levelValue-1.0)
+                    /(2.0*(levelValue-1.0)*(levelValue-1.0))
+                : 1.0;
+            const double fifthPower=levelValue*levelValue*levelValue
+                *levelValue*levelValue;
+            if (gRadiationReactionModel
+                == ChargeRadiationReactionModel::stochasticElectricDipole) {
+                std::cout << "the photon hazard puts this run about "
+                          << fifthPower*spacingOverClassical
+                          << "x longer than --level 1 (n^5 times the level "
+                             "spacing's own ratio to hbar*omega, "
+                          << spacingOverClassical << ").\n";
+            } else {
+                std::cout << "the continuum inspiral t ~ a^3 puts this run "
+                             "about " << fifthPower*levelValue
+                          << "x longer than --level 1 (n^6).\n";
+            }
+            std::cout << "  Raise --crem-wallclock-budget-s accordingly.\n";
         }
     }
     if (selectedMode == 0) {

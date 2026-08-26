@@ -2426,21 +2426,75 @@ Sprawdzone przeciw wzorowi analitycznemu
 | 2 | 2,0994 | 2,778 | 2,778 |
 | 3 | 3,1492 | 1,806 | 1,806 |
 
-Kaskada faktycznie schodzi przez drabinę: przy `--level 2` szesnaście
-kolejnych emisji korzysta z \(\Delta E\), po czym orbita spada poniżej
-\(n=2\) i pozostałe pięćdziesiąt jeden wraca do \(\hbar\omega\); przy
-`--level 3` jest to odpowiednio 53 i 25.
+**Kaskada schodzi po jednym poziomie na foton.** Zmierzone per emisja, a nie
+per checkpoint (pierwsza wersja tego akapitu myliła jedno z drugim i podawała
+liczby checkpointów jako liczby fotonów):
 
-**Czego ten tryb nie robi.** Nie kwantyzuje energii orbitalnej —
-\(\Delta E\) jest liczone przy **ciągłym** \(n\), więc po emisji para nie
-ląduje dokładnie na niższym poziomie. Pełna kwantyzacja byłaby inną zmianą,
-która przy domyślnym \(n=1\) zabroniłaby emisji orbitalnej w ogóle, a więc
-usunęłaby z modelu badany kolaps.
+```
+--level 3:  n=3.149 -> 2.130   dn=-1.019   dE
+            n=2.130 -> 1.087   dn=-1.044   dE
+            n=1.087 -> 0.634   dn=-0.452   hbar*omega
+            n=0.634 -> 0.270   dn=-0.364   hbar*omega
+            n=0.270 -> 0.080   dn=-0.191   hbar*omega
+--level 2:  n=2.099 -> 1.053   dn=-1.046   dE
+            (trzy dalsze emisje juz na hbar*omega)
+```
 
-**Koszt.** Czas kolapsu skaluje się jak \(a^3\), czyli \(n^6\): `--level 3`
-jest około \(729\times\) dłuższy niż domyślny, a `--level 8` około
-\(2{,}6\cdot10^5\times\) — przy standardowym budżecie wszystkie trajektorie
-wychodzą ocenzurowane. Startowy komunikat podaje ten mnożnik i przypomina o
+Cała trajektoria to **pięć** fotonów przy `--level 3` i **cztery** przy
+`--level 2`, z czego z \(\Delta E\) korzystają odpowiednio dwa i jeden.
+
+Para **ląduje o jeden poziom niżej**, z dokładnością do 2–4%. To nie
+przypadek, tylko tożsamość: skoro \(n=\sqrt{R/|E|}\), to \(|E|=R/n^2\) z
+definicji, więc
+
+\[
+E'=-\frac{R}{n^2}-R\Big(\frac1{(n-1)^2}-\frac1{n^2}\Big)=-\frac{R}{(n-1)^2},
+\]
+
+czyli dokładnie poziom \(n-1\). Resztkowe 2–4% pochodzi z czynnika
+\((\text{energyRatio})^{3/2}\), którym kod skaluje energię referencyjną
+między checkpointami, oraz z relatywistycznej poprawki
+\(\sqrt{W^2-2WE_\gamma}\approx W-E_\gamma-E_\gamma^2/2W\).
+
+**Czego ten tryb nie robi.** Nie kwantyzuje energii orbitalnej: krok wynosi
+jeden poziom, ale **odstęp od całkowitych poziomów Bohra jest zachowywany** —
+kaskada startująca z \(n=3{,}149\) idzie przez \(2{,}13\) i \(1{,}09\), a
+nie przez \(3\to2\to1\). Drabina ma poprawny **rozstaw**, lecz przesunięty
+**offset**, równy części ułamkowej \(n\) w chwili przygotowania. Pełna
+kwantyzacja byłaby inną zmianą, która przy domyślnym \(n=1\) zabroniłaby
+emisji orbitalnej w ogóle, a więc usunęłaby z modelu badany kolaps.
+
+**Koszt — i to nie jest jedno prawo potęgowe dla obu rodzin modeli.**
+Pierwsza wersja tego akapitu podawała \(n^6\) bez zastrzeżeń, co jest
+poprawne wyłącznie dla modeli ciągłych: tam \(dE/dt\sim a^{-4}\) przy
+\(E\sim-1/a\) całkuje się do \(t\sim a^3\), czyli \(n^6\).
+
+Domyślny tryb stochastyczny rządzi się hazardem, a hazard czyta także
+**energię** fotonu. Przy \(P\sim a^{-4}\sim n^{-8}\) i
+\(\hbar\omega\sim a^{-3/2}\sim n^{-3}\) czas oczekiwania szedłby jak
+\(n^5\); gałąź odstępu poziomów dzieli następnie tempo przez
+\(\Delta E/\hbar\omega=n(2n-1)/(2(n-1)^2)\). Zatem
+
+\[
+t\ \propto\ n^5\cdot\frac{n(2n-1)}{2(n-1)^2}\ \longrightarrow\ n^5 .
+\]
+
+Zmierzone bezpośrednio z tempa hazardu (bez szumu Poissona, w odróżnieniu od
+czasu do pierwszego fotonu, którego odchylenie standardowe równa się średniej):
+
+| n | 1/λ (s) | zmierzone × | \(n^5\) | \(n^6\) | wzór wyżej |
+|---|---|---|---|---|---|
+| 1,0497 | 2,352·10⁻¹⁰ | 1,0 | 1 | 1 | 1,0 |
+| 2,0995 | 2,091·10⁻⁸ | **88,9** | 32 | 64 | **88,9** |
+| 3,1492 | 1,032·10⁻⁷ | **438,9** | 243 | 729 | **438,9** |
+| 4,1989 | 3,655·10⁻⁷ | **1554,2** | 1024 | 4096 | **1554,2** |
+
+Wzór odtwarza pomiar co do ostatniej drukowanej cyfry; \(P\sim n^{-8}\)
+potwierdzone niezależnie (zmierzony iloraz mocy między \(n=1\) a \(n=2\)
+wynosi dokładnie \(256=2^8\)). Prawdziwa potęga asymptotyczna to więc
+\(n^5\), nie \(n^6\) — dla `--level 8` daje to \(4{,}0\cdot10^4\times\), a
+nie \(2{,}6\cdot10^5\times\), jak podawała pierwsza wersja. Komunikat
+startowy liczy właściwy mnożnik dla aktywnego modelu reakcji i przypomina o
 `--crem-wallclock-budget-s`.
 
 `--level 1` jest domyślne i **bit-identyczne** z zachowaniem sprzed tej
