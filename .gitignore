@@ -24,3 +24,7 @@ distributions/.*.tmp_*.pdf
 # module is imported rather than run as a script.
 __pycache__/
 *.pyc
+
+# Claude Code: the shared permission list is tracked, the per-machine
+# overrides in settings.local.json are not.
+.claude/settings.local.json

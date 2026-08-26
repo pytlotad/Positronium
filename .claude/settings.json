@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(timeout 200 ./positronium --mode statistical --phenomenon 1 --runs 10 --seed 42 --crem-wallclock-budget-s 40)",
+      "Bash(CREM_DEBUG_TILT=1 timeout 90 ./positronium --mode statistical --phenomenon 1 --runs 1 --seed 42 --crem-wallclock-budget-s 60)",
+      "Bash(awk -F'|L_dir|=' '{print $2}')",
+      "Bash(CREM_DEBUG=1 timeout 90 ./positronium --no-gui --mode statistical --phenomenon 2 --runs 3 --seed 7 --pair electron,positron --radiation-reaction stochastic)",
+      "Bash(xxd)",
+      "Bash(g++ -O3 -march=native -Wall -Wextra -Wpedantic -pthread -std=c++20 -m64 -fsized-deallocation -I/usr/include/root -o positronium positronium.cpp -L/usr/lib64/root -lCore -lImt -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lROOTVecOps -lTree -lTreePlayer -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lROOTNTuple -lROOTNTupleUtil -lMultiProc -lROOTDataFrame -Wl,-rpath,/usr/lib64/root -pthread -lm -ldl -rdynamic)",
+      "Bash(CREM_DEBUG=1 timeout 90 ./positronium --no-gui --mode statistical --phenomenon 2 --runs 5 --seed 42 --pair electron,positron --radiation-reaction stochastic)",
+      "Bash(timeout 90 ./positronium --no-gui --mode statistical --phenomenon 2 --runs 10 --seed 42 --pair electron,positron --radiation-reaction stochastic)"
+    ]
+  }
+}
