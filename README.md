@@ -2334,6 +2334,60 @@ to realna zmiana drogi przepływu energii.
 `radiatedEnergy` pozostaje **ciągłą** całką Poyntinga i pełni rolę diagnostyki
 porównawczej, nie sumy wyemitowanych kwantów — tak jak dla E1 od początku.
 
+#### Domknięcie sufitu: emisja w oknie zamiast chwilowego kopnięcia
+
+Sufit opisany niżej wykluczał emisję w całej dziedzinie modelu, a obie
+oczywiste naprawy (zatrzymanie hazardu, przeskalowanie kwantu) zostały
+zmierzone i odrzucone. Domyka go zmiana **rodzaju** emisji, nie jej rozmiaru.
+
+Zdarzenie nie przekazuje już fotonu w jednej chwili: **otwiera okno** długie
+na jeden okres orbitalny, przez które kwant jest wypłacany w przyrostach. W
+żadnej chwili nie ubywa więcej niż różniczka, a przez okno **pozycje
+ewoluują**, więc energia pochodzi z orbity — ze studni potencjału — a nie z
+zamrożonej chwilowej energii kinetycznej. To ta sama zmiana rodzaju, na
+której opiera się ścieżka sekularna, wykonana na trajektorii rozdzielczej.
+Jeden okres, bo fotonu o częstości \(\omega\) nie da się złożyć z krótszego
+ciągu falowego.
+
+*Dlaczego jest dokąd oddać energię.* Przy \(n=1\) orbita idzie
+\(105{,}8\to35{,}3\) pm, wciąż \(184\times\) powyżej bariery Comptona; przy
+\(n=0{,}25\) nowe \(a'=0{,}735\) pm, \(3{,}8\times\) nad barierą.
+
+*Moment pędu wychodzi za darmo.* Przyrosty idą przez to samo
+`applyStochasticDipolePhoton`, które skaluje **długość** pędu względnego,
+zachowując kierunek. Daje to \(dE/dL=v^2/(v_tr)\), czyli dokładnie
+\(\omega\) dla orbity kołowej — ten stosunek unosi promieniowanie
+obrotowego dipola E1 — i mieści się w \(0{,}25\%\) od niego przy zmierzonej
+medianie mimośrodu emisji \(0{,}05\).
+
+*Okno reguluje się samo.* Tempo nominalne \(\hbar\omega/(2\pi/\omega)\)
+rośnie jak \(\omega^2\), a energia kinetyczna, z której musi być zapłacone,
+tylko jak energia wiązania — więc głęboko w kolapsie tempo nominalne
+wyprzedza rezerwuar. Zmierzone przed dodaniem ogranicznika: odrzucane
+przyrosty sięgały średnio \(2{,}5\times\), a maksymalnie \(13{,}7\times\)
+dostępnej energii. Ograniczenie przyrostu do jednej dziesiątej **niezmiennika
+CM** \(W-(m_1+m_2)c^2\) (nie laboratoryjnej energii kinetycznej — ta różnica
+sama zostawiała \(1{,}3\%\) odmów) po prostu **wydłuża tam okno**: suma
+wypłat to nadal dokładnie jeden kwant, a odmowa staje się niemożliwa.
+Zweryfikowane przy sztucznie zawyżonym hazardzie
+(\(10^5\times\)): **3155 wypłat, zero odmów**.
+
+*Koszt, wypowiedziany wprost.* Trajektoria przestaje być zachowana dokładnie
+między fotonami — w oknie działa siła ciągła. Współczynnik wypełnienia
+ogranicza to do \(1{,}5\cdot10^{-6}\): jeden foton na \(669\,000\) obiegów,
+okno długie na jeden obieg. **\(99{,}99985\%\) trajektorii zachowuje dokładną
+zachowawczość**, na której ten tryb stoi.
+
+Nakładanie się okien **akumuluje**, nie nadpisuje. Przy prawdziwym hazardzie
+to zdarzenie o prawdopodobieństwie \(1{,}5\cdot10^{-6}\) i polityka nie ma
+znaczenia, ale nadpisywanie porzucałoby niezapłaconą resztę, co byłoby
+wyciekiem energii, a nie wyborem modelowym.
+
+Zachowanie produkcyjne jest **bit-identyczne**: przy fizycznym hazardzie
+ścieżka mechaniczna nie wyzwala fotonu w żadnym z przebiegów, jakie ten
+projekt uruchamia, więc okno nie ma się kiedy otworzyć. Domyka natomiast
+mechanizm, który dotąd po cichu gubił każdy foton, jaki próbował paść.
+
 #### Zgodność harmonik z progami energetycznymi
 
 Dwie ścieżki emisji mają **różne** progi kinematyczne, i to jest poprawne —

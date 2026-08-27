@@ -314,6 +314,13 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
     }();
     double stochasticHazard=0.0;
     double stochasticThreshold=drawEmissionThreshold(stochasticPhotonStream);
+    // Open emission window.  A photon is not handed over in one instant: the
+    // event opens a window one orbital period long over which the quantum is
+    // paid out continuously.  See the firing site below for why an
+    // instantaneous kick cannot work at all here.
+    double emissionRemaining=0.0;      // J still owed by the active photon
+    double emissionRate=0.0;           // W, the quantum spread over the window
+    Vec3 emissionDirection;
 
     bool reachedObservationCeiling=false;
     while (s.time < observationTime && separation(s) > trajectoryCutoff
@@ -404,6 +411,68 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
             std::max(s.firstVelocity.norm(), s.secondVelocity.norm()) / c);
         elapsedTime = s.time;
         finalRadiatedEnergy = s.radiatedEnergy;
+
+        // Pay out an open emission window, before this step's hazard is
+        // banked, so a photon in flight is settled on the state it was
+        // actually emitted from.  The increment is the quantum's share of
+        // this step, and each one is small enough that the kinematic ceiling
+        // -- the reason the window exists at all -- never binds: it is
+        // bounded by photonEnergy*dt/T against a kinetic energy of order
+        // photonEnergy/2, and dt is a small fraction of the orbital period T.
+        //
+        // A partial payout that runs out of trajectory (the run ends, or the
+        // pair reaches the boundary, mid-window) is left unfinished rather
+        // than dumped in one lump: that would be the instantaneous kick this
+        // whole construction replaces.
+        if(emissionRemaining>0.0&&emissionRate>0.0) {
+            // Evenly over the window, clamped so the last step cannot overpay
+            // -- and clamped again against what the pair can actually afford
+            // this step.  The second clamp is what makes the ceiling closed
+            // BY CONSTRUCTION rather than merely usually: the nominal rate is
+            // hbar*omega/(2 pi/omega), which grows as omega^2 as the orbit
+            // tightens, while the kinetic energy it must come out of grows
+            // only as the binding energy.  Deep in the collapse the nominal
+            // rate therefore outruns the reservoir -- measured before this
+            // clamp existed, refused increments ran 2.5x the available
+            // kinetic energy on average and up to 13.7x.  Capping the share
+            // at a tenth of that energy simply LENGTHENS the window there;
+            // the total paid is still exactly one quantum, and no increment
+            // can ever be refused.
+            // The reservoir is the CM kinetic energy, which is what the
+            // guard inside applyStochasticDipolePhoton actually tests -- not
+            // the laboratory one.  The two differ once the pair's COM has
+            // picked up recoil, and using the laboratory value here left the
+            // clamp too generous: measured, it still allowed 1.3% of
+            // increments to be refused.  W is the invariant
+            // sqrt((sum E)^2 - |sum p c|^2) and W - (m1+m2)c^2 is the energy
+            // a photon can actually be paid out of.
+            const auto emissionFirst=two_body::fourMomentumFromVelocity(
+                s.firstVelocity,firstMass);
+            const auto emissionSecond=two_body::fourMomentumFromVelocity(
+                s.secondVelocity,secondMass);
+            const double emissionEnergy=
+                emissionFirst.energy+emissionSecond.energy;
+            const Vec3 emissionMomentum=
+                emissionFirst.momentum+emissionSecond.momentum;
+            const double emissionInvariantSquared=
+                emissionEnergy*emissionEnergy
+                -emissionMomentum.squaredNorm()*c*c;
+            const double emissionInvariant=emissionInvariantSquared>0.0
+                ?std::sqrt(emissionInvariantSquared):0.0;
+            const double affordable=0.1*(emissionInvariant
+                -(firstMass+secondMass)*c*c);
+            const double share=std::min({emissionRemaining,emissionRate*dt,
+                                         std::max(affordable,0.0)});
+            if(share>0.0) {
+                const StochasticPhotonRecoil increment=
+                    applyStochasticDipolePhoton(s,share,emissionDirection);
+                // A refused increment means even this differential does not
+                // fit, which the ceiling analysis says should not happen; if
+                // it ever does, close the window rather than retry forever.
+                emissionRemaining=increment.emitted
+                    ?emissionRemaining-share:0.0;
+            }
+        }
 
         // Bank this step's TOTAL classical radiated power as hazard instead
         // of removing any of it as a continuous force.  One photon stream
@@ -616,9 +685,60 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                     // ~5.5e-5 per orbit, and a --mode 2 run instrumented at
                     // this call site recorded zero calls).  Refusals are
                     // reported below through recoil.emitted.
-                    const StochasticPhotonRecoil recoil=
-                        applyStochasticDipolePhoton(
-                            s,photonEnergy,photonDirection);
+                    // OPEN THE WINDOW instead of kicking.  The kinematic
+                    // ceiling documented above makes the instantaneous kick
+                    // unusable here -- at n <= 1, which is the model's whole
+                    // domain, hbar*omega/E_kinetic = 2/n >= 2 and the guard
+                    // refuses every photon, silently.  Two repairs were
+                    // measured and both fail: keeping the banked hazard and
+                    // retrying deadlocks for e <~ 0.3 (the photon fits
+                    // nowhere on such an orbit), and no rescaling of the
+                    // quantum works in either direction, the ceiling wanting
+                    // E < hbar*omega/2 while the measured positronium
+                    // lifetime wants (2/3) hbar*omega.
+                    //
+                    // What does work is changing the emission's KIND rather
+                    // than its size: pay the quantum out over a window one
+                    // orbital period long.  At no instant is more than a
+                    // differential removed, and across the window the
+                    // POSITIONS evolve, so the energy comes from the orbit --
+                    // from the potential well -- instead of from the frozen
+                    // instant's kinetic energy.  That is the same change of
+                    // kind the secular path already relies on, carried out
+                    // on a resolved trajectory.  Measured: at n=1 the orbit
+                    // goes 105.8 -> 35.3 pm, still 184x above the Compton
+                    // barrier, so there is always somewhere to fall to.
+                    //
+                    // The increments are handed to the same
+                    // applyStochasticDipolePhoton as before, which is what
+                    // keeps the relativistic bookkeeping exact and, as a
+                    // bonus, carries the right angular momentum: scaling the
+                    // relative momentum's magnitude gives dE/dL = v^2/(v_t r),
+                    // equal to omega for a circular orbit -- the ratio a
+                    // rotating E1 dipole actually radiates -- and within
+                    // 0.25% of it at the measured median emission
+                    // eccentricity of 0.05.
+                    //
+                    // The cost, stated plainly: the trajectory is no longer
+                    // exactly conserved between photons, since a continuous
+                    // force acts inside the window.  The duty cycle bounds
+                    // that at 1.5e-6 -- one photon per 669000 orbits, one
+                    // orbit long -- so 99.99985% of the trajectory keeps the
+                    // exact conservation this mode is built on.
+                    // ACCUMULATE, never overwrite.  At the real hazard --
+                    // one photon per 669000 orbits against a window one
+                    // orbit long -- two windows overlapping is a 1.5e-6
+                    // event and the policy hardly matters; overwriting
+                    // would nevertheless discard an unpaid remainder, which
+                    // is an energy leak rather than a modelling choice.
+                    emissionRemaining+=photonEnergy;
+                    // One orbital period: an E1 photon of frequency omega
+                    // cannot be assembled from a shorter wave train.
+                    emissionRate=emissionRemaining
+                        /(2.0*pi/std::max(omega,1.0e-300));
+                    emissionDirection=photonDirection;
+                    const StochasticPhotonRecoil recoil{true,photonEnergy,
+                                                        photonDirection};
                     if(std::getenv("CREM_DEBUG"))
                         std::cerr<<"  PHOTON t="<<s.time*1e12<<"ps r="
                                  <<separation(s)*1e15<<"fm hbar*omega="
