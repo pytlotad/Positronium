@@ -1202,30 +1202,59 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // 9.9e-17 s, is fourteen orders below the collapse.  But the
             // pair does not LIVE there: integrating Omega_reaction dt along
             // the inspiral with dt = (dE/da) da / P_E1 from a_Ps to the
-            // barrier gives 5.24e-3 rad -- 0.30 degrees over the entire
-            // collapse.  The spiral's clock is spent in the outer region,
-            // where the torque is 0.85 rad/s.
+            // barrier, averaged over 96 random orientations of the two
+            // moments, gives 2.33e-2 +- 0.24e-2 rad -- 1.33 degrees over the
+            // entire collapse.  The spiral's clock is spent in the outer
+            // region, where the torque is 0.85 rad/s.
             //
             // (This supersedes the 1.14e-44 ratio recorded in the README's
             // Sonda 6, which evaluated the torque on an unfilled history and
-            // is wrong by some thirty-two orders of magnitude.)
+            // is wrong by some thirty-two orders of magnitude.  It also
+            // supersedes an earlier 0.30 degrees written here, which was one
+            // unrepresentative orientation rather than an average.)
             //
-            // In the production path not even that 0.30 degrees happens: the
-            // reaction torque is gated off in the quantized mode
-            // (see applyDipoleRadiationTorque's call sites in
-            // electrodynamics.hpp), and applyStochasticDipolePhoton rebuilds
-            // only the four-velocities, never the proper dipoles.  The M1
-            // energy leaves through the kinematics while the orientation
-            // that generated it goes undebited.  That is a MODELLING GAP,
-            // not a physical argument, and the 0.30 degrees above is its
-            // upper bound.
+            // THE GAP, taken apart.  In the quantized mode two things are
+            // gated at the same flag: the reaction torque, and the
+            // dipoleConstraintEnergy drain.  Only the first is a real
+            // omission.
+            //
+            //   Energy.  In the continuous mode the drain equals the M1 flux
+            //   to the bit, and dipoleConstraintEnergy IS a term of
+            //   conservativeParticleEnergy, whose differences measuredDelta
+            //   reports as the secular orbital loss.  But the background run
+            //   is integrated with reactionModel::disabled, which does NOT
+            //   release the gate, so the background drains the reservoir
+            //   identically and 4.0e-5 of the M1 energy survives the
+            //   subtraction (5.9e-12 of the subtracted dE).  It is the
+            //   CONTINUOUS mode that loses M1 to the orbit; the quantized
+            //   mode, routing it through the hazard and the photon, is the
+            //   only one where it tightens the orbit at all.
+            //
+            //   Angular momentum.  M1's share of the radiated angular
+            //   momentum flux runs 2.2e-15 at a_Ps to 9.3e-5 at the terminal
+            //   radius -- negligible once weighted by dwell time.
+            //
+            //   Affordability.  Cumulative M1 never exceeds the dipole
+            //   orientation energy available at the same radius; the ratio
+            //   tops out at 3.9e-3 (3.70 eV against 950 eV of U_dd at the
+            //   barrier).  Neither account is overdrawn.
+            //
+            // So the omission is the orientation back-reaction alone, worth
+            // 1.33 degrees.  It does not separate the channels either: the
+            // destructive M1 interference is exact only at cos = -1, and
+            // averaged over orientations the M1 share of the quantized
+            // stream is 1.875e-3 +- 3.7e-4 for para against 1.903e-3 +-
+            // 2.3e-4 for ortho -- a difference consistent with zero.
             //
             // Measured directly over 144 components from 72 trajectories,
             // mu.L has SD 0.601 at the seed and 0.596 at termination against
             // 1/sqrt(3) = 0.577 for an isotropic distribution, with a median
-            // excursion of 0.019 across the whole collapse -- itself larger
-            // than the 5.2e-3 the ungated torque would have added, so
-            // closing the gap would not move the isotropy verdict.
+            // excursion of 0.019 across the whole collapse.  The ungated
+            // torque would have added 2.33e-2 -- MORE than that excursion,
+            // not less, so closing the gap would roughly double the total
+            // reorientation.  It still would not move the isotropy verdict,
+            // 1.3 degrees being nothing against a distribution of SD 0.577
+            // spread over [-1,1], but the margin is a factor of order one.
             //
             // And had there been dissipation it would not have produced
             // repulsion in ortho anyway: the system would seek the MINIMUM

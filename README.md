@@ -2496,8 +2496,9 @@ const double quantizedPower=
     +stepRadiation.electricQuadrupolePower;
 ```
 
-a scałkowany po całym kolapsie kanał M1 unosi \(3{,}98\) eV wobec
-\(3777\) eV z E1 — udział \(1{,}05\cdot10^{-3}\), mało, ale nie zero.
+a scałkowany po całym kolapsie kanał M1 unosi \(\approx7\) eV wobec
+\(3837\) eV z E1 — udział \(1{,}89\cdot10^{-3}\) uśredniony po orientacjach
+momentów, mało, ale nie zero.
 Momenty **mogą** tracić energię w kwantach.
 
 *Ile faktycznie się obracają — liczba rozstrzygająca.* Wyprowadźmy to z
@@ -2522,24 +2523,98 @@ reakcji}\,dt\) po spirali \(dt=(dE/da)\,da/P_{E1}\) od \(a_{Ps}\) do
 bariery:
 
 ```
-całkowity czas spirali        = 3,16e-11 s
-całkowity obrót od reakcji M1 = 5,24e-03 rad = 0,30 stopnia
+całkowity czas spirali = 3,16e-11 s
 ```
 
-Trzysta setnych stopnia przez cały kolaps. Czas życia spirali jest zdominowany
-przez obszar zewnętrzny — \(3{,}16\cdot10^{-11}\) s upływa już przy
-\(a\approx2\cdot10^{-11}\) m i dalej się praktycznie nie zmienia, podczas gdy
-szybki obrót zaczyna się cztery rzędy niżej.
+Czas życia spirali jest zdominowany przez obszar zewnętrzny —
+\(3{,}16\cdot10^{-11}\) s upływa już przy \(a\approx2\cdot10^{-11}\) m i dalej
+się praktycznie nie zmienia, podczas gdy szybki obrót zaczyna się cztery rzędy
+niżej. Sam obrót zależy jednak od wzajemnej orientacji obu momentów, więc
+pojedyncza konfiguracja nic nie rozstrzyga; uśrednione po \(96\) losowych
+parach orientacji, na siatce \(N=200\) punktów promienia (zbieżnej —
+patrz niżej):
 
-*A w ścieżce produkcyjnej nawet tyle nie zachodzi.* W trybie skwantowanym
-moment reakcji jest **bramkowany do zera**
-(`if(!quantizedRadiation) applyDipoleRadiationTorque(...)`), a wypłata fotonu,
-`applyStochasticDipolePhoton`, przelicza wyłącznie czteropędy — nie dotyka
-`firstProperDipole` ani `secondProperDipole`. Energia M1 wychodzi więc przez
-kinematykę, a orientacja momentu, która ją wygenerowała, nie jest obciążana.
-**To jest luka modelu, nie argument fizyczny**, i tak ją tu odnotowuję.
-Powyższe \(0{,}30°\) jest jej ograniczeniem górnym: tyle najwyżej ta luka
-gubi, bo tyle daje ten sam moment siły w trybie ciągłym, gdzie działa.
+| | \(n\) | średni obrót [rad] | SD | SEM |
+|---|---|---|---|---|
+| para | \(28\) | \(2{,}60\cdot10^{-2}\) | \(2{,}46\cdot10^{-2}\) | \(4{,}7\cdot10^{-3}\) |
+| orto | \(68\) | \(2{,}21\cdot10^{-2}\) | \(2{,}32\cdot10^{-2}\) | \(2{,}8\cdot10^{-3}\) |
+| razem | \(96\) | \(2{,}33\cdot10^{-2}\) | \(2{,}36\cdot10^{-2}\) | \(2{,}4\cdot10^{-3}\) |
+
+czyli **\(1{,}33°\pm0{,}14°\)** przez cały kolaps. Różnica para–orto,
+\(3{,}9\cdot10^{-3}\) rad przy łącznym SEM \(5{,}4\cdot10^{-3}\), jest
+nieistotna.
+
+> **Sprostowanie.** Pierwsza wersja tego akapitu podawała
+> \(5{,}24\cdot10^{-3}\) rad \(=0{,}30°\). Ta liczba pochodziła z **jednej**
+> konfiguracji momentów (\(\cos=+0{,}562\)) i nie jest reprezentatywna —
+> uśrednienie po orientacjach daje wartość \(4{,}4\) razy większą. Sama
+> całka po tej jednej orientacji jest zbieżna: dla \(N=36/100/300/800/2000\)
+> punktów wychodzi \(4{,}78/4{,}44/4{,}36/4{,}10/4{,}12\cdot10^{-3}\) rad,
+> a rozrzut do pierwotnie podanych \(5{,}24\) bierze się z innego szablonu
+> pochodnych (czynnik \(\approx1{,}7\), patrz Sonda 6). Zbieżność siatki nie
+> była więc problemem — problemem było uogólnienie z próbki wielkości jeden.
+
+### Luka implementacyjna wokół kanału M1 — rozbiór
+
+W trybie skwantowanym bramkowane są **dwie** rzeczy, przy tej samej fladze i w
+tym samym miejscu: moment siły reakcji
+(`if(!quantizedRadiation) applyDipoleRadiationTorque(...)`) oraz drenaż
+rezerwuaru (`if(!quantizedRadiation) trial.dipoleConstraintEnergy-=...`).
+Wypłata fotonu, `applyStochasticDipolePhoton`, przelicza wyłącznie czteropędy —
+nie dotyka `firstProperDipole` ani `secondProperDipole`. Pierwotny opis tej
+luki („energia wychodzi przez kinematykę, a orientacja nie jest obciążana")
+był zbyt zgrubny i po rozbiorze na składniki okazał się mylący. Poniżej cztery
+aspekty, zmierzone osobno.
+
+**(a) Bilans energii — to NIE jest luka, a kierunek jest odwrotny do
+oczekiwanego.** Zmierzone na jednym okresie przy \(a_{Ps}/50\):
+
+```
+                       tryb ciągły      tło (disabled)    tryb skwantowany
+dipoleConstraintEnergy  -4,81317e-27      -4,81336e-27       0,00000e+00
+```
+
+W trybie ciągłym drenaż jest co do bitu równy strumieniowi M1
+(`radiatedEnergy-orbitalRadiatedEnergy` \(=4{,}8132\cdot10^{-27}\) J), a
+`dipoleConstraintEnergy` **wchodzi** do `conservativeParticleEnergy` — czyli
+do tej samej funkcji, której różnice `measuredDelta` podaje jako sekularny
+ubytek energii orbity. Ale przebieg **tła** liczony jest z
+`ChargeRadiationReactionModel::disabled`, a ta flaga bramki nie zwalnia, więc
+tło drenuje rezerwuar tak samo. Po odjęciu tła z energii M1 zostaje
+\(4{,}0\cdot10^{-5}\) jej wartości, a jej udział w odjętym \(\Delta E\) to
+\(5{,}9\cdot10^{-12}\).
+
+Wniosek jest odwrotny do intuicji: to **tryb ciągły** gubi energię M1 dla
+orbity — kasuje ją w odejmowaniu tła — a tryb skwantowany jako jedyny
+pozwala jej realnie zacieśnić orbitę, przez hazard i foton. Na tej osi
+ścieżka produkcyjna jest bardziej, nie mniej, poprawna.
+
+**(b) Reakcja na orientację — to jest właściwa luka.** Moment siły reakcji
+zostaje odrzucony, a w trybie ciągłym obraca momenty o \(1{,}33°\pm0{,}14°\)
+przez cały kolaps (tabela wyżej). To jedyny składnik, którego skwantowanie
+nie odtwarza żadną drogą.
+
+**(c) Czy kanał M1 stać na to, co promieniuje.** Skumulowana energia M1 wzdłuż
+spirali nigdy nie przekracza energii orientacyjnej dipoli dostępnej przy tym
+samym promieniu — stosunek rośnie monotonicznie, ale kończy na
+\(3{,}9\cdot10^{-3}\) (\(3{,}70\) eV skumulowanego M1 wobec \(950\) eV
+\(U_{dd}\) przy barierze). Żadne z dwóch kont nie jest przekroczone, więc
+pytanie „skąd ta energia pochodzi" nie ma w tym modelu wymuszonej odpowiedzi.
+
+**(d) Moment pędu — pomijalny.** Udział M1 w strumieniu wypromieniowanego
+momentu pędu: \(2{,}2\cdot10^{-15}\) przy \(a_{Ps}\),
+\(3{,}5\cdot10^{-11}\) przy \(a_{Ps}/10\), \(9{,}3\cdot10^{-5}\) przy
+promieniu terminalnym. Po zważeniu czasem przebywania — nieistotny.
+
+*Czy luka rozdziela kanały.* Destruktywna interferencja M1 znosi się
+**dokładnie** tylko przy \(\cos=-1\); realne zdarzenia orto zajmują całe
+\(\cos<0{,}5\). Uśredniony po orientacjach udział M1 w strumieniu
+skwantowanym wynosi \(1{,}875\cdot10^{-3}\pm3{,}7\cdot10^{-4}\) dla para i
+\(1{,}903\cdot10^{-3}\pm2{,}3\cdot10^{-4}\) dla orto — różnica
+\(2{,}8\cdot10^{-5}\) przy niepewności \(4{,}4\cdot10^{-4}\), czyli
+**zgodna z zerem**. Obraz „M1 tylko dla para, zero dla orto" jest prawdziwy
+wyłącznie w punkcie \(\cos=-1\) i nie przenosi się na statystykę. Luka nie
+wprowadza mierzalnej asymetrii kanałów.
 
 Zmierzone wprost, rozkład \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) na
 \(144\) składowych z \(72\) trajektorii:
@@ -2553,9 +2628,13 @@ Zmierzone wprost, rozkład \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) na
 Mediana zmiany \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) przez cały kolaps to
 \(0{,}019\); frakcja blisko \(\hat{\mathbf L}\) \(12\%\) wobec \(10\%\)
 izotropowych. Momenty precesują, ale kończą tam, gdzie zaczęły, z rozkładem
-nieodróżnialnym od izotropowego — a \(0{,}019\) rad zmiany to więcej niż
-\(5{,}2\cdot10^{-3}\) rad, które reakcja M1 wniosłaby, gdyby jej nie
-bramkowano. Domknięcie luki nie ruszyłoby więc werdyktu o izotropii.
+nieodróżnialnym od izotropowego. Reakcja M1, gdyby jej nie bramkowano,
+wniosłaby \(2{,}33\cdot10^{-2}\) rad — a więc **więcej** niż zmierzone
+\(0{,}019\), nie mniej, jak podawała pierwsza wersja tego akapitu.
+Domknięcie luki mniej więcej podwoiłoby całkowity obrót momentów. Werdyktu o
+izotropii to i tak nie rusza: \(1{,}3°\) na rozkładzie o SD \(0{,}577\)
+rozciągniętym na \([-1,1]\) jest nierozróżnialne — ale margines wynosi
+czynnik rzędu jedności, nie cztery.
 Założenie izotropii jest podtrzymywane przez dynamikę — nie dlatego, że
 precesja zachodzi wokół \(\hat{\mathbf L}\), i nie dlatego, że nie ma kanału
 strat, tylko dlatego, że **kanał strat robi się szybki dopiero tam, gdzie para
@@ -4527,6 +4606,22 @@ zweryfikowany w walidatorze mechanizm. Ale jego energia jest świadomie
 i architektonicznie odcięta od orbity: księgowana do
 `dipoleConstraintEnergy`, osobnego rezerwuaru, nigdy nie wchodzi do
 budżetu energii orbitalnej ani do doboru harmoniki.
+
+**Ostatnie zdanie jest nieścisłe w obie strony i zostało sprawdzone w
+kodzie.** Po pierwsze, `dipoleConstraintEnergy` **jest** składnikiem
+`conservativeParticleEnergy`, a więc formalnie wchodzi do budżetu energii
+orbitalnej; z orbitą rozłącza je nie architektura, tylko **odejmowanie
+tła** — przebieg tła drenuje ten sam rezerwuar, więc po odjęciu zostaje
+\(4{,}0\cdot10^{-5}\) energii M1. Wniosek się broni, mechanizm był nazwany
+błędnie. Po drugie, w trybie skwantowanym M1 **wchodzi** do doboru fotonu:
+`quantizedPower` sumuje E1, M1 i E2 przed podzieleniem przez
+\(\hbar\omega\). Rozbiór obu tych ścieżek jest przy omówieniu luki
+implementacyjnej wokół kanału M1.
+
+Nieścisła jest też sama dychotomia „para \(4P_1\), orto zero": znoszenie
+jest dokładne wyłącznie przy \(\cos=-1\), a uśredniony po orientacjach
+udział M1 wynosi \(1{,}88\cdot10^{-3}\) dla para wobec
+\(1{,}90\cdot10^{-3}\) dla orto — różnica zgodna z zerem.
 
 *Sonda 6 — czy moment siły reakcji M1 mógłby wracać do orbity inną
 drogą, przez ewolucję samych wektorów dipola.* Sprawdzone w kodzie:
