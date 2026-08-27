@@ -86,6 +86,17 @@ double drawExponentialUnit(std::uint64_t& streamState) {
     return -std::log(uniform);
 }
 
+// The threshold the quantized emission actually fires on.  Exp(1) gives the
+// Poisson process; the constant 1 gives the deterministic variant, which
+// fires exactly when the continuously accumulated loss reaches one quantum
+// (see gDeterministicEmission for why that is the same thing as emitting on
+// a level crossing).  The stream is advanced either way, so switching modes
+// does not shift every later draw in the run.
+double drawEmissionThreshold(std::uint64_t& streamState) {
+    const double exponential=drawExponentialUnit(streamState);
+    return gDeterministicEmission ? 1.0 : exponential;
+}
+
 // Draws one uniform variate in [0,1) from the same stream, advancing it in
 // place.  Same bit construction as drawExponentialUnit's own intermediate
 // uniform, just returned directly instead of being fed through -log().
@@ -302,7 +313,7 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
         return bits;
     }();
     double stochasticHazard=0.0;
-    double stochasticThreshold=drawExponentialUnit(stochasticPhotonStream);
+    double stochasticThreshold=drawEmissionThreshold(stochasticPhotonStream);
 
     bool reachedObservationCeiling=false;
     while (s.time < observationTime && separation(s) > trajectoryCutoff
@@ -590,7 +601,7 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                                  <<photonDirection.y<<','
                                  <<photonDirection.z<<')'<<std::endl;
                     stochasticThreshold=
-                        drawExponentialUnit(stochasticPhotonStream);
+                        drawEmissionThreshold(stochasticPhotonStream);
                 }
             }
         }

@@ -2421,6 +2421,7 @@ dnie drabiny \(\hbar\omega\) myli się trzykrotnie.
 Sprawdzone przeciw wzorowi analitycznemu
 \(\Delta E/\hbar\omega=n(2n-1)/(2(n-1)^2)\):
 
+| `--emission` | `poisson` | **Eksperyment diagnostyczny.** Próg, na którym pada skwantowany foton. `poisson` losuje go z \(\mathrm{Exp}(1)\) — emisja spontaniczna z szumem śrutowym, zachowanie domyślne i fizyczne. `deterministic` ustawia próg na stałe \(1\), więc foton pada dokładnie wtedy, gdy orbita straciła ciągle jeden kwant (bankowany hazard to wypromieniowana energia w kwantach). Zmierzone: \(\sigma/\mu\) spada z \(0{,}894\) do \(0{,}343\), średnia pozostaje bez zmian. Nie sprowadza rozkładu do odpowiedzi kontinuum — patrz sekcja „`--emission deterministic`" wyżej. |
 | `--level` | \(n\) startowe | zmierzone | wzór |
 |---|---|---|---|
 | 2 | 2,0994 | 2,778 | 2,778 |
@@ -4026,6 +4027,51 @@ wykresy do `distributions/`, więc muszą być uruchamiane w osobnym katalogu
 roboczym. Partia \(15\)–\(20\) trajektorii podmieniająca figury robione
 przy \(N=1000\) jest cichą regresją, którą trzeba było raz cofać
 (`c06934b`).
+
+#### `--emission deterministic`: ten sam kwant, bez szumu śrutowego
+
+Bankowany hazard to \(\int (P/E_\gamma)\,dt\), czyli **wypromieniowana
+energia wyrażona w kwantach**. Próg emisji rozstrzyga więc tylko o jednym:
+
+- próg \(\mathrm{Exp}(1)\) — emisja spontaniczna, z szumem śrutowym (domyślna),
+- próg **stały równy 1** — foton pada dokładnie wtedy, gdy orbita straciła
+  ciągle jeden kwant.
+
+Drugi wariant jest tym, co potocznie znaczy „emituj przy przekroczeniu
+poziomu": orbita nadal schodzi w sposób ciągły, a samo przekroczenie jest
+wyzwalaczem. Różnica w kodzie to jedna stała, nie osobny model.
+
+*Zmierzone,* osiem ziaren po dwadzieścia trajektorii:
+
+| | Poisson | deterministyczny |
+|---|---|---|
+| \(\sigma/\mu\) | \(0{,}894\) | \(\mathbf{0{,}343}\) |
+| rozrzut \(\sigma/\mu\) między ziarnami | \(0{,}778\) | \(0{,}080\) |
+| średnia czasu kolapsu | \(161{,}9\) ps | \(167{,}3\) ps |
+| rozrzut średnich między ziarnami | \(142{,}2\) ps | \(39{,}7\) ps |
+| ziarna z cenzurowaniem | \(2/8\) | \(0/8\) |
+
+Przy założeniu niezależności obu źródeł rozrzutu
+(\(\sigma^2=\sigma_{\rm śrut}^2+\sigma_{\rm w.p.}^2\)) daje to rozkład
+wariancji: **szum śrutowy odpowiada za \(85\%\)**, a rozrzut warunków
+początkowych za \(15\%\). Reszta \(0{,}343\) jest przy tym niemal stała od
+ziarna do ziarna (\(0{,}303\)–\(0{,}384\)), podczas gdy pełne \(\sigma/\mu\)
+skacze od \(0{,}595\) do \(1{,}373\) — dokładnie tak, jak powinno, jeśli
+usunięto składnik losowy, a został deterministyczny rozrzut przygotowania.
+
+**Uściślenie wobec oczekiwania, z jakim ten tryb powstawał.** Spodziewano
+się, że zawężenie sprowadzi rozkład „z powrotem do odpowiedzi kontinuum".
+Nie sprowadza: średnia pozostaje przy \(167\) ps, czyli na skali trybu
+stochastycznego, a nie przy \(36\)–\(40\) ps modeli ciągłych. Powód jest
+strukturalny — średnią wyznacza budżet energii, czyli energie kwantów, które
+w obu trybach emisji są identyczne; próg zmienia wyłącznie **rozkład czasów**.
+Do odpowiedzi kontinuum prowadzi co innego: przywrócenie ciągłej siły
+hamującej, a nie zdjęcie losowości z progu.
+
+To eksperyment, nie zamiennik. Emisja spontaniczna naprawdę jest procesem
+Poissona, więc usunięcie losowości usuwa fizykę, nie tylko wariancję. Wartość
+tego trybu jest diagnostyczna: rozdziela, ile rozrzutu czasu kolapsu pochodzi
+z szumu śrutowego, a ile z przygotowania pary.
 
 **Na wyraźną prośbę: `CREM_HARMONIC` stał się nowym domyślnym modelem
 produkcyjnym.** Ta sama zmienna środowiskowa zostaje, ale zmienia się jej

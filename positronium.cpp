@@ -1121,6 +1121,27 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 // and only the level moves.
 inline int gInitialPrincipalLevel = 1;
 
+// Whether the quantized emission draws its next threshold from Exp(1) (the
+// default, a genuine Poisson process) or fires deterministically as soon as
+// one quantum's worth of energy has accumulated.
+//
+// The two differ by ONE constant, and the reason is worth stating because it
+// makes the deterministic variant nearly free.  The banked hazard is
+//
+//     integral(rate dt) = integral(P/E_photon dt) = (radiated energy)/E_photon,
+//
+// i.e. the accumulated loss measured in quanta.  Firing at a fixed threshold
+// of 1 therefore means "emit exactly when the orbit has continuously lost one
+// photon's worth of energy" -- the orbit still descends continuously, and the
+// level crossing itself is the trigger.  Firing at an Exp(1) threshold
+// instead is what turns that into spontaneous emission with its shot noise.
+//
+// Deterministic is an experiment, not a replacement.  Real spontaneous
+// emission IS Poissonian; removing the randomness removes physics, not just
+// variance.  It exists to separate what the collapse-time DISTRIBUTION owes
+// to shot noise from what it owes to the spread of initial conditions.
+inline bool gDeterministicEmission = false;
+
 #include "modules/crem_engine.hpp"
 
 
@@ -5730,6 +5751,16 @@ int main(int argc, char** argv) {
             } else if (argument == "--no-gui") {
                 // Retained for command-line compatibility. Statistical mode
                 // is always batch-only and never opens a window.
+            } else if (argument == "--emission") {
+                const std::string model = requireValue(argument);
+                if (model == "poisson") {
+                    gDeterministicEmission = false;
+                } else if (model == "deterministic") {
+                    gDeterministicEmission = true;
+                } else {
+                    throw std::invalid_argument(
+                        "--emission must be poisson or deterministic");
+                }
             } else if (argument == "--level") {
                 const std::string value = requireValue(argument);
                 const int level = std::stoi(value);

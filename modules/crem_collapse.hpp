@@ -821,7 +821,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     std::uint64_t stochasticSkipStream=
         splitMix64(seed^0x506f6973736f6e5fULL);
     double stochasticSkipHazard=0.0;
-    double stochasticSkipThreshold=drawExponentialUnit(stochasticSkipStream);
+    double stochasticSkipThreshold=drawEmissionThreshold(stochasticSkipStream);
     // Recoil bookkeeping, same lifetime/gating as the hazard state above.
     // CREM's bound initial conditions are always prepared at EXACTLY zero
     // total momentum (crem_trajectory.hpp splits the sampled relative
@@ -1950,7 +1950,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         -2.0L*invariantEnergyBefore*photonEnergy;
                     if(!(invariantSquaredAfter>0.0L)) {
                         stochasticSkipThreshold=
-                            drawExponentialUnit(stochasticSkipStream);
+                            drawEmissionThreshold(stochasticSkipStream);
                         continue;
                     }
                     const double invariantEnergyAfter=static_cast<double>(
@@ -1970,7 +1970,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         two_body::velocityFromFourMomentum(pairLabAfter);
                     if(!isFinite(recoiledVelocity)) {
                         stochasticSkipThreshold=
-                            drawExponentialUnit(stochasticSkipStream);
+                            drawEmissionThreshold(stochasticSkipStream);
                         continue;
                     }
                     centreOfMassVelocity=recoiledVelocity;
@@ -2288,7 +2288,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                  <<" |L_dir|="<<angularMomentumDirection.norm()
                                  <<std::endl;
                     stochasticSkipThreshold=
-                        drawExponentialUnit(stochasticSkipStream);
+                        drawEmissionThreshold(stochasticSkipStream);
                 }
             }
         } else {
