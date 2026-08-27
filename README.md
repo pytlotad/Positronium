@@ -3991,9 +3991,41 @@ przypadków**, \(k=2\) w \(2{,}4\%\), \(k=3\) w \(1{,}2\%\). Powód jest w
 mimośrodzie: w chwili emisji ma on medianę \(0{,}050\) (p90 \(0{,}18\), max
 \(0{,}25\)), a mediany harmonik \(11\) i \(27\) z tabeli wyżej odpowiadają
 \(e=0{,}9\) i \(0{,}945\), których emisje nie osiągają. Tabela harmonik jest
-więc w produkcji niemal bezczynna — co czyni pytanie, **z którego z dwóch
-składników korekty** pochodzi mierzone \(+4{,}82\%\), pytaniem otwartym i
-wymagającym osobnego pomiaru, a nie wnioskowania.
+więc w produkcji niemal bezczynna — co czyniło pytanie, **z którego z dwóch
+składników korekty** pochodzi mierzone \(+4{,}82\%\), pytaniem wymagającym
+osobnego pomiaru, a nie wnioskowania.
+
+*Rozkład efektu na składniki, zmierzony.* Korekta ma dwa niezależne
+składniki i zostały rozdzielone: dobór harmoniki \(k\) z tablicy oraz
+tłumienie hazardu \(S(e)\), które mnoży tempo emisji **przy każdym
+fotonie, także gdy \(k=1\)**. Cztery konfiguracje (pełna / tylko tablica /
+tylko \(S(e)\) / wyłączona), osiem ziaren po dwadzieścia trajektorii,
+sparowane po ziarnach, RMST względem konfiguracji wyłączonej:
+
+| składnik | średnia | 95% CI | \(t\) wobec zera |
+|---|---|---|---|
+| tylko tablica harmonik | \(+0{,}82\%\) | \([-1{,}51;\,+3{,}14]\) | \(0{,}69\) |
+| **tylko tłumienie \(S(e)\)** | \(\mathbf{+4{,}44\%}\) | \([+2{,}74;\,+6{,}13]\) | \(\mathbf{5{,}13}\) |
+| pełna korekta | \(+5{,}33\%\) | \([+2{,}31;\,+8{,}34]\) | \(3{,}46\) |
+
+Składniki sumują się addytywnie: \(0{,}82+4{,}44=5{,}25\%\) wobec
+\(5{,}33\%\) zmierzonych dla pełnej korekty.
+
+**Cały efekt pochodzi z \(S(e)\).** Wkład tablicy harmonik jest zgodny z
+zerem — co jest spójne z tym, że \(k=1\) w \(96{,}4\%\) emisji, więc
+tablica rzadko ma cokolwiek do zmienienia. Praktyczna konsekwencja: tablica
+\(18\times16\) i dekompozycja DFT do \(n_{max}=6000\), które ją wypełniają,
+nie wnoszą do zagregowanego wyniku nic mierzalnego przy mimośrodach, jakie
+produkcja osiąga; robi to pojedynczy skalar \(S(e)\). Nie jest to argument
+za usunięciem tablicy — pozostaje poprawna i zaczęłaby działać przy wyższych
+mimośrodach — lecz za tym, żeby nie przypisywać jej efektu, którego nie
+wywołuje.
+
+Zastrzeżenie metodyczne, to samo co wyżej: przebiegi pomiarowe zapisują
+wykresy do `distributions/`, więc muszą być uruchamiane w osobnym katalogu
+roboczym. Partia \(15\)–\(20\) trajektorii podmieniająca figury robione
+przy \(N=1000\) jest cichą regresją, którą trzeba było raz cofać
+(`c06934b`).
 
 **Na wyraźną prośbę: `CREM_HARMONIC` stał się nowym domyślnym modelem
 produkcyjnym.** Ta sama zmienna środowiskowa zostaje, ale zmienia się jej
