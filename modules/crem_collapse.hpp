@@ -1581,8 +1581,34 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // is kept, not removed, specifically so the pre-harmonic
             // behaviour stays one flag away for regression comparison --
             // see this file's own README section (point K) for the
-            // measurement (median unchanged, RMST +7.7%) that justified
-            // promoting it.
+            // measurement that justified promoting it.
+            //
+            // SIZE OF THE EFFECT, remeasured.  That section's number came
+            // from a single batch: seed 42, fifteen trajectories, 60 s
+            // budget, giving RMST 0.304 ns against 0.284 ns, i.e. +7.0%.
+            // The comment here used to quote it as +7.7%, which is not what
+            // the README's own two numbers give.
+            //
+            // The batch reproduces exactly -- rerun today it gives 306.8 ps
+            // against 288.9 ps, with the median matching the recorded
+            // 0.198748 ns to five significant figures -- but it is far too
+            // small to size the effect: the two RMSTs carry +/-77 and +/-70
+            // ps against a difference of 18 ps, so a single batch measures
+            // the effect four times less precisely than the effect itself.
+            //
+            // Measured properly instead, paired across sixteen seeds at
+            // twenty trajectories each (the pairing matters: the initial
+            // conditions dominate the 57% spread in collapse time and are
+            // shared between the two configurations at a given seed, so
+            // they cancel in the difference):
+            //
+            //     +4.82%, 95% CI [+3.64%, +6.01%], sign positive in 16/16
+            //
+            // The per-seed spread is 2.41%, which puts the original +7.0%
+            // at 0.90 sigma -- an ordinary draw, not a discrepancy.  The
+            // median is unchanged, as that section says: the collapse time's
+            // median is set by the energy budget, which this correction does
+            // not touch.
             const char* harmonicEnv=std::getenv("CREM_HARMONIC");
             const bool harmonicCorrection=
                 !harmonicEnv||std::strcmp(harmonicEnv,"0")!=0;

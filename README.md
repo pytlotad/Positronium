@@ -3955,6 +3955,46 @@ ta sama partia, te same liczby co do ostatniej cyfry, w obu wersjach
 tablicy). Czysta kompilacja (zero ostrzeżeń), `positronium_validation`
 33/33.
 
+*Rozmiar efektu, przemierzony na większej próbie.* Partia powyżej —
+jedno ziarno (42), piętnaście trajektorii — **odtwarza się dokładnie**:
+uruchomiona ponownie daje RMST \(306{,}8\) ps wobec \(288{,}9\) ps, a
+mediana zgadza się z zapisanym \(0{,}198748\) ns do **piątej cyfry
+znaczącej**. Nie jest to więc pomiar błędny. Jest natomiast zbyt mały, żeby
+nim rozmiar efektu wyznaczać: obie wartości RMST niosą \(\pm77\) i
+\(\pm70\) ps przy różnicy \(18\) ps, czyli pojedyncza partia mierzy efekt
+**czterokrotnie mniej precyzyjnie, niż wynosi sam efekt**.
+
+Zmierzone sparowanie po **szesnastu ziarnach po dwadzieścia trajektorii**
+(sparowanie jest tu istotne: rozrzut czasu kolapsu wynosi \(\sigma/\mu=0{,}57\)
+i pochodzi głównie z losowych warunków początkowych, które przy tym samym
+ziarnie są wspólne dla obu konfiguracji, więc w różnicy się kasują):
+
+\[
+\Delta_{\rm RMST}=+4{,}82\%,\qquad
+\text{95\% CI }[+3{,}64\%;\,+6{,}01\%],\qquad
+\text{znak dodatni w }16/16 .
+\]
+
+Rozrzut międzyziarnowy wynosi \(2{,}41\%\) (od \(+0{,}45\%\) do
+\(+9{,}17\%\)), co stawia oryginalne \(+7{,}0\%\) na \(0{,}90\sigma\) —
+zwykłe losowanie, nie rozbieżność. Mediana pozostaje bez zmian, zgodnie z
+tym, co ta sekcja mówiła od początku: wyznacza ją budżet energii, którego ta
+poprawka nie dotyka.
+
+Osobno: komentarz w `crem_collapse.hpp` cytował tę wartość jako \(+7{,}7\%\),
+podczas gdy dwie liczby podane wyżej dają \(0{,}304/0{,}284=+7{,}0\%\).
+Poprawione.
+
+*Jak często korekta w ogóle działa.* Zmierzony dobór harmoniki per foton,
+\(N=83\) emisji na jedenastu ziarnach: **\(k=1\) w \(96{,}4\%\)
+przypadków**, \(k=2\) w \(2{,}4\%\), \(k=3\) w \(1{,}2\%\). Powód jest w
+mimośrodzie: w chwili emisji ma on medianę \(0{,}050\) (p90 \(0{,}18\), max
+\(0{,}25\)), a mediany harmonik \(11\) i \(27\) z tabeli wyżej odpowiadają
+\(e=0{,}9\) i \(0{,}945\), których emisje nie osiągają. Tabela harmonik jest
+więc w produkcji niemal bezczynna — co czyni pytanie, **z którego z dwóch
+składników korekty** pochodzi mierzone \(+4{,}82\%\), pytaniem otwartym i
+wymagającym osobnego pomiaru, a nie wnioskowania.
+
 **Na wyraźną prośbę: `CREM_HARMONIC` stał się nowym domyślnym modelem
 produkcyjnym.** Ta sama zmienna środowiskowa zostaje, ale zmienia się jej
 domyślna wartość: poprawka jest teraz WŁĄCZONA, chyba że jawnie ustawi
