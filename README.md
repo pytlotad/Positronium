@@ -2468,13 +2468,50 @@ Największa zmiana to \(\approx0{,}15\), większość poniżej \(0{,}01\). Powó
 jest ten sam, co odwrócenie z Sondy 4: skoro przeciwne ładunki odwracają
 relację spin–moment, to \(q/m\) i orientacja momentu odwracają się **razem**,
 więc oba momenty precesują w tę samą stronę wokół wspólnego
-\(\mathbf B_{\rm BMT}\). Co więcej, dla orbity kołowej \(\mathbf B_{\rm BMT}\)
-jest zdominowane przez człon motoryczny \(\mathbf v\times\mathbf E/c^2\), a
-\(\mathbf v\) i \(\mathbf E\) leżą w płaszczyźnie orbity, więc pole jest
-skierowane wzdłuż \(\hat{\mathbf L}\) — precesja wokół \(\hat{\mathbf L}\)
-**zachowuje** \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\), czyli dokładnie tę
-składową, która wchodzi do czynnika kątowego. Założenie izotropii jest więc
-nie tylko prawdziwe na starcie, ale podtrzymywane przez dynamikę.
+\(\mathbf B_{\rm BMT}\).
+
+*Dlaczego momenty się nie ustawiają — poprawiony argument.* Wcześniejsza
+wersja tego akapitu tłumaczyła to tak: \(\mathbf B_{\rm BMT}\) jest
+zdominowane przez człon motoryczny \(\mathbf v\times\mathbf E/c^2\), skierowany
+wzdłuż \(\hat{\mathbf L}\), więc precesja zachowuje
+\(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\). **To jest prawdą tylko przy dużych
+separacjach.** Zmierzony stosunek pola dipolowego partnera do motorycznego
+wynosi \(0{,}25\) przy \(a_{Ps}\), zrównuje się przy \(6630\) fm i sięga
+\(5{,}07\) przy promieniu terminalnym — czyli tam, gdzie ten człon w ogóle
+zaczyna być duży, precesją rządzi już pole partnera, a nie \(\hat{\mathbf L}\).
+Argument nie obowiązuje dokładnie tam, gdzie był potrzebny.
+
+Nie obowiązuje też odpowiedź „nie zdąży": okres precesji dipolowej przy
+\(a_{Ps}\) wynosi \(45{,}6\) ps wobec \(\approx133\) ps kolapsu, czyli około
+trzech pełnych obrotów. **Czasu jest dość.**
+
+Właściwym powodem jest brak **dyssypacji**. Precesja zachowuje energię
+oddziaływania i tylko obraca momenty wokół pola efektywnego — nie prowadzi ich
+do minimum. Osiadanie w konfiguracji o najniższej energii wymaga kanału
+tłumiącego, a jedyny taki, moment reakcji M1, jest według własnego pomiaru
+tego dokumentu (Sonda 6) słabszy o **44 rzędy wielkości**
+(\(\Omega_{\rm reakcji}/\Omega_{\rm BMT}=1{,}14\cdot10^{-44}\)) i w trybie
+stochastycznym dodatkowo bramkowany do zera.
+
+Zmierzone wprost, rozkład \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) na
+\(144\) składowych z \(72\) trajektorii:
+
+| | średnia | SD |
+|---|---|---|
+| na starcie | \(-0{,}081\) | \(0{,}601\) |
+| przy terminacji | \(-0{,}090\) | \(0{,}596\) |
+| izotropowo | \(0\) | \(1/\sqrt3=0{,}577\) |
+
+Mediana zmiany \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) przez cały kolaps to
+\(0{,}019\); frakcja blisko \(\hat{\mathbf L}\) \(12\%\) wobec \(10\%\)
+izotropowych. Momenty precesują, ale kończą tam, gdzie zaczęły, z rozkładem
+nieodróżnialnym od izotropowego. Założenie izotropii jest więc podtrzymywane
+przez dynamikę — nie dlatego, że precesja zachodzi wokół \(\hat{\mathbf L}\),
+tylko dlatego, że **nie ma czym stracić energii**.
+
+Warto dodać, że gdyby dyssypacja istniała, i tak nie dałaby odpychania w
+orto: układ dążyłby do **minimum** energii dipolowej, a konfiguracja
+minimalna jest przyciągająca w obu kanałach.
 
 *I stąd wniosek, który obala wcześniejszą wersję tej sekcji.* Po uśrednieniu
 czynnik zależy już tylko od \(\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2\) i

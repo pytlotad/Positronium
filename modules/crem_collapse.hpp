@@ -1171,11 +1171,37 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // 0.885 -> 0.893, 0.552 -> 0.552, -0.765 -> -0.765 from seed to
             // termination, the largest excursion seen being 0.15.  Opposite
             // charges reverse the spin-moment relation along WITH q/m, so
-            // both moments precess the same way about a common B_BMT; and
-            // for a near-circular orbit that field is dominated by the
-            // motional v x E/c^2 with v and E both in the orbital plane,
-            // hence directed along L, so the precession conserves mu.L --
-            // exactly the component the angular factor reads.
+            // both moments precess the same way about a common B_BMT.
+            //
+            // WHY THEY DO NOT ALIGN, corrected.  An earlier version argued
+            // that B_BMT is dominated by the motional v x E/c^2, which lies
+            // along L, so precession conserves mu.L.  That holds only at
+            // large separation: the partner's own dipole field is 0.25 of
+            // the motional one at a_Ps, equals it at 6630 fm, and is 5.07x
+            // it at the terminal radius -- so exactly where this term
+            // matters, the precession is about the partner's field, not
+            // about L.  The argument failed where it was needed.
+            //
+            // Nor is "there is no time" the answer: the dipole precession
+            // period at a_Ps is 45.6 ps against a collapse of about 133 ps,
+            // some three full turns.
+            //
+            // The reason is that precession does not DISSIPATE.  It
+            // conserves the interaction energy and merely rotates the
+            // moments about the effective field; settling into the
+            // minimum-energy configuration needs a damping channel, and the
+            // only one -- the M1 reaction torque -- is 1.14e-44 of the
+            // precession rate by this project's own measurement, and gated
+            // off entirely in the stochastic mode.  Measured directly over
+            // 144 components from 72 trajectories, mu.L has SD 0.601 at the
+            // seed and 0.596 at termination against 1/sqrt(3) = 0.577 for an
+            // isotropic distribution, with a median excursion of 0.019
+            // across the whole collapse.
+            //
+            // And had there been dissipation it would not have produced
+            // repulsion in ortho anyway: the system would seek the MINIMUM
+            // of the dipole energy, whose configuration is attractive in
+            // both channels.
             //
             // (Which channel carries the ALIGNED moments is the opposite of
             // the naive guess, and README's own Sonda 4 says so: para is
