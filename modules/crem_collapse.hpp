@@ -1186,17 +1186,46 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // period at a_Ps is 45.6 ps against a collapse of about 133 ps,
             // some three full turns.
             //
-            // The reason is that precession does not DISSIPATE.  It
-            // conserves the interaction energy and merely rotates the
-            // moments about the effective field; settling into the
-            // minimum-energy configuration needs a damping channel, and the
-            // only one -- the M1 reaction torque -- is 1.14e-44 of the
-            // precession rate by this project's own measurement, and gated
-            // off entirely in the stochastic mode.  Measured directly over
-            // 144 components from 72 trajectories, mu.L has SD 0.601 at the
-            // seed and 0.596 at termination against 1/sqrt(3) = 0.577 for an
-            // isotropic distribution, with a median excursion of 0.019
-            // across the whole collapse.
+            // Nor is "there is nothing to lose energy to" the answer, which
+            // is what an earlier pass at this comment said.  The channel
+            // EXISTS: M1 enters the quantum beside E1 and E2 (see
+            // quantizedPower in crem_trajectory.hpp), and integrated over
+            // the collapse it carries 3.98 eV against 3777 eV of E1 -- a
+            // share of 1.05e-3, small but not zero.
+            //
+            // What settles it is the INTEGRATED rotation.  The M1 reaction
+            // torque, the same one the integrator applies as
+            // mu += gamma*T*dt, turns the moment at 0.85 rad/s at a_Ps and
+            // at 1.0e16 rad/s at the terminal radius -- 2.1e-12 and 1.2e-3
+            // of the BMT precession rate respectively, so at the bottom it
+            // is emphatically not weak, and the alignment time there,
+            // 9.9e-17 s, is fourteen orders below the collapse.  But the
+            // pair does not LIVE there: integrating Omega_reaction dt along
+            // the inspiral with dt = (dE/da) da / P_E1 from a_Ps to the
+            // barrier gives 5.24e-3 rad -- 0.30 degrees over the entire
+            // collapse.  The spiral's clock is spent in the outer region,
+            // where the torque is 0.85 rad/s.
+            //
+            // (This supersedes the 1.14e-44 ratio recorded in the README's
+            // Sonda 6, which evaluated the torque on an unfilled history and
+            // is wrong by some thirty-two orders of magnitude.)
+            //
+            // In the production path not even that 0.30 degrees happens: the
+            // reaction torque is gated off in the quantized mode
+            // (see applyDipoleRadiationTorque's call sites in
+            // electrodynamics.hpp), and applyStochasticDipolePhoton rebuilds
+            // only the four-velocities, never the proper dipoles.  The M1
+            // energy leaves through the kinematics while the orientation
+            // that generated it goes undebited.  That is a MODELLING GAP,
+            // not a physical argument, and the 0.30 degrees above is its
+            // upper bound.
+            //
+            // Measured directly over 144 components from 72 trajectories,
+            // mu.L has SD 0.601 at the seed and 0.596 at termination against
+            // 1/sqrt(3) = 0.577 for an isotropic distribution, with a median
+            // excursion of 0.019 across the whole collapse -- itself larger
+            // than the 5.2e-3 the ungated torque would have added, so
+            // closing the gap would not move the isotropy verdict.
             //
             // And had there been dissipation it would not have produced
             // repulsion in ortho anyway: the system would seek the MINIMUM

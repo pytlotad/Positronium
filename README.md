@@ -2485,13 +2485,61 @@ Nie obowiązuje też odpowiedź „nie zdąży": okres precesji dipolowej przy
 \(a_{Ps}\) wynosi \(45{,}6\) ps wobec \(\approx133\) ps kolapsu, czyli około
 trzech pełnych obrotów. **Czasu jest dość.**
 
-Właściwym powodem jest brak **dyssypacji**. Precesja zachowuje energię
-oddziaływania i tylko obraca momenty wokół pola efektywnego — nie prowadzi ich
-do minimum. Osiadanie w konfiguracji o najniższej energii wymaga kanału
-tłumiącego, a jedyny taki, moment reakcji M1, jest według własnego pomiaru
-tego dokumentu (Sonda 6) słabszy o **44 rzędy wielkości**
-(\(\Omega_{\rm reakcji}/\Omega_{\rm BMT}=1{,}14\cdot10^{-44}\)) i w trybie
-stochastycznym dodatkowo bramkowany do zera.
+Nie broni się też odpowiedź „nie ma czym stracić energii", którą wpisano tu
+w pierwszym podejściu do tej poprawki. Kanał **istnieje**: M1 wchodzi do
+kwantu na równi z E1 i E2,
+
+```cpp
+const double quantizedPower=
+    stepRadiation.leadingElectricDipolePower
+    +stepRadiation.magneticDipoleFlux.energy
+    +stepRadiation.electricQuadrupolePower;
+```
+
+a scałkowany po całym kolapsie kanał M1 unosi \(3{,}98\) eV wobec
+\(3777\) eV z E1 — udział \(1{,}05\cdot10^{-3}\), mało, ale nie zero.
+Momenty **mogą** tracić energię w kwantach.
+
+*Ile faktycznie się obracają — liczba rozstrzygająca.* Wyprowadźmy to z
+momentu siły reakcji M1, tego samego, który integrator stosuje jako
+`mu += gamma*T*dt`. Zmierzona chwilowa szybkość obrotu wzdłuż spirali:
+
+| promień | \(\Omega_{\rm reakcji}\) [rad/s] | \(\Omega_{\rm reakcji}/\Omega_{\rm BMT}\) | \(1/\Omega_{\rm reakcji}\) [s] |
+|---|---|---|---|
+| \(a_{Ps}\) | \(0{,}85\) | \(2{,}1\cdot10^{-12}\) | \(1{,}18\) |
+| \(a_{Ps}/10\) | \(5{,}2\cdot10^{5}\) | \(2{,}2\cdot10^{-9}\) | \(1{,}93\cdot10^{-6}\) |
+| \(6630\) fm | \(2{,}6\cdot10^{8}\) | \(2{,}8\cdot10^{-7}\) | \(3{,}85\cdot10^{-9}\) |
+| \(258\) fm (terminalny) | \(1{,}0\cdot10^{16}\) | \(1{,}2\cdot10^{-3}\) | \(9{,}90\cdot10^{-17}\) |
+| \(193\) fm (bariera) | \(2{,}9\cdot10^{16}\) | \(2{,}1\cdot10^{-3}\) | \(3{,}48\cdot10^{-17}\) |
+
+Przy promieniu terminalnym czas ustawienia to \(10^{-16}\) s — o czternaście
+rzędów krócej niż kolaps. Gdyby patrzeć tylko na tę kolumnę, momenty
+ustawiałyby się natychmiast, i zarzut byłby w pełni słuszny.
+
+Rozstrzyga jednak **scałkowany** obrót, bo tam, gdzie \(\Omega_{\rm reakcji}\)
+eksploduje, para prawie nie przebywa. Całkując \(\int\Omega_{\rm
+reakcji}\,dt\) po spirali \(dt=(dE/da)\,da/P_{E1}\) od \(a_{Ps}\) do
+bariery:
+
+```
+całkowity czas spirali        = 3,16e-11 s
+całkowity obrót od reakcji M1 = 5,24e-03 rad = 0,30 stopnia
+```
+
+Trzysta setnych stopnia przez cały kolaps. Czas życia spirali jest zdominowany
+przez obszar zewnętrzny — \(3{,}16\cdot10^{-11}\) s upływa już przy
+\(a\approx2\cdot10^{-11}\) m i dalej się praktycznie nie zmienia, podczas gdy
+szybki obrót zaczyna się cztery rzędy niżej.
+
+*A w ścieżce produkcyjnej nawet tyle nie zachodzi.* W trybie skwantowanym
+moment reakcji jest **bramkowany do zera**
+(`if(!quantizedRadiation) applyDipoleRadiationTorque(...)`), a wypłata fotonu,
+`applyStochasticDipolePhoton`, przelicza wyłącznie czteropędy — nie dotyka
+`firstProperDipole` ani `secondProperDipole`. Energia M1 wychodzi więc przez
+kinematykę, a orientacja momentu, która ją wygenerowała, nie jest obciążana.
+**To jest luka modelu, nie argument fizyczny**, i tak ją tu odnotowuję.
+Powyższe \(0{,}30°\) jest jej ograniczeniem górnym: tyle najwyżej ta luka
+gubi, bo tyle daje ten sam moment siły w trybie ciągłym, gdzie działa.
 
 Zmierzone wprost, rozkład \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) na
 \(144\) składowych z \(72\) trajektorii:
@@ -2505,9 +2553,13 @@ Zmierzone wprost, rozkład \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) na
 Mediana zmiany \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) przez cały kolaps to
 \(0{,}019\); frakcja blisko \(\hat{\mathbf L}\) \(12\%\) wobec \(10\%\)
 izotropowych. Momenty precesują, ale kończą tam, gdzie zaczęły, z rozkładem
-nieodróżnialnym od izotropowego. Założenie izotropii jest więc podtrzymywane
-przez dynamikę — nie dlatego, że precesja zachodzi wokół \(\hat{\mathbf L}\),
-tylko dlatego, że **nie ma czym stracić energii**.
+nieodróżnialnym od izotropowego — a \(0{,}019\) rad zmiany to więcej niż
+\(5{,}2\cdot10^{-3}\) rad, które reakcja M1 wniosłaby, gdyby jej nie
+bramkowano. Domknięcie luki nie ruszyłoby więc werdyktu o izotropii.
+Założenie izotropii jest podtrzymywane przez dynamikę — nie dlatego, że
+precesja zachodzi wokół \(\hat{\mathbf L}\), i nie dlatego, że nie ma kanału
+strat, tylko dlatego, że **kanał strat robi się szybki dopiero tam, gdzie para
+już nie przebywa**.
 
 Warto dodać, że gdyby dyssypacja istniała, i tak nie dałaby odpychania w
 orto: układ dążyłby do **minimum** energii dipolowej, a konfiguracja
@@ -4486,12 +4538,30 @@ policzona ilościowo, z prawdziwymi stałymi przy \(a_{Ps}\):
 
 ```
 Omega_BMT (precesja)                = 5,51e+11 rad/s
-Omega_reaction (od reakcji M1)      = 6,26e-33 rad/s
+Omega_reaction (od reakcji M1)      = 6,26e-33 rad/s   <-- BLAD, patrz nizej
 stosunek Omega_reaction/Omega_BMT   = 1,14e-44
 ```
 
-\(44\) rzędy wielkości słabsza niż sama precesja — formalnie istnieje,
-fizycznie martwa.
+**Ta liczba jest błędna i została później zmierzona ponownie.** Wartość
+\(6{,}26\cdot10^{-33}\) rad/s pochodzi z ewaluacji momentu reakcji na
+historii, która nie była jeszcze wypełniona — trzecia pochodna momentu,
+\(\dddot{\mathbf m}\), wychodziła wtedy z szablonu numerycznego bliska zeru.
+Policzona na wypełnionej historii i sprawdzona na siatce szablonów (\(10\) do
+\(640\) kroków wypełnienia, dwa rozstawy różniące się czterokrotnie — wynik
+stabilny w granicach czynnika \(1{,}7\)) daje przy \(a_{Ps}\)
+
+```
+Omega_reaction (od reakcji M1)      = 8,5e-01 rad/s
+stosunek Omega_reaction/Omega_BMT   = 2,1e-12
+```
+
+czyli \(12\) rzędów wielkości, nie \(44\). Co więcej stosunek ten **nie
+jest stały**: rośnie do \(1{,}2\cdot10^{-3}\) przy promieniu terminalnym.
+Wniosek „formalnie istnieje, fizycznie martwa" trzeba więc odrzucić w tej
+postaci — kanał nie jest martwy, jest tylko **szybki dopiero tam, gdzie para
+prawie nie przebywa**. Ilościowo rozstrzyga to scałkowany obrót po całej
+spirali, \(5{,}2\cdot10^{-3}\) rad; wyprowadzenie i tabela szybkości są przy
+omówieniu założenia izotropii momentów wyżej w tym dokumencie.
 
 *Sonda 7 — czy \(6\cdot10^{-6}\) z sondy 2 rzeczywiście pochodzi z
 dipol-dipol, i z której jego części.* Tu poprzednia odpowiedź (w tej
