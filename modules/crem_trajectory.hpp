@@ -584,7 +584,33 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                     // prescription hbar*omega_orb and the instantaneous-kick
                     // emission model are mutually inconsistent on a
                     // near-circular orbit, and reconciling them needs a
-                    // different emission model, not a different threshold.
+                    // different emission model -- not a different threshold,
+                    // and not a rescaled quantum either.
+                    //
+                    // The second half of that is worth the arithmetic, since
+                    // rescaling is the obvious thing to try.  At n=1 the
+                    // virial puts the kinetic energy at the binding energy R
+                    // while hbar*omega is 2R, so the ceiling admits a quantum
+                    // only below hbar*omega/2.  But the classical hazard is
+                    // (1/3) alpha^5 m_e c^2/hbar against Gamma_para's (1/2),
+                    // so the quantum that reproduces the measured
+                    // positronium lifetime EXACTLY is (2/3) hbar*omega.
+                    // Those two demands are incompatible by a factor of 4/3:
+                    //
+                    //   quantum        lifetime      vs 124.5 ps   ceiling
+                    //   hbar*omega     186.74 ps     x1.500        refused
+                    //   (2/3)hbar*w    124.49 ps     x1.000        refused
+                    //   (1/2)hbar*w     93.37 ps     x0.750        marginal
+                    //   (1/3)hbar*w     62.25 ps     x0.500        fits
+                    //   m_e c^2          7.01 us     x5.6e4        fits
+                    //
+                    // The first quantum that actually clears the ceiling
+                    // costs a factor of two on the lifetime, worse than the
+                    // 1.5 it starts from.  So no rescaling in EITHER
+                    // direction buys the ceiling without losing the
+                    // comparison, which is a stronger statement than the
+                    // earlier "do not raise the quantum" and closes the
+                    // direction the other way too.
                     // Production does not meet this: essentially every photon
                     // fires through the secular path (this one's hazard is
                     // ~5.5e-5 per orbit, and a --mode 2 run instrumented at

@@ -2545,22 +2545,51 @@ czyli \(3{,}75\cdot10^4\) razy większe.
 Warto zestawić z mierzoną medianą kolapsu w trybie stochastycznym,
 \(149\) ps (10 ziaren), która leży **pomiędzy** tymi dwiema liczbami.
 
-**Dlaczego to zamyka pewien kierunek.** Nasuwa się propozycja, żeby w stanie
-podstawowym czerpać z energii całkowitej, a fotony podstawowe uznać za
-anihilacyjne — co usunęłoby sufit kinematyczny opisany wyżej. Sprawdzone
-liczbowo: przy niezmienionej mocy klasycznej podmiana kwantu z
-\(\hbar\omega\) na \(m_ec^2\) dzieli tempo przez \(2/\alpha^2\approx3{,}8\cdot10^4\),
-dając czas życia \(7{,}0\) µs zamiast \(125\) ps — **cztery do pięciu rzędów
-wielkości za długo**:
+**Dlaczego żadne przeskalowanie kwantu nie zamyka sufitu.** Nasuwa się
+propozycja, żeby w stanie podstawowym czerpać z energii całkowitej, a fotony
+podstawowe uznać za anihilacyjne — co usunęłoby sufit kinematyczny opisany
+wyżej. Rozstrzygnięcie wymaga rozdzielenia dwóch odczytań tej propozycji,
+bo wyklucza je co innego.
 
-| kwant | czas życia | wobec 124,5 ps |
-|---|---|---|
-| \(\hbar\omega=13{,}6\) eV | 186,7 ps | ×1,50 |
-| \(m_ec^2=511\) keV | 7,01 µs | ×5,6·10⁴ |
-| \(2m_ec^2\) | 14,0 µs | ×1,1·10⁵ |
+*Odczytanie pierwsze: tempo anihilacji wyprowadzone z mocy klasycznej.*
+Przy niezmienionym \(P\) podmiana kwantu z \(\hbar\omega\) na \(m_ec^2\)
+dzieli tempo przez \(2/\alpha^2\approx3{,}8\cdot10^4\), dając \(7{,}0\) µs
+zamiast \(125\) ps — cztery do pięciu rzędów wielkości za długo. Wykluczone
+liczbowo.
 
-Sufitu kinematycznego **nie wolno więc naprawiać przez podniesienie energii
-kwantu**. Część intuicji o rezerwuarze jest natomiast zgodna z kodem: ścieżka
+*Odczytanie drugie: anihilacja we własnym, kwantowym tempie.* Tego pierwszy
+rachunek nie dotyka i nie wyklucza — ale wyklucza je co innego: para
+przestaje wtedy emitować orbitalnie, żyje do anihilacji i **kolaps, który
+model bada, znika**. Jest to dokładnie ten sam powód, dla którego odrzucono
+pełną kwantyzację poziomów, a nie nowy argument.
+
+*Czy pomogłoby inne przeskalowanie kwantu.* Naturalne pytanie, skoro sufit
+to \(\hbar\omega/E_{\rm kin}=2/n\), a przy \(n=1\) twierdzenie o wiriale
+daje \(E_{\rm kin}=R\). Zmierzone:
+
+| kwant | \(E_\gamma\) | czas życia | wobec \(124{,}5\) ps | sufit przy \(n=1\) |
+|---|---|---|---|---|
+| \(\hbar\omega\) | \(13{,}61\) eV | \(186{,}74\) ps | \(\times1{,}500\) | odrzucony |
+| \(\tfrac23\hbar\omega\) | \(9{,}07\) eV | \(124{,}49\) ps | \(\times1{,}000\) | odrzucony |
+| \(\tfrac12\hbar\omega\) | \(6{,}80\) eV | \(93{,}37\) ps | \(\times0{,}750\) | granicznie |
+| \(\tfrac13\hbar\omega\) | \(4{,}54\) eV | \(62{,}25\) ps | \(\times0{,}500\) | mieści się |
+| \(m_ec^2\) | \(511\) keV | \(7{,}01\) µs | \(\times5{,}6\cdot10^4\) | mieści się |
+
+Wiersz \(\tfrac23\hbar\omega\) nie jest przypadkiem: hazard klasyczny
+wynosi \(\tfrac13\alpha^5m_ec^2/\hbar\), a \(\Gamma_{\rm para}\) —
+\(\tfrac12\), więc kwant mniejszy o \(\tfrac23\) odtwarza zmierzone tempo
+**dokładnie**.
+
+I tu jest sedno: **sufit wymaga \(E_\gamma<E_{\rm kin}=\tfrac12\hbar\omega\),
+a zgodność z czasem życia wymaga \(E_\gamma=\tfrac23\hbar\omega\).** Te dwa
+warunki są niespełnialne jednocześnie, bo \(\tfrac23>\tfrac12\) — rozmijają
+się o czynnik \(\tfrac43\). Pierwszy kwant, który sufit faktycznie
+przepuszcza, daje zgodność \(\times0{,}5\) lub gorszą, czyli gorszą niż
+obecne \(\times1{,}5\). **Żadne przeskalowanie kwantu, w żadną stronę, nie
+zamyka sufitu bez utraty tej zgodności** — a to jest mocniejsze stwierdzenie
+niż samo „nie wolno podnosić energii", bo zamyka również kierunek przeciwny.
+
+Część intuicji o rezerwuarze jest natomiast zgodna z kodem: ścieżka
 sekularna już liczy \(W=(m_1+m_2)c^2+\mu\varepsilon\), czyli ma masę
 spoczynkową w niezmienniku, i dlatego nie ma tam tego problemu.
 
