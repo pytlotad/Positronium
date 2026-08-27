@@ -2384,6 +2384,49 @@ przestrzeni fazowej. Wypełniane tylko dla trajektorii, które **realnie
 dochodzą** do promienia terminalnego; przebiegi ocenzurowane i nieudane nie
 mają stanu, z którego można anihilować.
 
+*Człon dipol-dipol i to, co naprawdę rozdziela kanały.* Element
+`elements.specificEnergy` jest **oskulacyjnym elementem keplerowskim**, nie
+ogólną energią: osiem miejsc czyta go jako \(a=-K/2\varepsilon\),
+\(e^2=1+2\varepsilon\ell^2/K^2\) i okres. Wsunięcie w niego członu
+\(1/r^3\) nakarmiłoby każdy z tych wzorów wielkością, dla której nie zostały
+wyprowadzone, a zepsucie byłoby największe **dokładnie przy promieniu
+terminalnym**, gdzie sektor dipolowy stanowi \(56\%\) kulombowskiego.
+Element zostaje więc keplerowski, a energia dipolowa jest dodawana tam, gdzie
+ma znaczenie fizyczne — do niezmiennika, który dzielą fotony:
+
+\[
+W=(m_1+m_2)c^2+\mu\varepsilon+U_{\rm dd}.
+\]
+
+Nie jest to korekta **dynamiki**: trajektoria już czuje tę siłę
+(`mutualForces` niesie `regularizedDipoleForce`), a mechaniczna księga już
+niesie tę energię (`conservativeParticleEnergy` dodaje `dipolePotential`).
+Pominięta była wyłącznie **etykieta energetyczna** księgowania sekularnego.
+
+Stosunek dipol/Coulomb rośnie jak \(1/r^2\): \(3{,}3\cdot10^{-6}\) przy
+\(a_{Ps}\), ale \(0{,}56\) przy promieniu terminalnym i \(0{,}998\) na
+barierze. Warto odnotować, że \(r^*=193{,}3035\) fm, gdzie oba człony się
+zrównują, jest **co do cyfry** równe barierze Comptona — model zatrzymuje
+trajektorię dokładnie tam, gdzie sektor dipolowy dorównuje kulombowskiemu.
+
+Zmierzone (seed 4242, po 6 trajektorii na kanał):
+
+| | para | orto | różnica |
+|---|---|---|---|
+| promień terminalny | \(304{,}45\) fm | \(304{,}36\) fm | — |
+| wiązanie | \(2{,}3649\) keV | \(2{,}3655\) keV | **identyczne** |
+| **dipol-dipol** | \(+0{,}880\) keV | \(-1{,}715\) keV | \(2{,}595\) keV |
+| \(W\) | \(1020{,}51\) keV | \(1017{,}92\) keV | \(2{,}590\) keV |
+| \(W/2\) (linia) | \(510{,}256\) keV | \(508{,}959\) keV | \(1{,}297\) keV |
+
+Wiązanie jest **identyczne** w obu kanałach — to ta sama dynamika. Rozdziela
+je wyłącznie człon dipolowy, o **przeciwnych znakach**, bo czynnik kątowy
+\(\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2-3(\boldsymbol\mu_1\!\cdot\!\hat{\mathbf n})(\boldsymbol\mu_2\!\cdot\!\hat{\mathbf n})\)
+zmienia znak między ustawieniem zgodnym a przeciwnym, a para i orto różnią
+się w tym modelu dokładnie tym ustawieniem. Wynikowe **rozszczepienie linii
+między kanałami wynosi \(1{,}297\) keV, czyli \(0{,}254\%\)** — i jest
+większe niż samo przesunięcie wiązaniem.
+
 *Zastrzeżenie skali.* Klasyczna energia wiązania zjadłaby całe \(W\) przy
 \(a=r_e/4=0{,}70\) fm. Podłoga modelu leży \(274\times\) powyżej tej
 granicy, więc problem nie jest osiągany — ale to niezależne potwierdzenie, że

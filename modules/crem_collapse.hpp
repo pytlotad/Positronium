@@ -112,6 +112,10 @@ struct CremCollapseEstimate {
     // to annihilate from.
     double terminalSemiMajorAxis=std::numeric_limits<double>::quiet_NaN();
     double terminalBindingEnergy=std::numeric_limits<double>::quiet_NaN();
+    // Dipole-dipole interaction energy at the terminal configuration, the
+    // one term that distinguishes para from ortho in the final-state
+    // invariant.  Signed: negative for the orientation that binds.
+    double terminalDipoleEnergy=std::numeric_limits<double>::quiet_NaN();
     double annihilationInvariantEnergy=std::numeric_limits<double>::quiet_NaN();
     // Two entries for para (2 gamma), three for ortho (3 gamma), in the
     // pair's own centre-of-momentum frame and summing to
@@ -1080,8 +1084,39 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 -attractionParameter/(2.0*elements.specificEnergy);
             result.terminalBindingEnergy=
                 reducedMass*std::abs(elements.specificEnergy);
+            // DIPOLE-DIPOLE, which the Kepler element does not carry.
+            //
+            // elements.specificEnergy is an OSCULATING KEPLER element, not a
+            // general energy: eight places read it as a = -K/(2 eps),
+            // e^2 = 1 + 2 eps l^2/K^2 and the period.  Folding a 1/r^3 term
+            // into it would feed every one of those a quantity they were not
+            // derived for, and the damage would peak exactly here, at the
+            // terminal radius, where the dipole sector is 56% of Coulomb.
+            // So it stays a Kepler element and the dipole energy is added
+            // where it physically belongs instead: to the invariant the
+            // final-state photons actually share.
+            //
+            // Nothing about the DYNAMICS is being corrected -- the
+            // trajectory already feels this force (mutualForces carries
+            // regularizedDipoleForce) and the mechanical ledger already
+            // carries the energy (conservativeParticleEnergy adds
+            // dipolePotential).  Only the secular bookkeeping's energy LABEL
+            // omitted it.
+            //
+            // This is what makes W channel-dependent: the angular factor
+            // mu1.mu2 - 3(mu1.n)(mu2.n) changes sign between aligned and
+            // anti-aligned moments, and para and ortho differ in this model
+            // by exactly that alignment.  Measured at the terminal radius the
+            // term is 0.31% of W, larger than the 0.27% the binding itself
+            // shifts it, so it is not a correction that can be waved away.
+            const State terminalState=osculatingPeriapsisState(
+                elements,attractionParameter,firstDipole,secondDipole);
+            result.terminalDipoleEnergy=regularizedDipoleInteractionEnergy(
+                terminalState.firstPosition-terminalState.secondPosition,
+                terminalState.firstDipole,terminalState.secondDipole);
             result.annihilationInvariantEnergy=
-                (firstMass+secondMass)*c*c-result.terminalBindingEnergy;
+                (firstMass+secondMass)*c*c-result.terminalBindingEnergy
+                +result.terminalDipoleEnergy;
             result.annihilationPhotonEnergies=annihilationPhotonEnergiesFor(
                 result.annihilationInvariantEnergy,
                 selectedPhenomenon==1,stochasticSkipStream);

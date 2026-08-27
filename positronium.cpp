@@ -1686,6 +1686,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     std::vector<double> larmorRatios;
     std::vector<double> dipoleCouplingsGHz;
     std::vector<double> terminalInvariantKev, terminalBindingKev;
+    std::vector<double> terminalDipoleKev;
     std::vector<double> terminalRadiusFm, terminalLeadingPhotonKev;
     // Lab-frame photon kinematics (LabFramePhoton, modules/crem_collapse.hpp)
     // flattened across every trajectory in the batch and every photon each
@@ -1786,6 +1787,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                 estimate.annihilationInvariantEnergy/eCharge*1.0e-3);
             terminalBindingKev.push_back(
                 estimate.terminalBindingEnergy/eCharge*1.0e-3);
+            terminalDipoleKev.push_back(
+                estimate.terminalDipoleEnergy/eCharge*1.0e-3);
             terminalRadiusFm.push_back(
                 estimate.terminalSemiMajorAxis*1.0e15);
             double leading=0.0;
@@ -1962,12 +1965,18 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                      "mean binding)\n"
                   << "  terminal binding       "
                   << meanBinding << " keV\n"
+        // The one term that separates para from ortho here.  Signed: the
+        // orientation that binds pulls W down further, the other pushes it
+        // back up.  Larger than the binding shift itself at this radius.
+                  << "  terminal dipole-dipole " << average(terminalDipoleKev)
+                  << " keV (channel-dependent: this is what makes para and "
+                     "ortho differ)\n"
                   << "  annihilation W         "
                   << average(terminalInvariantKev) << " keV against "
                   << 2.0*restLine << " keV at rest, i.e. "
                   << 100.0*(average(terminalInvariantKev)-2.0*restLine)
                      /(2.0*restLine)
-                  << "% shifted by binding\n"
+                  << "% shifted (binding and dipole-dipole together)\n"
         // W/2 is the quantity the binding actually moves, and it is the
         // 2-gamma line for para and the spectrum ENDPOINT for ortho.  The
         // sampled leading photon is reported beside it but deliberately not
