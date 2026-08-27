@@ -2421,7 +2421,7 @@ dnie drabiny \(\hbar\omega\) myli się trzykrotnie.
 Sprawdzone przeciw wzorowi analitycznemu
 \(\Delta E/\hbar\omega=n(2n-1)/(2(n-1)^2)\):
 
-| `--emission` | `poisson` | **Eksperyment diagnostyczny.** Próg, na którym pada skwantowany foton. `poisson` losuje go z \(\mathrm{Exp}(1)\) — emisja spontaniczna z szumem śrutowym, zachowanie domyślne i fizyczne. `deterministic` ustawia próg na stałe \(1\), więc foton pada dokładnie wtedy, gdy orbita straciła ciągle jeden kwant (bankowany hazard to wypromieniowana energia w kwantach). Zmierzone: \(\sigma/\mu\) spada z \(0{,}894\) do \(0{,}343\), średnia pozostaje bez zmian. Nie sprowadza rozkładu do odpowiedzi kontinuum — patrz sekcja „`--emission deterministic`" wyżej. |
+| `--emission` | `poisson` | **Model produkcyjny.** Próg, na którym pada skwantowany foton. `poisson` losuje go z \(\mathrm{Exp}(1)\) — emisja spontaniczna z szumem śrutowym, zachowanie domyślne i fizyczne. `deterministic` ustawia próg na stałe \(1\), więc foton pada dokładnie wtedy, gdy orbita straciła ciągle jeden kwant (bankowany hazard to wypromieniowana energia w kwantach) — krok w stronę deterministycznego wyznaczania parametrów kwantowych, w którym energia fotonu wynika z orbity, a czas z jej ciągłej utraty energii. Zmierzone: \(\sigma/\mu\) spada z \(0{,}894\) do \(0{,}343\), średnia pozostaje bez zmian. Nie sprowadza rozkładu do odpowiedzi kontinuum — patrz sekcja „`--emission deterministic`" wyżej. |
 | `--level` | \(n\) startowe | zmierzone | wzór |
 |---|---|---|---|
 | 2 | 2,0994 | 2,778 | 2,778 |
@@ -4068,10 +4068,17 @@ w obu trybach emisji są identyczne; próg zmienia wyłącznie **rozkład czasó
 Do odpowiedzi kontinuum prowadzi co innego: przywrócenie ciągłej siły
 hamującej, a nie zdjęcie losowości z progu.
 
-To eksperyment, nie zamiennik. Emisja spontaniczna naprawdę jest procesem
-Poissona, więc usunięcie losowości usuwa fizykę, nie tylko wariancję. Wartość
-tego trybu jest diagnostyczna: rozdziela, ile rozrzutu czasu kolapsu pochodzi
-z szumu śrutowego, a ile z przygotowania pary.
+**Kierunek, któremu to służy: deterministyczne wyznaczanie parametrów
+kwantowych.** Energia fotonu jest już wyznaczona przez orbitę — zasadą
+korespondencji, a tam gdzie istnieje drabina, odstępem poziomów. Tryb
+deterministyczny domyka to samo dla **czasu** emisji, przez co w kwancie nie
+zostaje nic losowanego. Oba tryby są modelami produkcyjnymi, nie sondami.
+
+Odstępstwo od opisu konwencjonalnego trzeba przy tym wypowiedzieć wprost, a
+nie ukryć: emisja spontaniczna jest zwykle modelowana jako proces Poissona i
+z tego powodu `poisson` pozostaje wartością domyślną. To, co daje tryb
+deterministyczny, jest natomiast zmierzone: \(85\%\) wariancji czasu kolapsu
+okazuje się szumem śrutowym, a nie własnością pary.
 
 **Na wyraźną prośbę: `CREM_HARMONIC` stał się nowym domyślnym modelem
 produkcyjnym.** Ta sama zmienna środowiskowa zostaje, ale zmienia się jej

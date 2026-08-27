@@ -679,14 +679,25 @@ enum class ChargeRadiationReactionModel {
     // median 149 ps / mean 276+-91 ps (sigma/mean~1.0, i.e. genuinely
     // wide, not a tight distribution around the continuum answer) over 10
     // seeds -- a real, order-of-magnitude difference from discretizing
-    // emission this way, not a rounding artefact.  An experiment, not a
-    // replacement for the continuum models above -- but unlike --zpf's SED
-    // probe, this one DOES show a qualitative, physically interpretable
-    // difference, which is itself the point: naive photon-sized
-    // discretization of a classical orbit does not reduce smoothly to the
-    // classical answer once the photon scale stops being small against the
-    // system's own energy scale -- exactly the failure mode that made the
-    // old (pre-1925) semiclassical quantum theory unworkable.
+    // emission this way, not a rounding artefact.
+    //
+    // This is the production model, and the difference above is the reason
+    // rather than a caveat against it.  Unlike --zpf's SED probe it shows a
+    // qualitative, physically interpretable departure from the continuum:
+    // photon-sized discretization of a classical orbit does not reduce
+    // smoothly to the classical answer once the photon scale stops being
+    // small against the system's own energy scale.  At the pair Bohr radius
+    // hbar*omega is 13.6 eV against 6.8 eV of binding, so that scale
+    // separation is absent from the outset and the continuum answer is the
+    // approximation, not this one.
+    //
+    // The direction this serves is a DETERMINISTIC determination of the
+    // quantum parameters: the photon energy is fixed by the orbit
+    // (correspondence, or the level spacing where a ladder exists -- see
+    // crem_collapse.hpp), and --emission deterministic fixes its timing too.
+    // What remains stochastic here is the emission threshold, which is the
+    // conventional description of spontaneous emission and stays the
+    // default; it is not the part the model is committed to.
     //
     // DIRECTION, added.  Every kick above was originally isotropic in
     // effect (only |E| and |L| moved; OsculatingElements itself has no
