@@ -1965,12 +1965,15 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                      "mean binding)\n"
                   << "  terminal binding       "
                   << meanBinding << " keV\n"
-        // The one term that separates para from ortho here.  Signed: the
-        // orientation that binds pulls W down further, the other pushes it
-        // back up.  Larger than the binding shift itself at this radius.
+        // Zero expectation, large scatter.  After the azimuth average the
+        // angular factor has <factor> = 0 identically for isotropic moments
+        // at any mutual alignment, so this neither shifts W systematically
+        // nor separates para from ortho; what it does is broaden the line.
+        // A batch mean printed here is therefore an estimate of zero, and
+        // its size says more about the sample than about the physics.
                   << "  terminal dipole-dipole " << average(terminalDipoleKev)
-                  << " keV (channel-dependent: this is what makes para and "
-                     "ortho differ)\n"
+                  << " keV (zero expectation; contributes scatter, not a "
+                     "shift -- see README)\n"
                   << "  annihilation W         "
                   << average(terminalInvariantKev) << " keV against "
                   << 2.0*restLine << " keV at rest, i.e. "

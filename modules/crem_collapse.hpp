@@ -695,6 +695,55 @@ double regularizedPeriod(const OsculatingElements& elements,
     return 2.0*halfPeriod;
 }
 
+// Dipole-dipole interaction energy at separation r, averaged over the ONE
+// thing the osculating representation genuinely does not know: where in its
+// orbital plane the pair is.
+//
+// osculatingPeriapsisState resets the plane to canonical x-y and puts the
+// separation along +x, and says so -- that is sound for a collapse-time
+// estimate, which cares only about |E| and |L|.  It is NOT sound for the
+// angular factor mu1.mu2 - 3(mu1.n)(mu2.n), which depends on the direction
+// of n relative to the moments.  Using that convention's n = x gives an
+// answer that is not merely imprecise but can carry the WRONG SIGN: checked
+// against the correct average on random configurations, -0.268 against
+// +0.484 in one of four trials.
+//
+// The true anomaly at termination is unknowable here for the same reason the
+// photon-firing code states for its own emission azimuth: only the elements
+// survive the secular step, not the phase.  What IS tracked is the orbital
+// plane normal.  So the azimuth is averaged out rather than guessed, using
+//
+//     <n_i n_j> = (delta_ij - L_i L_j)/2   for n uniform in the plane,
+//
+// which turns the angular factor into
+//
+//     <mu1.mu2 - 3(mu1.n)(mu2.n)> = -(mu1.mu2)/2 + 3(mu1.L)(mu2.L)/2,
+//
+// verified against brute-force azimuth integration to 1e-16.  No 1/r^3
+// weighting enters: r is fixed at the terminal periapsis, so the average is
+// uniform in azimuth at that one radius, not an orbit average.
+//
+// The radial profile is the regularized one the field code uses, so this
+// agrees with regularizedDipoleInteractionEnergy term by term and reduces to
+// the point-dipole result where the regulator is inactive.
+double azimuthAveragedDipoleEnergy(double separation,
+                                   const Vec3& firstDipole,
+                                   const Vec3& secondDipole,
+                                   const Vec3& orbitNormal) {
+    if(!(separation>0.0)) return 0.0;
+    const MagneticRadialProfile profile=magneticRadialProfile(separation);
+    const double transverse=2.0*profile.vectorPotentialFactor
+        +separation*profile.firstDerivative;
+    const double radial=-separation*profile.firstDerivative;
+    const double moments=dot(firstDipole,secondDipole);
+    const double alongNormal=dot(firstDipole,orbitNormal)
+        *dot(secondDipole,orbitNormal);
+    // U = -mu1 . B_reg(mu2), with <(mu1.n)(mu2.n)> substituted for the
+    // unknown azimuth.
+    const double averagedRadial=0.5*(moments-alongNormal);
+    return -(mu0/(4.0*pi))*(moments*transverse+averagedRadial*radial);
+}
+
 // Fresh State at periapsis for the given osculating elements, carrying the
 // supplied dipole vectors over unchanged.  The orbital plane is reset to the
 // canonical x-y plane every time: only the (E,L) magnitudes are propagated
@@ -1103,17 +1152,43 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // dipolePotential).  Only the secular bookkeeping's energy LABEL
             // omitted it.
             //
-            // This is what makes W channel-dependent: the angular factor
-            // mu1.mu2 - 3(mu1.n)(mu2.n) changes sign between aligned and
-            // anti-aligned moments, and para and ortho differ in this model
-            // by exactly that alignment.  Measured at the terminal radius the
-            // term is 0.31% of W, larger than the 0.27% the binding itself
-            // shifts it, so it is not a correction that can be waved away.
-            const State terminalState=osculatingPeriapsisState(
-                elements,attractionParameter,firstDipole,secondDipole);
-            result.terminalDipoleEnergy=regularizedDipoleInteractionEnergy(
-                terminalState.firstPosition-terminalState.secondPosition,
-                terminalState.firstDipole,terminalState.secondDipole);
+            // WHAT THIS DOES AND DOES NOT DO.  An earlier version of this
+            // comment claimed the term makes W channel-dependent, since the
+            // angular factor changes sign between aligned and anti-aligned
+            // moments and that alignment is what separates para from ortho
+            // here.  That is wrong, and the reason is worth keeping.
+            //
+            // After the azimuth average the factor depends only on mu1.mu2
+            // and (mu1.L)(mu2.L).  For isotropically drawn moments at fixed
+            // cos = mu1^.mu2^, <(mu1^.L)(mu2^.L)> = cos/3 -- verified over
+            // 2e6 samples -- so
+            //
+            //     <factor> = -cos/2 + (3/2)(cos/3) = 0
+            //
+            // IDENTICALLY, for every cos, hence for either channel.  The
+            // term therefore has zero expectation and cannot separate para
+            // from ortho at all.  Measured over four seeds at fifteen
+            // trajectories: para -0.061 +/- 0.219 keV, ortho +0.157 +/-
+            // 0.147 keV, difference -0.217 +/- 0.263 keV, every one
+            // consistent with zero and with mixed signs inside each channel.
+            //
+            // What the term does contribute is SCATTER, and a large one: at
+            // the terminal radius the dipole sector is 56% of Coulomb, so
+            // individual trajectories carry order +/-1.5 keV of it.  The
+            // prediction it supports is a BROADENED line, not a shifted one
+            // -- roughly 0.15% of 511 keV in width, against the 0.27% by
+            // which the binding shifts the centre.
+            // Evaluated through the azimuth average, NOT by building a
+            // periapsis State: that helper resets the orbital plane to
+            // canonical x-y and puts the separation along +x, which is fine
+            // for a collapse-time estimate and wrong here, where the answer
+            // depends on the direction of n relative to the moments.  See
+            // azimuthAveragedDipoleEnergy for the measurement that shows the
+            // convention can flip the sign.
+            result.terminalDipoleEnergy=azimuthAveragedDipoleEnergy(
+                regularizedPeriapsis(elements,attractionParameter,
+                                     separationFloor()),
+                firstDipole,secondDipole,angularMomentumDirection);
             result.annihilationInvariantEnergy=
                 (firstMass+secondMass)*c*c-result.terminalBindingEnergy
                 +result.terminalDipoleEnergy;

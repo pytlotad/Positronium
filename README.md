@@ -2384,15 +2384,15 @@ przestrzeni fazowej. Wypełniane tylko dla trajektorii, które **realnie
 dochodzą** do promienia terminalnego; przebiegi ocenzurowane i nieudane nie
 mają stanu, z którego można anihilować.
 
-*Człon dipol-dipol i to, co naprawdę rozdziela kanały.* Element
+*Człon dipol-dipol: duży, ale o zerowej wartości oczekiwanej.* Element
 `elements.specificEnergy` jest **oskulacyjnym elementem keplerowskim**, nie
 ogólną energią: osiem miejsc czyta go jako \(a=-K/2\varepsilon\),
 \(e^2=1+2\varepsilon\ell^2/K^2\) i okres. Wsunięcie w niego członu
 \(1/r^3\) nakarmiłoby każdy z tych wzorów wielkością, dla której nie zostały
 wyprowadzone, a zepsucie byłoby największe **dokładnie przy promieniu
 terminalnym**, gdzie sektor dipolowy stanowi \(56\%\) kulombowskiego.
-Element zostaje więc keplerowski, a energia dipolowa jest dodawana tam, gdzie
-ma znaczenie fizyczne — do niezmiennika, który dzielą fotony:
+Element zostaje więc keplerowski, a energia dipolowa jest dodawana do
+niezmiennika, który dzielą fotony:
 
 \[
 W=(m_1+m_2)c^2+\mu\varepsilon+U_{\rm dd}.
@@ -2406,26 +2406,63 @@ Pominięta była wyłącznie **etykieta energetyczna** księgowania sekularnego.
 Stosunek dipol/Coulomb rośnie jak \(1/r^2\): \(3{,}3\cdot10^{-6}\) przy
 \(a_{Ps}\), ale \(0{,}56\) przy promieniu terminalnym i \(0{,}998\) na
 barierze. Warto odnotować, że \(r^*=193{,}3035\) fm, gdzie oba człony się
-zrównują, jest **co do cyfry** równe barierze Comptona — model zatrzymuje
-trajektorię dokładnie tam, gdzie sektor dipolowy dorównuje kulombowskiemu.
+zrównują, jest **co do cyfry** równe barierze Comptona.
 
-Zmierzone (seed 4242, po 6 trajektorii na kanał):
+*Azymut trzeba uśrednić, nie zgadnąć.* `osculatingPeriapsisState` resetuje
+płaszczyznę orbity do kanonicznej x-y i kładzie separację wzdłuż \(+\hat x\),
+mówiąc wprost, że orientacja płaszczyzny „jest nieistotna dla estymaty czasu
+kolapsu". Dla czasu kolapsu owszem — ale **nie dla czynnika kątowego**
+\(\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2-3(\boldsymbol\mu_1\!\cdot\!\hat{\mathbf n})(\boldsymbol\mu_2\!\cdot\!\hat{\mathbf n})\),
+który zależy od kierunku \(\hat{\mathbf n}\). Pierwsza wersja tej sekcji
+korzystała z tamtej konwencji i podawała liczby, które sprawdzone przeciw
+poprawnej średniej miały **inny znak** (na losowych konfiguracjach
+\(-0{,}268\) wobec \(+0{,}484\)).
 
-| | para | orto | różnica |
-|---|---|---|---|
-| promień terminalny | \(304{,}45\) fm | \(304{,}36\) fm | — |
-| wiązanie | \(2{,}3649\) keV | \(2{,}3655\) keV | **identyczne** |
-| **dipol-dipol** | \(+0{,}880\) keV | \(-1{,}715\) keV | \(2{,}595\) keV |
-| \(W\) | \(1020{,}51\) keV | \(1017{,}92\) keV | \(2{,}590\) keV |
-| \(W/2\) (linia) | \(510{,}256\) keV | \(508{,}959\) keV | \(1{,}297\) keV |
+Prawdziwa anomalia przy terminacji jest w reprezentacji oskulacyjnej
+nieznana — kod mówi to sam przy losowaniu azymutu emisji fotonu. Śledzona
+jest natomiast normalna płaszczyzny, więc azymut jest **uśredniany**:
 
-Wiązanie jest **identyczne** w obu kanałach — to ta sama dynamika. Rozdziela
-je wyłącznie człon dipolowy, o **przeciwnych znakach**, bo czynnik kątowy
-\(\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2-3(\boldsymbol\mu_1\!\cdot\!\hat{\mathbf n})(\boldsymbol\mu_2\!\cdot\!\hat{\mathbf n})\)
-zmienia znak między ustawieniem zgodnym a przeciwnym, a para i orto różnią
-się w tym modelu dokładnie tym ustawieniem. Wynikowe **rozszczepienie linii
-między kanałami wynosi \(1{,}297\) keV, czyli \(0{,}254\%\)** — i jest
-większe niż samo przesunięcie wiązaniem.
+\[
+\langle n_in_j\rangle=\tfrac12(\delta_{ij}-\hat L_i\hat L_j)
+\ \Longrightarrow\
+\langle\text{czynnik}\rangle=-\tfrac12(\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2)
++\tfrac32(\boldsymbol\mu_1\!\cdot\!\hat{\mathbf L})(\boldsymbol\mu_2\!\cdot\!\hat{\mathbf L}),
+\]
+
+zweryfikowane przeciw całkowaniu brute-force po azymucie do \(10^{-16}\).
+Nie wchodzi ważenie \(1/r^3\): \(r\) jest ustalone na perycentrum
+terminalnym, więc jest to średnia po azymucie przy jednym promieniu, nie
+średnia po orbicie.
+
+*I stąd wniosek, który obala wcześniejszą wersję tej sekcji.* Po uśrednieniu
+czynnik zależy już tylko od \(\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2\) i
+\((\boldsymbol\mu_1\!\cdot\!\hat{\mathbf L})(\boldsymbol\mu_2\!\cdot\!\hat{\mathbf L})\).
+Dla izotropowo losowanych momentów o ustalonym
+\(\cos=\hat{\boldsymbol\mu}_1\!\cdot\!\hat{\boldsymbol\mu}_2\) zachodzi
+\(\langle(\hat{\boldsymbol\mu}_1\!\cdot\!\hat{\mathbf L})(\hat{\boldsymbol\mu}_2\!\cdot\!\hat{\mathbf L})\rangle=\cos/3\)
+(zmierzone na \(2\cdot10^6\) próbkach: \(-0{,}3001\) wobec \(-0{,}3000\)
+przy \(\cos=-0{,}9\), i tak dalej), więc
+
+\[
+\langle\text{czynnik}\rangle=-\tfrac{\cos}2+\tfrac32\cdot\tfrac{\cos}3=0
+\quad\textbf{tożsamościowo,}
+\]
+
+**dla każdego \(\cos\), czyli dla obu kanałów.** Człon dipolowy ma zerową
+wartość oczekiwaną i **nie rozdziela para od orto**. Potwierdzone pomiarem
+(4 ziarna × 15 trajektorii): para \(-0{,}061\pm0{,}219\) keV, orto
+\(+0{,}157\pm0{,}147\) keV, różnica \(-0{,}217\pm0{,}263\) keV — wszystko
+zgodne z zerem, znaki mieszane wewnątrz obu kanałów.
+
+Wcześniejsze zdanie tego dokumentu, że „kanały rozdzielają się przy
+promieniu terminalnym", było więc **nieprawdziwe**: ten model nie rozróżnia
+kanałów w energii anihilacji nigdzie.
+
+*Co zostaje.* Człon jest przy promieniu terminalnym **duży** i wnosi realny
+**rozrzut**: rzędu \(\pm1{,}5\) keV na pojedynczą trajektorię przy zerowej
+średniej. Przepowiednia, którą wspiera, to zatem linia **poszerzona**, nie
+przesunięta — szerokość rzędu \(0{,}15\%\) z \(511\) keV, wobec
+\(0{,}27\%\), o które wiązanie przesuwa jej środek.
 
 *Zastrzeżenie skali.* Klasyczna energia wiązania zjadłaby całe \(W\) przy
 \(a=r_e/4=0{,}70\) fm. Podłoga modelu leży \(274\times\) powyżej tej
