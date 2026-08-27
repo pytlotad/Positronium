@@ -1158,6 +1158,32 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // moments and that alignment is what separates para from ortho
             // here.  That is wrong, and the reason is worth keeping.
             //
+            // What is averaged is the orientation of the RIGID pair relative
+            // to L, at FIXED mutual angle cos = mu1^.mu2^.  That angle is
+            // what separates the channels and is not averaged over; the
+            // identity below was checked separately at cos = -0.9, -0.4, 0,
+            // +0.4 and +0.9, so the vanishing happens INSIDE each class.
+            //
+            // The isotropy that assumes is not merely an initial condition:
+            // it survives the dynamics.  Opposite charges give opposite q/m,
+            // which suggests the perpendicular components counter-rotate and
+            // wash the mutual angle out -- measured, they do not.  cos runs
+            // 0.885 -> 0.893, 0.552 -> 0.552, -0.765 -> -0.765 from seed to
+            // termination, the largest excursion seen being 0.15.  Opposite
+            // charges reverse the spin-moment relation along WITH q/m, so
+            // both moments precess the same way about a common B_BMT; and
+            // for a near-circular orbit that field is dominated by the
+            // motional v x E/c^2 with v and E both in the orbital plane,
+            // hence directed along L, so the precession conserves mu.L --
+            // exactly the component the angular factor reads.
+            //
+            // (Which channel carries the ALIGNED moments is the opposite of
+            // the naive guess, and README's own Sonda 4 says so: para is
+            // forced to cos >= 0.5 and ortho to cos < 0.5, because opposite
+            // charges invert the spin-moment correlation.  Ortho's condition
+            // is one-sided -- everything but strongly aligned -- not
+            // "anti-aligned".)
+            //
             // After the azimuth average the factor depends only on mu1.mu2
             // and (mu1.L)(mu2.L).  For isotropically drawn moments at fixed
             // cos = mu1^.mu2^, <(mu1^.L)(mu2^.L)> = cos/3 -- verified over

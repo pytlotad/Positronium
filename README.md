@@ -2434,6 +2434,48 @@ Nie wchodzi ważenie \(1/r^3\): \(r\) jest ustalone na perycentrum
 terminalnym, więc jest to średnia po azymucie przy jednym promieniu, nie
 średnia po orbicie.
 
+*Co dokładnie jest uśredniane — bo to łatwo pomylić.* Uśredniana jest
+orientacja **sztywnej pary momentów względem \(\hat{\mathbf L}\)**, przy
+**ustalonym** wzajemnym kącie \(\cos=\hat{\boldsymbol\mu}_1\!\cdot\!\hat{\boldsymbol\mu}_2\).
+Ten kąt jest właśnie tym, co odróżnia kanały, i nie jest uśredniany. Tożsamość
+niżej sprawdzono osobno dla \(\cos=-0{,}9;\,-0{,}4;\,0;\,+0{,}4;\,+0{,}9\),
+więc zerowanie zachodzi **wewnątrz każdej klasy**, a nie przez wymieszanie ich
+ze sobą.
+
+*Uwaga o tym, który kanał ma zgodne momenty.* Wcześniejsza wersja tego opisu
+mówiła „para: antyrównoległe, orto: równoległe" — to dotyczy **spinów**. Dla
+**momentów magnetycznych** jest odwrotnie, bo przeciwne ładunki odwracają
+korelację spin–moment (\(\boldsymbol\mu=(gq/2m)\mathbf S\)). Kod wymusza
+\(\cos\ge0{,}5\) dla para i \(\cos<0{,}5\) dla orto, co README dokumentuje
+osobno jako Sondę 4. Zmierzone przy terminacji potwierdza konwencję: para
+\(+0{,}53\ldots+0{,}89\), orto \(-0{,}77\ldots+0{,}47\). Warunek orto jest
+przy tym **jednostronny** — to nie „antyrównoległe", lecz „wszystko poza
+silnie zgodnym", od prostopadłych po przeciwne.
+
+*Czy założenie izotropii przeżywa dynamikę.* Izotropia orientacji względem
+\(\hat{\mathbf L}\) wynika z warunków początkowych, ale trzeba sprawdzić, czy
+ewolucja jej nie łamie — i czy sam \(\cos\) dożywa promienia terminalnego.
+Nasuwa się podejrzenie, że nie: przeciwne ładunki dają przeciwne \(q/m\), więc
+składowe prostopadłe mogłyby kontrarotować i rozmyć wzajemny kąt. **Zmierzone,
+\(\cos\) jest zachowany**:
+
+```
+para:  0,885 -> 0,893    0,552 -> 0,552    0,539 -> 0,535    0,798 -> 0,648
+orto: -0,733 -> -0,738  -0,391 -> -0,391  -0,765 -> -0,765  -0,117 -> +0,028
+```
+
+Największa zmiana to \(\approx0{,}15\), większość poniżej \(0{,}01\). Powód
+jest ten sam, co odwrócenie z Sondy 4: skoro przeciwne ładunki odwracają
+relację spin–moment, to \(q/m\) i orientacja momentu odwracają się **razem**,
+więc oba momenty precesują w tę samą stronę wokół wspólnego
+\(\mathbf B_{\rm BMT}\). Co więcej, dla orbity kołowej \(\mathbf B_{\rm BMT}\)
+jest zdominowane przez człon motoryczny \(\mathbf v\times\mathbf E/c^2\), a
+\(\mathbf v\) i \(\mathbf E\) leżą w płaszczyźnie orbity, więc pole jest
+skierowane wzdłuż \(\hat{\mathbf L}\) — precesja wokół \(\hat{\mathbf L}\)
+**zachowuje** \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\), czyli dokładnie tę
+składową, która wchodzi do czynnika kątowego. Założenie izotropii jest więc
+nie tylko prawdziwe na starcie, ale podtrzymywane przez dynamikę.
+
 *I stąd wniosek, który obala wcześniejszą wersję tej sekcji.* Po uśrednieniu
 czynnik zależy już tylko od \(\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2\) i
 \((\boldsymbol\mu_1\!\cdot\!\hat{\mathbf L})(\boldsymbol\mu_2\!\cdot\!\hat{\mathbf L})\).
