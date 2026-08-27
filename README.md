@@ -2334,6 +2334,62 @@ to realna zmiana drogi przepływu energii.
 `radiatedEnergy` pozostaje **ciągłą** całką Poyntinga i pełni rolę diagnostyki
 porównawczej, nie sumy wyemitowanych kwantów — tak jak dla E1 od początku.
 
+#### Anihilacja związana z promieniem terminalnym
+
+Generator anihilacji w tym projekcie jest receptą kwantową **celowo
+niezależną** od modelu klasycznego: zakłada parę **w spoczynku** i wkłada w
+fotony pełne \(2m_ec^2\), przez co linia \(2\gamma\) jest stałą kompilacji,
+a widmo \(3\gamma\) to Ore-Powell dla pary spoczywającej. Ani sufit
+kinematyczny, ani podłoga go nie wyzwalają.
+
+Obok tego liczona jest teraz **druga, równoległa odpowiedź**: co zostaje
+parze, którą ten model faktycznie scałkował, w chwili gdy zatrzymuje ją
+reguła stopu. Orbita jest wtedy związana, więc jej energia niezmiennicza leży
+**poniżej** sumy mas spoczynkowych o nagromadzone wiązanie:
+
+\[
+W=(m_1+m_2)c^2+\mu\varepsilon,\qquad \varepsilon<0,
+\]
+
+i to \(W\), a nie \(2m_ec^2\), mają do podziału fotony stanu końcowego.
+Para dzieli je na \(2\gamma\) po \(W/2\) (wymusza to samo zachowanie pędu),
+orto na \(3\gamma\) z widma Ore-Powella, którego jedyną skalą jest \(W/2\) —
+więc przeskalowuje się z \(W\) zamiast być przypięte do \(m_ec^2\).
+
+Zmierzone (seed 4242, para):
+
+| wielkość | wartość |
+|---|---|
+| promień terminalny | \(258\) fm |
+| energia wiązania | \(2{,}79\) keV |
+| \(W\) | \(1019{,}21\) keV wobec \(1022{,}00\) keV → **\(-0{,}27\%\)** |
+| \(W/2\) (linia \(2\gamma\), koniec widma \(3\gamma\)) | \(509{,}60\) keV wobec \(510{,}999\) keV |
+
+Przesunięcie linii \(511\) keV jest wielkością **mierzoną doświadczalnie**,
+więc jest to konkretna, sprawdzalna przepowiednia — wynikająca jednak z
+klasycznej energii wiązania, nie z modelu anihilacji, którego CREM nie ma.
+
+*Dwie liczby, które łatwo pomylić.* Wielkością, którą przesuwa wiązanie, jest
+\(W\) (a więc i \(W/2\)) — to samo dla obu kanałów. **Wiodący foton to co
+innego**: dla orto leży średnio \(12\%\) poniżej \(W/2\) z samej przestrzeni
+fazowej trzech fotonów (zmierzone: \(0{,}878\pm\) rozrzut \(0{,}73\)–\(1{,}00\)),
+co z wiązaniem nie ma nic wspólnego. Pierwsza wersja tego raportu porównywała
+wiodący foton z \(511\) keV dla obu kanałów, przez co orto wyglądało na
+przesunięte \(-8{,}7\%\), czyli trzydziestokrotnie bardziej niż para —
+mieszając dwa niezależne efekty. Raportowane są teraz osobno.
+
+*Kontrola.* Suma energii fotonów równa się \(W\) do dwunastu cyfr w obu
+kanałach, a każdy foton spełnia \(E\le W/2\), czyli warunek fizycznej
+przestrzeni fazowej. Wypełniane tylko dla trajektorii, które **realnie
+dochodzą** do promienia terminalnego; przebiegi ocenzurowane i nieudane nie
+mają stanu, z którego można anihilować.
+
+*Zastrzeżenie skali.* Klasyczna energia wiązania zjadłaby całe \(W\) przy
+\(a=r_e/4=0{,}70\) fm. Podłoga modelu leży \(274\times\) powyżej tej
+granicy, więc problem nie jest osiągany — ale to niezależne potwierdzenie, że
+bariera Comptona kończy trajektorię na długo przed tym, jak opis klasyczny
+zjadłby masę spoczynkową pary.
+
 #### Domknięcie sufitu: emisja w oknie zamiast chwilowego kopnięcia
 
 Sufit opisany niżej wykluczał emisję w całej dziedzinie modelu, a obie

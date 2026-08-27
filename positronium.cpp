@@ -1685,6 +1685,8 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     std::vector<double> measuredCollapse, analyticCollapse; // plot units
     std::vector<double> larmorRatios;
     std::vector<double> dipoleCouplingsGHz;
+    std::vector<double> terminalInvariantKev, terminalBindingKev;
+    std::vector<double> terminalRadiusFm, terminalLeadingPhotonKev;
     // Lab-frame photon kinematics (LabFramePhoton, modules/crem_collapse.hpp)
     // flattened across every trajectory in the batch and every photon each
     // one fired -- independent of completion, same reasoning as
@@ -1775,6 +1777,22 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         }
         if(std::isfinite(estimate.dipoleCouplingHz)) {
             dipoleCouplingsGHz.push_back(estimate.dipoleCouplingHz*1.0e-9);
+        }
+        // Annihilation tied to the terminal radius: the leading photon's
+        // energy, and how far below the at-rest line the binding puts it.
+        if(std::isfinite(estimate.annihilationInvariantEnergy)
+           && !estimate.annihilationPhotonEnergies.empty()) {
+            terminalInvariantKev.push_back(
+                estimate.annihilationInvariantEnergy/eCharge*1.0e-3);
+            terminalBindingKev.push_back(
+                estimate.terminalBindingEnergy/eCharge*1.0e-3);
+            terminalRadiusFm.push_back(
+                estimate.terminalSemiMajorAxis*1.0e15);
+            double leading=0.0;
+            for(double energy : estimate.annihilationPhotonEnergies) {
+                leading=std::max(leading,energy);
+            }
+            terminalLeadingPhotonKev.push_back(leading/eCharge*1.0e-3);
         }
         for(const LabFramePhoton& labPhoton : estimate.labFramePhotons) {
             if(std::isfinite(labPhoton.energyJoules)
@@ -1912,6 +1930,58 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     } else {
         std::cout << "  mean of completed runs unavailable: no collapse was "
                      "observed\n";
+    }
+    // Annihilation tied to the terminal radius.  The pair this model
+    // integrated is BOUND when it stops, so its invariant energy is below
+    // 2 m_e c^2 by the binding it accumulated, and the final-state photons
+    // share W rather than the rest-mass sum.  Reported beside the at-rest
+    // line the project's independent annihilation generator uses, because
+    // the difference is the whole content of tying the two together -- and
+    // because a shift of the 511 keV line is a measured observable.
+    if(!terminalInvariantKev.empty()) {
+        const auto average=[](const std::vector<double>& values) {
+            double sum=0.0;
+            for(double value : values) sum+=value;
+            return sum/static_cast<double>(values.size());
+        };
+        const double restLine=
+            electronMass*c*c/eCharge*1.0e-3;                  // keV
+        const double leading=average(terminalLeadingPhotonKev);
+        // The radius is quoted from the MEAN BINDING rather than averaged
+        // directly: binding goes as 1/a, so averaging the two separately
+        // gives a pair of numbers that do not describe the same orbit (740.9
+        // fm against a binding whose own radius is 304 fm, measured).  W,
+        // the binding and the photon energy are mutually consistent by
+        // construction; the radius is now made to match them.
+        const double meanBinding=average(terminalBindingKev);
+        const double consistentRadius=meanBinding>0.0
+            ? pairCoulombStrength/(2.0*meanBinding*1.0e3*eCharge)*1.0e15
+            : std::numeric_limits<double>::quiet_NaN();
+        std::cout << "  terminal radius        "
+                  << consistentRadius << " fm (semi-major axis implied by the "
+                     "mean binding)\n"
+                  << "  terminal binding       "
+                  << meanBinding << " keV\n"
+                  << "  annihilation W         "
+                  << average(terminalInvariantKev) << " keV against "
+                  << 2.0*restLine << " keV at rest, i.e. "
+                  << 100.0*(average(terminalInvariantKev)-2.0*restLine)
+                     /(2.0*restLine)
+                  << "% shifted by binding\n"
+        // W/2 is the quantity the binding actually moves, and it is the
+        // 2-gamma line for para and the spectrum ENDPOINT for ortho.  The
+        // sampled leading photon is reported beside it but deliberately not
+        // compared with 511 keV: for ortho it sits ~12% under W/2 from
+        // three-photon phase space alone (measured, Ore-Powell), which has
+        // nothing to do with binding, and quoting one percentage for both
+        // channels would present that as though the binding had shifted
+        // ortho thirty times further than para.
+                  << "  W/2 (2g line, 3g end)  " << 0.5*average(
+                         terminalInvariantKev)
+                  << " keV against " << restLine << " keV at rest\n"
+                  << "  leading photon sampled " << leading << " keV ("
+                  << 100.0*leading/(0.5*average(terminalInvariantKev))
+                  << "% of W/2)\n";
     }
     if(completionPercent < 90.0 && std::isfinite(survival.restrictedMean)) {
         if(survival.eventCount==0) {

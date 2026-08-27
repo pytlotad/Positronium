@@ -94,7 +94,78 @@ struct CremCollapseEstimate {
     // expressed as a frequency so it can sit beside the measured o-Ps/p-Ps
     // hyperfine splitting.
     double dipoleCouplingHz=std::numeric_limits<double>::quiet_NaN();
+    // ANNIHILATION TIED TO THE TERMINAL RADIUS.  The project's own
+    // annihilation generator is a quantum prescription deliberately
+    // independent of the trajectory: it assumes a pair AT REST and puts the
+    // full 2 m_e c^2 into the photons, so its 2-gamma line is a compile-time
+    // constant.  These fields are the other thing one can ask -- what the
+    // pair this model actually integrated has left when it stops.
+    //
+    // The classical orbit is bound, so its invariant energy is BELOW the
+    // rest-mass sum by the binding it has accumulated:
+    //
+    //     W = (m1+m2) c^2 + mu * epsilon,   epsilon < 0,
+    //
+    // and W, not 2 m_e c^2, is what the final-state photons have to share.
+    // Filled only where a trajectory genuinely reaches the terminal radius;
+    // NaN/empty for censored and failed runs, which have no terminal state
+    // to annihilate from.
+    double terminalSemiMajorAxis=std::numeric_limits<double>::quiet_NaN();
+    double terminalBindingEnergy=std::numeric_limits<double>::quiet_NaN();
+    double annihilationInvariantEnergy=std::numeric_limits<double>::quiet_NaN();
+    // Two entries for para (2 gamma), three for ortho (3 gamma), in the
+    // pair's own centre-of-momentum frame and summing to
+    // annihilationInvariantEnergy exactly.
+    std::vector<double> annihilationPhotonEnergies;
 };
+
+// Final-state photon energies for a pair annihilating with invariant energy
+// W, in its own centre-of-momentum frame.
+//
+// Para (2 gamma): back to back, W/2 each, forced by momentum conservation
+// alone.  At W = 2 m_e c^2 this is the textbook 511 keV line; tied to a
+// bound terminal state it sits BELOW it, by exactly half the binding energy
+// the orbit accumulated.
+//
+// Ortho (3 gamma): the Ore-Powell spectrum, whose only scale is the maximum
+// single-photon energy W/2, so it rescales with W rather than being pinned
+// to m_e c^2.  Sampled by the same rejection rule the reference curve uses
+// (acceptance proportional to the normalized density below), then the three
+// energies are closed onto W exactly -- momentum conservation for three
+// massless quanta requires them to sum to W and to be constructible as a
+// closed triangle, which x1+x2+x3 = 2 with each x <= 1 guarantees.
+std::vector<double> annihilationPhotonEnergiesFor(
+        double invariantEnergy,bool para,std::uint64_t& stream) {
+    if(!(invariantEnergy>0.0)||!std::isfinite(invariantEnergy)) return {};
+    if(para) return {0.5*invariantEnergy,0.5*invariantEnergy};
+    // Ore-Powell density in x = E/(W/2), normalized to its own maximum.
+    const auto density=[](double x) {
+        if(!(x>0.0)||x>=1.0) return 0.0;
+        const double u=1.0-x, d=2.0-x;
+        return x*u/(d*d)-2.0*u*u*std::log(u)/(d*d*d)
+              +d/x+2.0*u*std::log(u)/(x*x);
+    };
+    // The density is maximal at the endpoint; 1.0 there bounds it.
+    const double bound=std::max(density(0.999),1.0);
+    double x1=0.0,x2=0.0;
+    for(int attempt=0;attempt<10000;++attempt) {
+        x1=drawUniformUnit(stream);
+        x2=drawUniformUnit(stream);
+        const double x3=2.0-x1-x2;
+        // Physical three-photon region: every energy positive and at most W/2.
+        if(!(x1>0.0&&x2>0.0&&x3>0.0&&x1<=1.0&&x2<=1.0&&x3<=1.0)) continue;
+        if(drawUniformUnit(stream)*bound<=density(x1)) break;
+    }
+    const double x3=2.0-x1-x2;
+    const double half=0.5*invariantEnergy;
+    if(!(x1>0.0&&x2>0.0&&x3>0.0)) {
+        // Sampling never landed in the physical region: fall back on the
+        // symmetric configuration rather than returning something that does
+        // not sum to W.
+        return {2.0*half/3.0,2.0*half/3.0,2.0*half/3.0};
+    }
+    return {x1*half,x2*half,x3*half};
+}
 
 struct OsculatingElements { double specificEnergy=0.0; double specificAngularMomentum=0.0; };
 
@@ -1001,6 +1072,19 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.calibrationOutcome=SimulationOutcome::ReachedCutoff;
             result.calibrationSeconds=simulatedTimeTotal;
             result.calibrationSecondsLab=labFrameTimeTotal;
+            // Annihilation from the state the trajectory actually reached,
+            // rather than from a pair at rest.  What is left to share is the
+            // invariant W = (m1+m2)c^2 + mu*epsilon, below the rest-mass sum
+            // by the binding this orbit accumulated on its way down.
+            result.terminalSemiMajorAxis=
+                -attractionParameter/(2.0*elements.specificEnergy);
+            result.terminalBindingEnergy=
+                reducedMass*std::abs(elements.specificEnergy);
+            result.annihilationInvariantEnergy=
+                (firstMass+secondMass)*c*c-result.terminalBindingEnergy;
+            result.annihilationPhotonEnergies=annihilationPhotonEnergiesFor(
+                result.annihilationInvariantEnergy,
+                selectedPhenomenon==1,stochasticSkipStream);
             if(std::getenv("CREM_DEBUG"))
                 std::cerr<<std::setprecision(12)
                          <<"  FINAL (periapsis/light-crossing cutoff): t_S'="
