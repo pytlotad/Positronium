@@ -7090,14 +7090,59 @@ uśrednienie idzie po **wspólnym kierunku** momentów, którego kwantowanie nie
 dotyka — pomiar wyżej ma \(\cos=\pm1\) ustalone i mimo to daje zero. Tej
 jednej kwantowanie nie uratuje.
 
-*Osobna obserwacja przy okazji.* `dipoleAwarePeriapsis` czyta wyłącznie kulomb,
-uśredniony azymutalnie człon dipol-dipol i człon odśrodkowy — spin-orbity nie
-widzi, więc działa ona tylko na jednej mechanicznie całkowanej orbicie na
-checkpoint, a nie na analitycznym przeskoku obejmującym do 200 000 orbit. Jest
-to ta sama klasa asymetrii, co luka w bramce M1 z wcześniejszej części sesji.
-Tym razem **nie ma konsekwencji**, bo dokładanie do warstwy sekularnej członu o
-zerowej wartości oczekiwanej nic by nie zmieniło — ale gdyby kiedyś doszedł
-mechanizm łamiący tę izotropię, to jest miejsce, w którym trzeba by wrócić.
+*Poprawka do powyższego, i wdrożenie.* Napisałem wyżej, że uśrednienie daje
+zero — to było zero **w granicach rozdzielczości tamtej sondy**, która losowała
+fazę orbity metodą Monte Carlo i miała próg szumu \(4{,}6\cdot10^{-5}\).
+Pod właściwą kwadraturą po fazie reszta się rozdziela i **nie jest zerem**:
+
+| \(r/r^*\) | para | ortho |
+|---|---|---|
+| 1 | \(+3{,}86\cdot10^{-9}\) | \(-3{,}69\cdot10^{-9}\) |
+| 2 | \(+3{,}35\cdot10^{-10}\) | \(-3{,}30\cdot10^{-10}\) |
+| 20 | \(+1{,}49\cdot10^{-14}\) | \(-1{,}47\cdot10^{-14}\) |
+
+Uśrednienie po fazie tłumi moment siły \(1{,}6\) **miliona** razy — prawie
+wszystko to drganie wewnątrzorbitalne — ale to, co zostaje, jest
+**systematyczne**, nie rozrzutem (RMS po orientacjach \(4{,}18\cdot10^{-9}\)
+ledwie przewyższa średnią \(3{,}86\cdot10^{-9}\)), ma **przeciwne znaki w obu
+kanałach** i spada jak \(r^{-4{,}2}\), czyli żyje w obszarze terminalnym —
+dokładnie tam, gdzie reguła stopu o wszystkim decyduje.
+
+Rozróżnienie, które to zmienia: zerowa średnia **po zespole** nie znaczy zerowy
+efekt **na trajektorię**. Kierunek momentów jest wzdłuż jednego przebiegu
+ustalony, więc każda trajektoria niesie własny systematyczny dryf \(L\),
+znoszący się dopiero w średniej po wielu przebiegach.
+
+*Wdrożone.* `azimuthAveragedSpinOrbitTorque` liczy ten moment siły
+kwadraturą 64-węzłową po fazie orbity kołowej przy bieżącej półosi (mimośród
+terminalny to \(0{,}001\)–\(0{,}019\), więc kołowość jest dobra znacznie
+poniżej dokładności samego członu) i jest stosowany do \(L\) raz na
+checkpoint, przez czas trwania przeskoku. Energii **nie** rusza: część
+magnetyczna nie wykonuje pracy, a jedna mechanicznie całkowana orbita już
+całkuje pełną siłę, więc dodanie tego do energii byłoby podwójnym liczeniem.
+
+*Zbieżność kwadratury* sprawdzona, nie założona: skumulowane \(|dL|/L\) na
+trajektorię wychodzi identyczne do sześciu cyfr przy 16, 32, 64, 256 i 1024
+węzłach.
+
+*Rozmiar efektu* — i to jest powód, dla którego członu nie wolno odrzucić po
+medianie. Skumulowane \(|dL|/L\) na trajektorię:
+
+| kanał | min | mediana | max |
+|---|---|---|---|
+| para | \(1{,}1\cdot10^{-8}\) | \(1{,}8\cdot10^{-5}\) | **0,255** |
+| ortho | \(2{,}4\cdot10^{-9}\) | \(2{,}3\cdot10^{-5}\) | **0,205** |
+
+Dla większości trajektorii to nic. Dla tych, które schodzą najgłębiej — czyli
+tych przy ostrzu noża — to **ćwierć momentu pędu**. Rozkład rozciąga się na
+cztery rzędy wielkości, co jest \(r^{-4{,}2}\) w działaniu.
+
+*Wpływ na produkcję,* A/B wobec HEAD na tych samych ziarnach: mediana czasu
+kolapsu **niezmieniona** (175,202 ps w obu), wiązanie terminalne niezmienione
+do pięciu cyfr, a przyczyna stopu przenosi się dla 1 trajektorii na 27 z
+bariery na próg retardacyjny. Liczba ukończeń pod stałym budżetem wallclock nie
+drgnęła, więc 64 wywołania siły na checkpoint są przy mechanicznie całkowanej
+orbicie niezauważalne.
 
 #### Czy ostrze noża jest efektem dipol-dipol? Nie — zmierzone i wykluczone
 

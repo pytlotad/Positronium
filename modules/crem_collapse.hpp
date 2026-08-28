@@ -905,6 +905,109 @@ double regularizedPeriod(const OsculatingElements& elements,
 // The radial profile is the regularized one the field code uses, so this
 // agrees with regularizedDipoleInteractionEnergy term by term and reduces to
 // the point-dipole result where the regulator is inactive.
+// PHASE-AVERAGED SPIN-ORBIT TORQUE about L, per unit reduced mass and per
+// unit time -- the secular counterpart of chargeDipoleForces.
+//
+// Why this exists.  chargeDipoleForces (electrodynamics.hpp) carries the
+// physically correct spin-orbit channel for this system: the partner's spin
+// field acting on a MOVING CHARGE, q v x B_spin, plus its reaction, built on
+// Thomas-BMT derivatives.  Positronium has no orbital magnetic moment at all
+// -- q1 m2^2 + q2 m1^2 = 0 exactly for equal masses and opposite charges --
+// so this is the only spin-orbit channel there is.  But that force lives in
+// allExternalForces, i.e. in the ONE mechanically integrated orbit per
+// checkpoint, while the analytic skip that follows covers up to 200 000
+// orbits and never saw it.
+//
+// Why it is not negligible, having first looked negligible.  The
+// INSTANTANEOUS torque is large -- |tau_L| ~ 6.6e-3 r|F_C| at the barrier --
+// and averaging over the orbital phase cancels it by a factor of 1.6 MILLION,
+// down to ~4.2e-9.  A first measurement sampled the phase by Monte Carlo and
+// reported the mean as consistent with zero; its noise floor was 4.6e-5, four
+// orders ABOVE the true value, so "zero" there meant "zero at that
+// resolution".  Under a proper phase quadrature the residue resolves:
+//
+//     r/r*     para          ortho         (units of r|F_C| = L omega)
+//     1        +3.86e-09     -3.69e-09
+//     2        +3.35e-10     -3.30e-10
+//     20       +1.49e-14     -1.47e-14
+//
+// Three things matter there.  It is SYSTEMATIC, not scatter: the RMS over
+// orientations (4.18e-09) barely exceeds the mean (3.86e-09), so the drift
+// survives the orientation average instead of washing out the way the
+// dipole-dipole ENERGY does.  It has OPPOSITE SIGNS for the two channels, so
+// it is a genuine para/ortho difference in the orbital dynamics rather than a
+// relabelling.  And it falls as ~r^-4.2, so it is a terminal-region effect,
+// which is exactly where the stopping rule decides everything.
+//
+// A circular orbit at r = a is used for the quadrature.  That is not a
+// convenience: terminal eccentricity is measured at 0.001-0.019, so the
+// osculating orbit there IS circular to well within this term's own accuracy,
+// and the elements-only representation carries no true anomaly to do better
+// with.
+//
+// The quadrature has to be good: a 1.6e6:1 cancellation needs far better than
+// percent accuracy.  A midpoint rule on a smooth periodic integrand is
+// spectrally accurate, and measured, it is: the accumulated |dL|/L per
+// trajectory comes out IDENTICAL to six digits at 16, 32, 64, 256 and 1024
+// nodes (1.2037e-08 smallest, 0.254856 largest).  64 is kept for margin at
+// negligible cost -- one checkpoint's 64 force evaluations sit beside a
+// mechanically integrated orbit, and the completion count under a fixed
+// wall-clock budget did not move.
+//
+// SIZE OF THE EFFECT, over a whole trajectory.  The distribution is extremely
+// skewed, which is the point: accumulated |dL|/L has a median of 1.8e-05
+// (para) and 2.3e-05 (ortho) but a maximum of 0.255 and 0.205.  For most
+// trajectories this is nothing; for the ones that go deepest -- exactly the
+// ones sitting at the stopping rule's knife edge -- it reaches a quarter of
+// the angular momentum.  That skew is the r^-4.2 falloff doing its work, and
+// it is why the term is carried rather than dismissed on its median.
+double azimuthAveragedSpinOrbitTorque(double semiMajorAxis,
+                                      const Vec3& firstDipole,
+                                      const Vec3& secondDipole,
+                                      const Vec3& orbitNormal,
+                                      double reducedMass) {
+    if(!(semiMajorAxis>0.0)||!std::isfinite(semiMajorAxis)) return 0.0;
+    const double normalNorm=orbitNormal.norm();
+    if(!(normalNorm>0.0)) return 0.0;
+    const Vec3 normal=orbitNormal*(1.0/normalNorm);
+    // Any orthonormal pair spanning the orbital plane; the phase average is
+    // independent of which one, so the cheapest stable choice is taken.
+    const Vec3 seed=std::abs(normal.x)<0.9?Vec3{1.0,0.0,0.0}:Vec3{0.0,1.0,0.0};
+    Vec3 inPlaneA=cross(seed,normal);
+    const double inPlaneANorm=inPlaneA.norm();
+    if(!(inPlaneANorm>0.0)) return 0.0;
+    inPlaneA=inPlaneA*(1.0/inPlaneANorm);
+    const Vec3 inPlaneB=cross(normal,inPlaneA);
+    const double circularSpeed=std::sqrt(
+        pairCoulombStrength/(reducedMass*semiMajorAxis));
+    if(!std::isfinite(circularSpeed)) return 0.0;
+    const double firstShare=activePair.second.mass
+        /(activePair.first.mass+activePair.second.mass);
+    const double secondShare=1.0-firstShare;
+    constexpr int phaseNodes=64;
+    double total=0.0;
+    for(int node=0;node<phaseNodes;++node) {
+        const double phase=2.0*pi*(node+0.5)/static_cast<double>(phaseNodes);
+        const Vec3 radial=inPlaneA*std::cos(phase)+inPlaneB*std::sin(phase);
+        const Vec3 tangential=
+            inPlaneA*(-std::sin(phase))+inPlaneB*std::cos(phase);
+        State sample{};
+        sample.firstPosition=radial*(semiMajorAxis*firstShare);
+        sample.secondPosition=radial*(-semiMajorAxis*secondShare);
+        sample.firstVelocity=tangential*(circularSpeed*firstShare);
+        sample.secondVelocity=tangential*(-circularSpeed*secondShare);
+        sample.firstDipole=firstDipole;
+        sample.secondDipole=secondDipole;
+        const StateHistory sampleHistory{State{sample}};
+        const MutualForces spinOrbit=chargeDipoleForces(sample,sampleHistory);
+        const Vec3 torque=cross(sample.firstPosition,spinOrbit.first)
+                         +cross(sample.secondPosition,spinOrbit.second);
+        total+=dot(torque,normal);
+    }
+    const double averaged=total/static_cast<double>(phaseNodes);
+    return std::isfinite(averaged)?averaged:0.0;
+}
+
 double azimuthAveragedDipoleEnergy(double separation,
                                    const Vec3& firstDipole,
                                    const Vec3& secondDipole,
@@ -3384,8 +3487,42 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             elements.specificAngularMomentum*=
                 std::pow(energyGrowth,angularExponent);
         }
-        simulatedTimeTotal+=measuredElapsed*static_cast<double>(orbitsToSkip)
+        const double checkpointProperTime=
+            measuredElapsed*static_cast<double>(orbitsToSkip)
             *(1.0-0.5*jumpParameter);
+        simulatedTimeTotal+=checkpointProperTime;
+        // SPIN-ORBIT TORQUE OVER THE SKIPPED ORBITS.  Applies to both
+        // branches: the force is there whatever the radiation-reaction model
+        // is, since it is a property of the pair's own fields, not of the
+        // reaction.  See azimuthAveragedSpinOrbitTorque for why the term is
+        // real (systematic, not scatter, and opposite in sign between the
+        // channels) despite averaging to something 1.6e6 times smaller than
+        // its own instantaneous size.
+        //
+        // Energy is deliberately NOT touched.  The magnetic Lorentz part does
+        // no work, and the term is applied here as a torque only; folding it
+        // into specificEnergy would double-count against the one measured
+        // orbit, which already integrates the full force.
+        {
+            const double spinOrbitTorque=azimuthAveragedSpinOrbitTorque(
+                -attractionParameter/(2.0*elements.specificEnergy),
+                firstDipole,secondDipole,angularMomentumDirection,
+                reducedMass);
+            const double deltaSpecificAngularMomentum=
+                spinOrbitTorque*checkpointProperTime/reducedMass;
+            if(std::isfinite(deltaSpecificAngularMomentum)) {
+                const double updated=elements.specificAngularMomentum
+                    +deltaSpecificAngularMomentum;
+                // Guarded, not clamped silently: a torque large enough to
+                // reverse or annihilate L within one checkpoint would mean
+                // the skip has outrun the term's own validity, and dropping
+                // it is the honest response -- the alternative is a sign
+                // flip in L that the Kepler elements cannot represent.
+                if(updated>0.0)
+                    elements.specificAngularMomentum=
+                        clampAboveGroundStateAngularMomentum(updated);
+            }
+        }
         // Lab-frame counterpart (README point N): the checkpoint's elapsed
         // proper time as a function of position s in [0,jumpParameter]
         // through its envelope (period shrinks linearly over the
