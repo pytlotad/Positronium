@@ -7028,6 +7028,76 @@ zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), 
 progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
 mylić.
 
+#### Warunek początkowy wobec drabiny Bohra: dwa poziomy, jeden punkt zgodności
+
+Podorbitalny start to konwencja SED/Bohra, więc uzgodnienie go z drabiną jest
+pytaniem o model, nie o parametr. Rozpisane, pasmo produkcyjne to
+
+```cpp
+f_r ∈ [-0.10, +0.10],   f ∈ [0.88, 1.12]      (w jednostkach v_circ, r = a_Ps)
+```
+
+a z \(v_{\rm circ}^2=K/r\) wychodzi zamknięcie:
+
+\[\frac{a_0}{a_{Ps}}=\frac{1}{2-f_r^2-f^2},\qquad
+  n_E=\sqrt{a_0/a_{Ps}},\qquad
+  e_0^2=1+f^2(f_r^2+f^2-2).\]
+
+**Stan niesie więc dwa różne poziomy Bohra naraz**: momentu pędu
+\(L/\hbar=f\) i energetyczny \(n_E\). Przyrównanie ich daje
+\((f^2-1)^2=0\), czyli zgadzają się przy \(f=1\) i **nigdzie indziej w
+paśmie**:
+
+| \(f\) | \(a_0/a_{Ps}\) | \(n_E\) | \(L/\hbar\) | \(e_0\) |
+|---|---|---|---|---|
+| 0,88 | 0,816 | 0,903 | 0,88 | 0,226 |
+| 1,00 | 1,000 | **1,000** | **1,00** | **0** |
+| 1,12 | 1,341 | 1,158 | 1,12 | 0,254 |
+
+Poza jednym punktem stan ma \(e_0\) do 0,28 i **nie jest stanem Bohra**. Samo
+w sobie nie jest to wadą — to klasyczne orbity. Wadą staje się dopiero
+dlatego, że inne części modelu stosują do nich pojęcia drabiny: `quantumFor`
+czyta poziom **energetyczny**, `clampAboveGroundStateAngularMomentum` czyta
+poziom **momentu pędu**.
+
+*Konsekwencje, zmierzone.*
+
+- \(n_E\) biegnie \(0{,}903\)–\(1{,}166\), a \(P(n_E<1)=0{,}493\) —
+  około **połowa trajektorii startuje poniżej stanu podstawowego**. To jest
+  dokładnie ten mechanizm, przez który `--ground-state-floor` daje zera.
+- Połowa startuje też z \(L=f\hbar<\hbar\), poniżej podłogi momentu pędu tej
+  samej flagi, więc pierwszy foton **podniósłby** L — emisja zwiększająca
+  moment pędu.
+- Pasmo jest centrowane na \(f=1\), ale **nie na \(n=1\)**: \(1/(2-f^2)\)
+  jest wypukłe, więc \(E[a_0/a_{Ps}]=1{,}0288\) i \(E[n_E]=1{,}0117\).
+  Zespół leży średnio 2,9% na zewnątrz promienia stanu podstawowego.
+- Nie jest to drobny efekt. Przy ustalonym \(f\) średni czas kolapsu wynosi
+  \(108{,}6\) ps dla \(f=0{,}88\), \(188{,}0\) dla \(f=1{,}00\) i
+  \(367{,}2\) dla \(f=1{,}12\) — **czynnik 3,4** w poprzek pasma
+  (klasycznie \(t\sim a^3\) przewiduje 4,6). Rozkładając wariancję:
+  \(\sigma/\text{średnia}\) to \(1{,}127\) z pasmem wobec \(\approx0{,}93\)
+  przy ustalonym \(f\), więc **pasmo daje ok. 32% wariancji** czasu kolapsu, a
+  proces fotonowy pozostałe 68%.
+
+*Szerokość pasma jest odziedziczona, nie wyprowadzona.* Komentarz w kodzie
+mówi wprost, że przy poprawianiu centrowania zachowano „a comparable spread"
+ze starego pasma \([0{,}72,\,0{,}97]\). Wyprowadzenie jej — jako szerokości
+równowagi fluktuacyjno-dyssypacyjnej SED — to wątek `--zpf`, a nie stała, którą
+da się tu wpisać.
+
+*Ostra alternatywa.* \(f=1\), \(f_r=0\) dokładnie: wtedy
+\(n_E=L/\hbar=1\) i \(e_0=0\), obie definicje poziomu zgadzają się **z
+konstrukcji**, a `--level n` daje ostry stan \(n\) zamiast pasma wokół niego.
+To jedna linijka. **Nie wdrożone**, bo przesuwa produkcyjną średnią o
+\(-12\%\) (\(214{,}8\to188{,}0\) ps) — a to jest decyzja o tym, co model
+twierdzi, nie naprawa błędu.
+
+Warto zauważyć, do czego to prowadzi razem z podłogą: przy ostrym
+przygotowaniu para startuje **dokładnie** na \(n=1\), więc pierwszy foton i
+tak ją zatrzymuje. Podłoga ma sens wyłącznie ze startem wzbudzonym, i wtedy
+kanoniczną konfiguracją jest `--level 2 --ground-state-floor` — kaskada
+\(n=2\to1\) jako realny proces. Obie decyzje są więc jedną decyzją.
+
 #### Czy włączyć `--ground-state-floor`? Jeszcze nie — i dlaczego
 
 Sekcja o regule stopu daje mocny argument ZA: bez podłogi 77% kolapsów kończy

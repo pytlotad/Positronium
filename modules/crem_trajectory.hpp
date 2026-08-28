@@ -845,6 +845,52 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
         // f in [0.72, 0.97] sat entirely BELOW the ground state, so every
         // sampled orbit was more tightly bound than positronium actually is.
         // The band now straddles it, leaving a comparable spread.
+        //
+        // WHAT THIS BAND ACTUALLY PREPARES, worked out rather than assumed.
+        // With v_circ^2 = K/r at r = a_Ps, and f_r the radial speed in the
+        // same units,
+        //
+        //     a_0/a_Ps = 1/(2 - f_r^2 - f^2),   n_E = sqrt(a_0/a_Ps),
+        //     e_0^2    = 1 + f^2 (f_r^2 + f^2 - 2),
+        //
+        // so the sampled state carries TWO different Bohr levels: an
+        // angular-momentum one, L/hbar = f, and an energy one, n_E.  Setting
+        // them equal gives (f^2-1)^2 = 0, i.e. they agree at f = 1 and NOWHERE
+        // ELSE in the band.  Everywhere else the state has e_0 up to 0.28 and
+        // is not a Bohr state at all -- which matters only because other parts
+        // of the model then apply ladder concepts to it: quantumFor reads the
+        // ENERGY level, clampAboveGroundStateAngularMomentum reads the
+        // ANGULAR-MOMENTUM one.
+        //
+        // Consequences, measured:
+        //   * n_E runs 0.903-1.166 and P(n_E < 1) = 0.493, so about HALF of
+        //     all trajectories are prepared below the ground state.  That is
+        //     what makes --ground-state-floor unusable at level 1: the floor
+        //     declares them settled before they move (see
+        //     CremCollapseEstimate::preparedBelowGroundState).
+        //   * Half likewise start with L = f*hbar < hbar, below the same
+        //     flag's angular-momentum floor, so the first photon would clamp
+        //     L UPWARD -- an emission that increases angular momentum.
+        //   * The band is centred on f = 1 but NOT on n = 1: 1/(2 - f^2) is
+        //     convex, so E[a_0/a_Ps] = 1.0288 and E[n_E] = 1.0117.  The
+        //     ensemble sits 2.9% outside the ground-state radius on average.
+        //   * It is not a small effect on the headline observable.  Holding f
+        //     fixed, the mean collapse time is 108.6 ps at f=0.88, 188.0 at
+        //     f=1.00 and 367.2 at f=1.12 -- a factor 3.4 across the band
+        //     (classical t ~ a^3 predicts 4.6).  Decomposing the variance,
+        //     sigma/mean is 1.127 with the band against ~0.93 at fixed f, so
+        //     the band supplies about 32% of the collapse time's variance and
+        //     the photon process the other 68%.
+        //
+        // The WIDTH is inherited, not derived: it was kept "comparable" to the
+        // old band's when the centring was corrected.  Deriving it instead --
+        // as the width of an SED fluctuation-dissipation equilibrium -- is the
+        // --zpf thread, not a constant that can be written down here.  The
+        // sharp alternative (f = 1, f_r = 0 exactly, so n_E = L/hbar = 1 and
+        // e_0 = 0) is a one-line change that would make the two level
+        // definitions agree by construction; it is NOT taken here because it
+        // moves the production mean by -12% and that is a decision about what
+        // the model claims, not a bug fix.
         radialSpeed = circularSpeed * (-0.10 + 0.20 * unitRandom(random));
         tangentialSpeed = circularSpeed * (0.88 + 0.24 * unitRandom(random));
     }
