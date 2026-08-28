@@ -1144,31 +1144,75 @@ double dipoleAwarePeriapsis(const OsculatingElements& elements,
     // both the maximising orientation and the full 2 mu_B rather than the
     // ~0.38 mu_B that |(mu2-mu1).n| actually measures.
     //
-    // HONESTLY: unlike the ledger term this one is NOT independently verified.
-    // The ledger addition halves a measured energy-balance residual; this one
-    // has no such check, and across 20 paired trajectories it changed the
-    // collapse median, the stop-cause split and the terminal binding by
-    // nothing at all.  It is carried because it is the same physics as the
-    // verified term, exact at the turning point, and free -- not because
-    // anything observable demanded it.
+    // IT IS INDEPENDENTLY VERIFIED, contrary to what this comment used to
+    // say.  The check is the obvious one and was simply not thought of:
+    // evaluate the secular form and chargeDipoleInteractionEnergy on the SAME
+    // turning-point state and require them to agree.  Run, it found two bugs
+    // in the hand-derived closed form that used to sit here -- see the note at
+    // spinOrbit below.  Since that form is now gone and this calls the ledger
+    // function directly, the identity holds by construction.
+    //
+    // The null result that had been offered as reassurance -- "it changed
+    // nothing across 20 paired trajectories" -- was true and carried no
+    // information: a term whose orientation factor is randomly signed, and
+    // whose overall sign was wrong, is statistically indistinguishable in
+    // aggregate from the correct one.  The absence of an effect was evidence
+    // that the test had no power, not that the term was harmless.
+    //
+    // Measured properly, with the corrected term and all 24 trajectories
+    // completing so the comparison is paired rather than censoring-limited:
+    // collapse median 208.007 ps and mean 223.308 +/- 37.95 ps are IDENTICAL
+    // with and without it, terminal binding identical, and exactly one
+    // trajectory in 24 moves from the retardation limit to the Compton
+    // barrier.  So it remains nearly inert -- but that is now a measurement of
+    // a correct term rather than of a broken one.
     const double normalNorm=orbitNormal.norm();
     const Vec3 normalHat=normalNorm>0.0?orbitNormal*(1.0/normalNorm):Vec3{};
     const double firstMass=activePair.first.mass;
-    const double momentDifferenceAlongNormal=normalNorm>0.0
-        ?dot(secondDipole-firstDipole,normalHat):0.0;
+    const double secondMassHere=activePair.second.mass;
+    const double totalMassHere=firstMass+secondMassHere;
+    // Any unit vector spanning the orbital plane; the turning-point geometry
+    // is r along it and the velocity perpendicular, in the plane.
+    const Vec3 seedAxis=std::abs(normalHat.x)<0.9
+        ?Vec3{1.0,0.0,0.0}:Vec3{0.0,1.0,0.0};
+    Vec3 radialHat=cross(seedAxis,normalHat);
+    const double radialHatNorm=radialHat.norm();
+    if(radialHatNorm>0.0) radialHat=radialHat*(1.0/radialHatNorm);
+    const Vec3 tangentialHat=cross(normalHat,radialHat);
     const auto h=[&](double r) {
         if(!(r>0.0)) return -std::numeric_limits<double>::infinity();
         const double dipole=azimuthAveragedDipoleEnergy(
             r,firstDipole,secondDipole,orbitNormal)/reducedMass;
-        // (mu0/4pi) q1 |mu2-mu1| (L/(m1 r)) * weight/r^2, signed by the
-        // component along the orbit normal.
-        const double weight=shortRangeFieldWeight(
-            r,magneticRegularizationRadius,magneticRegularizationExponent);
-        const double spinOrbit=firstMass>0.0
-            ?(mu0/(4.0*pi))*activePair.first.charge
-                *momentDifferenceAlongNormal
-                *(reducedMass*L/(firstMass*r))*weight/(r*r)/reducedMass
-            :0.0;
+        // Evaluated by BUILDING the turning-point state and calling
+        // chargeDipoleInteractionEnergy -- the same function the mechanical
+        // ledger uses, not a second copy of its formula.
+        //
+        // The second copy is exactly what went wrong.  A hand-derived closed
+        // form was used here first, and cross-checking it against this
+        // function on the same state showed it wrong in TWO ways: the sign
+        // (v x r_hat = -v L_hat, not +v L_hat, so the term entered with the
+        // wrong sign on every trajectory) and the short-range regularization,
+        // which drifted to a factor of 2 by the Compton barrier because the
+        // ledger clamps the separation vector and the closed form did not.
+        // Ratios measured against the ledger were -1.99992, -1.01 and
+        // -1.00000 at 1, 10 and 547.5 r*.  One prescription, called once, is
+        // the whole point -- the same lesson as quantumFor.
+        double spinOrbit=0.0;
+        if(firstMass>0.0&&totalMassHere>0.0&&radialHatNorm>0.0&&r>0.0) {
+            const double tangentialSpeed=L/r;   // v_r = 0 at the turning point
+            State turningPoint{};
+            turningPoint.firstPosition=
+                radialHat*(r*secondMassHere/totalMassHere);
+            turningPoint.secondPosition=
+                radialHat*(-r*firstMass/totalMassHere);
+            turningPoint.firstVelocity=
+                tangentialHat*(tangentialSpeed*secondMassHere/totalMassHere);
+            turningPoint.secondVelocity=
+                tangentialHat*(-tangentialSpeed*firstMass/totalMassHere);
+            turningPoint.firstDipole=firstDipole;
+            turningPoint.secondDipole=secondDipole;
+            spinOrbit=chargeDipoleInteractionEnergy(turningPoint)/reducedMass;
+        }
         return elements.specificEnergy+attractionParameter/r
             -dipole-spinOrbit-L*L/(2.0*r*r);
     };

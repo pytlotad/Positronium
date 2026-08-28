@@ -7278,12 +7278,49 @@ podawała tabela audytowa przy orientacji maksymalizującej i pełnym
 \(2\mu_B\), podczas gdy zmierzone \(|(\boldsymbol\mu_2-\boldsymbol\mu_1)
 \cdot\hat n|\) to \(0{,}38\,\mu_B\).
 
-W odróżnieniu od członu w księdze **ta druga warstwa nie jest niezależnie
-zweryfikowana**: nie ma dla niej testu w rodzaju reszty bilansu, a na 20
-sparowanych trajektoriach nie zmieniła ani mediany, ani podziału przyczyn
-stopu, ani wiązania terminalnego. Jest niesiona dlatego, że to ta sama fizyka
-co zweryfikowany człon, ścisła w punkcie zwrotnym i darmowa — a nie dlatego, że
-domagała się jej jakakolwiek obserwabla.
+*Powyższe było błędne w obie strony.* Napisałem, że dla warstwy sekularnej
+„nie ma takiego testu" i że „nie zmieniła niczego". Test **jest**, i to
+oczywisty — policzyć formę sekularną i `chargeDipoleInteractionEnergy` na
+**tym samym** stanie w punkcie zwrotnym i zażądać zgodności. Po prostu na to
+nie wpadłem.
+
+*Uruchomiony, znalazł dwa błędy* w ręcznie wyprowadzonej formie zamkniętej,
+która tu stała:
+
+| \(r/r^*\) | \(U\) z księgi [J] | \(U\) sekularne [J] | stosunek |
+|---|---|---|---|
+| 1 | \(-1{,}01895\cdot10^{-16}\) | \(+2{,}03781\cdot10^{-16}\) | \(-1{,}99992\) |
+| 10 | \(-6{,}38061\cdot10^{-19}\) | \(+6{,}44441\cdot10^{-19}\) | \(-1{,}01\) |
+| 547,5 | \(-2{,}90539\cdot10^{-23}\) | \(+2{,}90540\cdot10^{-23}\) | \(-1{,}00000\) |
+
+Zły **znak** — bo \(\mathbf v\times\hat r=-v\hat L\), a nie \(+v\hat L\),
+więc człon wchodził z odwrotnym znakiem na **każdej** trajektorii — oraz
+niezgodność regularizacji krótkiego zasięgu, narastająca do **czynnika 2 przy
+barierze**, bo księga obcina wektor separacji do podłogi, a forma zamknięta
+nie.
+
+*Naprawa.* Warstwa sekularna **woła** teraz `chargeDipoleInteractionEnergy` na
+zbudowanym stanie w punkcie zwrotnym, zamiast powtarzać jej wzór. Tożsamość
+zachodzi wtedy z konstrukcji. To ta sama lekcja, co przy `quantumFor`: jedna
+recepta, w jednym miejscu — drugą kopię zawsze trzeba potem gonić.
+
+*A wynik zerowy, który podałem jako uspokojenie, nie niósł żadnej informacji.*
+Człon, którego czynnik orientacyjny ma losowy znak, a znak globalny jest
+błędny, jest w agregacie **statystycznie nieodróżnialny** od poprawnego. Brak
+efektu świadczył o tym, że test nie miał mocy, a nie o tym, że człon jest
+nieszkodliwy.
+
+*Zmierzone porządnie,* z poprawionym członem i przy 24/24 ukończonych
+trajektoriach, więc porównanie jest sparowane, a nie ograniczone cenzurą:
+mediana \(208{,}007\) ps i średnia \(223{,}308\pm37{,}95\) ps **identyczne**
+z członem i bez, wiązanie terminalne identyczne, a **dokładnie jedna
+trajektoria na 24** przechodzi z progu retardacyjnego na barierę Comptona.
+Człon pozostaje więc niemal bezczynny — ale to jest teraz pomiar członu
+**poprawnego**, a nie zepsutego.
+
+(Po drodze odczyt pośredni \(238\to208\) ps wyglądał na efekt rzeczywisty;
+okazał się artefaktem cenzury — 13 wobec 14 ukończeń. Przebieg z pełnym
+ukończeniem go usunął.)
 
 #### Orbitalny moment magnetyczny i sprzężenie spin-orbita
 
