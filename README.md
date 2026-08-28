@@ -4266,9 +4266,29 @@ pasmo rezonansowe nie robi praktycznie nic, szersze pasma tylko pompują
 energię i powodują ucieczkę orbity, nigdy stabilizację. To nie jest
 bezpośredni test "czy ZPF wyzwala pojedyncze zdarzenia emisji
 deterministycznie", ale pokazuje, że próba samouzgodnionego domknięcia
-tej pętli w tej architekturze już się nie powiodła — więc obecny wybór
-(czysta losowość Poissona) jest zgodny z główną gałęzią fizyki, nie
-arbitralnym uproszczeniem, a głębsza, deterministyczna reformulacja
+tej pętli w tej architekturze już się nie powiodła — więc **domyślny** wybór
+(losowość Poissona) jest zgodny z główną gałęzią fizyki, nie arbitralnym
+uproszczeniem.
+
+*Uzupełnienie: częściowy determinizm już w repozytorium, i czym dokładnie
+jest.* Zdanie „obecny wybór to czysta losowość Poissona" opisuje wyłącznie
+tryb domyślny. `--emission deterministic` ustawia próg emisji na dokładnie
+\(1{,}0\) zamiast losować \(\mathrm{Exp}(1)\), i obejmuje **obie** ścieżki
+emisji — orbitalną (`crem_trajectory.hpp`) i analityczny skip
+(`crem_collapse.hpp`), a więc całość hazardu, nie jego część. Ponieważ sam
+hazard jest deterministycznym funkcjonałem trajektorii, w tym trybie **moment
+emisji nie niesie żadnej losowości**: \(n\)-ty foton pada dokładnie wtedy, gdy
+scałkowany hazard osiąga \(n\).
+
+Nie jest to jednak wyzwalacz w sensie SED i nie należy tego mylić. Zmienną,
+która o emisji decyduje, jest tu **skumulowany hazard samej orbity**, a nie
+realizacja pola zewnętrznego; determinizm dotyczy chwili emisji, nie jej
+kierunku (ten nadal losuje `sampleRotatingDipolePhotonDirection`) ani warunków
+początkowych. Wątek SED — czyli przeniesienie losowości do konkretnej
+realizacji pola punktu zerowego — pozostaje zamknięty z wynikiem negatywnym,
+niezależnie od tego trybu.
+
+Głębsza reformulacja, w której deterministyczne byłyby także kierunek i widmo,
 pozostaje otwartym, trudnym problemem badawczym.
 
 *Jaka konfiguracja pól pozytonium odpowiada polu fotonu — sprawdzone
@@ -6381,11 +6401,75 @@ prowadziłoby do jonizacji. Przejście jest więc z „zapada się" wprost w
 „rozszerza się", bez stanu stacjonarnego pomiędzy.
 
 Fizycznie widmo pola punktu zerowego nie ma górnego odcięcia, więc pasmo jest
-wyłącznie obcięciem numerycznym, a wynik od niego silnie zależy — to znaczy, że
-ta implementacja nie daje odpowiedzi fizycznej. Poprawne odtworzenie równowagi
-SED wymaga samouzgodnionej odpowiedzi cząstki na pełne widmo, a nie dołożenia
-losowego pola do gotowych równań ruchu; równowaga jest delikatnym skasowaniem,
-nie efektem rzędu wiodącego.
+wyłącznie obcięciem numerycznym, a wynik od niego silnie zależy. Poprawne
+odtworzenie równowagi SED wymaga samouzgodnionej odpowiedzi cząstki na pełne
+widmo, a nie dołożenia losowego pola do gotowych równań ruchu; równowaga jest
+delikatnym skasowaniem, nie efektem rzędu wiodącego.
+
+> **Sprostowanie dwóch zdań tej sekcji.** Stało tu wcześniej, że „ta
+> implementacja nie daje odpowiedzi fizycznej", a kilka akapitów niżej — że
+> ekstrapolacja ustalonego trendu czyni bieg przy pełnym odcięciu Comptona
+> testem „obarczonym niemal pewnym wynikiem". Oba naraz nie mogą być prawdą.
+> Skoro trend z górną krawędzią pasma jest monotoniczny i pewny, a widmo
+> fizyczne odpowiada granicy pasm coraz szerszych, to implementacja **daje**
+> odpowiedź w tej granicy — brak stanu związanego — tylko nie daje jej przy
+> żadnym pojedynczym obcięciu. Werdykt zostaje, uzasadnienie zostało zaniżone.
+
+**Dlaczego to jest trudne — zmierzone, a nie tylko nazwane.** Powyższe „delikatne
+skasowanie" było dotąd przypuszczeniem bez liczby, a wszystkie testy tej sekcji
+mierzą *skutki* (czas kolapsu, promień końcowy, `trajectory: FAIL`), nigdy samą
+wielkość, od której zależy mechanizm. Równowaga SED to warunek
+\(\langle P_{\rm pochł}\rangle=\langle P_{\rm wypr}\rangle\), więc zmierzono
+wprost pracę pola na obu ładunkach,
+\(\int(q_1\mathbf v_1\!\cdot\!\mathbf E_1+q_2\mathbf v_2\!\cdot\!\mathbf E_2)\,dt\),
+przeciw \(\int P_{\rm Larmor}\,dt\) — orbita kołowa przy \(a_{Ps}\), amplituda
+fizyczna (`scale=1`), osiem orbit:
+
+| pasmo | mody | \(\langle P_{\rm pochł}\rangle\) [W] | \(\langle P_{\rm wypr}\rangle\) [W] | stosunek |
+|---|---|---|---|---|
+| \([0{,}3;3]\) | \(64\) | \(2{,}45\cdot10^{-6}\) | \(1{,}14\cdot10^{-8}\) | \(+214\) |
+| \([0{,}3;3]\) | \(256\) | \(2{,}34\cdot10^{-6}\) | \(1{,}15\cdot10^{-8}\) | \(+204\) |
+| \([0{,}5;2]\) | \(64\) | \(-1{,}19\cdot10^{-6}\) | \(1{,}16\cdot10^{-8}\) | \(-102\) |
+| \([0{,}5;2]\) | \(256\) | \(-6{,}04\cdot10^{-6}\) | \(1{,}19\cdot10^{-8}\) | \(-506\) |
+| \([0{,}9;1{,}1]\) | \(64\) | \(-9{,}02\cdot10^{-7}\) | \(1{,}17\cdot10^{-8}\) | \(-77\) |
+| \([0{,}9;1{,}1]\) | \(256\) | \(-2{,}98\cdot10^{-6}\) | \(1{,}19\cdot10^{-8}\) | \(-250\) |
+| \([0{,}3;30]\) | \(64\) | \(1{,}28\cdot10^{-5}\) | \(1{,}09\cdot10^{-8}\) | \(+1180\) |
+| \([0{,}3;30]\) | \(256\) | \(-6{,}90\cdot10^{-6}\) | \(1{,}19\cdot10^{-8}\) | \(-578\) |
+
+To odwraca dotychczasową diagnozę. Mechanizm **nie jest za słaby** — wymiana
+mocy z polem jest o dwa do trzech rzędów **większa** od tego, co orbita
+promieniuje, i to również w wąskim paśmie rezonansowym \([0{,}9;1{,}1]\), gdzie
+obcięcie nie ma jak zaszkodzić. Szukana równowaga jest więc różnicą dwóch
+wielkości \(10^2\)–\(10^3\) razy większych od reszty, której się szuka.
+
+Znak nie jest przy tym ustalony: zmienia się z pasmem i z liczbą modów, a
+wartość przy \(64\) i \(256\) modach różni się o czynnik \(2\)–\(5\), czasem
+z odwróceniem znaku. To nie jest niedopróbkowanie — to sygnatura wielkości
+zdominowanej przez fluktuację. Sprawdzone wprost, pasmo \([0{,}9;1{,}1]\),
+\(64\) mody, cztery ziarna:
+
+| orbity | \(|P_{\rm pochł}|/P_{\rm wypr}\) (ziarno \(42\)) | rozrzut po ziarnach |
+|---|---|---|
+| \(2\) | \(382\) | \(538\) |
+| \(8\) | \(77\) | \(118\) |
+| \(32\) | \(216\) | \(109\) |
+| \(128\) | \(66\) | \(75\) |
+
+Pojedyncza realizacja błądzi bez trendu; **rozrzut po ziarnach spada jak
+\(N^{-0{,}47}\)** (\(538\to75\) przy \(64\)-krotnym wydłużeniu okna; wykładnik
+\(-\tfrac12\) dawałby \(67\)). To jest błądzenie losowe, a średnia po
+\(128\) orbitach wciąż nie ustaliła nawet **znaku**.
+
+Stąd realny koszt, i nie jest nim odcięcie pasma. Zejście rozrzutu do rzędu
+mocy promieniowanej wymagałoby \(\approx10^6\) orbit, a rozstrzygnięcie
+równowagi na poziomie procenta — \(\approx10^9\)–\(10^{10}\). Dla porównania
+cały kolaps to rząd \(10^5\)–\(10^6\) orbit. Ekstrapolacja z czterech ziaren
+jest zgrubna, ale rząd wielkości nie zależy od jej dokładności: **wąskim
+gardłem jest okno uśredniania, nie górna krawędź pasma.**
+
+Werdykt sekcji zostaje bez zmian — ucieczka orbity przy szerokich pasmach jest
+zmierzona i realna, a pięć prób kończących się `trajectory: FAIL` na trzech
+ziarnach nadal obowiązuje. Zmienia się diagnoza przyczyny.
 
 **Sprawdzone wprost, czy to obcięcie po prostu za mało modów, a nie sam
 mechanizm.** Powyższy wynik przy `0.3,300` użył 64 modów. Zmierzone na tym
