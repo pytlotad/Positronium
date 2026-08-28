@@ -7028,6 +7028,54 @@ zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), 
 progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
 mylić.
 
+#### Dlaczego żadna zasada zachowania nie wykryła brakującego oddziaływania
+
+Pytanie zasadne: człon siedział w całkowaniu bez odpowiednika w energii, a
+wszystko przechodziło 39/39. Przyczyny są trzy i każda jest strukturalna.
+
+**1. Pęd był ślepy z konstrukcji, nie przez niedopatrzenie.**
+`chargeDipolePairForces` zwraca `{onCharge, -onCharge}` — reakcja jest
+**przypisana**, a nie wyprowadzona z niczego. Zmierzone wcześniej
+\(|\mathbf F_1+\mathbf F_2|=0\) co do zera maszynowego na każdym promieniu.
+Zasada zachowania, która jest **narzucona**, a nie emergentna, ma zerową moc
+diagnostyczną: nie może zawieść, więc nie może o niczym donieść. To był jedyny
+kandydat, który wyglądał na kontrolę, a kontrolą nie był.
+
+**2. Energia to widziała, ale próg był 43× za luźny.** Check istnieje
+(`rawEnergyResidual < 1.0e-4`) i jest czuły — po dodaniu członu reszta spadła z
+\(3{,}97\cdot10^{-6}\) do \(1{,}64\cdot10^{-6}\), czyli brakujący człon
+odpowiadał za \(59\%\) jej wartości. Ale \(2{,}33\cdot10^{-6}\) wobec progu
+\(10^{-4}\) to **43× poniżej punktu zadziałania**. Sygnał był, tolerancja go
+przykryła.
+
+**3. Test, który by to rozstrzygnął, istniał — zastosowany do innej
+wielkości.** Przebieg z połową kroku jest liczony od dawna, ale używany
+wyłącznie do `stepConvergence`, czyli zbieżności **położeń i prędkości**.
+Reszta energii nigdy nie była rafinowana, więc stałe \(4\cdot10^{-6}\)
+czytało się jako błąd całkowania. Tymczasem projekt sam formułuje kryterium
+przy bilansie długozasięgowym: *fizyczne niezbilansowanie stoi w miejscu, błąd
+dyskretyzacji maleje*. Zastosowane tutaj daje odpowiedź natychmiast:
+
+| | reszta (pełny krok) | reszta (pół kroku) | stosunek |
+|---|---|---|---|
+| bez członu energii | \(3{,}97467\cdot10^{-6}\) | \(3{,}97572\cdot10^{-6}\) | **0,9997** |
+| z członem energii | \(1{,}6429\cdot10^{-6}\) | \(1{,}64396\cdot10^{-6}\) | **0,9994** |
+
+Reszta **nie maleje** przy połowieniu kroku. Bez członu było to więc od razu
+rozpoznawalne jako **fizyka, nie arytmetyka** — wystarczyło policzyć iloraz z
+danych, które już były liczone.
+
+**I to samo kryterium mówi teraz coś nowego.** Po poprawce reszta nadal jest
+płaska, przy \(1{,}64\cdot10^{-6}\). Czyli **brakuje jeszcze czegoś** — to nie
+jest błąd integratora. Nie jest to też próg Darwin-vs-retardacja, bo ten przy
+\(\beta=0{,}025\)–\(0{,}05\) sondy leży na \(6\cdot10^{-5}\)–\(5\cdot10^{-4}\),
+czyli dwa rzędy wyżej. Otwarte.
+
+*Wdrożone:* iloraz rafinacji jest teraz **stale raportowany** obok reszty, z
+opisem, jak go czytać. Nie jako bramka — bramka dziś by zawiodła, a wypuszczenie
+czerwonego builda po to, żeby zaznaczyć otwarte pytanie, jest gorsze niż
+wypisanie liczby, która to pytanie stawia.
+
 #### Dwa udokumentowane braki, sprawdzone: jeden trzyma, w drugim liczba była błędna
 
 Tabela audytu niżej ma dwie pozycje oparte na **uzasadnieniu**, a nie na

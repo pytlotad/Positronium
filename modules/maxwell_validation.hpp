@@ -950,6 +950,7 @@ int runMaxwellSelfTest(
         State finalState;
         bool advanced=false;
         double rawEnergyResidual=0.0;
+        double refinedEnergyResidual=0.0;
         double reactionFluxResidual=0.0;
         // Same mismatch, normalized by the orbit's own mechanical energy
         // instead of by the radiated energy.  The flux-normalized form is
@@ -998,6 +999,29 @@ int runMaxwellSelfTest(
         result.reactionFluxResidual=std::abs(full.reactionEnergyMismatch)
             /std::max(std::abs(full.radiatedEnergy),1.0e-300);
         result.reactionMechanicalMismatch=std::abs(full.reactionEnergyMismatch)
+            /std::max(std::abs(initialMechanical),1.0e-300);
+        // REFINEMENT RATIO of the energy residual, reported because its
+        // absence is how a real missing interaction went unseen.
+        //
+        // The half-step run was already being computed, but only to check
+        // that POSITIONS AND VELOCITIES converge (stepConvergence below).
+        // The residual itself was never refined, so a standing 4e-06 read as
+        // integrator error -- while the project's own long-horizon balance
+        // section states the discriminator plainly: a physical imbalance sits
+        // still, a discretization error shrinks.  Applied here it is
+        // immediate: the ratio measured 0.9997 with the charge-dipole energy
+        // MISSING, i.e. the residual did not shrink at all and was therefore
+        // physics, not arithmetic.
+        //
+        // It still is.  After that term was added the residual fell from
+        // 3.97e-06 to 1.64e-06 and the ratio is 0.9993 -- flat again, so what
+        // remains is also a physical imbalance and not the integrator.
+        // Reported rather than gated: a gate here would fail today, and
+        // shipping a red build to mark an open question is worse than
+        // printing the number that states it.
+        result.refinedEnergyResidual=std::abs(
+            conservativeParticleEnergy(half)+half.radiatedEnergy
+            -initialMechanical-yeeCoupledState.radiatedEnergy)
             /std::max(std::abs(initialMechanical),1.0e-300);
         result.stepConvergence=std::max({
             (full.firstPosition-half.firstPosition).norm()/bohrRadius,
@@ -3354,6 +3378,20 @@ int runMaxwellSelfTest(
               << "reaction raw off/LL/C:" << reactionDisabled.rawEnergyResidual
               << " / " << reactionLl.rawEnergyResidual << " / "
               << reactionCoherent.rawEnergyResidual << '\n'
+              << "  refinement ratio (full/half; ~1 means the residual is "
+                 "PHYSICAL, not discretization): "
+              << (reactionDisabled.refinedEnergyResidual>0.0
+                  ?reactionDisabled.rawEnergyResidual
+                      /reactionDisabled.refinedEnergyResidual:0.0)
+              << " / "
+              << (reactionLl.refinedEnergyResidual>0.0
+                  ?reactionLl.rawEnergyResidual
+                      /reactionLl.refinedEnergyResidual:0.0)
+              << " / "
+              << (reactionCoherent.refinedEnergyResidual>0.0
+                  ?reactionCoherent.rawEnergyResidual
+                      /reactionCoherent.refinedEnergyResidual:0.0)
+              << '\n'
               << "reaction flux off/LL/C:"
               << reactionDisabled.reactionFluxResidual << " / "
               << reactionLl.reactionFluxResidual << " / "
