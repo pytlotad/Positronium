@@ -6669,12 +6669,61 @@ mimośrodowe promieniują nieporównanie mocniej (czynnik
 \(L\) trzyma je okrągłymi. Kaskada zwalnia przez to o rząd wielkości wobec
 naiwnego oszacowania z prawa \(a^3\), które dawałoby \(\approx7{,}6\) ns.
 
-*Granica całego kierunku.* Model z obiema podłogami odtwarza stan podstawowy
-co do cyfry — ale odtwarza go, bo podano mu **dwie liczby**: \(a_{Ps}\) przez
-podłogę energetyczną i \(\hbar\) przez podłogę na momencie pędu. Zgodność
-promienia terminalnego z \(a_{Ps}\) jest **tautologiczna**. To, co model
-realnie wnosi, to droga do tego stanu i kinematyka wyjścia z niego — nie sam
-stan.
+#### Kwantowanie spinu, i czy 2γ/3γ daje wskazania do modelu anihilacji
+
+Liczba fotonów anihilacji nie ma dziś w modelu **żadnej** treści dynamicznej:
+kanał wybiera flaga `--phenomenon`, a `annihilationPhotonEnergiesFor` wyprowadza
+z tego wyboru \(2\gamma\) albo \(3\gamma\) zakodowaną regułą. Ustawienie
+momentów służy do przygotowania pary zgodnie z wybranym kanałem, nie do jego
+wyznaczenia.
+
+Model zawiera natomiast **jeden dokładny mechanizm** różnicujący kanały, i to
+o właściwej strukturze. Moc M1 liczona jest koherentnie z sumy
+\(\mathbf m=\boldsymbol\mu_1+\boldsymbol\mu_2\), więc przy \(\cos=-1\)
+kasuje się **ściśle do zera** (zmierzone: `0,0000e+00`, nie „małe"), a przy
+\(\cos=+1\) interferuje konstruktywnie. To ten sam kształt, co reguła wyboru
+w QED, gdzie \(C|n\gamma\rangle=(-1)^n\) wobec \(C|Ps\rangle=(-1)^{L+S}\)
+zamyka wiodący kanał dla jednego stanu spinowego i spycha go o rząd
+\(\alpha\) wyżej.
+
+Przy losowaniu kąta z przedziału mechanizm się jednak rozmywał: udział M1
+wychodził \(1{,}875\cdot10^{-3}\) dla para wobec \(1{,}903\cdot10^{-3}\) dla
+orto, różnica zgodna z zerem. Trzeci floor usuwa przedział — \(S=0\) i
+\(S=1\) to stany dokładne, więc \(\cos=\pm1\) ściśle.
+
+*Zmierzony skutek — przewidziany i trafiony.* Człon dipol-dipol przy
+terminacji przestaje uśredniać się do zera, bo losowa zostaje tylko
+orientacja pary względem \(\hat{\mathbf L}\), a \(\langle\cos^2\theta\rangle=1/3\):
+
+| | człon dipol-dipol |
+|---|---|
+| przed kwantowaniem | \(+0{,}0227\) keV (para), \(-0{,}2134\) keV (orto) — rzędy od siebie |
+| po, para | \(-6{,}053\cdot10^{-9}\) keV |
+| po, orto | \(+6{,}411\cdot10^{-9}\) keV |
+
+Znak odwraca się z kanałem, moduły zgadzają się do \(6\%\), a wartość równa
+się niezależnie zmierzonej skali dipolowej przy \(a_{Ps}\)
+(\(1{,}0216\cdot10^{-24}\) J \(=6{,}38\cdot10^{-9}\) keV).
+
+*I wskazanie właściwe, negatywne.* **To nie dociera do obserwabli.** Różnica
+kanałów w \(W\) siedzi w dziewiątej cyfrze (\(6\cdot10^{-12}\) względnie),
+bo \(6\cdot10^{-6}\) eV wobec \(1022\) keV to nic. Kwantowanie spinu czyni
+mechanizm dokładnym, ale architektura go omija: M1 jest wyłączone ze ścieżki
+energii sekularnej, a energetycznie człon dipolowy jest o dwanaście rzędów za
+mały, żeby cokolwiek napędzić.
+
+Wniosek dla ewentualnego modelu anihilacji: **różnica kanałów nie może wchodzić
+przez budżet energetyczny.** W QED też nie wchodzi — tam jest to reguła wyboru
+na stanie końcowym, nie efekt energetyczny. Model odtwarza *strukturę* (ścisłe
+kasowanie w jednym kanale), ale nie *wielkość*, która mogłaby cokolwiek
+napędzić; punkt zaczepienia musiałby leżeć w kanale wyjściowym.
+
+*Granica całego kierunku.* Model z trzema podłogami odtwarza stan podstawowy
+co do cyfry — ale odtwarza go, bo podano mu **trzy rzeczy**: \(a_{Ps}\) przez
+podłogę energetyczną, \(\hbar\) przez podłogę na momencie pędu i
+\(S\in\{0,1\}\) przez kwantowanie spinu. Zgodność promienia terminalnego z
+\(a_{Ps}\) jest **tautologiczna**. To, co model realnie wnosi, to droga do
+tego stanu i kinematyka wyjścia z niego — nie sam stan.
 
 Nie przetestowano wprost pasma sięgającego częstości Comptona
 `ω_C=m_ec²/ħ≈7,76·10²⁰` rad/s — przy startowej częstości orbitalnej

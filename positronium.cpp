@@ -1994,8 +1994,12 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         // A batch mean printed here is therefore an estimate of zero, and
         // its size says more about the sample than about the physics.
                   << "  terminal dipole-dipole " << average(terminalDipoleKev)
-                  << " keV (zero expectation; contributes scatter, not a "
-                     "shift -- see README)\n"
+                  << (gGroundStateEmissionFloor
+                      ? " keV (SIGNED by the channel under --ground-state-floor:"
+                        " quantizing the spin fixes the mutual angle at cos=+-1,"
+                        " so this stops averaging to zero -- see README)\n"
+                      : " keV (zero expectation; contributes scatter, not a "
+                        "shift -- see README)\n")
                   << "  annihilation W         "
                   << average(terminalInvariantKev) << " keV against "
                   << 2.0*restLine << " keV at rest, i.e. "

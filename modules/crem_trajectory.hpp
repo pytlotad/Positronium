@@ -853,12 +853,46 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     s.secondVelocity = relativeVelocity * (-firstMass / (firstMass + secondMass));
 
     s.firstDipole = randomDirection() * firstMagneticMoment;
-    do {
-        s.secondDipole = randomDirection() * secondMagneticMoment;
-    } while ((sampledScenario == 2 && dot(s.firstDipole, s.secondDipole)
-                                  / (firstMagneticMoment*secondMagneticMoment) < 0.5)
-          || (sampledScenario == 3 && dot(s.firstDipole, s.secondDipole)
-                                  / (firstMagneticMoment*secondMagneticMoment) >= 0.5));
+    // SPIN QUANTIZATION, third floor of --ground-state-floor and the one that
+    // gives the channels a dynamical difference instead of a label.
+    //
+    // Sampled normally, the mutual angle is drawn from a RANGE -- para gets
+    // cos >= 0.5, ortho everything below -- and that range is why the one
+    // exact mechanism the model owns does not survive.  The M1 power is
+    // computed coherently from the total moment m = mu1 + mu2, so at cos = -1
+    // it cancels EXACTLY (measured: 0.0000e+00, not merely small) while at
+    // cos = +1 it interferes constructively.  That is the same shape as the
+    // QED selection rule, where C|n gamma> = (-1)^n against
+    // C|Ps> = (-1)^(L+S) closes the leading channel for one spin state and
+    // pushes it an order of alpha higher.  But averaged over the sampled
+    // range the M1 share came out 1.875e-3 for para against 1.903e-3 for
+    // ortho -- a difference consistent with zero.  The mechanism exists at
+    // the endpoint and is washed out by the sampling.
+    //
+    // Quantizing S removes the range: S=0 and S=1 are exact states, so the
+    // moments are exactly aligned or exactly anti-aligned, not somewhere in
+    // a band.  Opposite charges invert the spin-moment relation, which is why
+    // ANTI-parallel spins (para, S=0) give ALIGNED moments -- see the README's
+    // Sonda 4, where that reversal is derived and measured.
+    //
+    // Like the other two floors this is IMPORTED.  It does not derive the
+    // photon count: 2 against 3 is a statement about the final state's
+    // C-parity, and this model has no annihilation dynamics at all -- no
+    // contact channel and no rate, established separately.  What it buys is
+    // that the channel difference becomes a property of the configuration
+    // rather than of the --phenomenon switch.
+    if(gGroundStateEmissionFloor && (sampledScenario==2||sampledScenario==3)) {
+        const double sign = sampledScenario==2 ? 1.0 : -1.0;
+        s.secondDipole = s.firstDipole
+            * (sign*secondMagneticMoment/firstMagneticMoment);
+    } else {
+        do {
+            s.secondDipole = randomDirection() * secondMagneticMoment;
+        } while ((sampledScenario == 2 && dot(s.firstDipole, s.secondDipole)
+                                      / (firstMagneticMoment*secondMagneticMoment) < 0.5)
+              || (sampledScenario == 3 && dot(s.firstDipole, s.secondDipole)
+                                      / (firstMagneticMoment*secondMagneticMoment) >= 0.5));
+    }
 
     const double relativeEnergy = 0.5 * reducedMass * relativeVelocity.squaredNorm()
                                 - pairCoulombStrength / initialSeparation;
