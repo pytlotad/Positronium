@@ -7074,35 +7074,60 @@ kulombowską, dipol–dipol, Darwina i więzy. Nie ma funkcji
 księdze jest wart do \(34\%\) członu kulombowskiego przy barierze — a człon
 dipol–dipol, który **jest** w księdze, w tym samym miejscu.
 
-*Struktura, i to jest ciekawe.* Dla orbity kołowej \(\mathbf v\times\hat r\)
-jest stałe co do wartości i skierowane wzdłuż \(\hat L\); ładunki i prędkości
-obu cząstek są przeciwne, więc oba pola dodają się zamiast znosić:
+*Struktura — z poprawką, bo pierwsze wyprowadzenie było błędne.* Napisałem tu,
+że „ładunki i prędkości obu cząstek są przeciwne, więc oba pola dodają się",
+i wyszło mi \(U_{\rm so}=-(\boldsymbol\mu_1+\boldsymbol\mu_2)\cdot\mathbf
+B\), czyli struktura M1: maksimum dla para, zero dla ortho. **To jest
+odwrócone.** Policzyłem trzy odwrócenia znaku jako dwa: odwraca się ładunek,
+prędkość **oraz** kierunek do punktu pola. Rachunek do końca:
 
-\[U_{\rm so}=-(\boldsymbol\mu_1+\boldsymbol\mu_2)\cdot\mathbf B.\]
+\[U_1=-\frac{\mu_0}{4\pi}\frac{q_2\,\boldsymbol\mu_1\cdot(\mathbf
+v_2\times\hat r_{12})}{r^2},\qquad
+U_2=+\frac{\mu_0}{4\pi}\frac{q_1\,\boldsymbol\mu_2\cdot(\mathbf
+v_1\times\hat r_{12})}{r^2},\]
 
-To jest **suma koherentna**, czyli dokładnie struktura M1 — a nie
-\(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\), jak w sekularnym momencie siły
-wdrożonym wyżej. Ponieważ \(|\boldsymbol\mu_1+\boldsymbol\mu_2|^2
-=2\mu^2(1+\cos)\), człon ten jest **maksymalny dla para i dokładnie zerowy
-dla ortho**. Jego wartość oczekiwana po izotropowych orientacjach znika
-(\(\langle(\boldsymbol\mu_1+\boldsymbol\mu_2)\cdot\hat L\rangle=0\)), ale
-— tak samo jak przy momencie sekularnym — **na pojedynczej trajektorii
-kierunek momentów jest ustalony**, więc każdy przebieg niesie własną
-systematyczną wartość.
+a po podstawieniu \(q_2=-q_1\), \(\mathbf v_2=-\mathbf v_1\):
 
-Model ma więc dwie różne dyskryminanty kanału w dwóch różnych miejscach:
+\[U_1+U_2=\frac{\mu_0}{4\pi}\frac{q_1\,(\boldsymbol\mu_2-\boldsymbol
+\mu_1)\cdot(\mathbf v_1\times\hat r_{12})}{r^2}.\]
+
+**Różnica momentów, nie suma** — czyli kombinacja **antykoherentna**: zerowa
+dla para (równoległe) i maksymalna dla ortho (antyrównoległe). Dokładne
+dopełnienie M1, a nie jego powtórzenie.
+
+*Zmierzone, i to właśnie ten pomiar wykrył błąd.* Reszta bilansu energii
+(`reaction raw off`, czyli zachowanie energii przy wyłączonej reakcji
+promienistej), z członem i bez:
+
+| konfiguracja | z członem | bez członu | różnica |
+|---|---|---|---|
+| ortho (antyrównoległe) | \(3{,}9746716\cdot10^{-6}\) | \(3{,}9649546\cdot10^{-6}\) | \(+9{,}7\cdot10^{-9}\) |
+| para (równoległe) | \(4{,}0128854\cdot10^{-6}\) | \(4{,}0132439\cdot10^{-6}\) | \(-3{,}6\cdot10^{-10}\) |
+
+Efekt jest **27× większy dla ortho** — dokładnie ta struktura, którą daje
+\((\boldsymbol\mu_2-\boldsymbol\mu_1)\), i przeciwna do tej, którą
+zapowiadałem.
+
+*Dwie rzeczy, które czyniły ten pomiar pustym, dopóki ich nie usunąłem.*
+Sonda walidacyjna ma momenty ustawione **antyrównolegle**, więc dla mojej
+(błędnej) hipotezy była ślepa z konstrukcji; i sprzężenie ładunek–dipol wchodzi
+tam **ścieżką retardowaną**, jako pole dipolowe partnera wewnątrz siły
+Lorentza, a nie przez `chargeDipoleForces`. Zabramkowanie samej
+`chargeDipoleForces` dawało wynik identyczny co do cyfry — trzeba było
+zabramkować `retardedMagneticDipoleField`.
+
+*Skala.* Człon zaburza resztę bilansu o \(\approx0{,}24\%\) jej wartości
+przy promieniu sondy (\(\approx6000\,r^*\)), gdzie sam jest wart
+\(\approx7\cdot10^{-7}\) członu kulombowskiego. Czyli **około 1% jego
+wielkości ujawnia się jako niezbilansowanie** — reszta pracy nie wykonuje, co
+jest oczekiwane dla siły magnetycznej. Ekstrapolacja do bariery, gdzie człon
+sięga \(0{,}34\) kulombowskiego, dawałaby \(\sim3\cdot10^{-3}\) — ale to
+jest ekstrapolacja, nie pomiar: sonda nie sięga tego promienia.
+
+Model ma więc dwie dyskryminanty kanału w dwóch miejscach:
 \(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\) w sekularnym momencie siły
-(wdrożona), i \((\boldsymbol\mu_1+\boldsymbol\mu_2)\) w energii spin-orbita
+(wdrożona) i \((\boldsymbol\mu_2-\boldsymbol\mu_1)\) w energii spin-orbita
 (brakująca).
-
-*Czego to jeszcze nie rozstrzyga.* Czy brak tego członu w księdze psuje bilans
-energii, zależy od tego, ile pracy wykonuje: część \(q\,\mathbf v\times
-\mathbf B\) nie wykonuje żadnej, część \(\nabla(\boldsymbol\mu\cdot\mathbf
-B)\) wykonuje. Tolerancja kontroli bilansu to \(\approx4\beta^3\), czyli
-\(1{,}6\cdot10^{-6}\) przy \(a_{Ps}\), gdzie sam człon sięga
-\(2{,}7\cdot10^{-5}\) — a więc **rząd wielkości powyżej tolerancji**. To jest
-następna rzecz do zmierzenia: różnica reszty bilansu przy włączonym i
-wyłączonym `chargeDipoleForces`.
 
 #### Orbitalny moment magnetyczny i sprzężenie spin-orbita
 
