@@ -976,7 +976,20 @@ int runMaxwellSelfTest(
             const auto start=std::chrono::steady_clock::now();
             bool advanced=true;
             for(int step=0;step<steps;++step) {
-                integrateElectrodynamicStep(value,dt,history,true,model);
+                // CREM_DARWIN_FORCES=1 integrates the matched Coulomb+Darwin
+                // force instead of the retarded one, so the Darwin-vs-retarded
+                // comparison is reproducible from here.  It does NOT give the
+                // clean version of that comparison: switching the force
+                // changes the TRAJECTORY, so the two runs are not the same
+                // orbit.  Measured on this probe, Darwin sits a constant
+                // ~4.05e-06 WORSE, with or without the charge-dipole energy --
+                // the opposite of the matched-force expectation, and the
+                // signature of two different paths rather than two
+                // bookkeepings of one.  The clean comparison is the one
+                // recorded at conservativeParticleEnergy: one orbit at a_Ps,
+                // tolerance-controlled.
+                integrateElectrodynamicStep(value,dt,history,true,model,
+                    std::getenv("CREM_DARWIN_FORCES")==nullptr);
                 advanced=isFinite(value)&&advanced;
                 if(!advanced) break;
                 appendStateHistory(history,value);

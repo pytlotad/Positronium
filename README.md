@@ -7105,9 +7105,46 @@ nie samo \(\beta\); zmierzone \(dE_{\rm mech}\) rośnie, a potem maleje
 1{,}7\cdot10^{-6}\) dla \(\beta_{\rm rel}=0{,}025\)–\(0{,}2\)), więc żadnego
 wykładnika z tego nie odczytam.
 
-Otwarte pozostaje więc coś węższego, niż napisałem: **kandydat wiodący
-(Darwin wobec retardacji) jest niesprawdzony**, a nie wykluczony, i sonda w
-obecnej postaci nie umie go sprawdzić.
+*I to też było błędne.* Napisałem, że kandydat wiodący jest „niesprawdzony" i
+że sonda nie umie go sprawdzić. **Był sprawdzony** — wcześniej w tej samej
+sesji, a wynik stoi zapisany w komentarzu przy `conservativeParticleEnergy`, w
+pliku, który wtedy edytowałem:
+
+> jedna orbita przy \(a_{Ps}\), reakcja wyłączona; przy dopasowanej sile
+> Coulomb+Darwin dryf spada \(5{,}13\cdot10^{-7}\to1{,}28\cdot10^{-7}\to
+> \(6{,}42\cdot10^{-8}\to3{,}21\cdot10^{-8}\) przy zaostrzaniu tolerancji
+> \(10^{-6}\to10^{-9}\), zbiegając czysto; przy sile retardowanej **stoi na
+> \(1{,}3\)–\(2{,}3\cdot10^{-6}\) i nie zbiega wcale**. Zamiecione po
+> \(\beta\): wykładnik \(2{,}94\pm0{,}15\), \(\text{floor}/\beta^3\)
+> stałe do \(7\%\) na \(3{,}8\)–\(4{,}1\).
+
+Czyli mechanizm jest **zidentyfikowany i skwantyfikowany**: to człon
+retardacyjny \(O(\beta^3)\), pierwszy rząd, który Darwin pomija, i rząd, w
+którym oddziaływanie dwuciałowe przestaje w ogóle wynikać z potencjału. Nie
+brakuje niczego nowego — brakowało mi połączenia reszty z własnym pomiarem
+sprzed kilku godzin.
+
+*Przełącznik też istnieje* (`useRetardedExternalForces`), więc „sonda nie umie"
+było nieprawdą co do litery. Ale wniosek co do meritum się broni z **innego**
+powodu, niż podałem: przełączenie siły zmienia **trajektorię**, więc dwa
+przebiegi nie są tą samą orbitą. Zmierzone na tej sondzie, Darwin wypada
+**stale o \(\approx4{,}05\cdot10^{-6}\) gorzej**, z członem ładunek-dipol i
+bez — czyli odwrotnie, niż dawałoby dopasowanie sił, i jest to sygnatura dwóch
+różnych ścieżek, a nie dwóch ksiąg jednej ścieżki. Czysta wersja porównania to
+ta zapisana wyżej: jedna orbita przy \(a_{Ps}\), sterowana tolerancją.
+
+*Efekt uboczny, wart zapisania.* Cztery przebiegi dały też niezależne
+potwierdzenie samego członu ładunek-dipol:
+
+| | z członem | bez | poprawa |
+|---|---|---|---|
+| siły retardowane | \(-2{,}484\cdot10^{-6}\) | \(-4{,}809\cdot10^{-6}\) | \(2{,}325\cdot10^{-6}\) |
+| siły Darwinowskie | \(-6{,}564\cdot10^{-6}\) | \(-8{,}838\cdot10^{-6}\) | \(2{,}274\cdot10^{-6}\) |
+
+Poprawia **obie** ścieżki o tyle samo, zgodnie do \(2\%\). Jest więc
+dopasowany do fizyki, a nie do jednej implementacji — co osobno rozwiewa obawę
+zgłoszoną przy jego wdrażaniu, że przypisana z definicji reakcja
+(`onDipole = -onCharge`) może go czynić zależnym od ścieżki.
 
 *Wdrożone:* oba człony są teraz raportowane osobno obok reszty, więc jej skład
 nie jest już ukryty za sumą.
