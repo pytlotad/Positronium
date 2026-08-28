@@ -6884,6 +6884,72 @@ dipolowy jest odpychający na tyle, że żaden promień poniżej bieżącej orbi
 jest dostępny, para **zatrzymuje się** i zwracany jest promień zatrzymania.
 Wcześniej takie trajektorie ogłaszano jako „dotarły do bariery".
 
+#### Wymuszony check bilansu kanału skwantowanego
+
+Dwie gałęzie promieniste całkują **tę samą** kopertę Larmora po orbitach
+pominiętych w checkpoincie: deterministyczna zdejmuje ją wprost, stochastyczna
+ma dostarczyć ją w dyskretnych fotonach, przy hazardzie skalibrowanym tak, że
+liczba fotonów skaluje się jak \(1/\hbar\omega\), a każdy niesie
+\(\hbar\omega\). Jeśli to zachodzi, usunięta energia jest **niezmiennicza**
+względem wyboru kwantu — czyli dokładnie teza, którą podważało wycofane 45%.
+
+*Oczywisty check jest bezwartościowy.* Porównanie tego, co faktycznie
+wyemitowano, z kopertą zmierzono: **1,87 / 2,49 / 2,92** na trzech ziarnach.
+To nie jest wyciek. Trajektoria emituje **\(\approx2{,}6\) fotonu w całości**,
+energia fotonu rośnie jak \(u^{3/2}\) wzdłuż spirali, w której \(u\) zmienia
+się o dekady, a przebieg **kończy się na fotonie**. Suma jest zdominowana przez
+własny ostatni wyraz i wyselekcjonowana na to, że jest duży — estymator o
+wariancji \(O(1)\) z obciążeniem stopu, nie \(1/\sqrt N\). Odczytanie tego
+rozrzutu jako fizyki byłoby błędem.
+
+*Co da się wymusić.* Dwie tożsamości o **zerowej wariancji**, każda
+sprawdzona osobno tym, że zawodzi po zepsuciu:
+
+**1. Bilans koperty, na każdym checkpoincie, w produkcji.** Strona hazardowa
+złożona z własnych zmiennych ścieżki emisji — `skipHazard` razy
+`hazardReference` razy średni czynnik narastania \((1-s)^{-1}\) w skoku —
+wobec koperty \(u\,[(1-J)^{-2/3}-1]\,\mu\). Algebraicznie równe, więc każda
+różnica jest usterką kodu, nigdy fluktuacją. Zmierzone: **1 z dokładnością do
+piętnastu cyfr**. Egzekwowane przy \(10^{-9}\), koszt kilku flopów, zero
+ryzyka fałszywego alarmu. Checkpointy z przyciętym `jumpParameter` są
+wykluczone z obu stron, bo tam obie opisują naprawdę różne energie.
+
+**2. Tożsamość tabel harmonicznych, raz na proces.** Check (1) jest na nią
+strukturalnie **ślepy**: hazard dzieli przez \(E_{\rm ref}/S(e)\), a liczba
+mnoży przez \(S(e)\), więc \(S\) się skraca. Tymczasem \(S(e)\) jest
+poprawne tylko wtedy, gdy równa się \(\langle1/n\rangle\) po widmie mocy —
+bo wtedy i tylko wtedy harmonika losowana z rozkładu **zliczeń**
+\((P_n/n)\) spełnia \(\langle n\rangle=1/S(e)\), co jest dokładnie tym, co
+sprawia, że \(N\langle n\rangle E_{\rm ref}\) odtwarza \(P\) niezależnie od
+rozłożenia mocy. Obie tabele powstały z **osobnych** dekompozycji
+numerycznych, więc nic poza tą tożsamością ich nie wiąże. Zmierzone:
+\(S(e)\langle n\rangle=1{,}00\pm0{,}03\), najgorzej \(1{,}065\) przy
+\(e=0{,}95\); pas \(0{,}10\), zakres do \(e=0{,}97\).
+
+Check (2) stoi przy tabelach, a nie w zestawie walidacyjnym, bo
+`crem_collapse.hpp` siedzi za produkcyjnym `#ifndef` i **nie jest w ogóle
+kompilowany** do walidatora.
+
+*Czego szukałem i nie znalazłem.* Pierwszy pomiar dał deficyt \(16{,}5\%\)
+— i był to **błąd w mojej sondzie**, nie w modelu: pominąłem czynnik
+narastania energii fotonu w trakcie skoku. Rozpoznane po tym, że wyszedł
+identyczny na trzech ziarnach (0,835318 / 0,835354 / 0,835283), co dla wielkości
+statystycznej jest niemożliwe. Analitycznie
+\(2(1-(1-J)^{1/3})/((1-J)^{-2/3}-1)=0{,}8353\) daje \(J=0{,}2998\), czyli
+`maximumJumpParameter` = 0,30 — sonda sama wskazała, czego jej brakuje.
+
+*Trop w sprawie 45%.* Bilans jest domknięty, więc te 45% **nie są wyciekiem
+energii**. Przy \(\approx2{,}6\) fotonu na trajektorię każdy zdejmuje
+\(\sim2\times\) bieżące wiązanie (\(\hbar\omega_{\rm orb}/|E|=2/n\)), a
+przebieg kończy się, gdy periapsis dosięgnie bariery — więc o stanie końcowym
+decyduje **przeskok** ostatniego fotonu za barierę. Większy kwant to skok z
+dalszej pozycji. Test bezpośredni: z poprawką mediana spada
+\(158{,}8\to26{,}6\) i \(87{,}1\to39{,}5\) ps, a fotonów **przybywa**
+(\(21\to29\), \(23\to27\)) — i wiązanie terminalne idzie **głębiej**
+(\(2{,}667\to3{,}883\) keV). Głębsze wiązanie przy mniejszym kwancie to
+sygnatura przeskoku, nie wycieku. To ziarnistość reguły stopu, nie budżet
+energii. Nie zamyka sprawy, ale przenosi ją z bilansu na regułę stopu.
+
 #### Poziom zerowy: drabina w potęgach \(\alpha\), nie na \(m_ec^2\)
 
 Propozycja „poziom zerowy przy promieniu terminalnym **i** stanie energetycznym

@@ -90,6 +90,59 @@ struct CremCollapseEstimate {
     // rate for the same osculating orbit).  1 means the engine reproduces
     // coherent electric-dipole radiation exactly.
     double larmorPowerRatio=std::numeric_limits<double>::quiet_NaN();
+    // QUANTIZED-CHANNEL ENERGY BALANCE.  Both radiative branches integrate
+    // the SAME Larmor envelope over a checkpoint's skipped orbits: the
+    // deterministic one removes it outright, the stochastic one is supposed
+    // to deliver it in discrete photons, with the emission hazard calibrated
+    // so the photon COUNT scales as 1/quantum while each photon carries the
+    // quantum.  If that holds, the energy removed is INVARIANT under the
+    // choice of photon energy -- the claim the withdrawn emission-quantum
+    // change appeared to contradict (README, "Kwant emisji").
+    //
+    // THREE totals, because they are not equally testable:
+    //
+    // classicalEnvelope  the deterministic branch's own integral,
+    //                    u*((1-J)^(-2/3) - 1)*reducedMass per checkpoint.
+    // expectedQuantized  the SAME energy reassembled from the emission
+    //                    path's own variables -- skipHazard (the photon
+    //                    count) times hazardReference (the energy scale the
+    //                    hazard divided by) times the mean of the in-skip
+    //                    growth factor (1-s)^(-1) each photon's own energy
+    //                    is scaled by.  Algebraically these two are equal,
+    //                    so this is a WIRING identity with exactly zero
+    //                    variance: it cannot drift on statistics, only on
+    //                    someone changing one of the five variables without
+    //                    the others.  This is the enforceable one.
+    // quantizedEmitted   what was actually emitted.  DIAGNOSTIC ONLY, and
+    //                    deliberately not enforced: measured, a trajectory
+    //                    fires ~2.6 photons in total, each carrying an
+    //                    energy proportional to u^(3/2) along an inspiral
+    //                    whose u spans decades, and the run TERMINATES on a
+    //                    photon.  The sum is therefore dominated by its own
+    //                    last term and selected on being large -- an O(1)
+    //                    variance estimator with a stopping bias, measured
+    //                    at 1.87/2.49/2.92 times the envelope on three
+    //                    seeds.  Reading that spread as a leak would be a
+    //                    mistake; it is what a 3-sample heavy-tailed sum
+    //                    stopped at its maximum looks like.
+    //
+    // The mean growth factor is the mean of (1-s)^(-1) under the hazard
+    // measure (1-s)^(-2/3) ds on [0,J], i.e.
+    //
+    //     <growth> = ((1-J)^(-2/3) - 1) / (2 (1 - (1-J)^(1/3)))
+    //
+    // = 1.1976 at the production J=0.30, and 1+J/3+O(J^2) -> 1 as J -> 0.
+    // Leaving it out is exactly the 16.5% deficit this instrumentation first
+    // reported (0.835318/0.835354/0.835283 on three seeds -- four identical
+    // digits, which is what identified it as an algebra slip in the probe
+    // rather than a physical effect in the model).
+    //
+    // Zero for every non-stochastic model, where no photon is ever fired.
+    double quantizedEmittedEnergyJoules=0.0;
+    double classicalEnvelopeEnergyJoules=0.0;
+    double expectedQuantizedEnergyJoules=0.0;
+    long long emittedPhotonCount=0;
+
     // Classical dipole-dipole interaction energy of the prepared pair,
     // expressed as a frequency so it can sit beside the measured o-Ps/p-Ps
     // hyperfine splitting.
@@ -2458,6 +2511,91 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     /hazardReference
                     *static_cast<double>(orbitsToSkip)*integralFactor;
                 double hazardConsumedThisSkip=0.0;
+                // Hazard-side reassembly of the same checkpoint envelope
+                // (see the three totals' comment on CremCollapseEstimate).
+                // Skipped when the ground-state floor has zeroed the rate:
+                // there the hazard is deliberately NOT the envelope, so
+                // comparing them would be asserting against the experiment's
+                // own mechanism rather than against a wiring mistake.
+                // Whether jumpParameter's own std::min clamped.  When it
+                // does, the checkpoint's envelope is built from
+                // maximumJumpParameter while its hazard is built from
+                // orbitsToSkip*lossPerOrbit, and the two genuinely describe
+                // different amounts of energy -- so such a checkpoint is
+                // excluded from BOTH totals rather than allowed to fail an
+                // identity it was never meant to satisfy.  Measured: it does
+                // not occur at all in production runs (the totals came out
+                // equal to fifteen digits), but it is reachable whenever one
+                // orbit alone would radiate more than maximumJumpParameter.
+                const bool jumpWasClamped=energyMagnitude>0.0
+                    &&1.5*static_cast<double>(orbitsToSkip)*lossPerOrbit
+                        /energyMagnitude>maximumJumpParameter;
+                if(!atGroundState&&!jumpWasClamped) {
+                    // The envelope this checkpoint is supposed to radiate
+                    // over its SKIPPED orbits -- energyMagnitude is already
+                    // post-credit for the one measured orbit, whose real
+                    // retarded-field flux went into elements.specificEnergy
+                    // further up, so this is exactly the part the photons
+                    // below are responsible for.  Accumulated HERE rather
+                    // than where updatedEnergyMagnitude is computed so that
+                    // both sides of the identity skip the same checkpoints:
+                    // a checkpoint with no hazard (floored, or a
+                    // non-positive reference) must contribute to neither
+                    // total or the comparison becomes meaningless.
+                    const double meanInSkipGrowth=jumpParameter>1.0e-12
+                        ?(std::pow(1.0-jumpParameter,-2.0/3.0)-1.0)
+                            /(2.0*(1.0-std::pow(1.0-jumpParameter,1.0/3.0)))
+                        :1.0;
+                    const double envelopeHere=
+                        (updatedEnergyMagnitude-energyMagnitude)*reducedMass;
+                    const double hazardSideHere=
+                        skipHazard*hazardReference*meanInSkipGrowth;
+                    result.classicalEnvelopeEnergyJoules+=envelopeHere;
+                    result.expectedQuantizedEnergyJoules+=hazardSideHere;
+                    // ENFORCED, per checkpoint, not per batch.  This is an
+                    // identity with exactly zero variance: both sides are
+                    // built from the same five numbers (orbitsToSkip,
+                    // lossPerOrbit, energyMagnitude, jumpParameter,
+                    // hazardReference) and are equal for algebraic reasons,
+                    // so any discrepancy at all is a code fault -- someone
+                    // changing one of them without the others -- and never a
+                    // statistical fluctuation.  That is why it can be
+                    // enforced at 1e-9 and run on every production
+                    // trajectory instead of being confined to a validation
+                    // batch: it costs a few flops and cannot false-positive.
+                    //
+                    // It exists because the emission path is exactly where
+                    // this file already lost the hazard/energy coupling once
+                    // in argument (README, "Kwant emisji"), and because the
+                    // OBVIOUS check -- comparing what was actually emitted
+                    // against this envelope -- is worthless: see the three
+                    // totals' comment for why a ~2.6-photon heavy-tailed sum
+                    // stopped on its own maximum cannot be enforced at all.
+                    if(envelopeHere>0.0
+                       &&std::abs(hazardSideHere-envelopeHere)
+                           >1.0e-9*envelopeHere) {
+                        std::cerr<<"CREM ENFORCED CHECK FAILED: quantized-"
+                                   "channel envelope balance broken at a "
+                                   "checkpoint.  hazard side="<<hazardSideHere
+                                 <<" J, envelope="<<envelopeHere
+                                 <<" J, relative difference="
+                                 <<(hazardSideHere-envelopeHere)/envelopeHere
+                                 <<" (jumpParameter="<<jumpParameter
+                                 <<", orbitsToSkip="<<orbitsToSkip
+                                 <<").  These are equal by construction; a "
+                                   "difference means the emission hazard and "
+                                   "the energy envelope no longer describe "
+                                   "the same radiated energy."<<std::endl;
+                        result.calibrationOutcome=
+                            SimulationOutcome::NumericalFailure;
+                        result.calibrationSeconds=
+                            simulatedTimeTotal+measuredElapsed;
+                        result.calibrationSecondsLab=labFrameTimeTotal
+                            +gammaFromBeta(centreOfMassVelocity.norm()/c)
+                                *measuredElapsed;
+                        return result;
+                    }
+                }
                 stochasticSkipHazard+=skipHazard;
                 int photonCountDebug=0;
                 // Whether elements.specificEnergy/specificAngularMomentum
@@ -3136,6 +3274,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         clampAboveGroundStateAngularMomentum(
                             classicalAngularMomentumMagnitude);
                     radiatedEnergyTotal+=photonEnergy;
+                    result.quantizedEmittedEnergyJoules+=photonEnergy;
+                    ++result.emittedPhotonCount;
                     ++photonCountDebug;
                     if(std::getenv("CREM_DEBUG"))
                         std::cerr<<"    PHOTON #"<<photonCountDebug<<" x="<<x
@@ -3225,6 +3365,71 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     return result;
 }
 
+// HARMONIC-TABLE ENERGY IDENTITY, enforced once per process.
+//
+// This is the half of the quantized channel's energy balance that the
+// per-checkpoint enforced check inside estimateCremCollapse() structurally
+// CANNOT see.  There, the hazard divides by hazardReference = E_ref/S(e)
+// while the count is multiplied by S(e), so S cancels and that check is
+// blind to whether S(e) is right at all.
+//
+// S(e) is right only if it equals <1/n> under the power spectrum, because
+// then -- and only then -- does the mean harmonic drawn from the COUNT
+// distribution (power_n/n) satisfy
+//
+//     <n> = 1 / <1/n>_power = 1 / S(e),
+//
+// which is exactly what makes the emitted energy N*<n>*E_ref reproduce the
+// classical power P no matter how that power is spread over harmonics.
+// eccentricOrbitHazardSuppression and eccentricOrbitHarmonicNumber are built
+// by SEPARATE numerical decompositions, so nothing but this identity ties
+// them together: let them drift and the model radiates the wrong energy
+// while every per-checkpoint identity still passes.
+//
+// It lives here, not in the validation suite, because crem_collapse.hpp sits
+// inside positronium.cpp's production #ifndef and is not compiled into the
+// validation executable at all -- so the validator cannot reach these two
+// tables.  Running it once at the top of the experiment costs ~0.3M table
+// evaluations against a run measured in seconds.
+//
+// Band 0.10, not tighter: both tables are interpolated, and the measured
+// residual runs 0.975-1.065 across the grid, worst at e=0.95 where the count
+// distribution's mean sits far out on a heavy tail that sixteen quantile
+// columns resolve only coarsely.  Stopped at e=0.97 because the harmonic
+// table's own eccentricity grid ends at 0.98 and its last quantile column is
+// a deliberate 1.5x cap: at e=0.99, S(e)=0.000853 asks for <n>=1172, which a
+// capped table cannot represent and never claimed to.
+void verifyHarmonicEnergyIdentity() {
+    constexpr int sampleCount=20001;
+    constexpr double band=0.10;
+    static constexpr double eccentricities[]={0.0,0.1,0.2,0.3,0.4,0.5,0.6,
+        0.7,0.75,0.8,0.85,0.9,0.93,0.95,0.97};
+    for(const double eccentricity:eccentricities) {
+        const double suppression=
+            eccentricOrbitHazardSuppression(eccentricity);
+        long double harmonicSum=0.0L;
+        for(int i=0;i<sampleCount;++i) {
+            harmonicSum+=std::max(1,static_cast<int>(std::lround(
+                eccentricOrbitHarmonicNumber(eccentricity,
+                    (i+0.5)/static_cast<double>(sampleCount)))));
+        }
+        const double meanHarmonic=
+            static_cast<double>(harmonicSum/sampleCount);
+        const double residual=suppression*meanHarmonic-1.0;
+        if(!std::isfinite(residual)||std::abs(residual)>band) {
+            std::cerr<<"CREM ENFORCED CHECK FAILED: harmonic energy identity "
+                       "broken at e="<<eccentricity<<".  S(e)="<<suppression
+                     <<", <n>="<<meanHarmonic<<", S(e)*<n>-1="<<residual
+                     <<" (band "<<band<<").  eccentricOrbitHazardSuppression "
+                       "and eccentricOrbitHarmonicNumber no longer describe "
+                       "the same harmonic decomposition, so the quantized "
+                       "channel radiates the wrong energy."<<std::endl;
+            throw std::runtime_error(
+                "harmonic energy identity violated -- see stderr");
+        }
+    }
+}
+
 std::vector<CremCollapseEstimate> runCremCollapseExperiment(
     std::uint64_t masterSeed,int selectedPhenomenon,int runCount,
     double wallClockBudgetSeconds) {
@@ -3236,6 +3441,9 @@ std::vector<CremCollapseEstimate> runCremCollapseExperiment(
         throw std::invalid_argument(
             "--crem-wallclock-budget-s must be finite and positive");
     }
+    // Enforced before any trajectory runs: a broken table identity would
+    // silently misradiate every one of them.
+    verifyHarmonicEnergyIdentity();
     std::vector<CremCollapseEstimate> estimates(static_cast<size_t>(runCount));
     std::atomic<int> nextIndex{0};
     std::atomic<int> completed{0};
