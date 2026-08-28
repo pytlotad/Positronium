@@ -6691,31 +6691,47 @@ wychodził \(1{,}875\cdot10^{-3}\) dla para wobec \(1{,}903\cdot10^{-3}\) dla
 orto, różnica zgodna z zerem. Trzeci floor usuwa przedział — \(S=0\) i
 \(S=1\) to stany dokładne, więc \(\cos=\pm1\) ściśle.
 
-*Zmierzony skutek — przewidziany i trafiony.* Człon dipol-dipol przy
-terminacji przestaje uśredniać się do zera, bo losowa zostaje tylko
-orientacja pary względem \(\hat{\mathbf L}\), a \(\langle\cos^2\theta\rangle=1/3\):
+*Zmierzony skutek, po sprostowaniu.* Pierwsza wersja tego akapitu głosiła, że
+człon dipol-dipol „przestaje uśredniać się do zera", na podstawie przebiegu
+dającego \(-6{,}053\cdot10^{-9}\) keV dla para i \(+6{,}411\cdot10^{-9}\) keV
+dla orto. **To była nadinterpretacja.** Oba przebiegi szły z tego samego
+ziarna, więc miały te same orientacje względem \(\hat{\mathbf L}\), a różnił
+je wyłącznie znak \(\cos\). Niemal dokładnie przeciwne wartości to **jedna
+próbka wielkości zerośredniej z odwróconym znakiem**, a nie dwa przesunięcia.
 
-| | człon dipol-dipol |
-|---|---|
-| przed kwantowaniem | \(+0{,}0227\) keV (para), \(-0{,}2134\) keV (orto) — rzędy od siebie |
-| po, para | \(-6{,}053\cdot10^{-9}\) keV |
-| po, orto | \(+6{,}411\cdot10^{-9}\) keV |
+Sprawdzone wprost, \(20\,000\) realizacji ze skwantowanym spinem
+(\(\cos=\pm1\) ściśle, losowa tylko orientacja względem \(\hat{\mathbf L}\)):
 
-Znak odwraca się z kanałem, moduły zgadzają się do \(6\%\), a wartość równa
-się niezależnie zmierzonej skali dipolowej przy \(a_{Ps}\)
-(\(1{,}0216\cdot10^{-24}\) J \(=6{,}38\cdot10^{-9}\) keV).
+| \(r\) | średnia \(U_{dd}\) [eV] | SD [eV] | odchylenie od zera |
+|---|---|---|---|
+| \(a_{Ps}\) | \(-1{,}15\cdot10^{-8}\) | \(2{,}04\cdot10^{-5}\) | \(0{,}08\sigma\) |
+| \(a_{Ps}/100\) | \(+0{,}255\) | \(20{,}4\) | \(1{,}77\sigma\) |
+| \(1000\) fm | \(-0{,}182\) | \(24{,}0\) | \(1{,}07\sigma\) |
+| \(282\) fm | \(+3{,}46\) | \(1071\) | \(0{,}46\sigma\) |
+| bariera | \(-81{,}3\) | \(3316\) | \(3{,}5\sigma\), SD \(40\times\) większe |
 
-*I wskazanie właściwe, negatywne.* **To nie dociera do obserwabli.** Różnica
-kanałów w \(W\) siedzi w dziewiątej cyfrze (\(6\cdot10^{-12}\) względnie),
-bo \(6\cdot10^{-6}\) eV wobec \(1022\) keV to nic. Kwantowanie spinu czyni
-mechanizm dokładnym, ale architektura go omija: M1 jest wyłączone ze ścieżki
-energii sekularnej, a energetycznie człon dipolowy jest o dwanaście rzędów za
-mały, żeby cokolwiek napędzić.
+**Wartość oczekiwana pozostaje zerowa także po skwantowaniu spinu.** Dla
+czystego \(1/r^3\) kasowanie jest tożsamościowe: przy
+\(\langle\cos^2\theta\rangle=1/3\) człon poprzeczny i radialny znoszą się
+dokładnie. Zostaje resztka od regularyzacji, widoczna jako \(3{,}5\sigma\)
+przy barierze i wciąż \(40\times\) mniejsza od rozrzutu. Kwantowanie spinu
+**nie** czyni członu systematycznym — czyni kanały **antyskorelowanymi
+realizacja po realizacji**, co jest czym innym.
 
-Wniosek dla ewentualnego modelu anihilacji: **różnica kanałów nie może wchodzić
-przez budżet energetyczny.** W QED też nie wchodzi — tam jest to reguła wyboru
+*Odpowiedź na pytanie, czy różnica kanałów wchodzi przez budżet energetyczny:
+nie — ale nie dlatego, że jest mała.* Mała nie jest: przy barierze rozrzut to
+\(3316\) eV wobec \(7449\) eV kulombowskich, czyli \(45\%\), zgodnie z
+zapisanym gdzie indziej „\(56\%\) Coulomba". Nie wchodzi dlatego, że **jej
+wartość oczekiwana znika**. Per trajektoria człon jest duży i ma znak kanału —
+to treść Sondy 7 — ale po ansamblu daje **wariancję, nie przesunięcie**.
+Dlatego mediany obu kanałów wychodzą takie same, a mierzone różnice są szumem
+próbki.
+
+Wniosek dla ewentualnego modelu anihilacji zostaje, wzmocniony: **różnica
+kanałów nie może wchodzić przez budżet energetyczny**, bo tam znika przez
+uśrednienie po orientacjach. W QED też nie wchodzi — tam jest to reguła wyboru
 na stanie końcowym, nie efekt energetyczny. Model odtwarza *strukturę* (ścisłe
-kasowanie w jednym kanale), ale nie *wielkość*, która mogłaby cokolwiek
+kasowanie M1 w jednym kanale), ale nie *wielkość*, która mogłaby cokolwiek
 napędzić; punkt zaczepienia musiałby leżeć w kanale wyjściowym.
 
 *Granica całego kierunku.* Model z trzema podłogami odtwarza stan podstawowy
