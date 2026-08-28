@@ -6484,9 +6484,14 @@ wyłącznie do nasyconej bramki `dominance` (próg 10-20, zmierzone wartości
 nigdy do bilansu energii. Zweryfikowane po poprawce: `positronium_validation`
 33/33 bez zmian.
 
-**Ten sam audyt znalazł też nierozstrzygniętą jeszcze rozbieżność w precesji
-spinu**, nienaprawioną celowo (wymaga osobnej derywacji, nie zgadywania,
-która strona jest błędna). Kod ma dwie implementacje: `thomasBmtEffectiveField`
+**Ten sam audyt znalazł też rozbieżność w precesji spinu** — poniżej opisaną
+w czasie, w jakim ją wtedy widziano, jako nierozstrzygniętą i nienaprawioną
+celowo (wymagającą osobnej derywacji, nie zgadywania, która strona jest
+błędna). *Została rozstrzygnięta i naprawiona* — pełny przebieg dochodzenia,
+łącznie z dwiema błędnymi naprawami po drodze, jest w akapitach
+„**Naprawione**" i „**Naprawa właściwa**" niżej w tej samej sekcji. Zdania w
+czasie teraźniejszym w trzech kolejnych akapitach należy więc czytać jako
+zapis stanu ówczesnego, nie bieżącego. Kod ma dwie implementacje: `thomasBmtEffectiveField`
 (dokładnie odtwarza wzór Jacksona, ale nie jest wołana z produkcyjnego kroku)
 i `advanceCovariantBmt` (kowariantne równanie tensorowe RK4, faktyczna ścieżka
 produkcyjna). Zmierzone bezpośrednio (niezależna reimplementacja w Pythonie,
@@ -6499,7 +6504,11 @@ samego siebie pod boostem (samospójność), nigdy względem niezależnie
 poprawnej `thomasBmtEffectiveField` — 33/33 nic tu nie gwarantuje. Dla
 domyślnej pary e⁺e⁻ przy prędkościach pozytonium to nieistotne; dla ciężkich,
 wysoko-anomalnych par pod `--radiation-reaction automatic` przy
-relatywistycznych prędkościach to nadal otwarte pytanie.
+relatywistycznych prędkościach było to wtedy otwarte pytanie. *(Zamknięte —
+patrz „Naprawa właściwa" niżej: `advanceCovariantBmt` nie jest już ścieżką
+produkcyjną i nosi `[[maybe_unused]]`, a `properDipolePrecessionRate` stosuje
+wzór Jacksona wprost do momentu spoczynkowego. Bramkowany test
+`bmt-precession-invariant` pilnuje tego od tamtej pory.)*
 
 **Dochodzenie kontynuowane.** Sprawdzone bezpośrednio w kodzie: konwersja
 `properDipole`→`state.firstDipole` (`synchronizeCovariantDipoles`,
