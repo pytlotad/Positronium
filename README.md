@@ -6804,6 +6804,61 @@ niósł systematyczne \(-59\) eV pochodzące z doboru \(r_{\rm reg}\), na tle
 \(3316\) eV rozrzutu; każde porównanie kanałów oparte na tej wielkości mierzyło
 regularyzację, nie oddziaływanie dipol-dipol.
 
+#### Czego warstwa sekularna nie widzi: człon dipolowy w punkcie zwrotnym
+
+Rozrzut \(3332\) eV przy barierze, wobec \(7449\) eV kulombowskich, każe
+zapytać, gdzie ta wielkość wchodzi, a gdzie jest pomijana. Prześledzone:
+
+| miejsce | czy niesie człon dipolowy |
+|---|---|
+| siła w integratorze (`mutualForces`) | **tak** |
+| `conservativeParticleEnergy` | **tak** |
+| niezmiennik anihilacyjny \(W\) | **tak**, dodawany na końcu |
+| `elements.specificEnergy` (element Keplera) | **nie**, świadomie |
+| energia startowa `relativeEnergy` | **nie** |
+| `regularizedPotentialEnergy` (punkty zwrotne) | **nie** |
+| `osculatingPeriapsis` — **reguła zatrzymania** | **nie** |
+
+Ostatni wiersz jest istotny. Trajektoria kończy się, gdy
+
+```cpp
+const double periapsis=osculatingPeriapsis(elements,attractionParameter);
+if(periapsis<=comptonBarrierRadius || ...)
+```
+
+czyli decyduje **czysto keplerowskie** peryapsis, liczone z potencjału
+zawierającego wyłącznie Coulomba — a w tym właśnie miejscu pominięty człon
+dipolowy stanowi \(44{,}7\%\) potencjału kulombowskiego i jest **większy niż
+raportowane wiązanie terminalne** (\(3332\) eV wobec \(2561\) eV).
+
+*Test wrażliwości.* Dla orbity terminalnej z przebiegu produkcyjnego
+(\(a=281{,}078\) fm, \(e=0{,}3123\)) rachunek bez dipola odtwarza próg
+\(193{,}3035\) fm co do cyfry. Dodanie zmierzonego rozkładu \(U_{dd}\) przy
+ustalonych \((E,L)\), \(20\,000\) orientacji:
+
+| punkt zwrotny | udział |
+|---|---|
+| głębszy o \(>5\%\) | \(57{,}0\%\) |
+| brak dozwolonej orbity przy tych \((E,L)\) | \(36{,}4\%\) |
+| odsunięty o \(>5\%\) | \(5{,}1\%\) |
+| **w granicach \(\pm5\%\)** | **\(1{,}5\%\)** |
+
+Czyli dla \(98{,}5\%\) orientacji przewidywany punkt zwrotny leży poza
+\(\pm5\%\) od tego, którym model się posługuje.
+
+*Co to znaczy, a czego nie znaczy.* **Nie** znaczy, że trajektorie są źle
+całkowane — integrator niesie pełną siłę i ruch jest poprawny. Znaczy, że
+**warstwa sekularna** (elementy oskulacyjne, punkty zwrotne, reguła
+zatrzymania) opisuje układ potencjałem, w którym w chwili podejmowania decyzji
+brakuje członu porównywalnego z wiodącym. Pozycja \(36{,}4\%\) „brak
+dozwolonej orbity" nie mówi, że orbita fizycznie nie istnieje — mówi, że
+para \((E,L)\) wyprowadzona bez dipola jest niespójna z pełnym potencjałem.
+
+To jest problem **wyłącznie terminalny**: człon dipolowy skaluje się jak
+\(1/r^3\) wobec \(1/r\) Coulomba, więc przy \(a_{Ps}\) stanowi \(10^{-6}\)
+potencjału i jest bez znaczenia. Gryzie dopiero tam, gdzie trajektoria się
+kończy — czyli dokładnie tam, gdzie zapada decyzja.
+
 #### Naprawa: wykładnik regulatora 6 → 12
 
 Skoro resztka jest proporcjonalna do \(w'(r)\), naprawą jest regulator, którego
