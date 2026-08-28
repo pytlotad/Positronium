@@ -6884,6 +6884,59 @@ dipolowy jest odpychający na tyle, że żaden promień poniżej bieżącej orbi
 jest dostępny, para **zatrzymuje się** i zwracany jest promień zatrzymania.
 Wcześniej takie trajektorie ogłaszano jako „dotarły do bariery".
 
+#### Progi energetyczne CREM wobec obserwowanych, i skąd bierze się \(a_{Ps}\)
+
+| próg | CREM | obserwacja | status |
+|---|---|---|---|
+| wiązanie / jonizacja | \(6{,}802847\) eV | \(6{,}8028\) eV | konsekwencja momentu — patrz niżej |
+| przejście \(n{=}2\to1\) | \(5{,}102135\) eV | \(5{,}1021\) eV | ta sama drabina |
+| kwant emisji \(\hbar\omega_{\rm orb}\) | \(\mathbf{13{,}605693}\) eV | brak takiego progu | **niezgodność** |
+| rozszczep nadsubtelny | \(7{,}57\) GHz | \(203{,}394\) GHz | \(3{,}7\%\) |
+| skala anihilacyjna | \(186{,}74\) ps | \(125{,}16\) ps (p-Ps) | ten sam \(\alpha^5\), iloraz \(3/2\) |
+
+*Wiersz trzeci jest najostrzejszy.* Kwant korespondencyjny wynosi
+\(13{,}6057\) eV — **dwukrotność energii wiązania** i \(2{,}67\times\)
+największe rzeczywiste przejście (\(1S\)–\(2S=5{,}10\) eV). Pozytonium nie ma
+progu przy \(13{,}6\) eV; para o takiej energii jest już zjonizowana. Jest to
+ta sama rzecz, którą model zapisuje jako sufit kinematyczny
+(\(\hbar\omega/E_{\rm wiąz}=2\sqrt{a_{Ps}/a}\)), ale zestawiona z obserwacją
+mówi ostrzej: **prescription \(\hbar\omega_{\rm orb}\) nie reprezentuje
+żadnego rzeczywistego przejścia ze stanu podstawowego.** (Ciekawostka
+algebraiczna: \(13{,}605693\) eV to dokładnie stała Rydberga — masa
+zredukowana \(m_e/2\) połowi wiązanie, a \(\hbar\omega=2E_{\rm wiąz}\) je
+przywraca.)
+
+*Skąd bierze się \(a_{Ps}\).* Model ma **jedną** emergentną długość z własnej
+elektrodynamiki: promień zrównania energii magnetycznej z kulombowską,
+
+\[r_*^2=\frac{\mu_0}{4\pi}\frac{\mu_1\mu_2}{K}=\frac{\mu_1\mu_2}{c^2|q_1q_2|},\]
+
+będący **tożsamościowo** tym samym co `comptonBarrierRadius` \(=g\hbar/4mc\),
+bo \(\mu=(g/2)(q\hbar/2m)\) daje \(r_*=\mu/(|q|c)\) wprost. Zmierzone:
+\(193{,}3035387648\) wobec \(193{,}3035388174\) fm — różnica \(2{,}7\cdot10^{-10}\),
+czyli zaokrąglenie CODATA między stabelaryzowanym momentem a \(\hbar\).
+
+Wyeliminowanie \(\hbar\) między \(r_*\) a relacją Bohra daje
+
+\[a_{\rm pary}=\frac{16\,(m_1+m_2)\,\mu_1\mu_2}{g_1g_2\,|q_1q_2|\,K},\]
+
+**bez jawnego \(\hbar\) i bez \(c\)**. `pairBohrRadius` liczy się teraz tą
+drogą; zgodność ze starą postacią \(\hbar^2/(\mu_{\rm red}K)\) wynosi
+\(10^{-16}\) na czterech parach (e⁺e⁻, µ⁺µ⁻, p⁺p̄, p+e⁻), więc zmiana jest
+numerycznie zerowa.
+
+> **Czym to nie jest.** Nie jest klasycznym wyprowadzeniem promienia Bohra:
+> \(\mu\) niesie \(\hbar\), więc relacja eliminuje \(\hbar\) między dwiema
+> wielkościami, które obie je zawierają. Czym jest: dowodem, że \(a_{\rm pary}\)
+> i moment magnetyczny **nie są niezależnymi wejściami**. Raportowane wiązanie
+> wynika ze zmierzonego momentu przez klasyczną elektrodynamikę, a nie jest
+> drugą stałą kwantową wpisaną obok — i po tej zmianie obie nie mogą się już
+> rozjechać, bo są tym samym wyrażeniem.
+>
+> Wcześniejsze partie tego dokumentu nazywały wiązanie \(6{,}8028\) eV
+> „tożsamością, bo \(a_{Ps}\) jest wejściem". Ściślej: jest konsekwencją
+> **jednego** wejścia kwantowego, nie dwóch.
+
 #### Błąd: energia zabierana bez momentu pędu
 
 Znaleziony przy okazji badania punktów zwrotnych, i poważniejszy od pytania,

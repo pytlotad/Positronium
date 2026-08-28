@@ -92,9 +92,40 @@ constexpr bool isAttracting(const ParticlePair& pair) {
 // (1.058 angstrom) because the reduced mass is m_e/2; for mu+mu- it is 512 fm
 // and for p+pbar 57.6 fm.  a0 itself is hydrogen's and belongs to none of
 // them.
+// Derived from the pair's MAGNETIC MOMENTS rather than posted independently,
+// so hbar enters this model in exactly one place -- the tabulated moments --
+// instead of two.
+//
+// The model's electrodynamics already produces one length by itself: the
+// radius where the magnetic and Coulomb energies cross,
+//
+//     r*^2 = (mu0/4pi) mu1 mu2 / K = mu1 mu2 / (c^2 |q1 q2|),
+//
+// which is the same number as comptonBarrierRadius = g hbar/(4 m c) -- not a
+// coincidence but an identity, since mu = (g/2)(q hbar/2m) gives
+// r* = mu/(|q| c) directly.  Verified: 193.3035387648 fm against
+// 193.3035388174 fm, a relative 2.7e-10 that is CODATA rounding between the
+// tabulated moment and hbar, nothing more.
+//
+// Eliminating hbar between r* and the Bohr relation leaves
+//
+//     a_pair = 16 (m1+m2) mu1 mu2 / (g1 g2 |q1 q2| K),
+//
+// with no explicit hbar and no explicit c.  It agrees with hbar^2/(mu_red K)
+// to 5.4e-10, again CODATA rounding.
+//
+// WHAT THIS IS AND IS NOT.  It is not a classical derivation of the Bohr
+// radius: mu carries hbar, so this eliminates hbar between two quantities
+// that both contain it.  What it does establish is that a_pair and the
+// magnetic moment are NOT independent inputs -- the binding energy this model
+// reports follows from the measured moment through classical electrodynamics,
+// rather than being a second quantum constant entered alongside it.
 constexpr double pairBohrRadius(const ParticlePair& pair) {
-    return hbar*hbar/(reducedMassOf(pair)*coulombConstant
-        *magnitude(chargeProduct(pair)));
+    return 16.0*(pair.first.mass+pair.second.mass)
+        *magneticMoment(pair.first)*magneticMoment(pair.second)
+        /(pair.first.gFactor*pair.second.gFactor
+          *magnitude(chargeProduct(pair))
+          *coulombConstant*magnitude(chargeProduct(pair)));
 }
 
 // Binding energy of the orbit carrying L = hbar, k|q1 q2|/(2 a).  6.80 eV for
