@@ -2105,6 +2105,48 @@ Vec3 noetherAngularMomentum(const State& s) {
 // against a reference carrying the same truncation at the same phase, which
 // is exactly what crem_collapse.hpp's background run is for.  See the README
 // section on the deterministic threshold in the energy balance.
+// CHARGE-DIPOLE (SPIN-ORBIT) INTERACTION ENERGY -- each moment sitting in the
+// regularized Biot-Savart field of the OTHER particle's moving charge.
+//
+// This is the term the completeness audit found missing: chargeDipoleForces
+// carried the force with no counterpart anywhere in the energy ledger, while
+// every other interaction in the model (Coulomb, Darwin, dipole-dipole) had
+// both.
+//
+// B at particle 1 from particle 2's motion is (mu0/4pi) q2 (v2 x r_hat)/r^2,
+// and vice versa with r_hat reversed.  vectorPotentialFactor is weight/r^3, so
+// crossing with the separation VECTOR rather than its unit vector leaves
+// exactly weight/r^2 -- the same short-range weight the dipole field itself
+// uses, so this term is tamed at small r by the same regulator and not by a
+// second, independent one.
+//
+// STRUCTURE.  Substituting q2 = -q1 and v2 = -v1 (equal masses, opposite
+// charges) collapses the sum to
+//
+//     (mu0/4pi) q1 (mu2 - mu1).(v1 x r12) / r^2
+//
+// the DIFFERENCE of the moments: zero for para, maximal for ortho.  It is the
+// exact complement of M1, which carries the sum.  An earlier version of this
+// derivation gave the sum, by counting three sign reversals as two -- the
+// charge, the velocity AND the direction to the field point all reverse.  The
+// measured 27x ortho/para asymmetry in the energy-balance residual is what
+// caught that.
+double chargeDipoleInteractionEnergy(const State& state) {
+    const Vec3 firstMinusSecond = clampedSeparationVector(
+        state.firstPosition - state.secondPosition, separationFloor());
+    const double distance = firstMinusSecond.norm();
+    if(!(distance > 0.0)) return 0.0;
+    const MagneticRadialProfile profile = magneticRadialProfile(distance);
+    constexpr double magneticConstant = mu0 / (4.0 * pi);
+    const Vec3 fieldAtFirst = cross(state.secondVelocity, firstMinusSecond)
+        * (magneticConstant * secondCharge * profile.vectorPotentialFactor);
+    const Vec3 fieldAtSecond = cross(state.firstVelocity, firstMinusSecond)
+        * (-magneticConstant * firstCharge * profile.vectorPotentialFactor);
+    const double energy = -dot(state.firstDipole, fieldAtFirst)
+                          -dot(state.secondDipole, fieldAtSecond);
+    return std::isfinite(energy) ? energy : 0.0;
+}
+
 double conservativeParticleEnergy(const State& state) {
     const PairGeometry geometry=clampedPairGeometry(state);
     const double kinetic=kineticEnergy(state.firstVelocity,firstMass)
@@ -2114,6 +2156,7 @@ double conservativeParticleEnergy(const State& state) {
     const double dipolePotential=regularizedDipoleInteractionEnergy(
         geometry.firstMinusSecond,state.firstDipole,state.secondDipole);
     return kinetic+coulombPotential+dipolePotential
+        +chargeDipoleInteractionEnergy(state)
         +darwinInteractionEnergy(state)+state.dipoleConstraintEnergy;
 }
 

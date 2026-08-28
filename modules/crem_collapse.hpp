@@ -1123,12 +1123,54 @@ double dipoleAwarePeriapsis(const OsculatingElements& elements,
     if(!(L!=0.0)||!(reducedMass>0.0)) return keplerPeriapsis;
     // h(r) = eps - U_coulomb - U_dipole - centrifugal.  Positive where the
     // motion is allowed.
+    // Charge-dipole (spin-orbit) energy at the TURNING POINT, where the form
+    // is exact rather than an orbit average: v_r = 0 there, so the velocity is
+    // purely tangential with magnitude L/(mu r), and v x r_hat lies along the
+    // orbit normal with that same magnitude.  Substituting into
+    //
+    //     U_so = (mu0/4pi) q1 (mu2 - mu1).(v1 x r12) / r^2      (regularized)
+    //
+    // and using v1 = (mu/m1) v_rel gives a term that depends only on r and L,
+    // which is what lets it enter this radial equation at all.  See
+    // chargeDipoleInteractionEnergy in electrodynamics.hpp for the derivation
+    // and for why it is the DIFFERENCE of the moments, not the sum.
+    //
+    // SIZE, measured on a real trajectory rather than estimated: |U_so|/|U_C|
+    // is 2.52e-06 at a_Ps, where it is LARGER than the azimuth-averaged
+    // dipole-dipole term beside it (1.37e-06).  It scales as L/r^2, and since
+    // L itself falls from 1 hbar to ~0.045 hbar over the inspiral, it reaches
+    // a few percent of the Coulomb term at the barrier for a typical
+    // orientation -- not the 34% an audit estimate suggested, which assumed
+    // both the maximising orientation and the full 2 mu_B rather than the
+    // ~0.38 mu_B that |(mu2-mu1).n| actually measures.
+    //
+    // HONESTLY: unlike the ledger term this one is NOT independently verified.
+    // The ledger addition halves a measured energy-balance residual; this one
+    // has no such check, and across 20 paired trajectories it changed the
+    // collapse median, the stop-cause split and the terminal binding by
+    // nothing at all.  It is carried because it is the same physics as the
+    // verified term, exact at the turning point, and free -- not because
+    // anything observable demanded it.
+    const double normalNorm=orbitNormal.norm();
+    const Vec3 normalHat=normalNorm>0.0?orbitNormal*(1.0/normalNorm):Vec3{};
+    const double firstMass=activePair.first.mass;
+    const double momentDifferenceAlongNormal=normalNorm>0.0
+        ?dot(secondDipole-firstDipole,normalHat):0.0;
     const auto h=[&](double r) {
         if(!(r>0.0)) return -std::numeric_limits<double>::infinity();
         const double dipole=azimuthAveragedDipoleEnergy(
             r,firstDipole,secondDipole,orbitNormal)/reducedMass;
+        // (mu0/4pi) q1 |mu2-mu1| (L/(m1 r)) * weight/r^2, signed by the
+        // component along the orbit normal.
+        const double weight=shortRangeFieldWeight(
+            r,magneticRegularizationRadius,magneticRegularizationExponent);
+        const double spinOrbit=firstMass>0.0
+            ?(mu0/(4.0*pi))*activePair.first.charge
+                *momentDifferenceAlongNormal
+                *(reducedMass*L/(firstMass*r))*weight/(r*r)/reducedMass
+            :0.0;
         return elements.specificEnergy+attractionParameter/r
-            -dipole-L*L/(2.0*r*r);
+            -dipole-spinOrbit-L*L/(2.0*r*r);
     };
     // The Kepler periapsis is the answer when the dipole is negligible, so
     // start from it and walk outward or inward as the sign of h dictates.

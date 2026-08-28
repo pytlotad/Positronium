@@ -7125,9 +7125,51 @@ sięga \(0{,}34\) kulombowskiego, dawałaby \(\sim3\cdot10^{-3}\) — ale to
 jest ekstrapolacja, nie pomiar: sonda nie sięga tego promienia.
 
 Model ma więc dwie dyskryminanty kanału w dwóch miejscach:
-\(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\) w sekularnym momencie siły
-(wdrożona) i \((\boldsymbol\mu_2-\boldsymbol\mu_1)\) w energii spin-orbita
-(brakująca).
+\(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\) w sekularnym momencie siły i
+\((\boldsymbol\mu_2-\boldsymbol\mu_1)\) w energii spin-orbita.
+
+*Wdrożone — i zweryfikowane pomiarem, który mógł je obalić.*
+`chargeDipoleInteractionEnergy` dokłada ten człon do
+`conservativeParticleEnergy`, z tą samą wagą regularizacyjną, której używa pole
+dipolowe, więc przy małych \(r\) tłumi go ten sam regulator, a nie drugi,
+niezależny.
+
+Ryzyko było realne: siła jest zaimplementowana jako \(q(\mathbf
+v\times\mathbf B)\) z reakcją przypisaną **z definicji**
+(`onDipole = -onCharge`), więc nie musi wynikać z żadnego potencjału. Gdyby
+dołożona energia nie odpowiadała tej sile, reszta bilansu by **wzrosła**. Test
+rozstrzygnął jednoznacznie:
+
+| | bez członu | z członem |
+|---|---|---|
+| `reaction raw off` | \(3{,}9746716\cdot10^{-6}\) | \(\mathbf{1{,}642896\cdot10^{-6}}\) (\(-59\%\)) |
+| `reaction raw LL/C` | \(4{,}4028823\cdot10^{-6}\) | \(\mathbf{2{,}0764777\cdot10^{-6}}\) (\(-53\%\)) |
+
+Reszta zachowania energii **spadła o ponad połowę**. To brakująca energia, nie
+sztuczny dodatek.
+
+*Produkcja nietknięta:* mediana \(7368{,}8\) ps identycznie przed i po, w obu
+kanałach; w trybie barierowym również bez zmian. Poprawka poprawnościowa, nie
+zmiana fizyki obserwabli.
+
+*Druga warstwa, uczciwie.* Audyt znalazł ten człon brakujący **w dwóch**
+warstwach, więc dołożyłem go też do `dipoleAwarePeriapsis` — w punkcie
+zwrotnym forma jest ścisła, bo tam \(v_r=0\) i \(v=L/\mu r\) stycznie, co
+czyni go funkcją samego \(r\) i \(L\). Zmierzony na rzeczywistej trajektorii:
+\(|U_{\rm so}|/|U_C|=2{,}52\cdot10^{-6}\) przy \(a_{Ps}\), czyli **większy
+niż stojący obok człon dipol–dipol** (\(1{,}37\cdot10^{-6}\)); skaluje się jak
+\(L/r^2\), a że \(L\) spada z \(1\hbar\) do \(\approx0{,}045\hbar\), przy
+barierze sięga kilku procent członu kulombowskiego — nie \(34\%\), które
+podawała tabela audytowa przy orientacji maksymalizującej i pełnym
+\(2\mu_B\), podczas gdy zmierzone \(|(\boldsymbol\mu_2-\boldsymbol\mu_1)
+\cdot\hat n|\) to \(0{,}38\,\mu_B\).
+
+W odróżnieniu od członu w księdze **ta druga warstwa nie jest niezależnie
+zweryfikowana**: nie ma dla niej testu w rodzaju reszty bilansu, a na 20
+sparowanych trajektoriach nie zmieniła ani mediany, ani podziału przyczyn
+stopu, ani wiązania terminalnego. Jest niesiona dlatego, że to ta sama fizyka
+co zweryfikowany człon, ścisła w punkcie zwrotnym i darmowa — a nie dlatego, że
+domagała się jej jakakolwiek obserwabla.
 
 #### Orbitalny moment magnetyczny i sprzężenie spin-orbita
 
