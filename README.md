@@ -7028,6 +7028,43 @@ zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), 
 progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
 mylić.
 
+#### Podłoga przy \(r^*\): rozważona, zmierzona, odrzucona
+
+Po ustaleniu, że dolny szczebel drabiny to bariera przy
+\((2/g)\alpha m_ec^2=3{,}7246\) keV, napraszała się podłoga emisji w tym
+miejscu — odpowiednik `--ground-state-floor`, tylko o jedną potęgę \(\alpha\)
+niżej. **Zmierzona jako bezczynna** i dlatego niewdrożona.
+
+Rozkład wiązania terminalnego, cztery ziarna po 40 przebiegów:
+
+| ziarno | \(n\) | min | mediana | max | powyżej 3,7246 keV |
+|---|---|---|---|---|---|
+| 42 | 38 | 0,227 | 1,451 | 3,878 | 1 (2,6%) |
+| 7 | 38 | 0,226 | 2,207 | 3,710 | 0 |
+| 99 | 37 | 0,226 | 1,588 | 3,658 | 0 |
+| 1234 | 38 | 0,226 | 2,095 | 3,875 | 1 (2,6%) |
+
+**2 trajektorie na 151 (1,3%)** w ogóle sięgają progu, i to ledwie. Dla nich
+podłoga zapaliłaby się na ostatnim fotonie — w checkpoincie, w którym reguła
+stopu i tak kończy przebieg, bo `periapsis <= comptonBarrierRadius` jest
+**twardym stopem**. Mechanizm zapalałby się dokładnie wtedy, kiedy przestaje
+mieć na co działać.
+
+To jest różnica względem `--ground-state-floor`, i warto ją zapisać: stan
+podstawowy leży przy 6,8 eV, czyli **tam, gdzie para startuje**, więc podłoga
+ma przed sobą cały kolaps, w którym może działać. Przy \(r^*\) nie ma żadnego
+obszaru — to koniec trajektorii, nie jej wnętrze. Dodatkowo 77% przebiegów
+nigdy tam nie dociera, bo kończy na progu retardacyjnym przy 10–16 \(r^*\)
+(sekcja o regule stopu wyżej).
+
+Jedyny sposób, w jaki ta podłoga mogłaby cokolwiek zmienić, to przycięcie
+ostatniego fotonu tak, żeby lądował na \(r^*\) — czyli droga odrzucona w
+sekcji o regule stopu, bo wymyśla przejście, którego model nie ma, i ubiera
+granicę ważności w fizykę. Odrzucenie stoi.
+
+Drabina \(\alpha\) niżej pozostaje w mocy jako opis **bariery**; to, czego
+nie ma, to mechanizm, który by przy niej parkował.
+
 #### Poziom zerowy: drabina w potęgach \(\alpha\), nie na \(m_ec^2\)
 
 Propozycja „poziom zerowy przy promieniu terminalnym **i** stanie energetycznym
