@@ -6752,10 +6752,57 @@ zdarzeń są o rząd do dwóch poniżej progu, więc **każde porównanie kanał
 tej dokumentacji jest zdominowane szumem** — co jest niezależnym wyjaśnieniem,
 dlaczego mediany obu kanałów zawsze wychodziły takie same.
 
-*Konsekwencja dla trzech podłóg.* Reżimy różnią się jakościowo. Z podłogami
-para siedzi przy \(a_{Ps}\), gdzie wartość oczekiwana **istotnie** znika. Bez
-nich kończy przy barierze, gdzie **nie znika**. To nie jest ta sama sytuacja i
-nie wolno przenosić wniosku z jednej na drugą.
+*Konsekwencja dla trzech podłóg — i skąd naprawdę bierze się ta resztka.*
+Reżimy różnią się jakościowo, ale zbadane głębiej okazują się różnić inaczej,
+niż wyglądało. Resztka przy barierze **nie jest efektem fizycznym, który
+podłogi tłumią** — jest artefaktem regularyzacji, poza który podłogi model
+wyprowadzają.
+
+Regularyzacja pola dipolowego ma promień \(r_{\rm reg}=68{,}47\) fm i wykładnik
+\(6\), a bariera Comptona leży przy \(r/r_{\rm reg}=2{,}82\), gdzie waga
+\(w=0{,}998\). Resztka śledzi tę wagę:
+
+| \(r/r_{\rm reg}\) | \(w(r)\) | średnia [eV] | średnia\(/U_{\rm coul}\) |
+|---|---|---|---|
+| \(8\) | \(0{,}999996\) | \(+0{,}29\) | \(1{,}1\cdot10^{-4}\) |
+| \(4\) | \(0{,}99976\) | \(-0{,}20\) | \(-3{,}7\cdot10^{-5}\) |
+| \(2\) | \(0{,}98462\) | \(-1251\) | \(-0{,}119\) |
+| \(1{,}5\) | \(0{,}91929\) | \(-14703\) | \(-1{,}05\) |
+| \(1\) | \(0{,}5\) | \(-167604\) | \(-7{,}97\) |
+
+*Test rozstrzygający.* Gdyby resztka była fizyczna, nie zależałaby od
+arbitralnego \(r_{\rm reg}\). Zależy — mierzone przy **stałym** promieniu
+(bariera), \(\mathrm{SEM}\approx7{,}4\) eV:
+
+| \(r_{\rm reg}\) [fm] | średnia przy barierze [eV] |
+|---|---|
+| \(34{,}2\) | \(+5{,}80\) (zgodne z zerem) |
+| \(47{,}9\) | \(-0{,}21\) (zgodne z zerem) |
+| \(\mathbf{68{,}5}\) (rzeczywiste) | \(\mathbf{-51{,}9}\) (\(7\sigma\)) |
+| \(95{,}9\) | \(-424\) |
+| \(136{,}9\) | \(-2964\) |
+
+Zmiana \(r_{\rm reg}\) o czynnik \(2\) zmienia resztkę o czynnik \(57\) i
+odwraca jej znak, a przy odsunięciu regularyzacji resztka **znika** — zgodnie
+z tożsamościowym kasowaniem dla czystego \(1/r^3\). To nie jest wielkość
+fizyczna.
+
+Zwraca uwagę wzmocnienie: odchylenie wagi od jedynki o \(0{,}2\%\) przy
+barierze daje efekt \(0{,}7\%\) potencjału kulombowskiego. Odpowiada za to
+pochodna profilu — przy wykładniku \(6\) logarytmiczna pochodna wagi mnoży
+odchylenie kilkukrotnie.
+
+*Stąd właściwy podział.* Z trzema podłogami para siedzi przy \(a_{Ps}\), gdzie
+\(r/r_{\rm reg}=1546\) i \(w=1\) do granic maszyny: kasowanie jest ścisłe, a
+znikanie wartości oczekiwanej **fizyczne**. Bez podłóg para kończy przy
+barierze, gdzie regularyzacja pracuje i nieznikanie jest **artefaktem**.
+Podłogi nie ukrywają więc efektu kanałowego — trzymają model poza strefą, w
+której jego własna regularyzacja taki efekt fabrykuje.
+
+*Konsekwencja praktyczna.* Raportowany `terminal dipole-dipole` niesie w
+produkcji systematyczne \(-59\) eV pochodzące z doboru \(r_{\rm reg}\), na tle
+\(3316\) eV rozrzutu. Każde porównanie kanałów oparte na tej wielkości mierzy
+regularyzację, nie oddziaływanie dipol-dipol.
 
 Wniosek dla ewentualnego modelu anihilacji trzeba więc osłabić: różnica kanałów
 w budżecie energetycznym **istnieje przy barierze**, ale jest o \(1{,}6\%\)
