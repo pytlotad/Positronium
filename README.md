@@ -7083,12 +7083,44 @@ fazach orbity, 20 000 próbek:
 różni się między kanałami o \(1{,}5\%\) — **rozrzut jest ten sam**. Widoczna
 asymetria była więc artefaktem szczególnej geometrii.
 
-To **ten sam washout, co przy M1**, i z tego samego powodu — z jedną różnicą,
-która ma znaczenie: kwantowanie spinu (`--ground-state-floor`) ratuje M1, bo
-tam uśrednienie szło po **kącie wzajemnym**, który kwantowanie ustala. Tutaj
-uśrednienie idzie po **wspólnym kierunku** momentów, którego kwantowanie nie
-dotyka — pomiar wyżej ma \(\cos=\pm1\) ustalone i mimo to daje zero. Tej
-jednej kwantowanie nie uratuje.
+*Uwaga wycofana.* Napisałem tu wcześniej, że jest to ten sam washout co przy
+M1, ale z różnicą: „kwantowanie spinu tu nie pomoże, bo uśrednienie idzie po
+wspólnym kierunku momentów, którego kwantowanie nie dotyka — pomiar miał
+\(\cos=\pm1\) ustalone i mimo to dał zero". **Obie części tego są błędne.**
+
+Rozumowanie jest odwrócone. Wspólny kierunek wymywa się **całkowicie** — to
+jest właśnie owo stłumienie \(1{,}6\cdot10^6\) — a to, co zostaje, zależy
+**wyłącznie** od kąta wzajemnego, czyli dokładnie od tego, co kwantowanie
+ustala. Powołany „pomiar" miał wprawdzie \(\cos=\pm1\), ale nie dał zera:
+dał \(3{,}7\cdot10^{-9}\), które ukrył próg szumu Monte Carlo
+(\(4{,}6\cdot10^{-5}\)).
+
+*Kwantowanie pomaga, i najbardziej ortho.* Zmierzone na 40 trajektoriach na
+kanał:
+
+| | \(\langle\cos\rangle\) bez podłogi | zakres | z kwantowaniem | wzmocnienie |
+|---|---|---|---|---|
+| para | \(+0{,}713\) | \([0{,}516,\ 0{,}984]\) | \(+1\) dokładnie | \(\times1{,}40\) |
+| ortho | \(-0{,}271\) | \([-0{,}991,\ +0{,}477]\) | \(-1\) dokładnie | \(\times3{,}69\) |
+
+(analitycznie \(+0{,}75\) i \(-0{,}25\), bo \(\cos\) jest jednostajny na
+\([-1,1]\), a cięcie idzie po \(0{,}5\)).
+
+*Wniosek dla samej flagi i tak się broni — z zupełnie innego powodu.* Podłoga
+zatrzymuje parę przy \(a_{Ps}\approx550\,r^*\), a człon spada stromo z
+promieniem, więc para nigdy nie dociera tam, gdzie jest on duży. Zmierzone
+skumulowane \(|dL|/L\): \(2\cdot10^{-14}\) z podłogą wobec
+\(6{,}4\cdot10^{-3}\) bez niej. **Podłoga usuwa obszar, nie sprzężenie.**
+
+*Jak czytać znak.* Na pojedynczej trajektorii znak skumulowanego \(dL\) idzie
+za \(\text{sign}(\cos)\), jak proporcjonalność wymaga: 37/40 dla para, 31/40
+dla ortho — a niezgodności to przebiegi, na których precesja BMT odsunęła
+\(\cos\) od wartości początkowej. Znak sumy **zespołowej** nie jest tego
+wiarygodnym odczytem, z tego samego powodu, co przy sumie energii fotonów:
+dominuje ją jedna głęboka trajektoria. W jednej partii ortho ta dominująca
+niosła \(dL=+0{,}205\) przy \(\cos=+0{,}414\) — dodatnim, co zakres ortho
+\([-1,\,0{,}5)\) dopuszcza — przez co cała suma wyszła dodatnia, choć każdy
+składnik z osobna szedł za własnym \(\cos\).
 
 *Poprawka do powyższego, i wdrożenie.* Napisałem wyżej, że uśrednienie daje
 zero — to było zero **w granicach rozdzielczości tamtej sondy**, która losowała

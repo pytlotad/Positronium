@@ -952,10 +952,35 @@ double regularizedPeriod(const OsculatingElements& elements,
 //
 // PRODUCTION CONSEQUENCE.  The channels are sampled from RANGES of cos, not
 // from +-1: directions are isotropic, so cos is uniform on [-1,1], para takes
-// cos >= 0.5 and ortho the rest.  Hence <cos> = +0.75 for para and -0.25 for
-// ortho -- the torque is THREE TIMES STRONGER for para and of opposite sign.
-// Under --ground-state-floor's spin quantization cos becomes exactly +-1 and
-// the two become symmetric instead.
+// cos >= 0.5 and ortho the rest.  Measured over 40 trajectories per channel,
+// <cos> = +0.713 for para (range 0.516-0.984) and -0.271 for ortho (range
+// -0.991 to +0.477), against the analytic +0.75 and -0.25.  So the torque is
+// roughly three times stronger for para and of opposite sign.
+//
+// SPIN QUANTIZATION HELPS HERE, and this file previously said the opposite.
+// The claim was that the average runs over the moments' COMMON DIRECTION,
+// which quantization does not touch.  That is backwards: the common direction
+// averages out completely -- it is the entire 1.6e6 suppression -- and what
+// survives depends ONLY on the mutual angle, which is exactly what
+// quantization fixes.  Measured, --ground-state-floor pins cos to exactly +1
+// (para) and -1 (ortho) on every trajectory, raising |<cos>| from 0.713 to
+// 1.000 for para (x1.40) and from 0.271 to 1.000 for ortho (x3.69).
+//
+// The conclusion for that flag's own configuration survives anyway, for an
+// unrelated reason: the floor stops the pair at a_Ps ~ 550 r*, and this term
+// falls off steeply, so the pair never reaches the region where it is large.
+// Measured accumulated |dL|/L is 2e-14 with the floor against 6.4e-3 without.
+// The floor removes the REGION, not the coupling.
+//
+// READING THE SIGN.  Per trajectory the sign of the accumulated dL follows
+// sign(cos), as the proportionality demands: 37/40 for para and 31/40 for
+// ortho, the disagreements being trajectories whose BMT precession moved cos
+// away from its initial value.  The ENSEMBLE sum's sign is not a reliable
+// readout of that, for the same reason the emitted-energy sum was not: it is
+// dominated by one deep trajectory.  In one ortho batch the dominant
+// trajectory carried dL = +0.205 at cos = +0.414 -- a positive cos, which
+// ortho's range [-1, 0.5) permits -- making the whole ensemble sum positive
+// while every individual term still followed its own cos.
 //
 // The radial falloff is steep but not a single power law: the local slope runs
 // 3.5 between r* and 2r* and 4.35 between 2r* and 20r*, so this is a
