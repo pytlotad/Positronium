@@ -951,6 +951,8 @@ int runMaxwellSelfTest(
         bool advanced=false;
         double rawEnergyResidual=0.0;
         double refinedEnergyResidual=0.0;
+        double mechanicalEnergyChange=0.0;
+        double radiatedEnergyFraction=0.0;
         double reactionFluxResidual=0.0;
         // Same mismatch, normalized by the orbit's own mechanical energy
         // instead of by the radiated energy.  The flux-normalized form is
@@ -995,6 +997,21 @@ int runMaxwellSelfTest(
         result.rawEnergyResidual=std::abs(
             conservativeParticleEnergy(full)+full.radiatedEnergy
             -initialMechanical-yeeCoupledState.radiatedEnergy)
+            /std::max(std::abs(initialMechanical),1.0e-300);
+        // The residual's two parts, kept apart because summing them hides
+        // what each says.  rawEnergyResidual adds the RADIATED energy to the
+        // change in mechanical energy; for the DISABLED reaction model no
+        // force removes that flux from the mechanics, so including it does
+        // not test a balance -- it partially cancels the mechanical drift and
+        // makes the residual look smaller than the drift actually is.
+        // Measured: dE_mech = -2.48e-06 against E_rad = +8.41e-07, summing to
+        // the -1.64e-06 that gets reported.  The physically meaningful number
+        // for the disabled model is the first one.
+        result.mechanicalEnergyChange=
+            (conservativeParticleEnergy(full)-initialMechanical)
+            /std::max(std::abs(initialMechanical),1.0e-300);
+        result.radiatedEnergyFraction=
+            (full.radiatedEnergy-yeeCoupledState.radiatedEnergy)
             /std::max(std::abs(initialMechanical),1.0e-300);
         result.reactionFluxResidual=std::abs(full.reactionEnergyMismatch)
             /std::max(std::abs(full.radiatedEnergy),1.0e-300);
@@ -3378,6 +3395,11 @@ int runMaxwellSelfTest(
               << "reaction raw off/LL/C:" << reactionDisabled.rawEnergyResidual
               << " / " << reactionLl.rawEnergyResidual << " / "
               << reactionCoherent.rawEnergyResidual << '\n'
+              << "  of which dE_mech/|E| = "
+              << reactionDisabled.mechanicalEnergyChange
+              << " and E_rad/|E| = " << reactionDisabled.radiatedEnergyFraction
+              << " (reaction off, so no force removes that flux from the "
+                 "mechanics)\n"
               << "  refinement ratio (full/half; ~1 means the residual is "
                  "PHYSICAL, not discretization): "
               << (reactionDisabled.refinedEnergyResidual>0.0

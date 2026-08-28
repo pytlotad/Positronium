@@ -7065,11 +7065,52 @@ Reszta **nie maleje** przy połowieniu kroku. Bez członu było to więc od razu
 rozpoznawalne jako **fizyka, nie arytmetyka** — wystarczyło policzyć iloraz z
 danych, które już były liczone.
 
-**I to samo kryterium mówi teraz coś nowego.** Po poprawce reszta nadal jest
-płaska, przy \(1{,}64\cdot10^{-6}\). Czyli **brakuje jeszcze czegoś** — to nie
-jest błąd integratora. Nie jest to też próg Darwin-vs-retardacja, bo ten przy
-\(\beta=0{,}025\)–\(0{,}05\) sondy leży na \(6\cdot10^{-5}\)–\(5\cdot10^{-4}\),
-czyli dwa rzędy wyżej. Otwarte.
+**I to samo kryterium mówi coś nowego** — ale wersja, którą tu najpierw
+zapisałem, wymagała trzech poprawek.
+
+*Reszta jest rozłożona na dwa człony, których sumowanie zaciera oba.*
+`rawEnergyResidual` dodaje energię **wypromieniowaną** do zmiany energii
+mechanicznej. Przy modelu `disabled` żadna siła tego strumienia z mechaniki nie
+zabiera, więc dodawanie go nie testuje żadnego bilansu — częściowo znosi dryf
+mechaniczny i sprawia, że reszta wygląda na **mniejszą**, niż dryf naprawdę
+jest:
+
+```
+dE_mech/|E| = -2.4840e-06        <- to jest wielkosc fizyczna
+E_rad/|E|   = +8.4112e-07        <- strumien, nieodejmowany
+suma        = -1.6429e-06        <- to bylo raportowane
+```
+
+Poprawna liczba to więc \(\mathbf{2{,}48\cdot10^{-6}}\), nie
+\(1{,}64\cdot10^{-6}\).
+
+*Ale wniosek się broni, i to na czystszej wielkości.* Rafinacja zastosowana do
+samego \(dE_{\rm mech}\): pełny krok \(-2{,}48401\cdot10^{-6}\), pół kroku
+\(-2{,}48508\cdot10^{-6}\), stosunek \(0{,}9996\) — **płaskie**. Energia
+mechaniczna spada przy **wyłączonej** reakcji, gdzie powinna być zachowana
+dokładnie, i nie znika to przy zagęszczeniu siatki. Niezbilansowanie jest
+realne.
+
+*Wykluczenie Darwina było nieprawidłowe logicznie.* Napisałem, że to „nie jest
+próg Darwin-vs-retardacja, bo ten leży dwa rzędy wyżej". Jeśli jakiś próg leży
+**wyżej**, to bycie pod nim go nie wyklucza — znaczy tylko, że nie działa. A
+sonda **całkuje siły retardowane** (Liénard-Wiechert) przeciwko księdze energii
+rzędu **Darwina**, więc ta niezgodność jest tu wręcz kandydatem wiodącym, nie
+wykluczonym.
+
+*Próba potwierdzenia jej skalowaniem po \(\beta\) jest zafałszowana przez
+konstrukcję sondy.* Zmiana prędkości początkowej zmienia całą trajektorię, a
+nie samo \(\beta\); zmierzone \(dE_{\rm mech}\) rośnie, a potem maleje
+(\(3{,}4\cdot10^{-7}\to2{,}5\cdot10^{-6}\to2{,}3\cdot10^{-6}\to
+1{,}7\cdot10^{-6}\) dla \(\beta_{\rm rel}=0{,}025\)–\(0{,}2\)), więc żadnego
+wykładnika z tego nie odczytam.
+
+Otwarte pozostaje więc coś węższego, niż napisałem: **kandydat wiodący
+(Darwin wobec retardacji) jest niesprawdzony**, a nie wykluczony, i sonda w
+obecnej postaci nie umie go sprawdzić.
+
+*Wdrożone:* oba człony są teraz raportowane osobno obok reszty, więc jej skład
+nie jest już ukryty za sumą.
 
 *Wdrożone:* iloraz rafinacji jest teraz **stale raportowany** obok reszty, z
 opisem, jak go czytać. Nie jako bramka — bramka dziś by zawiodła, a wypuszczenie
