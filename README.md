@@ -6436,36 +6436,64 @@ fizyczna (`scale=1`), osiem orbit:
 | \([0{,}3;30]\) | \(64\) | \(1{,}28\cdot10^{-5}\) | \(1{,}09\cdot10^{-8}\) | \(+1180\) |
 | \([0{,}3;30]\) | \(256\) | \(-6{,}90\cdot10^{-6}\) | \(1{,}19\cdot10^{-8}\) | \(-578\) |
 
-To odwraca dotychczasową diagnozę. Mechanizm **nie jest za słaby** — wymiana
-mocy z polem jest o dwa do trzech rzędów **większa** od tego, co orbita
-promieniuje, i to również w wąskim paśmie rezonansowym \([0{,}9;1{,}1]\), gdzie
-obcięcie nie ma jak zaszkodzić. Szukana równowaga jest więc różnicą dwóch
-wielkości \(10^2\)–\(10^3\) razy większych od reszty, której się szuka.
+Te liczby są jednak **fluktuacją, nie absorpcją systematyczną**, i to trzeba
+powiedzieć od razu, bo pierwsza wersja tego akapitu odczytała je odwrotnie.
+Rozstrzyga skalowanie po amplitudzie pola: część fluktuacyjna pracy jest
+**liniowa** w polu (prędkość jest w pierwszym przybliżeniu niezaburzona), a
+człon systematyczny — ten, który wchodzi do bilansu SED — pochodzi z korelacji
+pola z prędkością, którą samo wywołało, więc jest **kwadratowy**. Zmierzone,
+pasmo \([0{,}9;1{,}1]\), \(8\) ziaren:
 
-Znak nie jest przy tym ustalony: zmienia się z pasmem i z liczbą modów, a
-wartość przy \(64\) i \(256\) modach różni się o czynnik \(2\)–\(5\), czasem
-z odwróceniem znaku. To nie jest niedopróbkowanie — to sygnatura wielkości
-zdominowanej przez fluktuację. Sprawdzone wprost, pasmo \([0{,}9;1{,}1]\),
-\(64\) mody, cztery ziarna:
+| skala | średnia \(P_{\rm pochł}\) | SD | nachylenie średniej | \(r_{\rm końc}/r_0\) |
+|---|---|---|---|---|
+| \(1\) | \(-2{,}181\cdot10^{-6}\) | \(1{,}909\cdot10^{-6}\) | — | \(0{,}9951\) |
+| \(2\) | \(-4{,}381\cdot10^{-6}\) | \(3{,}900\cdot10^{-6}\) | \(1{,}006\) | \(0{,}9904\) |
+| \(4\) | \(-8{,}992\cdot10^{-6}\) | \(8{,}223\cdot10^{-6}\) | \(1{,}037\) | \(0{,}9809\) |
+| \(8\) | \(-1{,}890\cdot10^{-5}\) | \(1{,}874\cdot10^{-5}\) | \(1{,}071\) | \(0{,}9606\) |
 
-| orbity | \(|P_{\rm pochł}|/P_{\rm wypr}\) (ziarno \(42\)) | rozrzut po ziarnach |
-|---|---|---|
-| \(2\) | \(382\) | \(538\) |
-| \(8\) | \(77\) | \(118\) |
-| \(32\) | \(216\) | \(109\) |
-| \(128\) | \(66\) | \(75\) |
+Nachylenie \(1{,}0\), nie \(2\). To, co wyżej wygląda na „średnią", jest jedną
+realizacją przemnożoną przez amplitudę — te same ziarna dają to samo pole przy
+każdej skali. Stąd też bierze się rzekoma niestabilność znaku między pasmami:
+to własność próbki, nie fizyki.
 
-Pojedyncza realizacja błądzi bez trendu; **rozrzut po ziarnach spada jak
-\(N^{-0{,}47}\)** (\(538\to75\) przy \(64\)-krotnym wydłużeniu okna; wykładnik
-\(-\tfrac12\) dawałby \(67\)). To jest błądzenie losowe, a średnia po
-\(128\) orbitach wciąż nie ustaliła nawet **znaku**.
+*Wyodrębnienie członu systematycznego.* Dla ustalonej realizacji część liniowa
+jest deterministyczna, więc da się ją usunąć **tożsamościowo**: przesunięcie
+faz wszystkich modów o \(\pi\) neguje pole dokładnie, a w sumie
+\(P_{\rm pochł}(+\mathbf F)+P_{\rm pochł}(-\mathbf F)=2b\,s^2\) znikają
+wszystkie rzędy nieparzyste. Kasowanie działa (redukcja o czynnik \(\approx7{,}5\)
+przy \(s=2\)). Wynik na \(16\) ziarnach, w jednostkach mocy promieniowanej:
 
-Stąd realny koszt, i nie jest nim odcięcie pasma. Zejście rozrzutu do rzędu
-mocy promieniowanej wymagałoby \(\approx10^6\) orbit, a rozstrzygnięcie
-równowagi na poziomie procenta — \(\approx10^9\)–\(10^{10}\). Dla porównania
-cały kolaps to rząd \(10^5\)–\(10^6\) orbit. Ekstrapolacja z czterech ziaren
-jest zgrubna, ale rząd wielkości nie zależy od jej dokładności: **wąskim
-gardłem jest okno uśredniania, nie górna krawędź pasma.**
+```
+średnia   -2,98   SEM 1,61
+mediana   -0,36
+średnia ucinana 25%   -1,29
+zakres    -22,54 .. +2,34      ujemnych 9 z 16
+```
+
+Niezależne dopasowanie \(P=as+bs^2\) na pięciu amplitudach i \(10\) ziarnach
+daje zgodne \(-3{,}61\pm1{,}84\).
+
+**Co z tego wynika, a co nie.** Wynika **rząd wielkości**: człon systematyczny
+jest tego samego rzędu co moc promieniowana, \(|b|\sim P_{\rm wypr}\). To jest
+właśnie reżim „delikatnego skasowania" — teraz z liczbą, a nie jako
+przypuszczenie. **Nie wynika** ani znak, ani wartość: obie niezależne oceny
+leżą \(\approx1{,}9\sigma\) od zera, a mediana i średnia różnią się
+ośmiokrotnie, więc rozkład jest ciężkoogonowy i zdominowany przez dwa
+odstające ziarna. Doprowadzenie SEM poniżej \(0{,}5\,P_{\rm wypr}\)
+wymagałoby \(\approx165\) ziaren przy założeniu gaussowskim, którego ten ogon
+nie spełnia.
+
+> **Sprostowanie mojego własnego wniosku.** Zapisałem tu wcześniej, że „wąskim
+> gardłem jest okno uśredniania, **nie** górna krawędź pasma". To skleja dwa
+> pytania o różnych odpowiedziach. Krawędź pasma decyduje o **wyniku** — trend
+> \(43{,}0\to152{,}5\) ps jest systematyczny i monotoniczny. Okno uśredniania
+> decyduje o **mierzalności** warunku równowagi. Drugie zdanie się broni,
+> przeczenie w pierwszym było błędne.
+
+Uczciwy stan rzeczy jest więc taki: **ta sekcja nie zmierzyła warunku
+równowagi SED i przy tym nakładzie go nie zmierzy** — ustaliła natomiast, że
+absorpcja systematyczna i strata promienista są w rezonansie tego samego
+rzędu. To nie jest to samo co wykazanie, że równowagi nie ma.
 
 Werdykt sekcji zostaje bez zmian — ucieczka orbity przy szerokich pasmach jest
 zmierzona i realna, a pięć prób kończących się `trajectory: FAIL` na trzech
