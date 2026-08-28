@@ -7028,6 +7028,62 @@ zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), 
 progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
 mylić.
 
+#### Czy ostrze noża jest efektem dipol-dipol? Nie — zmierzone i wykluczone
+
+Podejrzenie było trafne co do miejsca: wniosek „para i ortho nie różnią się"
+ustalono dla **budżetu energii**, a ostrze noża siedzi w **regule stopu**,
+gdzie człon dipolowy wchodzi przez `dipoleAwarePeriapsis` i przy promieniu
+terminalnym jest wart dziesiątki procent członu kulombowskiego, nie
+\(10^{-5}\).
+
+Konfiguracja nadaje się do tego idealnie: prędkości losują się **przed**
+dipolami, więc para i ortho przy tym samym ziarnie mają identyczny początkowy
+\((E,L)\) i różni je wyłącznie kąt wzajemny momentów. Sparowane, 40 przebiegów
+na ziarno:
+
+| ziarno | para: 2/3 fotony | ortho: 2/3 fotony | mediana PLC para | ortho |
+|---|---|---|---|---|
+| 42 | 11 / 25 | 11 / 25 | 66,1931 | 66,1933 |
+| 7 | 7 / 30 | 7 / 30 | 48,6899 | 48,6841 |
+| 99 | 8 / 26 | 8 / 26 | 57,5085 | 57,5085 |
+
+Trajektoria po trajektorii, na 36 par ukończonych w obu konfiguracjach:
+
+```
+zmiana liczby fotonow:      0
+|dPLC/PLC|:  srednia 3.3e-04,  max 2.3e-03
+```
+
+*Kontrola przeszła* — porównanie nie jest puste: człon dipolowy ma przeciwne
+znaki, \(+0{,}310\) keV dla para i \(-0{,}337\) keV dla ortho, przy wiązaniu
+terminalnym \(1{,}45\) keV, czyli **21%**. Konfiguracje różnią się mocno, a
+ostrze i tak się nie rusza.
+
+*Dlaczego tak mało.* To są **dwie różne wielkości**, i mylenie ich było moim
+własnym błędem w postawieniu hipotezy. Te \(\pm0{,}31\) keV to wartość
+**chwilowa**, dodawana do niezmiennika anihilacji \(W\). Periapsis czyta
+wartość **uśrednioną azymutalnie** — tę, której resztę zmierzono w tej samej
+sesji jako \(-5{,}07\pm3{,}33\) eV po zmianie wykładnika regularizacji z 6 na
+12. Pięć eV wobec \(1450\) eV wiązania to \(0{,}35\%\), czyli rząd
+zmierzonego przesunięcia PLC. Poprawka regularizacji zamyka więc sprawę także
+tutaj.
+
+*Ile mogłaby dać, gdyby dawała.* Przesunięcie \(\le0{,}23\%\) przerzuci przez
+próg tylko trajektorię, która i tak ląduje w obrębie \(0{,}23\%\) od niego,
+czyli przy \(\text{PLC}\in[149{,}65,\,150]\). Takie się zdarzają (zmierzone
+maksima 149,677 i 149,98), ale to pasmo o szerokości \(0{,}35\) w zakresie
+\(122\)–\(150\) populacji dwufotonowej, więc rzędu **1 na 250 trajektorii**.
+Dla porównania: zmiana kwantu przesunęła medianę o 45% i liczbę fotonów z 21 na
+29, czyli ruszyła stan po drugim fotonie o \(O(1)\), nie o dwie dziesiąte
+procenta.
+
+**Wniosek.** Ostrze noża jest własnością **ziarnistości emisji**, a nie kanału
+rozpadu. Różnica dipolowa może je przerzucić, ale w skali \(10^{-3}\), i nie
+może być mechanizmem stojącym za 45%. Wniosek „różnica kanałów nie wchodzi
+przez budżet energetyczny" rozszerza się więc na regułę stopu — tym razem
+zmierzony tam, gdzie człon dipolowy faktycznie jest duży, a nie tam, gdzie jest
+zaniedbywalny.
+
 #### Warunek początkowy wobec drabiny Bohra: dwa poziomy, jeden punkt zgodności
 
 Podorbitalny start to konwencja SED/Bohra, więc uzgodnienie go z drabiną jest
