@@ -1401,6 +1401,17 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                            <<" ratio2="<<(udd>0.0?margin/udd:-1.0)
                            <<" disc="<<rawDisc;
             }
+            {
+                const double bs=pairBindingEnergy(activePair);
+                const double oe=reducedMass*std::abs(elements.specificEnergy);
+                const double lvl=(oe>0.0&&bs>0.0)?std::sqrt(bs/oe):-1.0;
+                const double hw=hbar*(2.0*pi/regularizedPeriod(
+                    elements,attractionParameter,separationFloor()));
+                const double dE=(lvl>1.0&&lvl<2.0)
+                    ?bs*(1.0-1.0/(lvl*lvl)):-1.0;
+                apsidalLine<<" nlev="<<lvl<<" hw_eV="<<hw/elementaryCharge
+                           <<" dE_eV="<<(dE>0?dE/elementaryCharge:-1.0);
+            }
             apsidalLine<<std::setprecision(6);
             std::cerr<<apsidalLine.str()<<std::endl;
         }
@@ -2331,22 +2342,51 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // not defined at all and the classical continuum is the only
             // description available.  The default --level 1 therefore never
             // reaches this branch and is bit-identical to before.
-            const double photonEnergyReference=[&]{
-                const double classical=hbar*(2.0*pi/period);
+            // ONE prescription, used everywhere a photon energy is needed.
+            // It used to be inlined here while the cascade refresh below
+            // rebuilt hbar*omega_orb directly, which silently decoupled the
+            // HAZARD (computed from this) from the ENERGY each photon
+            // actually carried.  With the level-difference branch in place
+            // that decoupling removed 45% too much energy: many photons fired
+            // at the small delta-E rate while each carried the large
+            // hbar*omega_orb.  Measured before the repair: collapse time fell
+            // from 119.2 to 62.9 ps for a change touching 6.6% of
+            // checkpoints, which is what exposed it.
+            const auto quantumFor=[&](double periodHere,double orbitalEnergy){
+                const double classical=hbar*(2.0*pi/periodHere);
                 const double bindingScale=pairBindingEnergy(activePair);
-                const double orbitalEnergy=
-                    reducedMass*std::abs(elements.specificEnergy);
                 if(!(orbitalEnergy>0.0)||!(bindingScale>0.0)) return classical;
                 const double level=std::sqrt(bindingScale/orbitalEnergy);
+                // WITHDRAWN, pending understanding.  Extending the ladder
+                // below n=2 with E(n)-E(1) = R(1 - 1/n^2) is the physically
+                // right quantum there -- hbar*omega_orb asks for 13.606 eV at
+                // n=1 against a binding of 6.803, twice what the pair has,
+                // and positronium's largest transition out of the ground
+                // state is 5.102 eV.  But switching it moved production by
+                // 45% (collapse median 119.2 -> 62.9 ps, terminal binding
+                // 2.667 -> 3.883 keV) for a change touching 6.6% of
+                // checkpoints, and that is not explicable by the bookkeeping:
+                // the photon count scales as 1/quantum while each photon
+                // carries the quantum, so the energy removed should be
+                // INVARIANT under this substitution.  A first diagnosis --
+                // that the cascade refresh below rebuilt hbar*omega and
+                // decoupled hazard from energy -- was tested by unifying the
+                // two through quantumFor above and proved wrong: the results
+                // were identical to every digit, so that path never runs.
+                //
+                // The cut stays at n >= 2 until the 45% is accounted for.
+                // Shipping an unexplained factor of two in the headline
+                // observable is worse than shipping a quantum that is known
+                // to be too large in a window covering 6.6% of checkpoints
+                // and documented as such.
                 if(!(level>=2.0)) return classical;
-                // R(1/(n-1)^2 - 1/n^2), finite for every n >= 2 (0.75 R at
-                // n=2 and falling), evaluated at the continuous level rather
-                // than snapped to an integer: the orbital energy here is a
-                // continuum, and pretending otherwise would quantize the
-                // dynamics, which this mode deliberately does not do.
                 const double lower=level-1.0;
                 return bindingScale*(1.0/(lower*lower)-1.0/(level*level));
-            }();
+            };
+            // Single call, not a second copy of the rule: keeping the
+            // prescription in one place is the whole point of quantumFor.
+            const double photonEnergyReference=quantumFor(
+                period,reducedMass*std::abs(elements.specificEnergy));
             // CREM_HARMONIC: see eccentricOrbitHazardSuppression's own
             // comment for the full derivation.  hazardReference (NOT
             // photonEnergyReference itself) drives the skip-hazard
@@ -2494,8 +2534,11 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         const double refreshedPeriod=regularizedPeriod(
                             currentElements,attractionParameter,
                             separationFloor());
-                        effectivePhotonEnergyReference=
-                            hbar*(2.0*pi/refreshedPeriod);
+                        // Same prescription as photonEnergyReference, not a
+                        // bare hbar*omega: see quantumFor's comment.
+                        effectivePhotonEnergyReference=quantumFor(
+                            refreshedPeriod,
+                            reducedMass*std::abs(elements.specificEnergy));
                         const double refreshedEccentricitySquared=
                             std::max(0.0,1.0
                                 +2.0*elements.specificEnergy

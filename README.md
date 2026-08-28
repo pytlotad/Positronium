@@ -6884,6 +6884,61 @@ dipolowy jest odpychający na tyle, że żaden promień poniżej bieżącej orbi
 jest dostępny, para **zatrzymuje się** i zwracany jest promień zatrzymania.
 Wcześniej takie trajektorie ogłaszano jako „dotarły do bariery".
 
+#### Kwant emisji: gdzie jest sztuczny i dlaczego poprawka została wycofana
+
+`ħω_orb` jest prescription **korespondencyjną**, ważną asymptotycznie dla
+dużych \(n\), gdzie \(\Delta E(n\to n{-}1)\to2R/n^3=\hbar\omega_{\rm orb}\).
+Przy \(n=1\) żąda \(13{,}606\) eV wobec wiązania \(6{,}803\) eV —
+**dwukrotnie więcej, niż para ma z czego zapłacić** — a największe rzeczywiste
+przejście ze stanu podstawowego to \(1S\)–\(2S=5{,}102\) eV.
+
+*Zasięg, zmierzony:* gałąź różnicy poziomów istniejąca w kodzie odcina się na
+\(n\ge2\) i w produkcji **nigdy nie jest wykonywana** (\(0{,}0\%\)
+checkpointów; służy przebiegom `--level`). Rozkład:
+
+| zakres | udział | \(\hbar\omega/\Delta E\) |
+|---|---|---|
+| \(n\ge2\) | \(0{,}0\%\) | — |
+| \(1\le n<2\) | \(6{,}6\%\) | mediana \(34\), do \(129\) |
+| \(n<1\) | \(\mathbf{93{,}4\%}\) | drabina nie ma stanów |
+
+*Poprawka, którą znam i której nie wdrożyłem.* W oknie \(1\le n<2\) jedynym
+stanem końcowym jest \(n=1\), więc kwant to \(E(n)-E(1)=R(1-1/n^2)\) —
+ograniczony przez \(R\), a więc zawsze wykonalny, i ciągły z gałęzią wyższą
+(obie dają \(0{,}75R=5{,}102\) eV przy \(n=2\)). Naiwne przesunięcie progu
+istniejącego wzoru **pogorszyłoby sprawę**: \(R(1/(n-1)^2-1/n^2)\) daje
+\(3{,}56R\) już przy \(n=1{,}5\).
+
+**Wycofana, bo skutek jest niewytłumaczony.** Podstawienie przesunęło produkcję
+o \(45\%\) (mediana \(119{,}2\to62{,}9\) ps, wiązanie terminalne
+\(2{,}667\to3{,}883\) keV) przy zmianie dotykającej \(6{,}6\%\)
+checkpointów. Rachunek mówi, że tak być nie może: liczba fotonów skaluje się
+jak \(1/\hbar\omega\), a każdy niesie \(\hbar\omega\), więc **energia
+usunięta jest niezmiennicza** względem tego podstawienia. Jedno z dwóch jest
+fałszywe i nie ustalono które.
+
+Pierwsza hipoteza — że odświeżanie kaskady odbudowuje `hbar*omega_orb` i
+rozspójnia hazard z energią — została **obalona pomiarem**: po ujednoliceniu
+obu ścieżek wynik wyszedł identyczny co do każdej cyfry, więc ta gałąź nigdy
+się nie wykonuje.
+
+*Decyzja.* Cięcie zostaje na \(n\ge2\). Niewytłumaczony czynnik dwa w głównej
+obserwabli jest gorszy niż kwant znany jako za duży w oknie obejmującym
+\(6{,}6\%\) checkpointów i udokumentowany jako taki. Wycofanie przywraca bazę
+w granicach szumu (RMST \(0{,}07\sigma\), średnia \(0{,}02\sigma\)).
+
+*Co zostało naprawione mimo to.* Reguła istniała w **dwóch** kopiach — jawnej i
+odbudowywanej w kaskadzie — i to ten sam wzorzec, który tego samego dnia
+wyprodukował już jeden błąd produkcyjny (trzy ścieżki aktualizujące elementy, z
+których jedna nie miała partnera dla momentu pędu). Obie kopie zastąpiono
+jednym `quantumFor`.
+
+*Gdzie naprawdę leży problem.* \(93{,}4\%\) kolapsu przebiega poniżej
+\(n=1\), gdzie drabina nie ma stanów, więc i różnicy poziomów do podstawienia.
+Sztuczność kwantu jest **objawem** przebywania poza dziedziną drabiny, nie jej
+przyczyną — i to samo ograniczenie atakuje z drugiej strony
+`--ground-state-floor`, nie poprawiając kwantu, tylko nie wpuszczając tam pary.
+
 #### Progi energetyczne CREM wobec obserwowanych, i skąd bierze się \(a_{Ps}\)
 
 | próg | CREM | obserwacja | status |
