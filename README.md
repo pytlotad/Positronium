@@ -6604,16 +6604,77 @@ dowodzi:
    więc przycinany do odległości od podłogi — ta sama reguła, którą plik
    stosuje już dla \(n\ge2\).
 
-*Czego to kosztuje.* Obserwabla czasu kolapsu **przestaje istnieć**: para
-nigdy nie dociera do bariery Comptona, więc wszystkie trajektorie są
-cenzurowane i program sygnalizuje to kodem wyjścia \(2\). Żeby wariant był
-użyteczny, a nie tylko poprawny, anihilacja musiałaby zostać przewiązana z
-bariery do stanu podstawowego — para siada na \(n=1\) i anihiluje stamtąd,
-jak prawdziwe pozytonium. Maszyneria jest (2γ/3γ, Ore-Powell), a skala
-zmierzona: hazard E1 w stanie podstawowym to \(186{,}74\) ps wobec
-\(\Gamma_{\rm para}\) odpowiadającego \(124{,}49\) ps, obie \(\sim\alpha^5\).
-To jednak nie poprawka, tylko zmiana tego, co model mierzy, i nie została
-tu podjęta.
+#### Przewiązanie anihilacji i kwantowanie momentu pędu
+
+Sama podłoga energetyczna zatrzymuje spiralę, ale zostawia parę bez punktu
+końcowego: nie docierając do bariery Comptona, nie anihiluje, więc wszystkie
+trajektorie są cenzurowane i program sygnalizuje to kodem \(2\). Anihilacja
+została więc przewiązana z bariery do stanu podstawowego.
+
+**Przewiązanie nie przemyca tempa anihilacji, bo model żadnego nie ma — ani
+przed, ani po.** W obu wariantach para anihiluje **deterministycznie** w
+chwili dotarcia; zmienia się dokąd dociera, nie czym jest to zdarzenie.
+Sprawdzone zostały trzy możliwe źródła tempa i żadne nie działa: kanał
+kontaktowy nie istnieje (klasyczna orbita Keplera z \(L\ne0\) nigdy nie
+osiąga \(r=0\), a z podłogą orbita jest dodatkowo zamrożona), hazard E1 w
+stanie podstawowym opisuje kwanty \(13{,}6\) eV a nie dwa po \(511\) keV,
+a \(\Gamma_{\rm para}\) z QED byłoby importem wyniku. Raportowany czas pod
+tą flagą jest więc **czasem kaskady**, a nie czasem życia anihilacyjnego.
+
+*Zysk, który zostaje niezależnie od reszty: linia anihilacyjna.* Bez
+przewiązania para anihilowała ze stanu \(375\times\) za głęboko związanego i
+linia wychodziła \(510{,}4\) keV — przesunięta o \(0{,}6\) keV. Po
+przewiązaniu:
+
+```
+annihilation W    1021,99 keV wobec 1022 keV      (-0,00067%)
+W/2 (linia 2g)     510,996 keV wobec 510,999 keV
+```
+
+czyli przesunięcie \(\approx3{,}4\) eV, dokładnie skala energii wiązania
+pozytonium. Poprzednia wartość była **\(160\times\) za duża** — nie dlatego,
+że kinematyka była zła, tylko dlatego, że punkt końcowy był zły.
+
+*Kwantowanie momentu pędu — dlaczego okazało się konieczne.* Z samą podłogą
+energetyczną zmierzone średnie wiązanie terminalne wyszło \(7{,}511\) eV
+wobec podłogi \(6{,}803\) eV, czyli \(10\%\) za głęboko. Powód: podłoga na
+ENERGII ustala półoś wielką i nie mówi nic o peryapsis, a orbita mimośrodowa
+przy \(a=a_{Ps}\) ma peryapsis \(a(1-e)\), które dla dużego \(e\) sięga
+bariery — i część trajektorii kończyła tam.
+
+Zamyka to Bohr-Sommerfeld: azymutalna liczba kwantowa biegnie \(k=1..n\), więc
+\(n=1\) dopuszcza wyłącznie \(k=1\), czyli \(L=\hbar\) i mimośród **zero**.
+Podłoga \(L\ge\hbar\) czyni ze stanu podstawowego orbitę kołową o peryapsis
+równym \(a_{Ps}\), dla której bariera jest nieosiągalna. Zmierzone:
+
+| | podłoga na E | + podłoga na L |
+|---|---|---|
+| promień terminalny | \(95\,859\) fm \((0{,}906\,a_{Ps})\) | \(105\,835\) fm \(=a_{Ps}\) |
+| wiązanie terminalne | \(7{,}511\) eV | \(6{,}80285\) eV \(=E_{gs}\) |
+
+Oba trafione co do cyfry, kanał barierowy zamknięty.
+
+*Czas kaskady.* Przy domyślnym seedingu mediana wynosi \(0\) ps i **jest to
+poprawne**: pasmo startowe jest wyśrodkowane na \(a_{Ps}\), więc połowa par
+rodzi się w stanie podstawowym i nie ma kaskady do przejścia. (Seeding
+przepuszczono przez obie klamry, żeby para wylosowana *poniżej* podłogi
+startowała na niej, a nie wewnątrz niej; startowania *na* podłodze to nie
+zmienia i zmienić nie może.) Kaskadę mierzy się dopiero od \(n\ge2\), i tam
+\(60\) trajektorii z \(n=2\) nie ukończyło jej w \(50\,832\) ps czasu
+symulacji — mamy więc **dolne ograniczenie \(>50\) ns**, nie wartość.
+
+Powolność jest zrozumiała i wynika z samej podłogi na \(L\): orbity
+mimośrodowe promieniują nieporównanie mocniej (czynnik
+\((1+e^2/2)/(1-e^2)^{5/2}\) rozbiega się przy \(e\to1\)), a kwantowanie
+\(L\) trzyma je okrągłymi. Kaskada zwalnia przez to o rząd wielkości wobec
+naiwnego oszacowania z prawa \(a^3\), które dawałoby \(\approx7{,}6\) ns.
+
+*Granica całego kierunku.* Model z obiema podłogami odtwarza stan podstawowy
+co do cyfry — ale odtwarza go, bo podano mu **dwie liczby**: \(a_{Ps}\) przez
+podłogę energetyczną i \(\hbar\) przez podłogę na momencie pędu. Zgodność
+promienia terminalnego z \(a_{Ps}\) jest **tautologiczna**. To, co model
+realnie wnosi, to droga do tego stanu i kinematyka wyjścia z niego — nie sam
+stan.
 
 Nie przetestowano wprost pasma sięgającego częstości Comptona
 `ω_C=m_ec²/ħ≈7,76·10²⁰` rad/s — przy startowej częstości orbitalnej

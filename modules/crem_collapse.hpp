@@ -221,6 +221,41 @@ inline double groundStateSpecificEnergy() {
 // machinery entirely, and with only the hazard gated a trajectory sank to
 // 0.84 a_Ps -- 19% below the floor -- while another stopped correctly at
 // 0.998.  Clamping at every write closes that second channel.
+// The angular-momentum half of the same floor, and the reason the energy
+// floor alone is not enough.
+//
+// Measured with only the energy clamped: the mean terminal binding came out
+// 7.511 eV against the 6.803 eV floor, i.e. 10% too deep, because a floor on
+// the ENERGY fixes the semi-major axis and says nothing about the periapsis.
+// An eccentric orbit sitting at a = a_Ps still has periapsis a(1-e), which
+// for large e reaches the Compton barrier, so those trajectories terminated
+// there rather than at the ground state.
+//
+// Bohr-Sommerfeld closes exactly that: the azimuthal quantum number runs
+// 1..n, so n=1 admits only k=1, which is L = hbar and eccentricity ZERO.
+// Flooring L at one quantum therefore makes the ground state a genuine
+// circular orbit at a_Ps, whose periapsis is a_Ps and which cannot reach the
+// barrier at all.  k=0, the radial fall through the origin, is excluded in
+// Bohr-Sommerfeld for the same reason it has to be excluded here.
+//
+// The floor is global rather than applied only at n=1: k >= 1 holds for every
+// bound state, and at shallower energies L = hbar is just the eccentric k=1
+// orbit, which is a legitimate state rather than a clamped artefact.
+//
+// Like the energy floor, this is IMPORTED, not derived.  It is a second
+// quantum fact of the same kind, and it earns the same caveat: the model ends
+// on a circular a_Ps orbit because it was told to, not because its dynamics
+// found one.
+inline double groundStateSpecificAngularMomentum() {
+    return hbar/reducedMassOf(activePair);
+}
+
+inline double clampAboveGroundStateAngularMomentum(double specific) {
+    return gGroundStateEmissionFloor
+        ?std::max(specific,groundStateSpecificAngularMomentum())
+        :specific;
+}
+
 inline double clampAboveGroundState(double specificEnergy) {
     return gGroundStateEmissionFloor
         ?std::max(specificEnergy,groundStateSpecificEnergy())
@@ -851,8 +886,16 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     if(seedRun.frames.empty()||!(seedRun.initial.relativeEnergy<0.0))
         return result;
 
-    OsculatingElements elements{seedRun.initial.relativeEnergy/reducedMass,
-        seedRun.initial.orbitalAngularMomentum/reducedMass};
+    // Seeded through the same floors, so a trajectory sampled below either
+    // one starts ON the ground state rather than inside it.  Without this the
+    // sampling band, which is centred on a_Ps, drops roughly half the
+    // population below the floor at t=0 and they terminate immediately: the
+    // measured Kaplan-Meier median came out 0 ps for exactly that reason.
+    OsculatingElements elements{
+        clampAboveGroundState(
+            seedRun.initial.relativeEnergy/reducedMass),
+        clampAboveGroundStateAngularMomentum(
+            seedRun.initial.orbitalAngularMomentum/reducedMass)};
     Vec3 firstDipole=seedRun.frames.front().firstDipole;
     Vec3 secondDipole=seedRun.frames.front().secondDipole;
     // Orbital plane orientation, kept ONLY for stochasticElectricDipole (see
@@ -1148,8 +1191,28 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         const double periodToLightCrossingRatio=(lightCrossingTime>0.0)
             ?period/lightCrossingTime:std::numeric_limits<double>::infinity();
         constexpr double minimumPeriodToLightCrossingRatio=150.0;
+        // THIRD stopping condition, only under --ground-state-floor: the
+        // pair has settled on n=1 and, with emission gated there, nothing
+        // further can happen to it dynamically.  Annihilation is retied from
+        // the Compton barrier to this point.
+        //
+        // The retie changes WHERE the pair annihilates, not the nature of
+        // the event: this model has never had an annihilation RATE.  Both
+        // with and without the floor the pair annihilates deterministically
+        // on arrival, so nothing is being smuggled in by stopping somewhere
+        // else.  What the model does NOT and cannot supply is the
+        // annihilation lifetime itself -- a classical Kepler orbit with
+        // L != 0 never reaches r = 0, and with the floor engaged the orbit
+        // is frozen, so there is no contact channel left to derive one from.
+        // The reported lifetime under this flag is therefore the CASCADE
+        // time to the ground state, which the model does compute, and not
+        // the annihilation lifetime, which it does not.
+        const bool settledOnGroundState=gGroundStateEmissionFloor
+            &&elements.specificEnergy
+                <=groundStateSpecificEnergy()*(1.0-1.0e-9);
         if(periapsis<=comptonBarrierRadius
-           ||periodToLightCrossingRatio<=minimumPeriodToLightCrossingRatio) {
+           ||periodToLightCrossingRatio<=minimumPeriodToLightCrossingRatio
+           ||settledOnGroundState) {
             result.lifetimeSeconds=simulatedTimeTotal;
             result.meanRadiatedPowerWatts=simulatedTimeTotal>0.0
                 ?radiatedEnergyTotal/simulatedTimeTotal
@@ -2688,7 +2751,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // below still runs regardless, so only direction is
                     // affected by this edge case.
                     elements.specificAngularMomentum=
-                        classicalAngularMomentumMagnitude;
+                        clampAboveGroundStateAngularMomentum(
+                            classicalAngularMomentumMagnitude);
                     radiatedEnergyTotal+=photonEnergy;
                     ++photonCountDebug;
                     if(std::getenv("CREM_DEBUG"))
