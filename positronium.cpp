@@ -1735,6 +1735,7 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     int reachedCutoffCount = 0;
     int observationLimitCount = 0;
     int noSecularLossCount = 0;
+    int preparedBelowFloorCount = 0;
     int calibrationFailureCount = 0;
     double censoredSimulatedTimeMax = 0.0;
     double censoredSimulatedTimeSum = 0.0;
@@ -1880,6 +1881,9 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                 // estimate that combines them.
                 survivalSample.push_back(
                     {estimate.calibrationSecondsLab*timeScale,false});
+                if(estimate.preparedBelowGroundState) {
+                    ++preparedBelowFloorCount; break;
+                }
                 if(estimate.secularLossAbsent) { ++noSecularLossCount; break; }
                 ++observationLimitCount;
                 censoredSimulatedTimeMax=std::max(
@@ -2167,6 +2171,18 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                  <<(censoredSimulatedTimeSum/observationLimitCount)*1.0e12
                  <<" ps, max "<<censoredSimulatedTimeMax*1.0e12<<" ps"
                     " (out of the classical estimate of a few ps to collapse).\n";
+    }
+    if(preparedBelowFloorCount>0) {
+        std::cout<<"Note: "<<preparedBelowFloorCount<<" of "<<runCount
+                 <<" trajectories were prepared AT OR BELOW the ground state, "
+                   "so --ground-state-floor declared them\n  settled before "
+                   "they moved and there is no cascade to time.  This is not a "
+                   "collapse of zero duration:\n  the pair starts at RADIUS "
+                   "a_Ps but with a sub-circular tangential speed, so its "
+                   "semi-major axis begins\n  below a_Ps and its Bohr level "
+                   "below n=1, which is where the floor says nothing exists.  "
+                   "Use --level 2\n  or higher, where the cascade down to n=1 "
+                   "is a real process this model can time.\n";
     }
     if(noSecularLossCount>0) {
         std::cout<<"Note: "<<noSecularLossCount<<" of "<<runCount

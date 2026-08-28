@@ -84,6 +84,26 @@ struct CremCollapseEstimate {
     // out of wall clock", and the report tells the user to raise a budget
     // that cannot possibly help.
     bool secularLossAbsent=false;
+    // PREPARED AT OR BELOW THE GROUND STATE, under --ground-state-floor.
+    // Not a collapse of zero duration, which is how it used to be reported:
+    // the pair never had a cascade to measure, because the floor's own
+    // settled test is already true on the state the run was handed.
+    //
+    // This is a genuine collision between two parts of the model.  Every
+    // trajectory is prepared at RADIUS a_Ps but with a SUB-CIRCULAR
+    // tangential speed, so its semi-major axis starts below a_Ps -- measured,
+    // a0/a_Ps runs 0.821-1.321 with the median at 0.94-1.02, i.e. the Bohr
+    // level n0 = sqrt(a0/a_Ps) runs 0.906-1.149 and ABOUT HALF of all
+    // trajectories begin below n=1.  The floor says nothing exists below
+    // n=1.  The two meet at t=0.
+    //
+    // Left unmarked this is silently destructive rather than merely wrong:
+    // such trajectories entered the survival sample as observed collapses at
+    // exactly 0 ps and dragged the Kaplan-Meier median to zero (measured,
+    // 17/20 and 23/23 of the completed trajectories on two seeds).  The
+    // meaningful configuration is an excited start, --level 2 or higher,
+    // where the cascade to n=1 is a real process the model can time.
+    bool preparedBelowGroundState=false;
     // Kepler period of the quasi-closed orbit.  The inspiral is not a closed
     // orbit: T shrinks as a^(3/2) while the pair sinks, so a single number
     // cannot describe it.  Both ends of the run are reported instead, plus
@@ -1565,6 +1585,18 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         const bool settledOnGroundState=gGroundStateEmissionFloor
             &&elements.specificEnergy
                 <=groundStateSpecificEnergy()*(1.0-1.0e-9);
+        // Before the stopping rule proper: a pair that is ALREADY settled
+        // when nothing has elapsed yet was prepared below the floor, and has
+        // no cascade to report.  Reported as an observation limit with its
+        // own flag rather than as a 0 ps collapse -- see
+        // preparedBelowGroundState for what the zeros did to the estimator.
+        if(settledOnGroundState&&!(simulatedTimeTotal>0.0)) {
+            result.calibrationOutcome=SimulationOutcome::ObservationLimit;
+            result.calibrationSeconds=0.0;
+            result.calibrationSecondsLab=0.0;
+            result.preparedBelowGroundState=true;
+            return result;
+        }
         if(periapsis<=comptonBarrierRadius
            ||periodToLightCrossingRatio<=minimumPeriodToLightCrossingRatio
            ||settledOnGroundState) {

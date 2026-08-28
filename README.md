@@ -7028,6 +7028,62 @@ zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), 
 progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
 mylić.
 
+#### Czy włączyć `--ground-state-floor`? Jeszcze nie — i dlaczego
+
+Sekcja o regule stopu daje mocny argument ZA: bez podłogi 77% kolapsów kończy
+zapas numeryczny, a stan terminalny jest niekontrolowanym przeskokiem. Z
+podłogą znika i jedno, i drugie. Zmierzone:
+
+```
+stopped by             0 Compton barrier, 0 retardation limit,
+                       20 ground-state floor (100%)
+terminal binding       0.00680285 keV     = alpha^2 m_e c^2 / 4, co do cyfry
+period/light-crossing  861.0 przy stopie, wobec progu 150
+```
+
+Model ani razu nie zbliża się do granicy własnej ważności, a stan końcowy jest
+deterministyczny i **fizyczny**, zamiast być własnością ziarnistości.
+
+**A mimo to flaga jest dziś zepsuta**, i to cicho. Mediana Kaplana–Meiera
+wychodzi **0 ps**, bo:
+
+| ziarno | ukończone | z czasem \(=0\) |
+|---|---|---|
+| 42 | 20 | **17** |
+| 7 | 23 | **23** |
+
+Przyczyna to zderzenie dwóch części modelu. Każda trajektoria startuje na
+*promieniu* \(a_{Ps}\), ale z **podorbitalną** prędkością styczną, więc jej
+półoś wielka zaczyna poniżej \(a_{Ps}\). Zmierzone: \(a_0/a_{Ps}\) biegnie
+\(0{,}821\)–\(1{,}321\) z medianą \(0{,}94\)–\(1{,}02\), czyli poziom
+Bohra \(n_0=\sqrt{a_0/a_{Ps}}\) biegnie \(0{,}906\)–\(1{,}149\) i **około
+połowa trajektorii zaczyna poniżej \(n=1\)**. Podłoga mówi, że poniżej
+\(n=1\) nic nie ma. Spotykają się w \(t=0\), podłoga ogłasza parę osiadłą,
+zanim ta ruszy — a taki przebieg wchodził do próby przeżycia jako
+zaobserwowany kolaps o długości zero i ściągał estymator do zera.
+
+To jest ta sama granica, co \(93{,}4\%\) checkpointów poniżej \(n=1\) z
+sekcji o kwancie emisji, tylko widziana w chwili startu.
+
+*Naprawione.* Para przygotowana na poziomie podłogi albo poniżej jest teraz
+oznaczana (`preparedBelowGroundState`), raportowana jako limit obserwacji z
+własnym komunikatem i **nie wchodzi do próby przeżycia**. Zamiast fałszywej
+mediany 0 ps przebieg mówi, co zaszło, i kieruje do `--level`.
+
+*Konfiguracja, która ma sens.* `--level 2 --ground-state-floor`: \(n_0\)
+wychodzi \(2{,}015\), zer nie ma, 100% stopów na stanie podstawowym,
+wiązanie terminalne \(6{,}80285\) eV. Kaskada do \(n=1\) jest wtedy realnym
+procesem, który model umie zmierzyć. **Koszt: \(\approx2002\) ps na kaskadę
+wobec \(\approx100\) ps** dla przebiegu ograniczonego barierą, czyli około
+dwudziestokrotnie dłużej — przy budżecie 15 s kończy 1 z 25, a przy
+`--level 3` żadna.
+
+*Warunki włączenia,* w tej kolejności: (1) uzgodnić warunek początkowy z
+definicją podłogi, żeby domyślny start nie leżał pod nią; (2) zbudżetować
+dwudziestokrotne spowolnienie, bo bez tego rozkład jest zdominowany przez
+cenzurę. Do tego czasu flaga zostaje eksperymentem — ale nie dlatego, że jest
+zła, tylko dlatego, że domyślny warunek początkowy jej przeczy.
+
 #### Podłoga przy \(r^*\): rozważona, zmierzona, odrzucona
 
 Po ustaleniu, że dolny szczebel drabiny to bariera przy
