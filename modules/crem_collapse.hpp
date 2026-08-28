@@ -1378,8 +1378,30 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                      <<" ratio="<<std::setprecision(9)<<apsidal
                      <<" eK="<<keplerEcc<<" eF="<<(ok?fullEcc:-1.0)
                      <<" TK="<<keplerPeriod<<" TF="<<(ok?fullPeriod:-1.0)
-                     <<" skip="<<orbitsToSkipPrevious
-                     <<std::setprecision(6);
+                     <<" skip="<<orbitsToSkipPrevious;
+            // Rozstrzygniecie luznej nitki: czy brak pasma radialnego bierze
+            // sie z tego, ze margines energii nad orbita kolowa (proporcjonalny
+            // do e^2) jest mniejszy niz sama perturbacja dipolowa.
+            {
+                const double Lspec=elements.specificAngularMomentum;
+                const double margin=0.5*attractionParameter*attractionParameter
+                    *keplerEcc*keplerEcc/(Lspec*Lspec);      // K^2 e^2 / 2L^2
+                const double rCirc=Lspec*Lspec/attractionParameter;
+                const double udd=std::abs(azimuthAveragedDipoleEnergy(
+                    rCirc,firstDipole,secondDipole,angularMomentumDirection))
+                    /reducedMass;
+                // Surowy dyskryminant PRZED klamra max(0,.) -- jesli jest
+                // ujemny, para (E,L) nie opisuje zadnej orbity keplerowskiej,
+                // bo L przekracza wartosc kolowa dla tego E.
+                const double rawDisc=1.0
+                    +2.0*elements.specificEnergy*Lspec*Lspec
+                        /(attractionParameter*attractionParameter);
+                apsidalLine<<" margin="<<margin*reducedMass
+                           <<" udd="<<udd*reducedMass
+                           <<" ratio2="<<(udd>0.0?margin/udd:-1.0)
+                           <<" disc="<<rawDisc;
+            }
+            apsidalLine<<std::setprecision(6);
             std::cerr<<apsidalLine.str()<<std::endl;
         }
         const State measurementState=osculatingPeriapsisState(
@@ -2018,8 +2040,90 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // -=, and matches the ReachedCutoff branch's use of the same
         // orbitalRadiatedEnergy field elsewhere in this function.
         if(isStochastic) {
+            // ANGULAR MOMENTUM MUST GO WITH IT.  This credit used to move the
+            // energy alone, and doing that repeatedly drives (E,L) off the
+            // physical sheet: lowering |E| at fixed L circularizes the orbit,
+            // and past the circular limit the Kepler discriminant
+            // 1 + 2 eps l^2/K^2 turns NEGATIVE -- L larger than the circular
+            // value for that energy, which describes no orbit at all.  The
+            // max(0,.) in eccentricitySquared then reported those as e = 0,
+            // so nothing downstream noticed.  Measured before this fix: the
+            // raw discriminant was <= 0 at 62% of checkpoints, median -7.0e-3
+            // and down to -7.0e-2 -- percent-level, not round-off.
+            //
+            // The photon path never had this problem, and its own comment
+            // says so ("(E,L) after this photon are consistent with each
+            // other by construction"); the deterministic bulk path pairs its
+            // energy jump with L *= energyGrowth^angularExponent.  Only this
+            // additive credit, added later to stop the measured orbit's loss
+            // being discarded, went in without its angular-momentum partner.
+            //
+            // Same law as the bulk path, so no new physics is introduced:
+            // k(e) = -(1-e^2)/(2+e^2) as the exponent on the energy ratio.
+            const double angularBefore=elements.specificAngularMomentum;
+            const double energyBefore=std::abs(elements.specificEnergy);
             elements.specificEnergy=clampAboveGroundState(
                 elements.specificEnergy+deltaEnergyPerOrbit);
+            const double energyAfter=std::abs(elements.specificEnergy);
+            // The angular momentum comes from the MEASURED far-zone flux, the
+            // same quadrature that supplies deltaEnergyPerOrbit, rather than
+            // from a Kepler law.  Both elements then follow from the
+            // electrodynamics of the orbit that was actually integrated.
+            //
+            // Not from realDelta - backgroundDelta, which is the other
+            // candidate and is zero by construction here: the stochastic model
+            // carries no continuous reaction force, so the measured orbit and
+            // its background are mechanically almost identical and their
+            // difference reads 2.5e-12 of L against a physical 1e-4 -- eight
+            // orders short.  The flux does not care whether a reaction force
+            // was applied, which is exactly why the ENERGY side already uses
+            // it.
+            //
+            // Cross-checked against the Kepler k(e) = -(1-e^2)/(2+e^2) law
+            // that stood here first: flux/law has median 1.0000 with the
+            // 10-90 percentile range 0.9923 to 1.0077, so the law was right
+            // to within 0.8% and the flux adds the retardation, Darwin and
+            // dipole content it omits.  The flux carries the M1 channel while
+            // orbitalRadiatedEnergy does not; that contamination is at most
+            // 9.3e-5 of the radiated angular momentum (measured at the
+            // terminal radius, 2.2e-15 at a_Ps), an order below the spread
+            // between the two routes.
+            const double fluxAngularLoss=
+                run.finalState.radiatedAngularMomentum.norm()/reducedMass;
+            if(std::isfinite(fluxAngularLoss)&&fluxAngularLoss>0.0
+               &&fluxAngularLoss<elements.specificAngularMomentum) {
+                elements.specificAngularMomentum-=fluxAngularLoss;
+            } else if(energyBefore>0.0&&energyAfter>0.0) {
+                // Fallback on the Kepler law when the flux is unavailable --
+                // it agrees to 0.8%, so this is a graceful degradation rather
+                // than a different model.
+                const double eSquared=std::max(0.0,1.0
+                    +2.0*(-energyBefore)*elements.specificAngularMomentum
+                        *elements.specificAngularMomentum
+                        /(attractionParameter*attractionParameter));
+                const double kOfE=-(1.0-eSquared)/(2.0+eSquared);
+                elements.specificAngularMomentum*=
+                    std::pow(energyAfter/energyBefore,kOfE);
+            }
+            if(std::getenv("CREM_APSIDAL")) {
+                const double lawDelta=elements.specificAngularMomentum
+                    -angularBefore;
+                std::ostringstream cmp;
+                // Strumien, nie roznica elementow: ta druga jest w trybie
+                // stochastycznym zerem z konstrukcji, bo mierzona orbita nie
+                // ma ciaglej sily reakcji.
+                const double fluxDelta=
+                    -run.finalState.radiatedAngularMomentum.norm()/reducedMass;
+                cmp<<"LCOMP measured="<<std::setprecision(9)
+                   <<deltaAngularMomentumPerOrbit
+                   <<" flux="<<fluxDelta
+                   <<" law="<<lawDelta
+                   <<" ratio="<<(lawDelta!=0.0
+                       ?deltaAngularMomentumPerOrbit/lawDelta:0.0)
+                   <<" L="<<elements.specificAngularMomentum
+                   <<std::setprecision(6);
+                std::cerr<<cmp.str()<<std::endl;
+            }
             radiatedEnergyTotal+=run.finalState.orbitalRadiatedEnergy;
         }
         // Measured orbital dissipation of this osculating orbit against the

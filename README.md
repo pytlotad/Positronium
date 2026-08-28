@@ -6884,6 +6884,76 @@ dipolowy jest odpychający na tyle, że żaden promień poniżej bieżącej orbi
 jest dostępny, para **zatrzymuje się** i zwracany jest promień zatrzymania.
 Wcześniej takie trajektorie ogłaszano jako „dotarły do bariery".
 
+#### Błąd: energia zabierana bez momentu pędu
+
+Znaleziony przy okazji badania punktów zwrotnych, i poważniejszy od pytania,
+które do niego doprowadziło.
+
+*Objaw.* Przy zamrożonych \((E,L)\) pełny potencjał nie dawał pasma radialnego
+dla \(62\%\) checkpointów. Wyglądało to na efekt dipolowy albo usterkę sondy;
+było jednym i drugim. Margines energii nad orbitą kołową wynosi
+\(\tfrac12K^2e^2/L^2\), a **we wszystkich** przypadkach bez pasma wychodził
+dokładnie zero — czyli \(e=0\) co do bitu, co bierze się z klamry
+\(\max(0,\cdot)\) w `eccentricitySquared`.
+
+*Przyczyna.* Surowy dyskryminant \(1+2\varepsilon l^2/K^2\) **przed** klamrą:
+
+| | \(n\) | \(\mathrm{disc}\le0\) | mediana | minimum |
+|---|---|---|---|---|
+| z pasmem | \(466\) | \(0{,}0\%\) | \(+2{,}03\cdot10^{-3}\) | \(+1{,}1\cdot10^{-16}\) |
+| bez pasma | \(770\) | \(\mathbf{99{,}0\%}\) | \(-7{,}03\cdot10^{-3}\) | \(-6{,}95\cdot10^{-2}\) |
+
+Ujemny dyskryminant znaczy \(L\) większe od wartości kołowej dla danego
+\(E\) — para nie opisuje **żadnej** orbity. Powód: ścieżka produkcyjna
+dopisywała stratę energii z mierzonej orbity **nie ruszając momentu pędu**.
+Obniżanie \(|E|\) przy stałym \(L\) uokrągla orbitę, a po przekroczeniu
+granicy kołowej dyskryminant przechodzi przez zero. Klamra raportowała takie
+stany jako orbity kołowe, więc nic tego nie widziało.
+
+Ścieżka fotonowa nigdy tego nie miała (jej komentarz stwierdza spójność „by
+construction"), a deterministyczna ścieżka masowa paruje skok energii z
+\(L\mathrel{*}=\)`energyGrowth`\(^{\text{angularExponent}}\). Tylko ten
+dodatkowy kredyt, dołożony później, poszedł bez partnera.
+
+*Naprawa: oba elementy z elektrodynamiki.* Moment pędu bierze się teraz z
+**tej samej kwadratury strumienia dalekiego pola**, z której idzie energia
+(`radiatedAngularMomentum` obok `orbitalRadiatedEnergy`), a nie z prawa
+Keplera.
+
+Pierwszy kandydat na „pomiar" był pułapką i warto to zapisać:
+`deltaAngularMomentumPerOrbit`, różnica przebiegu i tła, jest w trybie
+stochastycznym **zerem z konstrukcji** — ten model nie ma ciągłej siły
+reakcji, więc przebieg i tło są mechanicznie prawie identyczne. Zmierzone:
+\(2{,}5\cdot10^{-12}\) wobec fizycznych \(10^{-4}\), osiem rzędów za mało.
+Strumień jest odporny na tę pułapkę, bo nie zależy od tego, czy zastosowano
+siłę reakcji — i to jest powód, dla którego strona energetyczna od dawna z
+niego korzysta.
+
+*Walidacja krzyżowa.* Strumień wobec prawa \(k(e)=-(1-e^2)/(2+e^2)\), które
+stało tu jako pierwsza naprawa: iloraz ma **medianę \(1{,}0000\)** przy
+zakresie \(10\)–\(90\) percentyla \(0{,}9923\)–\(1{,}0077\). Prawo było więc
+trafne do \(0{,}8\%\), a strumień dokłada retardację, Darwina i dipol, których
+ono nie niesie. Prawo zostaje jako fallback przy niedostępnym strumieniu.
+
+*Skutek, zmierzony trójstronnie* (\(200\) zdarzeń, to samo ziarno):
+
+| | A: z błędem | B: prawo \(k(e)\) | C: strumień |
+|---|---|---|---|
+| średnia ukończonych | \(164{,}04\pm11{,}85\) ps | \(161{,}71\pm11{,}87\) | \(161{,}64\pm11{,}66\) |
+| promień terminalny | \(282{,}565\) fm | \(269{,}212\) fm | \(269{,}96\) fm |
+| wiązanie terminalne | \(2{,}548\) keV | \(2{,}674\) keV | \(2{,}667\) keV |
+
+\(A\to B\) jest istotne: promień terminalny \(-4{,}7\%\), wiązanie
+\(+5{,}0\%\). Błąd zawyżał więc promień końcowy i zaniżał wiązanie o \(5\%\),
+co przenosi się na niezmiennik anihilacyjny (\(\approx-126\) eV w \(W\),
+\(-63\) eV w linii). \(B\to C\) to \(0{,}28\%\) — różnica \(0{,}8\%\) na
+checkpoint **nie kumuluje się**.
+
+*Zastrzeżenie.* Strumień niesie kanał M1, którego `orbitalRadiatedEnergy` nie
+niesie. Zmierzone zanieczyszczenie: najwyżej \(9{,}3\cdot10^{-5}\) przy
+promieniu terminalnym, \(2{,}2\cdot10^{-15}\) przy \(a_{Ps}\) — rząd poniżej
+rozrzutu między obiema drogami, więc świadomie zaakceptowane.
+
 #### Czy warstwa harmonik, okresu i mimośrodu powinna przestać być keplerowska
 
 Poprawka peryapsis usunęła jedną niespójność i odsłoniła drugą: reguła
