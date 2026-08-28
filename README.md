@@ -2529,30 +2529,48 @@ całkowity czas spirali = 3,16e-11 s
 Czas życia spirali jest zdominowany przez obszar zewnętrzny —
 \(3{,}16\cdot10^{-11}\) s upływa już przy \(a\approx2\cdot10^{-11}\) m i dalej
 się praktycznie nie zmienia, podczas gdy szybki obrót zaczyna się cztery rzędy
-niżej. Sam obrót zależy jednak od wzajemnej orientacji obu momentów, więc
-pojedyncza konfiguracja nic nie rozstrzyga; uśrednione po \(96\) losowych
-parach orientacji, na siatce \(N=200\) punktów promienia (zbieżnej —
-patrz niżej):
+niżej.
 
-| | \(n\) | średni obrót [rad] | SD | SEM |
-|---|---|---|---|---|
-| para | \(28\) | \(2{,}60\cdot10^{-2}\) | \(2{,}46\cdot10^{-2}\) | \(4{,}7\cdot10^{-3}\) |
-| orto | \(68\) | \(2{,}21\cdot10^{-2}\) | \(2{,}32\cdot10^{-2}\) | \(2{,}8\cdot10^{-3}\) |
-| razem | \(96\) | \(2{,}33\cdot10^{-2}\) | \(2{,}36\cdot10^{-2}\) | \(2{,}4\cdot10^{-3}\) |
+> **Sprostowanie, dwukrotne — i drugie znosi pierwsze.** W tym miejscu stała
+> najpierw liczba \(5{,}24\cdot10^{-3}\) rad \(=0{,}30°\), potem —
+> po uśrednieniu \(\int\Omega_{\rm reakcji}\,dt\) po \(96\) losowych
+> parach orientacji — \(2{,}33\cdot10^{-2}\) rad \(=1{,}33°\). **Obie są
+> nieaktualne, bo zły był sam estymator, nie jego uśrednienie.**
+>
+> \(\int\Omega_{\rm reakcji}\,dt\) sumuje **moduł** chwilowej szybkości
+> obrotu, czyli milcząco zakłada dryf sekularny. Moment siły reakcji ma
+> jednak kierunek \(\propto\boldsymbol\mu\times\dddot{\mathbf m}_{\rm tot}\),
+> a \(\dddot{\mathbf m}_{\rm tot}\) obraca się razem z orbitą — obrót w
+> kolejnych częściach okresu znosi się, zostaje **oscylacja** o amplitudzie
+> \(\sim\Omega_{\rm reakcji}/\omega_{\rm orb}\), a nie narastanie
+> \(\Omega_{\rm reakcji}\cdot t\).
 
-czyli **\(1{,}33°\pm0{,}14°\)** przez cały kolaps. Różnica para–orto,
-\(3{,}9\cdot10^{-3}\) rad przy łącznym SEM \(5{,}4\cdot10^{-3}\), jest
-nieistotna.
+*Pomiar bezpośredni, zamiast całki.* Przebieg `stochastic` i przebieg
+`disabled` z tego samego stanu początkowego różnią się **wyłącznie** momentem
+siły M1 — dopóki nie padnie foton, trajektorie są identyczne co do bitu — więc
+\(|\Delta\hat{\boldsymbol\mu}|\) izoluje go czysto. Przy \(a_{Ps}/200\):
 
-> **Sprostowanie.** Pierwsza wersja tego akapitu podawała
-> \(5{,}24\cdot10^{-3}\) rad \(=0{,}30°\). Ta liczba pochodziła z **jednej**
-> konfiguracji momentów (\(\cos=+0{,}562\)) i nie jest reprezentatywna —
-> uśrednienie po orientacjach daje wartość \(4{,}4\) razy większą. Sama
-> całka po tej jednej orientacji jest zbieżna: dla \(N=36/100/300/800/2000\)
-> punktów wychodzi \(4{,}78/4{,}44/4{,}36/4{,}10/4{,}12\cdot10^{-3}\) rad,
-> a rozrzut do pierwotnie podanych \(5{,}24\) bierze się z innego szablonu
-> pochodnych (czynnik \(\approx1{,}7\), patrz Sonda 6). Zbieżność siatki nie
-> była więc problemem — problemem było uogólnienie z próbki wielkości jeden.
+| orbity | \(1\) | \(2\) | \(4\) | \(8\) | \(16\) |
+|---|---|---|---|---|---|
+| \(\|\Delta\hat{\boldsymbol\mu}\|\) | \(2{,}16\cdot10^{-6}\) | \(2{,}14\cdot10^{-6}\) | \(2{,}17\cdot10^{-6}\) | \(1{,}84\cdot10^{-6}\) | \(2{,}72\cdot10^{-6}\) |
+
+**Ograniczone, bez trendu liniowego** — szesnastokrotne wydłużenie czasu nie
+zwiększa efektu. To samo przy \(a_{Ps}/50\): \(3{,}02\cdot10^{-9}\) po
+dwóch orbitach i \(2{,}77\cdot10^{-9}\) po ośmiu. Rzędy zgadzają się z
+\(\Omega_{\rm reakcji}/\omega_{\rm orb}\) (\(\approx8\cdot10^{-10}\) przy
+\(a_{Ps}/50\)), a nie z \(\Omega_{\rm reakcji}\cdot t\), która byłaby o
+rzędy większa.
+
+Skala pominięcia wynosi więc \(\Omega_{\rm reakcji}/\omega_{\rm orb}\):
+\(4\cdot10^{-17}\) rad przy \(a_{Ps}\), \(2\cdot10^{-6}\) przy
+\(a_{Ps}/200\), a w najgorszym punkcie — przy promieniu terminalnym —
+\(\approx6\cdot10^{-5}\) rad, czyli \(0{,}003°\). Nie \(1{,}33°\).
+
+> Uwaga metodologiczna: liczby zbieżności siatki
+> (\(4{,}78/4{,}44/4{,}36/4{,}10/4{,}12\cdot10^{-3}\) dla
+> \(N=36/100/300/800/2000\)) były poprawne, i to właśnie czyniło je mylącymi
+> — zbieżna całka źle postawionej wielkości wygląda dokładnie tak samo jak
+> zbieżna całka dobrze postawionej.
 
 ### Luka implementacyjna wokół kanału M1 — rozbiór
 
@@ -2566,33 +2584,100 @@ luki („energia wychodzi przez kinematykę, a orientacja nie jest obciążana")
 był zbyt zgrubny i po rozbiorze na składniki okazał się mylący. Poniżej cztery
 aspekty, zmierzone osobno.
 
-**(a) Bilans energii — to NIE jest luka, a kierunek jest odwrotny do
-oczekiwanego.** Zmierzone na jednym okresie przy \(a_{Ps}/50\):
+**(a) Bilans energii — usterka realna, ale w innym miejscu, niż ją najpierw
+umiejscowiłem; poprawiona w kodzie.**
+
+Usterka: obie ciągłe studnie sektora M1 — moment siły reakcji i drenaż
+`dipoleConstraintEnergy` — były bramkowane **wyłącznie** dla
+`stochasticElectricDipole`. Tymczasem sektor ładunkowy od zawsze wyklucza
+**dwa** modele, `disabled` i `stochasticElectricDipole`, z komentarzem
+mówiącym wprost, że w `disabled` „nic nie ma ciągnąć orbity". A `disabled`
+to właśnie model, którym `crem_collapse.hpp` całkuje przebieg **tła**,
+odejmowany potem od przebiegu rzeczywistego.
+
+Skutki, zmierzone na jednym okresie przy \(a_{Ps}/50\) (przed poprawką):
 
 ```
                        tryb ciągły      tło (disabled)    tryb skwantowany
 dipoleConstraintEnergy  -4,81317e-27      -4,81336e-27       0,00000e+00
 ```
 
-W trybie ciągłym drenaż jest co do bitu równy strumieniowi M1
-(`radiatedEnergy-orbitalRadiatedEnergy` \(=4{,}8132\cdot10^{-27}\) J), a
-`dipoleConstraintEnergy` **wchodzi** do `conservativeParticleEnergy` — czyli
-do tej samej funkcji, której różnice `measuredDelta` podaje jako sekularny
-ubytek energii orbity. Ale przebieg **tła** liczony jest z
-`ChargeRadiationReactionModel::disabled`, a ta flaga bramki nie zwalnia, więc
-tło drenuje rezerwuar tak samo. Po odjęciu tła z energii M1 zostaje
-\(4{,}0\cdot10^{-5}\) jej wartości, a jej udział w odjętym \(\Delta E\) to
-\(5{,}9\cdot10^{-12}\).
+Tło drenowało ten sam rezerwuar, co przebieg, od którego je odejmowano, więc
+w modelach ciągłych studnia M1 kasowała samą siebie — przez odjęcie
+przechodziło \(4{,}0\cdot10^{-5}\) jej wartości. W trybie produkcyjnym
+(skwantowanym) było gorzej: tło niosło studnię, której przebieg rzeczywisty
+w ogóle nie miał, więc między fotonami oba przebiegi **nie były identyczne**,
+choć powinny być.
 
-Wniosek jest odwrotny do intuicji: to **tryb ciągły** gubi energię M1 dla
-orbity — kasuje ją w odejmowaniu tła — a tryb skwantowany jako jedyny
-pozwala jej realnie zacieśnić orbitę, przez hazard i foton. Na tej osi
-ścieżka produkcyjna jest bardziej, nie mniej, poprawna.
+Poprawka: bramkowanie **drenażu** objęło `disabled`, dokładnie jak w sektorze
+ładunkowym. Po niej tło ma \(0\), a przez odejmowanie przechodzi \(100\%\)
+energii M1.
 
-**(b) Reakcja na orientację — to jest właściwa luka.** Moment siły reakcji
-zostaje odrzucony, a w trybie ciągłym obraca momenty o \(1{,}33°\pm0{,}14°\)
-przez cały kolaps (tabela wyżej). To jedyny składnik, którego skwantowanie
-nie odtwarza żadną drogą.
+(Bramkowanie momentu siły **rozdzielono** od bramkowania drenażu — to
+poprawka (b) niżej. Przebieg skwantowany i jego tło nie są więc między
+fotonami identyczne co do bitu: przebieg rzeczywisty niesie moment reakcji
+M1, którego tło z definicji nie ma. Tak ma być — to sygnał fizyczny, a nie
+artefakt dyskretyzacji, i odejmowanie tła ma go zachować, nie skasować.)
+
+*Ile to zmienia w wynikach — niewiele, i warto powiedzieć dlaczego.*
+Prześledzenie ścieżki energii pokazuje, że rezerwuar i tak nie zasilał
+kolapsu:
+
+- pole `specificEnergy` z `measuredDelta` jest liczone, ale **celowo nieczytane**
+  (komentarz w `crem_collapse.hpp`: „ANGULAR MOMENTUM only, from here on");
+  tło jest odejmowane wyłącznie od momentu pędu;
+- sekularny ubytek energii to
+  `deltaEnergyPerOrbit = -finalState.orbitalRadiatedEnergy/reducedMass`, a
+  `orbitalRadiatedEnergy` jest z definicji strumieniem **bez M1**
+  (`radiatedEnergyIncrement-dipoleRadiatedEnergy`);
+- w ścieżce produkcyjnej nawet to nie jest używane: `lossPerOrbit` bierze
+  `expectedLossPerOrbit`, czyli analityczną moc Larmora **czystego E1**.
+
+Zostaje więc jedno wejście M1 do dynamiki: hazard wewnątrz **jednej**
+mierzonej orbity na checkpoint, gdzie `quantizedPower` sumuje E1, M1 i E2.
+Skip analityczny pokrywa do \(200000\) orbit na checkpoint i jest w całości
+E1-owy, a mierzona orbita niesie \(\sim5\cdot10^{-6}\) hazardu. Przy udziale
+M1 rzędu \(1{,}9\cdot10^{-3}\) daje to wpływ M1 na kolaps rzędu
+\(10^{-8}\) — poprawka jest więc naprawą spójności, nie liczb.
+
+> Przy okazji poprawiony nieaktualny komentarz w `state.hpp`, który nazywał
+> `orbitalRadiatedEnergy` „diagnostic-only: nothing currently reads it in
+> production". Czyta je `crem_collapse.hpp` i jest to **jedyny** produkcyjny
+> kanał energii sekularnej. Zdanie „M1 does not recoil the orbit at all" jest
+> prawdziwe o księdze sekularnej i fałszywe o hazardzie skwantowanym.
+
+**(b) Reakcja na orientację — jedyny realnie pominięty składnik; domknięty
+w kodzie, ale mały.** Moment siły reakcji był odrzucany i był to jedyny
+składnik, którego skwantowanie nie odtwarzało żadną drogą. Jego skala to
+jednak \(\Omega_{\rm reakcji}/\omega_{\rm orb}\), czyli najwyżej
+\(\approx6\cdot10^{-5}\) rad przy promieniu terminalnym i \(10^{-17}\)
+rad przy \(a_{Ps}\) — obrót **oscylacyjny**, nie narastający (pomiar i
+sprostowanie wyżej).
+
+Przyczyną było sklejenie dwóch **różnych** decyzji pod jedną flagą. Drenaż
+energii trzeba wyłączyć w trybie skwantowanym, bo tę samą energię unosi
+foton — inaczej odjęto by ją dwa razy. Ale reakcja **orientacyjna** nie ma
+takiego duplikatu: `applyStochasticDipolePhoton` przelicza czteropędy i nic
+więcej, foton niesie wyłącznie odrzut liniowy i zostawia moment, który go
+wypromieniował, skierowany dokładnie tam, gdzie był. Bramkowanie momentu siły
+razem z drenażem nie zapobiegało więc podwójnemu liczeniu — po prostu
+kasowało jedyną reakcję, do której ścieżka skwantowana nie miała innej drogi.
+
+Poprawka rozdziela flagi:
+
+```cpp
+const bool quantizedRadiation=            // drenaż energii
+    model==stochasticElectricDipole || model==disabled;
+const bool applyDipoleReactionTorque=     // reakcja orientacyjna
+    model!=disabled;
+```
+
+Energia nie jest przez to liczona podwójnie: kosztem energetycznym samego
+obrotu jest zmiana energii oddziaływania dipol-dipol, którą
+`conservativeParticleEnergy` już niesie przez
+`regularizedDipoleInteractionEnergy`. Foton rozlicza energię wypromieniowaną
+do strefy falowej, moment siły — orientację. `disabled` nie dostaje ani
+jednego, ani drugiego, zgodnie z (a).
 
 **(c) Czy kanał M1 stać na to, co promieniuje.** Skumulowana energia M1 wzdłuż
 spirali nigdy nie przekracza energii orientacyjnej dipoli dostępnej przy tym
@@ -2628,13 +2713,16 @@ Zmierzone wprost, rozkład \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) na
 Mediana zmiany \(\boldsymbol\mu\!\cdot\!\hat{\mathbf L}\) przez cały kolaps to
 \(0{,}019\); frakcja blisko \(\hat{\mathbf L}\) \(12\%\) wobec \(10\%\)
 izotropowych. Momenty precesują, ale kończą tam, gdzie zaczęły, z rozkładem
-nieodróżnialnym od izotropowego. Reakcja M1, gdyby jej nie bramkowano,
-wniosłaby \(2{,}33\cdot10^{-2}\) rad — a więc **więcej** niż zmierzone
-\(0{,}019\), nie mniej, jak podawała pierwsza wersja tego akapitu.
-Domknięcie luki mniej więcej podwoiłoby całkowity obrót momentów. Werdyktu o
-izotropii to i tak nie rusza: \(1{,}3°\) na rozkładzie o SD \(0{,}577\)
-rozciągniętym na \([-1,1]\) jest nierozróżnialne — ale margines wynosi
-czynnik rzędu jedności, nie cztery.
+nieodróżnialnym od izotropowego. Reakcja M1 wnosi do tego co najwyżej
+\(\approx6\cdot10^{-5}\) rad (oscylacja, nie dryf — patrz pomiar wyżej),
+czyli **trzysta razy mniej** niż zmierzone \(0{,}019\). Werdykt o izotropii
+ma więc zapas trzech rzędów wielkości.
+
+> Poprzednie dwie wersje tego akapitu podawały tu \(5{,}2\cdot10^{-3}\), a
+> potem \(2{,}33\cdot10^{-2}\) rad, i na tej drugiej podstawie **wycofałem**
+> stwierdzenie o wygodnym zapasie, pisząc, że domknięcie luki podwoiłoby
+> obrót momentów. To wycofanie samo było błędne i zostaje wycofane: zapas
+> jest wygodny, i to o dwa rzędy bardziej, niż głosiła pierwsza wersja.
 Założenie izotropii jest podtrzymywane przez dynamikę — nie dlatego, że
 precesja zachodzi wokół \(\hat{\mathbf L}\), i nie dlatego, że nie ma kanału
 strat, tylko dlatego, że **kanał strat robi się szybki dopiero tam, gdzie para
@@ -4654,9 +4742,14 @@ czyli \(12\) rzędów wielkości, nie \(44\). Co więcej stosunek ten **nie
 jest stały**: rośnie do \(1{,}2\cdot10^{-3}\) przy promieniu terminalnym.
 Wniosek „formalnie istnieje, fizycznie martwa" trzeba więc odrzucić w tej
 postaci — kanał nie jest martwy, jest tylko **szybki dopiero tam, gdzie para
-prawie nie przebywa**. Ilościowo rozstrzyga to scałkowany obrót po całej
-spirali, \(5{,}2\cdot10^{-3}\) rad; wyprowadzenie i tabela szybkości są przy
-omówieniu założenia izotropii momentów wyżej w tym dokumencie.
+prawie nie przebywa** — a ściślej: bo obrót od tego momentu siły jest
+**oscylacyjny**, nie sekularny. Ilościowo rozstrzyga to pomiar bezpośredni
+\(|\Delta\hat{\boldsymbol\mu}|\) między przebiegiem z momentem siły i bez
+niego, ograniczony na poziomie \(\Omega_{\rm reakcji}/\omega_{\rm orb}\);
+tabela szybkości i pomiar są przy omówieniu założenia izotropii momentów
+wyżej w tym dokumencie. (Scałkowany \(\int\Omega_{\rm reakcji}\,dt\),
+podawany tu wcześniej jako \(5{,}2\cdot10^{-3}\) rad, jest złym estymatorem
+tej wielkości i został wycofany.)
 
 *Sonda 7 — czy \(6\cdot10^{-6}\) z sondy 2 rzeczywiście pochodzi z
 dipol-dipol, i z której jego części.* Tu poprzednia odpowiedź (w tej

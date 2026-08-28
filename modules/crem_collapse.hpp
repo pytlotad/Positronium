@@ -1200,12 +1200,27 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // of the BMT precession rate respectively, so at the bottom it
             // is emphatically not weak, and the alignment time there,
             // 9.9e-17 s, is fourteen orders below the collapse.  But the
-            // pair does not LIVE there: integrating Omega_reaction dt along
-            // the inspiral with dt = (dE/da) da / P_E1 from a_Ps to the
-            // barrier, averaged over 96 random orientations of the two
-            // moments, gives 2.33e-2 +- 0.24e-2 rad -- 1.33 degrees over the
-            // entire collapse.  The spiral's clock is spent in the outer
-            // region, where the torque is 0.85 rad/s.
+            // pair does not LIVE there.  And the accumulation is not even
+            // secular: the torque points along mu x m'''_total, and
+            // m'''_total turns with the orbit, so successive parts of a
+            // period cancel and what survives is an OSCILLATION of amplitude
+            // ~Omega_reaction/omega_orb, not a drift ~Omega_reaction*t.
+            //
+            // Measured directly, which is the only way to see that: a
+            // stochastic run and a disabled run from the same seed differ
+            // ONLY by this torque (until a photon fires the trajectories are
+            // bit-identical), so |d(mu-hat)| between them isolates it.  At
+            // a_Ps/200, over 1/2/4/8/16 orbits: 2.16, 2.14, 2.17, 1.84,
+            // 2.72e-6 -- bounded, no linear trend across a sixteenfold span.
+            // At a_Ps/50: 3.02e-9 at two orbits, 2.77e-9 at eight.
+            //
+            // So the omitted reorientation is ~Omega_reaction/omega_orb:
+            // 4e-17 rad at a_Ps, 2e-6 at a_Ps/200, and at worst ~6e-5 rad
+            // (0.003 degrees) at the terminal radius.  An earlier pass here
+            // reported 2.33e-2 rad (1.33 degrees) from integrating
+            // Omega_reaction dt over the inspiral; that integral sums the
+            // MAGNITUDE of the instantaneous rate and so presumes the drift
+            // the measurement above rules out.  It is withdrawn.
             //
             // (This supersedes the 1.14e-44 ratio recorded in the README's
             // Sonda 6, which evaluated the torque on an unfilled history and
@@ -1213,22 +1228,37 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // supersedes an earlier 0.30 degrees written here, which was one
             // unrepresentative orientation rather than an average.)
             //
-            // THE GAP, taken apart.  In the quantized mode two things are
-            // gated at the same flag: the reaction torque, and the
-            // dipoleConstraintEnergy drain.  Only the first is a real
-            // omission.
+            // THE GAP, taken apart, and since closed.  The quantized mode
+            // used to gate two things at one flag: the reaction torque and
+            // the dipoleConstraintEnergy drain.  Only the first was a real
+            // omission, and electrodynamics.hpp now splits the two -- the
+            // drain stays off (the photon carries that energy), the torque
+            // runs.  What follows is the measurement that motivated it.
             //
-            //   Energy.  In the continuous mode the drain equals the M1 flux
-            //   to the bit, and dipoleConstraintEnergy IS a term of
-            //   conservativeParticleEnergy, whose differences measuredDelta
-            //   reports as the secular orbital loss.  But the background run
-            //   is integrated with reactionModel::disabled, which does NOT
-            //   release the gate, so the background drains the reservoir
-            //   identically and 4.0e-5 of the M1 energy survives the
-            //   subtraction (5.9e-12 of the subtracted dE).  It is the
-            //   CONTINUOUS mode that loses M1 to the orbit; the quantized
-            //   mode, routing it through the hazard and the photon, is the
-            //   only one where it tightens the orbit at all.
+            //   Energy.  There was a real defect here, since fixed in
+            //   electrodynamics.hpp: both M1 sinks were gated for
+            //   stochasticElectricDipole only, while the charge sector has
+            //   always excluded disabled as well -- and disabled is the model
+            //   this file integrates as the BACKGROUND.  The background
+            //   therefore drained the same reservoir as the run it was
+            //   subtracted from (4.0e-5 of the M1 energy survived), and in
+            //   the quantized mode it carried a sink the real run never had,
+            //   so between photons run and background were not bit-identical
+            //   when they should have been.  Gating disabled too fixes both.
+            //
+            //   It moves no numbers, and the reason is worth stating: the
+            //   reservoir never fed the collapse anyway.  measuredDelta's
+            //   specificEnergy is computed but deliberately unread (see the
+            //   "ANGULAR MOMENTUM only" comment below); the secular loss is
+            //   deltaEnergyPerOrbit = -orbitalRadiatedEnergy/reducedMass, and
+            //   orbitalRadiatedEnergy is the flux with M1 already subtracted
+            //   out; and in the production path even that is bypassed, since
+            //   lossPerOrbit takes expectedLossPerOrbit, the analytic E1
+            //   Larmor power.  M1's one entry into the dynamics is the hazard
+            //   inside the single measured orbit per checkpoint, against an
+            //   analytic skip of up to 200000 E1-only orbits -- roughly 1e-8
+            //   of the collapse once the 1.9e-3 M1 share is weighted by the
+            //   ~5e-6 of the hazard that measured orbit carries.
             //
             //   Angular momentum.  M1's share of the radiated angular
             //   momentum flux runs 2.2e-15 at a_Ps to 9.3e-5 at the terminal
@@ -1239,8 +1269,15 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             //   tops out at 3.9e-3 (3.70 eV against 950 eV of U_dd at the
             //   barrier).  Neither account is overdrawn.
             //
-            // So the omission is the orientation back-reaction alone, worth
-            // 1.33 degrees.  It does not separate the channels either: the
+            // So the omission was the orientation back-reaction alone, worth
+            // at most 0.003 degrees, and it is the one now restored: the
+            // supplies linear recoil only and leaves the radiating moment
+            // unturned, so nothing was being double counted by gating it --
+            // the gate simply deleted it.  The rotation's own energetic cost
+            // is the dipole-dipole term conservativeParticleEnergy already
+            // carries, so restoring it does not double count either.
+            //
+            // It did not separate the channels: the
             // destructive M1 interference is exact only at cos = -1, and
             // averaged over orientations the M1 share of the quantized
             // stream is 1.875e-3 +- 3.7e-4 for para against 1.903e-3 +-
@@ -1250,11 +1287,12 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // mu.L has SD 0.601 at the seed and 0.596 at termination against
             // 1/sqrt(3) = 0.577 for an isotropic distribution, with a median
             // excursion of 0.019 across the whole collapse.  The ungated
-            // torque would have added 2.33e-2 -- MORE than that excursion,
-            // not less, so closing the gap would roughly double the total
-            // reorientation.  It still would not move the isotropy verdict,
-            // 1.3 degrees being nothing against a distribution of SD 0.577
-            // spread over [-1,1], but the margin is a factor of order one.
+            // torque adds at most ~6e-5 to that -- three hundred times less,
+            // so the isotropy verdict has three orders of margin.  (An
+            // earlier pass put that addition at 2.33e-2 and withdrew the
+            // claim of a comfortable margin on the strength of it; the
+            // withdrawal rested on the discarded integral and is itself
+            // withdrawn.)
             //
             // And had there been dissipation it would not have produced
             // repulsion in ortho anyway: the system would seek the MINIMUM

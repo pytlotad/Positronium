@@ -2078,18 +2078,26 @@ int runMaxwellSelfTest(
                     std::abs(quantizedState.dipoleConstraintEnergy
                              -constraintStart)
                     /std::max(std::abs(quantizedState.radiatedEnergy),1.0e-300);
-                // The reaction TORQUE is gated by the same flag, at the same
-                // site, as the reservoir drain above, so the drain check
-                // covers that decision.  Deliberately NOT also probed
-                // through the dipole norms: applyDipoleRadiationTorque
-                // renormalizes what it turns, so the norm is preserved
-                // whether or not the torque was applied.  Measured on a
-                // build with the gates removed, a norm probe read 1.35e-13
-                // against 1.37e-13 for the correct build -- no separation at
-                // all.  Detecting the torque itself needs a direction
-                // comparison against a torque-free reference, and at this
-                // configuration's M1 strength that difference sits at
-                // round-off, so it would not discriminate either.
+                // The reaction TORQUE is no longer gated with the reservoir
+                // drain: the drain is off here (the photon carries that
+                // energy) while the torque RUNS, because the photon supplies
+                // linear recoil only and leaves the moment that radiated it
+                // unturned.  So this probe deliberately measures nothing --
+                // there is no longer a torque-suppression decision for it to
+                // confirm, and the drain check above covers the one gate
+                // that remains.
+                //
+                // Kept at zero rather than repurposed to check that the
+                // torque IS applied, for the reason the previous note
+                // records: applyDipoleRadiationTorque renormalizes what it
+                // turns, so the dipole norm is preserved either way (a norm
+                // probe read 1.35e-13 against 1.37e-13 on a build with the
+                // gates removed -- no separation at all), and a direction
+                // comparison against a torque-free reference sits at
+                // round-off at this configuration's M1 strength.  The
+                // torque's effect is real but needs a full inspiral to
+                // accumulate to something measurable, which is a statistics
+                // run, not a unit check.
                 quantizedDipoleTorqueDrain=0.0;
                 (void)firstDipoleNormStart;(void)secondDipoleNormStart;
             }

@@ -29,10 +29,20 @@ struct State {
     // zone Poynting integral and does not share conservativeParticleEnergy's
     // Darwin/near-field approximation, so it stays meaningful exactly where
     // that approximation (period comparable to the light-crossing time)
-    // breaks down.  Diagnostic-only: nothing currently reads it in
-    // production, and it costs nothing extra to accumulate once the flux
-    // quadrature (computeOutwardFlux) is already being computed for
-    // radiatedEnergy's own sake.
+    // breaks down.
+    //
+    // NOT diagnostic-only, whatever this comment used to say: it is THE
+    // production energy channel.  crem_collapse.hpp's secular estimator sets
+    // deltaEnergyPerOrbit = -finalState.orbitalRadiatedEnergy/reducedMass,
+    // so the M1 exclusion above is not a bookkeeping nicety -- it is the
+    // reason the magnetic-dipole channel never tightens the orbit through
+    // the secular path in ANY reaction model.
+    //
+    // One exception, and it is the only route M1 has into the dynamics: in
+    // the quantized mode crem_trajectory.hpp's quantizedPower sums E1, M1
+    // and E2 before dividing by hbar*omega, so M1 does raise the in-orbit
+    // photon hazard there.  "Does not recoil the orbit at all" above is
+    // therefore true of the secular ledger and false of that hazard.
     double orbitalRadiatedEnergy=0.0;
     double dipoleConstraintEnergy=0.0;
     // Accumulated phase of the orbit-following zero-point field, integral of
