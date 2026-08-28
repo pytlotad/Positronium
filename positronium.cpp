@@ -1727,6 +1727,11 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     // collected only from trajectories that ran to the boundary so the three
     // numbers describe the same complete collapses as the lifetime above.
     std::vector<double> initialPeriods, finalPeriods, revolutionCounts;
+    // Which validity limit actually ended each trajectory, and how far past
+    // it the pair landed -- see CremCollapseEstimate::stopCause for why this
+    // is reported rather than left implicit.
+    std::vector<double> stopOvershoot, stopRatioPLC;
+    int barrierStops = 0, retardationStops = 0, floorStops = 0;
     int reachedCutoffCount = 0;
     int observationLimitCount = 0;
     int noSecularLossCount = 0;
@@ -1756,6 +1761,20 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         if(std::isfinite(estimate.lifetimeSecondsLab))
             decayTimes.push_back(estimate.lifetimeSecondsLab*timeScale);
         if(estimate.calibrationOutcome==SimulationOutcome::ReachedCutoff) {
+            switch(estimate.stopCause) {
+                case CollapseStopCause::ComptonBarrier: ++barrierStops; break;
+                case CollapseStopCause::RetardationLimit:
+                    ++retardationStops; break;
+                case CollapseStopCause::GroundStateFloor:
+                    ++floorStops; break;
+                default: break;
+            }
+            if(std::isfinite(estimate.terminalPeriapsisOverBarrier))
+                stopOvershoot.push_back(
+                    estimate.terminalPeriapsisOverBarrier);
+            if(std::isfinite(estimate.terminalPeriodToLightCrossing))
+                stopRatioPLC.push_back(
+                    estimate.terminalPeriodToLightCrossing);
             if(std::isfinite(estimate.initialPeriodSeconds))
                 initialPeriods.push_back(estimate.initialPeriodSeconds);
             if(std::isfinite(estimate.finalPeriodSeconds))
@@ -1982,6 +2001,50 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         const double consistentRadius=meanBinding>0.0
             ? pairCoulombStrength/(2.0*meanBinding*1.0e3*eCharge)*1.0e15
             : std::numeric_limits<double>::quiet_NaN();
+        // WHAT ACTUALLY STOPPED THE TRAJECTORY, printed before the terminal
+        // numbers because it is what they mean.  The Compton barrier is the
+        // limit this model describes itself by, but it is not the majority
+        // stopping cause; the period/light-crossing ratio is, and its
+        // threshold of 150 is a numerical safety margin rather than a
+        // physical scale.  The overshoot is reported for the same reason: at
+        // n<~1 one photon carries about twice the current binding, so a
+        // single emission moves the periapsis by a factor of 10-60 and the
+        // stopping rule cannot resolve anything finer.  The pair therefore
+        // lands wherever that jump puts it -- sometimes well inside the
+        // region the limits exclude -- and the terminal binding below is a
+        // property of that discreteness, not the binding AT a boundary.
+        if(!stopOvershoot.empty()) {
+            const auto quantile=[](std::vector<double> values,double q) {
+                std::sort(values.begin(),values.end());
+                const size_t index=static_cast<size_t>(
+                    q*static_cast<double>(values.size()-1)+0.5);
+                return values[std::min(index,values.size()-1)];
+            };
+            const int stopped=barrierStops+retardationStops+floorStops;
+            const double percent=stopped>0?100.0/stopped:0.0;
+            std::cout << "  stopped by             "
+                      << barrierStops << " Compton barrier ("
+                      << barrierStops*percent << "%), "
+                      << retardationStops << " retardation limit ("
+                      << retardationStops*percent << "%)";
+            if(floorStops>0)
+                std::cout << ", " << floorStops << " ground-state floor ("
+                          << floorStops*percent << "%)";
+            std::cout << "\n"
+                      << "  landed at periapsis    "
+                      << quantile(stopOvershoot,0.5)
+                      << " r* (median), range "
+                      << quantile(stopOvershoot,0.0) << "-"
+                      << quantile(stopOvershoot,1.0) << " r*\n";
+            if(!stopRatioPLC.empty())
+                std::cout << "  period/light-crossing  "
+                          << quantile(stopRatioPLC,0.5)
+                          << " at the stop (median), lowest "
+                          << quantile(stopRatioPLC,0.0)
+                          << " against a threshold of 150 -- values far below"
+                             " it mean the last photon jumped clean over the"
+                             " limit\n";
+        }
         std::cout << "  terminal radius        "
                   << consistentRadius << " fm (semi-major axis implied by the "
                      "mean binding)\n"

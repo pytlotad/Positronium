@@ -6950,6 +6950,84 @@ dalszej pozycji. Test bezpośredni: z poprawką mediana spada
 sygnatura przeskoku, nie wycieku. To ziarnistość reguły stopu, nie budżet
 energii. Nie zamyka sprawy, ale przenosi ją z bilansu na regułę stopu.
 
+#### Reguła stopu: co naprawdę kończy trajektorię
+
+Bilans energii jest domknięty (poprzednia sekcja), więc czułość na kwant musi
+siedzieć w regule stopu. Siedzi, i obraz jest ostrzejszy, niż się spodziewałem.
+
+**Bariera Comptona kończy mniejszość przebiegów.** Zmierzone na 39 kolapsach:
+
+```
+stopped by             9 Compton barrier (23.1%), 30 retardation limit (76.9%)
+landed at periapsis    1.85 r* (median), range 0.313-16.5 r*
+period/light-crossing  66.1 at the stop (median), lowest 36.1 against 150
+```
+
+Trzy czwarte trajektorii kończy na warunku \(T/t_{\rm light}\le150\) — a ten
+próg jest, wedle własnego uzasadnienia w kodzie, **marginesem bezpieczeństwa**
+(czynnik \(\approx2\) nad pasmem 37,8–71,6, w którym zaobserwowano prawdziwe
+awarie numeryczne), nie skalą fizyczną. Główna obserwabla modelu jest więc dla
+większości przebiegów wyznaczona przez zapas numeryczny, a nie przez barierę,
+którą model deklaruje jako swoją granicę.
+
+**Model wychodzi z wnętrza własnego obszaru niedozwolonego.** Mediana
+\(T/t_{\rm light}\) w chwili stopu to 66 przy progu 150, minimum 36 — czyli
+przekroczenie o czynnik 2–4, dokładnie w paśmie, w którym udokumentowano
+23/23 awarie. Powód jest jeden: przy \(n\lesssim1\) jeden foton niesie około
+podwójnego bieżącego wiązania, więc pojedyncza emisja przesuwa periapsis o
+czynnik 10–60. Zmierzone wprost wewnątrz jednej kaskady:
+
+```
+CASCADE n=2  r_p/r* = 21.71
+CASCADE n=3  r_p/r* = 0.347        <- czynnik 62 w JEDNYM fotonie
+```
+
+Reguła sprawdzana między checkpointami nie ma jak rozdzielczości poniżej tego
+skoku. Sprawdzone osobno i **wykluczone**: żaden foton nie jest emitowany ze
+stanu już nieważnego — naruszenie zawsze przypada na ostatni foton kaskady,
+łapany na szczycie następnego checkpointu. Przerwanie kaskady nic by nie dało.
+
+**Cały kolaps to 2 albo 3 fotony, i to rozstrzyga wszystko.** Populacje są
+rozdzielone bez zakładek:
+
+| | fotony = 2 | fotony = 3 |
+|---|---|---|
+| wiązanie terminalne | 0,23–0,35 keV | 1,24–3,40 keV |
+| \(L/\hbar\) | 0,140–0,173 | 0,045–0,074 |
+| \(T/t_{\rm light}\) | 122–150 | **38–70** |
+| \(r_p/r^*\) | 9,8–16,5 | 0,31–3,0 |
+| przyczyna stopu | retardacja (100%) | mieszane |
+
+Mimośród na końcu to \(0{,}001\)–\(0{,}019\), więc orbita jest kołowa i
+\(r_p\propto L^2\); para traci 83–96% momentu pędu. O tym, czy trajektoria ma
+dwa fotony czy trzy, decyduje **ostrze noża**: czy po drugim fotonie
+\(T/t_{\rm light}\) wypadnie powyżej, czy poniżej 150. Przesuń kwant, a
+przesuniesz stan po drugim fotonie i przerzucisz część próbki przez ostrze —
+stąd 45%, i stąd głębsze wiązanie terminalne przy mniejszym kwancie.
+
+*Czego NIE zrobiłem i dlaczego.* Napraszało się przycięcie ostatniego fotonu
+tak, żeby lądował dokładnie na barierze — mechanizm już w pliku jest
+(`roomToFloor` pod `--ground-state-floor`). Odrzucone: model deklaruje, że
+poniżej \(r^*\) elektrodynamika punktowa przestaje obowiązywać, więc
+dopisanie przejścia kończącego się dokładnie na \(r^*\) **wymyśliłoby**
+przejście, którego model nie ma, i ubrałoby granicę ważności w fizykę. Z tego
+samego powodu nie przycinam do progu retardacyjnego, który jest wprost
+liczbą numeryczną.
+
+*Co zrobiłem.* `stopCause`, `terminalPeriapsisOverBarrier` i
+`terminalPeriodToLightCrossing` są teraz zapisywane i raportowane. To zamienia
+ukryty artefakt w podaną liczbę: czytelnik widzi, że `terminal binding` nie
+jest wiązaniem NA granicy, tylko własnością ziarnistości ostatniego skoku, i
+że w 77% przypadków granicą był zapas numeryczny.
+
+*Konsekwencja dla drabiny \(\alpha\).* Sekcja niżej podaje wiązanie na
+barierze jako \((2/g)\alpha m_ec^2=3{,}7246\) keV. To jest wartość **przy**
+\(r^*\) i pozostaje poprawna jako własność bariery — ale nie jest tym, co
+przebiegi raportują jako `terminal binding` (\(\approx1{,}6\)–\(2{,}7\) keV,
+zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), na
+progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
+mylić.
+
 #### Poziom zerowy: drabina w potęgach \(\alpha\), nie na \(m_ec^2\)
 
 Propozycja „poziom zerowy przy promieniu terminalnym **i** stanie energetycznym

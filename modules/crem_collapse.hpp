@@ -35,6 +35,18 @@ struct LabFramePhoton {
     double sourceBeta=0.0;
 };
 
+// Which of the trajectory's three independent stopping conditions fired.
+// See the fields on CremCollapseEstimate for why this is recorded rather
+// than left implicit.
+enum class CollapseStopCause {
+    None,             // still running, censored, or failed
+    ComptonBarrier,   // periapsis <= comptonBarrierRadius: the model-validity
+                      // limit the project describes itself by
+    RetardationLimit, // period/light-crossing <= 150: a NUMERICAL safety
+                      // margin, and in practice the majority stopping cause
+    GroundStateFloor  // --ground-state-floor only: settled on n=1
+};
+
 struct CremCollapseEstimate {
     double lifetimeSeconds=std::numeric_limits<double>::quiet_NaN();
     double calibrationSeconds=0.0;
@@ -163,6 +175,29 @@ struct CremCollapseEstimate {
     // Filled only where a trajectory genuinely reaches the terminal radius;
     // NaN/empty for censored and failed runs, which have no terminal state
     // to annihilate from.
+    // WHICH validity limit ended the trajectory, and HOW FAR PAST it the
+    // pair landed.  Not cosmetic bookkeeping: measured, the Compton barrier
+    // -- the limit this model is described by -- ends only 24% of
+    // trajectories.  The other 76% end on the period/light-crossing ratio,
+    // whose threshold of 150 is a NUMERICAL safety margin (a factor ~2 over
+    // the 37.8-71.6 band where genuine NumericalFailures were observed), not
+    // a physical scale.  A headline observable set three times out of four
+    // by a safety margin has to say so rather than be averaged silently.
+    //
+    // The overshoot matters for the same reason.  One photon carries about
+    // twice the current binding at n<~1, so a single emission moves the
+    // periapsis by a factor of 10-60 -- measured, 21.7 r* -> 0.35 r* in one
+    // photon -- and the stopping rule, evaluated between checkpoints, cannot
+    // resolve anything finer than that jump.  Trajectories therefore exit
+    // from INSIDE the region the limits exclude: the ratio bottoms out at 36
+    // against its own threshold of 150.  These two fields let a reader see
+    // that, instead of reading terminalBindingEnergy as if it were the
+    // binding AT a boundary.
+    CollapseStopCause stopCause=CollapseStopCause::None;
+    double terminalPeriapsisOverBarrier=
+        std::numeric_limits<double>::quiet_NaN();
+    double terminalPeriodToLightCrossing=
+        std::numeric_limits<double>::quiet_NaN();
     double terminalSemiMajorAxis=std::numeric_limits<double>::quiet_NaN();
     double terminalBindingEnergy=std::numeric_limits<double>::quiet_NaN();
     // Dipole-dipole interaction energy at the terminal configuration, the
@@ -1544,6 +1579,18 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.calibrationOutcome=SimulationOutcome::ReachedCutoff;
             result.calibrationSeconds=simulatedTimeTotal;
             result.calibrationSecondsLab=labFrameTimeTotal;
+            // Order matters and matches the condition above: the barrier is
+            // tested first, so a trajectory that trips both is attributed to
+            // it rather than to the numerical margin.
+            result.stopCause=periapsis<=comptonBarrierRadius
+                ?CollapseStopCause::ComptonBarrier
+                :(periodToLightCrossingRatio
+                      <=minimumPeriodToLightCrossingRatio
+                  ?CollapseStopCause::RetardationLimit
+                  :CollapseStopCause::GroundStateFloor);
+            result.terminalPeriapsisOverBarrier=
+                periapsis/comptonBarrierRadius;
+            result.terminalPeriodToLightCrossing=periodToLightCrossingRatio;
             // Annihilation from the state the trajectory actually reached,
             // rather than from a pair at rest.  What is left to share is the
             // invariant W = (m1+m2)c^2 + mu*epsilon, below the rest-mass sum
