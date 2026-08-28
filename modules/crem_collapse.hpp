@@ -1219,8 +1219,34 @@ double dipoleAwarePeriapsis(const OsculatingElements& elements,
     // The Kepler periapsis is the answer when the dipole is negligible, so
     // start from it and walk outward or inward as the sign of h dictates.
     const double apoapsis=osculatingApoapsis(elements,attractionParameter);
-    const double outer=std::isfinite(apoapsis)&&apoapsis>keplerPeriapsis
-        ?apoapsis:keplerPeriapsis*2.0;
+    // Whether `outer` is a MEANINGFUL bound (the apoapsis of an eccentric
+    // orbit) or an arbitrary one.  For a circular orbit apoapsis == periapsis,
+    // so the ternary falls through to 2*periapsis, which bounds nothing
+    // physical -- and the "nowhere accessible" exit below then RETURNS it.
+    const bool outerIsPhysical=
+        std::isfinite(apoapsis)&&apoapsis>keplerPeriapsis;
+    const double outer=outerIsPhysical?apoapsis:keplerPeriapsis*2.0;
+    // DEGENERATE DOUBLE ROOT -- a circular orbit.  There h has a double root
+    // AT the Kepler periapsis, so h(keplerPeriapsis) is zero to round-off,
+    // which is not > 0; the code below then took the outward branch, found
+    // h(outer) <= 0 as well, and returned `outer` = 2a.  A factor of two in
+    // the quantity the stopping rule reads, for exactly the orbits the sharp
+    // preparation and the ground-state floor now produce BY CONSTRUCTION.
+    //
+    // Measured before the fix, on exactly circular orbits with the dipoles
+    // zeroed: dipoleAwarePeriapsis/a came out 2 at discriminant 0 or -2e-16
+    // and 1 at discriminant +1e-16 -- i.e. it hinged on the sign of round-off.
+    // The default configuration's reported terminal periapsis was 1095 r*,
+    // which is 2 a_Ps, where the pair actually sits at a_Ps.
+    //
+    // The right answer at a double root is the root itself.  Tested against
+    // the scale of the specific energy, not against zero, so that a genuinely
+    // closed region -- a dipole repulsive enough to leave nothing accessible
+    // -- still falls through to the branch below.
+    const double degeneracyScale=
+        1.0e-9*std::abs(elements.specificEnergy);
+    if(std::abs(h(keplerPeriapsis))<=degeneracyScale)
+        return keplerPeriapsis;
     if(h(keplerPeriapsis)>0.0) {
         // Dipole is attractive here: the pair reaches deeper.  Bracket down.
         double lo=keplerPeriapsis*1.0e-6,hi=keplerPeriapsis;
@@ -1234,7 +1260,27 @@ double dipoleAwarePeriapsis(const OsculatingElements& elements,
     // Dipole is repulsive here: the turning point has moved outward, so the
     // pair stalls before the Kepler periapsis.  Bracket up towards apoapsis.
     double lo=keplerPeriapsis,hi=outer;
-    if(!(h(hi)>0.0)) return outer;   // nowhere accessible below apoapsis
+    if(!(h(hi)>0.0)) {
+        // Nothing accessible in [periapsis, outer].  For an ECCENTRIC orbit
+        // that is a real statement -- the pair cannot get below its apoapsis
+        // -- and returning it is right.  For a near-CIRCULAR one it is not:
+        // `outer` there is the arbitrary 2*periapsis, and returning it
+        // reported the pair at twice its actual radius.
+        //
+        // Measured, on the production default where the floor parks the pair
+        // in an exactly circular ground state (a/a_Ps = 1, L/L_circ = 1,
+        // discriminant -1e-14): r_p/a came out 2 whenever the dipole term was
+        // repulsive at the Kepler periapsis and 0.998 whenever it was
+        // attractive, so the reported terminal periapsis flipped between a
+        // and 2a on the SIGN OF THE DIPOLE TERM.  The batch median was
+        // 1095 r* -- exactly 2 a_Ps -- for a pair sitting at a_Ps.
+        //
+        // A circular orbit perturbed by a small repulsive term does not
+        // acquire a turning point at 2a; its radial range collapses onto
+        // a itself.  Returning the Kepler periapsis is both the right answer
+        // there and a far better failure mode than an arbitrary bracket.
+        return outerIsPhysical?outer:keplerPeriapsis;
+    }
     for(int i=0;i<200;++i) {
         const double mid=0.5*(lo+hi);
         if(h(mid)>0.0) hi=mid; else lo=mid;

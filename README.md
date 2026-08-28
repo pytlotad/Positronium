@@ -7132,11 +7132,56 @@ model od skali, na której anihilacja w ogóle zachodzi:
 | klasyczny promień elektronu | \(2{,}818\) fm | 37 558 |
 
 Pod domyślną konfiguracją para parkuje \(274\) zredukowane długości Comptona
-od kontaktu. W trybie barierowym schodzi do \(r^*=0{,}501\,\bar\lambda_C\) —
-czyli **na samą skalę Comptona**, gdzie fizyka anihilacji żyje, ale to jest
-dokładnie ten promień, przy którym model ogłasza swoją nieważność. Brak jest
-więc strukturalny w obu trybach, a pod nową domyślną konfiguracją o
-\(274\times\) dalszy.
+od kontaktu.
+
+*Dalszy ciąg tego akapitu był błędny w trzech miejscach* i wymagał osobnego
+sprawdzenia; poprawki niżej.
+
+**(a) „W trybie barierowym schodzi do \(r^*=0{,}501\,\bar\lambda_C\)" —
+nie.** Zmierzone, periapsis w chwili stopu ma medianę \(1{,}347\,r^*\) i
+zakres \(0{,}313\)–\(2{,}275\,r^*\), więc najbliższe podejście to
+\(0{,}313\,r^*=\mathbf{0{,}157\,\bar\lambda_C}\) — **wewnątrz** skali
+Comptona, nie na niej. Do tego tylko \(42\%\) trajektorii w ogóle kończy na
+barierze; \(58\%\) staje wcześniej na progu retardacyjnym. Zacytowałem
+nominalną granicę zamiast tego, gdzie trajektorie faktycznie lądują — wbrew
+własnemu pomiarowi z sekcji o regule stopu.
+
+**(b) „o \(274\times\) dalszy" — zła arytmetyka.** \(274\) to
+\(a_{Ps}/\bar\lambda_C\), a nie stosunek między trybami. Ten wynosi
+\(a_{Ps}/r^*=\mathbf{547{,}5}\) wobec nominalnej bariery, a wobec
+rzeczywistego najbliższego podejścia (\(0{,}313\,r^*\)) —
+\(\mathbf{1749\times}\).
+
+**(c) Liczba, na której to oparłem, była zepsuta przez błąd, który przy tym
+sprawdzeniu wyszedł.** `dipoleAwarePeriapsis` zwracał **\(2a\) zamiast
+\(a\)** dla orbit kołowych. Dla orbity kołowej apoapsis \(=\) periapsis, więc
+ogranicznik `outer` spada na arbitralne \(2\times\) periapsis, a wyjście
+„nigdzie nie ma dostępnego obszaru" **zwraca** ten ogranicznik. Zmierzone na
+domyślnej konfiguracji, gdzie podłoga parkuje parę w dokładnie kołowym stanie
+podstawowym (\(a/a_{Ps}=1\), \(L/L_{\rm circ}=1\), dyskryminant
+\(-10^{-14}\)): \(r_p/a\) wychodziło \(2\), gdy człon dipolowy był w
+periapsis odpychający, i \(0{,}998\), gdy przyciągający — czyli raportowany
+periapsis **przeskakiwał między \(a\) a \(2a\) na znaku członu dipolowego**.
+Mediana partii wynosiła \(1095\,r^*\), dokładnie \(2a_{Ps}\), dla pary
+siedzącej w \(a_{Ps}\).
+
+Waży to dziś więcej niż kiedyś: ostre przygotowanie i podłoga stanu
+podstawowego robią orbity dokładnie kołowe **z konstrukcji**.
+
+*Naprawione* w dwóch miejscach: sprawdzenie zdegenerowanego podwójnego
+pierwiastka, oraz fallback zwracający periapsis keplerowski zamiast
+arbitralnego ogranicznika, gdy `outer` nie jest fizyczny. Po poprawce tryb
+domyślny raportuje \(547{,}509\,r^*\) (zakres \(546{,}5\)–\(547{,}5\)),
+czyli \(a_{Ps}\), a górna krawędź zakresu barierowego spada z \(4{,}551\) na
+\(2{,}275\,r^*\) — też była artefaktem \(2\times\). Mediana kolapsu, średnia i
+podział przyczyn stopu **bez zmian w obu trybach**: poprawka dotyczy raportu,
+nie dynamiki.
+
+*Co z tego zostaje w mocy:* brak anihilacji jest strukturalny w obu trybach.
+Pod domyślną konfiguracją para stoi \(274\,\bar\lambda_C\) od kontaktu; w
+trybie barierowym dochodzi do \(0{,}157\,\bar\lambda_C\) — czyli **wchodzi**
+w skalę Comptona, ale robi to w obszarze, który model deklaruje jako
+nieważny, więc nic z tego nie wynika poza tym, że tam się zatrzymuje.
 
 (Przy okazji test spójności: \(r^*=g\hbar/4m_ec=(g/4)\bar\lambda_C\), a
 zmierzone \(r^*/\bar\lambda_C=0{,}501\) — bariera to dokładnie pół
