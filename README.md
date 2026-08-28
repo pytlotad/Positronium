@@ -7185,6 +7185,53 @@ bariery na próg retardacyjny. Liczba ukończeń pod stałym budżetem wallclock
 drgnęła, więc 64 wywołania siły na checkpoint są przy mechanicznie całkowanej
 orbicie niezauważalne.
 
+#### Ostrze noża po wprowadzeniu członu spin-orbita: nadal nie, ale teraz wiadomo dlaczego
+
+Poprzednia sekcja wykluczyła kanał rozpadu jako sprawcę ostrza, ale mierzyła
+kod **sprzed** wprowadzenia sekularnego członu spin-orbita. Ten człon jest
+dokładnie proporcjonalny do \(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\),
+trzykrotnie silniejszy dla para, przeciwnego znaku i sięga 25% momentu pędu na
+najgłębszych trajektoriach — więc pytanie wymagało przeliczenia.
+
+Sparowane para/ortho, 38 par ukończonych w obu konfiguracjach, ten sam
+początkowy \((E,L)\):
+
+| | zmiana liczby fotonów | \(|\Delta\text{PLC}/\text{PLC}|\) średnia | max |
+|---|---|---|---|
+| przed członem | **0** | \(3{,}16\cdot10^{-4}\) | \(2{,}33\cdot10^{-3}\) |
+| po członie | **0** | \(5{,}49\cdot10^{-3}\) | \(8{,}52\cdot10^{-2}\) |
+
+Człon wzmocnił różnicę kanałów **17× w średniej i 37× w maksimum**, do
+\(8{,}5\%\) — a mimo to nie przerzucił ani jednej trajektorii. Przy
+\(8{,}5\%\) pasmo flipu byłoby szerokie na ~13 jednostek PLC wobec zakresu
+\(122\)–\(150\) populacji dwufotonowej, więc flipy **powinny** były wystąpić.
+Nie wystąpiły, i rozbicie na populacje mówi dlaczego:
+
+| populacja | PLC przy stopie | \(|\Delta\text{PLC}/\text{PLC}|\) |
+|---|---|---|
+| 2 fotony (**przy ostrzu**) | \(121{,}9\)–\(149{,}7\) | \(0\) dla 9 z 11, \(7\cdot10^{-6}\) dla reszty |
+| 3 fotony (głęboko) | \(32{,}4\)–\(70{,}2\) | do \(8{,}5\cdot10^{-2}\) |
+
+**Człon jest cztery rzędy wielkości większy tam, gdzie nie może nic
+przerzucić.** Spadek jak \(r^{-4}\) działa przeciwko niemu: żyje przy małych
+promieniach, czyli na trajektoriach trzyfotonowych, które siedzą przy
+\(\text{PLC}=32\)–\(70\), daleko **pod** progiem 150 i już nic ich nie
+uratuje. Populacja dwufotonowa, która o ostrzu decyduje, zatrzymuje się przy
+\(10\)–\(16\,r^*\), gdzie człon jest praktycznie zerowy.
+
+*Poprawka do wcześniejszego oszacowania.* W poprzedniej sekcji podałem
+częstość flipu rzędu 1 na 250, biorąc maksimum \(|\Delta\text{PLC}|\) po
+całej próbce. To było błędne o dwa rzędy: maksimum pochodzi z trajektorii
+głębokich, a przy samym ostrzu przesunięcie wynosi \(\le7\cdot10^{-6}\), co
+daje pasmo szerokości \(0{,}001\) w zakresie 28 jednostek, czyli **1 na
+27 000**.
+
+*Wniosek.* Kanał rozpadu wchodzi teraz do dynamiki orbitalnej realnie i
+dokładnie proporcjonalnie do \(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\), ale
+**nie może** przerzucić ostrza — nie dlatego, że jest za mały, tylko dlatego,
+że jest duży w niewłaściwym miejscu. Ostrze pozostaje własnością ziarnistości
+emisji.
+
 #### Czy ostrze noża jest efektem dipol-dipol? Nie — zmierzone i wykluczone
 
 Podejrzenie było trafne co do miejsca: wniosek „para i ortho nie różnią się"
