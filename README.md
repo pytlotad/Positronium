@@ -7103,10 +7103,51 @@ Pod właściwą kwadraturą po fazie reszta się rozdziela i **nie jest zerem**:
 
 Uśrednienie po fazie tłumi moment siły \(1{,}6\) **miliona** razy — prawie
 wszystko to drganie wewnątrzorbitalne — ale to, co zostaje, jest
-**systematyczne**, nie rozrzutem (RMS po orientacjach \(4{,}18\cdot10^{-9}\)
-ledwie przewyższa średnią \(3{,}86\cdot10^{-9}\)), ma **przeciwne znaki w obu
-kanałach** i spada jak \(r^{-4{,}2}\), czyli żyje w obszarze terminalnym —
-dokładnie tam, gdzie reguła stopu o wszystkim decyduje.
+**systematyczne**, nie rozrzutem.
+
+*Doprecyzowane na deterministycznej siatce.* Powyższe liczby pochodziły z
+losowania Monte Carlo po orientacjach i były antysymetryczne tylko z grubsza.
+Na siatce iloczynowej \(48\times96\times64\) są **dokładne**:
+
+```
+<tau_L>    para = +3.69299e-09   ortho = -3.69299e-09   suma 8.6e-21
+<|tau_L|>  para =  ortho co do ostatniego bitu, roznica wzgledna 0
+```
+
+Czyli oba twierdzenia z pierwszego podejścia wymagały poprawki, w przeciwne
+strony. **Rozrzut jest identyczny dokładnie**, nie „w granicach 1,5%" — tamte
+\(1{,}5\%\) były szumem próbkowania (błąd standardowy \(\approx0{,}7\%\),
+więc różnica siedziała na dwóch sigmach i nie wolno było nazwać jej zerem).
+Ale **antysymetria też jest dokładna**, a nie przybliżona — i to znaczy, że
+teza „asymetria była artefaktem narzuconej geometrii" **była błędna**.
+
+*Dlaczego.* Przemiatanie kąta wzajemnego pokazuje, że to, co przeżywa
+uśrednienie, jest wprost proporcjonalne do \(\boldsymbol\mu_1\cdot
+\boldsymbol\mu_2\):
+
+| \(\cos\) | 1 | 0,75 | 0,5 | 0,25 | 0 | \(-0{,}5\) | \(-1\) |
+|---|---|---|---|---|---|---|---|
+| \(\langle\tau_L\rangle/\cos\) | \(3{,}69539\cdot10^{-9}\) | \(3{,}69539\) | \(3{,}69539\) | \(3{,}69539\) | — | \(3{,}69539\) | \(3{,}69539\) |
+
+Do sześciu cyfr przy każdym niezerowym \(\cos\), a przy \(\cos=0\) średnia
+wynosi \(-9{,}2\cdot10^{-21}\), czyli zero maszynowe. Wymywa się część
+**liniowa** w momentach; część **dwuliniowa** \((\boldsymbol\mu_1\cdot
+\boldsymbol\mu_2)\) nie wymywa się wcale. To, co zostaje, **jest**
+dyskryminantą kanału.
+
+*Konsekwencja produkcyjna, wcześniej przeoczona.* Kanały próbkuje się z
+**zakresów** \(\cos\), nie z \(\pm1\): kierunki są izotropowe, więc
+\(\cos\) jest jednostajny na \([-1,1]\), para bierze \(\cos\ge0{,}5\), a
+ortho resztę. Stąd \(\langle\cos\rangle=+0{,}75\) dla para i
+\(\mathbf{-0{,}25}\) dla ortho — człon jest **trzykrotnie silniejszy dla
+para** i przeciwnego znaku. Pod kwantowaniem spinu
+(`--ground-state-floor`) \(\cos\) staje się dokładnie \(\pm1\) i oba kanały
+robią się symetryczne.
+
+*Spadek z promieniem* nie jest pojedynczą potęgą: nachylenie lokalne wynosi
+\(3{,}5\) między \(r^*\) a \(2r^*\) i \(4{,}35\) między \(2r^*\) a
+\(20r^*\). Tak czy inaczej jest to efekt obszaru terminalnego — dokładnie
+tam, gdzie reguła stopu o wszystkim decyduje.
 
 Rozróżnienie, które to zmienia: zerowa średnia **po zespole** nie znaczy zerowy
 efekt **na trajektorię**. Kierunek momentów jest wzdłuż jednego przebiegu

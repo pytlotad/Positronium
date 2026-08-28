@@ -927,17 +927,40 @@ double regularizedPeriod(const OsculatingElements& elements,
 // resolution".  Under a proper phase quadrature the residue resolves:
 //
 //     r/r*     para          ortho         (units of r|F_C| = L omega)
-//     1        +3.86e-09     -3.69e-09
-//     2        +3.35e-10     -3.30e-10
-//     20       +1.49e-14     -1.47e-14
+//     1        +3.69e-09     -3.69e-09
+//     2        +3.31e-10     -3.31e-10
+//     20       +1.46e-14     -1.46e-14
 //
-// Three things matter there.  It is SYSTEMATIC, not scatter: the RMS over
-// orientations (4.18e-09) barely exceeds the mean (3.86e-09), so the drift
-// survives the orientation average instead of washing out the way the
-// dipole-dipole ENERGY does.  It has OPPOSITE SIGNS for the two channels, so
-// it is a genuine para/ortho difference in the orbital dynamics rather than a
-// relabelling.  And it falls as ~r^-4.2, so it is a terminal-region effect,
-// which is exactly where the stopping rule decides everything.
+// Those numbers came from Monte Carlo orientation sampling and were only
+// approximately antisymmetric.  Re-measured on a deterministic 48x96x64
+// product grid they are EXACT:
+//
+//     <tau_L>   para = +3.69299e-09, ortho = -3.69299e-09, sum 8.6e-21
+//     <|tau_L|> para =  ortho to the last bit, relative difference 0
+//
+// and sweeping the mutual angle shows why -- the surviving term is exactly
+// proportional to mu1.mu2:
+//
+//     cos     1      0.75    0.5     0.25    0      -0.5    -1
+//     ratio   3.69539e-09 at every nonzero cos, to six digits;
+//             at cos = 0 the average is -9.2e-21, i.e. machine zero.
+//
+// So what survives the isotropic average IS the channel discriminant.  The
+// orientation-dependent part of the INSTANTANEOUS force does wash out; the
+// bilinear (mu1.mu2) part does not, and it is maximal and opposite for the
+// two channels.
+//
+// PRODUCTION CONSEQUENCE.  The channels are sampled from RANGES of cos, not
+// from +-1: directions are isotropic, so cos is uniform on [-1,1], para takes
+// cos >= 0.5 and ortho the rest.  Hence <cos> = +0.75 for para and -0.25 for
+// ortho -- the torque is THREE TIMES STRONGER for para and of opposite sign.
+// Under --ground-state-floor's spin quantization cos becomes exactly +-1 and
+// the two become symmetric instead.
+//
+// The radial falloff is steep but not a single power law: the local slope runs
+// 3.5 between r* and 2r* and 4.35 between 2r* and 20r*, so this is a
+// terminal-region effect -- exactly where the stopping rule decides
+// everything.
 //
 // A circular orbit at r = a is used for the quadrature.  That is not a
 // convenience: terminal eccentricity is measured at 0.001-0.019, so the
