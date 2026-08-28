@@ -139,7 +139,7 @@ constexpr double cubeRoot(double value) {
 // caps the ACTUAL energy -mu1.B_reg at E/2 for every separation and
 // orientation when both moments have their tabulated proper magnitudes in a
 // common rest frame.  Omitting peak and the factor two capped only f(r), while
-// the production curl(A) still reached 1.524 E.
+// the production curl(A) still reached 2.778 E.
 //
 // E is the rest energy of the LIGHTER of the two, which is the first scale at
 // which the classical description of a constituent stops meaning anything.  A
@@ -153,21 +153,31 @@ constexpr double cubeRoot(double value) {
 //
 // For e+e- this does NOT remove the short-range dipole barrier: the
 // unregularized dipole and Coulomb energies cross at
-// r* = sqrt((mu0/4pi) mu1 mu2 / k|q1 q2|) = 193 fm, outside the 68.47 fm
+// r* = sqrt((mu0/4pi) mu1 mu2 / k|q1 q2|) = 193 fm, outside the 83.64 fm
 // smoothing radius.  For sufficiently asymmetric pairs the E/2 scale can
 // overlap that formal point-dipole crossover, but both then lie at or below
 // the 10 fm terminal boundary where the reported trajectory already ends.
 inline constexpr double dipoleEnergyCeilingFraction=0.5;
-inline constexpr double sixthOrderDipoleCurlPeak=1.5244264856335352;
-static_assert(magneticRegularizationExponent==6.0,
-    "sixthOrderDipoleCurlPeak must be re-derived when the profile changes");
+// Peak of |U| in units of (mu0/4pi) mu1 mu2 / r_reg^3, for the CURRENT
+// regulator exponent.  Derived rather than fitted: the transverse coefficient
+// is w[n(1-w)-1]/r^3, and with u = (r_reg/r)^n its extremum solves
+//
+//     (n-1)(3-n) u^2 + (n^2+4n-6) u - 3 = 0,
+//
+// which at n=6 gives 5u^2-18u+1=0, u=(9+2sqrt19)/5, hence the (9-2sqrt19)^(1/6)
+// peak radius this file used to carry, and at n=12 gives 33u^2-62u+1=0,
+// u=(31+4sqrt58)/33.  Evaluating the coefficient there yields the constant
+// below; an independent 4e6-point numerical maximization agrees to 1.2e-13.
+inline constexpr double regulatorDipoleCurlPeak=2.7783644145278381;
+static_assert(magneticRegularizationExponent==12.0,
+    "regulatorDipoleCurlPeak must be re-derived when the profile changes");
 
 constexpr double dipoleRegularizationRadius(const ParticlePair& pair) {
     const double lighterMass=pair.first.mass<pair.second.mass
         ?pair.first.mass:pair.second.mass;
     return cubeRoot((mu0/(4.0*pi))
         *magneticMoment(pair.first)*magneticMoment(pair.second)
-        *sixthOrderDipoleCurlPeak
+        *regulatorDipoleCurlPeak
         /(dipoleEnergyCeilingFraction
           *lighterMass*speedOfLight*speedOfLight));
 }
@@ -275,8 +285,8 @@ static_assert(agreesTo(pairBohrRadius(ParticlePair{electron,positron}),
 // Pin the default scale as a guard against dropping the curl(A) peak factor or
 // one of the two role moments.  The former scalar-profile radius was 47.22 fm;
 // enforcing the same E/2 ceiling on the production field raises it by
-// (2*1.524426...)^(1/3)=1.450036... to 68.47 fm.
+// (2*2.778364...)^(1/3)=1.771560... to 83.64 fm.
 static_assert(agreesTo(dipoleRegularizationRadius(ParticlePair{electron,positron}),
-                       6.847246471287685e-14,1.0e-8));
+                       8.363926379319052e-14,1.0e-8));
 
 } // namespace positronium::parameters

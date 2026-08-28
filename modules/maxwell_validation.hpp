@@ -2734,15 +2734,24 @@ int runMaxwellSelfTest(
     // is diagonal: radial and transverse source/target dipoles span all of its
     // singular values, hence the larger absolute energy is the maximum over
     // every orientation.  The old test sampled only w(r)*mu1*mu2/r^3; it
-    // certified 0.5 while this production operator actually reached 1.524.
+    // certified 0.5 while this production operator actually reached 2.778.
     const double lighterMass=std::min(firstMass,secondMass);
     double peakDipoleEnergyOverRestEnergy=0.0;
     double peakRadialDipoleEnergyOverRestEnergy=0.0;
     double peakTransverseDipoleEnergyOverRestEnergy=0.0;
     double measuredDipoleCurlPeak=0.0;
-    for(int sample=0;sample<4000;++sample) {
+    // 16000 samples, not 4000.  The peak of the regularized energy narrows in
+    // log-radius as the regulator exponent rises, and at the production
+    // exponent 12 a 4000-point grid over six decades (0.35% spacing in radius
+    // at the peak) resolved the curl peak only to 2.778064 against the derived
+    // 2.7783644, a 3.0e-4 miss against this check's 1e-4 tolerance.  The error
+    // is quadratic in the spacing, so four times the samples brings it to
+    // about 2e-5.  The constant itself is not in doubt: evaluated at the
+    // ANALYTIC peak radius below, the energy matches the 0.5 ceiling to
+    // 1.7e-16.
+    for(int sample=0;sample<16000;++sample) {
         const double radius=magneticRegularizationRadius
-            *std::pow(10.0,-3.0+6.0*sample/3999.0);
+            *std::pow(10.0,-3.0+6.0*sample/15999.0);
         const Vec3 separation{radius,0,0};
         const Vec3 radialTarget{firstMagneticMoment,0,0};
         const Vec3 transverseTarget{0,firstMagneticMoment,0};
@@ -2765,8 +2774,13 @@ int runMaxwellSelfTest(
             energy*std::pow(magneticRegularizationRadius,3)
                 /((mu0/(4.0*pi))*firstMagneticMoment*secondMagneticMoment));
     }
+    // Analytic peak of the transverse coefficient w[n(1-w)-1]/r^3.  With
+    // u = (r_reg/r)^n the extremum solves (n-1)(3-n)u^2+(n^2+4n-6)u-3 = 0;
+    // at the production exponent 12 that is 33u^2-62u+1 = 0, u = (31+4sqrt58)/33,
+    // so the peak sits at r_reg*[33/(31+4sqrt58)]^(1/12) = 0.9494927 r_reg.
+    // (At the former exponent 6 the same equation gave (9-2sqrt19)^(1/6).)
     const double exactDipolePeakRadius=magneticRegularizationRadius
-        *std::pow(9.0-2.0*std::sqrt(19.0),1.0/6.0);
+        *std::pow(33.0/(31.0+4.0*std::sqrt(58.0)),1.0/12.0);
     const Vec3 exactDipolePeakSeparation{exactDipolePeakRadius,0,0};
     const double exactParallelDipoleEnergy=regularizedDipoleInteractionEnergy(
         exactDipolePeakSeparation,{0,firstMagneticMoment,0},
@@ -3187,15 +3201,15 @@ int runMaxwellSelfTest(
         &&isFinite(regulatorOriginForce)&&regulatorOriginForce.norm()==0.0
         // Check both the requested cap and the analytic peak of curl(A).  The
         // lower cap bound prevents an accidentally oversized radius from
-        // passing, while the measured 1.524 factor prevents the validator from
+        // passing, while the measured 2.778 factor prevents the validator from
         // silently returning to the scalar w/r^3 surrogate.
         &&peakDipoleEnergyOverRestEnergy<0.5005
         &&peakDipoleEnergyOverRestEnergy>0.4995
         &&peakTransverseDipoleEnergyOverRestEnergy<0.5005
         &&peakTransverseDipoleEnergyOverRestEnergy>0.4995
-        &&peakRadialDipoleEnergyOverRestEnergy<0.329
-        &&peakRadialDipoleEnergyOverRestEnergy>0.327
-        &&std::abs(measuredDipoleCurlPeak-sixthOrderDipoleCurlPeak)<1.0e-4
+        &&peakRadialDipoleEnergyOverRestEnergy<0.2052
+        &&peakRadialDipoleEnergyOverRestEnergy>0.2050
+        &&std::abs(measuredDipoleCurlPeak-regulatorDipoleCurlPeak)<1.0e-4
         &&exactParallelDipoleEnergy<0.0
         &&exactAntiparallelDipoleEnergy>0.0
         &&std::abs(exactDipolePeakOverRestEnergy

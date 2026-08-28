@@ -6799,10 +6799,69 @@ barierze, gdzie regularyzacja pracuje i nieznikanie jest **artefaktem**.
 Podłogi nie ukrywają więc efektu kanałowego — trzymają model poza strefą, w
 której jego własna regularyzacja taki efekt fabrykuje.
 
-*Konsekwencja praktyczna.* Raportowany `terminal dipole-dipole` niesie w
-produkcji systematyczne \(-59\) eV pochodzące z doboru \(r_{\rm reg}\), na tle
-\(3316\) eV rozrzutu. Każde porównanie kanałów oparte na tej wielkości mierzy
+*Konsekwencja praktyczna — i naprawa.* Raportowany `terminal dipole-dipole`
+niósł systematyczne \(-59\) eV pochodzące z doboru \(r_{\rm reg}\), na tle
+\(3316\) eV rozrzutu; każde porównanie kanałów oparte na tej wielkości mierzyło
 regularyzację, nie oddziaływanie dipol-dipol.
+
+#### Naprawa: wykładnik regulatora 6 → 12
+
+Skoro resztka jest proporcjonalna do \(w'(r)\), naprawą jest regulator, którego
+gradient jest pomijalny tam, gdzie pomijalna jest już jego wartość. Przy
+wykładniku \(6\) waga przy barierze wynosiła \(0{,}998\) — czyli regulator
+prawie nie zmieniał *wartości* — ale jego *gradient* dawał \(0{,}79\%\)
+potencjału kulombowskiego.
+
+*Wyprowadzenie, nie dobór.* Współczynnik poprzeczny profilu to
+\(w[n(1-w)-1]/r^3\), a przy podstawieniu \(u=(r_{\rm reg}/r)^n\) jego ekstremum
+spełnia
+
+\[(n-1)(3-n)u^2+(n^2+4n-6)u-3=0.\]
+
+Dla \(n=6\) daje to \(5u^2-18u+1=0\), \(u=(9+2\sqrt{19})/5\), czyli szczyt przy
+\((9-2\sqrt{19})^{1/6}\) — **dokładnie stałą, którą kod już nosił**, co
+weryfikuje wyprowadzenie na znanym przypadku przed użyciem go do nowego. Dla
+\(n=12\): \(33u^2-62u+1=0\), \(u=(31+4\sqrt{58})/33\), szczyt przy
+\([33/(31+4\sqrt{58})]^{1/12}=0{,}94949269\).
+
+| | wykł. 6 | wykł. 12 |
+|---|---|---|
+| \(K_n\) (szczyt \(|U|r_{\rm reg}^3/(\mu_0\mu_1\mu_2/4\pi)\)) | \(1{,}5244265\) | \(2{,}7783644\) |
+| \(r_{\rm reg}\) | \(68{,}472\) fm | \(83{,}639\) fm |
+| \(w\)(bariera) | \(0{,}998028\) | \(0{,}999957\) |
+| sufit energii dipolowej | \(0{,}5\) | \(0{,}5\) |
+
+Analityczne \(K_{12}\) zgadza się z niezależną maksymalizacją numeryczną
+(\(4\cdot10^6\) punktów) do \(1{,}19\cdot10^{-13}\), a energia w analitycznym
+szczycie trafia w sufit \(0{,}5\,mc^2\) z odchyłką \(1{,}7\cdot10^{-16}\).
+
+*Efekt, zmierzony.* Resztka przy barierze, \(N=10^6\) orientacji:
+
+```
+wykladnik 6:   -58,9 eV   przy 7-9 sigma
+wykladnik 12:   -5,07 eV  +- 3,33   ->  1,52 sigma
+```
+
+czyli z jednoznacznie wykrywalnej staje się **nieodróżnialną od zera**, zgodnie
+z przewidywaniem analitycznym \(-2{,}57\) eV (rozbieżność \(0{,}75\sigma\)).
+
+*Koszt dla produkcji: żaden.* A/B sekwencyjne na pustej maszynie, \(200\)
+zdarzeń, to samo ziarno — wyniki **identyczne co do cyfry**: mediana KM
+\(120{,}355\) ps, RMST \(181{,}78\pm13{,}2435\) ps, średnia ukończonych
+\(163{,}086\pm11{,}7395\) ps, promień terminalny \(281{,}078\) fm, ukończenia
+\(186/200\) w obu. Trajektorie nie docierają tam, gdzie regulator się różni, a
+przy barierze nowy regulator jest **mniej** natrętny także co do wartości.
+
+> Walidator złapał przy tej zmianie dwie rzeczy. `static_assert` przypinający
+> \(r_{\rm reg}\) wywalił kompilację, bo zapomniałem go przeliczyć. Potem
+> `measuredDipoleCurlPeak` rozminął się o \(3{,}0\cdot10^{-4}\) przy tolerancji
+> \(10^{-4}\) — ale winna była **siatka, nie stała**: szczyt przy wykładniku
+> \(12\) jest węższy w skali logarytmicznej, a \(4000\) punktów na sześć dekad
+> daje \(0{,}35\%\) odstępu w promieniu. Rozstrzygnął to test przy
+> analitycznym promieniu (odchyłka \(1{,}7\cdot10^{-16}\)), więc siatka
+> została zagęszczona do \(16\,000\) punktów zamiast rozluźnienia tolerancji —
+> ta ostatnia broni przed cichym powrotem produkcji do skalarnego surogatu
+> \(w/r^3\) i osłabianie jej byłoby naprawianiem miernika zamiast pomiaru.
 
 Wniosek dla ewentualnego modelu anihilacji trzeba więc osłabić: różnica kanałów
 w budżecie energetycznym **istnieje przy barierze**, ale jest o \(1{,}6\%\)

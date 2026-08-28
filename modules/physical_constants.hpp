@@ -59,7 +59,22 @@ inline constexpr double nuclearCutoff = 1.0e-14;
 // from being tied to e+e-, that value bounded only w/r^3; the production
 // curl(A) has a larger transverse maximum.  particle_species.hpp now derives
 // the pair scale from that actual field maximum.
-inline constexpr double magneticRegularizationExponent = 6.0;
+// Raised from 6 to 12.  The regulator's VALUE at the radii trajectories
+// actually visit was already negligible at 6 (w = 0.998 at the Compton
+// barrier), but its GRADIENT was not, and the azimuth-averaged dipole energy
+// depends on exactly that gradient:
+//
+//     <U> = -(mu0/4pi) (mu1.mu2) (2/3) w'(r)/r^2,
+//
+// which is identically zero for an unregularized 1/r^3 and nonzero only
+// through w'.  At exponent 6 that left a -58.6 eV channel-signed systematic at
+// the barrier -- 0.79% of Coulomb -- that scaled with the arbitrary regulator
+// radius (factor 57 and a sign flip under a factor-2 change), i.e. an artefact
+// masquerading as the model's only channel-dependent energy effect.  At 12 the
+// same term is -2.57 eV, a 23-fold reduction, and the regulator is LESS
+// intrusive in value as well (w = 0.999957 against 0.998).  See the README
+// section on the dipole-dipole channel difference.
+inline constexpr double magneticRegularizationExponent = 12.0;
 inline constexpr double hbar = 1.054571817e-34;
 // Compton barrier of the e+e- pair: r* = (g/2)*(reduced Compton wavelength)/2
 //   = g*hbar/(4*m_e*c) = 193.30 fm,
