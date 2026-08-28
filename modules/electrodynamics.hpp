@@ -914,10 +914,34 @@ enum class ChargeRadiationReactionModel {
     // usually-assumed M1/E2, are the genuine next multipole order after
     // E1 here.  Estimated at beta^4 relative to E1 (one order beyond the
     // usual beta^2 for M1/E2, since M2 pays both the "magnetic" and the
-    // "one l higher" penalty): ~3e-9 at a_Ps, growing only to order unity
-    // right at the Compton barrier where the rest of this model already
-    // stops applying -- genuinely negligible, not fixed, and the search
-    // that ruled it out surfaced something that was not negligible.)  The
+    // "one l higher" penalty): ~3e-9 at a_Ps -- genuinely negligible, not
+    // fixed, and the search that ruled it out surfaced something that was
+    // not negligible.)
+    //
+    // RE-AUDITED.  The structure holds exactly and is worth stating in
+    // closed form: for equal masses the multipole of order n goes as
+    // (r/2)^n [q1 + q2(-1)^n], which for q2 = -q1 vanishes for EVEN n and
+    // survives for odd; the magnetic series picks up one further sign
+    // reversal from v2 = -v1 and so has the OPPOSITE parity.  Hence E1
+    // survives, E2 vanishes, E3 survives; M1 (orbital) vanishes, M2
+    // survives.  The next non-vanishing order after E1 is {E3, M2}, both
+    // beta^4 in power, exactly as claimed.
+    //
+    // The MAGNITUDE claim was wrong.  This comment used to add that beta^4
+    // grows "to order unity right at the Compton barrier".  It does not.
+    // A circular orbit at r* has |E| = K/2r* = (2/g) alpha m c^2 = 1/2 mu
+    // v^2, giving beta^2 = 4 alpha and
+    //
+    //     beta^4 = 8.52e-04 at the barrier, not 1 -- wrong by 1174x,
+    //     beta^4 = 3.08e-06 at the period/light-crossing threshold of 150,
+    //     beta^4 = 2.84e-09 at a_Ps (the ~3e-9 above, which was right).
+    //
+    // The error is in the SAFE direction: the neglected order is three
+    // orders smaller than the comment claimed, so the decision not to
+    // implement it is better founded than its own justification said.  It
+    // also matters less than it did: production now stops at the ground
+    // state rather than the barrier, so the endpoint sits at beta^4 = 2.8e-9
+    // instead of 8.5e-4.  The
     // one mechanically-measured orbit every checkpoint performs
     // (runMechanicalTrajectory, feeding deltaEnergyPerOrbit/
     // orbitalRadiatedEnergy above) genuinely radiates via the real

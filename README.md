@@ -7028,6 +7028,72 @@ zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), 
 progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
 mylić.
 
+#### Dwa udokumentowane braki, sprawdzone: jeden trzyma, w drugim liczba była błędna
+
+Tabela audytu niżej ma dwie pozycje oparte na **uzasadnieniu**, a nie na
+pomiarze: M2/E3 i dynamika anihilacji. Obie sprawdzone osobno.
+
+**M2/E3 — struktura trzyma dokładnie, magnitude nie.**
+
+Struktura da się zapisać w postaci zamkniętej. Dla równych mas moment
+multipolowy rzędu \(n\) idzie jak \((r/2)^n[q_1+q_2(-1)^n]\), co dla
+\(q_2=-q_1\) **znika dla parzystych \(n\)** i przeżywa dla nieparzystych;
+szereg magnetyczny dostaje jeszcze jedno odwrócenie znaku z \(\mathbf
+v_2=-\mathbf v_1\), więc ma **odwrotną parzystość**:
+
+| | E1 | E2 | E3 | M1 | M2 | M3 |
+|---|---|---|---|---|---|---|
+| | przeżywa | **znika** | przeżywa | **znika** | przeżywa | znika |
+
+Następny niezerowy rząd po E1 to więc \(\{E3, M2\}\), oba \(\beta^4\) w
+mocy — dokładnie jak twierdzi kod.
+
+Ale komentarz dodawał, że \(\beta^4\) „rośnie do rzędu jedności przy samej
+barierze Comptona". **Nie rośnie.** Orbita kołowa przy \(r^*\) ma
+\(|E|=K/2r^*=(2/g)\alpha m c^2=\tfrac12\mu v^2\), skąd \(\beta^2=4\alpha\):
+
+| miejsce | \(\beta\) | \(\beta^4\) | komentarz |
+|---|---|---|---|
+| \(a_{Ps}\) | 0,007297 | \(2{,}84\cdot10^{-9}\) | „~3e-9" ✔ |
+| próg retardacyjny (150) | 0,041888 | \(3{,}08\cdot10^{-6}\) | — |
+| bariera \(r^*\) | 0,170849 | \(8{,}52\cdot10^{-4}\) | „rzędu jedności" ✘ **1174×** |
+
+Błąd jest w stronę **bezpieczną**: zaniedbany rząd jest trzy rzędy mniejszy,
+niż głosiło jego własne uzasadnienie, więc decyzja o niewdrażaniu stoi mocniej,
+niż sama twierdziła. I znaczy dziś mniej: produkcja kończy na stanie
+podstawowym, a nie na barierze, więc punkt końcowy siedzi przy
+\(\beta^4=2{,}8\cdot10^{-9}\), nie \(8{,}5\cdot10^{-4}\).
+
+**Dynamika anihilacji — brak trzyma, i da się go podać liczbą.**
+
+Sprawdzone: w kodzie nie ma żadnego rate'u ani czasu życia anihilacji —
+jedyne trafienia na „Gamma" to gamma Lorentza i tytuł w bibliografii. Moduł
+`qed_reference` niesie **kinematykę** anihilacji (kanał \(s\), Bhabha), nie
+jej tempo.
+
+Brak nie jest brakującym współczynnikiem, tylko brakującym pojęciem: tempo
+anihilacji jest w QED proporcjonalne do \(|\psi(0)|^2\), a klasyczna orbita o
+\(L\neq0\) ma w zerze gęstość dokładnie zero. Konkretnie, jak daleko jest
+model od skali, na której anihilacja w ogóle zachodzi:
+
+| skala | wartość | \(a_{Ps}/\text{skala}\) |
+|---|---|---|
+| \(a_{Ps}\) (postój pod podłogą) | \(105{,}835\) pm | — |
+| bariera \(r^*\) | \(193{,}303\) fm | 547 |
+| zredukowana dł. Comptona \(\bar\lambda_C\) | \(386{,}159\) fm | **274** |
+| klasyczny promień elektronu | \(2{,}818\) fm | 37 558 |
+
+Pod domyślną konfiguracją para parkuje \(274\) zredukowane długości Comptona
+od kontaktu. W trybie barierowym schodzi do \(r^*=0{,}501\,\bar\lambda_C\) —
+czyli **na samą skalę Comptona**, gdzie fizyka anihilacji żyje, ale to jest
+dokładnie ten promień, przy którym model ogłasza swoją nieważność. Brak jest
+więc strukturalny w obu trybach, a pod nową domyślną konfiguracją o
+\(274\times\) dalszy.
+
+(Przy okazji test spójności: \(r^*=g\hbar/4m_ec=(g/4)\bar\lambda_C\), a
+zmierzone \(r^*/\bar\lambda_C=0{,}501\) — bariera to dokładnie pół
+zredukowanej długości Comptona, z dokładnością do \(g/2\).)
+
 #### Audyt kompletności: który człon jest w której warstwie
 
 Pytanie: czy wszystkie policzone efekty — spin-orbita, orbita-spin i tak dalej
