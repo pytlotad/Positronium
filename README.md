@@ -6940,13 +6940,51 @@ Skip **nie** degeneruje się: przy \(a<500\) fm nadal pokrywa \(433\) orbity,
 czyli obwiednia keplerowska pracuje pełną parą dokładnie tam, gdzie jest
 nieważna. Granicy do rozdzielenia nie ma.
 
-*Wniosek.* Nadanie elementom pełnego potencjału wymaga wyprowadzenia od nowa
-obwiedni sekularnej dla potencjału bez rozwiązania zamkniętego. Realną drogą
-jest **rachunek zaburzeń w \(C\)** — poprawki pierwszego rzędu do wykładników
-obwiedni — co dałoby formy zamknięte, których skip potrzebuje. Jest to osobne
-wyprowadzenie z własną walidacją, nie refaktoryzacja, i nie zostało tu podjęte.
-Diagnostyka `CREM_APSIDAL` zostaje w kodzie właśnie po to, żeby takie
-wyprowadzenie miało przeciw czemu się walidować.
+*Rachunek zaburzeń w \(C\) — wykonany, i jego granica.* Dla ustalonej
+orientacji dipoli uśredniona po azymucie energia jest dokładnie \(C/r^3\) ze
+stałym \(C=-\tfrac{\mu_0}{4\pi}\big[\tfrac12\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2-\tfrac32(\boldsymbol\mu_1\!\cdot\!\hat L)(\boldsymbol\mu_2\!\cdot\!\hat L)\big]\),
+więc problem jest klasyczną perturbacją Keplera. Przez akcję radialną
+\(S_r=\oint p_r\,dr\):
+
+\[\delta S_r=-2C\int_{r_-}^{r_+}\frac{dr}{r^3\sqrt{X}}\]
+
+i kluczowe uproszczenie \(dr/\sqrt X=dt=r^2d\varphi/L\) redukuje to do
+\((1/L)\int d\varphi/r\), co dla \(r=p/(1+e\cos\varphi)\) daje \(\pi/(Lp)\) na
+pół obiegu. Stąd
+
+\[\delta S_r=-\frac{2\pi CK}{L^3}.\]
+
+**Nie zależy od \(E\)** — a ponieważ \(T_r=\partial S_r/\partial E\), wynika z
+tego \(\delta T=0\): poprawka pierwszego rzędu do okresu **znika
+tożsamościowo**. To wyjaśnia zmierzoną medianę odchylenia okresu równą dokładnie
+\(0{,}0\) i \(90\%\) na \(3{,}7\cdot10^{-9}\). Okres wypada więc z pytania o
+niekeplerowskość — nie z powodu małości, tylko struktury.
+
+Z \(\Phi=-\partial S_r/\partial L\) wychodzi natomiast precesja:
+
+\[\frac{\Delta\varphi}{\pi}=1-\frac{3CK}{L^4}.\]
+
+*Zweryfikowane numerycznie:*
+
+| \(a\) [fm] | numerycznie | teoria \(1\). rzędu | iloraz |
+|---|---|---|---|
+| \(31\,697\) | \(6{,}885\cdot10^{-5}\) | \(6{,}887\cdot10^{-5}\) | \(0{,}9997\) |
+| \(4138\) | \(4{,}081\cdot10^{-3}\) | \(4{,}041\cdot10^{-3}\) | \(1{,}0099\) |
+| \(1000\) | \(2{,}919\cdot10^{-1}\) | \(6{,}920\cdot10^{-2}\) | \(4{,}22\) |
+| \(282{,}6\) | \(-1{,}912\cdot10^{-1}\) | \(+8{,}667\cdot10^{-1}\) | \(-0{,}22\) |
+
+**Wzór jest potwierdzony do \(0{,}03\%\) przy \(31\,697\) fm i do \(1\%\) przy
+\(4138\) fm — i załamuje się dokładnie tam, gdzie poprawka staje się duża.**
+Przy \(1000\) fm myli się czterokrotnie, przy \(282\) fm ma zły znak, bo
+przyciągający \(C/r^3\) wtedy orbitę niszczy, a nie zaburza.
+
+*Wniosek dla obwiedni.* Rachunek zaburzeń działa tam, gdzie \(C\) nie ma
+znaczenia, i zawodzi tam, gdzie ma. Obwiednia sekularna psuje się przy małych
+\(a\), czyli w obszarze rozbieżności szeregu — perturbacyjna droga nie naprawi
+więc skipu w reżimie terminalnym. Nadanie elementom pełnego potencjału
+pozostaje możliwe tylko przez numeryczną obwiednię, której skip miał właśnie
+unikać. Diagnostyka `CREM_APSIDAL` zostaje w kodzie, żeby każda przyszła próba
+miała przeciw czemu się walidować.
 
 *Zmierzony skutek — znacznie mniejszy, niż zapowiadał test wrażliwości.* A/B
 sekwencyjne, \(200\) zdarzeń, to samo ziarno:
