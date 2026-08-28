@@ -6255,14 +6255,64 @@ błąd zgodny co do czterech cyfr, \(5{,}043\cdot10^{-6}\) i
 \(6{,}778\cdot10^{-6}\). Podwojenie precyzji mantysy nie zmienia niczego, więc
 próg jest deterministyczny, a nie szumowy.
 
-Czym jest, pozostaje nierozstrzygnięte. Wychylenie energii mechanicznej jest co
-do bitu lustrzane wobec rezerwuaru pola związanego — suma wychodzi dokładnie
-zero — ale jest to **ta sama tożsamość**, o której mowa wyżej, więc nie odróżnia
-fizycznej wymiany z polem bliskim od deterministycznego błędu schematu
-wchłoniętego przez resztę. Praktyczny wniosek jest natomiast jednoznaczny: próg
-leży niecałe dwa razy powyżej sygnału \(2{,}6\cdot10^{-6}\) na obieg i **nie
-usuwa go ani rząd, ani tolerancja, ani precyzja**, więc odejmowanie przebiegu
-tła jest w tym schemacie konieczne.
+**Rozstrzygnięte: to niezgodność siły z energią, a nie błąd całkowania.**
+Wcześniejsza wersja tego akapitu zostawiała pytanie otwarte, zauważając tylko,
+że lustrzana tożsamość wobec rezerwuaru pola nie odróżnia fizycznej wymiany od
+błędu schematu. Rozdziela je natomiast prosty eksperyment, którego wtedy nie
+wykonano: **przełączyć siłę, a nie tolerancję.**
+
+Silnik ma diagnostyczny przełącznik `useRetardedExternalForces`. Przy `true`
+(produkcja) całkowana jest pełna, retardowana siła Liénarda–Wiecherta; przy
+`false` — sama siła Coulomba–Darwina, czyli dokładnie ta, której potencjałem
+`conservativeParticleEnergy()` **jest**. Zmierzony dryf energii zachowawczej
+przez jeden obieg przy \(a_{Ps}\), z wyłączoną reakcją promieniowania i
+zerowymi dipolami:
+
+| tolerancja | retardowana (produkcja) | Coulomb+Darwin |
+|---|---|---|
+| \(10^{-5}\) | \(2{,}314\cdot10^{-6}\) | \(5{,}131\cdot10^{-7}\) |
+| \(10^{-6}\) | \(2{,}314\cdot10^{-6}\) | \(5{,}131\cdot10^{-7}\) |
+| \(10^{-7}\) | \(1{,}280\cdot10^{-6}\) | \(1{,}283\cdot10^{-7}\) |
+| \(10^{-8}\) | \(1{,}827\cdot10^{-6}\) | \(6{,}415\cdot10^{-8}\) |
+| \(10^{-9}\) | \(1{,}604\cdot10^{-6}\) | \(3{,}208\cdot10^{-8}\) |
+
+Dopasowana para siła–energia **zbiega monotonicznie**, o czynnik \(2\) na
+dekadę tolerancji, bez śladu podłogi. Para niedopasowana staje w miejscu.
+Podłogi nie ma więc w integratorze — jest w tym, że mierzy się zachowanie
+wielkości, która nie jest całką ruchu całkowanej siły.
+
+*Którego rzędu jest brakujący człon — zmierzone, nie założone.* Podłoga
+przemieciona po \(\beta\) (promień od \(a_{Ps}\) do \(a_{Ps}/16\), tolerancja
+zacieśniona aż do nasycenia):
+
+| \(r/a_{Ps}\) | \(\beta\) | podłoga | podłoga\(/\beta^3\) | nachylenie lokalne |
+|---|---|---|---|---|
+| \(1\) | \(7{,}297\cdot10^{-3}\) | \(1{,}604\cdot10^{-6}\) | \(4{,}13\) | — |
+| \(1/2\) | \(1{,}032\cdot10^{-2}\) | \(4{,}492\cdot10^{-6}\) | \(4{,}09\) | \(2{,}97\) |
+| \(1/4\) | \(1{,}460\cdot10^{-2}\) | \(1{,}190\cdot10^{-5}\) | \(3{,}83\) | \(2{,}81\) |
+| \(1/8\) | \(2{,}064\cdot10^{-2}\) | \(3{,}587\cdot10^{-5}\) | \(4{,}08\) | \(3{,}18\) |
+| \(1/16\) | \(2{,}919\cdot10^{-2}\) | \(9{,}485\cdot10^{-5}\) | \(3{,}81\) | \(2{,}81\) |
+
+Wykładnik \(2{,}94\pm0{,}15\), a iloraz \(\text{podłoga}/\beta^3\) stały co do
+\(7\%\) na czterokrotnym zakresie \(\beta\). Podłoga wynosi więc
+\(\approx4\beta^3\) — a \(O(\beta^3)\) to **dokładnie pierwszy rząd, którego
+lagranżjan Darwina nie zawiera**: Darwin jest zupełny do \(O(v^2/c^2)\)
+włącznie, a następny rząd retardacji nie daje się już zapisać jako potencjał
+dwuciałowy, bo to ten rząd, w którym energia realnie przechodzi do pola.
+
+To wyjaśnia komplet objawów naraz. Niezależność od precyzji mantysy — bo to
+nie zaokrąglenia. Niezależność od tolerancji — bo to nie błąd kroku.
+Deterministyczność — bo to człon fizyczny o ustalonej wielkości. A nawet
+**wzrost** przy zacieśnianiu tolerancji z \(10^{-7}\) do \(10^{-9}\): podłoga
+nie jest granicą monotoniczną, tylko obwiednią oscylacji zależnej od fazy, więc
+inna sekwencja kroków trafia w inne maksimum w tej samej obwiedni.
+
+Praktyczny wniosek stoi bez zmian, ale ma teraz uzasadnienie zamiast samej
+obserwacji: próg leży niecałe dwa razy powyżej sygnału
+\(2{,}6\cdot10^{-6}\) na obieg i nie usuwa go ani rząd, ani tolerancja, ani
+precyzja, więc odejmowanie przebiegu tła jest konieczne — a jest przy tym
+**właściwym** narzędziem, bo przebieg tła niesie tę samą obcinkę Darwina w tej
+samej fazie, więc odejmowanie ją kasuje, zostawiając stratę fizyczną.
 
 Prawdziwe przyczyny są dwie i żadna nie jest precyzją. Po pierwsze **granice są
 sprzężone**: wewnętrzne całkowanie ma `terminalSeparation` równe

@@ -2087,6 +2087,24 @@ Vec3 noetherAngularMomentum(const State& s) {
     return noetherAngularMomentum(s, canonicalMomenta(s));
 }
 
+// The Darwin energy: exact through O(v^2/c^2) and no further.  It is the
+// potential of the Coulomb+Darwin force (allExternalForces), NOT of the
+// retarded Lienard-Wiechert force production actually integrates, and the
+// gap between the two is the reason this quantity has a floor no tolerance
+// can lower.  Measured over one orbit at a_Ps with radiation reaction off:
+// integrating the matched Coulomb+Darwin force, the drift falls 5.13e-7 ->
+// 1.28e-7 -> 6.42e-8 -> 3.21e-8 as the tolerance goes 1e-6 -> 1e-9, cleanly
+// converging; integrating the retarded force it sits at 1.3-2.3e-6 and does
+// not converge at all.  Swept over beta (a_Ps down to a_Ps/16) that floor
+// scales as beta^2.94 +- 0.15 with floor/beta^3 constant to 7% at 3.8-4.1 --
+// i.e. it is the O(beta^3) retardation term, the first order Darwin omits
+// and the order at which the two-body interaction stops being derivable
+// from a potential at all.
+//
+// Consequences for callers: differences of this function are meaningful only
+// against a reference carrying the same truncation at the same phase, which
+// is exactly what crem_collapse.hpp's background run is for.  See the README
+// section on the deterministic threshold in the energy balance.
 double conservativeParticleEnergy(const State& state) {
     const PairGeometry geometry=clampedPairGeometry(state);
     const double kinetic=kineticEnergy(state.firstVelocity,firstMass)
