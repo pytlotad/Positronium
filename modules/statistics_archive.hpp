@@ -141,7 +141,60 @@ inline const std::vector<ScientificSource>& scientificSources() {
          "https://doi.org/10.1080/14786440508637080", "2026-08-11"},
         {"internal_ideal_model", "Positronium simulation",
          "Ideal statistical model assumptions", "In-program model definition",
-         2026, "", "", "2026-08-11"}
+         2026, "", "", "2026-08-11"},
+        // Stochastic electrodynamics.  These back no plotted VALUE -- nothing
+        // in scientificValues() cites them -- and are catalogued because the
+        // README's --zpf section rests on the SED literature while the
+        // bibliography carried nothing from it, so a reader had no way to
+        // check the framing or to find where the same question is argued.
+        //
+        // Metadata verified against Crossref, not written from memory, and
+        // the check caught an error worth recording: the Cole and Zou title
+        // ends "from classical electrodynamics", not "from classical
+        // physics".  What these papers CONCLUDE is deliberately not
+        // paraphrased anywhere -- Crossref returns no abstracts for them and
+        // they were not read here, so only their existence, authorship and
+        // titles are asserted.  The two 2003 entries are published Comments,
+        // which their own titles establish; that the Cole-Zou result was
+        // contested in print is therefore citable, while who was right is
+        // not claimed.
+        {"boyer_1975", "Timothy H. Boyer",
+         "Random electrodynamics: The theory of classical electrodynamics "
+         "with classical electromagnetic zero-point radiation",
+         "Physical Review D 11, 790-808", 1975,
+         "10.1103/PhysRevD.11.790",
+         "https://doi.org/10.1103/PhysRevD.11.790", "2026-08-28"},
+        {"cole_zou_2003", "Daniel C. Cole; Yi Zou",
+         "Quantum mechanical ground state of hydrogen obtained from "
+         "classical electrodynamics",
+         "Physics Letters A 317, 14-20", 2003,
+         "10.1016/j.physleta.2003.08.022",
+         "https://doi.org/10.1016/j.physleta.2003.08.022", "2026-08-28"},
+        {"boyer_2003_comment", "Timothy H. Boyer",
+         "Comments on Cole and Zou's Calculation of the Hydrogen Ground "
+         "State in Classical Physics",
+         "Foundations of Physics Letters 16, 613-617", 2003,
+         "10.1023/B:FOPL.0000012787.05764.4d",
+         "https://doi.org/10.1023/B:FOPL.0000012787.05764.4d", "2026-08-28"},
+        {"milonni_2003_comment", "Peter W. Milonni",
+         "Comment on Cole and Zou's Classical Computations of the Hydrogen "
+         "Ground State",
+         "Foundations of Physics Letters 16, 619-621", 2003,
+         "10.1023/B:FOPL.0000012788.94843.5b",
+         "https://doi.org/10.1023/B:FOPL.0000012788.94843.5b", "2026-08-28"},
+        {"nieuwenhuizen_liska_2015", "Theo M. Nieuwenhuizen; Matthew T. P. Liska",
+         "Simulation of the hydrogen ground state in stochastic "
+         "electrodynamics",
+         "Physica Scripta T165, 014006", 2015,
+         "10.1088/0031-8949/2015/T165/014006",
+         "https://doi.org/10.1088/0031-8949/2015/T165/014006", "2026-08-28"},
+        {"nieuwenhuizen_liska_2015b",
+         "Theodorus M. Nieuwenhuizen; Matthew T. P. Liska",
+         "Simulation of the Hydrogen Ground State in Stochastic "
+         "Electrodynamics-2: Inclusion of Relativistic Corrections",
+         "Foundations of Physics 45, 1190-1202", 2015,
+         "10.1007/s10701-015-9919-0",
+         "https://doi.org/10.1007/s10701-015-9919-0", "2026-08-28"}
     };
     return sources;
 }

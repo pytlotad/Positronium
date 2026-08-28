@@ -75,6 +75,60 @@ doi=
 url=
 accessed=2026-08-11
 
+[source:boyer_1975]
+authors=Timothy H. Boyer
+title=Random electrodynamics: The theory of classical electrodynamics with classical electromagnetic zero-point radiation
+publication=Physical Review D 11, 790-808
+year=1975
+doi=10.1103/PhysRevD.11.790
+url=https://doi.org/10.1103/PhysRevD.11.790
+accessed=2026-08-28
+
+[source:cole_zou_2003]
+authors=Daniel C. Cole; Yi Zou
+title=Quantum mechanical ground state of hydrogen obtained from classical electrodynamics
+publication=Physics Letters A 317, 14-20
+year=2003
+doi=10.1016/j.physleta.2003.08.022
+url=https://doi.org/10.1016/j.physleta.2003.08.022
+accessed=2026-08-28
+
+[source:boyer_2003_comment]
+authors=Timothy H. Boyer
+title=Comments on Cole and Zou's Calculation of the Hydrogen Ground State in Classical Physics
+publication=Foundations of Physics Letters 16, 613-617
+year=2003
+doi=10.1023/B:FOPL.0000012787.05764.4d
+url=https://doi.org/10.1023/B:FOPL.0000012787.05764.4d
+accessed=2026-08-28
+
+[source:milonni_2003_comment]
+authors=Peter W. Milonni
+title=Comment on Cole and Zou's Classical Computations of the Hydrogen Ground State
+publication=Foundations of Physics Letters 16, 619-621
+year=2003
+doi=10.1023/B:FOPL.0000012788.94843.5b
+url=https://doi.org/10.1023/B:FOPL.0000012788.94843.5b
+accessed=2026-08-28
+
+[source:nieuwenhuizen_liska_2015]
+authors=Theo M. Nieuwenhuizen; Matthew T. P. Liska
+title=Simulation of the hydrogen ground state in stochastic electrodynamics
+publication=Physica Scripta T165, 014006
+year=2015
+doi=10.1088/0031-8949/2015/T165/014006
+url=https://doi.org/10.1088/0031-8949/2015/T165/014006
+accessed=2026-08-28
+
+[source:nieuwenhuizen_liska_2015b]
+authors=Theodorus M. Nieuwenhuizen; Matthew T. P. Liska
+title=Simulation of the Hydrogen Ground State in Stochastic Electrodynamics-2: Inclusion of Relativistic Corrections
+publication=Foundations of Physics 45, 1190-1202
+year=2015
+doi=10.1007/s10701-015-9919-0
+url=https://doi.org/10.1007/s10701-015-9919-0
+accessed=2026-08-28
+
 [value:para_decay_rate_measurement]
 source=al_ramadhan_gidley_1994
 phenomenon_mask=1

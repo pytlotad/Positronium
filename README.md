@@ -6471,6 +6471,37 @@ Werdykt sekcji zostaje bez zmian — ucieczka orbity przy szerokich pasmach jest
 zmierzona i realna, a pięć prób kończących się `trajectory: FAIL` na trzech
 ziarnach nadal obowiązuje. Zmienia się diagnoza przyczyny.
 
+*Umiejscowienie w literaturze — i granica tego, co tu twierdzę.* Sekcja
+opierała się na pojęciu elektrodynamiki stochastycznej, a bibliografia nie
+miała ani jednej pozycji z tej dziedziny; czytelnik nie miał więc jak
+sprawdzić ram ani znaleźć miejsca, gdzie to samo pytanie jest dyskutowane.
+Do katalogu dopisano sześć pozycji, wszystkie z metadanymi zweryfikowanymi
+w Crossref przez `make references-check` (\(11\) DOI sprawdzonych, \(0\)
+niezgodności):
+
+| klucz | pozycja |
+|---|---|
+| `boyer_1975` | T. H. Boyer, *Random electrodynamics: The theory of classical electrodynamics with classical electromagnetic zero-point radiation*, Phys. Rev. D **11**, 790–808 (1975) |
+| `cole_zou_2003` | D. C. Cole, Y. Zou, *Quantum mechanical ground state of hydrogen obtained from classical electrodynamics*, Phys. Lett. A **317**, 14–20 (2003) |
+| `boyer_2003_comment` | T. H. Boyer, *Comments on Cole and Zou's Calculation of the Hydrogen Ground State in Classical Physics*, Found. Phys. Lett. **16**, 613–617 (2003) |
+| `milonni_2003_comment` | P. W. Milonni, *Comment on Cole and Zou's Classical Computations of the Hydrogen Ground State*, Found. Phys. Lett. **16**, 619–621 (2003) |
+| `nieuwenhuizen_liska_2015` | T. M. Nieuwenhuizen, M. T. P. Liska, *Simulation of the hydrogen ground state in stochastic electrodynamics*, Phys. Scr. **T165**, 014006 (2015) |
+| `nieuwenhuizen_liska_2015b` | T. M. Nieuwenhuizen, M. T. P. Liska, *…-2: Inclusion of Relativistic Corrections*, Found. Phys. **45**, 1190–1202 (2015) |
+
+Weryfikacja od razu złapała błąd, który powstałby przy cytowaniu z pamięci:
+tytuł pracy Cole'a i Zou kończy się na „from classical **electrodynamics**",
+nie „from classical physics".
+
+**Czego te pozycje tutaj nie uzasadniają.** Crossref nie zwraca dla nich
+abstraktów, a prace nie zostały tu przeczytane, więc **nie parafrazuję ich
+wniosków** i żaden wynik tej sekcji się na nich nie opiera. Twierdzę
+wyłącznie to, co wynika z samych tytułów: że Cole i Zou ogłosili wynik
+pozytywny dla stanu podstawowego wodoru, że ukazały się dwa opublikowane
+**komentarze** do tego rachunku, oraz że problem był potem symulowany
+ponownie, w drugiej pracy z poprawkami relatywistycznymi. Innymi słowy —
+pytanie, które ta sekcja bada, jest w literaturze **sporne**, a nie
+zaniedbane; kto ma rację, nie jest tu rozstrzygane ani zakładane.
+
 **Sprawdzone wprost, czy to obcięcie po prostu za mało modów, a nie sam
 mechanizm.** Powyższy wynik przy `0.3,300` użył 64 modów. Zmierzone na tym
 samym paśmie i ziarnie (42) przy 64/256/1024 modach: promień końcowy
