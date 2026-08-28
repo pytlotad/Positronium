@@ -6848,16 +6848,64 @@ Czyli dla \(98{,}5\%\) orientacji przewidywany punkt zwrotny leży poza
 
 *Co to znaczy, a czego nie znaczy.* **Nie** znaczy, że trajektorie są źle
 całkowane — integrator niesie pełną siłę i ruch jest poprawny. Znaczy, że
-**warstwa sekularna** (elementy oskulacyjne, punkty zwrotne, reguła
-zatrzymania) opisuje układ potencjałem, w którym w chwili podejmowania decyzji
-brakuje członu porównywalnego z wiodącym. Pozycja \(36{,}4\%\) „brak
-dozwolonej orbity" nie mówi, że orbita fizycznie nie istnieje — mówi, że
-para \((E,L)\) wyprowadzona bez dipola jest niespójna z pełnym potencjałem.
+**warstwa sekularna** opisywała układ potencjałem, w którym w chwili
+podejmowania decyzji brakowało członu porównywalnego z wiodącym.
 
 To jest problem **wyłącznie terminalny**: człon dipolowy skaluje się jak
 \(1/r^3\) wobec \(1/r\) Coulomba, więc przy \(a_{Ps}\) stanowi \(10^{-6}\)
-potencjału i jest bez znaczenia. Gryzie dopiero tam, gdzie trajektoria się
-kończy — czyli dokładnie tam, gdzie zapada decyzja.
+potencjału. Gryzie dopiero tam, gdzie trajektoria się kończy — czyli dokładnie
+tam, gdzie zapada decyzja.
+
+*Naprawione: `dipoleAwarePeriapsis`.* Reguła zatrzymania rozwiązuje teraz
+numerycznie
+
+\[E=U_{\rm coul}(r)+U_{dd}(r)+\frac{L^2}{2r^2}\]
+
+zamiast odwracać relację Keplera z potencjału bez dipola.
+
+**Element nie wymagał zmiany**, i to jest sedno rozwiązania. Wcześniejsza
+wersja tego dokumentu odkładała naprawę, twierdząc, że wymaga nadania elementom
+niekeplerowskiego potencjału, bo osiem miejsc czyta je jako \(a=-K/2\varepsilon\),
+\(e^2\) i okres. Okazało się to rozwiązywalne bez ich dotykania:
+`elements.specificEnergy` jest inicjowane jako \(KE+U_{\rm coul}\) przy
+\(a_{Ps}\), gdzie dipol to \(10^{-6}\) potencjału, a potem maleje wyłącznie o
+wypromieniowaną energię — a zachowana jest suma \(KE+U_{\rm coul}+U_{dd}\).
+Zatem
+
+\[E_{\rm elem}=\big(KE+U_{\rm coul}\big)\Big|_{\rm teraz}+U_{dd}\Big|_{\rm teraz},\]
+
+czyli **element już jest pełną energią całkowitą**; wadliwe było wyłącznie
+*odwracanie* go z powrotem na promień. Dipol wchodzi więc tam, gdzie promień
+jest faktycznie rozwiązywany, a znaczenie keplerowskie elementu zostaje
+nietknięte.
+
+Nowa funkcja wyraża też stan, którego stara reguła nie umiała: gdy człon
+dipolowy jest odpychający na tyle, że żaden promień poniżej bieżącej orbity nie
+jest dostępny, para **zatrzymuje się** i zwracany jest promień zatrzymania.
+Wcześniej takie trajektorie ogłaszano jako „dotarły do bariery".
+
+*Zmierzony skutek — znacznie mniejszy, niż zapowiadał test wrażliwości.* A/B
+sekwencyjne, \(200\) zdarzeń, to samo ziarno:
+
+| | przed | po |
+|---|---|---|
+| ukończenia | \(186/200\) | \(184/200\) |
+| mediana KM | \(120{,}355\) ps | \(123{,}618\) ps |
+| RMST | \(181{,}78\pm13{,}24\) ps | \(183{,}73\pm13{,}38\) ps |
+| średnia ukończonych | \(163{,}09\pm11{,}74\) ps | \(164{,}04\pm11{,}85\) ps |
+| promień terminalny | \(281{,}078\) fm | \(282{,}565\) fm |
+| wiązanie terminalne | \(2{,}5615\) keV | \(2{,}54802\) keV |
+
+RMST przesuwa się o \(0{,}15\sigma\), średnia o \(0{,}08\sigma\), ukończenia
+mieszczą się w szumie Poissona. Promień terminalny rośnie o \(0{,}53\%\), a
+wiązanie spada o tyle samo — spójnie, bo \(r\propto1/E\).
+
+**Test wrażliwości przeceniał skutek**, i warto wiedzieć dlaczego: liczył
+przesunięcie przy **zamrożonych** \((E,L)\) dla jednej orbity terminalnej,
+podczas gdy w przebiegu poprawiona reguła działa na **każdym** checkpoincie, więc
+warstwa sekularna dochodzi do stanu końcowego stopniowo i sama się dostosowuje.
+Pozycja \(36{,}4\%\) „brak dozwolonej orbity" nie przekłada się więc na
+\(36{,}4\%\) zatrzymanych trajektorii.
 
 #### Naprawa: wykładnik regulatora 6 → 12
 

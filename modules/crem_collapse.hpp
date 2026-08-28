@@ -815,6 +815,83 @@ double azimuthAveragedDipoleEnergy(double separation,
     return -(mu0/(4.0*pi))*(moments*transverse+averagedRadial*radial);
 }
 
+// Periapsis of the FULL effective potential, dipole term included.
+//
+// Why this exists.  osculatingPeriapsis() inverts the Kepler relation, so it
+// describes a potential that is Coulomb and centrifugal and nothing else.  For
+// most of a collapse that is exact enough to ignore: the dipole term goes as
+// 1/r^3 against Coulomb's 1/r, so at a_Ps it is 1e-6 of the potential.  At the
+// terminal radius it is not.  Measured at the Compton barrier, the
+// azimuth-averaged dipole energy has a spread of 3332 eV against 7449 eV of
+// Coulomb -- 44.7% -- and is LARGER than the terminal binding it is being
+// compared against (2561 eV).  Since the stopping rule tests periapsis against
+// comptonBarrierRadius, that omission sat exactly where the decision is taken:
+// a sensitivity test on the production terminal orbit put only 1.5% of
+// orientations within +-5% of the Kepler turning point, 57% deeper and 36%
+// unable to reach it at all.
+//
+// Why the element does not need changing.  elements.specificEnergy is seeded
+// as (KE + U_coulomb) at a_Ps, where U_dipole is 1e-6 of the potential, and
+// afterwards decreases only by the radiated energy.  What is conserved
+// (radiation aside) is KE + U_coulomb + U_dipole, so
+//
+//     elements.specificEnergy = (KE + U_coulomb)|now + U_dipole|now,
+//
+// i.e. the element already IS the total specific energy; it is only the
+// INVERSION back to a radius that assumed a Coulomb-only potential.  So the
+// element keeps its Kepler meaning for a, e and the period -- the eight call
+// sites that read it that way are untouched -- and the dipole enters here,
+// where a radius is actually being solved for.
+//
+// Returns the innermost radius the pair can reach.  When the dipole term is
+// repulsive enough that no radius below the current orbit is accessible, the
+// pair stalls rather than continuing inward, and the stall radius is returned:
+// that is a physical outcome the Coulomb-only rule could not express.
+double dipoleAwarePeriapsis(const OsculatingElements& elements,
+                            double attractionParameter,
+                            const Vec3& firstDipole,const Vec3& secondDipole,
+                            const Vec3& orbitNormal,double reducedMass) {
+    const double keplerPeriapsis=
+        osculatingPeriapsis(elements,attractionParameter);
+    if(!(keplerPeriapsis>0.0)||!std::isfinite(keplerPeriapsis))
+        return keplerPeriapsis;
+    const double L=elements.specificAngularMomentum;
+    if(!(L!=0.0)||!(reducedMass>0.0)) return keplerPeriapsis;
+    // h(r) = eps - U_coulomb - U_dipole - centrifugal.  Positive where the
+    // motion is allowed.
+    const auto h=[&](double r) {
+        if(!(r>0.0)) return -std::numeric_limits<double>::infinity();
+        const double dipole=azimuthAveragedDipoleEnergy(
+            r,firstDipole,secondDipole,orbitNormal)/reducedMass;
+        return elements.specificEnergy+attractionParameter/r
+            -dipole-L*L/(2.0*r*r);
+    };
+    // The Kepler periapsis is the answer when the dipole is negligible, so
+    // start from it and walk outward or inward as the sign of h dictates.
+    const double apoapsis=osculatingApoapsis(elements,attractionParameter);
+    const double outer=std::isfinite(apoapsis)&&apoapsis>keplerPeriapsis
+        ?apoapsis:keplerPeriapsis*2.0;
+    if(h(keplerPeriapsis)>0.0) {
+        // Dipole is attractive here: the pair reaches deeper.  Bracket down.
+        double lo=keplerPeriapsis*1.0e-6,hi=keplerPeriapsis;
+        if(h(lo)>0.0) return lo;
+        for(int i=0;i<200;++i) {
+            const double mid=0.5*(lo+hi);
+            if(h(mid)>0.0) hi=mid; else lo=mid;
+        }
+        return 0.5*(lo+hi);
+    }
+    // Dipole is repulsive here: the turning point has moved outward, so the
+    // pair stalls before the Kepler periapsis.  Bracket up towards apoapsis.
+    double lo=keplerPeriapsis,hi=outer;
+    if(!(h(hi)>0.0)) return outer;   // nowhere accessible below apoapsis
+    for(int i=0;i<200;++i) {
+        const double mid=0.5*(lo+hi);
+        if(h(mid)>0.0) hi=mid; else lo=mid;
+    }
+    return 0.5*(lo+hi);
+}
+
 // Fresh State at periapsis for the given osculating elements, carrying the
 // supplied dipole vectors over unchanged.  The orbital plane is reset to the
 // canonical x-y plane every time: only the (E,L) magnitudes are propagated
@@ -1142,7 +1219,14 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.calibrationSecondsLab=labFrameTimeTotal;
             return result;
         }
-        const double periapsis=osculatingPeriapsis(elements,attractionParameter);
+        // Dipole-aware, not the bare Kepler inversion: at the terminal radius
+        // the omitted dipole term is 44.7% of Coulomb and larger than the
+        // binding it is compared against, and this value is what the Compton
+        // barrier test below reads.  See dipoleAwarePeriapsis for the
+        // derivation and for why the element itself stays Keplerian.
+        const double periapsis=dipoleAwarePeriapsis(
+            elements,attractionParameter,firstDipole,secondDipole,
+            angularMomentumDirection,reducedMass);
         if(!(periapsis>0.0)||!std::isfinite(periapsis)) {
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             return result;
