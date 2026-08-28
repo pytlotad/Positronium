@@ -7028,6 +7028,82 @@ zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), 
 progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
 mylić.
 
+#### Audyt kompletności: który człon jest w której warstwie
+
+Pytanie: czy wszystkie policzone efekty — spin-orbita, orbita-spin i tak dalej
+— mają odzwierciedlenie w CREM. Model ma **trzy warstwy**, w których człon może
+być obecny lub nie, i to nie to samo: siła w całkowaniu mechanicznym, energia w
+księdze zachowawczej `conservativeParticleEnergy`, oraz reprezentacja w
+warstwie sekularnej (elementy \((E,L)\), `dipoleAwarePeriapsis`, hazard
+emisji).
+
+| człon | siła | energia | warstwa sekularna |
+|---|---|---|---|
+| ładunek–ładunek (kulombowski) | ✔ | ✔ | ✔ |
+| ładunek–ładunek \(v^2/c^2\) (Darwin) | ✔ | ✔ | — (przez zmierzoną orbitę) |
+| dipol–dipol (spin–spin) | ✔ | ✔ | ✔ `azimuthAveragedDipoleEnergy` |
+| ładunek–dipol (spin–orbita, oba parowania) | ✔ | **BRAK** | ✔ tylko jako moment siły |
+| precesja BMT + Thomas | ✔ (moment) | — (nie wykonuje pracy) | — |
+| moment reakcji promienistej na dipole | ✔ | ✔ | — |
+| promieniowanie E1, retardowane | ✔ | ✔ | ✔ |
+| promieniowanie M1 (koherentne) | ✔ | ✔ | ✔ |
+| M2/E3 | — | — | — (udokumentowane jako \(\beta^4\)) |
+| dynamika anihilacji | — | — | — (udokumentowany brak) |
+
+Odpowiedź brzmi więc: **prawie wszystkie, z jednym wyjątkiem, i ten wyjątek
+nie jest mały.**
+
+*Znaleziona luka: energia oddziaływania ładunek–dipol nie istnieje nigdzie w
+modelu.* Siła jest (`chargeDipoleForces`, oba parowania, domknięta para
+akcja–reakcja), ale `conservativeParticleEnergy` niesie tylko kinetyczną,
+kulombowską, dipol–dipol, Darwina i więzy. Nie ma funkcji
+`chargeDipoleInteractionEnergy` — sprawdzone przez wszystkie moduły.
+
+*Rozmiar.* Z \(B=\frac{\mu_0}{4\pi}\frac{qv}{r^2}\) i
+\(\mu=\frac{e\hbar}{2m}\) wychodzi zamknięcie
+\(U_{\rm so}/U_{\rm dd}=4L/\hbar\), potwierdzone numerycznie:
+
+| \(r/r^*\) | \(L/\hbar\) | \(|U_{dd}|/|U_C|\) | \(|U_{\rm so}|/|U_C|\) |
+|---|---|---|---|
+| 1 (bariera) | 0,043 | 2,0 | **0,342** |
+| 1,5 | 0,052 | 0,889 | 0,186 |
+| 3 | 0,074 | 0,222 | 0,066 |
+| \(a_{Ps}\) | 1,0 | \(6{,}7\cdot10^{-6}\) | \(2{,}7\cdot10^{-5}\) |
+
+(orientacje maksymalizujące, więc górne ograniczenia). Człon nieobecny w
+księdze jest wart do \(34\%\) członu kulombowskiego przy barierze — a człon
+dipol–dipol, który **jest** w księdze, w tym samym miejscu.
+
+*Struktura, i to jest ciekawe.* Dla orbity kołowej \(\mathbf v\times\hat r\)
+jest stałe co do wartości i skierowane wzdłuż \(\hat L\); ładunki i prędkości
+obu cząstek są przeciwne, więc oba pola dodają się zamiast znosić:
+
+\[U_{\rm so}=-(\boldsymbol\mu_1+\boldsymbol\mu_2)\cdot\mathbf B.\]
+
+To jest **suma koherentna**, czyli dokładnie struktura M1 — a nie
+\(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\), jak w sekularnym momencie siły
+wdrożonym wyżej. Ponieważ \(|\boldsymbol\mu_1+\boldsymbol\mu_2|^2
+=2\mu^2(1+\cos)\), człon ten jest **maksymalny dla para i dokładnie zerowy
+dla ortho**. Jego wartość oczekiwana po izotropowych orientacjach znika
+(\(\langle(\boldsymbol\mu_1+\boldsymbol\mu_2)\cdot\hat L\rangle=0\)), ale
+— tak samo jak przy momencie sekularnym — **na pojedynczej trajektorii
+kierunek momentów jest ustalony**, więc każdy przebieg niesie własną
+systematyczną wartość.
+
+Model ma więc dwie różne dyskryminanty kanału w dwóch różnych miejscach:
+\(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\) w sekularnym momencie siły
+(wdrożona), i \((\boldsymbol\mu_1+\boldsymbol\mu_2)\) w energii spin-orbita
+(brakująca).
+
+*Czego to jeszcze nie rozstrzyga.* Czy brak tego członu w księdze psuje bilans
+energii, zależy od tego, ile pracy wykonuje: część \(q\,\mathbf v\times
+\mathbf B\) nie wykonuje żadnej, część \(\nabla(\boldsymbol\mu\cdot\mathbf
+B)\) wykonuje. Tolerancja kontroli bilansu to \(\approx4\beta^3\), czyli
+\(1{,}6\cdot10^{-6}\) przy \(a_{Ps}\), gdzie sam człon sięga
+\(2{,}7\cdot10^{-5}\) — a więc **rząd wielkości powyżej tolerancji**. To jest
+następna rzecz do zmierzenia: różnica reszty bilansu przy włączonym i
+wyłączonym `chargeDipoleForces`.
+
 #### Orbitalny moment magnetyczny i sprzężenie spin-orbita
 
 Pytanie: para i ortho różnią się nie tylko orientacją momentów, ale i tym, jak
