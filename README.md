@@ -6710,29 +6710,59 @@ Sprawdzone wprost, \(20\,000\) realizacji ze skwantowanym spinem
 | \(282\) fm | \(+3{,}46\) | \(1071\) | \(0{,}46\sigma\) |
 | bariera | \(-81{,}3\) | \(3316\) | \(3{,}5\sigma\), SD \(40\times\) większe |
 
-**Wartość oczekiwana pozostaje zerowa także po skwantowaniu spinu.** Dla
-czystego \(1/r^3\) kasowanie jest tożsamościowe: przy
-\(\langle\cos^2\theta\rangle=1/3\) człon poprzeczny i radialny znoszą się
-dokładnie. Zostaje resztka od regularyzacji, widoczna jako \(3{,}5\sigma\)
-przy barierze i wciąż \(40\times\) mniejsza od rozrzutu. Kwantowanie spinu
-**nie** czyni członu systematycznym — czyni kanały **antyskorelowanymi
-realizacja po realizacji**, co jest czym innym.
+*Zmierzone osobno dla obu kanałów, bo poprzednia wersja mierzyła tylko para i
+zakładała, że orto jest jej odbiciem.* Odbiciem jest, i to **dokładnym**:
+\(\max|U_{\rm para}+U_{\rm orto}|/|U_{\rm para}|=0{,}000\) bitowo, przy każdym
+promieniu. Ale wartość oczekiwana zachowuje się różnie w różnych reżimach
+(\(N=200\,000\) orientacji na wiersz):
 
-*Odpowiedź na pytanie, czy różnica kanałów wchodzi przez budżet energetyczny:
-nie — ale nie dlatego, że jest mała.* Mała nie jest: przy barierze rozrzut to
-\(3316\) eV wobec \(7449\) eV kulombowskich, czyli \(45\%\), zgodnie z
-zapisanym gdzie indziej „\(56\%\) Coulomba". Nie wchodzi dlatego, że **jej
-wartość oczekiwana znika**. Per trajektoria człon jest duży i ma znak kanału —
-to treść Sondy 7 — ale po ansamblu daje **wariancję, nie przesunięcie**.
-Dlatego mediany obu kanałów wychodzą takie same, a mierzone różnice są szumem
-próbki.
+| \(r\) | para: średnia [eV] | odchylenie od zera |
+|---|---|---|
+| \(a_{Ps}\) | \(+3{,}93\cdot10^{-9}\) | \(0{,}09\sigma\) |
+| \(a_{Ps}/10\) | \(-5{,}90\cdot10^{-5}\) | \(1{,}30\sigma\) |
+| \(a_{Ps}/100\) | \(-2{,}03\cdot10^{-2}\) | \(0{,}45\sigma\) |
+| \(1000\) fm | \(+8{,}01\cdot10^{-3}\) | \(0{,}15\sigma\) |
+| \(282\) fm | \(-2{,}38\) | \(0{,}99\sigma\) |
+| **bariera** | \(\mathbf{-59{,}1}\) | \(\mathbf{7{,}98\sigma}\) |
 
-Wniosek dla ewentualnego modelu anihilacji zostaje, wzmocniony: **różnica
-kanałów nie może wchodzić przez budżet energetyczny**, bo tam znika przez
-uśrednienie po orientacjach. W QED też nie wchodzi — tam jest to reguła wyboru
-na stanie końcowym, nie efekt energetyczny. Model odtwarza *strukturę* (ścisłe
-kasowanie M1 w jednym kanale), ale nie *wielkość*, która mogłaby cokolwiek
-napędzić; punkt zaczepienia musiałby leżeć w kanale wyjściowym.
+**Przy barierze Comptona wartość oczekiwana NIE znika**, i to nie jest
+fluktuacja: pięć niezależnych ziaren daje \(-52{,}6\), \(-59{,}7\),
+\(-63{,}3\), \(-51{,}3\), \(-67{,}6\) eV, każde \(6{,}9\)–\(9{,}2\sigma\) od
+zera, średnio \(-58{,}9\) eV \(=-0{,}79\%\) potencjału kulombowskiego
+(\(7449\) eV). Różnica kanałów wynosi więc \(118\) eV, czyli \(1{,}6\%\)
+Coulomba.
+
+Powód jest w regularyzacji. Dla czystego \(1/r^3\) kasowanie jest
+tożsamościowe — przy \(\langle\cos^2\theta\rangle=1/3\) człon poprzeczny i
+radialny znoszą się dokładnie — i to tłumaczy zera przy dużych promieniach.
+Regularyzacja łamie to kasowanie i przy barierze zostawia realną resztkę.
+
+*Odpowiedź, zawężona.* Różnica kanałów **nie** wchodzi przez budżet
+energetyczny **przy promieniach rzędu \(a_{Ps}\)** — tam wartość oczekiwana
+znika (\(0{,}09\sigma\)), więc człon daje wariancję, nie przesunięcie. Ale
+**przy barierze wchodzi**, systematycznie, na poziomie \(1{,}6\%\) Coulomba.
+Poprzednia wersja tego akapitu twierdziła, że znika wszędzie; to było za
+mocne.
+
+*Dlaczego mimo to nie widać tego w żadnym przebiegu.* Rozrzut wynosi
+\(3316\) eV wobec średniej \(58{,}9\) eV, czyli \(\mathrm{SD}/|\text{średnia}|
+=56{,}3\). Wykrycie efektu wymaga \(\approx3170\) trajektorii na \(1\sigma\) i
+\(\approx28\,500\) na \(3\sigma\). Przebiegi produkcyjne po \(60\)–\(1000\)
+zdarzeń są o rząd do dwóch poniżej progu, więc **każde porównanie kanałów w
+tej dokumentacji jest zdominowane szumem** — co jest niezależnym wyjaśnieniem,
+dlaczego mediany obu kanałów zawsze wychodziły takie same.
+
+*Konsekwencja dla trzech podłóg.* Reżimy różnią się jakościowo. Z podłogami
+para siedzi przy \(a_{Ps}\), gdzie wartość oczekiwana **istotnie** znika. Bez
+nich kończy przy barierze, gdzie **nie znika**. To nie jest ta sama sytuacja i
+nie wolno przenosić wniosku z jednej na drugą.
+
+Wniosek dla ewentualnego modelu anihilacji trzeba więc osłabić: różnica kanałów
+w budżecie energetycznym **istnieje przy barierze**, ale jest o \(1{,}6\%\)
+Coulomba i wymaga \(\sim10^4\) trajektorii, żeby ją zobaczyć. W QED różnica
+kanałów jest regułą wyboru na stanie końcowym i daje trzy rzędy w czasie życia
+— czego \(1{,}6\%\) w energii wiązania nie odtworzy. Model odtwarza
+*strukturę* (ścisłe kasowanie M1 w jednym kanale), ale nie *wielkość*.
 
 *Granica całego kierunku.* Model z trzema podłogami odtwarza stan podstawowy
 co do cyfry — ale odtwarza go, bo podano mu **trzy rzeczy**: \(a_{Ps}\) przez
