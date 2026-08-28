@@ -1151,6 +1151,28 @@ inline int gInitialPrincipalLevel = 1;
 // sigma/mu falls from 0.894 to 0.343 while the mean is unchanged.
 inline bool gDeterministicEmission = false;
 
+// EXPERIMENT, not part of the model -- the same standing as --zpf, and aimed
+// at the same gap: CREM is a classical radiative inspiral with nothing to
+// halt it at the pair Bohr radius, so the collapse runs past the ground state
+// by a factor of 375 in radius and ends at the Compton barrier instead.
+//
+// --zpf tried to supply the missing mechanism from outside, by coupling a
+// classical zero-point field and looking for a fluctuation-dissipation
+// balance.  That failed: the resonant band moves the collapse time by 0.3%,
+// wider bands only pump the orbit toward escape, and the balance condition
+// could not even be measured (see the README's ZPF section).
+//
+// This flag tries the opposite tack.  Instead of a mechanism, it imports ONE
+// quantum fact and nothing else: the Bohr ladder terminates, so there is no
+// state below n=1 for a photon to leave the pair in.  Emission is refused
+// whenever it would bind the pair tighter than the ground state.
+//
+// It is a CLOSURE, not a derivation.  It does not explain why no lower state
+// exists; it asserts it, and any result obtained with it has to be read that
+// way.  What it buys over --zpf is that it carries no free parameter, no band
+// edge to choose, no mode count to converge, and no cost.
+inline bool gGroundStateEmissionFloor = false;
+
 #include "modules/crem_engine.hpp"
 
 
@@ -5852,6 +5874,8 @@ int main(int argc, char** argv) {
                     throw std::invalid_argument(
                         "--emission must be poisson or deterministic");
                 }
+            } else if (argument == "--ground-state-floor") {
+                gGroundStateEmissionFloor = true;
             } else if (argument == "--level") {
                 const std::string value = requireValue(argument);
                 const int level = std::stoi(value);

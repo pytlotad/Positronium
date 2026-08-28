@@ -6102,6 +6102,7 @@ Pięć opcji sterują samą fizyką i kosztem eksperymentów związanych:
 
 | Opcja | Domyślnie | Znaczenie |
 | --- | --- | --- |
+| `--ground-state-floor` | wyłączone | **Eksperyment, nie część modelu.** Druga próba domknięcia tej samej luki co `--zpf`, przeciwną metodą: zamiast mechanizmu importuje **jeden** fakt kwantowy — drabina Bohra kończy się na \(n=1\) — i odmawia emisji, która związałaby parę ciaśniej niż stan podstawowy. Bramkuje tempo hazardu (nie odrzuca pojedynczych fotonów: bankowanie i ponawianie zakleszcza się, co ten plik odnotowuje osobno), klamruje wszystkie trzy miejsca zapisu `specificEnergy` i przycina ostatni kwant tak, by wylądował dokładnie na podłodze. **Zatrzymuje spiralę na \(a_{Ps}\), ale likwiduje obserwablę czasu kolapsu — patrz niżej.** |
 | `--zpf`, `--zpf-band` | `0` (wyłączone) | **Eksperyment, nie część modelu.** Klasyczne pole punktu zerowego elektrodynamiki stochastycznej: losowe fale płaskie o widmie \(\rho(\omega)=\hbar\omega^3/2\pi^2c^3\), 64 mody o równej energii, orientacje i fazy z ziarna `--seed`. `--zpf` skaluje **amplitudę** (1 = poziom fizyczny, moc pochłaniana rośnie jak kwadrat), `--zpf-band lo,hi` ustala pasmo w jednostkach częstości orbitalnej pary (domyślnie `0.3,3`). To jest fluktuacyjna połowa pary fluktuacja–dyssypacja; dyssypacyjną, czyli reakcję promieniowania, model ma od zawsze. Wchodzi w te same trzy miejsca co pole jednorodne, ale próbkowane osobno dla każdej cząstki, bo zależy od położenia i czasu. **Nie odtwarza stanu podstawowego SED — patrz niżej.** |
 | `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
 | `--level` | `1` | **Tryb wzbudzony.** Główna liczba kwantowa, na której przygotowywana jest para związana: \(a_n=n^2a_{\rm pary}\), pasmo prędkości stycznej niezmienione względem prędkości kołowej przy tej separacji. Energia fotonu podąża wtedy za odstępem poziomów \(\Delta E(n\to n-1)\), dopóki \(n\ge2\), a poniżej wraca do \(\hbar\omega\). Czas kolapsu rośnie jak \(n^6\), więc dla \(n\ge3\) trzeba podnieść `--crem-wallclock-budget-s`. Wartość `1` jest bit-identyczna z zachowaniem sprzed wprowadzenia opcji. Patrz „Tryb wzbudzony" wyżej. |
@@ -6557,6 +6558,62 @@ niedopróbkowania wysokich częstości przy 64 modach, zwiększenie rozdzielczo�
 problem nie jest w rozdzielczości próbkowania, tylko w samej strukturze
 (skończona suma modów, obcięta arbitralnie w paśmie), dokładnie jak
 zdiagnozowano wyżej.
+
+### Alternatywa dla `--zpf`: podłoga emisyjna w stanie podstawowym
+
+Skoro `--zpf` nie dostarczył mechanizmu zatrzymującego spiralę, spróbowano
+drogi przeciwnej. `--zpf` szukał **mechanizmu** — równowagi fluktuacyjno-
+dyssypacyjnej z realnym polem. `--ground-state-floor` żadnego mechanizmu nie
+proponuje: importuje **jeden** fakt kwantowy, że pod \(n=1\) nie ma stanu, do
+którego foton mógłby parę zostawić, i odmawia takiej emisji.
+
+**To jest domknięcie, nie wyprowadzenie**, i tak trzeba czytać każdy wynik z
+tą flagą. Nie tłumaczy, dlaczego niższego stanu nie ma — stwierdza to.
+W szczególności para kończy przy \(6{,}802847\) eV **dlatego, że tę liczbę
+bramce podano**: \(a_{Ps}\) jest zdefiniowane jako \(\hbar^2/(\mu k)\), więc
+\(k/(2a_{Ps})\) jest algebraicznie \(\mu k^2/2\hbar^2\), czyli sam wzór
+Bohra-Rydberga; obie drogi zgadzają się do \(1{,}8\cdot10^{-16}\), bo to ten
+sam wzór. Żadna dynamika CREM w to nie wchodzi.
+
+*Co daje.* Spirala **zatrzymuje się** — \(0\) kolapsów na \(200\) wobec
+\(186/200\) bez bramki, \(S(t)=1\) przez \(4398\) ps. Przy budżecie
+zegarowym pozwalającym dojść do końca, \(7\) z \(8\) trajektorii siada na
+
+```
+E/E_gs = 1,000001     r/a_Ps = 0,999999
+```
+
+czyli na stanie podstawowym co do sześciu cyfr, z rozmaitych warunków
+początkowych. Ósma po \(16{,}7\) ns wciąż schodzi. Tego `--zpf` nie osiągnął
+ani razu: tam szersze pasma zawsze pompowały orbitę ku ucieczce.
+
+*Dwie usterki wykryte pomiarem, obie niewidoczne w teście „czy się
+zatrzymuje".* Warto je zapisać, bo pokazują, że samo zatrzymanie niczego nie
+dowodzi:
+
+1. **Przeciek.** Bramkowanie hazardu fotonowego nie wystarcza — ścieżka
+   stochastyczna ma drugi kanał, `elements.specificEnergy += deltaEnergyPerOrbit`,
+   omijający maszynerię fotonową. Trajektoria zeszła \(19\%\) za głęboko, na
+   \(0{,}8407\,a_{Ps}\). Zamknięte klamrą przy każdym zapisie.
+2. **Utknięcie powyżej podłogi.** Odrzucanie zbyt dużego fotonu zostawiało
+   parę na \(1{,}2478\,a_{Ps}\): kwant korespondencyjny \(\hbar\omega_{\rm orb}\)
+   wynosi tam \(1{,}43\,E_{gs}\), a miejsca zostało \(0{,}20\,E_{gs}\), więc
+   żaden foton już się nie mieścił. Właściwą regułą nie jest „odmów", tylko
+   „ostatnie przejście jest skokiem poziomowym": para o krok nad stanem
+   podstawowym emituje \(E(n)-E(1)\), nie \(\hbar\omega_{\rm orb}\). Kwant jest
+   więc przycinany do odległości od podłogi — ta sama reguła, którą plik
+   stosuje już dla \(n\ge2\).
+
+*Czego to kosztuje.* Obserwabla czasu kolapsu **przestaje istnieć**: para
+nigdy nie dociera do bariery Comptona, więc wszystkie trajektorie są
+cenzurowane i program sygnalizuje to kodem wyjścia \(2\). Żeby wariant był
+użyteczny, a nie tylko poprawny, anihilacja musiałaby zostać przewiązana z
+bariery do stanu podstawowego — para siada na \(n=1\) i anihiluje stamtąd,
+jak prawdziwe pozytonium. Maszyneria jest (2γ/3γ, Ore-Powell), a skala
+zmierzona: hazard E1 w stanie podstawowym to \(186{,}74\) ps wobec
+\(\Gamma_{\rm para}\) odpowiadającego \(124{,}49\) ps, obie \(\sim\alpha^5\).
+To jednak nie poprawka, tylko zmiana tego, co model mierzy, i nie została
+tu podjęta.
 
 Nie przetestowano wprost pasma sięgającego częstości Comptona
 `ω_C=m_ec²/ħ≈7,76·10²⁰` rad/s — przy startowej częstości orbitalnej

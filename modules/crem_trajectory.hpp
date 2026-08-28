@@ -575,7 +575,21 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                     stepRadiation.leadingElectricDipolePower
                     +stepRadiation.magneticDipoleFlux.energy
                     +stepRadiation.electricQuadrupolePower;
-                stochasticHazard+=quantizedPower/photonEnergy*dt;
+                // Ground-state emission floor, the in-orbit half of the
+                // same experiment gated in crem_collapse.hpp.  Practically
+                // every photon fires on the secular path (the mechanical
+                // hazard is ~5.5e-5 per revolution and a --mode 2 run
+                // instrumented here recorded zero calls), so this branch is
+                // for completeness and for --level runs rather than for
+                // production weight.
+                const double floorSpecificEnergy=
+                    -pairCoulombStrength
+                    /(2.0*pairBohrRadius(activePair)*pairReducedMass);
+                const bool belowFloor=gGroundStateEmissionFloor
+                    &&conservativeParticleEnergy(s)/pairReducedMass
+                        <=floorSpecificEnergy;
+                stochasticHazard+=belowFloor
+                    ?0.0:quantizedPower/photonEnergy*dt;
                 // A while, not an if: a fast step near periapsis can bank
                 // more than one photon's worth of hazard at once.
                 while(stochasticHazard>=stochasticThreshold) {

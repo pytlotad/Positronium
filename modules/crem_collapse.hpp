@@ -191,6 +191,42 @@ struct OsculatingElements { double specificEnergy=0.0; double specificAngularMom
 // The active pair is selected by --pair, so these inputs are runtime globals.
 // Keeping this function constexpr is ill-formed even though GCC historically
 // accepted it as an extension with -Winvalid-constexpr.
+// Specific energy of the pair's n=1 Bohr state, -k/(2 a_Ps) per reduced mass.
+//
+// NOT a prediction of anything, and the earlier wording here ("verified
+// against the physical binding") was wrong to imply otherwise.  a_Ps is
+// DEFINED as hbar^2/(mu k), so k/(2 a_Ps) is algebraically mu k^2/(2 hbar^2),
+// the Bohr-Rydberg expression itself; the two agree to 1.8e-16, which is
+// machine epsilon, because they are the same formula.  The 6.802847 eV it
+// returns is 13.605693/2, arithmetic from hbar, e, epsilon0 and the reduced
+// mass m_e/2, with no CREM dynamics anywhere in it.  Evaluating it checks
+// that the constants are entered correctly -- a units check, not a physics
+// one.
+//
+// This matters for how a --ground-state-floor run is read.  With the floor
+// on, the collapse will terminate at exactly this energy, and that is the
+// value the floor was GIVEN, not a value the model found.  a_Ps is an input
+// to this model (it is the initial separation); without the floor the pair
+// flies straight past it and ends 375 times deeper.  Nothing here shows CREM
+// reproducing the ground state as a state.
+inline double groundStateSpecificEnergy() {
+    return -pairCoulombStrength
+        /(2.0*pairBohrRadius(activePair)*reducedMassOf(activePair));
+}
+
+// The floor applied as a clamp.  Gating the photon hazard alone is NOT
+// enough and this was measured: the stochastic branch also credits the
+// measured orbit's own radiated energy straight into the elements
+// (elements.specificEnergy += deltaEnergyPerOrbit), bypassing the photon
+// machinery entirely, and with only the hazard gated a trajectory sank to
+// 0.84 a_Ps -- 19% below the floor -- while another stopped correctly at
+// 0.998.  Clamping at every write closes that second channel.
+inline double clampAboveGroundState(double specificEnergy) {
+    return gGroundStateEmissionFloor
+        ?std::max(specificEnergy,groundStateSpecificEnergy())
+        :specificEnergy;
+}
+
 inline double classicalInspiralCoefficient() {
     return 2.0*pairDipoleCharge*pairDipoleCharge*pairCoulombStrength
         /(6.0*pi*epsilon0*c*c*c*pairReducedMass*pairReducedMass);
@@ -1685,7 +1721,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // -=, and matches the ReachedCutoff branch's use of the same
         // orbitalRadiatedEnergy field elsewhere in this function.
         if(isStochastic) {
-            elements.specificEnergy+=deltaEnergyPerOrbit;
+            elements.specificEnergy=clampAboveGroundState(
+                elements.specificEnergy+deltaEnergyPerOrbit);
             radiatedEnergyTotal+=run.finalState.orbitalRadiatedEnergy;
         }
         // Measured orbital dissipation of this osculating orbit against the
@@ -1964,7 +2001,18 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     ?(3.0/jumpParameter)
                         *(1.0-std::pow(1.0-jumpParameter,1.0/3.0))
                     :1.0;
-                const double skipHazard=lossPerOrbit*reducedMass
+                // GROUND-STATE EMISSION FLOOR (--ground-state-floor, an
+                // experiment; see gGroundStateEmissionFloor).  A photon has
+                // to leave the pair in some state, and under the Bohr ladder
+                // there is none below n=1.  Zeroing the hazard here rather
+                // than refusing photons one at a time is deliberate: this
+                // file already records that banking a refused hazard and
+                // retrying deadlocks (the accumulator grows without bound and
+                // nothing ever fires), so the rate itself has to go to zero.
+                const bool atGroundState=gGroundStateEmissionFloor
+                    &&elements.specificEnergy<=groundStateSpecificEnergy();
+                const double skipHazard=atGroundState?0.0
+                    :lossPerOrbit*reducedMass
                     /hazardReference
                     *static_cast<double>(orbitsToSkip)*integralFactor;
                 double hazardConsumedThisSkip=0.0;
@@ -2130,9 +2178,31 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                 effectiveEccentricityHere,
                                 drawUniformUnit(stochasticSkipStream)))))
                         :1;
-                    const double photonEnergy=effectivePhotonEnergyReference
+                    double photonEnergy=effectivePhotonEnergyReference
                         *std::pow(useExactEnergyRatio?1.0:energyRatio,1.5)
                         *static_cast<double>(harmonicNumber);
+                    // LAST TRANSITION under --ground-state-floor.  Refusing
+                    // an oversized photon outright (which is what the first
+                    // version of this experiment did) strands the pair ABOVE
+                    // the floor: measured, a trajectory parked at 1.2478
+                    // a_Ps and stayed there, because the correspondence
+                    // quantum hbar*omega_orb is 1.43 E_gs at that radius
+                    // while only 0.20 E_gs of room remained, so no photon
+                    // ever fit again.
+                    //
+                    // The physical rule is not "refuse" but "the last
+                    // transition is a level jump": a pair one step above the
+                    // ground state emits E(n)-E(1), not hbar*omega_orb.
+                    // This file already carries that distinction for n>=2.
+                    // Trimming the quantum to land exactly on the floor is
+                    // that same rule applied to the final step.
+                    if(gGroundStateEmissionFloor) {
+                        const double roomToFloor=
+                            (elements.specificEnergy-groundStateSpecificEnergy())
+                            *reducedMass;
+                        if(roomToFloor<=0.0) break;
+                        photonEnergy=std::min(photonEnergy,roomToFloor);
+                    }
                     // Photon emission angle relative to the CURRENT orbital
                     // plane normal, drawn from the actual angular pattern of
                     // a rotating (not linearly oscillating) E1 dipole:
@@ -2318,6 +2388,13 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     centreOfMassVelocity=recoiledVelocity;
                     const double recoiledSpecificEnergy=
                         (invariantEnergyAfter-restEnergy)/reducedMass;
+                    // The photon was trimmed above to land on the floor, so
+                    // this should not trigger; it stays as a guard against a
+                    // numerical overshoot rather than as the mechanism.
+                    if(gGroundStateEmissionFloor
+                       &&recoiledSpecificEnergy
+                            <groundStateSpecificEnergy()*(1.0+1.0e-9))
+                        break;
                     // ANGULAR MOMENTUM DIRECTION: NOT tilted here, and this
                     // is a finding, not an omission.  An earlier version of
                     // this block tilted angularMomentumDirection by
@@ -2379,7 +2456,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             /(attractionParameter*attractionParameter));
                     const double energyBeforeKick=
                         std::abs(elements.specificEnergy);
-                    elements.specificEnergy=recoiledSpecificEnergy;
+                    elements.specificEnergy=
+                        clampAboveGroundState(recoiledSpecificEnergy);
                     const double energyAfterKick=
                         std::abs(elements.specificEnergy);
                     // From here on, any further photon drawn within this
@@ -2636,7 +2714,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         } else {
             radiatedEnergyTotal+=
                 (updatedEnergyMagnitude-energyMagnitude)*reducedMass;
-            elements.specificEnergy=-updatedEnergyMagnitude;
+            elements.specificEnergy=
+                clampAboveGroundState(-updatedEnergyMagnitude);
             elements.specificAngularMomentum*=
                 std::pow(energyGrowth,angularExponent);
         }
