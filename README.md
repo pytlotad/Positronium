@@ -7028,6 +7028,77 @@ zależnie od cenzury), bo większość z nich zatrzymuje się powyżej \(r^*\), 
 progu retardacyjnym. Te dwie liczby opisują różne rzeczy i nie należy ich
 mylić.
 
+#### Orbitalny moment magnetyczny i sprzężenie spin-orbita
+
+Pytanie: para i ortho różnią się nie tylko orientacją momentów, ale i tym, jak
+te momenty wpływają na **orbitalny moment magnetyczny** pozytonium — czy jest
+to uwzględnione?
+
+*Pierwsza połowa odpowiedzi: nie ma na co wpływać.* W układzie CM
+
+\[\boldsymbol\mu_L=\tfrac12\sum_i q_i\,\mathbf r_i\times\mathbf v_i
+  =\frac{q_1m_2^2+q_2m_1^2}{2M^2}\cdot\frac{\mathbf L}{\mu_{\rm red}},\]
+
+a dla pozytonium \(q_1=-e,\ q_2=+e,\ m_1=m_2\), więc licznik to
+\(-em^2+em^2=0\). **Orbitalny moment magnetyczny pozytonium znika dokładnie.**
+Nie jest to nowe ustalenie — `electrodynamics.hpp` już to notuje i sprawdził
+numerycznie, przy okazji audytu kompletności multipolowej (to samo zerowanie
+usuwa M1 i E2 z listy następnych rzędów, zostawiając M2/E3).
+
+*Druga połowa: właściwy kanał istnieje i JEST w modelu.* Sprzężenie
+spin-orbita nie potrzebuje orbitalnego momentu — działa przez pole magnetyczne
+spinu partnera na **poruszający się ładunek**, \(q\,\mathbf v\times\mathbf
+B_{\rm spin}\), plus reakcja. To `chargeDipoleForces`, zbudowane na pochodnych
+Thomasa-BMT i wchodzące do `allExternalForces` oraz do gałęzi retardowanej.
+Zweryfikowane jako domknięta para akcja-reakcja: \(|\mathbf F_1+\mathbf
+F_2|=0\) dokładnie, na każdym zmierzonym promieniu.
+
+*Rozmiar, i pozorna asymetria kanałów.* W geometrii z momentami wzdłuż
+\(\mathbf L\) siła ta jest **czysto ortho**:
+
+| \(r/r^*\) | para | ortho |
+|---|---|---|
+| 1 | **0** | 0,2415 |
+| 2 | **0** | 0,1080 |
+| 20 | **0** | 0,0038 |
+
+(w jednostkach \(|F_{\rm Coulomb}|\); w geometrii z momentami wzdłuż separacji
+ortho sięga 0,479). Wygląda to jak dopełnienie struktury M1 — M1 wzmacnia się
+dla para i znika dla ortho, tu odwrotnie — czyli klasyczny odpowiednik reguły
+C-parzystości.
+
+*Ale znika po uśrednieniu.* Wielkością, która mogłaby ruszyć periapsis, jest
+moment siły względem \(\mathbf L\). Uśredniony po izotropowych orientacjach i
+fazach orbity, 20 000 próbek:
+
+| \(r/r^*\) | kanał | \(\langle\tau_L\rangle\) | \(\langle|\tau_L|\rangle\) | stosunek |
+|---|---|---|---|---|
+| 1 | para | \(-1{,}43\cdot10^{-5}\) | \(6{,}57\cdot10^{-3}\) | \(-0{,}0022\) |
+| 1 | ortho | \(-4{,}34\cdot10^{-5}\) | \(6{,}47\cdot10^{-3}\) | \(-0{,}0067\) |
+| 2 | para | \(-2{,}76\cdot10^{-6}\) | \(1{,}665\cdot10^{-3}\) | \(-0{,}0017\) |
+| 2 | ortho | \(-3{,}57\cdot10^{-6}\) | \(1{,}645\cdot10^{-3}\) | \(-0{,}0022\) |
+
+Średnia to \(0{,}2\)–\(0{,}7\%\) wartości bezwzględnej przy szumie
+\(1/\sqrt{20000}=0{,}7\%\), czyli **zero**. A \(\langle|\tau_L|\rangle\)
+różni się między kanałami o \(1{,}5\%\) — **rozrzut jest ten sam**. Widoczna
+asymetria była więc artefaktem szczególnej geometrii.
+
+To **ten sam washout, co przy M1**, i z tego samego powodu — z jedną różnicą,
+która ma znaczenie: kwantowanie spinu (`--ground-state-floor`) ratuje M1, bo
+tam uśrednienie szło po **kącie wzajemnym**, który kwantowanie ustala. Tutaj
+uśrednienie idzie po **wspólnym kierunku** momentów, którego kwantowanie nie
+dotyka — pomiar wyżej ma \(\cos=\pm1\) ustalone i mimo to daje zero. Tej
+jednej kwantowanie nie uratuje.
+
+*Osobna obserwacja przy okazji.* `dipoleAwarePeriapsis` czyta wyłącznie kulomb,
+uśredniony azymutalnie człon dipol-dipol i człon odśrodkowy — spin-orbity nie
+widzi, więc działa ona tylko na jednej mechanicznie całkowanej orbicie na
+checkpoint, a nie na analitycznym przeskoku obejmującym do 200 000 orbit. Jest
+to ta sama klasa asymetrii, co luka w bramce M1 z wcześniejszej części sesji.
+Tym razem **nie ma konsekwencji**, bo dokładanie do warstwy sekularnej członu o
+zerowej wartości oczekiwanej nic by nie zmieniło — ale gdyby kiedyś doszedł
+mechanizm łamiący tę izotropię, to jest miejsce, w którym trzeba by wrócić.
+
 #### Czy ostrze noża jest efektem dipol-dipol? Nie — zmierzone i wykluczone
 
 Podejrzenie było trafne co do miejsca: wniosek „para i ortho nie różnią się"
