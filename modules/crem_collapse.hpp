@@ -3015,9 +3015,42 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // Trimming the quantum to land exactly on the floor is
                     // that same rule applied to the final step.
                     if(gGroundStateEmissionFloor) {
-                        const double roomToFloor=
-                            (elements.specificEnergy-groundStateSpecificEnergy())
-                            *reducedMass;
+                        // RECOIL-EXACT room to the floor.  The naive version
+                        // of this was (E - E_gs)*mu, i.e. the INTERNAL energy
+                        // gap, and it deadlocked the whole experiment.
+                        //
+                        // A photon of energy E_gamma does not lower the
+                        // internal energy by E_gamma: the pair recoils, and
+                        // W_b = sqrt(W_a^2 + E_gamma^2) + E_gamma exactly, so
+                        // the internal drop exceeds the photon by the recoil
+                        // kinetic energy, E_gamma^2 / 2 W_b.  Trimming to the
+                        // internal gap therefore lands the pair just BELOW the
+                        // floor -- by 7.2e-7 relative at the scales here,
+                        // which is 700x the 1e-9 tolerance of the guard below,
+                        // so that guard fired on EVERY such photon.  Its own
+                        // comment said it "should not trigger"; measured, it
+                        // triggered every time, and because it breaks after
+                        // the hazard has already been consumed the pair sat at
+                        // n = 1.367 firing and discarding photons for 460
+                        // consecutive checkpoints without moving.  That is why
+                        // --level 2 --ground-state-floor completed 0 of 16
+                        // trajectories at a 60 s budget while reaching 41.8 ns.
+                        //
+                        // Inverting W_a^2 = W_b^2 - 2 W_b E_gamma for the
+                        // E_gamma that lands W_a exactly on the floor gives
+                        // E_gamma = (W_b^2 - W_a^2) / (2 W_b), which is what
+                        // this computes.  It is smaller than the internal gap,
+                        // by exactly the recoil.
+                        const double restEnergyHere=totalMass*c*c;
+                        const double invariantNow=restEnergyHere
+                            +reducedMass*elements.specificEnergy;
+                        const double invariantAtFloor=restEnergyHere
+                            +reducedMass*groundStateSpecificEnergy();
+                        const double roomToFloor=invariantNow>0.0
+                            ?(invariantNow*invariantNow
+                              -invariantAtFloor*invariantAtFloor)
+                             /(2.0*invariantNow)
+                            :0.0;
                         if(roomToFloor<=0.0) break;
                         photonEnergy=std::min(photonEnergy,roomToFloor);
                     }
@@ -3206,12 +3239,20 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     centreOfMassVelocity=recoiledVelocity;
                     const double recoiledSpecificEnergy=
                         (invariantEnergyAfter-restEnergy)/reducedMass;
-                    // The photon was trimmed above to land on the floor, so
-                    // this should not trigger; it stays as a guard against a
-                    // numerical overshoot rather than as the mechanism.
+                    // The photon is trimmed above to land on the floor
+                    // EXACTLY, recoil included, so this is a guard against a
+                    // numerical overshoot rather than the mechanism.  It used
+                    // to be the mechanism by accident: with the naive
+                    // internal-gap trim it fired on every floor-reaching
+                    // photon and deadlocked the run (see roomToFloor).  The
+                    // tolerance is widened from 1e-9 to 1e-6 so that ordinary
+                    // round-off in the trim cannot resurrect that, while an
+                    // overshoot large enough to matter physically still trips
+                    // it -- the recoil term it used to catch is itself only
+                    // 7.2e-7 relative.
                     if(gGroundStateEmissionFloor
                        &&recoiledSpecificEnergy
-                            <groundStateSpecificEnergy()*(1.0+1.0e-9))
+                            <groundStateSpecificEnergy()*(1.0+1.0e-6))
                         break;
                     // ANGULAR MOMENTUM DIRECTION: NOT tilted here, and this
                     // is a finding, not an omission.  An earlier version of

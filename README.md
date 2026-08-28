@@ -7433,7 +7433,73 @@ tak ją zatrzymuje. Podłoga ma sens wyłącznie ze startem wzbudzonym, i wtedy
 kanoniczną konfiguracją jest `--level 2 --ground-state-floor` — kaskada
 \(n=2\to1\) jako realny proces. Obie decyzje są więc jedną decyzją.
 
-#### Czy włączyć `--ground-state-floor`? Jeszcze nie — i dlaczego
+#### `--level 2 --ground-state-floor` produkcyjnie — i zakleszczenie, które to blokowało
+
+Polecenie brzmiało: wprowadzić tę konfigurację jako domyślną. Pierwszy pomiar
+wyglądał na twardy bloker — **0 z 16** trajektorii kończyło przy 60 s budżetu na
+trajektorię, dochodząc do \(41{,}8\) ns czasu symulowanego. Ale to nie był
+koszt obliczeń, tylko **błąd**.
+
+*Ślad.* Po pierwszym fotonie stan przestawał się ruszać:
+
+```
+orbitsToSkip=157093 jumpParameter=0.3 skipHazard=0.153287 ... E_ref=8.52483e-19
+orbitsToSkip=157092 jumpParameter=0.3 skipHazard=0.153286 ... E_ref=8.52485e-19
+orbitsToSkip=157092 jumpParameter=0.3 skipHazard=0.153286 ... E_ref=8.52486e-19
+```
+
+`cumHazard` cyklicznie przekraczał próg i był odejmowany — czyli fotony
+**leciały**, co dwa checkpointy — a energia nie drgnęła przez 460 kolejnych
+checkpointów. Para stała przy \(n=1{,}367\) i paliła hazard w nieskończoność.
+
+*Przyczyna.* `roomToFloor` przycinał foton do luki **energii wewnętrznej**,
+\((E-E_{gs})\mu\). Ale foton o energii \(E_\gamma\) nie obniża energii
+wewnętrznej o \(E_\gamma\): para się odrzuca i dokładnie
+\(W_b=\sqrt{W_a^2+E_\gamma^2}+E_\gamma\), więc ubytek przewyższa foton o
+energię odrzutu \(E_\gamma^2/2W_b\). Przycięcie do luki wewnętrznej sadza
+więc parę **tuż poniżej** podłogi — o \(7{,}2\cdot10^{-7}\) względnie, czyli
+**700×** więcej niż tolerancja \(10^{-9}\) strażnika poniżej. Strażnik,
+którego własny komentarz głosił „this should not trigger", wykonywał się
+**zawsze** — a ponieważ robi `break` już po zużyciu hazardu, foton przepadał
+bez śladu.
+
+*Poprawka.* Odwrócenie \(W_a^2=W_b^2-2W_bE_\gamma\) względem \(E_\gamma\)
+sadzającego \(W_a\) dokładnie na podłodze daje
+
+\[E_\gamma=\frac{W_b^2-W_a^2}{2W_b},\]
+
+co jest mniejsze od luki wewnętrznej dokładnie o odrzut. Tolerancja strażnika
+poszła z \(10^{-9}\) na \(10^{-6}\), żeby zwykłe zaokrąglenie przycięcia nie
+mogło tego wskrzesić, a fizycznie istotne przestrzelenie nadal go wyzwalało.
+
+*Skutek:*
+
+| | przed | po |
+|---|---|---|
+| ukończone | **0 / 16** przy 60 s | **14 / 16** przy 45 s |
+| mediana KM | — (\(S(t)=1\) po 41,8 ns) | **7161 ps** |
+| stop | — | 100% na stanie podstawowym |
+| wiązanie terminalne | — | \(6{,}80285\) eV |
+
+*Wprowadzone domyślne:* `gInitialPrincipalLevel = 2`,
+`gGroundStateEmissionFloor = true`, budżet wallclock \(20\to90\) s (kaskada
+zajmuje \(\approx7\) ns czasu symulowanego wobec \(\approx150\) ps inspiralu
+ograniczonego barierą). Standardowy przebieg to teraz **kaskada
+\(n=2\to n=1\)** kończąca się na stanie podstawowym. Poprzednie zachowanie
+jest pod `--no-ground-state-floor --level 1`.
+
+*Zmiana znaczenia obserwabli, wypisywana teraz przez sam program.* Raportowany
+czas **nie jest** klasycznym czasem inspiralu do bariery ani **czasem życia
+anihilacji** — model nie ma dynamiki anihilacji, ani kanału kontaktowego, ani
+rate'u. Jest czasem kaskady z przygotowanego poziomu do \(n=1\). Zdania w
+raporcie, które twierdziły co innego, są teraz warunkowe i mówią, co
+faktycznie zachodzi.
+
+*Weryfikacja:* ścieżka bez podłogi nietknięta (zmiana w całości wewnątrz
+`if(gGroundStateEmissionFloor)`), ortho zachowuje się identycznie (14/16,
+mediana \(7{,}161\) ns), 0 awarii numerycznych, 39/39 PASS.
+
+#### Czy włączyć `--ground-state-floor`? Jeszcze nie — i dlaczego (przebieg rozstrzygnięty wyżej)
 
 Sekcja o regule stopu daje mocny argument ZA: bez podłogi 77% kolapsów kończy
 zapas numeryczny, a stan terminalny jest niekontrolowanym przeskokiem. Z

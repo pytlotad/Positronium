@@ -1119,7 +1119,12 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 // a_n = n^2 a_pair and the tangential band is quoted in units of the circular
 // speed AT that separation, so the sampled spread in L/(n hbar) is unchanged
 // and only the level moves.
-inline int gInitialPrincipalLevel = 1;
+// PRODUCTION DEFAULT 2, not 1: with the sharp preparation the pair starts
+// exactly ON n=1, which is the lowest state the emission floor admits, so a
+// floored run at level 1 has nowhere to cascade to by construction.  Level 2
+// is the smallest prepared state for which the cascade is a real process the
+// model can time.
+inline int gInitialPrincipalLevel = 2;
 
 // Whether the quantized emission draws its next threshold from Exp(1) (the
 // default, a genuine Poisson process) or fires deterministically as soon as
@@ -1171,7 +1176,19 @@ inline bool gDeterministicEmission = false;
 // exists; it asserts it, and any result obtained with it has to be read that
 // way.  What it buys over --zpf is that it carries no free parameter, no band
 // edge to choose, no mode count to converge, and no cost.
-inline bool gGroundStateEmissionFloor = false;
+// PRODUCTION DEFAULT since the recoil-exact floor trim made the cascade
+// terminate.  Together with gInitialPrincipalLevel = 2 this makes the standard
+// run an n=2 -> n=1 cascade ending on the ground state, rather than a
+// classical inspiral ending on the Compton barrier or, more often, on a
+// numerical safety margin.
+//
+// WHAT THE REPORTED TIME MEANS UNDER THIS DEFAULT, and it is not what it meant
+// before: it is the CASCADE time from the prepared level down to n=1.  It is
+// not an inspiral time to the Compton barrier, and it is not an annihilation
+// lifetime -- this model has no annihilation dynamics at all, no contact
+// channel and no rate, established separately.  --no-ground-state-floor
+// restores the previous behaviour.
+inline bool gGroundStateEmissionFloor = true;
 
 #include "modules/crem_engine.hpp"
 
@@ -1742,6 +1759,14 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     decayTimes.reserve(static_cast<size_t>(runCount));
     calibrationPowers.reserve(static_cast<size_t>(runCount));
 
+    if(std::getenv("CREM_PROGRESS")) {
+        for(const auto& e:collapseEstimates)
+            std::cerr<<"PROG outcome="<<static_cast<int>(e.calibrationOutcome)
+                     <<" t_ps="<<e.calibrationSecondsLab*1e12
+                     <<" bind_eV="<<e.terminalBindingEnergy/eCharge
+                     <<" photons="<<e.emittedPhotonCount
+                     <<" rev="<<e.revolutions<<std::endl;
+    }
     for (int index = 0; index < runCount; ++index) {
         const CremCollapseEstimate& estimate =
             collapseEstimates[static_cast<size_t>(index)];
@@ -2129,10 +2154,32 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                  "angular momentum, not its radius, so it can trigger above "
                  "or below the Compton barrier depending on the orbit) --\n"
                  "or the per-event wall-clock budget is spent (then censored, "
-                 "not extrapolated).  External lifetime is comparison only.\n"
-              << "Caution: the CREM collapse time is a classical inspiral time."
-                 " Para and ortho differ here only through the initial dipole\n"
-                 "alignment, whose coupling is ~1e-5 of the Coulomb potential,"
+                 "not extrapolated).  External lifetime is comparison only.\n";
+    if (gGroundStateEmissionFloor) {
+        std::cout
+            << "WHAT THIS RUN REPORTS: the emission floor is ON (the default), "
+               "so a THIRD limit applies and in practice is the\n"
+               "only one that fires -- the pair settles on the Bohr ground "
+               "state and emission is gated there, because a photon has to\n"
+               "leave the pair in some state and the ladder has none below "
+               "n=1.  The time above is therefore the CASCADE time from the\n"
+               "prepared level (--level " << gInitialPrincipalLevel
+            << ") down to n=1.  It is NOT the classical inspiral time to the "
+               "Compton barrier, and it is\nNOT an annihilation lifetime: this "
+               "model has no annihilation dynamics, no contact channel and no "
+               "rate.  Use\n--no-ground-state-floor --level 1 for the "
+               "barrier-limited inspiral this program used to report by "
+               "default.\n";
+    }
+    std::cout
+              << (gGroundStateEmissionFloor
+                  ? "Caution: the time above is a classical CASCADE time (see"
+                    " above). Para and ortho differ here only through the"
+                    " initial dipole\n"
+                  : "Caution: the CREM collapse time is a classical inspiral"
+                    " time. Para and ortho differ here only through the"
+                    " initial dipole\n")
+                 << "alignment, whose coupling is ~1e-5 of the Coulomb potential,"
                  " so both channels yield the same collapse distribution while\n"
                  "their measured annihilation lifetimes differ by ~1000x.  The"
                  " comparison is a scale reference, not a prediction.\n";
@@ -2152,14 +2199,18 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                    " a^(3/2) while the pair sinks and no single period\n"
                    "describes the whole run.  T is the Kepler period "
                    "2*pi*sqrt(mu*a^3/(k e^2)) of the osculating orbit.  Every "
-                   "trajectory starts at\nRADIUS a_0 but with a sub-circular "
-                   "tangential speed, so its semi-major axis is already below "
-                   "a_0 and T is below the\n107.5 as of a circular orbit at "
-                   "a_0.  The run ends when the PERIAPSIS reaches the Compton "
-                   "barrier (193.30 fm) or the period/light-crossing-time\n"
-                   "ratio drops to 150, whichever comes first.  The "
-                   "revolution count is accumulated by the orbit-averaged "
-                   "integrator, resolved and\nskipped orbits alike.\n";
+                   "trajectory is prepared as an\nEXACT circular Bohr state at "
+                   "a_n = n^2 a_Ps (L = n hbar and E = -R/n^2 identically, so "
+                   "e_0 = 0); "
+                 <<(gGroundStateEmissionFloor
+                    ? "the run ends when the pair\nsettles on n = 1, where the "
+                      "emission floor gates further radiation."
+                    : "the run ends when the\nPERIAPSIS reaches the Compton "
+                      "barrier (193.30 fm) or the period/light-crossing-time "
+                      "ratio drops to 150, whichever\ncomes first.")
+                 <<"  The revolution count is accumulated by the "
+                   "orbit-averaged integrator,\nresolved and skipped orbits "
+                   "alike.\n";
     }
     if(observationLimitCount>0) {
         std::cout<<"Note: "<<observationLimitCount<<" of "<<runCount
@@ -5911,7 +5962,11 @@ int main(int argc, char** argv) {
     // needs a huge number of cheap orbits before the radiative loss becomes
     // visible, so each event is censored once it spends this long on the
     // wall clock rather than left to run indefinitely.
-    double cremWallClockBudgetSeconds = 20.0;
+    // Raised from 20 s with the n=2 cascade default: the cascade takes about
+    // 7 ns of simulated time against the barrier-limited inspiral's ~150 ps,
+    // and 45 s per trajectory measured 14 completions out of 16.  90 s leaves
+    // margin without making a standard batch open-ended.
+    double cremWallClockBudgetSeconds = 90.0;
     // Negative means "not stated on the command line", which is what lets the
     // startup question below stay silent for a fully specified batch run
     // instead of blocking it on stdin.
@@ -5954,7 +6009,11 @@ int main(int argc, char** argv) {
                         "--emission must be poisson or deterministic");
                 }
             } else if (argument == "--ground-state-floor") {
-                gGroundStateEmissionFloor = true;
+                gGroundStateEmissionFloor = true;   // now the default; kept
+                                                    // so existing command
+                                                    // lines keep working
+            } else if (argument == "--no-ground-state-floor") {
+                gGroundStateEmissionFloor = false;
             } else if (argument == "--level") {
                 const std::string value = requireValue(argument);
                 const int level = std::stoi(value);
