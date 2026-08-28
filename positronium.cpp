@@ -2177,12 +2177,12 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                  <<" trajectories were prepared AT OR BELOW the ground state, "
                    "so --ground-state-floor declared them\n  settled before "
                    "they moved and there is no cascade to time.  This is not a "
-                   "collapse of zero duration:\n  the pair starts at RADIUS "
-                   "a_Ps but with a sub-circular tangential speed, so its "
-                   "semi-major axis begins\n  below a_Ps and its Bohr level "
-                   "below n=1, which is where the floor says nothing exists.  "
-                   "Use --level 2\n  or higher, where the cascade down to n=1 "
-                   "is a real process this model can time.\n";
+                   "collapse of zero duration.\n  Under the sharp preparation "
+                   "the pair starts exactly ON n=1, which is the lowest state "
+                   "the floor\n  admits, so a floored run at level 1 has "
+                   "nowhere to cascade to by construction.  Use --level 2 or\n"
+                   "  higher, where the cascade down to n=1 is a real process "
+                   "this model can time.\n";
     }
     if(noSecularLossCount>0) {
         std::cout<<"Note: "<<noSecularLossCount<<" of "<<runCount

@@ -891,8 +891,34 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
         // definitions agree by construction; it is NOT taken here because it
         // moves the production mean by -12% and that is a decision about what
         // the model claims, not a bug fix.
-        radialSpeed = circularSpeed * (-0.10 + 0.20 * unitRandom(random));
-        tangentialSpeed = circularSpeed * (0.88 + 0.24 * unitRandom(random));
+        //
+        // SHARP PREPARATION, taken.  f = 1 and f_r = 0 exactly, so
+        // n_E = L/hbar = 1 and e_0 = 0: the two Bohr-level definitions agree
+        // BY CONSTRUCTION rather than at one point of a band, and --level n
+        // becomes an exact Bohr state (at r = n^2 a_Ps a circular orbit has
+        // L = n hbar and E = -R/n^2 identically).  What is given up is a
+        // spread whose WIDTH was never derived -- it was inherited from the
+        // old [0.72, 0.97] band when the centring was corrected -- and which
+        // supplied about 32% of the collapse time's variance while moving its
+        // mean by a factor of 3.4 depending on where in the band a trajectory
+        // sat.  The remaining spread is the emission process, which is what
+        // the collapse time's spread ought to mean.
+        //
+        // The two random draws are still CONSUMED, not removed: dropping them
+        // would reseed every subsequent draw in the stream and make this a
+        // wholesale change of trajectory rather than a change of initial
+        // condition, destroying comparability with everything measured
+        // before.
+        const double bandRadial = -0.10 + 0.20 * unitRandom(random);
+        const double bandTangential = 0.88 + 0.24 * unitRandom(random);
+        // CREM_INITIAL_BAND=1 restores the old sampled band, kept one flag
+        // away for regression comparison -- the same opt-out shape the
+        // harmonic correction uses, and for the same reason.
+        const char* bandEnv = std::getenv("CREM_INITIAL_BAND");
+        const bool sampledBand = bandEnv && std::strcmp(bandEnv, "0") != 0;
+        radialSpeed = sampledBand ? circularSpeed * bandRadial : 0.0;
+        tangentialSpeed = circularSpeed
+            * (sampledBand ? bandTangential : 1.0);
     }
     const Vec3 relativeVelocity{radialSpeed, tangentialSpeed, 0.0};
     s.firstVelocity = relativeVelocity * (secondMass / (firstMass + secondMass));

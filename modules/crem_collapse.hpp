@@ -89,13 +89,18 @@ struct CremCollapseEstimate {
     // the pair never had a cascade to measure, because the floor's own
     // settled test is already true on the state the run was handed.
     //
-    // This is a genuine collision between two parts of the model.  Every
-    // trajectory is prepared at RADIUS a_Ps but with a SUB-CIRCULAR
-    // tangential speed, so its semi-major axis starts below a_Ps -- measured,
-    // a0/a_Ps runs 0.821-1.321 with the median at 0.94-1.02, i.e. the Bohr
-    // level n0 = sqrt(a0/a_Ps) runs 0.906-1.149 and ABOUT HALF of all
-    // trajectories begin below n=1.  The floor says nothing exists below
-    // n=1.  The two meet at t=0.
+    // Under the SHARP preparation now in production (crem_trajectory.hpp) the
+    // pair starts exactly ON n=1, which is the lowest state the floor admits,
+    // so a floored run at level 1 has nowhere to cascade to by construction
+    // and every trajectory lands here.  That is not a defect of the floor: it
+    // is what a ground state with an emission floor means.
+    //
+    // It was a genuine collision between two parts of the model under the old
+    // sampled band (CREM_INITIAL_BAND=1), where the sub-circular tangential
+    // speed put a0/a_Ps at 0.821-1.321 and hence n0 = sqrt(a0/a_Ps) at
+    // 0.906-1.149, so ABOUT HALF of all trajectories began strictly BELOW the
+    // floor while the floor says nothing exists there.  Removing that band is
+    // what turned an inconsistency into a boundary condition.
     //
     // Left unmarked this is silently destructive rather than merely wrong:
     // such trajectories entered the survival sample as observed collapses at

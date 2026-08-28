@@ -7377,12 +7377,55 @@ ze starego pasma \([0{,}72,\,0{,}97]\). Wyprowadzenie jej — jako szerokości
 równowagi fluktuacyjno-dyssypacyjnej SED — to wątek `--zpf`, a nie stała, którą
 da się tu wpisać.
 
-*Ostra alternatywa.* \(f=1\), \(f_r=0\) dokładnie: wtedy
-\(n_E=L/\hbar=1\) i \(e_0=0\), obie definicje poziomu zgadzają się **z
-konstrukcji**, a `--level n` daje ostry stan \(n\) zamiast pasma wokół niego.
-To jedna linijka. **Nie wdrożone**, bo przesuwa produkcyjną średnią o
-\(-12\%\) (\(214{,}8\to188{,}0\) ps) — a to jest decyzja o tym, co model
-twierdzi, nie naprawa błędu.
+*Ostra alternatywa — WDROŻONA.* \(f=1\), \(f_r=0\) dokładnie. Zweryfikowane:
+\(n_0=1\) i \(e_0=0\) **co do cyfry** na każdej trajektorii, a `--level 2`
+daje \(n_0=2\) dokładnie — przy \(r=n^2a_{Ps}\) orbita kołowa ma
+\(L=n\hbar\) i \(E=-R/n^2\) tożsamościowo, więc `--level n` jest teraz
+**ścisłym stanem Bohra**, a nie pasmem wokół niego. Stare pasmo zostaje jedną
+flagą dalej (`CREM_INITIAL_BAND=1`) do porównań regresyjnych, tym samym
+wzorcem, co poprawka harmoniczna.
+
+Oba losowania są nadal **pobierane**, tylko nieużywane: usunięcie ich
+przesunęłoby cały dalszy strumień losowy i zmieniłoby to w hurtową zmianę
+trajektorii zamiast zmiany warunku początkowego, niszcząc porównywalność ze
+wszystkim, co zmierzono wcześniej.
+
+*Zmierzone skutki,* ta sama binarka, pasmo włączane flagą:
+
+| | pasmo s42 | ostry s42 | pasmo s7 | ostry s7 |
+|---|---|---|---|---|
+| RMST [ps] | \(218{,}1\pm33{,}1\) | \(193{,}6\pm26{,}4\) | \(219{,}3\pm31{,}2\) | \(191{,}6\pm23{,}3\) |
+| \(\sigma/\text{średnia}\) | 1,144 | **0,990** | 1,096 | **0,940** |
+| stop na barierze | 19,3% | **47,2%** | 25,9% | **45,6%** |
+| wiązanie term. [keV] | 1,584 | **2,515** | 1,847 | **4,602** |
+
+RMST spada o \(\approx12\%\), zgodnie z przewidywaniem, a
+\(\sigma/\text{średnia}\) z \(\approx1{,}12\) do \(\approx0{,}96\) — czyli
+dokładnie o te \(32\%\) wariancji, które dawało pasmo. Rozrzut czasu kolapsu
+jest teraz procesem emisji, a nie odziedziczoną szerokością pasma.
+
+*Najważniejszy skutek jest jednak w trzecim wierszu.* **Bariera zatrzymuje
+teraz \(\approx46\%\) trajektorii zamiast \(\approx22\%\)**, a wiązanie
+terminalne rośnie z \(1{,}6\)–\(1{,}8\) do \(2{,}5\)–\(4{,}6\) keV. Para
+dochodzi do zadeklarowanej granicy fizycznej modelu zamiast wypadać wcześniej
+na progu numerycznym — czyli sekcja o regule stopu wyżej opisuje stan, który ta
+zmiana w połowie naprawia.
+
+Mechanizm jest ten sam, który kod już notuje przy warunku (b): orbity o
+**niższym \(L\)**, czyli bardziej radialne, dosięgają progu
+\(T/t_{\rm light}\) przy **większym** periapsis niż kołowe. Stare pasmo dawało
+\(e_0\) do \(0{,}25\), nowe daje \(e_0=0\), więc orbity zostają kołowe i
+docierają do bariery, zamiast wypaść na retardacji przy \(10\)–\(16\,r^*\).
+(To wyjaśnienie, nie osobny pomiar — ale zgadza się i z kierunkiem wiązania
+terminalnego, i z udokumentowanym w kodzie mechanizmem.)
+
+*Skutek uboczny, spójny.* Przy ostrym przygotowaniu para startuje **dokładnie**
+na \(n=1\), czyli na najniższym stanie, jaki podłoga dopuszcza — więc
+`--ground-state-floor` na poziomie 1 nie ma dokąd kaskadować i wszystkie
+trajektorie trafiają do strażnika `preparedBelowGroundState` (zmierzone: 15 z
+15). To nie jest wada: tak właśnie wygląda stan podstawowy z podłogą emisji.
+Sensowną konfiguracją pozostaje `--level 2 --ground-state-floor`. Usunięcie
+pasma zamieniło więc **niespójność w warunek brzegowy**.
 
 Warto zauważyć, do czego to prowadzi razem z podłogą: przy ostrym
 przygotowaniu para startuje **dokładnie** na \(n=1\), więc pierwszy foton i
