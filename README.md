@@ -6884,6 +6884,39 @@ dipolowy jest odpychający na tyle, że żaden promień poniżej bieżącej orbi
 jest dostępny, para **zatrzymuje się** i zwracany jest promień zatrzymania.
 Wcześniej takie trajektorie ogłaszano jako „dotarły do bariery".
 
+#### Poziom zerowy: drabina w potęgach \(\alpha\), nie na \(m_ec^2\)
+
+Propozycja „poziom zerowy przy promieniu terminalnym **i** stanie energetycznym
+co najmniej \(m_ec^2\)" ma dwie połowy, których **nie da się spełnić naraz**.
+Promień terminalny nie jest wolnym parametrem: bariera to
+\(r^*=g\hbar/4m_ec\), więc wiązanie tam wynosi
+
+\[|E(r^*)|=\frac{K}{2r^*}=\frac{2\alpha m_ec^2}{g},\]
+
+czyli \(3{,}724620\) keV wobec \(\alpha m_ec^2=3{,}728940\) keV — stosunek
+\(0{,}998842=2/g\). Te \(0{,}12\%\) to **wyłącznie anomalny moment
+magnetyczny elektronu**; poza nim równość jest dokładna. Żeby wiązanie sięgnęło
+\(m_ec^2\), para musiałaby zejść do \(1{,}408970\) fm, czyli \(137{,}195\)
+razy głębiej niż bariera — w obszar, który bariera istnieje po to, żeby
+wykluczyć.
+
+To, o co propozycja zahacza, model **już ma**, tylko szczeble idą w potęgach
+\(\alpha\):
+
+| szczebel | promień | energia | postać zamknięta | zmierzony stosunek |
+|---|---|---|---|---|
+| anihilacja | — | \(510{,}999\) keV | \(m_ec^2\) | — |
+| bariera (terminal) | \(193{,}3035\) fm | \(3{,}7246\) keV | \((2/g)\,\alpha m_ec^2\) | \(0{,}998842\) |
+| stan podstawowy | \(105{,}835\) pm | \(6{,}8028\) eV | \(\alpha^2m_ec^2/4\) | \(1{,}000000\) |
+
+Dolny szczebel wychodzi **dokładnie**, do wszystkich cyfr, odkąd \(a_{Ps}\)
+jest wyprowadzane z momentów magnetycznych pary, a nie wpisywane.
+
+Wniosek dla modelu anihilacji: \(m_ec^2\) **nie jest poziomem orbitalnym**.
+Jest tym, co anihilacja uwalnia, a nie tym, do czego para spada. Poziomem
+zerowym orbity jest bariera — jedno \(\alpha\) poniżej masy spoczynkowej i
+\(4/\alpha\) powyżej stanu podstawowego.
+
 #### Kwant emisji: gdzie jest sztuczny i dlaczego poprawka została wycofana
 
 `ħω_orb` jest prescription **korespondencyjną**, ważną asymptotycznie dla
