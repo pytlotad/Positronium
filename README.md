@@ -6884,6 +6884,70 @@ dipolowy jest odpychający na tyle, że żaden promień poniżej bieżącej orbi
 jest dostępny, para **zatrzymuje się** i zwracany jest promień zatrzymania.
 Wcześniej takie trajektorie ogłaszano jako „dotarły do bariery".
 
+#### Czy warstwa harmonik, okresu i mimośrodu powinna przestać być keplerowska
+
+Poprawka peryapsis usunęła jedną niespójność i odsłoniła drugą: reguła
+zatrzymania rozwiązuje pełny potencjał, a mimośród, okres i dobór harmonik
+pozostały keplerowskie. Człon \(1/r^3\) łamie twierdzenie Bertranda, więc
+orbita precesuje, \(\omega_r\neq\omega_\varphi\), a widmo przenosi się z
+całkowitych wielokrotności jednej częstości na kombinacje
+\(m\omega_\varphi+n\omega_r\) — czego maszyneria z całkowitym
+`harmonicNumber` nie umie wyrazić.
+
+*Zmierzone wzdłuż rzeczywistych trajektorii* (diagnostyka `CREM_APSIDAL`,
+\(757\) checkpointów z pełnym zestawem):
+
+| wielkość | mediana | \(90\%\) | \(>1\%\) checkpointów |
+|---|---|---|---|
+| kąt apsydalny \(|\Delta\varphi/\pi-1|\) | \(2{,}0\cdot10^{-5}\) | \(1{,}1\cdot10^{-4}\) | \(1{,}72\%\) |
+| okres \(|T_{\rm pełny}-T_K|/T_K\) | \(0{,}0\) | \(3{,}7\cdot10^{-9}\) | \(1{,}85\%\) |
+| mimośród \(|e_{\rm pełny}-e_K|\) | \(1{,}9\cdot10^{-4}\) | \(1{,}9\cdot10^{-3}\) | \(5{,}02\%\) |
+
+Funkcja jest zwalidowana na znanej odpowiedzi: dla dipoli zerowych zwraca
+\(1{,}000000000\) przy mimośrodach od \(0{,}8\) do \(0{,}001\). Opis
+keplerowski jest więc dokładny do \(10^{-4}\) przez \(90\%\) kolapsu i
+załamuje się dopiero w końcowych \(2\)–\(5\%\).
+
+*Dlaczego mimo to nie da się tego tanio naprawić.* Naturalnym pomysłem jest
+odmrozić \((E,L)\) i nadać elementom pełny potencjał. Jest to architektonicznie
+słuszne — usuwa też artefakt, przez który przy zamrożonych \((E,L)\) i orbicie
+prawie kołowej \(56{,}6\%\) checkpointów nie miało zdefiniowanego pasma
+radialnego. Blokadą nie są jednak trzydzieści jeden miejsc odczytu elementów,
+tylko **analityczny skip**:
+
+```cpp
+energyGrowth   = pow(1-jumpParameter, -2.0/3.0);
+angularExponent = -(1-e^2)/(2+e^2);
+integralFactor = (3/J)*(1-pow(1-J,1.0/3.0));
+```
+
+Wykładnik \(-2/3\) pochodzi wprost z prawa \(a^3\), a te formy zamknięte
+pokrywają do \(200\,000\) orbit na checkpoint i to one czynią model
+obliczalnym. Dla \(-K/r+C/r^3\) nie mają odpowiedników analitycznych.
+
+*Sprawdzone obejście, i dlaczego nie działa.* Gdyby skip degenerował się do
+jednej orbity tam, gdzie potencjał przestaje być keplerowski, oba opisy dałoby
+się rozdzielić wzdłuż naturalnej granicy. Zmierzone:
+
+| półoś | mediana `orbitsToSkip` | \(|\Delta\varphi/\pi-1|>1\%\) |
+|---|---|---|
+| \(>10000\) fm | \(9529\) | \(0{,}0\%\) |
+| \(1000\)–\(10000\) | \(458\) | \(3{,}2\%\) |
+| \(500\)–\(1000\) | \(1079\) | \(100\%\) |
+| \(<500\) fm | \(433\) | \(77{,}8\%\) |
+
+Skip **nie** degeneruje się: przy \(a<500\) fm nadal pokrywa \(433\) orbity,
+czyli obwiednia keplerowska pracuje pełną parą dokładnie tam, gdzie jest
+nieważna. Granicy do rozdzielenia nie ma.
+
+*Wniosek.* Nadanie elementom pełnego potencjału wymaga wyprowadzenia od nowa
+obwiedni sekularnej dla potencjału bez rozwiązania zamkniętego. Realną drogą
+jest **rachunek zaburzeń w \(C\)** — poprawki pierwszego rzędu do wykładników
+obwiedni — co dałoby formy zamknięte, których skip potrzebuje. Jest to osobne
+wyprowadzenie z własną walidacją, nie refaktoryzacja, i nie zostało tu podjęte.
+Diagnostyka `CREM_APSIDAL` zostaje w kodzie właśnie po to, żeby takie
+wyprowadzenie miało przeciw czemu się walidować.
+
 *Zmierzony skutek — znacznie mniejszy, niż zapowiadał test wrażliwości.* A/B
 sekwencyjne, \(200\) zdarzeń, to samo ziarno:
 

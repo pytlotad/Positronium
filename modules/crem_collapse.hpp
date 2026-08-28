@@ -892,6 +892,127 @@ double dipoleAwarePeriapsis(const OsculatingElements& elements,
     return 0.5*(lo+hi);
 }
 
+// Apsidal angle of the FULL potential, in units of pi.
+//
+// Kepler closes: the angle swept between successive periapsis and apoapsis is
+// exactly pi, so w_r = w_phi and the radiated spectrum sits on integer
+// multiples of one frequency -- which is what the harmonic machinery below
+// assumes when it draws an integer harmonicNumber against a single reference.
+// A 1/r^3 term breaks Bertrand's theorem: the orbit precesses, w_r and w_phi
+// separate, and the true spectrum moves onto combinations m*w_phi + n*w_r.
+//
+// This measures how far from pi the model's own orbits actually run.  It is
+// diagnostic only -- nothing reads it -- and exists because the stopping rule
+// was made dipole-aware while the harmonic, period and eccentricity layer
+// stayed Keplerian, so the size of that remaining inconsistency is worth
+// being able to measure rather than assume.
+double apsidalAngleOverPi(const OsculatingElements& elements,
+                          double attractionParameter,
+                          const Vec3& firstDipole,const Vec3& secondDipole,
+                          const Vec3& orbitNormal,double reducedMass) {
+    const double L=elements.specificAngularMomentum;
+    if(!(L!=0.0)||!(reducedMass>0.0))
+        return std::numeric_limits<double>::quiet_NaN();
+    const auto radial=[&](double r) {          // 2(eps-U) - L^2/r^2
+        if(!(r>0.0)) return -std::numeric_limits<double>::infinity();
+        const double dipole=azimuthAveragedDipoleEnergy(
+            r,firstDipole,secondDipole,orbitNormal)/reducedMass;
+        return 2.0*(elements.specificEnergy+attractionParameter/r-dipole)
+            -L*L/(r*r);
+    };
+    const double keplerPeriapsis=
+        osculatingPeriapsis(elements,attractionParameter);
+    const double keplerApoapsis=
+        osculatingApoapsis(elements,attractionParameter);
+    if(!(keplerPeriapsis>0.0)||!(keplerApoapsis>keplerPeriapsis))
+        return std::numeric_limits<double>::quiet_NaN();
+    // Locate the maximum of the radial function, then bracket both roots.
+    double best=-std::numeric_limits<double>::infinity(),peak=0.0;
+    for(int i=0;i<2000;++i) {
+        const double r=keplerPeriapsis*0.05
+            *std::pow(keplerApoapsis*40.0/(keplerPeriapsis*0.05),i/1999.0);
+        const double v=radial(r);
+        if(v>best) { best=v; peak=r; }
+    }
+    if(!(best>0.0)) return std::numeric_limits<double>::quiet_NaN();
+    double lo=keplerPeriapsis*1.0e-4,hi=peak;
+    for(int i=0;i<120;++i) { const double m=0.5*(lo+hi);
+        if(radial(m)>0.0) hi=m; else lo=m; }
+    const double rMin=0.5*(lo+hi);
+    lo=peak; hi=keplerApoapsis*40.0;
+    for(int i=0;i<120;++i) { const double m=0.5*(lo+hi);
+        if(radial(m)>0.0) lo=m; else hi=m; }
+    const double rMax=0.5*(lo+hi);
+    if(!(rMax>rMin)) return std::numeric_limits<double>::quiet_NaN();
+    // r = A + B cos(psi) removes the inverse-square-root endpoint
+    // singularities: the sin(psi) from dr cancels the one in sqrt.
+    const double A=0.5*(rMin+rMax),B=0.5*(rMax-rMin);
+    constexpr int steps=4000;
+    double integral=0.0;
+    for(int i=0;i<steps;++i) {
+        const double psi=pi*(i+0.5)/steps;
+        const double r=A+B*std::cos(psi);
+        const double v=radial(r);
+        if(!(v>0.0)) continue;
+        integral+=(L/(r*r))*B*std::sin(psi)/std::sqrt(v)*(pi/steps);
+    }
+    return integral/pi;
+}
+
+// Radial period and eccentricity of the FULL potential, for the same reason:
+// the period sizes the measurement window and the skip, the eccentricity
+// drives the harmonic suppression, and both are currently Keplerian while the
+// stopping rule is not.  Returns false when the frozen (E,L) admits no radial
+// band -- which for a near-circular orbit means the perturbation moved the
+// effective-potential minimum past E, not that no orbit exists.
+bool fullPotentialOrbit(const OsculatingElements& elements,
+                        double attractionParameter,
+                        const Vec3& firstDipole,const Vec3& secondDipole,
+                        const Vec3& orbitNormal,double reducedMass,
+                        double& radialPeriod,double& eccentricity) {
+    const double L=elements.specificAngularMomentum;
+    if(!(L!=0.0)||!(reducedMass>0.0)) return false;
+    const auto radial=[&](double r) {
+        if(!(r>0.0)) return -std::numeric_limits<double>::infinity();
+        const double dipole=azimuthAveragedDipoleEnergy(
+            r,firstDipole,secondDipole,orbitNormal)/reducedMass;
+        return 2.0*(elements.specificEnergy+attractionParameter/r-dipole)
+            -L*L/(r*r);
+    };
+    const double kp=osculatingPeriapsis(elements,attractionParameter);
+    const double ka=osculatingApoapsis(elements,attractionParameter);
+    if(!(kp>0.0)||!(ka>kp)) return false;
+    double best=-std::numeric_limits<double>::infinity(),peak=0.0;
+    for(int i=0;i<2000;++i) {
+        const double r=kp*0.05*std::pow(ka*40.0/(kp*0.05),i/1999.0);
+        const double v=radial(r);
+        if(v>best) { best=v; peak=r; }
+    }
+    if(!(best>0.0)) return false;
+    double lo=kp*1.0e-4,hi=peak;
+    for(int i=0;i<120;++i) { const double m=0.5*(lo+hi);
+        if(radial(m)>0.0) hi=m; else lo=m; }
+    const double rMin=0.5*(lo+hi);
+    lo=peak; hi=ka*40.0;
+    for(int i=0;i<120;++i) { const double m=0.5*(lo+hi);
+        if(radial(m)>0.0) lo=m; else hi=m; }
+    const double rMax=0.5*(lo+hi);
+    if(!(rMax>rMin)) return false;
+    const double A=0.5*(rMin+rMax),B=0.5*(rMax-rMin);
+    constexpr int steps=4000;
+    double period=0.0;
+    for(int i=0;i<steps;++i) {
+        const double psi=pi*(i+0.5)/steps;
+        const double r=A+B*std::cos(psi);
+        const double v=radial(r);
+        if(!(v>0.0)) continue;
+        period+=2.0*B*std::sin(psi)/std::sqrt(v)*(pi/steps);
+    }
+    radialPeriod=period;
+    eccentricity=(rMax-rMin)/(rMax+rMin);
+    return true;
+}
+
 // Fresh State at periapsis for the given osculating elements, carrying the
 // supplied dipole vectors over unchanged.  The orbital plane is reset to the
 // canonical x-y plane every time: only the (E,L) magnitudes are propagated
@@ -1179,6 +1300,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     result.initialPeriodSeconds=osculatingPeriod(
         elements.specificEnergy,attractionParameter);
 
+    int orbitsToSkipPrevious=0;   // diagnostyka CREM_APSIDAL
     for(int checkpoint=0;checkpoint<maxCheckpoints;++checkpoint) {
         // Refreshed every checkpoint so that whichever branch returns below
         // reports the period of the orbit reached at that point.
@@ -1232,6 +1354,34 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             return result;
         }
 
+        if(std::getenv("CREM_APSIDAL")) {
+            const double apsidal=apsidalAngleOverPi(
+                elements,attractionParameter,firstDipole,secondDipole,
+                angularMomentumDirection,reducedMass);
+            const double aNow=-attractionParameter
+                /(2.0*elements.specificEnergy);
+            double fullPeriod=0.0,fullEcc=0.0;
+            const bool ok=fullPotentialOrbit(
+                elements,attractionParameter,firstDipole,secondDipole,
+                angularMomentumDirection,reducedMass,fullPeriod,fullEcc);
+            const double keplerEcc=std::sqrt(std::max(0.0,1.0
+                +2.0*elements.specificEnergy*elements.specificAngularMomentum
+                    *elements.specificAngularMomentum
+                    /(attractionParameter*attractionParameter)));
+            const double keplerPeriod=osculatingPeriod(
+                elements.specificEnergy,attractionParameter);
+            // One assembled string, one insertion: trajectories run
+            // concurrently and a chain of << interleaves mid-line.
+            std::ostringstream apsidalLine;
+            apsidalLine<<"APSIDAL cp="<<checkpoint
+                     <<" a="<<aNow<<" periapsis="<<periapsis
+                     <<" ratio="<<std::setprecision(9)<<apsidal
+                     <<" eK="<<keplerEcc<<" eF="<<(ok?fullEcc:-1.0)
+                     <<" TK="<<keplerPeriod<<" TF="<<(ok?fullPeriod:-1.0)
+                     <<" skip="<<orbitsToSkipPrevious
+                     <<std::setprecision(6);
+            std::cerr<<apsidalLine.str()<<std::endl;
+        }
         const State measurementState=osculatingPeriapsisState(
             elements,attractionParameter,firstDipole,secondDipole);
         // regularizedPeriod(), not the naive formula: this sizes the ONE
@@ -1973,6 +2123,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 :static_cast<double>(maxOrbitsSkippedAtOnce);
             orbitsToSkip=static_cast<int>(boundedOrbits);
         }
+        orbitsToSkipPrevious=orbitsToSkip;
         const double jumpParameter=std::min(
             1.5*static_cast<double>(orbitsToSkip)*lossPerOrbit/energyMagnitude,
             maximumJumpParameter);
