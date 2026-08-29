@@ -7510,11 +7510,34 @@ rzeczywiste pozytonium tego nie robi, bo jego stany spinowe są stanami własnym
 i wcale nie kontrrotują. **Poprawne zachowanie momentu pędu jest tym, co
 uczyniło klasyczną dynamikę spinu widoczną w orbicie.**
 
-*Różnica kanałów w czasie kolapsu pojawia się, ale nie jest ustalona.* Stosunki
-ortho/para po czterech ziarnach: \(0{,}957\), \(1{,}484\), \(1{,}020\),
-\(1{,}172\) — trzy z czterech w jedną stronę, przy rozrzucie od \(0{,}96\) do
-\(1{,}48\). To ten sam wzorzec, na który złapałem się przy udziale stopów
-barierowych, więc tym razem nie ogłaszam efektu bez sparowanego pomiaru.
+*Różnica kanałów w czasie kolapsu — zmierzona porządnie.* Pierwsze cztery
+ziarna dawały stosunki \(0{,}957\), \(1{,}484\), \(1{,}020\), \(1{,}172\),
+czyli trzy z czterech w jedną stronę przy dużym rozrzucie — dokładnie ten
+wzorzec, na który dałem się złapać przy udziale stopów barierowych. Więc zamiast
+ogłaszać efekt, wykonano pomiar sparowany: 10 ziaren, 160 trajektorii
+ukończonych w obu kanałach z **identycznym** początkowym \((E,L)\).
+
+```
+ROZNICA ortho - para:   -43,83 +/- 95,58 ps      (0,46 sigma)
+STOSUNEK geometryczny:  1,0261,  95% CI [0,9889, 1,0646]
+TEST ZNAKOWY:           ortho dluzsze w 91 ze 160,  dokladny p = 0,097
+```
+
+**Różnica nie jest ustalona.** Przedział ufności stosunku zawiera \(1\),
+średnia siedzi na \(0{,}46\sigma\), a test znakowy nie schodzi poniżej
+\(0{,}05\). Dwa wskaźniki przechylają się lekko ku dłuższemu ortho
+(\(+2{,}6\%\) geometrycznie, \(91/160=56{,}9\%\) przypadków), ale to jest
+poniżej progu, przy którym warto to nazwać efektem. Żeby rozstrzygnąć
+\(2{,}6\%\) na \(3\sigma\), trzeba by około \(770\) par — wykonalne, ale
+to osobny przebieg.
+
+*Za to trajektorie naprawdę się rozeszły.* Liczba par, w których **liczba
+fotonów** różni się między kanałami, wzrosła z \(2{,}09\%\) (\(4/191\), przed
+poprawką precesji) do \(\mathbf{12{,}5\%}\) (\(20/160\)) — sześciokrotnie.
+Sprzężenie zwrotne uczyniło więc kanały **dynamicznie rozróżnialnymi na poziomie
+pojedynczej trajektorii**, nie dając (jeszcze) rozstrzygalnej różnicy w
+obserwabli zagregowanej. To jest najsilniejsze rozejście się para i ortho
+zmierzone w całej tej serii.
 
 *Obserwable produkcyjne nietknięte:* mediana \(7368{,}8\) ps i wiązanie
 terminalne \(6{,}80285\) eV w obu kanałach, 12/12 ukończonych, 0 awarii, koszt
