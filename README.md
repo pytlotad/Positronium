@@ -7679,8 +7679,48 @@ procentowych, co wygląda na duży efekt systematyczny. Na czterech ziarnach:
 | 1234 | 33,3% | 54,2% | \(+20{,}8\) |
 
 Średnia \(+9{,}4\pm8{,}6\) punktu, czyli \(1{,}1\sigma\), znak zmienny.
-Zgodne z zerem. Pojedyncze ziarno dałoby tu wniosek fałszywy — ten sam wzorzec,
-co przy sumie energii fotonów i przy uśrednianiu momentu spin-orbita.
+Zgodne z zerem.
+
+*Sprawdzone porządnie, bo tamten test był zły metodycznie.* Porównanie jest
+**sparowane** — te same ziarna, te same warunki początkowe, różni się tylko
+konfiguracja dipoli — a ja uśredniłem cztery **brzegowe** udziały i policzyłem
+błąd z czterech liczb, wyrzucając sparowanie. Właściwy test to McNemar na
+parach niezgodnych. Na 96 sparowanych trajektoriach (4 ziarna, wszystkie
+ukończone w obu kanałach):
+
+```
+niezgodne przyczyny stopu:  55 z 96 = 57,3%
+b=23 (para=bariera, ortho=retardacja),  c=32 (odwrotnie)
+dokladny p dwustronny (McNemar) = 0,281
+roznica brzegowa = +9,38 pkt,  SE = 7,73 pkt,  1,21 sigma
+```
+
+**Wniosek się nie zmienia, a moje oszacowanie było adekwatne, nie błędne.**
+Średnia wychodzi identycznie (\(+9{,}38\) wobec \(+9{,}4\) — musi, to ta sama
+wielkość), a błąd \(7{,}73\) wobec \(8{,}6\), czyli mój był lekko
+**konserwatywny**. Rozrzut międzyziarnowy jest tu po prostu rozrzutem
+dwumianowym, więc obie drogi mierzą to samo. Nazwałem to błędem
+metodologicznym ostrzej, niż na to zasługuje.
+
+*Ale test sparowany mówi dwie rzeczy, których tamten nie widział.*
+
+**Po pierwsze: \(57{,}3\%\) par jest niezgodnych.** Kanały dają różną
+atrybucję granicy na **większości** trajektorii, nie na jednej partii — to
+znacznie mocniejsze stwierdzenie niż \(16/24\) z jednego ziarna, i jest to
+wielkość o wysokiej pewności, w odróżnieniu od kierunku.
+
+**Po drugie: jest \(1\) flip liczby fotonów na 96 (\(1{,}04\%\)).** Moje
+„zero flipów" było stwierdzeniem o próbce 24, nie zerem strukturalnym. Ostrze
+**da się** przerzucić konfiguracją kanału, tylko rzadko — zgodne z wcześniejszym
+oszacowaniem pasma (rzędu 1 na 250; przedział Poissona dla 1 zdarzenia na 96 to
+\(0{,}03\%\)–\(5{,}8\%\), więc obie liczby są zgodne).
+
+*I korekta do samej analogii.* Napisałem „ten sam wzorzec, co przy sumie
+energii fotonów i przy uśrednianiu momentu spin-orbita". To są **trzy różne
+tryby awarii**: tam ciężki ogon (wariancja \(O(1)\) zamiast \(1/\sqrt N\)),
+tam próg szumu Monte Carlo cztery rzędy nad sygnałem, a tutaj zwykła
+fluktuacja dwumianowa. Łączy je kształt wniosku, nie mechanizm — a lekarstwo na
+każdy jest inne.
 
 *Zestawienie.* Człony magnetyczne **rozdzielają kanały w regule stopu**
 trajektoria po trajektorii (16 z 24 zmienia atrybucję), ale ani nie przerzucają
