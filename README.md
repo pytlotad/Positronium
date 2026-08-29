@@ -7315,9 +7315,39 @@ Na pełnej próbce (247 ukończonych trajektorii barierowych):
 zatrzymuje \(245/247=99{,}2\%\) (przed: \(58\%\)), a mediana spadła z
 \(208{,}0\) ps na \(63{,}5\) ps.
 
-*Wniosek, i jest to ostrzeżenie.* Kolaps w trybie barierowym nie jest już
-napędzany **promieniowaniem**, tylko **błądzeniem losowym \(L\)** od
-sprzężenia zwrotnego spinu. Trajektoria dochodzi do granicy ważności, bo jej
+*Zmierzony wariant pośredni — i sprzężenie wycofane.* Zaproponowano oddawanie
+tylko składowej \(\Delta\mathbf S\) **wzdłuż \(\mathbf L\)**, co usuwa
+dyfuzję kierunku. Zmierzone razem z wariantem bez sprzężenia, to samo ziarno i
+budżet, 24 trajektorie:
+
+| wariant | ukończone | fotony | przyczyny stopu | mediana |
+|---|---|---|---|---|
+| **precesja bez sprzężenia** | \(24/24\) | \(3\) we **wszystkich** | 12 bariera / 12 retardacja | \(208{,}0\) ps |
+| sprzężenie osiowe | \(15/24\) | \(0{:}1\ 1{:}13\ 2{:}1\) | 3 bariera / 12 retardacja | \(54{,}7\) ps |
+| sprzężenie pełny wektor | \(16/24\) | \(1{:}15\ 2{:}1\) | 0 bariera / 16 retardacja | \(109{,}9\) ps |
+
+**Sama precesja odtwarza zachowanie sprzed poprawki dokładnie.** Winowajcą jest
+wyłącznie sprzężenie, a wariant osiowy nie ratuje niczego — jest nawet gorszy.
+Przyczyna jest ilościowa: \(|\Delta\mathbf S|\) to rząd \(0{,}5\hbar\) na
+checkpoint wobec orbitalnego \(L\) rzędu \(1\)–\(2\hbar\), więc **każde**
+wierne sprzężenie dominuje, niezależnie od tego, którą składową się oddaje.
+
+*Sprzężenie zostało więc wycofane, a poprawka precesji zostaje.* Nie dlatego, że
+zachowanie momentu pędu jest nieważne — jest — tylko dlatego, że wina leży
+powyżej. Klasyczna para momentów kontrrotuje w tempie nadsubtelnym i wymienia
+rząd \(\hbar\) z orbitą przy \(\sim200\) GHz; rzeczywiste pozytonium tego nie
+robi, bo jego stany spinowe są stanami własnymi. Dopóki sektor spinowy tego nie
+reprezentuje, **wierne sprzężenie przenosi niefizyczną dynamikę wprost do
+głównej obserwabli** — co jest gorsze niż udokumentowana i zmierzona
+niespójność. Obie strony są zapisane przy kodzie, razem z liczbami, więc decyzja
+jest odwracalna.
+
+*Stan po wycofaniu:* mediana \(7368{,}8\) ps, wiązanie terminalne
+\(6{,}80285\) eV, 12/12 ukończonych, 39/39 PASS — czyli produkcja wraca do
+wartości sprzed całego tego wątku, z poprawnie całkowaną precesją w środku.
+
+*Wniosek zachowany dla zapisu.* Przy włączonym sprzężeniu kolaps barierowy nie
+był już napędzany **promieniowaniem**, tylko **błądzeniem losowym \(L\)**. Trajektoria dochodzi do granicy ważności, bo jej
 moment pędu został rozproszony, a nie dlatego, że wypromieniowała energię — i
 w \(9\%\) przypadków dzieje się to bez ani jednego kwantu. To znaczy, że
 sprzężenie w obecnej postaci **przejęło rolę mechanizmu dominującego**, czego
