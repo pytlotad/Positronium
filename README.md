@@ -7318,11 +7318,39 @@ promieniuje na papierze i nie jest odejmowane od niczego.**
 
 Ortho ma dokładnie zero, bo kwantowanie spinu ustawia \(\cos=-1\), gdzie
 moment koherentny \(\boldsymbol\mu_1+\boldsymbol\mu_2\) znosi się dokładnie.
-Luka jest więc **wyłącznie po stronie para** — i to jest powód, żeby ją nazwać,
-mimo że przy \(10^{-18}\)–\(10^{-15}\) całkowitej mocy nie ma żadnego
-znaczenia liczbowego. Udokumentowana, nie naprawiona: zdrenowanie jej
-wymagałoby, żeby hazard fotonowy niósł udział M1, czyli zmiany recepty emisji
-dla efektu siedemnaście rzędów niżej.
+Efekt jest więc **wyłącznie po stronie para**.
+
+*Sprawdzone dokładniej — i to nie jest luka, tylko projekt.* Nazwałem to
+„gniazdem bez pary" i zaproponowałem naprawę przez włączenie drenażu.
+**Obie wersje tej naprawy zawodzą walidację** (38/39, pada
+`quantized-radiation-drain`): i „zawsze drenuj", i „drenuj wtedy, gdy działa
+moment siły". Treścią tego checku jest dokładnie to, że w trybie skwantowanym
+**żadna energia nie może być usuwana w sposób ciągły** — wszystko ma wyjść w
+kwantach. Bramka nie jest niedopatrzeniem, tylko zapisaną decyzją, egzekwowaną.
+
+Więc oryginalne zdanie było **poprawne**, tylko podałem dla niego słaby powód
+(„efekt jest mały") zamiast prawdziwego: domknięcie tego naprawdę wymagałoby,
+żeby hazard fotonowy niósł udział M1, bo żadna inna droga nie przechodzi przez
+bramkę.
+
+*Co jest naprawdę zepsute, i co mnie zmyliło.* Komentarz przy tym checku wciąż
+wymieniał **moment reakcji** wśród rzeczy, które muszą być zerem w trybie
+skwantowanym. Przestało to być prawdą, gdy bramkę rozdzielono na dwie flagi —
+co widać w drugim komentarzu, przy `quantizedDipoleTorqueDrain`: *„there is no
+longer a torque-suppression decision for it to confirm"*, a residuum momentu
+jest tam **celowo ustawiane na zero**, bo `applyDipoleRadiationTorque`
+renormalizuje to, co obraca (zmierzone \(1{,}35\cdot10^{-13}\) wobec
+\(1{,}37\cdot10^{-13}\) — brak rozdzielenia), a efekt wymaga pełnego
+inspiralu, nie testu jednostkowego.
+
+Czytając nieaktualną klauzulę, para „moment włączony / drenaż wyłączony"
+wygląda na złamaną symetrię i naprawa wydaje się oczywista. Nie jest.
+Klauzula poprawiona.
+
+*Bezczynność potwierdzona mocniej niż stosunkiem mocy.* Trzy konfiguracje —
+produkcja, drenaż włączony, moment wyłączony — dają **identyczne** mediany
+(\(7368{,}8\) ps para, \(7{,}3688\) ns ortho). Sektor M1 nie robi w produkcji
+nic, niezależnie od tego, jak go zabramkować.
 
 **Domknięcie po stronie para/ortho.** Kanał wchodzi do dynamiki przez trzy
 niezależne kombinacje momentów, i wszystkie trzy są reprezentowane:
@@ -7331,7 +7359,7 @@ niezależne kombinacje momentów, i wszystkie trzy są reprezentowane:
 |---|---|---|
 | \(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\) | energia i siła dipol–dipol, moment sekularny | komplet |
 | \(\boldsymbol\mu_2-\boldsymbol\mu_1\) | energia i siła ładunek–dipol | komplet |
-| \(\boldsymbol\mu_1+\boldsymbol\mu_2\) | promieniowanie M1 | brak drenażu energii |
+| \(\boldsymbol\mu_1+\boldsymbol\mu_2\) | promieniowanie M1 | drenaż celowo wyłączony w trybie skwantowanym |
 
 Te trzy wyczerpują niezależne niezmienniki liniowe i dwuliniowe pary momentów,
 więc lista jest zamknięta, a nie tylko długa.

@@ -1910,11 +1910,23 @@ int runMaxwellSelfTest(
         bool advanced=false;
     };
     std::array<BalanceRadiusPoint,3> balanceRadiusSweep{};
-    // Continuous mechanical radiative drain that survives in the fully
+    // Continuous mechanical radiative ENERGY drain that survives in the fully
     // quantized mode.  Must be exactly zero: under stochasticElectricDipole
-    // every channel leaves as discrete quanta, so nothing may be removed
-    // between photons -- not the charge sector's reaction force, and not the
-    // magnetic sector's dipoleConstraintEnergy drain or reaction torque.
+    // every energy channel leaves as discrete quanta, so no energy may be
+    // removed between photons -- neither the charge sector's reaction force
+    // nor the magnetic sector's dipoleConstraintEnergy drain.
+    //
+    // The reaction TORQUE is deliberately NOT on that list any more, and this
+    // clause used to say it was.  The stale wording cost a wrong turn during
+    // the symmetry audit: reading it, the M1 torque-on/drain-off pairing looks
+    // like an unpaired conjugate slot, and the obvious repair is to turn the
+    // drain on.  Two versions of that were tried and both take validation to
+    // 38/39 -- "always drain" and "drain iff the torque is applied" alike --
+    // because this very check forbids any continuous energy removal in the
+    // quantized mode.  The torque is a different conjugate slot and was
+    // separated from the drain on purpose; see the note at
+    // quantizedDipoleTorqueDrain below for why it is set to zero rather than
+    // measured.
     double quantizedChargeReactionDrain=
         std::numeric_limits<double>::quiet_NaN();
     double quantizedDipoleConstraintDrain=

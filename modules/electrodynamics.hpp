@@ -2516,15 +2516,21 @@ void integrateElectrodynamicStep(State& s, double dt,
     // Diagnostic split below still subtracts the M1 rate unconditionally --
     // orbitalRadiatedEnergy is a decomposition of the measured Poynting flux
     // and is not a sink.  Only the mechanical drain is gated.
-    // SYMMETRY AUDIT, recorded here because this is the one place the four
-    // conjugate slots do not all line up.  Every other interaction in the
-    // model carries force, torque, energy and a reaction partner; the M1
-    // channel under a QUANTIZED reaction model carries its reaction TORQUE
-    // (applyDipoleReactionTorque is true) while its energy drain is gated OFF
-    // -- because the quantized channel is supposed to remove the energy in
-    // photons instead.  But the photon hazard is built from
+    // SYMMETRY AUDIT.  Under a QUANTIZED reaction model the M1 channel exerts
+    // its reaction TORQUE (applyDipoleReactionTorque is true) while its energy
+    // drain is gated OFF, because the quantized channel is supposed to remove
+    // the energy in photons instead.  The photon hazard is built from
     // larmorOrbitAveragedPower, which is the E1 power and contains no M1, so
     // the M1 energy is radiated on paper and removed from nothing.
+    //
+    // THIS IS THE DESIGN, not a gap, and the audit's first reading of it as an
+    // unpaired conjugate slot was wrong.  The gate is enforced: turning the
+    // drain on takes validation to 38/39 on quantized-radiation-drain, whose
+    // whole content is that no energy may be removed continuously in this
+    // mode.  Both repairs were tried -- unconditional draining, and draining
+    // iff the torque is applied -- and both fail it.  So closing the gap
+    // really would mean giving the photon hazard an M1 share, i.e. changing
+    // the emission prescription, which is what that entry claims.
     //
     // Measured, as a fraction of the total radiated power:
     //
