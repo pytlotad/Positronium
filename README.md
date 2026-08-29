@@ -7265,6 +7265,71 @@ nieważny, więc nic z tego nie wynika poza tym, że tam się zatrzymuje.
 zmierzone \(r^*/\bar\lambda_C=0{,}501\) — bariera to dokładnie pół
 zredukowanej długości Comptona, z dokładnością do \(g/2\).)
 
+#### Pominięty efekt: precesja spinów nie jest całkowana po pominiętych orbitach
+
+Rachunek rzędów wielkości, którego wcześniej nie zrobiłem, nie domykał się o
+**siedem rzędów** — i to wskazało brakujący element.
+
+*Co nie grało.* Pole dipolowe partnera przy \(a_{Ps}\) wynosi \(0{,}78\) T, a
+tempo precesji BMT, policzone **funkcją samego kodu**
+(`thomasBmtDipoleDerivatives`), daje \(\omega=4{,}95\cdot10^{10}\) rad/s,
+czyli \(1{,}504\cdot10^{-5}\) rad na orbitę. Kaskada domyślna obejmuje
+\(6{,}9\cdot10^{6}\) obrotów, więc **powinna nagromadzić \(\approx104\)
+radiany precesji**. A zmierzony dryf \(|\boldsymbol\mu_2-\boldsymbol\mu_1|\)
+sięga \(2\cdot10^{-4}\).
+
+*Przyczyna.* Jedyne miejsce, w którym dipole są przenoszone między
+checkpointami, to
+```cpp
+firstDipole=run.finalState.firstDipole;
+secondDipole=run.finalState.secondDipole;
+```
+czyli **jedna mechanicznie całkowana orbita**. Nad `orbitsToSkip` — do
+\(200\,000\) orbit na checkpoint — precesja **nie jest całkowana w ogóle**.
+Zmierzony udział orbit, po których precesja faktycznie biegnie:
+
+| tryb | całkowane / wszystkie | udział |
+|---|---|---|
+| domyślny | 3 / 557 097 | \(5{,}39\cdot10^{-6}\) |
+| domyślny | 20 / 3 785 470 | \(5{,}28\cdot10^{-6}\) |
+| domyślny | 35 / 6 914 185 | \(5{,}06\cdot10^{-6}\) |
+| barierowy | 122 / 1 626 269 | \(7{,}50\cdot10^{-5}\) |
+| barierowy | 952 / 1 843 725 | \(5{,}16\cdot10^{-4}\) |
+
+**Około jednej orbity na 200 000.** Rachunek się wtedy domyka: model stosuje
+\(35\times1{,}504\cdot10^{-5}=5{,}3\cdot10^{-4}\) rad, a
+\(2\mu\sin(5{,}3\cdot10^{-4})\approx1{,}1\cdot10^{-3}\) — ten sam rząd co
+zmierzone \(2\cdot10^{-4}\).
+
+*Ta sama klasa luki, co pozostałe znalezione dziś* — coś obecnego w mierzonej
+orbicie i nieobecnego w analitycznym przeskoku, jak moment spin-orbita i energia
+ładunek–dipol — ale ze **współczynnikiem niedoliczenia \(2\cdot10^{5}\)**
+zamiast rzędu jedności. To zdecydowanie największa z nich.
+
+*Co to znaczy dla wcześniejszych wniosków tej sekcji.* Wszystkie pomiary
+orientacji spinów — dryf \(\cos\) rzędu \(10^{-8}\) pod domyślną
+konfiguracją, \(0{,}048\) w trybie barierowym, przeżywanie kwantowania —
+wykonano na układzie, w którym \(99{,}9995\%\) precesji nie jest całkowane.
+
+Dwie rzeczy przetrwają to bez zmian, i jedna nie:
+
+- **punkt stały ortho przetrwa**: pochodna sumy jest *dokładnie* zerem, więc
+  żadna ilość całkowania jej nie ruszy;
+- **wnioski o czasach kolapsu przetrwają**: precesja nie wchodzi do budżetu
+  energii;
+- **ustawienie para prawdopodobnie nie przetrwa**. Przy
+  \(\omega=4{,}95\cdot10^{10}\) rad/s różnica
+  \(|\boldsymbol\mu_2-\boldsymbol\mu_1|\) oscyluje z okresem
+  \(\pi/\omega=63\) ps, więc na kaskadzie \(7368\) ps przeszłaby
+  \(\approx117\) pełnych cykli i wartość końcowa byłaby zasadniczo dowolna w
+  \([0,2\mu]\). Kwantowanie spinu, na którym opiera się domyślna
+  konfiguracja, dotyczyłoby wtedy tylko **stanu przygotowanego**, nie
+  trajektorii.
+
+To ostatnie jest **wnioskiem z okresu oscylacji, nie pomiarem**: bezpośredni
+test wymaga przebiegu z pełnym całkowaniem, czyli \(2\cdot10^{5}\) razy
+wolniejszego. Test pośredni (zmniejszanie `maxOrbitsSkippedAtOnce`) jest w toku.
+
 #### Co dokładnie robi kwantowanie spinu — trzy struktury, nie jedna
 
 Zapisałem, że „kwantowanie działa wyłącznie na kąt wzajemny, a wszystkie trzy
