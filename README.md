@@ -7265,6 +7265,107 @@ nieważny, więc nic z tego nie wynika poza tym, że tam się zatrzymuje.
 zmierzone \(r^*/\bar\lambda_C=0{,}501\) — bariera to dokładnie pół
 zredukowanej długości Comptona, z dokładnością do \(g/2\).)
 
+### Sektor spinowy: co się okazało, gdy zaczęto go mierzyć
+
+Ta sekcja zbiera wątek, który przeszedł przez kilkanaście kroków i skończył się
+zmianą produkcyjną większą niż jakakolwiek inna w tej serii. Warto go czytać w
+całości, bo pojedyncze podsekcje niżej zapisują kolejne **korekty tego samego
+twierdzenia**, i bez kolejności wyglądają na sprzeczne.
+
+**Punkt wyjścia.** Model traktował orientacje momentów magnetycznych jako
+rzecz drugorzędną: precesja Thomasa-BMT działała w mechanicznie całkowanej
+orbicie, a warstwa sekularna przenosiła momenty między checkpointami jedną
+linią, `firstDipole = run.finalState.firstDipole`. Nikt nie sprawdził, ile
+orbit ta linia pomija.
+
+**Co to wykryło.** Rachunek rzędów wielkości, robiony przy zupełnie innym
+pytaniu, nie domykał się o **siedem rzędów**: pole dipolowe partnera przy
+\(a_{Ps}\) to \(0{,}78\) T, tempo precesji \(4{,}95\cdot10^{10}\) rad/s,
+czyli \(1{,}5\cdot10^{-5}\) rad na orbitę, a kaskada obejmuje
+\(6{,}9\cdot10^{6}\) orbit — więc powinno nagromadzić się \(\approx104\)
+radiany. Zmierzony dryf wynosił \(2\cdot10^{-4}\). Przyczyną okazało się, że
+precesja biegnie po **jednej orbicie na 200 000** (zmierzone udziały
+\(5{,}1\cdot10^{-6}\) w trybie domyślnym).
+
+**Że to nie uśrednia się do zera** pokazał test skalowania: dziesięciokrotny
+wzrost liczby całkowanych orbit dał dziesięciokrotny wzrost dryfu
+(\(10{,}3\times\) wobec \(10{,}1\times\)). Dryf jest sekularny, więc
+niedoliczenie narasta, a nie oscyluje wokół zera. To zamieniło obserwację w
+przesłankę do poprawy.
+
+**Poprawka, etap pierwszy.** `advanceSkippedDipolePrecession` przechodzi czas
+własny checkpointu w 64 plasterkach o różnych fazach orbitalnych, wołając **tę
+samą** `applyDipolePrecession`, której używa integrator mechaniczny — więc
+uśrednianie po orbicie i akumulacja dzieją się razem i nie powstaje druga kopia
+reguły BMT. (Ta ostrożność nie jest przesadą: druga kopia recepty zemściła się
+w tej sesji już dwa razy — przy kwancie emisji i przy sekularnej formie
+ładunek–dipol, gdzie ręcznie wyprowadzony wzór miał zły znak i złą
+regularizację.)
+
+**Skutek etapu pierwszego** był dokładnie tym, co zapowiadała ekstrapolacja:
+ustawienie momentów dla **para** przestaje przeżywać kaskadę i nasyca się przy
+maksimum, a punkt stały **ortho** przeżywa idealnie. To drugie ma wyprowadzenie:
+pole napędzające dryf jest proporcjonalne do
+\((\boldsymbol\mu_1+\boldsymbol\mu_2)\), więc w stanie antyrównoległym
+znika — konfiguracja sama się podtrzymuje.
+
+**Właściwa zmienna to \(|\mathbf S|\), nie \(\cos\).** Dla pozytonium
+\(\gamma_2=-\gamma_1\), więc \(\mathbf S_1+\mathbf S_2
+=(\boldsymbol\mu_1-\boldsymbol\mu_2)/\gamma_1\): para to singlet
+\(|S|=0\), ortho to tryplet \(|S|=\hbar\). Zmierzone: ortho zachowuje
+\(|S|\) do \(0{,}2\%\), para idzie z \(0\) do \(\approx\hbar\).
+**Model zachowuje charakter trypletowy i niszczy singletowy** — a w mechanice
+kwantowej oba są zachowane. To realne ograniczenie modelu klasycznego, nie
+szczegół implementacji: klasyczna para momentów sprzężonych dipolowo ma
+konfigurację antyrównoległą jako punkt stały, równoległą jako niestabilną, i nie
+ma czym reprezentować singletu.
+
+**Etap pierwszy był jednostronny**, co wyszło dopiero przy osobnym pytaniu.
+Rutyna przesuwała spiny, nie ruszając orbitalnego momentu pędu — a model
+spinowy moment pędu **liczy**, jako \(\mu/\gamma\). Zmiana rzędu
+\(1\hbar\) wobec orbitalnego \(L=1\hbar\) jest porównywalna z **całym**
+orbitalnym momentem pędu.
+
+**Poprawka, etap drugi: pełna zmiana wektorowa.**
+\(\mathbf L_{\rm po}=\mathbf L_{\rm przed}-\Delta\mathbf S\), z magnitudą
+i kierunkiem z tego samego odejmowania. Różni się to świadomie od traktowania
+\(\hbar\) fotonu, gdzie kierunek pochodzi z odejmowania, a magnituda z prawa
+\(k(e)\): tam osobne prawo istnieje, tutaj nie ma, więc zachowawczym wyborem
+jest cały wektor.
+
+**I dopiero to pokazało rzecz najważniejszą.** Orbitalne \(L\) zaczyna błądzić
+losowo — w obie strony, z wychyleniami do \(\pm0{,}4\hbar\) przy
+\(|\Delta\mathbf S|\) rzędu \(0{,}5\hbar\) na checkpoint — a kaskada
+skraca się o około \(25\%\). **To nie jest artefakt sprzężenia**: skoro spin
+faktycznie zmienia się o \(\Delta\mathbf S\), zachowanie momentu pędu wymaga,
+by \(L\) to wchłonęło. Ujawnia się natomiast coś powyżej: dwa momenty
+kontrrotują w tempie **nadsubtelnym** (\(\sim200\) GHz), więc para klasyczna
+wymienia z orbitą rząd \(\hbar\) momentu pędu przy tej częstości — a
+rzeczywiste pozytonium tego nie robi, bo jego stany spinowe są stanami własnymi
+i nie kontrrotują wcale.
+
+**Wniosek, który wart jest zapisania osobno.** Poprawne zachowanie momentu pędu
+jest tym, co uczyniło **klasyczną dynamikę spinu widoczną w orbicie**. Dopóki
+precesja była zamrożona (niedoliczona \(2\cdot10^5\) razy), a potem odmrożona
+ale bez sprzężenia, sektor spinowy nie miał żadnego wpływu na obserwable.
+Domknięcie bilansu przeniosło jego niefizyczność wprost do czasu kolapsu. Model
+nie ma stanów własnych spinu, więc nie ma czym powstrzymać kontrrotacji — i
+teraz to widać.
+
+**Czego to nie rozstrzyga.** Czy \(25\%\) skrócenia kaskady należy przyjąć
+jako wynik modelu, czy jako sygnał, że klasyczny sektor spinowy trzeba
+traktować inaczej, jest decyzją o tym, co model twierdzi. Zapisane jest jedno i
+drugie: bramka jest jawna, obie warstwy udokumentowane, a każda liczba w tej
+sekcji zmierzona, nie oszacowana.
+
+*Metodycznie* ten wątek jest też zapisem sześciu kolejnych korekt tego samego
+twierdzenia. Warto je znać, bo każda miała inną przyczynę: pomiar na złej
+wielkości (mediana zamiast orientacji momentów), uogólnienie z konfiguracji
+domyślnej na model, wynik zerowy z testu bez mocy, nieistniejący rzekomo test,
+który istniał, potrójna zmiana znaku policzona jako podwójna, i wreszcie
+jednostronne wdrożenie, w którym sam popełniłem tę klasę błędu, którą przez pół
+sesji tropiłem u innych.
+
 #### Pominięty efekt: precesja spinów nie jest całkowana po pominiętych orbitach
 
 Rachunek rzędów wielkości, którego wcześniej nie zrobiłem, nie domykał się o
