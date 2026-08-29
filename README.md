@@ -7322,6 +7322,41 @@ i moje „zaostrza każdą z nich" jest prawdziwe tylko przy czytaniu „zaostrz
 moduł". Efekt zespołowy pozostaje zerem, bo rzut izotropowy go kasuje niezależnie
 od tego, co zrobiono z kątem.
 
+*Para „dokładnie komplementarna" — algebraicznie tak, dynamicznie nie.*
+Napisałem, że przy \(\cos=+1\) człon ładunek–dipol znika tożsamościowo dla
+para, M1 zachowuje się odwrotnie, i że daje to parę dokładnie komplementarną.
+Algebraicznie zgadza się: \(|\boldsymbol\mu_1\pm\boldsymbol\mu_2|
+=\mu\sqrt{2(1\pm\cos)}\) to ścisłe odbicia lustrzane względem
+\(\cos\to-\cos\). **Ale ewolucja czasowa je rozróżnia**, i to jest rzecz,
+której nie sprawdziłem:
+
+```
+ortho, domyslnie:  |mu1+mu2| = 0 na starcie I na koncu, 17 cyfr, do 15277 ps
+para,  domyslnie:  |mu2-mu1| = 0 na starcie  ->  3,7e-06 ... 1,24e-04
+```
+
+**Zerowanie ortho jest dokładne i dynamicznie zachowane. Zerowanie para jest
+dokładne tylko przy przygotowaniu** — precesja rozsuwa momenty i człon
+ładunek–dipol odżywa na poziomie \(10^{-4}\) modułu. To wciąż tłumienie o
+\(2\cdot10^4\) wobec ortho, ale nie tożsamościowe zero, jak napisałem.
+
+Przyczyną **nie** jest moment reakcji M1 — jego wkład do dryfu zmierzono
+osobno jako \(2\cdot10^{-16}\), osiem rzędów poniżej obserwowanego
+\(10^{-8}\) dryfu \(\cos\). Zostaje precesja BMT: obie orientacje obracają
+się wokół **różnych** pól efektywnych, bo każda cząstka widzi pole partnera w
+swoim położeniu i wchodzi z własną prędkością do członu Thomasa.
+
+*I obie zależą od kwantowania.* W trybie barierowym, gdzie spin nie jest
+kwantowany, żadne z tych zerowań nie istnieje w ogóle:
+
+```
+para : |mu2-mu1| 0,974 -> 1,024,   |mu1+mu2| 1,747 -> 1,721
+ortho: |mu2-mu1| 1,875 -> 1,886,   |mu1+mu2| 0,696 -> 0,663
+```
+
+Obie kombinacje są tam \(O(1)\) w obu kanałach. Struktura „komplementarnej
+pary" jest więc własnością **skwantowanego stanu przygotowanego**, nie modelu.
+
 *I jedno zastrzeżenie do samego kwantowania:* jest **nakładane przy
 przygotowaniu**, a dynamika je eroduje. Zmierzone: dryf \(\cos\) wynosi
 \(\sim10^{-8}\) pod domyślną konfiguracją (krótka kaskada, więc kwantowanie
