@@ -7438,8 +7438,28 @@ trajektoriach, więc porównanie jest sparowane, a nie ograniczone cenzurą:
 mediana \(208{,}007\) ps i średnia \(223{,}308\pm37{,}95\) ps **identyczne**
 z członem i bez, wiązanie terminalne identyczne, a **dokładnie jedna
 trajektoria na 24** przechodzi z progu retardacyjnego na barierę Comptona.
-Człon pozostaje więc niemal bezczynny — ale to jest teraz pomiar członu
-**poprawnego**, a nie zepsutego.
+
+*Powtórzone na większej próbce, bo 24 to za mało na wniosek „nie zmienia
+niczego".* Sparowane z członem wobec bez, 48 trajektorii ukończonych w obu
+konfiguracjach:
+
+```
+zmiany przyczyny stopu:  1 = 2,1%   (b=1, c=0, p=1,0)
+flipy liczby fotonow:    0
+|dt/t|:        srednia = 0   max = 0
+|dbind/bind|:  srednia = 0   max = 0
+```
+
+Czasy życia i wiązania terminalne są **identyczne co do bitu**, nie „do szóstej
+cyfry" — a to znacznie mocniejsze stwierdzenie, niż miałem prawo zrobić z
+poprzedniej próbki. I ta jedna zmiana przyczyny stopu ma **identyczny czas
+życia**, czyli człon przestawił tam **etykietę granicy**, a nie wynik: obie
+granice były spełnione niemal jednocześnie i człon przechylił, której przypisać
+zdarzenie.
+
+Człon pozostaje więc bezczynny w obserwablach — ale to jest teraz pomiar członu
+**poprawnego**, na dwukrotnie większej próbce, i z rozróżnieniem, którego
+wcześniej nie robiłem: bezczynny w wyniku, nie w atrybucji.
 
 (Po drodze odczyt pośredni \(238\to208\) ps wyglądał na efekt rzeczywisty;
 okazał się artefaktem cenzury — 13 wobec 14 ukończeń. Przebieg z pełnym
@@ -7709,11 +7729,28 @@ atrybucję granicy na **większości** trajektorii, nie na jednej partii — to
 znacznie mocniejsze stwierdzenie niż \(16/24\) z jednego ziarna, i jest to
 wielkość o wysokiej pewności, w odróżnieniu od kierunku.
 
-**Po drugie: jest \(1\) flip liczby fotonów na 96 (\(1{,}04\%\)).** Moje
-„zero flipów" było stwierdzeniem o próbce 24, nie zerem strukturalnym. Ostrze
-**da się** przerzucić konfiguracją kanału, tylko rzadko — zgodne z wcześniejszym
-oszacowaniem pasma (rzędu 1 na 250; przedział Poissona dla 1 zdarzenia na 96 to
-\(0{,}03\%\)–\(5{,}8\%\), więc obie liczby są zgodne).
+**Po drugie: są flipy liczby fotonów.** Moje „zero flipów" było stwierdzeniem
+o próbce 24, nie zerem strukturalnym.
+
+*Rozszerzone do ośmiu ziaren (191 par),* co zmieniło dwie z tych liczb:
+
+```
+niezgodne przyczyny:  111 z 191 = 58,1%   (na 4 ziarnach: 57,3% - stabilne)
+b=59  c=52   p = 0,569
+roznica brzegowa = -3,66 pkt, SE 5,52, 0,66 sigma   (na 4 ziarnach: +9,38!)
+flipy liczby fotonow: 4 z 191 = 2,09%   (na 4 ziarnach: 1,04%)
+```
+
+**Znak różnicy brzegowej odwrócił się** przy podwojeniu próbki
+(\(+9{,}38\to-3{,}66\)), co przesądza sprawę kierunku ostatecznie: to szum, i
+dobrze, że nie ogłosiłem go efektem przy \(1{,}2\sigma\). Udział par
+niezgodnych jest natomiast **stabilny** (\(57{,}3\to58{,}1\%\)) — to jest ta
+wielkość, którą warto cytować.
+
+A wskaźnik flipów wyszedł \(\mathbf{2{,}09\%}\), pięciokrotnie powyżej mojego
+wcześniejszego oszacowania „rzędu 1 na 250" (\(0{,}4\%\)). Przedział Poissona
+dla 4 zdarzeń na 191 to \(0{,}6\%\)–\(5{,}3\%\), więc tamto oszacowanie leży
+**poniżej** przedziału i było zbyt optymistyczne.
 
 *I korekta do samej analogii.* Napisałem „ten sam wzorzec, co przy sumie
 energii fotonów i przy uśrednianiu momentu spin-orbita". To są **trzy różne
