@@ -7345,13 +7345,48 @@ współczesna mechanika kwantowa ma \(l\le n-1\), więc stan podstawowy jest
 \(l=0\). Model nie ma **żadnych** stanów \(l=0\), i to jest powód, dla
 którego człon kontaktowy — obecny i poprawnie znormalizowany — nie wnosi nic.
 
-To przenosi lukę z prawa siły do **przygotowania stanu**, i czyni ją znacznie
-konkretniejszą: aby rozszczep się pojawił, model potrzebowałby orbit o
-\(L\to0\), czyli radialnych. Te przechodzą przez obszar \(r\lesssim
-r_{\rm reg}=83{,}6\) fm, który leży **poniżej bariery Comptona**
-(\(193{,}3\) fm) — czyli w strefie zadeklarowanej jako nieważna. Jest to więc
-osiągalne w zasadzie, lecz wymagałoby jednoczesnego rozstrzygnięcia, co model
-robi poniżej własnej granicy ważności.
+To przenosi lukę z prawa siły do **przygotowania stanu** — więc naturalne
+pytanie brzmi: przygotować stan \(l=0\)? Policzone, **nie**, i to nie z powodu,
+którego się spodziewałem.
+
+*Gdzie leży siła kontaktowa.* Udział całki \(\int\mathbf B\,d^3r\) poniżej
+promienia \(R\):
+
+| \(R/r_{\rm reg}\) | \(R\) [fm] | udział |
+|---|---|---|
+| \(1{,}0\) | \(83{,}6\) | \(0{,}559\) |
+| \(2{,}0\) | \(167{,}3\) | \(0{,}9997\) |
+| \(2{,}31\) (bariera) | \(193{,}3\) | \(0{,}9999\) |
+
+Praktycznie **cała** siła kontaktowa leży wewnątrz bariery Comptona, więc
+trajektoria zatrzymana na barierze nie próbkuje z niej nic — to była pierwsza
+przeszkoda. Ale druga jest rozstrzygająca.
+
+*Ile orbita radialna faktycznie by wychwyciła.* Uśredniona po czasie energia
+kontaktowa dla radialnej orbity Keplera o półosi \(a_{Ps}\), liczona polem
+samego modelu:
+
+```
+orbita RADIALNA (l=0):   <U>_czas = -0,1572 eV     = 18688% rozszczepu
+orbita kolowa a_Ps:       U       =  4,54e-05 eV   =     5,4% rozszczepu
+```
+
+**Przygotowanie \(l=0\) przestrzeliłoby rozszczep 187-krotnie** (a wobec samego
+członu kontaktowego, \(4{,}83\cdot10^{-4}\) eV, aż \(326\)-krotnie).
+
+*Powód jest jakościowy, nie do wyregulowania.* Klasyczna orbita radialna ma
+gęstość czasową przy \(r\to0\) rozbieżną jak \(r^{-3/2}\), podczas gdy
+kwantowe \(|\psi(0)|^2=1/(\pi a^3)=2{,}69\cdot10^{29}\) m\(^{-3}\) jest
+**skończone**. Klasyczny punkt materialny spada do zera i wraca; funkcja falowa
+ma tam skończoną, gładką gęstość. Wynik zależałby więc od promienia
+regularizacji — czyli od parametru numerycznego, nie od fizyki.
+
+**Luka nie jest zatem naprawialna przez przygotowanie stanu.** Nie chodzi o to,
+że model nie ma \(l=0\); chodzi o to, że klasyczne \(l=0\) i kwantowe
+\(l=0\) różnią się w zerze **jakościowo**, i to właśnie tam, gdzie człon
+kontaktowy żyje. Model ma poprawne oddziaływanie i nie ma stanu, który mógłby je
+próbkować tak, jak robi to funkcja falowa — a każdy klasyczny stan, który by je
+próbkował, dałby odpowiedź ustaloną przez regulator.
 
 *Anihilacja wirtualna zostaje nieobecna* i to na innym poziomie: jest również
 członem kontaktowym, ale nie ma klasycznego odpowiednika w żadnej postaci — nie
