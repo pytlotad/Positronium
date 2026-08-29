@@ -7265,6 +7265,70 @@ nieważny, więc nic z tego nie wynika poza tym, że tam się zatrzymuje.
 zmierzone \(r^*/\bar\lambda_C=0{,}501\) — bariera to dokładnie pół
 zredukowanej długości Comptona, z dokładnością do \(g/2\).)
 
+#### Co dokładnie robi kwantowanie spinu — trzy struktury, nie jedna
+
+Zapisałem, że „kwantowanie działa wyłącznie na kąt wzajemny, a wszystkie trzy
+wielkości różnicujące kanały od niego zależą, więc kwantowanie zaostrza każdą".
+Pierwsza połowa jest prawdziwa, druga zlepia trzy różne struktury w jedną.
+
+*Co model kwantuje, a czego nie.*
+
+| wielkość | stan |
+|---|---|
+| moduł każdego momentu | \(|q|\hbar/2m\), wyprowadzony z \(\hbar\), zachowywany przez więz |
+| spin fotonu | dokładnie \(\pm\hbar\) wzdłuż propagacji, per foton |
+| kąt wzajemny momentów | \(\cos=\pm1\) pod `--ground-state-floor` (domyślnie) |
+| **wspólny kierunek momentów** | **izotropowy, ciągły — nie ma osi kwantyzacji** |
+| orbitalny moment pędu | **podłoga** \(\max(L,\hbar/\mu)\), nie kwantowanie do \(n\hbar\) |
+
+*Trzy dyskryminanty kanału zachowują się różnie,* bo różnią się typem:
+
+**\(\boldsymbol\mu_1+\boldsymbol\mu_2\) w M1 wchodzi jako MODUŁ**
+\(|\boldsymbol\mu_1+\boldsymbol\mu_2|^2=2\mu^2(1+\cos)\), więc zależy
+wyłącznie od kąta wzajemnego. Kwantowanie działa tu na wartość średnią:
+maksimum dla para, **dokładnie zero** dla ortho. Zmierzone: udział M1 w mocy
+\(9{,}24\cdot10^{-18}\) dla para i \(0\) dla ortho.
+
+**\(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\) w momencie sekularnym jest
+NIEZMIENNIKIEM SKALARNYM**, więc też zależy tylko od kąta. Zmierzone wcześniej:
+\(\langle\tau_L\rangle=C(r)\cos\) dokładnie, a kwantowanie podnosi
+\(|\langle\cos\rangle|\) z \(0{,}713\) na \(1\) (para) i z \(0{,}271\) na
+\(1\) (ortho). Znów efekt na średniej.
+
+**\(\boldsymbol\mu_2-\boldsymbol\mu_1\) w energii ładunek–dipol wchodzi
+jako RZUT** \((\boldsymbol\mu_2-\boldsymbol\mu_1)\cdot(\mathbf
+v\times\hat r)\), więc zależy **także od wspólnej orientacji**, której
+kwantowanie nie dotyka. Zmierzone przy \(a_{Ps}\), uśrednione po izotropowej
+orientacji wspólnej:
+
+| \(\cos\) | \(|\boldsymbol\mu_2-\boldsymbol\mu_1|/\mu\) | \(\langle U_{\rm so}\rangle\) | \(\langle|U_{\rm so}|\rangle\) |
+|---|---|---|---|
+| \(+1\) (para) | \(0\) | \(\mathbf{0}\) | \(\mathbf{0}\) |
+| \(+0{,}5\) | \(1\) | \(-3{,}3\cdot10^{-26}\) | \(7{,}25\cdot10^{-24}\) |
+| \(0\) | \(1{,}414\) | \(8{,}9\cdot10^{-27}\) | \(1{,}02\cdot10^{-23}\) |
+| \(-0{,}5\) | \(1{,}732\) | \(1{,}1\cdot10^{-25}\) | \(1{,}25\cdot10^{-23}\) |
+| \(-1\) (ortho) | \(2\) | \(1{,}1\cdot10^{-25}\) | \(1{,}45\cdot10^{-23}\) |
+
+Trzy rzeczy naraz. Przy \(\cos=+1\) człon znika **dokładnie** — pod domyślną
+konfiguracją energia ładunek–dipol jest dla para tożsamościowo zerowa.
+\(\langle|U_{\rm so}|\rangle\) jest **ściśle proporcjonalne** do
+\(|\boldsymbol\mu_2-\boldsymbol\mu_1|=\mu\sqrt{2(1-\cos)}\) (iloraz
+\(7{,}25/7{,}22/7{,}22/7{,}25\)). Ale **wartość oczekiwana znika przy każdym
+kącie**, także skwantowanym: \(\langle U_{\rm so}\rangle\) siedzi na
+\(\approx1\%\) wartości bezwzględnej, czyli na progu szumu \(1/\sqrt{20000}\).
+
+**Więc dla tego jednego członu kwantowanie zaostrza ROZRZUT, a nie średnią** —
+i moje „zaostrza każdą z nich" jest prawdziwe tylko przy czytaniu „zaostrza
+moduł". Efekt zespołowy pozostaje zerem, bo rzut izotropowy go kasuje niezależnie
+od tego, co zrobiono z kątem.
+
+*I jedno zastrzeżenie do samego kwantowania:* jest **nakładane przy
+przygotowaniu**, a dynamika je eroduje. Zmierzone: dryf \(\cos\) wynosi
+\(\sim10^{-8}\) pod domyślną konfiguracją (krótka kaskada, więc kwantowanie
+przeżywa) i do \(0{,}048\) na pełnym inspiralu w trybie barierowym, gdzie by
+nie przeżyło. Zdanie „spin jest kwantowany" jest więc prawdziwe dla stanu
+przygotowanego i dla domyślnego przebiegu, a nie dla modelu w ogóle.
+
 #### Audyt symetrii: siły, momenty sił, pędy i momenty pędu — gdzie coś nie ma pary
 
 Poprzedni audyt pytał, **który człon jest w której warstwie**. Ten pyta
