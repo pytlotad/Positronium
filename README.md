@@ -7634,6 +7634,60 @@ bariery na próg retardacyjny. Liczba ukończeń pod stałym budżetem wallclock
 drgnęła, więc 64 wywołania siły na checkpoint są przy mechanicznie całkowanej
 orbicie niezauważalne.
 
+#### Ostrze noża wobec obu członów magnetycznych: nadal nie, ale kanały jednak się różnią
+
+Przeliczone po raz trzeci, bo od poprzedniego sprawdzenia energia
+**ładunek-dipol** weszła wprost do `dipoleAwarePeriapsis` — czyli do wielkości
+decydującej o ostrzu — i idzie jak \((\boldsymbol\mu_2-\boldsymbol\mu_1)\),
+więc jest zerowa dla para i maksymalna dla ortho. Do tego naprawiono w tej
+funkcji błąd znaku i błąd orbity kołowej. Tym razem oba człony bramkowane
+osobno, sparowane para/ortho, 24 trajektorie, wszystkie ukończone:
+
+| konfiguracja | flipy liczby fotonów | różnice przyczyny stopu |
+|---|---|---|
+| oba człony | **0** | 16 / 24 |
+| tylko dipol–dipol | **0** | 16 / 24 |
+| tylko ładunek–dipol | **0** | 4 / 24 |
+| żaden | **0** | **0 / 24** |
+
+**Odpowiedź na pytanie: nie.** Liczba fotonów nie zmienia się między kanałami w
+żadnej z czterech konfiguracji. Ostrze \(2\) wobec \(3\) fotonów jest
+nietknięte, więc \(45\%\) nie da się na te człony zrzucić.
+
+**Ale wiersz ostatni mówi coś, czego wcześniej nie widziałem.** Z **żadnym** z
+tych członów para i ortho dają **identyczne** przyczyny stopu — zero różnic na
+24 trajektoriach. Cała zależność kanałowa reguły stopu jest więc niesiona
+dokładnie przez te dwa człony sekularne: dipol–dipol dominująco (16/24),
+ładunek–dipol słabiej (4/24). To nie jest nic, tylko trafia w atrybucję
+granicy, a nie w obserwablę.
+
+*I nie dociera do niczego mierzalnego.* Czasy życia zgadzają się między
+kanałami **co do szóstej cyfry nawet tam, gdzie przyczyna stopu jest inna**
+(\(398{,}513\) wobec \(398{,}513\); \(209{,}165\) wobec \(209{,}164\)),
+mediany są identyczne (\(208{,}007\) ps), a wiązanie terminalne różni się o
+\(0{,}03\%\) (\(2{,}5715\) wobec \(2{,}5722\) keV).
+
+*Pułapka, w którą prawie wpadłem.* Na ziarnie 42 udział stopów na barierze
+wyszedł \(41{,}7\%\) dla para wobec \(66{,}7\%\) dla ortho — 25 punktów
+procentowych, co wygląda na duży efekt systematyczny. Na czterech ziarnach:
+
+| ziarno | para | ortho | różnica |
+|---|---|---|---|
+| 42 | 41,7% | 66,7% | \(+25{,}0\) |
+| 7 | 50,0% | 37,5% | \(\mathbf{-12{,}5}\) |
+| 99 | 37,5% | 41,7% | \(+4{,}2\) |
+| 1234 | 33,3% | 54,2% | \(+20{,}8\) |
+
+Średnia \(+9{,}4\pm8{,}6\) punktu, czyli \(1{,}1\sigma\), znak zmienny.
+Zgodne z zerem. Pojedyncze ziarno dałoby tu wniosek fałszywy — ten sam wzorzec,
+co przy sumie energii fotonów i przy uśrednianiu momentu spin-orbita.
+
+*Zestawienie.* Człony magnetyczne **rozdzielają kanały w regule stopu**
+trajektoria po trajektorii (16 z 24 zmienia atrybucję), ale ani nie przerzucają
+ostrza, ani nie zmieniają żadnej wielkości raportowanej, ani nie dają
+systematycznego przesunięcia udziałów. Ostrze zostaje własnością ziarnistości
+emisji.
+
 #### Ostrze noża po wprowadzeniu członu spin-orbita: nadal nie, ale teraz wiadomo dlaczego
 
 Poprzednia sekcja wykluczyła kanał rozpadu jako sprawcę ostrza, ale mierzyła
