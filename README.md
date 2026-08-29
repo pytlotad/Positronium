@@ -7326,9 +7326,21 @@ Dwie rzeczy przetrwają to bez zmian, i jedna nie:
   konfiguracja, dotyczyłoby wtedy tylko **stanu przygotowanego**, nie
   trajektorii.
 
-To ostatnie jest **wnioskiem z okresu oscylacji, nie pomiarem**: bezpośredni
-test wymaga przebiegu z pełnym całkowaniem, czyli \(2\cdot10^{5}\) razy
-wolniejszego. Test pośredni (zmniejszanie `maxOrbitsSkippedAtOnce`) jest w toku.
+*Test pośredni to potwierdził.* Zmniejszenie `maxOrbitsSkippedAtOnce`
+zwiększa udział orbit całkowanych; jeśli dryf jest sekularny, musi rosnąć
+proporcjonalnie:
+
+| `maxskip` | orbity całkowane | udział | \(|\boldsymbol\mu_2-\boldsymbol\mu_1|\) |
+|---|---|---|---|
+| 200 000 | 35 | \(5{,}06\cdot10^{-6}\) | \(1{,}974\cdot10^{-4}\) |
+| 20 000 | 360 | \(5{,}00\cdot10^{-5}\) | \(1{,}988\cdot10^{-3}\) |
+
+Orbit całkowanych \(10{,}3\times\) więcej, dryfu \(10{,}1\times\) więcej —
+**dokładnie liniowo**. Dryf jest więc sekularny, a nie oscylacyjny wokół zera, i
+ekstrapolacja do pełnego całkowania daje \(1{,}974\cdot10^{-4}/5{,}06\cdot
+10^{-6}=39\), czyli daleko powyżej maksimum \(2\). **Ustawienie spinów para
+nasyciłoby się i nie przetrwało kaskady** — to już nie jest wniosek z okresu
+oscylacji, tylko zmierzone skalowanie.
 
 #### Co dokładnie robi kwantowanie spinu — trzy struktury, nie jedna
 
