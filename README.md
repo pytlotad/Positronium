@@ -7265,6 +7265,77 @@ nieważny, więc nic z tego nie wynika poza tym, że tam się zatrzymuje.
 zmierzone \(r^*/\bar\lambda_C=0{,}501\) — bariera to dokładnie pół
 zredukowanej długości Comptona, z dokładnością do \(g/2\).)
 
+#### Audyt symetrii: siły, momenty sił, pędy i momenty pędu — gdzie coś nie ma pary
+
+Poprzedni audyt pytał, **który człon jest w której warstwie**. Ten pyta
+trudniej: czy dla każdego efektu wypełnione są wszystkie **cztery gniazda
+sprzężone** — siła (pęd), moment siły na spiny, energia, i partner reakcji — a
+dla kanałów promienistych czy niosą energię, pęd odrzutu, moment pędu **i**
+reakcję na źródło. To jest wzorzec, który w tej sesji zawiódł trzykrotnie
+(bramka M1, energia ładunek-dipol, energia usuwana bez momentu pędu), więc
+sprawdzony osobno dla każdego efektu.
+
+**Oddziaływania zachowawcze:**
+
+| efekt | siła | moment na spiny | energia | reakcja |
+|---|---|---|---|---|
+| kulombowskie | ✔ | — | ✔ | III zasada |
+| Darwina \(v^2/c^2\) | ✔ | — | ✔ | ✔ |
+| dipol–dipol | ✔ | ✔ | ✔ | ✔ |
+| ładunek–dipol | ✔ | ✔ | ✔ | przypisana |
+| zewnętrzne / ZPF | ✔ | ✔ | — | — |
+
+Momenty sił na spiny idą przez precesję BMT, a ta widzi **pełne** pole lokalne:
+Liénarda-Wiecherta od ładunku partnera, retardowane pole dipola magnetycznego,
+pole dipola elektrycznego i pole zewnętrzne. Więc i moment spin–spin, i moment
+spin–orbita na spinie są obecne — sprawdzone w `localRelativisticFields`.
+
+**Kanały promieniste:**
+
+| kanał | energia | pęd | moment pędu | reakcja |
+|---|---|---|---|---|
+| E1 ciągłe | ✔ | ✔ | ✔ | ✔ |
+| E1 skwantowane (fotony) | ✔ | ✔ odrzut | ✔ \(\hbar\) spinu | ✔ |
+| M1 | ✔ | ✔ | ✔ | moment ✔, **drenaż energii wyłączony** |
+
+`radiatedMomentum` i `radiatedAngularMomentum` są akumulowane obok
+`radiatedEnergy`, a strumień M1 wchodzi do wszystkich trzech.
+
+**Jedyne gniazdo bez pary** to drenaż energii M1 pod modelami skwantowanymi.
+`applyDipoleReactionTorque` jest prawdą, więc M1 wywiera moment reakcji; ale
+`quantizedRadiation` jest wtedy też prawdą, więc `dipoleConstraintEnergy` nie
+jest drenowane — bo energię ma zabrać kanał fotonowy. Tyle że hazard fotonowy
+liczy `larmorOrbitAveragedPower`, czyli moc E1, w której M1 nie ma. **M1
+promieniuje na papierze i nie jest odejmowane od niczego.**
+
+*I to jest efekt czysto para.* Zmierzony udział w mocy całkowitej:
+
+| konfiguracja | para | ortho |
+|---|---|---|
+| domyślna (\(a_{Ps}\), spin kwantowany) | \(9{,}24\cdot10^{-18}\) | **dokładnie 0** |
+| barierowa (\(\cos\) próbkowany) | \(1{,}96\cdot10^{-15}\) | \(1{,}11\cdot10^{-15}\) |
+| `--radiation-reaction coherent` | drenaż włączony, luki nie ma | — |
+
+Ortho ma dokładnie zero, bo kwantowanie spinu ustawia \(\cos=-1\), gdzie
+moment koherentny \(\boldsymbol\mu_1+\boldsymbol\mu_2\) znosi się dokładnie.
+Luka jest więc **wyłącznie po stronie para** — i to jest powód, żeby ją nazwać,
+mimo że przy \(10^{-18}\)–\(10^{-15}\) całkowitej mocy nie ma żadnego
+znaczenia liczbowego. Udokumentowana, nie naprawiona: zdrenowanie jej
+wymagałoby, żeby hazard fotonowy niósł udział M1, czyli zmiany recepty emisji
+dla efektu siedemnaście rzędów niżej.
+
+**Domknięcie po stronie para/ortho.** Kanał wchodzi do dynamiki przez trzy
+niezależne kombinacje momentów, i wszystkie trzy są reprezentowane:
+
+| kombinacja | gdzie | slots |
+|---|---|---|
+| \(\boldsymbol\mu_1\cdot\boldsymbol\mu_2\) | energia i siła dipol–dipol, moment sekularny | komplet |
+| \(\boldsymbol\mu_2-\boldsymbol\mu_1\) | energia i siła ładunek–dipol | komplet |
+| \(\boldsymbol\mu_1+\boldsymbol\mu_2\) | promieniowanie M1 | brak drenażu energii |
+
+Te trzy wyczerpują niezależne niezmienniki liniowe i dwuliniowe pary momentów,
+więc lista jest zamknięta, a nie tylko długa.
+
 #### Audyt kompletności: który człon jest w której warstwie
 
 Pytanie: czy wszystkie policzone efekty — spin-orbita, orbita-spin i tak dalej

@@ -2516,6 +2516,29 @@ void integrateElectrodynamicStep(State& s, double dt,
     // Diagnostic split below still subtracts the M1 rate unconditionally --
     // orbitalRadiatedEnergy is a decomposition of the measured Poynting flux
     // and is not a sink.  Only the mechanical drain is gated.
+    // SYMMETRY AUDIT, recorded here because this is the one place the four
+    // conjugate slots do not all line up.  Every other interaction in the
+    // model carries force, torque, energy and a reaction partner; the M1
+    // channel under a QUANTIZED reaction model carries its reaction TORQUE
+    // (applyDipoleReactionTorque is true) while its energy drain is gated OFF
+    // -- because the quantized channel is supposed to remove the energy in
+    // photons instead.  But the photon hazard is built from
+    // larmorOrbitAveragedPower, which is the E1 power and contains no M1, so
+    // the M1 energy is radiated on paper and removed from nothing.
+    //
+    // Measured, as a fraction of the total radiated power:
+    //
+    //   production default (a_Ps, spin quantized):  para 9.24e-18, ortho 0
+    //   barrier mode (cos sampled, deeper radii):   para 1.96e-15, ortho 1.11e-15
+    //   --radiation-reaction coherent:              drain ON, no gap
+    //
+    // Ortho is EXACTLY zero under the default because spin quantization pins
+    // cos = -1, where the coherent moment mu1 + mu2 cancels exactly -- so the
+    // gap is a pure para effect, which is what makes it worth naming.  At
+    // 1e-18 to 1e-15 of the total it is far below anything the model resolves,
+    // so it is documented rather than fixed: draining it would require the
+    // photon hazard to carry an M1 share, which is a change to the emission
+    // prescription for an effect seventeen orders down.
     if(!quantizedRadiation) trial.dipoleConstraintEnergy-=dipoleRadiatedEnergy;
     // E1-only, M1 excluded: valid by linearity of the trapezoid rule in its
     // rate argument, so this is exactly trapezoid(outwardFlux-
