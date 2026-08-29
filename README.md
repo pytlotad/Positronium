@@ -7265,6 +7265,71 @@ nieważny, więc nic z tego nie wynika poza tym, że tam się zatrzymuje.
 zmierzone \(r^*/\bar\lambda_C=0{,}501\) — bariera to dokładnie pół
 zredukowanej długości Comptona, z dokładnością do \(g/2\).)
 
+#### Ostrze noża przestało istnieć — i to jest ostrzeżenie o sprzężeniu
+
+Pytanie, czym ostrze noża może być w konfiguracji para/ortho, wymagało
+przeliczenia aktualnym kodem. Odpowiedź jest taka, że **opis, na którym to
+pytanie stoi, przestał opisywać model**.
+
+*Czym ostrze było mechanicznie.* Próg \(T/t_{\rm light}=150\) to dla orbity
+kołowej \(2\pi/\beta\), czyli \(\beta=0{,}0419\). Nie jest to wielkość
+fizyczna: \(150\) wybrano jako dwukrotny zapas nad pasmem \(37{,}8\)–\(71{,}6\)
+zaobserwowanych awarii numerycznych. Ostrze było **granicą ważności modelu**, a
+dychotomia \(2\)-vs-\(3\) fotony brała się stąd, że dyskretna emisja akurat ją
+okrakiem przekraczała.
+
+*Czym mogłoby być, i dlaczego to kusi.* Rozstrzygało między 2 a 3 fotonami, a
+fizyczna różnica kanałów to dokładnie \(2\gamma\) dla para i \(3\gamma\) dla
+ortho. Kod zaznacza, że tego **nie wyprowadza**; dotąd nie dało się nawet
+sprawdzić, bo kanały dawały identyczne liczby fotonów. Zmierzone teraz, gdy
+dają różne:
+
+| tryb | ortho ma więcej | para ma więcej | \(p\) |
+|---|---|---|---|
+| domyślny (160 par) | 14 | 6 | \(0{,}115\) |
+| barierowy (113 par) | 7 | **17** | \(0{,}064\) |
+
+**Kierunki są przeciwne.** Oba blisko \(p\approx0{,}1\), oba nieistotne, i
+wskazują w przeciwne strony — czyli szum, a nie korespondencja z regułą
+C-parzystości. Hipoteza upada, i dobrze, że była testowana w obu trybach.
+
+*Ale najważniejsze jest to, co pokazał sam rozkład.* Struktura „cały kolaps to
+2 albo 3 fotony, populacje bez zakładek" **już nie istnieje**:
+
+| binarka | rozkład liczby fotonów (24 trajektorie, to samo ziarno i budżet) |
+|---|---|
+| przed pracą nad precesją | \(3\to24\) — wszystkie |
+| obecny kod | \(0\to8\), \(1\to15\), \(2\to1\) |
+
+Na pełnej próbce (247 ukończonych trajektorii barierowych):
+
+```
+0 fotonow, bariera     :   6        mediana zycia 63,5 ps
+0 fotonow, retardacja  :  17
+1 foton,   retardacja  : 204        mediana zycia 63,5 ps
+2 fotony,  retardacja  :  19
+3 fotony,  retardacja  :   1
+```
+
+**23 trajektorie kolapsują nie emitując ani jednego fotonu**, retardacja
+zatrzymuje \(245/247=99{,}2\%\) (przed: \(58\%\)), a mediana spadła z
+\(208{,}0\) ps na \(63{,}5\) ps.
+
+*Wniosek, i jest to ostrzeżenie.* Kolaps w trybie barierowym nie jest już
+napędzany **promieniowaniem**, tylko **błądzeniem losowym \(L\)** od
+sprzężenia zwrotnego spinu. Trajektoria dochodzi do granicy ważności, bo jej
+moment pędu został rozproszony, a nie dlatego, że wypromieniowała energię — i
+w \(9\%\) przypadków dzieje się to bez ani jednego kwantu. To znaczy, że
+sprzężenie w obecnej postaci **przejęło rolę mechanizmu dominującego**, czego
+nie powinno robić.
+
+Konsekwencja dla wcześniejszego wyjaśnienia \(45\%\): tłumaczyło ono
+przesunięcie kwantu przerzucaniem próbki przez ostrze \(2\)-vs-\(3\). Ten opis
+dotyczy wersji modelu, która już nie istnieje. W obecnym kodzie \(45\%\)
+wymagałoby wyjaśnienia od nowa — a przed tym trzeba rozstrzygnąć, czy pełna
+zmiana wektorowa jest właściwym traktowaniem sprzężenia, skoro robi z dyfuzji
+spinowej główny mechanizm kolapsu.
+
 ### Sektor spinowy: co się okazało, gdy zaczęto go mierzyć
 
 Ta sekcja zbiera wątek, który przeszedł przez kilkanaście kroków i skończył się
