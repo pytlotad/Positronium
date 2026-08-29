@@ -7316,21 +7316,50 @@ Tak czy inaczej **model pokrywa \(0\%\) fizyki, która rozszczep wytwarza**:
 człon, który zawiera, uśrednia się w tym stanie do zera (i model to poprawnie
 oddaje), a oba człony, które rozszczep tworzą, są nieobecne.
 
-*Człon kontaktowy: brak strukturalny, i to podwójny.* Wymaga
-\(|\psi(0)|^2\) — gęstości prawdopodobieństwa **w punkcie kontaktu** — a
-klasyczna orbita o \(L\neq0\) ma tam gęstość dokładnie zero. To ten sam
-argument, który wyklucza dynamikę anihilacji, i jest to brak **pojęcia**, nie
-współczynnika. Do tego skala jest źle położona: promień regularizacji modelu to
-\(83{,}6\) fm, a bariera Comptona \(193{,}3\) fm — **obszar kontaktowy leży
-poniżej bariery**, czyli wewnątrz strefy, którą model deklaruje jako nieważną.
-Nawet gdyby orbita mogła tam sięgnąć, sięgnęłaby poza własną dziedzinę.
+*Człon kontaktowy — a on już tam JEST.* To było pytanie postawione wprost
+(„może człony tworzące rozszczep powinny tu być obecne?") i odpowiedź okazała
+się inna, niż napisałem. Oba brakujące człony są **kontaktowe**
+(\(\propto\delta^3(\mathbf r)\)), a model regularizuje dipol **na poziomie
+potencjału wektorowego** — czyli dokładnie tą konstrukcją, która człon
+kontaktowy generuje. Sprawdzone całkowaniem pola po całej przestrzeni:
 
-*Anihilacja wirtualna: brak jeszcze głębszy.* To proces pętlowy QED
-(\(e^+e^-\to\gamma^*\to e^+e^-\)), działający wyłącznie w kanale ortho przez
-C-parzystość. Nie ma klasycznego odpowiednika w żadnej postaci — nie jest to
-oddziaływanie między ładunkami czy momentami, tylko wymiana wirtualnego fotonu
-w kanale \(s\). `qed_reference` niesie tę kinematykę jako **odniesienie**
-rozpraszania, nie jako wkład do energii stanu związanego.
+```
+int B d^3r  =  7.77694e-30        oczekiwane (2 mu0/3) m = 7.77839e-30
+stosunek    =  0.999814           (odchylenie = blad kwadratury, ~1/4000)
+```
+
+**Zregularyzowane pole niesie człon kontaktowy z poprawną siłą całkowitą**,
+rozmyty na skali \(r_{\rm reg}=83{,}6\) fm zamiast być deltą — czyli tak, jak
+regularyzowany dipol powinien. Brakuje więc **nie oddziaływania**.
+
+*Brakuje stanu \(l=0\).* Człon kontaktowy próbkują wyłącznie stany o zerowym
+momencie pędu. A model przygotowuje **kołowe orbity Bohra**, \(L=n\hbar\):
+
+| | model | rzeczywistość |
+|---|---|---|
+| stan podstawowy | \(n=1\), \(L=\hbar\) | \(n=1\), \(l=0\), \(L=0\) |
+| gęstość w zerze | **dokładnie 0** | \(|\psi(0)|^2\neq0\) |
+
+Model używa więc **starego schematu Bohra, w którym \(l=n\)**, podczas gdy
+współczesna mechanika kwantowa ma \(l\le n-1\), więc stan podstawowy jest
+\(l=0\). Model nie ma **żadnych** stanów \(l=0\), i to jest powód, dla
+którego człon kontaktowy — obecny i poprawnie znormalizowany — nie wnosi nic.
+
+To przenosi lukę z prawa siły do **przygotowania stanu**, i czyni ją znacznie
+konkretniejszą: aby rozszczep się pojawił, model potrzebowałby orbit o
+\(L\to0\), czyli radialnych. Te przechodzą przez obszar \(r\lesssim
+r_{\rm reg}=83{,}6\) fm, który leży **poniżej bariery Comptona**
+(\(193{,}3\) fm) — czyli w strefie zadeklarowanej jako nieważna. Jest to więc
+osiągalne w zasadzie, lecz wymagałoby jednoczesnego rozstrzygnięcia, co model
+robi poniżej własnej granicy ważności.
+
+*Anihilacja wirtualna zostaje nieobecna* i to na innym poziomie: jest również
+członem kontaktowym, ale nie ma klasycznego odpowiednika w żadnej postaci — nie
+jest oddziaływaniem między ładunkami czy momentami, tylko wymianą wirtualnego
+fotonu w kanale \(s\), działającą wyłącznie w ortho przez C-parzystość.
+`qed_reference` niesie tę kinematykę jako **odniesienie** rozpraszania, nie jako
+wkład do energii stanu związanego. Nawet gdyby model dostał stany \(l=0\),
+odzyskałby \(4/7\) rozszczepu, nie całość.
 
 *Co z tego wynika dla wcześniejszych wniosków.* Zdanie „klasyczne sprzężenie
 pokrywa \(3{,}8\%\) rozszczepu" jest w repozytorium od dawna i jest
