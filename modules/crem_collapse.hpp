@@ -1111,6 +1111,82 @@ double azimuthAveragedDipoleEnergy(double separation,
 // repulsive enough that no radius below the current orbit is accessible, the
 // pair stalls rather than continuing inward, and the stall radius is returned:
 // that is a physical outcome the Coulomb-only rule could not express.
+// BMT PRECESSION OVER THE SKIPPED ORBITS -- the piece the analytic skip left
+// out entirely.
+//
+// The dipoles used to be carried between checkpoints by one line,
+// firstDipole = run.finalState.firstDipole, which is the ONE mechanically
+// integrated orbit.  Over orbitsToSkip -- up to 200000 orbits per checkpoint --
+// the precession was not integrated at all.  Measured, the precession ran over
+// 3/557097, 20/3785470 and 35/6914185 revolutions, i.e. about ONE ORBIT IN
+// 200000.
+//
+// The size of what was missing: thomasBmtDipoleDerivatives gives
+// omega = 4.95e10 rad/s at a_Ps, i.e. 1.504e-05 rad per orbit, so the default
+// cascade's 6.9e6 revolutions should accumulate ~104 RADIANS.  The model
+// applied 5.3e-04.
+//
+// And it does not average away.  Shrinking maxOrbitsSkippedAtOnce by 10x
+// raised the integrated fraction 10.3x and the resulting |mu2 - mu1| drift
+// 10.1x -- exactly linear, so the drift is secular, not bounded oscillation.
+//
+// Treatment: over many orbits the fast phase-dependent part of the effective
+// field averages out and each moment precesses about the ORBIT-AVERAGED field.
+// This walks the checkpoint's proper time in phaseNodes equal slices, each at a
+// different orbital phase, calling the same applyDipolePrecession the mechanical
+// integrator uses -- so the averaging and the accumulation happen together and
+// no second copy of the BMT rule is introduced.  A circular orbit at the
+// current semi-major axis is used for the same reason dipoleAwarePeriapsis
+// does: terminal eccentricity is 0.001-0.019 and the elements carry no true
+// anomaly.
+void advanceSkippedDipolePrecession(Vec3& firstDipole,Vec3& secondDipole,
+                                    double semiMajorAxis,
+                                    const Vec3& orbitNormal,
+                                    double reducedMass,double properTime) {
+    if(!(semiMajorAxis>0.0)||!(properTime>0.0)) return;
+    if(!std::isfinite(semiMajorAxis)||!std::isfinite(properTime)) return;
+    const double normalNorm=orbitNormal.norm();
+    if(!(normalNorm>0.0)) return;
+    const Vec3 normal=orbitNormal*(1.0/normalNorm);
+    const Vec3 seed=std::abs(normal.x)<0.9?Vec3{1.0,0.0,0.0}:Vec3{0.0,1.0,0.0};
+    Vec3 radialHat=cross(seed,normal);
+    const double radialNorm=radialHat.norm();
+    if(!(radialNorm>0.0)) return;
+    radialHat=radialHat*(1.0/radialNorm);
+    const Vec3 tangentialHat=cross(normal,radialHat);
+    const double circularSpeed=std::sqrt(
+        pairCoulombStrength/(reducedMass*semiMajorAxis));
+    if(!std::isfinite(circularSpeed)) return;
+    const double firstMass=activePair.first.mass;
+    const double secondMass=activePair.second.mass;
+    const double totalMassHere=firstMass+secondMass;
+    if(!(totalMassHere>0.0)) return;
+    constexpr int phaseNodes=64;
+    const double slice=properTime/static_cast<double>(phaseNodes);
+    Vec3 first=firstDipole,second=secondDipole;
+    for(int node=0;node<phaseNodes;++node) {
+        const double phase=2.0*pi*(node+0.5)/static_cast<double>(phaseNodes);
+        const Vec3 radial=radialHat*std::cos(phase)+tangentialHat*std::sin(phase);
+        const Vec3 tangential=
+            radialHat*(-std::sin(phase))+tangentialHat*std::cos(phase);
+        State sample{};
+        sample.firstPosition=radial*(semiMajorAxis*secondMass/totalMassHere);
+        sample.secondPosition=radial*(-semiMajorAxis*firstMass/totalMassHere);
+        sample.firstVelocity=tangential*(circularSpeed*secondMass/totalMassHere);
+        sample.secondVelocity=
+            tangential*(-circularSpeed*firstMass/totalMassHere);
+        sample.firstDipole=first;
+        sample.secondDipole=second;
+        const StateHistory sampleHistory{State{sample}};
+        applyDipolePrecession(sample,slice,sampleHistory);
+        if(!isFinite(sample.firstDipole)||!isFinite(sample.secondDipole)) return;
+        first=sample.firstDipole;
+        second=sample.secondDipole;
+    }
+    firstDipole=first;
+    secondDipole=second;
+}
+
 double dipoleAwarePeriapsis(const OsculatingElements& elements,
                             double attractionParameter,
                             const Vec3& firstDipole,const Vec3& secondDipole,
@@ -3792,6 +3868,10 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         revolutionsTotal+=static_cast<double>(orbitsToSkip);
         firstDipole=run.finalState.firstDipole;
         secondDipole=run.finalState.secondDipole;
+        // ...and the skipped orbits' share, which used to be dropped.
+        advanceSkippedDipolePrecession(firstDipole,secondDipole,
+            -attractionParameter/(2.0*elements.specificEnergy),
+            angularMomentumDirection,reducedMass,checkpointProperTime);
 
         if(!(elements.specificEnergy<0.0)||!std::isfinite(elements.specificEnergy)
            ||!std::isfinite(elements.specificAngularMomentum)) {

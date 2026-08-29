@@ -7326,7 +7326,42 @@ Dwie rzeczy przetrwają to bez zmian, i jedna nie:
   konfiguracja, dotyczyłoby wtedy tylko **stanu przygotowanego**, nie
   trajektorii.
 
-*Test pośredni to potwierdził.* Zmniejszenie `maxOrbitsSkippedAtOnce`
+*WDROŻONE.* `advanceSkippedDipolePrecession` przechodzi czas własny checkpointu
+w 64 równych plasterkach, każdy przy innej fazie orbitalnej, wołając **tę samą**
+`applyDipolePrecession`, której używa integrator mechaniczny — więc uśrednianie
+po orbicie i akumulacja dzieją się razem, i nie powstaje druga kopia reguły BMT.
+Orbita kołowa przy bieżącej półosi, z tego samego powodu co w
+`dipoleAwarePeriapsis`: mimośród terminalny to \(0{,}001\)–\(0{,}019\), a
+elementy nie niosą anomalii prawdziwej.
+
+*Skutek jest dokładnie tym, co przewidywała ekstrapolacja:*
+
+| kanał | \(|\boldsymbol\mu_2-\boldsymbol\mu_1|\) | \(|\boldsymbol\mu_1+\boldsymbol\mu_2|\) |
+|---|---|---|
+| para, przed | \(0\to2\cdot10^{-4}\) | \(2\to2\) |
+| **para, po** | \(0\to\mathbf{1{,}98\ /\ 2{,}00\ /\ 0{,}71}\) | \(2\to0{,}25\ /\ 0{,}11\ /\ 1{,}87\) |
+| ortho, przed | \(2\to2\) | \(0\to0\) |
+| **ortho, po** | \(2\to2\) | \(0\to\mathbf{0}\) dokładnie |
+
+**Ustawienie para zostaje zniszczone** — nasyca się przy maksimum \(2\), jak
+zapowiadała ekstrapolacja \(39\). **Punkt stały ortho przeżywa idealnie**,
+potwierdzając wyprowadzenie: pole napędzające jest proporcjonalne do
+\((\boldsymbol\mu_1+\boldsymbol\mu_2)\), więc w tym stanie znika i żadna
+ilość całkowania go nie ruszy.
+
+*Konsekwencja, którą trzeba wypowiedzieć wprost:* **kwantowanie spinu utrzymuje
+się teraz tylko dla ortho.** Dla para przygotowane \(\cos=+1\) nie przeżywa
+kaskady, a kąt wzajemny na końcu jest zasadniczo dowolny. Zdanie „domyślna
+konfiguracja kwantuje spin" jest więc prawdziwe dla stanu przygotowanego i dla
+kanału ortho, a nie dla trajektorii para.
+
+*Obserwable produkcyjne nietknięte:* mediana \(7368{,}8\) ps i wiązanie
+terminalne \(6{,}80285\) eV w obu kanałach, 12/12 ukończonych, 0 awarii, koszt
+64 wywołań precesji na checkpoint niezauważalny obok mechanicznie całkowanej
+orbity. Poprawka zmienia sektor spinowy, a nie budżet energii — zgodnie z tym,
+co przewidziano wyżej.
+
+*Test pośredni, który do tego doprowadził.* Zmniejszenie `maxOrbitsSkippedAtOnce`
 zwiększa udział orbit całkowanych; jeśli dryf jest sekularny, musi rosnąć
 proporcjonalnie:
 
