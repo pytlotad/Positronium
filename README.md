@@ -7347,10 +7347,41 @@ Czytając nieaktualną klauzulę, para „moment włączony / drenaż wyłączon
 wygląda na złamaną symetrię i naprawa wydaje się oczywista. Nie jest.
 Klauzula poprawiona.
 
-*Bezczynność potwierdzona mocniej niż stosunkiem mocy.* Trzy konfiguracje —
-produkcja, drenaż włączony, moment wyłączony — dają **identyczne** mediany
-(\(7368{,}8\) ps para, \(7{,}3688\) ns ortho). Sektor M1 nie robi w produkcji
-nic, niezależnie od tego, jak go zabramkować.
+*„Sektor M1 nie robi nic" — sprawdzone i za mocne.* Oparłem to na tym, że trzy
+konfiguracje (produkcja, drenaż włączony, moment wyłączony) dają identyczne
+**mediany**. To był zły pomiar: mediana czasu kolapsu nie jest wielkością, na
+którą działa moment siły — on obraca **momenty magnetyczne**. A kod sam
+zapowiadał wynik przeciwny, w komentarzu przy `quantizedDipoleTorqueDrain`:
+*„The torque's effect is real but needs a full inspiral to accumulate to
+something measurable."*
+
+Zmierzone na właściwej wielkości — dryf kąta wzajemnego \(\cos\) od
+przygotowania do stopu, sparowane z momentem i bez:
+
+| tryb | dryf, moment ON | moment OFF | wkład momentu |
+|---|---|---|---|
+| domyślny | \(-2{,}25924\cdot10^{-9}\) | \(-2{,}25924\cdot10^{-9}\) | \(\sim2\cdot10^{-16}\) |
+| domyślny | \(-6{,}81122\cdot10^{-12}\) | \(-6{,}811\cdot10^{-12}\) | \(\sim2\cdot10^{-16}\) |
+| barierowy | \(-0{,}0483188\) | \(-0{,}0483194\) | \(\mathbf{6\cdot10^{-7}}\) |
+| barierowy | \(-0{,}0420423\) | \(-0{,}0420416\) | \(\mathbf{7\cdot10^{-7}}\) |
+
+**W trybie barierowym moment M1 jest mierzalny** — przesuwa końcowy \(\cos\) o
+\(\sim7\cdot10^{-7}\), pięć rzędów nad precyzją podwójną, więc to nie
+zaokrąglenie. Komentarz w kodzie miał rację, a moje „nie robi nic" nie.
+
+*Co pozostaje prawdą, w węższej postaci.* Wkład momentu to \(1{,}2\cdot10^{-5}\)
+całego dryfu \(\cos\), który sięga \(0{,}048\) na pełnym inspiralu i jest
+zdominowany przez **precesję BMT** w polu partnera. Pod domyślną konfiguracją
+— gdzie kwantowanie spinu trzyma \(\cos=\pm1\), a kaskada trwa krótko — wkład
+spada do \(2\cdot10^{-16}\), czyli do zera maszynowego. Więc:
+
+- w **konfiguracji produkcyjnej** moment M1 istotnie nie robi nic
+- w **trybie barierowym** robi coś mierzalnego, tylko \(10^{-5}\) razy mniej
+  niż mechanizm dominujący
+- ani jedno, ani drugie nie dociera do czasu kolapsu czy wiązania terminalnego
+
+Uogólnienie „niezależnie od tego, jak go zabramkować" było nieuprawnione:
+zależy od tego, jak długo trwa przebieg i czy spin jest kwantowany.
 
 **Domknięcie po stronie para/ortho.** Kanał wchodzi do dynamiki przez trzy
 niezależne kombinacje momentów, i wszystkie trzy są reprezentowane:
