@@ -7265,6 +7265,53 @@ nieważny, więc nic z tego nie wynika poza tym, że tam się zatrzymuje.
 zmierzone \(r^*/\bar\lambda_C=0{,}501\) — bariera to dokładnie pół
 zredukowanej długości Comptona, z dokładnością do \(g/2\).)
 
+#### Czy brakujące \(96\%\) rozszczepu nadsubtelnego ma szansę w tym modelu?
+
+Krótka odpowiedź: **nie, i to z dwóch różnych powodów** — a przy okazji owe
+\(3{,}8\%\), które model ma, nie są ułamkiem odpowiedzi, tylko inną
+wielkością.
+
+*Z czego składa się rzeczywisty rozszczep.*
+\(\Delta E_{\rm hfs}=\tfrac{7}{12}\alpha^4m_ec^2=8{,}45\cdot10^{-4}\) eV
+\(=204{,}4\) GHz, i rozpada się na **człon kontaktowy Fermiego \(4/7=57\%\)**
+oraz **anihilację wirtualną \(3/7=43\%\)**. Człon tensorowy dipol-dipol — ten
+jedyny, który model zawiera — daje w stanie \(S\) **dokładnie zero**, bo
+znika po uśrednieniu sferycznym. Sprawdzone:
+
+```
+usrednienie SFERYCZNE (stan S):   <U>/|mu1.mu2| = -0.00087   (zero w granicach szumu)
+usrednienie PLASKIE (orbita):     <U>/|mu1.mu2| = +0.49
+```
+
+**Model raportuje więc chwilową wartość członu, który w rzeczywistym stanie
+podstawowym uśrednia się do zera** — niezerową wyłącznie dlatego, że klasyczna
+orbita jest **płaska**, a nie sferycznie symetryczna. Te \(3{,}8\%\) to nie
+jest ułamek rozszczepu; to inna wielkość, która akurat wychodzi tego rzędu.
+Model pokrywa \(0\%\) fizyki, która rozszczep wytwarza.
+
+*Człon kontaktowy: brak strukturalny, i to podwójny.* Wymaga
+\(|\psi(0)|^2\) — gęstości prawdopodobieństwa **w punkcie kontaktu** — a
+klasyczna orbita o \(L\neq0\) ma tam gęstość dokładnie zero. To ten sam
+argument, który wyklucza dynamikę anihilacji, i jest to brak **pojęcia**, nie
+współczynnika. Do tego skala jest źle położona: promień regularizacji modelu to
+\(83{,}6\) fm, a bariera Comptona \(193{,}3\) fm — **obszar kontaktowy leży
+poniżej bariery**, czyli wewnątrz strefy, którą model deklaruje jako nieważną.
+Nawet gdyby orbita mogła tam sięgnąć, sięgnęłaby poza własną dziedzinę.
+
+*Anihilacja wirtualna: brak jeszcze głębszy.* To proces pętlowy QED
+(\(e^+e^-\to\gamma^*\to e^+e^-\)), działający wyłącznie w kanale ortho przez
+C-parzystość. Nie ma klasycznego odpowiednika w żadnej postaci — nie jest to
+oddziaływanie między ładunkami czy momentami, tylko wymiana wirtualnego fotonu
+w kanale \(s\). `qed_reference` niesie tę kinematykę jako **odniesienie**
+rozpraszania, nie jako wkład do energii stanu związanego.
+
+*Co z tego wynika dla wcześniejszych wniosków.* Zdanie „klasyczne sprzężenie
+pokrywa \(3{,}8\%\) rozszczepu" jest w repozytorium od dawna i jest
+technicznie poprawne jako stosunek dwóch liczb — ale zachęca do czytania go
+jako „model łapie \(3{,}8\%\) fizyki nadsubtelnej", co nie jest prawdą.
+Właściwe sformułowanie: model liczy człon, który w tym stanie znika, i nie
+zawiera obu członów, które rozszczep tworzą.
+
 #### Ostrze noża przestało istnieć — i to jest ostrzeżenie o sprzężeniu
 
 Pytanie, czym ostrze noża może być w konfiguracji para/ortho, wymagało
