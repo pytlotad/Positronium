@@ -5508,6 +5508,42 @@ GHz, pokrywające \(3{,}87\%\) mierzonego rozszczepu nadsubtelnego o-Ps/p-Ps
 \(203{,}3941\) GHz (`1_2_2`) — reszta to anihilacja wirtualna i człon
 kontaktowy Fermiego, których model klasyczny nie niesie.
 
+**Figury przegenerowane wobec aktualnego stanu modelu** (`--runs 1000
+--seed 42`, wszystkie 38 paneli, e⁺e⁻ bez pola zewnętrznego). Liczby poniżej
+opisują **inną wielkość** niż zapisy z poprzednich przebiegów, i to jest
+najważniejsza rzecz do odnotowania: domyślna konfiguracja to teraz
+`--level 2 --ground-state-floor`, więc raportowany czas jest **czasem kaskady
+\(n=2\to n=1\)**, a nie czasem inspiralu do bariery Comptona.
+
+```
+1000/1000 trajektorii ukonczonych w obu kanalach, 0 cenzury, 0 awarii
+mediana Kaplana-Meiera:  p-Ps 4877,95 ps   o-Ps 4,87795 ns   (identyczne)
+RMST (N=200):            5790,97 +/- 350,62 ps,  sigma/srednia = 0,856
+zatrzymane przez:        100% podloga stanu podstawowego
+periapsis koncowy:       545,4 r* (mediana), zakres 544,3-547,5  = a_Ps
+wiazanie terminalne:     6,80285 eV = alpha^2 m_e c^2 / 4, co do cyfry
+```
+
+Trzy rzeczy warto z tego wyczytać. **Wszystkie trajektorie kończą na stanie
+podstawowym**, żadna na barierze ani na progu retardacyjnym — czyli zniknął
+problem, w którym o trzech czwartych kolapsów decydował margines numeryczny.
+**Wiązanie terminalne jest teraz deterministyczne** i równe dokładnie
+\(\alpha^2m_ec^2/4\), zamiast być rozrzutem od niekontrolowanego przeskoku.
+I **mediany obu kanałów są identyczne**, zgodnie ze sparowanym pomiarem na 160
+trajektoriach, który nie ustalił różnicy (\(0{,}46\sigma\)).
+
+*Panel `N_2_2` zmienił się o dwa rzędy i wymaga innego czytania.* Sprzężenie
+dipol-dipol idzie jak \(1/r^3\), a domyślne przygotowanie przeniosło się z
+\(a_{Ps}\) na \(4a_{Ps}\), więc zamiast \(3{,}8\%\) rozszczepu panel
+pokazuje teraz \(\approx0{,}064\%\) — zmierzone, zgodne z przewidywanym
+\(3{,}76\%/64=0{,}059\%\). Niezależnie od wartości, sekcja o rozszczepie
+nadsubtelnym niżej pokazuje, że **średnia zespołowa tego członu jest zerem**
+(\(0{,}00026\%\)), tak jak wymaga stan \(S\); panel pokazuje typową wartość
+bezwzględną na trajektorię, a nie ułamek fizyki, którą model łapie.
+
+*Poprzedni zapis, dla porównania* — pochodzi z domyślnych `--level 1` bez
+podłogi i opisuje inspiral do bariery, nie kaskadę:
+
 Ponownie przeliczone po serii ośmiu poprawek warstwy sekularnej CREM
 (`ecf7380`…`0ebc7d2`, N=1000, e⁺e⁻, bez pola zewnętrznego, bez ustalonego
 ziarna, 16,4 i 16,9 minuty na 4 wątkach dla p-Ps/o-Ps): **1000/1000
