@@ -7283,11 +7283,38 @@ usrednienie SFERYCZNE (stan S):   <U>/|mu1.mu2| = -0.00087   (zero w granicach s
 usrednienie PLASKIE (orbita):     <U>/|mu1.mu2| = +0.49
 ```
 
-**Model raportuje więc chwilową wartość członu, który w rzeczywistym stanie
-podstawowym uśrednia się do zera** — niezerową wyłącznie dlatego, że klasyczna
-orbita jest **płaska**, a nie sferycznie symetryczna. Te \(3{,}8\%\) to nie
-jest ułamek rozszczepu; to inna wielkość, która akurat wychodzi tego rzędu.
-Model pokrywa \(0\%\) fizyki, która rozszczep wytwarza.
+*Płaska orbita czy sferyczna — jedno i drugie, i to rozstrzyga.* Pojedyncza
+orbita Keplera **jest płaska**: ma ustaloną płaszczyznę wyznaczoną przez
+\(\hat L\). Ale zespół trajektorii próbkuje wszystkie orientacje
+**izotropowo**, więc na poziomie zespołu układ jest sferyczny — i to zespół
+liczy się przy porównaniu z rozszczepem, bo rozszczep jest własnością stanu, a
+nie pojedynczego przebiegu. Zmierzone, 60 trajektorii na konfigurację:
+
+| przygotowanie | \(\langle|U|\rangle\) / hfs | \(|\langle U\rangle|\) / hfs |
+|---|---|---|
+| `--level 1` (\(a_{Ps}\)) | \(3{,}749\%\) | \(0{,}148\%\) |
+| `--level 2` (\(4a_{Ps}\), obecna domyślna) | \(0{,}064\%\) | \(\mathbf{0{,}00026\%}\) |
+
+**Średnia zespołowa jest zerem** (przy 60 próbkach próg szumu to
+\(3{,}75\%/\sqrt{60}=0{,}48\%\), więc \(0{,}148\%\) też jest zerem). Model
+**odtwarza więc zanikanie członu tensorowego w stanie \(S\) poprawnie** — moje
+wcześniejsze sformułowanie, że jest on „niezerowy, bo orbita jest płaska",
+sugerowało, że model tego nie odtwarza. Odtwarza.
+
+Niezerowa jest wartość **na pojedynczej trajektorii**, i to właśnie ją
+raportuje `dipoleCouplingHz`: \(3{,}8\%\) jest typową **wartością
+bezwzględną**, nie średnią. To ta sama struktura, co przy terminalnym członie
+dipol-dipol — zerowa wartość oczekiwana, niezerowy rozrzut — i w tej sesji
+wychodzi po raz czwarty.
+
+*Przy okazji: te \(3{,}8\%\) są nieaktualne wobec domyślnej konfiguracji.*
+Pochodzą z przygotowania na \(a_{Ps}\); domyślne przygotowanie jest teraz na
+\(4a_{Ps}\), gdzie sprzężenie \(\propto1/r^3\) jest \(64\times\) słabsze —
+zmierzone \(0{,}064\%\) wobec przewidywanego \(3{,}76\%/64=0{,}059\%\).
+
+Tak czy inaczej **model pokrywa \(0\%\) fizyki, która rozszczep wytwarza**:
+człon, który zawiera, uśrednia się w tym stanie do zera (i model to poprawnie
+oddaje), a oba człony, które rozszczep tworzą, są nieobecne.
 
 *Człon kontaktowy: brak strukturalny, i to podwójny.* Wymaga
 \(|\psi(0)|^2\) — gęstości prawdopodobieństwa **w punkcie kontaktu** — a
