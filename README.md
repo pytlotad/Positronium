@@ -7375,14 +7375,45 @@ liczy (jako \(\mu/\gamma\)). Zmiana \(|\Delta\mathbf S|\) rzędu \(1\hbar\)
 wobec orbitalnego \(L=1\hbar\) w stanie podstawowym jest więc porównywalna z
 **całym** orbitalnym momentem pędu, a nie poprawką do niego.
 
-Argument, dla którego mimo to jest niesiona: oba momenty kontrrotują wokół
-wspólnego pola, więc składowa całkowitego spinu wzdłuż tego pola jest zachowana
-i tylko część prostopadła się kołysze — w skali nadsubtelnej (\(\sim200\) GHz,
-okres \(\sim5\) ps) wobec orbity ewoluującej przez nanosekundy. Orbita widzi
-więc średnią z szybkiej oscylacji, a nie sekularny odpływ, co jest zgodne z tym,
-że produkcja się nie zmieniła. **To jest argument, nie pomiar** — pełne
-potraktowanie oddawałoby zmianę spinu do `elements.specificAngularMomentum` i
-jego kierunku, tak jak już robi to \(\hbar\) fotonu, i tego nie zrobiono.
+*Domknięte pełną zmianą wektorową.* Zmiana spinu jest teraz oddawana do
+orbitalnego momentu pędu jako **cały wektor** — magnituda i kierunek oba
+pochodzą z odejmowania \(\mathbf L_{\rm po}=\mathbf L_{\rm przed}-\Delta
+\mathbf S\). Różni się to od traktowania \(\hbar\) fotonu, gdzie kierunek
+bierze się z odejmowania, a **magnituda** z klasycznego prawa \(k(e)\): tam
+osobne prawo na magnitudę istnieje, tutaj nie ma go, więc zachowawczym wyborem
+jest cały wektor.
+
+*I to ujawnia coś, czego bez sprzężenia nie było widać.* Zmierzone na
+checkpoint:
+
+```
+|dS|/hbar = 0.326   L: 2     -> 1.965
+|dS|/hbar = 0.670   L: 1.965 -> 2.077
+|dS|/hbar = 0.704   L: 2.077 -> 1.984
+|dS|/hbar = 0.404   L: 1.984 -> 1.914
+|dS|/hbar = 0.560   L: 1.914 -> 2.293
+|dS|/hbar = 0.698   L: 2.293 -> 1.915
+```
+
+**Orbitalne \(L\) błądzi losowo**, w obie strony, z wychyleniami do
+\(\pm0{,}4\hbar\) przy \(|\Delta\mathbf S|\) rzędu \(0{,}5\hbar\) na
+checkpoint. Kaskada skraca się o około \(25\%\) (\(7368{,}8\to5567{,}1\) ps
+dla para, \(7{,}369\to5{,}329\) ns dla ortho).
+
+**To nie jest artefakt sprzężenia.** Skoro spin faktycznie idzie od
+\(\mathbf S_{\rm przed}\) do \(\mathbf S_{\rm po}\), zachowanie momentu pędu
+**wymaga**, żeby \(L\) wchłonęło różnicę. Ujawnia się natomiast coś powyżej:
+oba momenty kontrrotują w tempie nadsubtelnym (\(\sim200\) GHz), więc para
+klasyczna wymienia z orbitą rząd \(\hbar\) momentu pędu przy tej częstości — a
+rzeczywiste pozytonium tego nie robi, bo jego stany spinowe są stanami własnymi
+i wcale nie kontrrotują. **Poprawne zachowanie momentu pędu jest tym, co
+uczyniło klasyczną dynamikę spinu widoczną w orbicie.**
+
+*Różnica kanałów w czasie kolapsu pojawia się, ale nie jest ustalona.* Stosunki
+ortho/para po czterech ziarnach: \(0{,}957\), \(1{,}484\), \(1{,}020\),
+\(1{,}172\) — trzy z czterech w jedną stronę, przy rozrzucie od \(0{,}96\) do
+\(1{,}48\). To ten sam wzorzec, na który złapałem się przy udziale stopów
+barierowych, więc tym razem nie ogłaszam efektu bez sparowanego pomiaru.
 
 *Obserwable produkcyjne nietknięte:* mediana \(7368{,}8\) ps i wiązanie
 terminalne \(6{,}80285\) eV w obu kanałach, 12/12 ukończonych, 0 awarii, koszt

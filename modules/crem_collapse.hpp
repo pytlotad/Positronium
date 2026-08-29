@@ -3894,9 +3894,66 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         firstDipole=run.finalState.firstDipole;
         secondDipole=run.finalState.secondDipole;
         // ...and the skipped orbits' share, which used to be dropped.
-        advanceSkippedDipolePrecession(firstDipole,secondDipole,
-            -attractionParameter/(2.0*elements.specificEnergy),
-            angularMomentumDirection,reducedMass,checkpointProperTime);
+        //
+        // The spin change is fed back into the ORBITAL angular momentum as a
+        // full vector, closing what the first version of this left open.  The
+        // model counts spin angular momentum as mu/gyromagneticRatio, so
+        // turning the moments IS a change of angular momentum; advancing them
+        // without a partner created up to 1 hbar of it against an orbital L of
+        // 1 hbar.
+        //
+        // Full vector, not just the component along L: magnitude AND direction
+        // both come out of the subtraction.  That differs from the photon's own
+        // hbar a few lines below, where the direction is taken from the
+        // subtraction but the MAGNITUDE from the classical k(e) law -- there a
+        // separate law for the magnitude exists, here there is none, and the
+        // conserving choice is the whole vector.
+        {
+            const Vec3 spinBefore=
+                firstDipole*(1.0/firstGyromagneticRatioOf())
+                +secondDipole*(1.0/secondGyromagneticRatioOf());
+            advanceSkippedDipolePrecession(firstDipole,secondDipole,
+                -attractionParameter/(2.0*elements.specificEnergy),
+                angularMomentumDirection,reducedMass,checkpointProperTime);
+            const Vec3 spinAfter=
+                firstDipole*(1.0/firstGyromagneticRatioOf())
+                +secondDipole*(1.0/secondGyromagneticRatioOf());
+            const Vec3 orbitalBefore=angularMomentumDirection
+                *(elements.specificAngularMomentum*reducedMass);
+            const Vec3 orbitalAfter=orbitalBefore-(spinAfter-spinBefore);
+            const double orbitalAfterNorm=orbitalAfter.norm();
+            // WHAT THIS REVEALS, and it is not a bookkeeping detail.  Feeding
+            // the change back faithfully makes the orbital L RANDOM-WALK:
+            // measured per checkpoint, |dS| runs 0.33-0.70 hbar and L goes
+            // 2 -> 1.965 -> 2.077 -> 1.984 -> 1.914 -> 2.293 -> 1.915, moving
+            // both ways with excursions to +-0.4 hbar.  The cascade shortens by
+            // about 25% (7368.8 -> 5567.1 ps for para, 7.369 -> 5.329 ns for
+            // ortho).
+            //
+            // That is not an artefact of the back-reaction: if the spin really
+            // goes from spinBefore to spinAfter, conservation REQUIRES L to
+            // absorb the difference.  What it exposes is upstream.  The two
+            // moments counter-rotate at the hyperfine rate (~200 GHz), so a
+            // classical pair exchanges order-hbar of angular momentum with the
+            // orbit at that frequency -- and real positronium does not, because
+            // its spin states are eigenstates and do not counter-rotate at all.
+            // Conserving angular momentum properly is what made the classical
+            // spin dynamics visible in the orbit.
+            //
+            // Guarded rather than clamped silently: a spin kick large enough to
+            // reverse or annihilate L means the skip has outrun this term's own
+            // validity, and dropping the back-reaction for that checkpoint is
+            // the honest response -- the alternative is a sign flip the Kepler
+            // elements cannot represent.  Same guard shape as the secular
+            // spin-orbit torque above.
+            if(orbitalAfterNorm>0.0&&std::isfinite(orbitalAfterNorm)) {
+                angularMomentumDirection=
+                    orbitalAfter*(1.0/orbitalAfterNorm);
+                elements.specificAngularMomentum=
+                    clampAboveGroundStateAngularMomentum(
+                        orbitalAfterNorm/reducedMass);
+            }
+        }
 
         if(!(elements.specificEnergy<0.0)||!std::isfinite(elements.specificEnergy)
            ||!std::isfinite(elements.specificAngularMomentum)) {
