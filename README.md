@@ -7342,9 +7342,49 @@ dokładne tylko przy przygotowaniu** — precesja rozsuwa momenty i człon
 
 Przyczyną **nie** jest moment reakcji M1 — jego wkład do dryfu zmierzono
 osobno jako \(2\cdot10^{-16}\), osiem rzędów poniżej obserwowanego
-\(10^{-8}\) dryfu \(\cos\). Zostaje precesja BMT: obie orientacje obracają
-się wokół **różnych** pól efektywnych, bo każda cząstka widzi pole partnera w
-swoim położeniu i wchodzi z własną prędkością do członu Thomasa.
+\(10^{-8}\) dryfu \(\cos\). Zostaje precesja BMT — i tu jest wyprowadzenie,
+którego wcześniej nie miałem.
+
+*Dlaczego jedno zerowanie przeżywa, a drugie nie.* Dla pozytonium
+\(q_2/m_2=-q_1/m_1\equiv-k\), więc
+
+\[\frac{d(\boldsymbol\mu_1+\boldsymbol\mu_2)}{dt}\Big|_{\rm ortho}
+ =k\,\boldsymbol\mu_1\times(\mathbf B_1+\mathbf B_2),\qquad
+ \frac{d(\boldsymbol\mu_2-\boldsymbol\mu_1)}{dt}\Big|_{\rm para}
+ =-k\,\boldsymbol\mu_1\times(\mathbf B_1+\mathbf B_2).\]
+
+**Ta sama wielkość, przeciwny znak** — więc różnica musi siedzieć w
+\(\mathbf B_1+\mathbf B_2\), i siedzi. Ta suma rozpada się na dwa człony o
+przeciwnym zachowaniu:
+
+- **człon ruchu ładunku znika w sumie dokładnie**, bo odwracają się trzy
+  rzeczy: ładunek, prędkość **i** kierunek do punktu pola. To ta sama
+  potrójna zmiana znaku, która daje \((\boldsymbol\mu_2-\boldsymbol\mu_1)\)
+  w energii ładunek–dipol — i na której się dziś raz pomyliłem;
+- **człon dipolowy dodaje się w sumie proporcjonalnie do
+  \((\boldsymbol\mu_1+\boldsymbol\mu_2)\)**, bo dwa odwrócenia \(\hat r\)
+  się znoszą.
+
+Czyli \(\mathbf B_1+\mathbf B_2\propto(\boldsymbol\mu_1+\boldsymbol\mu_2)\),
+a stąd wniosek: **wielkość, która napędzałaby dryf stanu ortho, jest
+proporcjonalna do wielkości, która w tym stanie jest zerem.** Stan
+antyrównoległy jest więc **punktem stałym precesji BMT**, samopodtrzymującym
+się. Dla para pole napędzające jest maksymalne (\(2\times\) pole dipolowe
+\(\boldsymbol\mu_1\)), więc różnica dryfuje najszybciej, jak może.
+
+*Zweryfikowane funkcjami samego kodu* (`thomasBmtDipoleDerivatives`), a nie
+powtórzeniem rachunku — po dwóch pomyłkach znakowych tego samego dnia:
+
+| \(\cos\) | \(|d(\boldsymbol\mu_1+\boldsymbol\mu_2)/dt|\,/\,|d\boldsymbol\mu_1/dt|\) | \(|d(\boldsymbol\mu_2-\boldsymbol\mu_1)/dt|\,/\,|d\boldsymbol\mu_1/dt|\) |
+|---|---|---|
+| \(+1\) (para) | \(2{,}218\) | \(1{,}083\) |
+| \(0\) | \(3{,}325\) | \(4{,}371\) |
+| \(-1\) (ortho) | \(\mathbf{0}\) | \(2\) |
+
+Przy \(\cos=-1\) pochodna sumy jest **dokładnie zerem**; przy \(\cos=+1\)
+pochodna różnicy nie jest. Asymetria, którą godzinę wcześniej mogłem tylko
+zmierzyć, ma więc powód, i jest nim struktura znaków dwuciałowego pola, a nie
+nic przypadkowego.
 
 *I obie zależą od kwantowania.* W trybie barierowym, gdzie spin nie jest
 kwantowany, żadne z tych zerowań nie istnieje w ogóle:
