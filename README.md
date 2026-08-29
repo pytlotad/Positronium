@@ -7332,15 +7332,36 @@ Przyczyna jest ilościowa: \(|\Delta\mathbf S|\) to rząd \(0{,}5\hbar\) na
 checkpoint wobec orbitalnego \(L\) rzędu \(1\)–\(2\hbar\), więc **każde**
 wierne sprzężenie dominuje, niezależnie od tego, którą składową się oddaje.
 
-*Sprzężenie zostało więc wycofane, a poprawka precesji zostaje.* Nie dlatego, że
-zachowanie momentu pędu jest nieważne — jest — tylko dlatego, że wina leży
-powyżej. Klasyczna para momentów kontrrotuje w tempie nadsubtelnym i wymienia
-rząd \(\hbar\) z orbitą przy \(\sim200\) GHz; rzeczywiste pozytonium tego nie
-robi, bo jego stany spinowe są stanami własnymi. Dopóki sektor spinowy tego nie
-reprezentuje, **wierne sprzężenie przenosi niefizyczną dynamikę wprost do
-głównej obserwabli** — co jest gorsze niż udokumentowana i zmierzona
-niespójność. Obie strony są zapisane przy kodzie, razem z liczbami, więc decyzja
-jest odwracalna.
+*Sprzężenie zostało więc wycofane, a poprawka precesji zostaje* — i uzasadnienie
+tego wymagało własnej poprawki, bo pierwsza wersja opierała się na liczbie
+błędnej \(26\times\).
+
+Napisałem, że para kontrrotuje „w tempie nadsubtelnym, \(\sim200\) GHz". Nie
+kontrrotuje. Zmierzone tempo to \(\omega=4{,}95\cdot10^{10}\) rad/s, czyli
+\(\mathbf{7{,}878}\) **GHz** — a to jest dokładnie ta wielkość, którą projekt
+już ma zapisaną jako klasyczne sprzężenie dipol-dipol: \(3{,}8\%\) mierzonego
+rozszczepu nadsubtelnego \(203{,}3941\) GHz. Brakujące \(96\%\) to człon
+kontaktowy Fermiego i anihilacja wirtualna, których model punktowo-dipolowy nie
+zawiera. Sprawdzenia można było dokonać jednym spojrzeniem do panelu
+`1_2_2`, który stoi w tym repozytorium od dawna.
+
+Poprawna liczba zmienia argument, i na mocniejszy. Sektor spinowy nie jest
+„fizyką nadsubtelną w złym miejscu" — jest **opisem spin-spin kompletnym w
+\(3{,}8\%\), i bez stanów własnych**: w mechanice kwantowej stacjonarne są
+\(S=0\) i \(S=1\), a tutaj punktem stałym jest tylko konfiguracja
+antyrównoległa, podczas gdy równoległa kołysze się z amplitudą rzędu
+\(\hbar\).
+
+*A rozstaw checkpointów zamienia to w błądzenie losowe.* Okres precesji wynosi
+\(126{,}9\) ps; kaskada domyślna to około 35 checkpointów na \(7368\) ps,
+czyli \(211\) ps każdy — **1,66 okresu**. Każdy checkpoint próbkuje więc
+kołysanie w praktycznie dowolnej fazie, co jest dokładnie zmierzonym
+\(|\Delta\mathbf S|\approx0{,}5\hbar\) na checkpoint.
+
+Wierne sprzężenie przenosi zatem do głównej obserwabli dynamikę spinową
+kompletną w \(3{,}8\%\), pozbawioną stanów własnych i próbkowaną w losowej
+fazie. To jest gorsze niż udokumentowana i zmierzona niespójność. Obie strony
+są zapisane przy kodzie razem z liczbami, więc decyzja jest odwracalna.
 
 *Stan po wycofaniu:* mediana \(7368{,}8\) ps, wiązanie terminalne
 \(6{,}80285\) eV, 12/12 ukończonych, 39/39 PASS — czyli produkcja wraca do

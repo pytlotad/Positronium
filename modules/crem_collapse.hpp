@@ -3917,13 +3917,31 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // boundary having radiated NOTHING: spin diffusion, not radiation,
         // becomes the collapse mechanism.
         //
-        // The fault is upstream, not in the feedback.  A classical pair of
-        // moments counter-rotates at the hyperfine rate and so exchanges
-        // order-hbar with the orbit at ~200 GHz; real positronium does not,
-        // because its spin states are eigenstates.  Until the spin sector
-        // represents that, a conserving feedback propagates an unphysical
-        // dynamics into the headline observable, which is worse than a
-        // documented and quantified inconsistency.
+        // The fault is upstream, not in the feedback -- and the rate matters
+        // for saying why.  The pair counter-rotates at the CLASSICAL
+        // DIPOLE-DIPOLE rate, measured here as omega = 4.95e10 rad/s = 7.878
+        // GHz, which is what this project already records as the classical
+        // coupling: 3.8% of the measured o-Ps/p-Ps hyperfine splitting of
+        // 203.3941 GHz.  (An earlier version of this note said "the hyperfine
+        // rate, ~200 GHz" and was wrong by a factor of 26.)  The missing 96%
+        // is the Fermi contact term and virtual annihilation, neither of which
+        // a classical point-dipole model contains.
+        //
+        // So the spin sector is a 3.8%-complete description of the spin-spin
+        // physics, with no eigenstates: in quantum mechanics both S=0 and S=1
+        // are stationary, while here only the anti-aligned configuration is a
+        // fixed point and the aligned one swings with amplitude of order hbar.
+        //
+        // And the checkpoint spacing is what turns that into a random walk.
+        // The precession period is 127 ps; a default cascade runs ~35
+        // checkpoints over 7368 ps, i.e. 210 ps each, or 1.65 periods.  Each
+        // checkpoint therefore samples the swing at an essentially arbitrary
+        // phase, which is exactly the measured |dS| ~ 0.5 hbar per checkpoint.
+        //
+        // Feeding that back faithfully propagates a 3.8%-complete, eigenstate-
+        // free spin dynamics into the headline observable, sampled at random
+        // phase.  That is worse than a documented and quantified
+        // inconsistency.
         if(!(elements.specificEnergy<0.0)||!std::isfinite(elements.specificEnergy)
            ||!std::isfinite(elements.specificAngularMomentum)) {
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
