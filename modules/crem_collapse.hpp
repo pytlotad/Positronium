@@ -1130,6 +1130,31 @@ double azimuthAveragedDipoleEnergy(double separation,
 // raised the integrated fraction 10.3x and the resulting |mu2 - mu1| drift
 // 10.1x -- exactly linear, so the drift is secular, not bounded oscillation.
 //
+// WHAT THIS ROUTINE DOES NOT DO, stated because it is O(1) and not a detail.
+// It advances the SPINS and leaves the orbital angular momentum untouched.  The
+// model does count spin angular momentum -- as mu/gyromagneticRatio, see the
+// total in electrodynamics.hpp -- so a change in the moments is a change in
+// angular momentum with nothing here to balance it.  Measured over a default
+// cascade, in units of hbar:
+//
+//     para :  |S| 0 -> 0.993 / 0.999 / 0.357,  |dS| up to 1.0
+//     ortho:  |S| 1 -> 1.00103 / 1.00073 / 1.00205 (magnitude conserved to
+//             0.2%), but |dS| up to 1.93 from the direction turning
+//
+// against an orbital L of 1 hbar at the ground state.  So the uncompensated
+// piece is comparable to the ENTIRE orbital angular momentum, not a correction
+// to it.
+//
+// Why it is nevertheless carried this way: the two moments counter-rotate about
+// a common field, so the component of the total spin along that field is
+// conserved and only the perpendicular part swings -- at the hyperfine scale
+// (~200 GHz, period ~5 ps) against an orbit that evolves over nanoseconds.  The
+// orbit therefore sees the average of a fast oscillation rather than a secular
+// drain, which is consistent with production being unchanged.  That is an
+// ARGUMENT, not a measurement: a proper treatment would feed the spin change
+// back into elements.specificAngularMomentum and its direction the way the
+// photon's own hbar already is, and that has not been done.
+//
 // Treatment: over many orbits the fast phase-dependent part of the effective
 // field averages out and each moment precesses about the ORBIT-AVERAGED field.
 // This walks the checkpoint's proper time in phaseNodes equal slices, each at a

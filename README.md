@@ -7349,11 +7349,40 @@ potwierdzając wyprowadzenie: pole napędzające jest proporcjonalne do
 \((\boldsymbol\mu_1+\boldsymbol\mu_2)\), więc w tym stanie znika i żadna
 ilość całkowania go nie ruszy.
 
-*Konsekwencja, którą trzeba wypowiedzieć wprost:* **kwantowanie spinu utrzymuje
-się teraz tylko dla ortho.** Dla para przygotowane \(\cos=+1\) nie przeżywa
-kaskady, a kąt wzajemny na końcu jest zasadniczo dowolny. Zdanie „domyślna
-konfiguracja kwantuje spin" jest więc prawdziwe dla stanu przygotowanego i dla
-kanału ortho, a nie dla trajektorii para.
+*Konsekwencja — i właściwa zmienna, żeby ją wypowiedzieć.* Mówiłem o tym w
+kategoriach \(\cos\), ale wielkością o znaczeniu fizycznym jest **moduł
+całkowitego spinu**. Dla pozytonium \(\gamma_2=-\gamma_1\), więc
+\(\mathbf S_1+\mathbf S_2=(\boldsymbol\mu_1-\boldsymbol\mu_2)/\gamma_1\) —
+para (singlet) to \(|S|=0\), ortho (tryplet) to \(|S|=\hbar\). Zmierzone przez
+kaskadę, w jednostkach \(\hbar\):
+
+| kanał | \(|S|\) start \(\to\) koniec | \(|\Delta\mathbf S|\) |
+|---|---|---|
+| para | \(0\to\mathbf{0{,}993\ /\ 0{,}999\ /\ 0{,}357}\) | do \(1{,}0\) |
+| ortho | \(1\to\mathbf{1{,}00103\ /\ 1{,}00073\ /\ 1{,}00205}\) | do \(1{,}93\) |
+
+**Model zachowuje charakter tryple­towy i niszczy singletowy.** Moduł
+całkowitego spinu ortho jest zachowany do \(0{,}2\%\); dla para rośnie z zera
+do \(\approx\hbar\), czyli stan przestaje być singletem. W mechanice kwantowej
+**oba** są zachowane, więc jest to realne ograniczenie modelu klasycznego, a nie
+szczegół księgowy: klasyczny układ dwóch momentów sprzężonych dipolowo ma
+konfigurację antyrównoległą jako punkt stały, a równoległą jako niestabilną, i
+nie ma czym reprezentować singletu.
+
+*Wada tej poprawki, którą trzeba zapisać razem z nią.* Rutyna przesuwa
+**spiny** i nie rusza orbitalnego momentu pędu, a model spinowy moment pędu
+liczy (jako \(\mu/\gamma\)). Zmiana \(|\Delta\mathbf S|\) rzędu \(1\hbar\)
+wobec orbitalnego \(L=1\hbar\) w stanie podstawowym jest więc porównywalna z
+**całym** orbitalnym momentem pędu, a nie poprawką do niego.
+
+Argument, dla którego mimo to jest niesiona: oba momenty kontrrotują wokół
+wspólnego pola, więc składowa całkowitego spinu wzdłuż tego pola jest zachowana
+i tylko część prostopadła się kołysze — w skali nadsubtelnej (\(\sim200\) GHz,
+okres \(\sim5\) ps) wobec orbity ewoluującej przez nanosekundy. Orbita widzi
+więc średnią z szybkiej oscylacji, a nie sekularny odpływ, co jest zgodne z tym,
+że produkcja się nie zmieniła. **To jest argument, nie pomiar** — pełne
+potraktowanie oddawałoby zmianę spinu do `elements.specificAngularMomentum` i
+jego kierunku, tak jak już robi to \(\hbar\) fotonu, i tego nie zrobiono.
 
 *Obserwable produkcyjne nietknięte:* mediana \(7368{,}8\) ps i wiązanie
 terminalne \(6{,}80285\) eV w obu kanałach, 12/12 ukończonych, 0 awarii, koszt
