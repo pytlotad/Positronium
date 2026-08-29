@@ -7440,20 +7440,29 @@ z członem i bez, wiązanie terminalne identyczne, a **dokładnie jedna
 trajektoria na 24** przechodzi z progu retardacyjnego na barierę Comptona.
 
 *Powtórzone na większej próbce, bo 24 to za mało na wniosek „nie zmienia
-niczego".* Sparowane z członem wobec bez, 48 trajektorii ukończonych w obu
-konfiguracjach:
+niczego".* Sparowane z członem wobec bez, **120** trajektorii ukończonych w obu
+konfiguracjach (pięć ziaren):
 
 ```
-zmiany przyczyny stopu:  1 = 2,1%   (b=1, c=0, p=1,0)
+zmiany przyczyny stopu:  1 = 0,83%   (b=1, c=0, p=1,0)
 flipy liczby fotonow:    0
-|dt/t|:        srednia = 0   max = 0
-|dbind/bind|:  srednia = 0   max = 0
+max |dt/t|        = 0
+max |dbind/bind|  = 0
+
+jedyna zmieniona: ziarno 42, idx 11
+  przyczyna:  bariera (z czlonem)  vs  retardacja (bez)
+  czas zycia: 491,293 ps           vs  491,293 ps
 ```
 
-Czasy życia i wiązania terminalne są **identyczne co do bitu**, nie „do szóstej
-cyfry" — a to znacznie mocniejsze stwierdzenie, niż miałem prawo zrobić z
-poprzedniej próbki. I ta jedna zmiana przyczyny stopu ma **identyczny czas
-życia**, czyli człon przestawił tam **etykietę granicy**, a nie wynik: obie
+(Na pierwszych 48 trajektoriach ta sama jedna zmiana dawała \(2{,}1\%\);
+przy 120 wychodzi \(0{,}83\%\), przedział Poissona
+\(0{,}02\%\)–\(4{,}6\%\).)
+
+Czasy życia i wiązania terminalne są **identyczne co do bitu** na wszystkich
+120 trajektoriach, nie „do szóstej cyfry" — a to znacznie mocniejsze
+stwierdzenie, niż miałem prawo zrobić z poprzedniej próbki. I jedyna zmiana
+przyczyny stopu ma **identyczny czas życia** (\(491{,}293\) ps po obu
+stronach), czyli człon przestawił tam **etykietę granicy**, a nie wynik: obie
 granice były spełnione niemal jednocześnie i człon przechylił, której przypisać
 zdarzenie.
 
