@@ -2900,7 +2900,10 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 // observable is worse than shipping a quantum that is known
                 // to be too large in a window covering 6.6% of checkpoints
                 // and documented as such.
-                if(!(level>=2.0)) return classical;
+                // gBohrLevelPhotonEnergy off (the default): never import the
+                // level-difference rule, always report what the orbit's own
+                // frequency produces.  See its own comment in positronium.cpp.
+                if(!gBohrLevelPhotonEnergy||!(level>=2.0)) return classical;
                 const double lower=level-1.0;
                 return bindingScale*(1.0/(lower*lower)-1.0/(level*level));
             };

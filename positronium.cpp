@@ -1099,31 +1099,34 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 [[maybe_unused]] ChargeRadiationReactionModel gRadiationReactionModel =
     ChargeRadiationReactionModel::stochasticElectricDipole;
 
-// Principal level the bound scenarios are PREPARED on.  One is the historical
-// behaviour and the default: the pair starts at the pair Bohr radius, which
-// is the L = hbar orbit, and every committed result in this repository was
-// produced there.
+// Starting separation the bound scenarios are PREPARED at, a_n = n^2 a_pair
+// (a_pair itself comes from the pair's measured magnetic moment -- see
+// pairBohrRadius's own comment -- the one length scale this model actually
+// has to start an inspiral from).  Not a claim that the pair occupies "the
+// n-th energy level" as a physical eigenstate: with the ground-state floor
+// and the Bohr-ladder photon energy both off by default (see
+// gGroundStateEmissionFloor, gBohrLevelPhotonEnergy below), nothing in the
+// default run treats this as a quantized level any more than any other
+// starting radius would be -- it is just where the classical inspiral begins.
+// n is still an integer and a_n still scales as n^2 purely so --level stays
+// a convenient, backward-comparable way to pick a starting separation.
 //
-// Raising it exists because of a measurement.  On the Bohr ladder the
-// instantaneous-kick emission ceiling is exactly
+// Kept at 2, not 1, for a reason that survives both defaults above: on the
+// Bohr ladder the instantaneous-kick emission ceiling is exactly
 //
 //     hbar*omega / E_kinetic = 2/n
 //
-// (virial: a circular orbit's kinetic energy is its binding energy), so a
-// photon of hbar*omega cannot be paid for at n=1 or n=2 and fits from n=3 up.
-// Measured across all four phenomena, the model never leaves n <= 1.09 --
-// which is why that ceiling covers its whole operating range, and why the
-// level-difference photon energy below has nothing to act on at the default.
-// Preparing the pair higher up the ladder is what gives both a domain.
+// (virial: a circular orbit's kinetic energy equals its binding energy), so
+// a photon of hbar*omega cannot be paid for at n=1 or n=2 and fits from n=3
+// up -- a constraint on the mechanical trajectory's stochastic photon-kick
+// reaction model, independent of the secular ladder machinery
+// the other two defaults switch off.  Measured across all four phenomena,
+// the model never leaves n <= 1.09, so this ceiling covers its whole
+// operating range regardless of where the ladder concept itself is used.
 //
 // a_n = n^2 a_pair and the tangential band is quoted in units of the circular
 // speed AT that separation, so the sampled spread in L/(n hbar) is unchanged
 // and only the level moves.
-// PRODUCTION DEFAULT 2, not 1: with the sharp preparation the pair starts
-// exactly ON n=1, which is the lowest state the emission floor admits, so a
-// floored run at level 1 has nowhere to cascade to by construction.  Level 2
-// is the smallest prepared state for which the cascade is a real process the
-// model can time.
 inline int gInitialPrincipalLevel = 2;
 
 // Whether the quantized emission draws its next threshold from Exp(1) (a
@@ -1168,12 +1171,14 @@ inline int gInitialPrincipalLevel = 2;
 // specifically wants the spontaneous-emission statistics.
 inline bool gDeterministicEmission = true;
 
-// EXPERIMENT, not part of the model -- the same standing as --zpf, and aimed
-// at the same gap: CREM is a classical radiative inspiral with nothing to
-// halt it at the pair Bohr radius, so the collapse runs past the ground state
-// by a factor of 375 in radius and ends at the Compton barrier instead.
+// The same standing as --zpf, and aimed at the same gap: CREM is a classical
+// radiative inspiral with nothing to halt it at the pair Bohr radius, so left
+// alone the collapse runs past the ground state and ends wherever the
+// electrodynamics itself stops it -- the Compton barrier, or (measured, the
+// large majority of the time -- see the README's Compton-barrier
+// re-measurement) a numerical retardation-time safety margin first.
 //
-// --zpf tried to supply the missing mechanism from outside, by coupling a
+// --zpf tried to supply a stopping mechanism from outside, by coupling a
 // classical zero-point field and looking for a fluctuation-dissipation
 // balance.  That failed: the resonant band moves the collapse time by 0.3%,
 // wider bands only pump the orbit toward escape, and the balance condition
@@ -1187,20 +1192,54 @@ inline bool gDeterministicEmission = true;
 // It is a CLOSURE, not a derivation.  It does not explain why no lower state
 // exists; it asserts it, and any result obtained with it has to be read that
 // way.  What it buys over --zpf is that it carries no free parameter, no band
-// edge to choose, no mode count to converge, and no cost.
-// PRODUCTION DEFAULT since the recoil-exact floor trim made the cascade
-// terminate.  Together with gInitialPrincipalLevel = 2 this makes the standard
-// run an n=2 -> n=1 cascade ending on the ground state, rather than a
-// classical inspiral ending on the Compton barrier or, more often, on a
-// numerical safety margin.
+// edge to choose, no mode count to converge, and no cost.  --ground-state-floor
+// restores it.
 //
-// WHAT THE REPORTED TIME MEANS UNDER THIS DEFAULT, and it is not what it meant
-// before: it is the CASCADE time from the prepared level down to n=1.  It is
-// not an inspiral time to the Compton barrier, and it is not an annihilation
+// OFF BY DEFAULT, on request, to leave the classical electrodynamics running
+// unmodified: this closure, gBohrLevelPhotonEnergy below, and the choice of
+// L=n*hbar starting separation (gInitialPrincipalLevel, now documented as a
+// starting radius rather than a claimed energy level) are the three places
+// this file imports a discrete quantum fact rather than deriving one, and
+// this is the first to go.  Measured (N=100x2, seed 7, --no-ground-state-floor
+// equivalent, both channels): 97-98% of trajectories stop on the retardation
+// safety margin, 2-3% on the Compton barrier, "landed at periapsis" spans a
+// smooth 0.26-15.3 r* with no clustering, and para/ortho are statistically
+// indistinguishable -- i.e. what the bare electrodynamics produces here is
+// continuous scatter, not a rediscovered ladder.
+//
+// WHAT THE REPORTED TIME MEANS WITH THE FLOOR OFF: a classical inspiral time
+// to wherever the electrodynamics actually stops (Compton barrier or
+// retardation margin), NOT a cascade to n=1 and NOT an annihilation
 // lifetime -- this model has no annihilation dynamics at all, no contact
-// channel and no rate, established separately.  --no-ground-state-floor
-// restores the previous behaviour.
-inline bool gGroundStateEmissionFloor = true;
+// channel and no rate, established separately.  --ground-state-floor restores
+// the n=1 cascade-time reading documented above.
+inline bool gGroundStateEmissionFloor = false;
+
+// The second of the three imported quantum facts (see
+// gGroundStateEmissionFloor's comment).  quantumFor (crem_collapse.hpp) needs
+// a photon energy for the secular estimator's hazard bookkeeping; it has
+// always had two candidates available, the Bohr LEVEL DIFFERENCE E(n)-E(n-1)
+// where the ladder has a rung below, and hbar*omega_orb -- the value the
+// orbit's own frequency actually produces, with no ladder concept at all --
+// as the fallback everywhere the ladder does not reach (n<2, or now,
+// unconditionally, whenever this flag is off).
+//
+// hbar*omega_orb is not a worse number by construction: it is the
+// correspondence-principle value, and measured, dE(n->n-1)/hbar*omega_orb is
+// close to 1 (1.0152 at n=100, 1.0523 at n=30) everywhere except close to the
+// ground state, where the ladder's spacing stops resembling the local orbital
+// frequency at all (a factor of 3 off at n=2) -- see quantumFor's own comment
+// for the measurement.  Choosing it unconditionally means the photon energy
+// this file reports is always something the electrodynamics itself produces,
+// never a level difference imported from the quantum ladder.
+//
+// OFF BY DEFAULT, on request, alongside gGroundStateEmissionFloor above.
+// --bohr-photon-energy restores the level-difference rule (quantumFor's own
+// n>=2 branch), for comparison against the historical behaviour.
+// [[maybe_unused]] because quantumFor lives in crem_collapse.hpp, which is
+// only included outside the validation executable (see its #ifndef just
+// below) -- same reason as gIntegratorOrder above.
+[[maybe_unused]] inline bool gBohrLevelPhotonEnergy = false;
 
 #include "modules/crem_engine.hpp"
 
@@ -6049,11 +6088,20 @@ int main(int argc, char** argv) {
                         "--emission must be poisson or deterministic");
                 }
             } else if (argument == "--ground-state-floor") {
-                gGroundStateEmissionFloor = true;   // now the default; kept
+                gGroundStateEmissionFloor = true;   // restores the historical
+                                                    // default; see the flag's
+                                                    // own comment
+            } else if (argument == "--no-ground-state-floor") {
+                gGroundStateEmissionFloor = false;  // now the default; kept
                                                     // so existing command
                                                     // lines keep working
-            } else if (argument == "--no-ground-state-floor") {
-                gGroundStateEmissionFloor = false;
+            } else if (argument == "--bohr-photon-energy") {
+                gBohrLevelPhotonEnergy = true;      // restores the historical
+                                                    // level-difference rule
+            } else if (argument == "--no-bohr-photon-energy") {
+                gBohrLevelPhotonEnergy = false;     // now the default; kept
+                                                    // so existing command
+                                                    // lines keep working
             } else if (argument == "--level") {
                 const std::string value = requireValue(argument);
                 const int level = std::stoi(value);
@@ -6290,15 +6338,20 @@ int main(int argc, char** argv) {
             const double levelSquared =
                 static_cast<double>(gInitialPrincipalLevel)
                 * static_cast<double>(gInitialPrincipalLevel);
-            std::cout << "Initial principal level: n = "
-                      << gInitialPrincipalLevel
-                      << " (a_n = " << levelSquared << " a_pair = "
-                      << levelSquared*pairBohrRadius(activePair)*1.0e12
-                      << " pm, binding "
-                      << pairBindingEnergy(activePair)/levelSquared/eCharge
-                      << " eV).  Photon energy follows the level spacing "
-                         "dE(n->n-1) while n >= 2 and reverts to hbar*omega "
-                         "below, where the ladder has no lower rung.\n"
+            std::cout << "Starting separation: a_n = " << levelSquared
+                      << " a_pair (n = " << gInitialPrincipalLevel
+                      << ") = " << levelSquared*pairBohrRadius(activePair)*1.0e12
+                      << " pm -- an initial condition for the classical "
+                         "inspiral, not a claimed energy eigenstate.\n"
+                      << (gBohrLevelPhotonEnergy
+                          ? "  Photon energy follows the imported level "
+                            "spacing dE(n->n-1) while n >= 2 and reverts to "
+                            "hbar*omega below, where the ladder has no lower "
+                            "rung (--bohr-photon-energy).\n"
+                          : "  Photon energy is hbar*omega_orb throughout -- "
+                            "whatever the orbit's own frequency produces, no "
+                            "imported level spacing (--bohr-photon-energy "
+                            "restores it).\n")
                       << "  Cost: ";
             // How much longer this run takes, which is NOT one power law for
             // both reaction families and was briefly documented as if it were.
@@ -6316,7 +6369,12 @@ int main(int argc, char** argv) {
             // n = 2, 3 and 4, which the expression below reproduces to every
             // digit printed.  So the true asymptotic power is n^5, not n^6.
             const double levelValue=static_cast<double>(gInitialPrincipalLevel);
-            const double spacingOverClassical=levelValue>=2.0
+            // Only the imported level-difference photon energy divides the
+            // hazard rate by this ratio; with it off (the default) every
+            // photon is hbar*omega_orb, the same reference the n<2 fallback
+            // always used, so the ratio to itself is 1.
+            const double spacingOverClassical=gBohrLevelPhotonEnergy
+                    && levelValue>=2.0
                 ? levelValue*(2.0*levelValue-1.0)
                     /(2.0*(levelValue-1.0)*(levelValue-1.0))
                 : 1.0;

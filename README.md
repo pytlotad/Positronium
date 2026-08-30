@@ -6204,13 +6204,45 @@ Pięć opcji sterują samą fizyką i kosztem eksperymentów związanych:
 
 | Opcja | Domyślnie | Znaczenie |
 | --- | --- | --- |
-| `--ground-state-floor` | wyłączone | **Eksperyment, nie część modelu.** Druga próba domknięcia tej samej luki co `--zpf`, przeciwną metodą: zamiast mechanizmu importuje **jeden** fakt kwantowy — drabina Bohra kończy się na \(n=1\) — i odmawia emisji, która związałaby parę ciaśniej niż stan podstawowy. Bramkuje tempo hazardu (nie odrzuca pojedynczych fotonów: bankowanie i ponawianie zakleszcza się, co ten plik odnotowuje osobno), klamruje wszystkie trzy miejsca zapisu `specificEnergy` i przycina ostatni kwant tak, by wylądował dokładnie na podłodze. **Zatrzymuje spiralę na \(a_{Ps}\), ale likwiduje obserwablę czasu kolapsu — patrz niżej.** |
+| `--ground-state-floor` | **wyłączone od `ffbfa91`** (wcześniej domyślnie włączone — patrz notatka pod tabelą) | **Eksperyment, nie część modelu.** Druga próba domknięcia tej samej luki co `--zpf`, przeciwną metodą: zamiast mechanizmu importuje **jeden** fakt kwantowy — drabina Bohra kończy się na \(n=1\) — i odmawia emisji, która związałaby parę ciaśniej niż stan podstawowy. Bramkuje tempo hazardu (nie odrzuca pojedynczych fotonów: bankowanie i ponawianie zakleszcza się, co ten plik odnotowuje osobno), klamruje wszystkie trzy miejsca zapisu `specificEnergy` i przycina ostatni kwant tak, by wylądował dokładnie na podłodze. **Zatrzymuje spiralę na \(a_{Ps}\), ale likwiduje obserwablę czasu kolapsu — patrz niżej.** |
+| `--bohr-photon-energy` | **wyłączone** | Energia skwantowanego fotonu w estymatorze sekularnym (`quantumFor`, `crem_collapse.hpp`). Domyślnie zawsze \(\hbar\omega_{\rm orb}\) — to, co orbita sama produkuje. Włączone przywraca importowany odstęp poziomów Bohra \(\Delta E(n\to n{-}1)\) dla \(n\ge2\), z powrotem do \(\hbar\omega\) poniżej. |
 | `--zpf`, `--zpf-band` | `0` (wyłączone) | **Eksperyment, nie część modelu.** Klasyczne pole punktu zerowego elektrodynamiki stochastycznej: losowe fale płaskie o widmie \(\rho(\omega)=\hbar\omega^3/2\pi^2c^3\), 64 mody o równej energii, orientacje i fazy z ziarna `--seed`. `--zpf` skaluje **amplitudę** (1 = poziom fizyczny, moc pochłaniana rośnie jak kwadrat), `--zpf-band lo,hi` ustala pasmo w jednostkach częstości orbitalnej pary (domyślnie `0.3,3`). To jest fluktuacyjna połowa pary fluktuacja–dyssypacja; dyssypacyjną, czyli reakcję promieniowania, model ma od zawsze. Wchodzi w te same trzy miejsca co pole jednorodne, ale próbkowane osobno dla każdej cząstki, bo zależy od położenia i czasu. **Nie odtwarza stanu podstawowego SED — patrz niżej.** |
 | `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
-| `--level` | `1` | **Tryb wzbudzony.** Główna liczba kwantowa, na której przygotowywana jest para związana: \(a_n=n^2a_{\rm pary}\), pasmo prędkości stycznej niezmienione względem prędkości kołowej przy tej separacji. Energia fotonu podąża wtedy za odstępem poziomów \(\Delta E(n\to n-1)\), dopóki \(n\ge2\), a poniżej wraca do \(\hbar\omega\). Czas kolapsu rośnie jak \(n^6\), więc dla \(n\ge3\) trzeba podnieść `--crem-wallclock-budget-s`. Wartość `1` jest bit-identyczna z zachowaniem sprzed wprowadzenia opcji. Patrz „Tryb wzbudzony" wyżej. |
+| `--level` | `2` (nie `1` — patrz notatka pod tabelą) | Separacja startowa, na której przygotowywana jest para związana: \(a_n=n^2a_{\rm pary}\), pasmo prędkości stycznej niezmienione względem prędkości kołowej przy tej separacji. **Warunek początkowy, nie deklarowany stan energetyczny** — patrz komentarz `gInitialPrincipalLevel` w kodzie. Energia fotonu podąża za odstępem poziomów \(\Delta E(n\to n-1)\) tylko pod `--bohr-photon-energy`; domyślnie zawsze \(\hbar\omega_{\rm orb}\). Czas kolapsu rośnie jak \(n^6\) (albo \(n^5\) domyślnie, bez mnożnika odstępu poziomów), więc dla \(n\ge3\) trzeba podnieść `--crem-wallclock-budget-s`. |
 | `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
 | `--radiation-reaction` | `stochastic` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki), `automatic` (mieszanka obu) albo `stochastic` (domyślny od tego miejsca w historii projektu — kwantowane, Poissonowskie kopnięcia fotonowe zamiast ciągłego hamowania, patrz niżej). **Każda liczba czasu kolapsu cytowana wcześniej w tym README (rzędu 36-40 ps dla e⁺e⁻) została zmierzona pod `individual`, nie pod obecnym domyślnym `stochastic`** — żeby je odtworzyć, trzeba dziś podać `--radiation-reaction individual` jawnie. Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
 | `--beam-energy-sigma-ev` | `0` (wyłączone) | **Tylko eksperymenty 3, 4.** Odchylenie standardowe rozkładu Gaussa, z którego próbkowana jest energia środka masy \(K_{CM}\) każdego zdarzenia wiązki, wokół `--beam-energy-ev`; `0` zachowuje dotychczasową, monochromatyczną wiązkę bit w bit. Próbkowanie odrzuca wyniki \(\le 0\) (do 1000 prób, jak `sampleKinetic` eksperymentu 5), a widmo strat energii liczy się względem faktycznie wylosowanej energii zdarzenia, nie ustalonej średniej. Modeluje skończoną rozdzielczość energetyczną realnej wiązki kosztem rozmycia porównania z formułą Rutherforda, która jest zdefiniowana przy jednym \(K_{CM}\). |
+
+**Na wyraźną prośbę, `ffbfa91`→`HEAD`: domyślna konfiguracja eksperymentów 1/2
+to teraz czysta elektrodynamika, bez żadnego z trzech importowanych faktów
+kwantowych.** Trzy niezależne zmiany naraz:
+
+1. `--ground-state-floor` — wyłączone domyślnie (było włączone). Kaskada nie
+   zatrzymuje się już sztucznie na \(n=1\); klasyczny inspiral leci dalej, aż
+   zatrzyma go sama elektrodynamika (bariera Comptona) albo numeryczny margines
+   bezpieczeństwa retardacji — patrz "Zmierzone bezpośrednio" wyżej, gdzie
+   zmierzono to jawnie pod `--no-ground-state-floor`: 97-98% zatrzymań to
+   margines numeryczny, 2-3% bariera Comptona, "landed at periapsis" rozciąga
+   się gładko 0,26-15,3 r\* bez klastrowania, para i orto nierozróżnialne.
+2. `--bohr-photon-energy` — nowa flaga, wyłączona domyślnie. `quantumFor`
+   przestał liczyć \(\Delta E(n\to n{-}1)\) z importowanego wzoru Bohra i
+   zawsze zwraca \(\hbar\omega_{\rm orb}\) — wartość, którą orbita sama
+   generuje przez zasadę korespondencji.
+3. `--emission deterministic` — już opisane wyżej.
+
+Efekt: **rozległe sekcje niżej, które opisują `--level 2 --ground-state-floor`
+jako "produkcyjną"/"kanoniczną" konfigurację, opisują poprzedni domyślny
+stan, nie obecny.** Liczby w nich zostają poprawne jako pomiary tamtej
+konfiguracji i jako materiał historyczny/porównawczy — nie zostały cofnięte
+— ale żeby je dziś odtworzyć, trzeba jawnie podać
+`--ground-state-floor --bohr-photon-energy --emission poisson` (ostatnie, bo
+domyślna emisja też się zmieniła — patrz `--emission` wyżej). `gInitialPrincipalLevel`
+(`--level`) sam w sobie zostaje bez zmian (`2`, nie `1` — ta tabela już
+wcześniej była nieaktualna w tym punkcie, niezależnie od dzisiejszej zmiany):
+to jedyny z czterech mechanizmów, którego nie da się po prostu wyłączyć, bo
+symulacja potrzebuje jakiejś separacji startowej, a \(a_{\rm pary}\) (z
+mierzonego momentu magnetycznego pary) jest jedyną fizycznie umotywowaną
+skalą długości, jaką model w ogóle ma.
 
 Zasięg `--pair` nie jest jednakowy dla wszystkich eksperymentów.
 Eksperymenty 1 i 2 mierzą klasyczną inspiralę CREM — ta część jest ogólna dla
