@@ -4115,32 +4115,28 @@ std::vector<InteractionEvent> runInteractionExperiment(
                                            .maximumDepth=8,
                                            .reactionModel=gRadiationReactionModel});
             if (event.outcome == InteractionOutcome::NumericalFailure) {
-                // 12 was sized against the pre-fix appendStateHistory, which
-                // (see its own comment) silently froze the retarded history
-                // once the adaptive step fell below its node spacing -- that
-                // made the coarse/fine error estimate spuriously agree during
-                // exactly the final plunge this retry exists for, so it
-                // rarely needed to subdivide this deep to begin with.  With
-                // the freeze fixed, the same seed/energy that used to clear
-                // depth 12 with zero NumericalFailure now needs more: at
-                // depth 18 a same-seed before/after check (interaction-energy
-                // 0.6 eV, seed 12345) recovers the previously-masked
-                // "Collision" answer bit-for-bit (K_CM=1.15361 eV,
-                // b=2.05509 pm) for the cases close enough to converge, in
-                // 43s for a 20-event batch with zero eventWallClockBudget
-                // cutoffs -- still affordable since this ladder only runs for
-                // the minority of events the depth-8 pass already failed.
-                // Depth 20+ was measured to start truncating into Unresolved
-                // instead of NumericalFailure (eventWallClockBudgetSeconds is
+                // Tried raising this to 18 on the strength of a same-seed
+                // N=20 probe that recovered one previously-masked "Collision"
+                // answer for zero eventWallClockBudget cutoffs.  A same-seed
+                // N=60 sweep (8 vs 12 vs 18) falsified that generalisation:
+                // depth 8 and 12 land on the BIT-IDENTICAL 11/60 failure set,
+                // and depth 18 recovers exactly one of those eleven -- for 3x
+                // the wall-clock cost (28.3s/28.4s -> 85.5s) and a newly
+                // introduced Unresolved (eventWallClockBudgetSeconds is
                 // shared with the cheap first pass and was not raised to
-                // match), so this stops at 18 rather than chasing the
-                // remaining near-Compton-barrier cases that did not converge
-                // even there -- those are plausibly genuine stiffness right
-                // where the classical point-particle model is already
-                // questionable, not a resolvable subdivision shortfall.
+                // match, so the deeper recursion starts running into it).
+                // Depth is therefore not the lever: the failures are a stable
+                // set the retry ladder barely touches regardless of budget,
+                // consistent with genuine stiffness right at the
+                // Compton-barrier boundary rather than a resolvable
+                // subdivision shortfall.  Left at 12 -- see README's
+                // "Zmierzone bezpośrednio" section for the N=200 measurement
+                // of how large that stable failure set actually is (~28-33%
+                // of events at the default energy, not the 0% the pre-fix
+                // appendStateHistory used to report).
                 event = simulateInteractionEvent(
                     eventSeed, configuration, {.relativeTolerance=1.0e-5,
-                                               .maximumDepth=18,
+                                               .maximumDepth=12,
                                                .reactionModel=gRadiationReactionModel});
             }
             events[static_cast<size_t>(index)] = std::move(event);

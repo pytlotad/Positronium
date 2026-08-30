@@ -411,6 +411,44 @@ para:orto wynosi 36:80 (\(\approx1{:}2{,}2\)) wobec izotropowego 1:3 — przy
 116 zdarzeniach związanych to wciąż szum statystyczny, nie odchylenie
 systemowe. Zero `NumericalFailure`/`Unresolved` na całej próbie.
 
+**Nieaktualne po naprawie zamrożenia bufora historii retardowanej**
+(`appendStateHistory`, gałąź "keep the leading edge current" dodana przez
+`d164f69` samą). Powyższe "Zero `NumericalFailure`/`Unresolved`" i "koszt
+zegara wyższy tylko o ~8,5%" mierzono na silniku z INNYM sprzężeniem siatki
+historii z krokiem niż to, które `d164f69` naprawiło: gałąź, którą sam
+`d164f69` dodał, porównywała nowo przychodzący czas z polem, które ta sama
+gałąź nadpisywała, więc pod utrzymującym się ciągiem pod-progowych
+półkroków — dokładnie w finalnym zbliżeniu do bariery Comptona — bufor
+przestawał w ogóle rosnąć. To sztucznie ułatwiało zbieżność coarse/fine
+właśnie tam, gdzie powyższy pomiar liczył awarie.
+
+Powtórzone tą samą metodologią (te same ziarna 7 i 42, N=200, próg
+`comptonBarrierRadius`) na naprawionym silniku:
+
+| ziarno | Collision | Scattering | związane | Unresolved | NumericalFailure | czas |
+|---|---|---|---|---|---|---|
+| 7 | 7 (3,5%) | 121 (60,5%) | 13 (6,5%) | 3 (1,5%) | **56 (28,0%)** | 4m31s |
+| 42 | 5 (2,5%) | 113 (56,5%) | 13 (6,5%) | 3 (1,5%) | **66 (33,0%)** | 4m55s |
+
+Prawie jedna trzecia zdarzeń nie rozwiązuje się nawet z drabinką retry — i
+nie z powodu zbyt płytkiego budżetu subdywizji: sweep depth 8/12/18 dla
+ziarna 7 (N=60) pokazał, że 8 i 12 dają bit-identyczny zestaw 11/60 awarii, a
+18 odzyskuje z niego dokładnie jedno zdarzenie za trzykrotny koszt czasu
+(28s→85s) i nowy `Unresolved` (`eventWallClockBudgetSeconds` jest dzielony z
+tanim pierwszym przebiegiem i nie został podniesiony razem z głębią). Podłoga
+jest więc stabilnym zbiorem awarii, którego drabinka retry prawie nie rusza
+niezależnie od budżetu — ten sam wzorzec co w podsekcji "Podłoga zasięgu
+CREM" wyżej dla `crem_collapse.hpp` (tam też "zwiększenie głębokości... nie
+zmienia nic"), tylko odkryty tu drugi raz, w innym miejscu tego samego
+silnika.
+
+**Wniosek: bariera Comptona NIE jest niezawodnie osiągalna przez ten silnik**
+przy domyślnej energii (0,6 eV) — ~28-33% zdarzeń, nie 0%. Produkcyjny
+przebieg N=1000 cytowany niżej pochodzi z tej samej ery kodu i niesie to samo
+ryzyko; nie został niezależnie przemierzony po tej naprawie, więc jego "Zero
+`NumericalFailure`/`Unresolved`" należy traktować jako nieaktualne do czasu
+ponownego pomiaru, nie jako potwierdzenie na pełnej próbie.
+
 Ponownie przeliczone po serii ośmiu poprawek warstwy sekularnej CREM
 (`ecf7380`…`0ebc7d2`: zaciśnięcie prawa siły/energii pod barierą Comptona,
 regularyzowane periapsis/apoapsis/okres, zamknięty wzór na wykładnik momentu
