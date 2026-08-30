@@ -3661,8 +3661,17 @@ InteractionEvent simulateInteractionEvent(
     ClassicalTrajectoryEngine::Accuracy accuracy) {
     std::mt19937_64 random(seed);
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
-    std::normal_distribution<double> energyGaussian(
-        configuration.meanKineticEnergy, configuration.kineticEnergySigma);
+    // std::normal_distribution requires stddev > 0; a zero-sigma constructor
+    // call is undefined behaviour and aborts under _GLIBCXX_ASSERTIONS /
+    // _GLIBCXX_DEBUG.  The interface legitimately allows kineticEnergySigma
+    // == 0 (a monochromatic beam -- see the guard in sampleKinetic below,
+    // and the same zero-sigma convention in simulateBeamEvent), so only set
+    // a real parameter once sigma is known to be positive.
+    std::normal_distribution<double> energyGaussian;
+    if (configuration.kineticEnergySigma > 0.0) {
+        energyGaussian.param(std::normal_distribution<double>::param_type(
+            configuration.meanKineticEnergy, configuration.kineticEnergySigma));
+    }
     std::normal_distribution<double> impactGaussian(
         0.0, configuration.impactParameterSigma);
 
