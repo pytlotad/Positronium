@@ -2947,7 +2947,7 @@ dnie drabiny \(\hbar\omega\) myli się trzykrotnie.
 Sprawdzone przeciw wzorowi analitycznemu
 \(\Delta E/\hbar\omega=n(2n-1)/(2(n-1)^2)\):
 
-| `--emission` | `poisson` | **Model produkcyjny.** Próg, na którym pada skwantowany foton. `poisson` losuje go z \(\mathrm{Exp}(1)\) — emisja spontaniczna z szumem śrutowym, zachowanie domyślne i fizyczne. `deterministic` ustawia próg na stałe \(1\), więc foton pada dokładnie wtedy, gdy orbita straciła ciągle jeden kwant (bankowany hazard to wypromieniowana energia w kwantach) — krok w stronę deterministycznego wyznaczania parametrów kwantowych, w którym energia fotonu wynika z orbity, a czas z jej ciągłej utraty energii. Zmierzone: \(\sigma/\mu\) spada z \(0{,}894\) do \(0{,}343\), średnia pozostaje bez zmian. Nie sprowadza rozkładu do odpowiedzi kontinuum — patrz sekcja „`--emission deterministic`" wyżej. |
+| `--emission` | `deterministic` | **Model produkcyjny.** Próg, na którym pada skwantowany foton. `deterministic` ustawia próg na stałe \(1\), więc foton pada dokładnie wtedy, gdy orbita straciła ciągle jeden kwant (bankowany hazard to wypromieniowana energia w kwantach) — krok w stronę deterministycznego wyznaczania parametrów kwantowych, w którym energia fotonu wynika z orbity, a czas z jej ciągłej utraty energii; **domyślne od czasu, gdy "ostre przygotowanie" (orbita startowa dokładnie kołowa, e=0) usunęło ostatnie nielosowe źródło rozrzutu** — patrz sekcja „`--emission deterministic`" wyżej, gdzie przy N=100 na jednym ziarnie \(\sigma/\mu\) spada z \(0{,}883\) (Poisson) do \(4{,}0{\times}10^{-11}\) (czysty szum zmiennoprzecinkowy), a średnia zostaje ta sama w granicach błędu (\(6398{,}9\pm568{,}1\) ps wobec \(6206{,}4\) ps). `poisson` losuje próg z \(\mathrm{Exp}(1)\) — emisja spontaniczna z szumem śrutowym, wciąż dostępna dla tego, kto chce statystyki emisji spontanicznej, a nie estymatora samej trajektorii. Żaden tryb nie sprowadza rozkładu do odpowiedzi kontinuum. |
 | `--level` | \(n\) startowe | zmierzone | wzór |
 |---|---|---|---|
 | 2 | 2,0994 | 2,778 | 2,778 |
@@ -4304,9 +4304,10 @@ pasmo rezonansowe nie robi praktycznie nic, szersze pasma tylko pompują
 energię i powodują ucieczkę orbity, nigdy stabilizację. To nie jest
 bezpośredni test "czy ZPF wyzwala pojedyncze zdarzenia emisji
 deterministycznie", ale pokazuje, że próba samouzgodnionego domknięcia
-tej pętli w tej architekturze już się nie powiodła — więc **domyślny** wybór
-(losowość Poissona) jest zgodny z główną gałęzią fizyki, nie arbitralnym
-uproszczeniem.
+tej pętli w tej architekturze już się nie powiodła — więc losowość Poissona
+(`--emission poisson`; `deterministic` jest dziś domyślny z powodów
+opisanych niżej, nie dlatego że Poisson przestał być fizycznie właściwym
+opisem) jest zgodna z główną gałęzią fizyki, nie arbitralnym uproszczeniem.
 
 *Uzupełnienie: częściowy determinizm już w repozytorium, i czym dokładnie
 jest.* Zdanie „obecny wybór to czysta losowość Poissona" opisuje wyłącznie
@@ -4651,9 +4652,36 @@ zostaje nic losowanego. Oba tryby są modelami produkcyjnymi, nie sondami.
 
 Odstępstwo od opisu konwencjonalnego trzeba przy tym wypowiedzieć wprost, a
 nie ukryć: emisja spontaniczna jest zwykle modelowana jako proces Poissona i
-z tego powodu `poisson` pozostaje wartością domyślną. To, co daje tryb
+to był powód, dla którego `poisson` był wartością domyślną. To, co daje tryb
 deterministyczny, jest natomiast zmierzone: \(85\%\) wariancji czasu kolapsu
-okazuje się szumem śrutowym, a nie własnością pary.
+okazywało się szumem śrutowym, a nie własnością pary.
+
+**Na wyraźną prośbę: `deterministic` stał się nowym domyślnym modelem
+produkcyjnym.** Powyższa tabela (osiem ziaren, \(\sigma/\mu\): \(0{,}894\to
+0{,}343\)) pochodzi sprzed "ostrego przygotowania" — startu dokładnie na
+kołowej orbicie Bohra (\(e=0\)), zamiast próbkowanego pasma mimośrodów
+\([0{,}72,0{,}97]\), które wtedy dostarczało pozostałe \(15\%\) wariancji
+(rozrzut warunków początkowych). Ostre przygotowanie usunęło to pasmo z
+zupełnie innego powodu (patrz jego własna sekcja), ale efektem ubocznym jest,
+że nie zostało już nic, co szum śrutowy miałby wobec siebie uśredniać.
+Zmierzone ponownie po tej zmianie (N=\(100\), jedno ziarno, \(n{=}2{\to}1\)):
+
+| | Poisson | deterministyczny |
+|---|---|---|
+| \(\sigma/\mu\) | \(0{,}883\) | \(4{,}0{\times}10^{-11}\) |
+| mediana | \(4462{,}85\) ps | \(6206{,}42\) ps |
+| średnia | \(6398{,}9\pm568{,}1\) ps | \(6206{,}42\) ps |
+
+\(\sigma/\mu=0{,}883\) dla Poissona wciąż zgadza się z dawnym \(0{,}894\) w
+granicach szumu próby — ta część pomiaru się nie zmieniła. Zmieniło się to,
+że reszta (dawne \(0{,}343\)) spadła do poziomu szumu zmiennoprzecinkowego:
+każda z \(100\) trajektorii ma dziś identyczną, kołową moc Larmora, więc próg
+deterministyczny nie ma już czego uśredniać — cały raportowany rozrzut trybu
+Poissona jest dziś w \(100\%\) szumem śrutowym samego losowania progu, nie
+konkurencyjną przepowiednią fizyczną. Średnia zostaje zachowana w granicach
+błędu (\(0{,}34\) odchylenia standardowego). `deterministic` jest więc dziś
+ściśle lepszym estymatorem samej trajektorii; `poisson` zostaje dostępny pod
+`--emission poisson` dla statystyk emisji spontanicznej jako takiej.
 
 **Na wyraźną prośbę: `CREM_HARMONIC` stał się nowym domyślnym modelem
 produkcyjnym.** Ta sama zmienna środowiskowa zostaje, ale zmienia się jej

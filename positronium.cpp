@@ -1126,9 +1126,10 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 // model can time.
 inline int gInitialPrincipalLevel = 2;
 
-// Whether the quantized emission draws its next threshold from Exp(1) (the
-// default, a genuine Poisson process) or fires deterministically as soon as
-// one quantum's worth of energy has accumulated.
+// Whether the quantized emission draws its next threshold from Exp(1) (a
+// genuine Poisson process, available via --emission poisson) or fires
+// deterministically as soon as one quantum's worth of energy has
+// accumulated -- the default since the measurement below.
 //
 // The two differ by ONE constant, and the reason is worth stating because it
 // makes the deterministic variant nearly free.  The banked hazard is
@@ -1150,11 +1151,22 @@ inline int gInitialPrincipalLevel = 2;
 //
 // The departure this makes from the conventional description is worth
 // stating plainly rather than hiding: spontaneous emission is normally
-// modelled as Poissonian, and poisson remains the default for that reason.
-// What deterministic buys, measured, is that 85% of the collapse-time
-// variance turns out to be shot noise rather than anything about the pair --
-// sigma/mu falls from 0.894 to 0.343 while the mean is unchanged.
-inline bool gDeterministicEmission = false;
+// modelled as Poissonian, and that used to be why Poisson was the default.
+// What changed the answer is that the "sharp preparation" -- the pair now
+// starts on an EXACT circular Bohr orbit (e=0), not a sampled eccentricity
+// band -- removed the last non-shot-noise source of collapse-time spread.
+// Re-measured after that change (N=100, seed 7, level 2 -> 1): Poisson
+// sigma/mean = 0.883 (matches the old 0.894 within sampling noise), while
+// deterministic sigma/mean = 4.0e-11 -- floating-point noise, not physics,
+// because every trajectory now shares the identical circular Larmor rate and
+// there is nothing left for the threshold draw to average over. The mean is
+// preserved as claimed: 6398.9+/-568.1 ps (Poisson) against 6206.4 ps
+// (deterministic), 0.34 standard errors apart. Poisson's entire reported
+// spread is therefore shot noise around that same number, not a competing
+// physical prediction, so deterministic is the better default estimator of
+// the trajectory itself; --emission poisson remains available for whoever
+// specifically wants the spontaneous-emission statistics.
+inline bool gDeterministicEmission = true;
 
 // EXPERIMENT, not part of the model -- the same standing as --zpf, and aimed
 // at the same gap: CREM is a classical radiative inspiral with nothing to
