@@ -8616,6 +8616,85 @@ bariery na próg retardacyjny. Liczba ukończeń pod stałym budżetem wallclock
 drgnęła, więc 64 wywołania siły na checkpoint są przy mechanicznie całkowanej
 orbicie niezauważalne.
 
+#### Niezależne potwierdzenie: pełny silnik mechaniczny, poza estymatorem sekularnym
+
+Wszystko powyżej mierzy konsekwencje tego członu **wewnątrz estymatora
+sekularnego** (`estimateCremCollapse`), którego własna ziarnistość emisji —
+po dzisiejszym przejściu na domyślne \(\hbar\omega_{\rm orb}\) bez importowanej
+drabiny — okazała się sama w sobie duża: **cała kaskada to dziś zaledwie
+\(4\) fotony, każdy ucinający ~50% pozostałego \(L\)** (zmierzone,
+`--emission deterministic` i `poisson` dają ten sam rozkład 4 fotonów/0,495 na
+foton — nie jest to więc artefakt akurat determinizmu, tylko skali energii
+fotonu ℏω_orb). Efekt spin-orbita (rzędu \(10^{-2}\)–\(10^{-9}\) w zależności
+od promienia) nie ma żadnej szansy przebić się przez cztery kroki po 50%.
+
+Zmierzone więc **niezależnie**, przez `runMechanicalTrajectory` (ten sam
+silnik co eksperyment 5) zamiast estymatora sekularnego, z dwoma
+zabezpieczeniami metodycznymi:
+
+1. **Prędkość kołowa samouzgodniona z pełną siłą** (Coulomb+Darwin, bez
+   dipoli), nie ze wzoru nierelatywistycznego \(\sqrt{K/\mu r}\) — przy
+   \(r=4\)–\(8\,r^*\), \(\beta\approx0{,}09\)–\(0{,}13\), naiwny wzór myli się
+   o pełne \(50\%\) (nie o kilka procent — sprawdzone: bez korekty nawet
+   kontrola BEZ dipoli "spada" o połowę promienia w 500 orbitach, co jest
+   artefaktem złego warunku początkowego, nie fizyki). Po korekcie (bisekcja
+   na rzeczywistej sile) orbita zostaje kołowa co do 4 cyfr przez cały
+   przebieg, dla wszystkich trzech konfiguracji.
+2. **Reakcja promieniowania wyłączona** (`disabled`) — czysta dynamika
+   zachowawcza (Coulomb, Darwin, dipol-dipol, spin-orbita, precesja BMT), bez
+   samosiły E1 i bez momentu reakcji M1 (`applyDipoleReactionTorque`), który
+   inaczej mieszałby się z sygnałem: para i ortho różnią się też koherencją
+   promieniowania M1 (Sonda 5), więc bez tego wyłączenia efekt byłby
+   nieodróżnialny od spin-orbity.
+
+\(500\) orbit, kołowo, \(\mu_1\) w płaszczyźnie orbity, para \(\boldsymbol\mu_2=+\boldsymbol\mu_1\),
+ortho \(\boldsymbol\mu_2=-\boldsymbol\mu_1\), kontrola bez momentów:
+
+| \(r_0/r^*\) | para \(\Delta L_z/L_0\) | ortho \(\Delta L_z/L_0\) | kontrola (szum) |
+|---|---|---|---|
+| \(8\) | \(-1{,}24\%\) | \(+1{,}60\%\) | \(+0{,}17\%\) |
+| \(4\) | \(-4{,}67\%\) | \(+5{,}66\%\) | \(+0{,}34\%\) |
+
+Na obu promieniach: **przeciwny znak między kanałami, porównywalna wielkość,
+wyraźnie ponad szumem kontroli, rosnąca przy zbliżeniu do bariery** — dokładnie
+sygnatura, którą `azimuthAveragedSpinOrbitTorque` przewiduje analitycznie
+(`<tau_L> para=+3,69e-9, ortho=-3,69e-9`, przeciwny znak, stromy spadek z
+promieniem), teraz potwierdzona **niezależną ścieżką kodu** — pełną
+retardowaną mechaniką, nie kwadraturą fazową na kołowej aproksymacji. Sprzężenie
+spin-orbita jest więc realnym, zweryfikowanym dwiema metodami efektem — po
+prostu niewidocznym w statystykach `estimateCremCollapse` z powodu jego
+własnej, dziś jeszcze grubszej ziarnistości emisji, nie dlatego, że efekt jest
+zerowy czy niepoprawnie policzony.
+
+*I to pytanie zadane wprost eksperymentowi 5.* Skoro efekt jest realny w pełnej
+mechanice, a eksperyment 5 (interakcje) tej właśnie mechaniki używa bez
+pośrednictwa estymatora sekularnego — czy przebija się do jego statystyk
+zbiorczych? Sparowane A/B, ten sam silnik: tymczasowa flaga zerująca
+wyłącznie bezpośredni kanał ładunek-dipol w sile Lorentza wewnątrz
+`retardedExternalForces` (`q v x B_dipol(drugiej)`, dokładnie to samo, co
+zweryfikowano wyżej), zostawiająca `covariantDipoleGradientForce`
+(dipol-dipol i reakcyjną stronę ładunek-dipol) nietkniętą. N=\(200\), jedno
+ziarno, identyczne `eventSeed` w obu przebiegach (\(0\) rozbieżności — pełne
+sparowanie), silnik w pełni deterministyczny, więc każda różnica jest
+przyczynowa, nie szumem:
+
+```
+rozbiezne klasyfikacje (spin-orbita wl. vs wyl.): 2/200 = 1,0%
+Collision            -> NumericalFailure    : 1
+Ortho-Positronium    -> Scattering          : 1
+```
+
+Agregaty przesuwają się dokładnie o te dwa przypadki (Collision \(4\to3\),
+Ortho \(11\to10\), para:ortho \(2{:}11\to2{:}10\)) — nic więcej. Mniej niż
+\(57\)–\(58\%\) z estymatora sekularnego, ale to inne pytanie: tamten wynik
+mierzył przypisanie **przyczyny zatrzymania** (rozstrzygnięcie na styk dwóch
+niemal wyrównanych warunków numerycznych), a to mierzy **końcową
+klasyfikację fizyczną** (Collision/Scattering/Para/Ortho) — dużo bardziej
+odporną na małe zaburzenia siły. Że w ogóle jest niezerowe i deterministyczne
+potwierdza: kanał spin-orbita ma realny, mierzalny — choć mały — wpływ na to,
+jak kończy się pojedyncza trajektoria eksperymentu 5, dokładnie tam, gdzie
+bezpośredni pomiar mechaniczny wyżej przewidywał, że powinien być widoczny.
+
 #### Ostrze noża wobec obu członów magnetycznych: nadal nie, ale kanały jednak się różnią
 
 Przeliczone po raz trzeci, bo od poprzedniego sprawdzenia energia
