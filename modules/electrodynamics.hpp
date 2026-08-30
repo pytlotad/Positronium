@@ -2696,8 +2696,19 @@ void appendStateHistory(StateHistory& history, const State& state) {
     // it against the LL route at that point compares against a near-zero
     // vector.  That is a measurement trap, not a second bug.
     constexpr std::size_t targetHistoryNodes = 128;
+    // Anchor the freshness check on the last COMMITTED node
+    // (history[size-2]), not on history.back() itself: back() is exactly the
+    // field this branch overwrites, so comparing against it made the gap
+    // reset to the current step's dt on every call and never accumulate.
+    // Under sustained sub-threshold steps -- the deep, stiff part of a
+    // collapsing trajectory, where recursive step halving pushes dt below
+    // retentionTime/128 while the retentionTime floor stops shrinking -- that
+    // meant no new node was ever committed and stale-sample eviction below
+    // (which only runs past this early return) never ran either, while the
+    // spacing between the last two genuine nodes grew unboundedly instead of
+    // staying pinned near the target.
     if (history.size() >= 2
-        && state.time - history.back().time
+        && state.time - history[history.size()-2].time
                < retentionTime / static_cast<double>(targetHistoryNodes)) {
         // Keep the leading edge current without densifying the grid.
         history.back() = state;

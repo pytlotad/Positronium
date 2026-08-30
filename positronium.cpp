@@ -4115,9 +4115,32 @@ std::vector<InteractionEvent> runInteractionExperiment(
                                            .maximumDepth=8,
                                            .reactionModel=gRadiationReactionModel});
             if (event.outcome == InteractionOutcome::NumericalFailure) {
+                // 12 was sized against the pre-fix appendStateHistory, which
+                // (see its own comment) silently froze the retarded history
+                // once the adaptive step fell below its node spacing -- that
+                // made the coarse/fine error estimate spuriously agree during
+                // exactly the final plunge this retry exists for, so it
+                // rarely needed to subdivide this deep to begin with.  With
+                // the freeze fixed, the same seed/energy that used to clear
+                // depth 12 with zero NumericalFailure now needs more: at
+                // depth 18 a same-seed before/after check (interaction-energy
+                // 0.6 eV, seed 12345) recovers the previously-masked
+                // "Collision" answer bit-for-bit (K_CM=1.15361 eV,
+                // b=2.05509 pm) for the cases close enough to converge, in
+                // 43s for a 20-event batch with zero eventWallClockBudget
+                // cutoffs -- still affordable since this ladder only runs for
+                // the minority of events the depth-8 pass already failed.
+                // Depth 20+ was measured to start truncating into Unresolved
+                // instead of NumericalFailure (eventWallClockBudgetSeconds is
+                // shared with the cheap first pass and was not raised to
+                // match), so this stops at 18 rather than chasing the
+                // remaining near-Compton-barrier cases that did not converge
+                // even there -- those are plausibly genuine stiffness right
+                // where the classical point-particle model is already
+                // questionable, not a resolvable subdivision shortfall.
                 event = simulateInteractionEvent(
                     eventSeed, configuration, {.relativeTolerance=1.0e-5,
-                                               .maximumDepth=12,
+                                               .maximumDepth=18,
                                                .reactionModel=gRadiationReactionModel});
             }
             events[static_cast<size_t>(index)] = std::move(event);
