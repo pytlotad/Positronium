@@ -406,64 +406,10 @@ double dipoleSecondInvariant(const DipoleTensor& dipole) {
 // presentation apart -- see the header's own comment).
 #include "modules/separation_crossing.hpp"
 
-struct Frame {
-    Vec3 first, second, firstDipole, secondDipole;
-    Vec3 noetherMomentum, noetherAngularMomentum;
-    Vec3 radiatedMomentum, radiatedAngularMomentum;
-    double canonicalMomentumScale;
-    double time, radius, radiatedEnergy, mechanicalEnergy, schottEnergy;
-    double firstMechanicalEnergy, secondMechanicalEnergy;
-    double boundFieldEnergy=0.0,reactionEnergyMismatch=0.0;
-    Vec3 boundFieldMomentum,boundFieldAngularMomentum;
-    Vec3 reactionMomentumMismatch,reactionAngularMomentumMismatch;
-};
-
-enum class Phenomenon { DirectCollision, Scattering, ParaPositronium, OrthoPositronium };
-enum class SimulationOutcome { ReachedCutoff, ObservationLimit, NumericalFailure };
-enum class VisualStyle { Unselected, Line, Dot };
-
-struct InitialConditions {
-    double relativeEnergy;
-    double orbitalAngularMomentum;
-    double predictedClosestApproach;
-    double dipoleAlignment;
-    double timeToCutoff;
-    Phenomenon phenomenon;
-    std::uint64_t seed;
-};
-
-struct SimulationResult {
-    std::vector<Frame> frames;
-    InitialConditions initial;
-    SimulationOutcome outcome;
-    double minimumSeparation;
-    double elapsedTime;
-    double finalRadiatedEnergy;
-    double maximumBeta;
-};
-
-struct SimulationOptions {
-    bool collectFrames = true;
-    int frameCount = 1200;
-    double observationTime = 0.0; // zero selects the phenomenon's visual window
-    // Positive values override the visual point-particle cutoff. Statistical
-    // CREM lifetime studies (experiments 1/2) instead pass comptonBarrierRadius
-    // directly as runMechanicalTrajectory's trajectoryCutoff argument, so this
-    // field is not what bounds them -- see crem_collapse.hpp.
-    double terminalSeparation = 0.0;
-    std::function<void(const Frame&)> frameReady;
-    // Called after every accepted integration step.  Unlike frameReady this
-    // is independent of physical-time sampling and is therefore suitable for
-    // keeping an interactive visualization responsive.
-    std::function<void(const State&)> stepReady;
-    std::function<bool()> stopRequested;
-    // Set false by callers that never read radiatedEnergy / radiatedMomentum /
-    // radiatedAngularMomentum / boundField* from the result.  It switches off
-    // the far-zone Poynting quadrature, which is the dominant per-step cost
-    // and does not influence the trajectory (see
-    // ClassicalTrajectoryEngine::Accuracy::computeOutwardFlux).
-    bool radiatedEnergyBookkeeping = true;
-};
+// Frame, Phenomenon, SimulationOutcome, VisualStyle, InitialConditions,
+// SimulationResult, SimulationOptions (Stage 0 of splitting engine/
+// experiments/ROOT presentation apart -- see the header's own comment).
+#include "modules/simulation_interface.hpp"
 
 // clampedSeparationVector, separationFloor, PairGeometry, pairGeometry,
 // clampedPairGeometry, separation (Stage 0 of splitting engine/experiments/
