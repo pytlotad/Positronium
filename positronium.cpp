@@ -402,24 +402,9 @@ double dipoleSecondInvariant(const DipoleTensor& dipole) {
 // presentation apart -- see the header's own comment).
 #include "modules/state_validity_interpolation.hpp"
 
-double separationCrossingFraction(const State& before,const State& after,
-                                  double targetSeparation) {
-    const Vec3 initial=before.firstPosition-before.secondPosition;
-    const Vec3 change=(after.firstPosition-after.secondPosition)-initial;
-    const double quadratic=dot(change,change);
-    const double linear=2.0*dot(initial,change);
-    const double constant=dot(initial,initial)-targetSeparation*targetSeparation;
-    if(quadratic<=1.0e-300) {
-        if(std::abs(linear)<=1.0e-300) return 1.0;
-        return std::clamp(-constant/linear,0.0,1.0);
-    }
-    const double discriminant=std::max(0.0,linear*linear-4.0*quadratic*constant);
-    const double root1=(-linear-std::sqrt(discriminant))/(2.0*quadratic);
-    const double root2=(-linear+std::sqrt(discriminant))/(2.0*quadratic);
-    if(root1>=0.0&&root1<=1.0) return root1;
-    if(root2>=0.0&&root2<=1.0) return root2;
-    return std::clamp(root1,0.0,1.0);
-}
+// separationCrossingFraction (Stage 0 of splitting engine/experiments/ROOT
+// presentation apart -- see the header's own comment).
+#include "modules/separation_crossing.hpp"
 
 struct Frame {
     Vec3 first, second, firstDipole, secondDipole;
