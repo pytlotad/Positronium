@@ -1429,6 +1429,102 @@ int runMaxwellSelfTest(
         && bmtEffectiveFieldGapActiveG<1.0e-9
         && bmtEffectiveFieldGapHighBeta<1.0e-9;
 
+    // Coupled secular spin-orbit transport.  This is separate from the BMT
+    // check above: exact rotations can preserve each |mu| while still losing
+    // the angular momentum transferred between spin and orbit.  Exercise a
+    // finite, nonlinear turn at three substep bounds and independently rebuild
+    // J=L+mu1/gamma1+mu2/gamma2 from every result.
+    const double secularRadius=pairBohrRadius(activePair);
+    const Vec3 secularFirstDirection{0.31,-0.47,0.826619};
+    const Vec3 secularSecondDirection{-0.62,0.19,0.761249};
+    const SecularSpinOrbitState secularInitial{
+        {0.17*hbar,-0.11*hbar,hbar},
+        secularFirstDirection
+            *(firstMagneticMoment/secularFirstDirection.norm()),
+        secularSecondDirection
+            *(secondMagneticMoment/secularSecondDirection.norm())};
+    const OrbitAveragedBmtAngularVelocities secularInitialRates=
+        orbitAveragedBmtAngularVelocities(
+            secularRadius,secularInitial.orbitalAngularMomentum,
+            secularInitial.firstDipole,secularInitial.secondDipole,
+            pairReducedMass);
+    const double secularAngularSpeed=secularInitialRates.valid
+        ?std::max(secularInitialRates.first.norm(),
+                  secularInitialRates.second.norm()):0.0;
+    const double secularElapsed=secularAngularSpeed>0.0
+        ?0.5/secularAngularSpeed:0.0;
+    const SecularSpinOrbitAdvance secularCoarse=
+        advanceCoupledSecularSpinOrbit(
+            secularInitial,secularRadius,pairReducedMass,secularElapsed,0.05);
+    const SecularSpinOrbitAdvance secularFine=
+        advanceCoupledSecularSpinOrbit(
+            secularInitial,secularRadius,pairReducedMass,secularElapsed,0.025);
+    const SecularSpinOrbitAdvance secularReference=
+        advanceCoupledSecularSpinOrbit(
+            secularInitial,secularRadius,pairReducedMass,secularElapsed,0.0125);
+    // External torque belongs to the source of the configured field, not to
+    // the orbital reaction.  Exercise that branch explicitly and restore the
+    // process-wide option before any later validation probe observes it.
+    const Vec3 savedExternalMagneticField=gExternalMagneticField;
+    gExternalMagneticField={0.23,-0.17,0.31};
+    const OrbitAveragedBmtAngularVelocities secularExternalRates=
+        orbitAveragedBmtAngularVelocities(
+            secularRadius,secularInitial.orbitalAngularMomentum,
+            secularInitial.firstDipole,secularInitial.secondDipole,
+            pairReducedMass);
+    const double secularExternalSpeed=secularExternalRates.valid
+        ?std::max(secularExternalRates.first.norm(),
+                  secularExternalRates.second.norm()):0.0;
+    const SecularSpinOrbitAdvance secularExternal=
+        advanceCoupledSecularSpinOrbit(
+            secularInitial,secularRadius,pairReducedMass,
+            secularExternalSpeed>0.0?0.2/secularExternalSpeed:0.0,0.025);
+    gExternalMagneticField=savedExternalMagneticField;
+    const double secularFirstNormDrift=secularReference.completed
+        ?std::abs(secularReference.state.firstDipole.norm()
+            /secularInitial.firstDipole.norm()-1.0)
+        :std::numeric_limits<double>::infinity();
+    const double secularSecondNormDrift=secularReference.completed
+        ?std::abs(secularReference.state.secondDipole.norm()
+            /secularInitial.secondDipole.norm()-1.0)
+        :std::numeric_limits<double>::infinity();
+    const auto secularDifference=[&](const SecularSpinOrbitState& first,
+                                     const SecularSpinOrbitState& second) {
+        const double firstGyromagneticRatio=firstGyromagneticRatioOf();
+        const double secondGyromagneticRatio=secondGyromagneticRatioOf();
+        const double scale=secularInitial.orbitalAngularMomentum.norm()
+            +secularInitial.firstDipole.norm()
+                /std::abs(firstGyromagneticRatio)
+            +secularInitial.secondDipole.norm()
+                /std::abs(secondGyromagneticRatio);
+        return ((first.orbitalAngularMomentum-second.orbitalAngularMomentum).norm()
+            +(first.firstDipole-second.firstDipole).norm()
+                /std::abs(firstGyromagneticRatio)
+            +(first.secondDipole-second.secondDipole).norm()
+                /std::abs(secondGyromagneticRatio))/scale;
+    };
+    const double secularCoarseFineDifference=
+        secularDifference(secularCoarse.state,secularFine.state);
+    const double secularFineReferenceDifference=
+        secularDifference(secularFine.state,secularReference.state);
+    const bool secularSpinOrbitIdentityOk=secularInitialRates.valid
+        &&secularCoarse.completed&&secularFine.completed
+        &&secularReference.completed
+        &&secularCoarse.relativeAngularMomentumResidual<1.0e-12
+        &&secularFine.relativeAngularMomentumResidual<1.0e-12
+        &&secularReference.relativeAngularMomentumResidual<1.0e-12
+        &&secularFirstNormDrift<1.0e-12&&secularSecondNormDrift<1.0e-12;
+    const bool secularExternalTorqueOk=secularExternalRates.valid
+        &&secularExternal.completed
+        &&secularExternal.relativeAngularMomentumResidual<1.0e-12
+        &&secularExternal.externalAngularMomentumTransfer.norm()
+            >1.0e-6*hbar;
+    const bool secularSpinOrbitConvergenceOk=secularSpinOrbitIdentityOk
+        &&secularExternalTorqueOk
+        &&secularFineReferenceDifference
+            <0.6*secularCoarseFineDifference
+        &&secularFineReferenceDifference<1.0e-3;
+
     // ---------------------------------------------------------------------
     // Role routing in applyDipolePrecession().
     //
@@ -3599,6 +3695,18 @@ int runMaxwellSelfTest(
               << "BMT norm (2 rad): " << bmtNormDriftActiveG << " / "
                  << bmtNormDriftHighBeta
                  << "  (production routine, no renormalization)\n"
+              << "secular spin J/norm: "
+                 << secularReference.relativeAngularMomentumResidual << " / "
+                 << std::max(secularFirstNormDrift,secularSecondNormDrift)
+                 << "\n"
+              << "secular spin coarse/fine/ref: "
+                 << secularCoarseFineDifference << " / "
+                 << secularFineReferenceDifference << "  ("
+                 << secularCoarse.substeps << "/" << secularFine.substeps
+                 << "/" << secularReference.substeps << " substeps)\n"
+              << "secular external dJ/hbar: "
+                 << secularExternal.externalAngularMomentumTransfer.norm()/hbar
+                 << '\n'
               << "role routing:     " << roleRoutingResidual
               << "  (obrot " << roleRoutingTravel << ")\n"
               << "particle boost F/R:" << covarianceForceResidual << " / "
@@ -3842,7 +3950,7 @@ int runMaxwellSelfTest(
         && std::isfinite(quantizedDipoleTorqueDrain)
         && quantizedChargeReactionDrain==0.0
         && quantizedDipoleConstraintDrain==0.0;
-    const std::array<ValidationCheck,42> regressionChecks{{
+    const std::array<ValidationCheck,44> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -3873,6 +3981,8 @@ int runMaxwellSelfTest(
         {ValidationSection::IndependentBalance,"long-horizon-radiative-balance",longHorizonBalanceOk},
         {ValidationSection::AlgebraicIdentity,"role-routing",roleRoutingOk},
         {ValidationSection::AlgebraicIdentity,"bmt-precession-invariant",bmtPrecessionOk},
+        {ValidationSection::AlgebraicIdentity,"coupled-secular-spin-orbit",secularSpinOrbitIdentityOk},
+        {ValidationSection::Convergence,"coupled-secular-spin-orbit-convergence",secularSpinOrbitConvergenceOk},
         {ValidationSection::AlgebraicIdentity,"quantized-radiation-drain",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"state-integrity",stateIntegrityOk},

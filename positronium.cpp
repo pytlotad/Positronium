@@ -559,6 +559,11 @@ inline bool gGroundStateEmissionFloor = false;
 
 #include "modules/crem_trajectory.hpp"
 
+// Shared by the production CREM estimator and the validation executable:
+// orbit-averaged Thomas-BMT transport with the orbital back-reaction evolved
+// in the same vector state.
+#include "modules/secular_spin_orbit.hpp"
+
 #ifndef POSITRONIUM_VALIDATION_EXECUTABLE
 // formatTableValue, cutoffTimeLabel, spinLabel (continuing the split of
 // engine/experiments/ROOT presentation apart -- see the header's own

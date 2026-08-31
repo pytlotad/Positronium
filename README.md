@@ -6136,13 +6136,14 @@ czytelności i rozdzieleniu odpowiedzialności.
 | `electrodynamics.hpp` | **prawa sił**: pola opóźnione, Darwin, sprzężenie dipolowe, reakcja promieniowania, strumień dalekiego pola |
 | `crem_engine.hpp` | **numeryka**: rekonstrukcja historii przyczynowej i adaptacyjny integrator (sonda błędu, podział kroku, retencja historii) |
 | `crem_trajectory.hpp` | warstwa trajektorii: `Frame`, wspólna pętla całkowania, sampler warunków początkowych i klasyfikacja zjawiska |
+| `secular_spin_orbit.hpp` | sprzężony, uśredniony po orbicie klasyczny transport wektorów \(L,S_1,S_2\), z adaptacyjnymi podkrokami BMT i jawnym bilansem zewnętrznego momentu siły |
 | `crem_collapse.hpp` | estymator kolapsu: całkowanie sekularne z uśrednianiem po orbitach oraz zamknięte odniesienia elektrodynamiczne |
 | `statistics_archive.hpp` | katalog wartości zmierzonych i teoretycznych |
 | `root_export.hpp` | atomowy zapis PDF |
 | `maxwell_validation*.hpp` | zestaw testów budowany do `positronium_validation` |
 
 Trzy moduły `crem_*` nie zawierają **żadnego kodu ROOT** — cała prezentacja
-pozostaje w `positronium.cpp`. Bieżąca walidacja ma 33 nazwane bramki; trzy
+pozostaje w `positronium.cpp`. Bieżąca walidacja ma 44 nazwane bramki; trzy
 pierwsze sprawdzają kinematykę dwuciałową, w tym zamianę ról nierównych mas,
 boost i boost odwrotny oraz warunek \(|v|<c\). Osobna bramka kontrolera
 adaptacyjnego wymusza odrzucenie kroku, który na `maximumDepth` nadal
@@ -7773,6 +7774,52 @@ pytania o sprzężenie) została zachowana. Pełne uzasadnienie i historia obu
 prób sprzężenia zwrotnego: komentarz przy `advanceSkippedDipolePrecession`
 w `modules/crem_collapse.hpp`. 39/39 PASS; produkcja (bez sprzężenia)
 niezmieniona co do cyfry względem stanu sprzed tego wątku.
+
+#### Trzecie podejście: sprzężony solver sekularny zamiast poprawki po fakcie
+
+Powyższy akapit opisuje stan historyczny. Produkcja nie używa już ani
+`advanceSkippedDipolePrecession`, ani osobnego skalarnego
+`azimuthAveragedSpinOrbitTorque`. Obie operacje zastąpił
+`advanceCoupledSecularSpinOrbit` w `modules/secular_spin_orbit.hpp`.
+
+Stan kroku zawiera teraz pełne wektory
+\(\mathbf L,\boldsymbol\mu_1,\boldsymbol\mu_2\). Dla każdego adaptacyjnego
+podkroku solver:
+
+1. oblicza 64-punktową średnią prędkości BMT po fazie orbitalnej,
+2. wykonuje predyktor do punktu środkowego dokładnymi obrotami Rodriguesa,
+3. odświeża pole na stanie pośrednim,
+4. obraca oba momenty przez cały podkrok,
+5. wyznacza orbitalny wektor z jednego bilansu
+   \(\mathbf J=\mathbf L+\boldsymbol\mu_1/\gamma_1+
+   \boldsymbol\mu_2/\gamma_2\).
+
+Kąt jednego podkroku jest ograniczony domyślnie do \(0{,}05\) rad. Nie ma
+więc próbki spinu raz na około \(1{,}66\) okresu precesji ani skoku
+\(\Delta\mathbf L=-\Delta\mathbf S\) dopisywanego po całym checkpointcie.
+Cały checkpoint stosuje symetryczny podział drugiego rzędu: pół kroku
+spin–orbita, pełny krok promieniowania/fotonów, pół kroku spin–orbita.
+Pole zewnętrzne i ZPF są rozdzielone od pola wewnętrznego: ich moment siły
+zmienia \(\mathbf J\) pary i nie jest błędnie oddawany orbicie.
+
+Naprawiono przy tym drugie naliczenie pierwszej orbity checkpointu. Orbita
+mechaniczna służy do pomiaru szybkości zmian sekularnych, ale jej czas jest
+już zawarty w `checkpointProperTime`. Dawny kod kopiował momenty z jej końca,
+a następnie precesował je ponownie przez czas obejmujący również tę orbitę.
+Nowy solver startuje od stanu początku checkpointu i przechodzi cały odcinek
+dokładnie raz.
+
+Walidacja sprawdza niezależnie zachowanie \(\mathbf J\), modułów obu momentów i
+zbieżność przy granicach kąta \(0{,}05/0{,}025/0{,}0125\) rad. W bieżącym
+teście reszta \(\mathbf J\) wynosi 0, dryf modułu \(2{,}2\cdot10^{-16}\), a
+błąd maleje około czterokrotnie po dwukrotnym zagęszczeniu, zgodnie z metodą
+drugiego rzędu. Zestaw walidacyjny przechodzi 44/44.
+
+To domyka **klasyczny zredukowany model momentu pędu**, ale nie usuwa
+ograniczenia fizycznego opisanego dalej: klasyczne wektory nadal nie są
+kwantowymi stanami własnymi singlet/triplet i model nadal nie zawiera członu
+kontaktowego Fermiego ani anihilacji wirtualnej. Wyniki para/ortho pozostają
+więc wynikami modelu klasycznego, nie pełną prognozą QED.
 
 ### Sektor spinowy: co się okazało, gdy zaczęto go mierzyć
 
