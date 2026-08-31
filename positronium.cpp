@@ -66,40 +66,11 @@
 #include "modules/root_export.hpp"
 #include "modules/statistics_archive.hpp"
 
-// These functions are intentionally global: ROOT's TButton invokes its action
-// through the interpreter while the animation loop observes these flags.
-bool gSimulationPaused = false;
-bool gExitRequested = false;
-TButton* gStopButton = nullptr;
-TCanvas* gVisualCanvas = nullptr;
-int gVisualPhenomenon = 0;
-bool gVisualExitSaveAttempted = false;
-
-void ToggleSimulation() {
-    gSimulationPaused = !gSimulationPaused;
-    // Update immediately on the click, not only on the next animation frame.
-    if (gStopButton) gStopButton->SetTitle(gSimulationPaused ? "START" : "STOP");
-}
-void ExitSimulation() {
-    gExitRequested = true;
-    if(gVisualCanvas&&gVisualPhenomenon>=1&&gVisualPhenomenon<=4) {
-        gVisualExitSaveAttempted=true;
-        gVisualCanvas->Modified();
-        gVisualCanvas->Update();
-        const root_export::ExportResult screenshot=
-            root_export::saveVisualScreenshot(
-                *gVisualCanvas,gVisualPhenomenon);
-        if(screenshot) {
-            std::cout<<"Saved visual screenshot: "
-                     <<screenshot.path.string()<<'\n';
-        } else {
-            std::cerr<<"Warning: could not save visual screenshot "
-                     <<screenshot.path.string()<<": "
-                     <<screenshot.error<<'\n';
-        }
-    }
-    if (gApplication) gApplication->Terminate(0);
-}
+// gSimulationPaused/gExitRequested/gStopButton/gVisualCanvas/
+// gVisualPhenomenon/gVisualExitSaveAttempted, ToggleSimulation,
+// ExitSimulation -- the presentation side of splitting engine/experiments/
+// ROOT presentation apart (see the header's own comment).
+#include "modules/visual_gui_controls.hpp"
 
 // Approximate relativistic two-body electrodynamics in SI units. Mutual
 // Charge-charge forces use mutually retarded Lienard-Wiechert fields;
