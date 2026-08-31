@@ -218,7 +218,7 @@ inline ExportResult saveVisualScreenshot(
     const std::filesystem::path& outputDirectory = "distributions") {
     const std::string_view phenomenon = phenomenonNameAscii(selectedPhenomenon);
     if (phenomenon.empty()) {
-        return {outputDirectory, "phenomenon number must be from 1 to 4"};
+        return {outputDirectory, "phenomenon number must be from 1 to 5"};
     }
     return detail::savePadPdf(canvas,
         outputDirectory / (std::to_string(selectedPhenomenon)
@@ -233,7 +233,7 @@ inline std::vector<ExportResult> saveStatisticalPlots(
     const std::string_view phenomenon = phenomenonNameAscii(selectedPhenomenon);
     if (phenomenon.empty()) {
         results.push_back(
-            {outputDirectory, "phenomenon number must be from 1 to 4"});
+            {outputDirectory, "phenomenon number must be from 1 to 5"});
         return results;
     }
 

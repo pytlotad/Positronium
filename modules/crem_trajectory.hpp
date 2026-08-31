@@ -745,12 +745,25 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                     // event and the policy hardly matters; overwriting
                     // would nevertheless discard an unpaid remainder, which
                     // is an energy leak rather than a modelling choice.
+                    // BLEND, don't overwrite, the direction the still-unpaid
+                    // remainder is paid out along -- overwriting silently
+                    // handed the old window's whole unpaid remainder to the
+                    // new photon's direction, which conserves the energy (it
+                    // is accumulated, not replaced) but not the momentum of
+                    // that already-committed-but-unpaid share.  Weighted by
+                    // energy, since that is what each direction is worth in
+                    // the payout below.
+                    const Vec3 blendedDirection=
+                        emissionDirection*emissionRemaining
+                            +photonDirection*photonEnergy;
+                    const double blendedNorm=blendedDirection.norm();
+                    emissionDirection=blendedNorm>0.0
+                        ?blendedDirection*(1.0/blendedNorm):photonDirection;
                     emissionRemaining+=photonEnergy;
                     // One orbital period: an E1 photon of frequency omega
                     // cannot be assembled from a shorter wave train.
                     emissionRate=emissionRemaining
                         /(2.0*pi/std::max(omega,1.0e-300));
-                    emissionDirection=photonDirection;
                     const StochasticPhotonRecoil recoil{true,photonEnergy,
                                                         photonDirection};
                     if(std::getenv("CREM_DEBUG"))

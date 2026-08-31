@@ -803,6 +803,14 @@ ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
         }
         retardedTime = refinedTime;
     }
+    // source was last evaluated at the PREVIOUS iterate, one Newton step
+    // behind the retardedTime this loop just converged to (the other two
+    // Newton loops on this same light-cone equation, in
+    // retardedElectricDipoleField and retardedMagneticDipoleField, both
+    // re-fetch their source at the converged time for exactly this reason).
+    // Quadratic convergence keeps the resulting position/velocity/
+    // acceleration error tiny, but it is real and free to remove.
+    source = historicalCharge(history, presentState, sourceIsFirst, retardedTime);
     const Vec3 displacement = observationPosition - source.position;
     const double distance = displacement.norm();
     if(distance<=std::numeric_limits<double>::min()) return {};
@@ -1083,12 +1091,16 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 
 // Selected once from --radiation-reaction and read by every trajectory
 // constructed below (visual, beam and interaction experiments alike).
-// Defaults to individualLandauLifshitz (radiation ON): the electric-dipole
-// charge self-force is the only channel that removes orbital energy (see
-// individualLandauLifshitzSelfForces / coherentElectricDipoleReaction), and
-// estimateCremCollapse now measures the classical inspiral mechanically
-// rather than assuming it, so it needs that channel switched on to observe
-// anything.
+// Defaults to stochasticElectricDipole (radiation ON): the same E1 dipole
+// power individualLandauLifshitz would remove as a continuous drag force is
+// instead banked as Poissonian hazard and paid out in discrete,
+// momentum-conserving photon kicks -- see the enum's own comment in
+// electrodynamics.hpp for why (deterministic drag has no photon to report;
+// --emission deterministic bypasses the Poisson draw but still uses this
+// channel).  estimateCremCollapse now measures the classical inspiral
+// mechanically rather than assuming it, so it needs some such channel
+// switched on to observe anything; --radiation-reaction individual restores
+// the continuous-drag alternative.
 // [[maybe_unused]] because the validation executable's main() never reaches
 // the trajectory constructors that read this, so GCC sees no use in that
 // build.
@@ -6069,6 +6081,59 @@ int main(int argc, char** argv) {
                 }
                 return std::string(argv[++i]);
             };
+            // std::stoi/std::stod/std::stoull parse a leading PREFIX and
+            // silently ignore whatever follows it -- std::stoi("2junk")
+            // returns 2, no exception -- so "--level 2junk" was accepted as
+            // --level 2.  These wrap them with a check that the whole
+            // argument was consumed.
+            const auto parseInt = [](const std::string& option,
+                                     const std::string& text) {
+                std::size_t consumed = 0;
+                int value = 0;
+                try {
+                    value = std::stoi(text, &consumed);
+                } catch (const std::exception&) {
+                    throw std::invalid_argument(
+                        "value for " + option + " must be an integer: " + text);
+                }
+                if (consumed != text.size()) {
+                    throw std::invalid_argument(
+                        "value for " + option + " must be an integer: " + text);
+                }
+                return value;
+            };
+            const auto parseUnsignedLong = [](const std::string& option,
+                                              const std::string& text) {
+                std::size_t consumed = 0;
+                unsigned long long value = 0;
+                try {
+                    value = std::stoull(text, &consumed);
+                } catch (const std::exception&) {
+                    throw std::invalid_argument("value for " + option
+                        + " must be a non-negative integer: " + text);
+                }
+                if (consumed != text.size()) {
+                    throw std::invalid_argument("value for " + option
+                        + " must be a non-negative integer: " + text);
+                }
+                return value;
+            };
+            const auto parseDouble = [](const std::string& option,
+                                        const std::string& text) {
+                std::size_t consumed = 0;
+                double value = 0.0;
+                try {
+                    value = std::stod(text, &consumed);
+                } catch (const std::exception&) {
+                    throw std::invalid_argument(
+                        "value for " + option + " must be a number: " + text);
+                }
+                if (consumed != text.size()) {
+                    throw std::invalid_argument(
+                        "value for " + option + " must be a number: " + text);
+                }
+                return value;
+            };
             if (argument == "--diagnose") {
                 diagnose = true;
             } else if (argument == "--maxwell-test") {
@@ -6104,7 +6169,7 @@ int main(int argc, char** argv) {
                                                     // lines keep working
             } else if (argument == "--level") {
                 const std::string value = requireValue(argument);
-                const int level = std::stoi(value);
+                const int level = parseInt(argument, value);
                 if (level < 1 || level > 1000) {
                     throw std::invalid_argument(
                         "--level must be a principal quantum number in [1,1000]");
@@ -6113,11 +6178,11 @@ int main(int argc, char** argv) {
             } else if (argument == "--pair") {
                 applyPairFromOption(requireValue(argument));
             } else if (argument == "--seed") {
-                seed = std::stoull(requireValue(argument));
+                seed = parseUnsignedLong(argument, requireValue(argument));
             } else if (argument == "--phenomenon") {
-                selectedPhenomenon = std::stoi(requireValue(argument));
+                selectedPhenomenon = parseInt(argument, requireValue(argument));
             } else if (argument == "--runs") {
-                statisticalRuns = std::stoi(requireValue(argument));
+                statisticalRuns = parseInt(argument, requireValue(argument));
             } else if (argument == "--decay-events") {
                 (void)requireValue(argument);
                 throw std::invalid_argument(
@@ -6129,23 +6194,23 @@ int main(int argc, char** argv) {
                     "--stat-window-ps was removed: the CREM calibration window is "
                     "fixed by the orbit-averaged collapse estimator");
             } else if (argument == "--beam-energy-ev") {
-                beamEnergyEv = std::stod(requireValue(argument));
+                beamEnergyEv = parseDouble(argument, requireValue(argument));
             } else if (argument == "--beam-energy-sigma-ev") {
-                beamEnergySigmaEv = std::stod(requireValue(argument));
+                beamEnergySigmaEv = parseDouble(argument, requireValue(argument));
             } else if (argument == "--theta-min-deg") {
-                thetaMinimumDegrees = std::stod(requireValue(argument));
+                thetaMinimumDegrees = parseDouble(argument, requireValue(argument));
             } else if (argument == "--angle-bins") {
-                angleBins = std::stoi(requireValue(argument));
+                angleBins = parseInt(argument, requireValue(argument));
             } else if (argument == "--bmax-pm") {
-                impactParameterMaximumPm = std::stod(requireValue(argument));
+                impactParameterMaximumPm = parseDouble(argument, requireValue(argument));
             } else if (argument == "--matching-radius-pm") {
-                matchingRadiusPm = std::stod(requireValue(argument));
+                matchingRadiusPm = parseDouble(argument, requireValue(argument));
             } else if (argument == "--interaction-energy-ev") {
-                interactionEnergyEv = std::stod(requireValue(argument));
+                interactionEnergyEv = parseDouble(argument, requireValue(argument));
             } else if (argument == "--interaction-energy-sigma-ev") {
-                interactionEnergySigmaEv = std::stod(requireValue(argument));
+                interactionEnergySigmaEv = parseDouble(argument, requireValue(argument));
             } else if (argument == "--interaction-bsigma-pm") {
-                interactionImpactSigmaPm = std::stod(requireValue(argument));
+                interactionImpactSigmaPm = parseDouble(argument, requireValue(argument));
             } else if (argument == "--radiation-reaction") {
                 const std::string model = requireValue(argument);
                 if (model == "disabled") {
@@ -6166,7 +6231,7 @@ int main(int argc, char** argv) {
                         "disabled, coherent, individual, automatic or stochastic");
                 }
             } else if (argument == "--crem-wallclock-budget-s") {
-                cremWallClockBudgetSeconds = std::stod(requireValue(argument));
+                cremWallClockBudgetSeconds = parseDouble(argument, requireValue(argument));
                 if (!(cremWallClockBudgetSeconds > 0.0)
                     || !std::isfinite(cremWallClockBudgetSeconds)) {
                     throw std::invalid_argument(
@@ -6184,11 +6249,11 @@ int main(int argc, char** argv) {
                     throw std::invalid_argument("mode must be visual or statistical");
                 }
             } else if (argument == "--zpf-modes") {
-                zeroPointModes = std::stoi(requireValue(argument));
+                zeroPointModes = parseInt(argument, requireValue(argument));
                 if (zeroPointModes <= 0)
                     throw std::invalid_argument("--zpf-modes must be positive");
             } else if (argument == "--integrator-order") {
-                gIntegratorOrder = std::stoi(requireValue(argument));
+                gIntegratorOrder = parseInt(argument, requireValue(argument));
                 if (gIntegratorOrder != 2 && gIntegratorOrder != 4)
                     throw std::invalid_argument(
                         "--integrator-order must be 2 or 4");
@@ -6198,19 +6263,19 @@ int main(int argc, char** argv) {
                 if (comma == std::string::npos)
                     throw std::invalid_argument(
                         "--zpf-band needs lo,hi in units of the orbital frequency");
-                zeroPointBandLow = std::stod(value.substr(0, comma));
-                zeroPointBandHigh = std::stod(value.substr(comma + 1));
+                zeroPointBandLow = parseDouble(argument, value.substr(0, comma));
+                zeroPointBandHigh = parseDouble(argument, value.substr(comma + 1));
                 if (!(zeroPointBandHigh > zeroPointBandLow)
                     || !(zeroPointBandLow > 0.0))
                     throw std::invalid_argument("--zpf-band needs 0 < lo < hi");
             } else if (argument == "--zpf") {
-                zeroPointScale = std::stod(requireValue(argument));
+                zeroPointScale = parseDouble(argument, requireValue(argument));
                 if (!std::isfinite(zeroPointScale) || zeroPointScale < 0.0) {
                     throw std::invalid_argument(
                         "--zpf scale must be finite and non-negative");
                 }
             } else if (argument == "--external-field") {
-                externalFieldMicroTesla = std::stod(requireValue(argument));
+                externalFieldMicroTesla = parseDouble(argument, requireValue(argument));
                 if (!std::isfinite(externalFieldMicroTesla)
                     || externalFieldMicroTesla < 0.0) {
                     throw std::invalid_argument(
@@ -6223,6 +6288,14 @@ int main(int argc, char** argv) {
                 else throw std::invalid_argument("visual style must be line or dot");
             } else if (argument.rfind("--", 0) == 0) {
                 throw std::invalid_argument("unknown option " + argument);
+            } else {
+                // Every real option above is "--something"; a bare word here
+                // is not a value (those are consumed by requireValue inside
+                // the branch that expects them) but a stray positional
+                // argument, which used to fall through every branch above
+                // and be silently ignored.
+                throw std::invalid_argument("unexpected argument '" + argument
+                    + "' (options are all --flag or --flag value)");
             }
         }
     } catch (const std::exception& error) {
@@ -6468,8 +6541,10 @@ int main(int argc, char** argv) {
         // extrapolation, so the old 10000 ceiling could mean hours of
         // wall-clock time; 1000 keeps a full run in the tens-of-minutes
         // range while still giving smooth statistics.
-        const int maximumStatisticalRuns=selectedPhenomenon<=2?1000
-            :(selectedPhenomenon==5?100000:100000);
+        // Both non-CREM branches (3/4 beam trials and 5 interactions) share
+        // this ceiling; there used to be a selectedPhenomenon==5 branch here
+        // but it resolved to the same 100000 either way, so it is gone.
+        const int maximumStatisticalRuns=selectedPhenomenon<=2?1000:100000;
         if (statisticalRuns < 1 || statisticalRuns > maximumStatisticalRuns) {
             std::cerr << "The number of CREM trajectories/beam trials must be from 1 to "
                       <<maximumStatisticalRuns<<" for this experiment.\n";
