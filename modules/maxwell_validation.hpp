@@ -2863,6 +2863,142 @@ int runMaxwellSelfTest(
     const Vec3 cutoffDipoleForce=regularizedDipoleForce(
         {nuclearCutoff,0,0},{firstMagneticMoment,0,0},
         staticDipoleState.secondDipole);
+
+    // State integrity is intentionally tested independently of a physical
+    // trajectory.  Distinct, finite values in every member make omissions in
+    // interpolateState() visible instead of letting default zeroes pass.
+    const std::array stateVectorMembers{
+        &State::firstPosition,&State::secondPosition,
+        &State::firstVelocity,&State::secondVelocity,
+        &State::firstAcceleration,&State::secondAcceleration,
+        &State::firstDipole,&State::secondDipole,
+        &State::firstElectricDipole,&State::secondElectricDipole,
+        &State::firstProperDipole,&State::secondProperDipole,
+        &State::radiatedMomentum,&State::radiatedAngularMomentum,
+        &State::boundFieldMomentum,&State::boundFieldAngularMomentum,
+        &State::previousFluxMomentum,&State::previousFluxAngularMomentum,
+        &State::previousMismatchMomentum,&State::previousMismatchAngularMomentum,
+        &State::reactionMomentumMismatch,&State::reactionAngularMomentumMismatch
+    };
+    const std::array stateScalarMembers{
+        &State::time,&State::radiatedEnergy,&State::orbitalRadiatedEnergy,
+        &State::dipoleConstraintEnergy,&State::zeroPointPhase,
+        &State::boundFieldEnergy,&State::reactionEnergyMismatch,
+        &State::previousStepDt,&State::previousFluxEnergy,
+        &State::previousDipoleFluxEnergy,&State::previousMismatchEnergy
+    };
+    State interpolationBefore,interpolationAfter;
+    double stateTestValue=1.0;
+    for(const auto member:stateVectorMembers) {
+        interpolationBefore.*member={stateTestValue,stateTestValue+0.25,
+                                     stateTestValue+0.5};
+        interpolationAfter.*member={stateTestValue+20.0,stateTestValue+20.5,
+                                    stateTestValue+21.0};
+        stateTestValue+=1.0;
+    }
+    for(const auto member:stateScalarMembers) {
+        interpolationBefore.*member=stateTestValue;
+        interpolationAfter.*member=stateTestValue+20.0;
+        stateTestValue+=1.0;
+    }
+    interpolationBefore.hasPreviousRates=true;
+    interpolationAfter.hasPreviousRates=false;
+    const auto sameVector=[](const Vec3& first,const Vec3& second) {
+        return first.x==second.x&&first.y==second.y&&first.z==second.z;
+    };
+    const auto sameState=[&](const State& first,const State& second) {
+        return std::ranges::all_of(stateVectorMembers,[&](const auto member) {
+                return sameVector(first.*member,second.*member);
+            })
+            &&std::ranges::all_of(stateScalarMembers,[&](const auto member) {
+                return first.*member==second.*member;
+            })
+            &&first.hasPreviousRates==second.hasPreviousRates;
+    };
+    const std::array linearStateVectorMembers{
+        &State::firstPosition,&State::secondPosition,
+        &State::firstVelocity,&State::secondVelocity,
+        &State::firstAcceleration,&State::secondAcceleration,
+        &State::firstElectricDipole,&State::secondElectricDipole,
+        &State::radiatedMomentum,&State::radiatedAngularMomentum,
+        &State::boundFieldMomentum,&State::boundFieldAngularMomentum,
+        &State::reactionMomentumMismatch,&State::reactionAngularMomentumMismatch
+    };
+    const std::array dipoleStateMembers{
+        &State::firstDipole,&State::secondDipole,
+        &State::firstProperDipole,&State::secondProperDipole
+    };
+    const std::array continuousStateScalarMembers{
+        &State::time,&State::radiatedEnergy,&State::orbitalRadiatedEnergy,
+        &State::dipoleConstraintEnergy,&State::zeroPointPhase,
+        &State::boundFieldEnergy,&State::reactionEnergyMismatch
+    };
+    constexpr double stateInterpolationFraction=0.375;
+    const State interpolatedState=interpolateState(
+        interpolationBefore,interpolationAfter,stateInterpolationFraction);
+    const bool stateInterpolationOk=
+        sameState(interpolateState(interpolationBefore,interpolationAfter,0.0),
+                  interpolationBefore)
+        &&sameState(interpolateState(interpolationBefore,interpolationAfter,1.0),
+                   interpolationAfter)
+        &&std::ranges::all_of(linearStateVectorMembers,[&](const auto member) {
+            return sameVector(interpolatedState.*member,
+                interpolateVector(interpolationBefore.*member,
+                                  interpolationAfter.*member,
+                                  stateInterpolationFraction));
+        })
+        &&std::ranges::all_of(dipoleStateMembers,[&](const auto member) {
+            return sameVector(interpolatedState.*member,
+                interpolateDipole(interpolationBefore.*member,
+                                  interpolationAfter.*member,
+                                  stateInterpolationFraction));
+        })
+        &&std::ranges::all_of(continuousStateScalarMembers,
+            [&](const auto member) {
+                return interpolatedState.*member==interpolationBefore.*member
+                    +(interpolationAfter.*member-interpolationBefore.*member)
+                        *stateInterpolationFraction;
+            })
+        &&!interpolatedState.hasPreviousRates
+        &&interpolatedState.previousStepDt==0.0
+        &&interpolatedState.previousFluxEnergy==0.0
+        &&interpolatedState.previousDipoleFluxEnergy==0.0
+        &&interpolatedState.previousFluxMomentum.squaredNorm()==0.0
+        &&interpolatedState.previousFluxAngularMomentum.squaredNorm()==0.0
+        &&interpolatedState.previousMismatchEnergy==0.0
+        &&interpolatedState.previousMismatchMomentum.squaredNorm()==0.0
+        &&interpolatedState.previousMismatchAngularMomentum.squaredNorm()==0.0
+        &&isFinite(interpolatedState);
+    const std::array finiteStateScalarMembers{
+        &State::orbitalRadiatedEnergy,&State::previousStepDt,
+        &State::previousFluxEnergy,&State::previousDipoleFluxEnergy,
+        &State::previousMismatchEnergy
+    };
+    const std::array finiteStateVectorMembers{
+        &State::previousFluxMomentum,&State::previousFluxAngularMomentum,
+        &State::previousMismatchMomentum,&State::previousMismatchAngularMomentum
+    };
+    const std::array invalidStateValues{
+        std::numeric_limits<double>::quiet_NaN(),
+        std::numeric_limits<double>::infinity()
+    };
+    const bool stateFiniteGuardOk=isFinite(interpolationBefore)
+        &&isFinite(interpolationAfter)
+        &&std::ranges::all_of(invalidStateValues,[&](double invalidValue) {
+            return std::ranges::all_of(finiteStateScalarMembers,
+                [&](const auto member) {
+                    State invalid=interpolationBefore;
+                    invalid.*member=invalidValue;
+                    return !isFinite(invalid);
+                })
+                &&std::ranges::all_of(finiteStateVectorMembers,
+                    [&](const auto member) {
+                        State invalid=interpolationBefore;
+                        invalid.*member={invalidValue,0.0,0.0};
+                        return !isFinite(invalid);
+                    });
+        });
+    const bool stateIntegrityOk=stateInterpolationOk&&stateFiniteGuardOk;
     State crossingBefore,crossingAfter;
     crossingBefore.firstPosition={1.1*nuclearCutoff,0.2*nuclearCutoff,0};
     crossingAfter.firstPosition={0.7*nuclearCutoff,-0.1*nuclearCutoff,0};
@@ -3612,7 +3748,7 @@ int runMaxwellSelfTest(
         && std::isfinite(quantizedDipoleTorqueDrain)
         && quantizedChargeReactionDrain==0.0
         && quantizedDipoleConstraintDrain==0.0;
-    const std::array<ValidationCheck,39> regressionChecks{{
+    const std::array<ValidationCheck,40> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -3645,6 +3781,7 @@ int runMaxwellSelfTest(
         {ValidationSection::AlgebraicIdentity,"bmt-precession-invariant",bmtPrecessionOk},
         {ValidationSection::AlgebraicIdentity,"quantized-radiation-drain",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
+        {ValidationSection::NumericalRegression,"state-integrity",stateIntegrityOk},
         {ValidationSection::NumericalRegression,"adaptive-depth-rejection",adaptiveDepthRejectionOk},
         {ValidationSection::Convergence,"causal-startup",causalStartupOk},
         {ValidationSection::Convergence,"history-construction-sensitivity",historyConstructionSensitivityOk},
