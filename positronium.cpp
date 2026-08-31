@@ -673,37 +673,10 @@ void precessDipole(Vec3& dipole,const Vec3& field,
 }
 #endif
 
-double gamma(const Vec3& velocity) {
-    return two_body::strictLorentzFactor(velocity);
-}
-
-Vec3 momentum(const Vec3& velocity, double mass) { return velocity * (gamma(velocity) * mass); }
-
-double kineticEnergy(const Vec3& velocity,double mass) {
-    return two_body::kineticEnergyFromVelocity(velocity,mass);
-}
-
-Vec3 velocityFromMomentum(const Vec3& momentum, double mass) {
-    const double gammaFromMomentum = std::sqrt(1.0 + momentum.squaredNorm() / (mass*mass*c*c));
-    return momentum / (gammaFromMomentum * mass);
-}
-
-void synchronizeCovariantDipoles(State& state) {
-    if(state.firstProperDipole.squaredNorm()==0.0
-        &&state.firstDipole.squaredNorm()>0.0)
-        state.firstProperDipole=state.firstDipole;
-    if(state.secondProperDipole.squaredNorm()==0.0
-        &&state.secondDipole.squaredNorm()>0.0)
-        state.secondProperDipole=state.secondDipole;
-    const DipoleTensor firstLab=lorentzBoostDipole(
-        {{},state.firstProperDipole},state.firstVelocity);
-    const DipoleTensor secondLab=lorentzBoostDipole(
-        {{},state.secondProperDipole},state.secondVelocity);
-    state.firstElectricDipole=firstLab.electric;
-    state.firstDipole=firstLab.magnetic;
-    state.secondElectricDipole=secondLab.electric;
-    state.secondDipole=secondLab.magnetic;
-}
+// gamma, momentum, kineticEnergy, velocityFromMomentum,
+// synchronizeCovariantDipoles (Stage 0 of splitting engine/experiments/ROOT
+// presentation apart -- see the header's own comment).
+#include "modules/relativistic_kinematics.hpp"
 Vec3 thomasBmtEffectiveField(const Vec3& velocity,
                              const ElectromagneticField& field,
                              double gFactor);
