@@ -17,10 +17,21 @@
 // through the interpreter while the animation loop observes these flags.
 bool gSimulationPaused = false;
 bool gExitRequested = false;
+bool gVisualSimulationComplete = false;
 TButton* gStopButton = nullptr;
 TCanvas* gVisualCanvas = nullptr;
+TPaveText* gVisualObservationBox = nullptr;
 int gVisualPhenomenon = 0;
 bool gVisualExitSaveAttempted = false;
+
+void SetVisualObservationStatus(const char* headline,const char* detail,
+                                int color) {
+    if(!gVisualObservationBox) return;
+    gVisualObservationBox->Clear();
+    gVisualObservationBox->SetTextColor(color);
+    gVisualObservationBox->AddText(headline);
+    gVisualObservationBox->AddText(detail);
+}
 
 void ToggleSimulation() {
     gSimulationPaused = !gSimulationPaused;
@@ -30,6 +41,14 @@ void ToggleSimulation() {
 void ExitSimulation() {
     gExitRequested = true;
     if(gVisualCanvas&&gVisualPhenomenon>=1&&gVisualPhenomenon<=4) {
+        // EXIT censors an observation only while integration is still in
+        // progress.  Once the engine has returned, this button merely closes
+        // an already classified result and must not overwrite it.
+        if(!gVisualSimulationComplete) {
+            SetVisualObservationStatus(
+                "Observation: ADMINISTRATIVELY CENSORED",
+                "User EXIT before the terminal endpoint was observed",kOrange+7);
+        }
         gVisualExitSaveAttempted=true;
         gVisualCanvas->Modified();
         gVisualCanvas->Update();

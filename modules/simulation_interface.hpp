@@ -28,6 +28,36 @@ struct Frame {
 
 enum class Phenomenon { DirectCollision, Scattering, ParaPositronium, OrthoPositronium };
 enum class SimulationOutcome { ReachedCutoff, ObservationLimit, NumericalFailure };
+// SimulationOutcome intentionally remains the coarse contract used by the
+// statistical collapse machinery.  This companion records WHY the shared
+// ObservationLimit outcome occurred, which matters to a visual observation:
+// a fixed window and an explicit user stop are both administrative censoring,
+// but they should not be presented as the same action.
+enum class SimulationStopReason {
+    ReachedCutoff,
+    ObservationTimeLimit,
+    StopRequested,
+    NumericalFailure
+};
+enum class SimulationObservationDisposition {
+    ObservedEndpoint,
+    AdministrativelyCensored,
+    NumericalFailure
+};
+
+constexpr SimulationObservationDisposition observationDisposition(
+        SimulationStopReason reason) noexcept {
+    switch(reason) {
+        case SimulationStopReason::ReachedCutoff:
+            return SimulationObservationDisposition::ObservedEndpoint;
+        case SimulationStopReason::ObservationTimeLimit:
+        case SimulationStopReason::StopRequested:
+            return SimulationObservationDisposition::AdministrativelyCensored;
+        case SimulationStopReason::NumericalFailure:
+            return SimulationObservationDisposition::NumericalFailure;
+    }
+    return SimulationObservationDisposition::NumericalFailure;
+}
 enum class VisualStyle { Unselected, Line, Dot };
 
 struct InitialConditions {
@@ -44,6 +74,7 @@ struct SimulationResult {
     std::vector<Frame> frames;
     InitialConditions initial;
     SimulationOutcome outcome;
+    SimulationStopReason stopReason=SimulationStopReason::NumericalFailure;
     double minimumSeparation;
     double elapsedTime;
     double finalRadiatedEnergy;

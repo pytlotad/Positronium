@@ -14,6 +14,7 @@
 #include <TColor.h>
 #include <TF1.h>
 #include <TGraph.h>
+#include <TGraphAsymmErrors.h>
 #include <TGraphErrors.h>
 #include <TInterpreter.h>
 #include <TLegend.h>
@@ -59,6 +60,7 @@
 
 #include "modules/vector3.hpp"
 #include "modules/state.hpp"
+#include "modules/censoring_analysis.hpp"
 #include "modules/physical_constants.hpp"
 #include "modules/particle_species.hpp"
 #include "modules/two_body_kinematics.hpp"
@@ -66,8 +68,9 @@
 #include "modules/root_export.hpp"
 #include "modules/statistics_archive.hpp"
 
-// gSimulationPaused/gExitRequested/gStopButton/gVisualCanvas/
-// gVisualPhenomenon/gVisualExitSaveAttempted, ToggleSimulation,
+// gSimulationPaused/gExitRequested/gVisualSimulationComplete/gStopButton/gVisualCanvas/
+// gVisualObservationBox/gVisualPhenomenon/gVisualExitSaveAttempted,
+// SetVisualObservationStatus, ToggleSimulation,
 // ExitSimulation -- the presentation side of splitting engine/experiments/
 // ROOT presentation apart (see the header's own comment).
 #include "modules/visual_gui_controls.hpp"
@@ -3154,6 +3157,142 @@ double sampleQuantile(std::vector<double> values, double probability) {
     return values[lower] + fraction * (values[upper] - values[lower]);
 }
 
+const char* visualObservationHeadline(SimulationStopReason reason) {
+    switch(observationDisposition(reason)) {
+        case SimulationObservationDisposition::ObservedEndpoint:
+            return "Observation: TERMINAL ENDPOINT OBSERVED";
+        case SimulationObservationDisposition::AdministrativelyCensored:
+            return "Observation: ADMINISTRATIVELY CENSORED";
+        case SimulationObservationDisposition::NumericalFailure:
+            return "Observation: NUMERICAL FAILURE";
+    }
+    return "Observation: NUMERICAL FAILURE";
+}
+
+const char* visualObservationDetail(SimulationStopReason reason) {
+    switch(reason) {
+        case SimulationStopReason::ReachedCutoff:
+            return "The configured separation cutoff was reached";
+        case SimulationStopReason::ObservationTimeLimit:
+            return "Visual time window ended before the cutoff was reached";
+        case SimulationStopReason::StopRequested:
+            return "User EXIT before the terminal endpoint was observed";
+        case SimulationStopReason::NumericalFailure:
+            return "Physical terminal outcome unavailable; state became invalid";
+    }
+    return "Physical terminal outcome unavailable";
+}
+
+int visualObservationColor(SimulationStopReason reason) {
+    switch(observationDisposition(reason)) {
+        case SimulationObservationDisposition::ObservedEndpoint:
+            return kGreen+2;
+        case SimulationObservationDisposition::AdministrativelyCensored:
+            return kOrange+7;
+        case SimulationObservationDisposition::NumericalFailure:
+            return kRed+1;
+    }
+    return kRed+1;
+}
+
+void printVisualObservationStatus(const SimulationResult& simulation) {
+    std::cout << "Visual terminal observation: ";
+    switch(observationDisposition(simulation.stopReason)) {
+        case SimulationObservationDisposition::ObservedEndpoint:
+            std::cout << "observed";
+            break;
+        case SimulationObservationDisposition::AdministrativelyCensored:
+            std::cout << "administratively censored";
+            break;
+        case SimulationObservationDisposition::NumericalFailure:
+            std::cout << "numerical failure (not censoring)";
+            break;
+    }
+    std::cout << " at t=" << simulation.elapsedTime << " s; "
+              << visualObservationDetail(simulation.stopReason) << ".\n";
+    if(observationDisposition(simulation.stopReason)
+       ==SimulationObservationDisposition::AdministrativelyCensored) {
+        std::cout << "  Time-to-cutoff is right-censored at this finite "
+                     "observation time; the prepared phenomenon label is an "
+                     "initial condition, not an observed later endpoint.\n";
+    } else if(simulation.stopReason==SimulationStopReason::NumericalFailure) {
+        std::cout << "  The last finite frame is diagnostic only and must not "
+                     "be interpreted as a physical terminal event.\n";
+    }
+}
+
+void printLogisticAssociations(
+        const positronium::statistics::LogisticModel& model,
+        const char* label) {
+    std::cout << "  " << label << ": ";
+    if(!model.fitted) {
+        std::cout << "not estimable (no finite covariate pairs)\n";
+        return;
+    }
+    if(model.constant) {
+        std::cout << "constant rate " << model.constantProbability
+                  << " (" << model.positiveCount << '/' << model.sampleCount
+                  << "); covariate effects not estimable\n";
+        return;
+    }
+    const auto printEffect=[&](const char* name,std::size_t index,
+                               bool varying) {
+        std::cout << name << '=';
+        if(!varying) {
+            std::cout << "not varying";
+            return;
+        }
+        const double oddsRatio=std::exp(std::clamp(
+            model.coefficient[index],-700.0,700.0));
+        std::cout << oddsRatio;
+        if(std::isfinite(model.standardError[index])) {
+            const double lower=std::exp(std::clamp(
+                model.coefficient[index]-1.95996398454005
+                    *model.standardError[index],-700.0,700.0));
+            const double upper=std::exp(std::clamp(
+                model.coefficient[index]+1.95996398454005
+                    *model.standardError[index],-700.0,700.0));
+            std::cout << " (95% " << lower << "-" << upper << ')';
+        }
+    };
+    std::cout << "adjusted odds ratios per one sample SD: ";
+    printEffect("K_CM",1,model.energyScaling.varying);
+    std::cout << ", ";
+    printEffect("b",2,model.impactScaling.varying);
+    std::cout << "; Brier=" << model.brierScore
+              << (model.converged?"":"; WARNING: fit did not converge")
+              << '\n';
+}
+
+void printOutcomeCensoringAnalysis(
+        const positronium::statistics::CensoringAnalysis& analysis) {
+    std::cout << "\nExplicit outcome-censoring model:\n"
+              << "  physical outcome observed / administratively censored / "
+                 "numerical failure = "
+              << analysis.observedCount << " / "
+              << analysis.administrativelyCensoredCount << " / "
+              << analysis.numericalFailureCount << '\n';
+    printLogisticAssociations(analysis.completionModel,
+        "P(physical classification | K_CM,b)");
+    printLogisticAssociations(analysis.failureModel,
+        "P(numerical failure | K_CM,b)");
+    if(analysis.observedCount>0) {
+        std::cout << "  IPCW positivity: min fitted completion probability="
+                  << analysis.minimumCompletionProbability
+                  << ", max clipped weight=" << analysis.maximumIpcwWeight
+                  << " (floor " << analysis.probabilityFloor << "), effective N="
+                  << analysis.effectiveObservedSampleSize << '\n';
+    }
+    if(analysis.invalidCovariateCount>0) {
+        std::cout << "  " << analysis.invalidCovariateCount
+                  << " trajectories lacked finite K_CM or b and were excluded "
+                     "from this covariate model.\n";
+    }
+    std::cout << "  IPCW assumption: physical classification is missing at "
+                 "random conditional on sampled (K_CM,b); NumericalFailure is "
+                 "modeled separately and is not called a physical event.\n";
+}
+
 std::string crossSectionEstimate(double sampledArea, int count, int total,
                                  double unit) {
     std::ostringstream text;
@@ -3218,33 +3357,56 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     int unresolved = 0;
     int failed = 0;
     std::vector<double> fiducialEnergyLossesEv;
+    std::vector<positronium::statistics::CensoringObservation>
+        beamCensoringSample;
+    beamCensoringSample.reserve(events.size());
     for (const BeamEvent& event : events) {
+        positronium::statistics::ObservationDisposition disposition=
+            positronium::statistics::ObservationDisposition::Observed;
+        int physicalCategory=-1;
         switch (event.outcome) {
             case BeamOutcome::Escaped:
                 ++escaped;
                 if (event.scatteringAngle >= configuration.analysisThetaMinimum) {
                     ++fiducial;
+                    physicalCategory=1; // accepted escaped channel
                     fiducialEnergyLossesEv.push_back(
                         (event.incidentEnergy
                          - event.outgoingEnergy) / eCharge);
-                }
+                } else physicalCategory=0; // escaped outside acceptance
                 break;
-            case BeamOutcome::Collision: ++collision; break;
-            case BeamOutcome::Captured: ++captured; break;
-            case BeamOutcome::Unresolved: ++unresolved; break;
-            case BeamOutcome::NumericalFailure: ++failed; break;
+            case BeamOutcome::Collision:
+                ++collision;
+                physicalCategory=2;
+                break;
+            case BeamOutcome::Captured:
+                ++captured;
+                physicalCategory=3;
+                break;
+            case BeamOutcome::Unresolved:
+                ++unresolved;
+                disposition=positronium::statistics::ObservationDisposition::
+                    AdministrativelyCensored;
+                break;
+            case BeamOutcome::NumericalFailure:
+                ++failed;
+                disposition=positronium::statistics::ObservationDisposition::
+                    NumericalFailure;
+                break;
         }
+        beamCensoringSample.push_back({event.incidentEnergy/eCharge,
+            event.impactParameter*1.0e12,disposition,physicalCategory});
     }
+    const positronium::statistics::CensoringAnalysis beamCensoring=
+        positronium::statistics::analyzeCensoring(beamCensoringSample,4);
+    printOutcomeCensoringAnalysis(beamCensoring);
     if (failed > 0) {
         std::cerr << "Outcomes: escaped=" << escaped << ", collision=" << collision
                   << ", captured=" << captured
                   << ", unresolved=" << unresolved << ", failed=" << failed << '\n'
                   << "Cross-section report is INVALID because at least one trajectory "
-                     "became numerically non-finite. No plots were produced.\n";
-        bool persistenceOk = reportArchiveOperation(
-            statistics_archive::writeScientificReferencesText(),
-            "scientific-reference catalogue");
-        return persistenceOk ? 2 : 3;
+                     "became numerically non-finite. Diagnostic plots will still "
+                     "be produced so the failure dependence is inspectable.\n";
     }
     constexpr double diagnosticFloor = 64.0 * std::numeric_limits<double>::epsilon();
     const double energyFloor = diagnosticFloor * 2.0*firstMass*c*c;
@@ -3374,12 +3536,29 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     }
     std::cout << "; Wilson 95% CI [" << rutherfordNormalizationLower95
               << ", " << rutherfordNormalizationUpper95 << "]\n";
+    if((unresolved>0||failed>0)
+       &&beamCensoring.ipcwCategoryProbability.size()==4) {
+        const double ipcwFiducialProbability=
+            beamCensoring.ipcwCategoryProbability[1];
+        std::cout << "IPCW sensitivity estimate under MAR(K_CM,b): "
+                  << "sigma(theta >= acceptance)="
+                  << sampledArea*ipcwFiducialProbability/barn
+                  << " barn (raw finite-gate estimate="
+                  << sampledArea*fiducialProbability/barn << " barn).\n";
+    }
     if (configuration.shortRangeFocus) {
         std::cout << "Model sigma(reach cutoff) = "
                   << crossSectionEstimate(sampledArea, collision, runCount, barn)
                   << " barn; pure-Coulomb cutoff reference = "
                   << analyticCutoff/barn << " barn\n"
                   << "Important: cutoff reach is not a QED annihilation cross section.\n";
+        if((unresolved>0||failed>0)
+           &&beamCensoring.ipcwCategoryProbability.size()==4) {
+            std::cout << "IPCW sensitivity sigma(reach cutoff)="
+                      << sampledArea
+                          *beamCensoring.ipcwCategoryProbability[2]/barn
+                      << " barn under the same MAR(K_CM,b) assumption.\n";
+        }
     }
     if(captured>0) {
         std::cout<<"Captured="<<captured
@@ -3856,6 +4035,23 @@ int showBeamStatistics(std::uint64_t seed, int selectedPhenomenon, int runCount,
     outcomeLine << "escaped/collision/captured/gated/failed = " << escaped << '/'
                 << collision << '/' << captured << '/' << unresolved << '/' << failed;
     summary.AddText(outcomeLine.str().c_str());
+    std::ostringstream censoringLine;
+    censoringLine << "Outcome model: observed/censored/failed = "
+                  << beamCensoring.observedCount << '/'
+                  << beamCensoring.administrativelyCensoredCount << '/'
+                  << beamCensoring.numericalFailureCount;
+    summary.AddText(censoringLine.str().c_str());
+    if(!beamCensoring.failureModel.constant
+       &&beamCensoring.failureModel.fitted) {
+        std::ostringstream failureAssociationLine;
+        failureAssociationLine << "Failure adjusted OR per SD: K="
+            << std::exp(std::clamp(
+                beamCensoring.failureModel.coefficient[1],-700.0,700.0))
+            << ", b=" << std::exp(std::clamp(
+                beamCensoring.failureModel.coefficient[2],-700.0,700.0));
+        summary.AddText(failureAssociationLine.str().c_str());
+    }
+    summary.AddText("IPCW assumes outcome MAR conditional on (K_{CM},b)");
     summary.AddText("Classical low-v trajectory model");
     if (configuration.shortRangeFocus) {
         summary.AddText("#sigma_{cutoff} is not an annihilation cross section");
@@ -4157,9 +4353,14 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     std::array<double,6> energySums{}, impactSums{};
     std::array<int,6> classSamples{};
     std::array<std::vector<double>,6> classEnergies, classImpacts;
+    std::vector<positronium::statistics::CensoringObservation>
+        interactionCensoringSample;
+    interactionCensoringSample.reserve(events.size());
     for (const InteractionEvent& event : events) {
+        int eventSlot=-1;
         for (std::size_t slot = 0; slot < outcomeOrder.size(); ++slot) {
             if (event.outcome != outcomeOrder[slot]) continue;
+            eventSlot=static_cast<int>(slot);
             ++outcomeCounts[slot];
             if (std::isfinite(event.kineticEnergyEv)
                 && std::isfinite(event.impactParameter)) {
@@ -4176,6 +4377,18 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         if (std::isfinite(event.impactParameter)) {
             allImpacts.push_back(event.impactParameter*1.0e12);
         }
+        positronium::statistics::ObservationDisposition disposition=
+            positronium::statistics::ObservationDisposition::Observed;
+        int physicalCategory=eventSlot>=0&&eventSlot<4?eventSlot:-1;
+        if(event.outcome==InteractionOutcome::Unresolved) {
+            disposition=positronium::statistics::ObservationDisposition::
+                AdministrativelyCensored;
+        } else if(event.outcome==InteractionOutcome::NumericalFailure) {
+            disposition=positronium::statistics::ObservationDisposition::
+                NumericalFailure;
+        }
+        interactionCensoringSample.push_back({event.kineticEnergyEv,
+            event.impactParameter*1.0e12,disposition,physicalCategory});
         const bool isBound =
             event.outcome == InteractionOutcome::ParaPositronium
          || event.outcome == InteractionOutcome::OrthoPositronium;
@@ -4221,6 +4434,10 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             reactionFractions.push_back(reaction);
         }
     }
+    const positronium::statistics::CensoringAnalysis interactionCensoring=
+        positronium::statistics::analyzeCensoring(
+            interactionCensoringSample,4);
+    printOutcomeCensoringAnalysis(interactionCensoring);
 
     // The summary the experiment exists to produce.
     std::cout << "\nInteraction outcome summary (" << runCount
@@ -4248,6 +4465,20 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     }
     std::cout << "Para = parallel magnetic moments (antiparallel spins, S=0); "
                  "ortho = antiparallel moments (S=1).\n";
+    if(interactionCensoring.ipcwCategoryProbability.size()==4
+       &&interactionCensoring.observedCount>0) {
+        std::cout << "IPCW physical-class distribution under MAR(K_CM,b)"
+                     " (Hajek normalized):\n";
+        for(std::size_t slot=0;slot<4;++slot) {
+            std::cout << "  " << std::left << std::setw(18)
+                      << interactionOutcomeName(outcomeOrder[slot]) << std::right
+                      << std::setw(8) << 100.0
+                          *interactionCensoring.ipcwCategoryProbability[slot]
+                      << "%\n";
+        }
+        std::cout << "This is a censoring-sensitivity estimate, not a replacement "
+                     "for the raw counts above.\n";
+    }
 
     const auto mean = [](const std::vector<double>& values) {
         if (values.empty()) return std::numeric_limits<double>::quiet_NaN();
@@ -4358,7 +4589,7 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     distributionsPage.cd();
     distributionsPage.Divide(2, 3, 0.006, 0.006);
     diagnosticsPage.cd();
-    diagnosticsPage.Divide(1, 1, 0.006, 0.006);
+    diagnosticsPage.Divide(2, 2, 0.006, 0.006);
     std::vector<std::unique_ptr<TPaveText>> analysisBoxes;
     std::vector<std::unique_ptr<TF1>> analysisFunctions;
 
@@ -4414,9 +4645,20 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             + std::to_string(outcomeCounts[slot]) + " ("
             + compactNumber(100.0*outcomeCounts[slot]/runCount, 3) + "%)");
     }
-    if (outcomeCounts[4] + outcomeCounts[5] > 0) {
-        summaryLines.push_back("gated/failed: "
-            + std::to_string(outcomeCounts[4] + outcomeCounts[5]));
+    summaryLines.push_back("outcome observed / censored / failed: "
+        +std::to_string(interactionCensoring.observedCount)+" / "
+        +std::to_string(interactionCensoring.administrativelyCensoredCount)+" / "
+        +std::to_string(interactionCensoring.numericalFailureCount));
+    if(interactionCensoring.ipcwCategoryProbability.size()==4
+       &&(outcomeCounts[4]+outcomeCounts[5]>0)) {
+        summaryLines.push_back(AnalysisLine("IPCW collision / bound = "
+            +compactNumber(100.0
+                *interactionCensoring.ipcwCategoryProbability[0],3)+"% / "
+            +compactNumber(100.0*(
+                interactionCensoring.ipcwCategoryProbability[2]
+                +interactionCensoring.ipcwCategoryProbability[3]),3)+"%",
+            plot_style::crem()));
+        summaryLines.push_back("IPCW: outcome MAR conditional on (K_{CM},b)");
     }
     summaryLines.push_back("Collision: r reached "
         + compactNumber(configuration.collisionRadius*1.0e12, 3)
@@ -4780,6 +5022,179 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     diagnosticsPage.cd(1);
     diagnosticSummary.Draw();
 
+    // Empirical equal-count bins show what the sample actually did; the two
+    // additive logistic curves show the adjusted dependence with the other
+    // covariate fixed at its sample mean.  NumericalFailure is a subset of
+    // "not classified", but remains visibly distinct rather than being
+    // relabelled as an administrative censoring event.
+    std::vector<std::unique_ptr<TObject>> censoringPlotObjects;
+    const auto drawCensoringDependence=[&](int padNumber,bool useEnergy) {
+        diagnosticsPage.cd(padNumber);
+        gPad->SetGrid();
+        const auto incompleteRates=positronium::statistics::binnedRate(
+            interactionCensoringSample,useEnergy,
+            positronium::statistics::BinaryEndpoint::NotPhysicallyObserved);
+        const auto failureRates=positronium::statistics::binnedRate(
+            interactionCensoringSample,useEnergy,
+            positronium::statistics::BinaryEndpoint::NumericalFailure);
+        const std::vector<double>& values=useEnergy?allEnergies:allImpacts;
+        double minimum=values.empty()?0.0:
+            *std::min_element(values.begin(),values.end());
+        double maximum=values.empty()?1.0:
+            *std::max_element(values.begin(),values.end());
+        double span=maximum-minimum;
+        if(!(span>0.0)) span=std::max(1.0e-6,0.1*std::max(1.0,std::abs(minimum)));
+        const double lower=minimum-0.05*span;
+        const double upper=maximum+0.05*span;
+        const char* suffix=useEnergy?"energy":"impact";
+        const char* axis=useEnergy?"K_{CM} [eV]":"b [pm]";
+        std::string title=std::string(
+            "Outcome non-observation and numerical failure vs ")
+            +(useEnergy?"collision energy;":"impact parameter;")
+            +axis+";Probability";
+        auto frame=std::make_unique<TH1D>(
+            (std::string("interaction_censoring_frame_")+suffix).c_str(),
+            title.c_str(),1,lower,upper);
+        frame->SetDirectory(nullptr);
+        frame->SetStats(false);
+        frame->SetMinimum(0.0);
+        frame->SetMaximum(1.05);
+        frame->Draw();
+
+        auto incompletePoints=std::make_unique<TGraphAsymmErrors>();
+        for(std::size_t index=0;index<incompleteRates.size();++index) {
+            incompletePoints->SetPoint(static_cast<int>(index),
+                incompleteRates[index].covariate,incompleteRates[index].rate);
+            incompletePoints->SetPointError(static_cast<int>(index),
+                incompleteRates[index].covariateHalfRange,
+                incompleteRates[index].covariateHalfRange,
+                incompleteRates[index].rateErrorLow,
+                incompleteRates[index].rateErrorHigh);
+        }
+        incompletePoints->SetMarkerStyle(20);
+        incompletePoints->SetMarkerSize(0.9);
+        incompletePoints->SetMarkerColor(plot_style::crem());
+        incompletePoints->SetLineColor(plot_style::crem());
+        incompletePoints->Draw("P SAME");
+
+        auto failurePoints=std::make_unique<TGraphAsymmErrors>();
+        for(std::size_t index=0;index<failureRates.size();++index) {
+            failurePoints->SetPoint(static_cast<int>(index),
+                failureRates[index].covariate,failureRates[index].rate);
+            failurePoints->SetPointError(static_cast<int>(index),
+                failureRates[index].covariateHalfRange,
+                failureRates[index].covariateHalfRange,
+                failureRates[index].rateErrorLow,
+                failureRates[index].rateErrorHigh);
+        }
+        failurePoints->SetMarkerStyle(24);
+        failurePoints->SetMarkerSize(0.9);
+        failurePoints->SetMarkerColor(plot_style::crem());
+        failurePoints->SetLineColor(plot_style::crem());
+        failurePoints->Draw("P SAME");
+
+        constexpr int curvePoints=101;
+        auto incompleteCurve=std::make_unique<TGraph>(curvePoints);
+        auto failureCurve=std::make_unique<TGraph>(curvePoints);
+        for(int index=0;index<curvePoints;++index) {
+            const double value=lower+(upper-lower)*index/(curvePoints-1.0);
+            const double energy=useEnergy?value:
+                interactionCensoring.completionModel.energyScaling.mean;
+            const double impact=useEnergy
+                ?interactionCensoring.completionModel.impactScaling.mean:value;
+            const double completionProbability=
+                interactionCensoring.completionModel.probability(energy,impact);
+            const double failureProbability=
+                interactionCensoring.failureModel.probability(energy,impact);
+            incompleteCurve->SetPoint(index,value,
+                std::isfinite(completionProbability)
+                    ?1.0-completionProbability:0.0);
+            failureCurve->SetPoint(index,value,
+                std::isfinite(failureProbability)?failureProbability:0.0);
+        }
+        incompleteCurve->SetLineColor(plot_style::crem());
+        incompleteCurve->SetLineWidth(3);
+        incompleteCurve->SetLineStyle(1);
+        incompleteCurve->Draw("L SAME");
+        failureCurve->SetLineColor(plot_style::crem());
+        failureCurve->SetLineWidth(3);
+        failureCurve->SetLineStyle(2);
+        failureCurve->Draw("L SAME");
+
+        auto legend=std::make_unique<TLegend>(0.11,0.68,0.88,0.90);
+        legend->SetFillColorAlpha(kWhite,0.88);
+        legend->SetTextSize(0.026);
+        legend->SetNColumns(2);
+        legend->AddEntry(incompletePoints.get(),"not classified: bins (95% Wilson)","pe");
+        legend->AddEntry(incompleteCurve.get(),"not-classified logistic model","l");
+        legend->AddEntry(failurePoints.get(),"NumericalFailure: bins (95% Wilson)","pe");
+        legend->AddEntry(failureCurve.get(),"failure logistic model","l");
+        legend->Draw();
+        censoringPlotObjects.push_back(std::move(frame));
+        censoringPlotObjects.push_back(std::move(incompletePoints));
+        censoringPlotObjects.push_back(std::move(failurePoints));
+        censoringPlotObjects.push_back(std::move(incompleteCurve));
+        censoringPlotObjects.push_back(std::move(failureCurve));
+        censoringPlotObjects.push_back(std::move(legend));
+    };
+    drawCensoringDependence(2,true);
+    drawCensoringDependence(3,false);
+
+    diagnosticsPage.cd(4);
+    TPaveText censoringSummary(0.06,0.08,0.94,0.92,"NDC");
+    censoringSummary.SetFillColorAlpha(kWhite,0.95);
+    censoringSummary.SetTextAlign(12);
+    censoringSummary.SetTextFont(42);
+    censoringSummary.AddText("Explicit categorical-outcome censoring model");
+    censoringSummary.AddText(
+        "logit P(classified) = beta_{0} + beta_{E} z(K_{CM}) + beta_{b} z(b)");
+    censoringSummary.AddText(
+        "separate failure logit; standardized slopes use L2 penalty #lambda=1");
+    std::ostringstream censoringCounts;
+    censoringCounts << "observed / administrative censoring / failure = "
+                    << interactionCensoring.observedCount << " / "
+                    << interactionCensoring.administrativelyCensoredCount
+                    << " / " << interactionCensoring.numericalFailureCount;
+    censoringSummary.AddText(censoringCounts.str().c_str());
+    const auto addOddsRatioLine=[&](const char* label,
+            const positronium::statistics::LogisticModel& model,
+            bool negate) {
+        std::ostringstream line;
+        line << label;
+        if(model.constant) {
+            line << " constant rate "
+                 << (negate?1.0-model.constantProbability
+                           :model.constantProbability)
+                 << "; slopes not estimable";
+        } else if(model.fitted) {
+            const double sign=negate?-1.0:1.0;
+            line << " OR/SD: K=" << std::exp(std::clamp(
+                sign*model.coefficient[1],-700.0,700.0))
+                 << ", b=" << std::exp(std::clamp(
+                sign*model.coefficient[2],-700.0,700.0));
+        } else line << " unavailable";
+        censoringSummary.AddText(line.str().c_str());
+    };
+    // Complementing a logistic probability negates its linear predictor, so
+    // the non-classification odds ratios are exp(-beta_completion).
+    addOddsRatioLine("not classified",interactionCensoring.completionModel,true);
+    addOddsRatioLine("NumericalFailure",interactionCensoring.failureModel,false);
+    std::ostringstream positivityLine;
+    positivityLine << "IPCW floor=" << interactionCensoring.probabilityFloor
+                   << ", min pi="
+                   << interactionCensoring.minimumCompletionProbability
+                   << ", max weight=" << interactionCensoring.maximumIpcwWeight
+                   << ", effective N="
+                   << interactionCensoring.effectiveObservedSampleSize;
+    censoringSummary.AddText(positivityLine.str().c_str());
+    censoringSummary.AddText(
+        "IPCW: Hajek-normalized physical classes; sensitivity estimate only");
+    censoringSummary.AddText(
+        "assumption: outcome MAR conditional on sampled (K_{CM},b) + positivity");
+    censoringSummary.AddText(
+        "NumericalFailure is missing outcome, not a physical event or censoring time");
+    censoringSummary.Draw();
+
     canvas.cd();
     distributionsPage.Pop();
     canvas.Modified();
@@ -4795,7 +5210,10 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
         {distributionsPage.GetPad(4), 1, 'a', 4, "dipole_alignment"},
         {distributionsPage.GetPad(5), 1, 'b', 5, "collapse_time_distribution_para"},
         {distributionsPage.GetPad(6), 1, 'b', 6, "collapse_time_distribution_ortho"},
-        {diagnosticsPage.GetPad(1), 2, 'b', 1, "diagnostic_summary"}
+        {diagnosticsPage.GetPad(1), 2, 'b', 1, "diagnostic_summary"},
+        {diagnosticsPage.GetPad(2), 2, 'b', 2, "censoring_vs_energy"},
+        {diagnosticsPage.GetPad(3), 2, 'b', 3, "censoring_vs_impact_parameter"},
+        {diagnosticsPage.GetPad(4), 2, 'b', 4, "censoring_model_summary"}
     }));
     bool persistenceOk = reportArchiveOperation(
         statistics_archive::writeScientificReferencesText(),
@@ -5450,6 +5868,8 @@ int main(int argc, char** argv) {
                                            initialOptions);
     const std::vector<Frame>& frames = simulation.frames;
     const InitialConditions initialConditions = simulation.initial;
+    if(diagnose||simulation.outcome==SimulationOutcome::NumericalFailure)
+        printVisualObservationStatus(simulation);
     if (simulation.outcome == SimulationOutcome::NumericalFailure) {
         std::cerr << "Simulation stopped because the numerical state became invalid.\n";
         return 2;
@@ -5601,6 +6021,7 @@ int main(int argc, char** argv) {
     gVisualCanvas=&canvas;
     gVisualPhenomenon=selectedPhenomenon;
     gVisualExitSaveAttempted=false;
+    gVisualSimulationComplete=false;
     canvas.SetFillColor(kBlack);
     canvas.SetSupportGL(kTRUE);
     TPad scene("scene", "Simulation", 0.0, 0.0, 1.0, 0.86);
@@ -5773,6 +6194,18 @@ int main(int argc, char** argv) {
     deltaBottomRad.Draw();
 
     controls.cd();
+    TPaveText observationBox(0.02,0.16,0.70,0.84,"NDC");
+    observationBox.SetFillColor(kBlack);
+    observationBox.SetFillStyle(1001);
+    observationBox.SetBorderSize(1);
+    observationBox.SetLineColor(kGray+1);
+    observationBox.SetTextAlign(12);
+    observationBox.SetTextFont(42);
+    observationBox.SetTextSize(0.18);
+    gVisualObservationBox=&observationBox;
+    SetVisualObservationStatus("Observation: RUNNING",
+        "Terminal endpoint has not yet been observed",kWhite);
+    observationBox.Draw();
     gInterpreter->Declare("void ToggleSimulation(); void ExitSimulation();");
     TButton stopButton("STOP", "ToggleSimulation();", 0.73, 0.25, 0.85, 0.78);
     stopButton.SetFillColor(kOrange + 7);
@@ -5786,6 +6219,12 @@ int main(int argc, char** argv) {
     const auto syncStopButton = [&]() {
         if (gStopButton) gStopButton->SetTitle(gSimulationPaused ? "START" : "STOP");
         controls.Modified();
+    };
+    const auto updateVisualObservationStatus=[&](SimulationStopReason reason) {
+        SetVisualObservationStatus(visualObservationHeadline(reason),
+            visualObservationDetail(reason),visualObservationColor(reason));
+        controls.Modified();
+        controls.Update();
     };
     syncStopButton();
     controls.Modified();
@@ -5938,12 +6377,23 @@ int main(int argc, char** argv) {
         return screenshot.succeeded();
     };
     simulation = simulate(seed, selectedPhenomenon, visualOptions);
+    gVisualSimulationComplete=true;
+    updateVisualObservationStatus(simulation.stopReason);
+    printVisualObservationStatus(simulation);
     if (gExitRequested) {
         if(!gVisualExitSaveAttempted) saveVisualCanvas();
+        gVisualCanvas=nullptr;
+        gVisualObservationBox=nullptr;
+        gStopButton=nullptr;
         return 0;
     }
     if (simulation.outcome == SimulationOutcome::NumericalFailure) {
         std::cerr << "Simulation stopped because the numerical state became invalid.\n";
+        if(!frames.empty()) renderVisualFrame(frames.back());
+        saveVisualCanvas();
+        gVisualCanvas=nullptr;
+        gVisualObservationBox=nullptr;
+        gStopButton=nullptr;
         return 2;
     }
     if (!frames.empty()) {
@@ -5964,6 +6414,8 @@ int main(int argc, char** argv) {
     app.Run();
     if(gExitRequested&&!gVisualExitSaveAttempted) saveVisualCanvas();
     gVisualCanvas=nullptr;
+    gVisualObservationBox=nullptr;
+    gStopButton=nullptr;
     return 0;
 #endif
 }

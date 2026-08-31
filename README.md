@@ -6042,7 +6042,34 @@ daje 6 plików, a 4 daje 5.
 | `N_2_2_diagnostic_momentum_balance.pdf` | To samo dla pędu, w skali `log₁₀`. |
 | `N_2_3_diagnostic_angular_momentum_balance.pdf` | To samo dla momentu pędu. |
 
-**Statistical 5 — oddziaływania** (7 plików)
+Eksperymenty wiązkowe 3/4 i interakcyjny 5 mają wspólny, jawny model
+nieobserwowania wyniku. `Unresolved` oznacza administracyjne cenzurowanie
+klasy końcowej, natomiast `NumericalFailure` pozostaje osobną awarią i nie jest
+liczone jako zdarzenie fizyczne. Program dopasowuje dwa modele
+
+\[
+\operatorname{logit}P(\text{klasyfikacja})=
+\beta_0+\beta_E z(K_{CM})+\beta_b z(b),\qquad
+\operatorname{logit}P(\text{awaria numeryczna})=
+\gamma_0+\gamma_E z(K_{CM})+\gamma_b z(b),
+\]
+
+gdzie predyktory są standaryzowane w bieżącej próbie. Nachylenia mają jawną
+karę `L2` z `λ=1`, która utrzymuje skończone estymaty przy pełnej separacji w
+małej próbie; raportowane przedziały 95% pochodzą z penalizowanej macierzy
+informacji i są diagnostyczne, nie dokładne. Raport podaje ilorazy szans na
+jedno odchylenie standardowe, wynik Briera oraz diagnostykę zbieżności.
+Rozkład klas fizycznych jest dodatkowo
+pokazywany jako czułościowa estymata IPCW (normalizacja Hájeka, minimalne
+prawdopodobieństwo kompletacji `0,05`). Ta korekta wymaga założenia MAR:
+brak klasyfikacji ma być warunkowo niezależny od nieznanego wyniku po zadaniu
+wylosowanych \((K_{CM},b)\), oraz warunku dodatniości. Surowe liczności
+pozostają wynikiem podstawowym; IPCW nie ukrywa awarii i nie zamienia ich w
+kolizje, rozproszenia ani stany związane. Eksperymenty 1/2 analizują inną
+wielkość — czas kolapsu — dlatego zachowują właściwe dla prawostronnego
+cenzurowania estymatory Kaplana–Meiera zamiast tego modelu kategorii.
+
+**Statistical 5 — oddziaływania** (10 plików)
 
 | Plik | Zawartość |
 | --- | --- |
@@ -6053,12 +6080,30 @@ daje 6 plików, a 4 daje 5.
 | `5_1_5_collapse_time_distribution_para.pdf` | Histogram zmierzonych czasów kolapsu CREM schwytanych par sklasyfikowanych jako para-Ps (zwykle nieliczne: tylko te, których okno obserwacji pokryło pełny obieg Keplera). Oś prowadzona danymi, τ_exp jako pionowa linia tylko gdy się mieści w zasięgu. |
 | `5_1_6_collapse_time_distribution_ortho.pdf` | To samo dla klasy orto. |
 | `5_2_1_diagnostic_summary.pdf` | Panel tekstowy z medianami residuów bilansu i zastrzeżeniem o definicji `E_bound`. |
+| `5_2_2_censoring_vs_energy.pdf` | Empiryczne, równo liczebne przedziały (95% Wilsona) oraz skorygowane modele logistyczne prawdopodobieństwa braku klasyfikacji i awarii numerycznej względem `K_CM`; drugi predyktor jest utrzymany na średniej próby. |
+| `5_2_3_censoring_vs_impact_parameter.pdf` | Ta sama analiza względem parametru zderzenia `b`, po korekcie o energię. |
+| `5_2_4_censoring_model_summary.pdf` | Definicja modeli, liczności observed/censored/failed, ilorazy szans oraz diagnostyka wag IPCW i efektywnej liczebności próby. |
 
 **Tryb wizualny** (1 plik na eksperyment, `N` = 1…4)
 
 | Plik | Zawartość |
 | --- | --- |
 | `N_1_1_visual_simulation.pdf` | Zrzut całego ekranu animacji: scena, tabela i przyciski. |
+
+Tryb wizualny raportuje teraz jawny status obserwacji końcowej. Dojście do
+skonfigurowanej granicy rozdzielczości jest wynikiem zaobserwowanym. Koniec
+stałego okna czasu albo naciśnięcie `EXIT` oznacza administracyjne,
+prawostronne cenzurowanie czasu dojścia do tej granicy. `NumericalFailure`
+pozostaje osobną awarią: ostatnia skończona klatka jest wtedy wyłącznie
+diagnostyczna i nie jest zdarzeniem fizycznym. Status oraz dokładna przyczyna
+zakończenia są widoczne na kanwie, trafiają do PDF-u i są wypisywane w konsoli.
+
+Nazwa fenomenu w trybie Visual opisuje przygotowany warunek początkowy, a nie
+dowód, że późniejszy punkt końcowy został zaobserwowany. Pojedyncza trajektoria
+nie pozwala też estymować zależności awarii od energii ani geometrii zderzenia;
+regresje względem `K_CM` i `b` pozostają analizą zespołową eksperymentów
+statystycznych 3–5. Visual pokazuje natomiast własne `E_rel`, przewidywane
+`r_min` i status kompletności tej konkretnej obserwacji.
 
 Po zakończeniu animacji trybu wizualnego cały ekran (scena, tabela i przyciski)
 jest zapisywany jako `N_1_1_visual_simulation.pdf`, gdzie `N` jest numerem

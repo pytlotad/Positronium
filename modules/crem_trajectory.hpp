@@ -233,6 +233,7 @@ const char* phenomenonName(Phenomenon phenomenon) {
 struct MechanicalTrajectoryResult {
     State finalState;
     SimulationOutcome outcome=SimulationOutcome::NumericalFailure;
+    SimulationStopReason stopReason=SimulationStopReason::NumericalFailure;
     double minimumSeparation=std::numeric_limits<double>::quiet_NaN();
     double elapsedTime=0.0;
     double finalRadiatedEnergy=0.0;
@@ -281,6 +282,7 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
     double elapsedTime = s.time;
     double finalRadiatedEnergy = s.radiatedEnergy;
     SimulationOutcome outcome = SimulationOutcome::NumericalFailure;
+    SimulationStopReason stopReason=SimulationStopReason::NumericalFailure;
     ClassicalTrajectoryEngine trajectory(s,
         {.relativeTolerance=1.0e-5,.maximumDepth=12,
          .compositionOrder=gIntegratorOrder,
@@ -323,8 +325,12 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
     Vec3 emissionDirection;
 
     bool reachedObservationCeiling=false;
-    while (s.time < observationTime && separation(s) > trajectoryCutoff
-           &&!(options.stopRequested&&options.stopRequested())) {
+    bool externalStopRequested=false;
+    while (s.time < observationTime && separation(s) > trajectoryCutoff) {
+        if(options.stopRequested&&options.stopRequested()) {
+            externalStopRequested=true;
+            break;
+        }
         // Resolve each instantaneous orbit well enough to keep numerical
         // energy drift below the physical radiation loss.
         const State beforeStep = s;
@@ -402,6 +408,7 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                 }
             }
             outcome = SimulationOutcome::ReachedCutoff;
+            stopReason=SimulationStopReason::ReachedCutoff;
             s = eventState;
             break;
         }
@@ -785,8 +792,11 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
     // boundary", not a numerical breakdown -- both are reported the same way.
     if (outcome != SimulationOutcome::ReachedCutoff && isFinite(s)
         && (s.time >= observationTime || reachedObservationCeiling
-            || (options.stopRequested && options.stopRequested()))) {
+            || externalStopRequested)) {
         outcome = SimulationOutcome::ObservationLimit;
+        stopReason=externalStopRequested
+            ?SimulationStopReason::StopRequested
+            :SimulationStopReason::ObservationTimeLimit;
         elapsedTime = s.time;
         finalRadiatedEnergy = s.radiatedEnergy;
     }
@@ -795,8 +805,8 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
         frames.push_back(makeFrame(s));
         if (options.frameReady) options.frameReady(frames.back());
     }
-    return {s, outcome, minimumSeparation, elapsedTime, finalRadiatedEnergy,
-            maximumBeta, std::move(frames)};
+    return {s, outcome, stopReason, minimumSeparation, elapsedTime,
+            finalRadiatedEnergy, maximumBeta, std::move(frames)};
 }
 
 SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
@@ -1026,6 +1036,6 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
                               ? run.elapsedTime : std::numeric_limits<double>::infinity();
     return {std::move(run.frames), {relativeEnergy, orbitalAngularMomentum,
             predictedClosestApproach, dipoleAlignment, timeToCutoff, phenomenon, seed},
-            run.outcome, run.minimumSeparation, run.elapsedTime,
+            run.outcome, run.stopReason, run.minimumSeparation, run.elapsedTime,
             run.finalRadiatedEnergy, run.maximumBeta};
 }

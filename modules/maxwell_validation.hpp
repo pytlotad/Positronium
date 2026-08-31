@@ -2999,6 +2999,100 @@ int runMaxwellSelfTest(
                     });
         });
     const bool stateIntegrityOk=stateInterpolationOk&&stateFiniteGuardOk;
+
+    // Synthetic censoring regression with known directions: failures become
+    // more likely as energy rises and impact parameter falls, while the
+    // administrative gate becomes more likely at high energy and large b.
+    // Repeated deterministic strata avoid making the validator itself
+    // stochastic and keep the logistic fits away from complete separation.
+    std::vector<positronium::statistics::CensoringObservation>
+        syntheticCensoringSample;
+    for(int energyIndex=0;energyIndex<10;++energyIndex) {
+        for(int impactIndex=0;impactIndex<10;++impactIndex) {
+            const double failureProbability=0.02+0.02*energyIndex
+                +0.015*(9-impactIndex);
+            const double administrativeProbability=0.03+0.01*energyIndex
+                +0.02*impactIndex;
+            for(int replicate=0;replicate<20;++replicate) {
+                const double quantile=(replicate+0.5)/20.0;
+                auto disposition=
+                    positronium::statistics::ObservationDisposition::Observed;
+                if(quantile<failureProbability) {
+                    disposition=positronium::statistics::
+                        ObservationDisposition::NumericalFailure;
+                } else if(quantile
+                          <failureProbability+administrativeProbability) {
+                    disposition=positronium::statistics::
+                        ObservationDisposition::AdministrativelyCensored;
+                }
+                syntheticCensoringSample.push_back({
+                    0.5+0.2*energyIndex,2.0+0.4*impactIndex,disposition,
+                    (energyIndex+impactIndex+replicate)%3});
+            }
+        }
+    }
+    const auto syntheticCensoring=positronium::statistics::analyzeCensoring(
+        syntheticCensoringSample,3);
+    const auto syntheticFailureByEnergy=positronium::statistics::binnedRate(
+        syntheticCensoringSample,true,
+        positronium::statistics::BinaryEndpoint::NumericalFailure);
+    const double syntheticCategorySum=std::accumulate(
+        syntheticCensoring.ipcwCategoryProbability.begin(),
+        syntheticCensoring.ipcwCategoryProbability.end(),0.0);
+    std::vector<positronium::statistics::CensoringObservation>
+        uncensoredSyntheticSample;
+    for(int index=0;index<30;++index) {
+        uncensoredSyntheticSample.push_back({1.0+0.1*index,0.5+0.2*index,
+            positronium::statistics::ObservationDisposition::Observed,index%3});
+    }
+    const auto uncensoredSynthetic=positronium::statistics::analyzeCensoring(
+        uncensoredSyntheticSample,3);
+    const bool censoringModelOk=syntheticCensoring.validCount==2000
+        &&syntheticCensoring.observedCount>0
+        &&syntheticCensoring.administrativelyCensoredCount>0
+        &&syntheticCensoring.numericalFailureCount>0
+        &&syntheticCensoring.completionModel.fitted
+        &&syntheticCensoring.completionModel.converged
+        &&syntheticCensoring.failureModel.fitted
+        &&syntheticCensoring.failureModel.converged
+        &&syntheticCensoring.failureModel.coefficient[1]>0.0
+        &&syntheticCensoring.failureModel.coefficient[2]<0.0
+        &&syntheticCensoring.completionModel.coefficient[1]<0.0
+        &&syntheticCensoring.completionModel.coefficient[2]<0.0
+        &&std::abs(syntheticCategorySum-1.0)<1.0e-12
+        &&syntheticCensoring.effectiveObservedSampleSize>0.0
+        &&!syntheticFailureByEnergy.empty()
+        &&uncensoredSynthetic.completionModel.constant
+        &&uncensoredSynthetic.completionModel.constantProbability==1.0
+        &&uncensoredSynthetic.failureModel.constant
+        &&uncensoredSynthetic.failureModel.constantProbability==0.0
+        &&uncensoredSynthetic.maximumIpcwWeight==1.0
+        &&uncensoredSynthetic.effectiveObservedSampleSize==30.0;
+    SimulationOptions visualTimeLimitOptions;
+    visualTimeLimitOptions.collectFrames=false;
+    visualTimeLimitOptions.observationTime=1.0e-24;
+    visualTimeLimitOptions.radiatedEnergyBookkeeping=false;
+    const SimulationResult visualTimeLimited=simulate(
+        0x19a72ULL,3,visualTimeLimitOptions);
+    SimulationOptions visualStopOptions=visualTimeLimitOptions;
+    visualStopOptions.observationTime=1.0e-15;
+    visualStopOptions.stopRequested=[](){return true;};
+    const SimulationResult visualStopped=simulate(
+        0x19a72ULL,3,visualStopOptions);
+    const bool visualCensoringSemanticsOk=
+        visualTimeLimited.outcome==SimulationOutcome::ObservationLimit
+        &&visualTimeLimited.stopReason
+            ==SimulationStopReason::ObservationTimeLimit
+        &&observationDisposition(visualTimeLimited.stopReason)
+            ==SimulationObservationDisposition::AdministrativelyCensored
+        &&visualStopped.outcome==SimulationOutcome::ObservationLimit
+        &&visualStopped.stopReason==SimulationStopReason::StopRequested
+        &&observationDisposition(visualStopped.stopReason)
+            ==SimulationObservationDisposition::AdministrativelyCensored
+        &&observationDisposition(SimulationStopReason::ReachedCutoff)
+            ==SimulationObservationDisposition::ObservedEndpoint
+        &&observationDisposition(SimulationStopReason::NumericalFailure)
+            ==SimulationObservationDisposition::NumericalFailure;
     State crossingBefore,crossingAfter;
     crossingBefore.firstPosition={1.1*nuclearCutoff,0.2*nuclearCutoff,0};
     crossingAfter.firstPosition={0.7*nuclearCutoff,-0.1*nuclearCutoff,0};
@@ -3748,7 +3842,7 @@ int runMaxwellSelfTest(
         && std::isfinite(quantizedDipoleTorqueDrain)
         && quantizedChargeReactionDrain==0.0
         && quantizedDipoleConstraintDrain==0.0;
-    const std::array<ValidationCheck,40> regressionChecks{{
+    const std::array<ValidationCheck,42> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -3782,6 +3876,8 @@ int runMaxwellSelfTest(
         {ValidationSection::AlgebraicIdentity,"quantized-radiation-drain",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"state-integrity",stateIntegrityOk},
+        {ValidationSection::NumericalRegression,"censoring-model",censoringModelOk},
+        {ValidationSection::NumericalRegression,"visual-censoring-semantics",visualCensoringSemanticsOk},
         {ValidationSection::NumericalRegression,"adaptive-depth-rejection",adaptiveDepthRejectionOk},
         {ValidationSection::Convergence,"causal-startup",causalStartupOk},
         {ValidationSection::Convergence,"history-construction-sensitivity",historyConstructionSensitivityOk},
