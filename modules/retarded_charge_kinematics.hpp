@@ -1,3 +1,5 @@
+#pragma once
+
 // Retarded point-charge kinematics: reconstructing where/how fast/how
 // accelerated a charge WAS at an earlier time from the state history, and
 // solving the light-cone equation that turns "earlier" into "retarded" for

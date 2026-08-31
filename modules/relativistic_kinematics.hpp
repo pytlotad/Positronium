@@ -1,3 +1,5 @@
+#pragma once
+
 // Relativistic point-particle kinematics (Lorentz factor, momentum, kinetic
 // energy, the momentum-to-velocity inverse) and the lab/proper covariant
 // dipole synchronization built on top of them.

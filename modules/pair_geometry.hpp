@@ -1,3 +1,5 @@
+#pragma once
+
 // Pair separation geometry and its regularization: the TRUE geometry used
 // for termination/diagnostics, and the floored, Plummer-softened variant
 // every conservative force/energy law reads instead so nothing diverges on

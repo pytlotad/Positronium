@@ -371,22 +371,9 @@ ZeroPointField makeZeroPointField(double lowFactor,double highFactor,
     return field;
 }
 
-DipoleTensor lorentzBoostDipole(const DipoleTensor& dipole,
-                                const Vec3& frameVelocity) {
-    const double speedSquared=frameVelocity.squaredNorm();
-    if(speedSquared==0.0) return dipole;
-    const double boostGamma=gamma(frameVelocity);
-    const double longitudinalFactor=boostGamma*boostGamma
-        /(boostGamma+1.0)/(c*c);
-    return {
-        (dipole.electric+cross(frameVelocity,dipole.magnetic)/(c*c))
-            *boostGamma
-            -frameVelocity*(longitudinalFactor
-                *dot(frameVelocity,dipole.electric)),
-        (dipole.magnetic-cross(frameVelocity,dipole.electric))*boostGamma
-            -frameVelocity*(longitudinalFactor
-                *dot(frameVelocity,dipole.magnetic))};
-}
+// lorentzBoostDipole (Stage 0 of splitting engine/experiments/ROOT
+// presentation apart -- see the header's own comment).
+#include "modules/lorentz_boost_dipole.hpp"
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 // Lorentz invariants of the polarization-magnetization tensor.  Only the
@@ -401,12 +388,10 @@ double dipoleSecondInvariant(const DipoleTensor& dipole) {
     return c*dot(dipole.electric,dipole.magnetic);
 }
 #endif
-Vec3 unit(const Vec3& v) { return v / v.norm(); }
-struct FourVector { double time=0.0; Vec3 space; }; // x^0=ct convention
-struct ElectromagneticField { Vec3 electric, magnetic; };
-double minkowskiDot(const FourVector& first,const FourVector& second) {
-    return first.time*second.time-dot(first.space,second.space);
-}
+// unit, FourVector, ElectromagneticField, minkowskiDot (Stage 0 of
+// splitting engine/experiments/ROOT presentation apart -- see the header's
+// own comment).
+#include "modules/relativistic_field_types.hpp"
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 #include "modules/maxwell_validation_backend.hpp"
