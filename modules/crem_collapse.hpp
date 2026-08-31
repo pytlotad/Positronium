@@ -1145,15 +1145,34 @@ double azimuthAveragedDipoleEnergy(double separation,
 // piece is comparable to the ENTIRE orbital angular momentum, not a correction
 // to it.
 //
-// Why it is nevertheless carried this way: the two moments counter-rotate about
-// a common field, so the component of the total spin along that field is
-// conserved and only the perpendicular part swings -- at the hyperfine scale
-// (~200 GHz, period ~5 ps) against an orbit that evolves over nanoseconds.  The
-// orbit therefore sees the average of a fast oscillation rather than a secular
-// drain, which is consistent with production being unchanged.  That is an
-// ARGUMENT, not a measurement: a proper treatment would feed the spin change
-// back into elements.specificAngularMomentum and its direction the way the
-// photon's own hbar already is, and that has not been done.
+// Why it is nevertheless carried this way, and why feeding it back has TWICE
+// been tried and TWICE withdrawn (see the "Sektor spinowy" README section for
+// the full measured history):
+//
+// The first attempt fed dS back into elements.specificAngularMomentum
+// wholesale.  It was withdrawn once measured: the counter-rotation rate is
+// 7.878 GHz (not the ~200 GHz first guessed -- that guess was itself wrong by
+// 26x, corrected in the same README section), and the checkpoint spacing at
+// production parameters is ~1.66 precession periods, not many.  So the orbit
+// does NOT see a time-averaged spin -- it samples the swing at an essentially
+// arbitrary phase every checkpoint, and any faithful feedback of an order-hbar
+// quantity sampled that way is a random walk on L, not a correction to it.
+//
+// The second attempt (this session) first fixed a genuine, separate bug in
+// the precession estimate below -- its 64-phase average was being applied at
+// the wrong time scale, mismatching real mechanical integration by 70-425x --
+// then re-tried the same feedback on the corrected estimate.  It still fails,
+// for a further reason found in the process: a fixed circular orbit and a
+// precessing dipole are not a stable decoupling once real electron/positron
+// moments are included, so there is no "correct dS" for a wholesale feedback
+// to converge to at this radius.  See the fix's own comment below for the
+// measurement.
+//
+// Both withdrawals kept the precession fix and dropped only the feedback, so
+// the spin sector's moments are now precessed as accurately as this
+// orbit-averaged approach allows -- orbital L is left alone until a treatment
+// exists that does not carry an eigenstate-free, randomly-phase-sampled spin
+// dynamics into the headline observable.
 //
 // Treatment: over many orbits the fast phase-dependent part of the effective
 // field averages out and each moment precesses about the ORBIT-AVERAGED field.
@@ -1187,8 +1206,44 @@ void advanceSkippedDipolePrecession(Vec3& firstDipole,Vec3& secondDipole,
     const double totalMassHere=firstMass+secondMass;
     if(!(totalMassHere>0.0)) return;
     constexpr int phaseNodes=64;
-    const double slice=properTime/static_cast<double>(phaseNodes);
-    Vec3 first=firstDipole,second=secondDipole;
+    // FIXED (was measured wrong by 70-425x -- see the note above this
+    // function's signature; this replaces its "slice=properTime/64,
+    // composed 64 times" body).  The bug: applyDipolePrecession was called
+    // 64 times, once per phase node, each rotating by the INSTANTANEOUS
+    // (un-averaged) rate for properTime/64 -- conflating "1/64 of the whole
+    // skip" (up to 200000 orbits) with "1/64 of one orbit".  Every phase
+    // therefore applied its local rate for a hugely-too-long duration, and
+    // composed 64 large, non-commuting rotations instead of one rotation at
+    // the orbit-averaged rate.
+    //
+    // Fix: sample the same 64 phases, but only to build the average angular
+    // velocity omega (Thomas-BMT effective field converted to a rotation
+    // rate, same physics applyDipolePrecession itself uses -- see its
+    // definition), then apply ONE proper (magnitude-preserving) rotation by
+    // that averaged omega over the FULL properTime.  Verified directly
+    // against real mechanical integration (radiation disabled, same fixed
+    // r0 and properTime, 2000 orbits): mismatch fell from 70x/425x to
+    // 13.4x/65.9x (para/ortho respectively) against the pre-fix
+    // decomposition.  Also tried: refreshing the average every properTime/8
+    // sub-step from the partially-rotated dipole, on the theory that omega
+    // itself drifts as the dipoles precess -- measured WORSE (367x/166x),
+    // so left at one shot; see this session's own note in the surrounding
+    // README section.  The residual double-digit mismatch was then traced
+    // further: it is not (only) an averaging-accuracy question.  Holding
+    // the orbit exactly circular at a fixed semi-major axis while only the
+    // dipoles precess is not itself a stable decoupling once real
+    // electron/positron magnetic moments are included -- a genuinely
+    // circular initial condition (bisected including the dipole-dipole
+    // force) still drifts by 3-4 orders of magnitude in separation over a
+    // few thousand orbits, or plunges to the trajectory cutoff within a
+    // tenth of one orbit, depending on the relative dipole orientation.
+    // That is a property of the coupled dynamics, not of this routine, and
+    // it is the same conclusion the back-reaction withdrawal (see the
+    // "Sektor spinowy" README section) reached by a different, independent
+    // measurement.
+    Vec3 firstOmegaSum,secondOmegaSum;
+    const double firstGFactor=activePair.first.gFactor;
+    const double secondGFactor=activePair.second.gFactor;
     for(int node=0;node<phaseNodes;++node) {
         const double phase=2.0*pi*(node+0.5)/static_cast<double>(phaseNodes);
         const Vec3 radial=radialHat*std::cos(phase)+tangentialHat*std::sin(phase);
@@ -1200,14 +1255,34 @@ void advanceSkippedDipolePrecession(Vec3& firstDipole,Vec3& secondDipole,
         sample.firstVelocity=tangential*(circularSpeed*secondMass/totalMassHere);
         sample.secondVelocity=
             tangential*(-circularSpeed*firstMass/totalMassHere);
-        sample.firstDipole=first;
-        sample.secondDipole=second;
+        sample.firstDipole=firstDipole;
+        sample.secondDipole=secondDipole;
         const StateHistory sampleHistory{State{sample}};
-        applyDipolePrecession(sample,slice,sampleHistory);
-        if(!isFinite(sample.firstDipole)||!isFinite(sample.secondDipole)) return;
-        first=sample.firstDipole;
-        second=sample.secondDipole;
+        const LocalElectromagneticFields fields=
+            localRelativisticFields(sample,sampleHistory);
+        firstOmegaSum=firstOmegaSum+thomasBmtEffectiveField(
+            sample.firstVelocity,fields.atFirst,firstGFactor)
+                *(-activePair.first.charge/firstMass);
+        secondOmegaSum=secondOmegaSum+thomasBmtEffectiveField(
+            sample.secondVelocity,fields.atSecond,secondGFactor)
+                *(-activePair.second.charge/secondMass);
     }
+    const Vec3 firstOmega=firstOmegaSum*(1.0/static_cast<double>(phaseNodes));
+    const Vec3 secondOmega=secondOmegaSum*(1.0/static_cast<double>(phaseNodes));
+    // Same rotation applyDipolePrecession/advanceThomasBmtDipole uses (a
+    // proper rotation, exact by construction, no rescale needed).
+    const auto rotateByOmega=[properTime](const Vec3& dipole,const Vec3& omega) {
+        const double angularSpeed=omega.norm();
+        if(!(angularSpeed>0.0)) return dipole;
+        const Vec3 axis=omega*(1.0/angularSpeed);
+        const double angle=angularSpeed*properTime;
+        const double cosine=std::cos(angle),sine=std::sin(angle);
+        return dipole*cosine+cross(axis,dipole)*sine
+            +axis*(dot(axis,dipole)*(1.0-cosine));
+    };
+    const Vec3 first=rotateByOmega(firstDipole,firstOmega);
+    const Vec3 second=rotateByOmega(secondDipole,secondOmega);
+    if(!isFinite(first)||!isFinite(second)) return;
     firstDipole=first;
     secondDipole=second;
 }

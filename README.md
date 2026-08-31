@@ -7653,6 +7653,82 @@ wymagałoby wyjaśnienia od nowa — a przed tym trzeba rozstrzygnąć, czy peł
 zmiana wektorowa jest właściwym traktowaniem sprzężenia, skoro robi z dyfuzji
 spinowej główny mechanizm kolapsu.
 
+#### Druga próba sprzężenia zwrotnego: naprawiony estymator, ten sam wynik
+
+Poproszony o naprawienie samego skrótu, zanim jakiekolwiek sprzężenie zwrotne
+zostanie podłączone z powrotem — `advanceSkippedDipolePrecession` miał
+osobny, wcześniej nieznaleziony błąd skali czasu, niezależny od pytania o
+sprzężenie.
+
+*Błąd.* 64-węzłowa pętla uśredniania fazowego wywoływała
+`applyDipolePrecession` 64 razy, za każdym razem obracając o CHWILOWĄ
+(nieuśrednioną) prędkość kątową przez \(properTime/64\) — mylącą „1/64
+całego pominiętego odcinka" (do \(200\,000\) orbit) z „1/64 jednej orbity".
+Każda faza stosowała więc swoje lokalne tempo przez drastycznie za długi
+czas, składając 64 duże, nieprzemienne obroty zamiast jednego obrotu w
+tempie uśrednionym po orbicie.
+
+*Naprawa i pomiar.* Te same 64 fazy są teraz próbkowane wyłącznie do
+zbudowania średniej prędkości kątowej \(\omega\) (ta sama fizyka co
+`thomasBmtEffectiveField`/`applyDipolePrecession`), po czym stosowany jest
+JEDEN obrót Rodriguesa tym uśrednionym \(\omega\) przez cały `properTime`.
+Zweryfikowane bezpośrednio wobec pełnej integracji mechanicznej
+(promieniowanie wyłączone, ten sam ustalony r0 i properTime, 2000 orbit):
+
+| wersja | rozbieżność mechanika/analityka (para / ortho) |
+|---|---|
+| przed naprawą (błąd skali) | \(70\times\) / \(425\times\) |
+| po naprawie (jeden strzał) | \(13{,}4\times\) / \(65{,}9\times\) |
+| próba pod-krokowa (odświeżanie \(\omega\) co \(properTime/8\)) | \(367\times\) / \(166\times\) — gorzej, odrzucona |
+
+Naprawa jest realna i utrzymana. Ale rezydualna rozbieżność \(13\)–\(66\times\)
+skłoniła do dalszego dochodzenia.
+
+*Skąd bierze się reszta.* Test porównawczy zakładał niejawnie, że orbita
+„kołowa" pozostaje dokładnie kołowa przez cały pominięty odcinek, skoro
+promieniowanie jest wyłączone. To założenie okazało się fałszywe. Bilans
+siły promieniowej użyty do wyznaczenia prędkości „kołowej" pierwotnie
+pomijał dipole na sondzie (siła dipol-dipol wewnątrz `mutualForces` była
+wyzerowana, bo sonda miała domyślne, zerowe momenty) — po naprawieniu tego
+bilansu (z realnymi momentami) okazało się, że orbita z prawdziwymi
+momentami dipolowymi elektron-pozyton przy \(r_0=8\times r_{\rm Comptona}\)
+**w ogóle nie jest dynamicznie stabilna**:
+
+- momenty równoległe do wektora separacji: promień zapada się do progu
+  odcięcia po \(\sim10\%\) jednej orbity,
+- momenty antyrównoległe: promień rośnie do \(\sim4720\times r_0\) po 2000
+  orbitach.
+
+`chargeDipoleForces` i `covariantDipoleGradientForce`, sprawdzone jawnie przy
+tej geometrii, wynoszą dokładnie zero — nie są przyczyną. Przyczyną jest to,
+że siła dipol-dipol zależy od kąta między momentami a wektorem separacji;
+gdy precesja BMT ten kąt zmienia, bilans siły radialnej ustalony przy
+\(t=0\) przestaje obowiązywać, i orbita dryfuje. Żadne dopracowanie
+uśredniania fazowego (jeden strzał czy pod-kroki) tego nie naprawi — to nie
+błąd uśredniania, tylko złamane założenie o rozdzielności skali czasowej
+orbita/precesja.
+
+*Ponowna próba sprzężenia zwrotnego — i drugie wycofanie.* Z naprawionym
+estymatorem połączono z powrotem \(\Delta\mathbf L=-\Delta\mathbf S\) (jak w
+pierwszej próbie wyżej) i zmierzono sparowany test A/B eksperymentu 5
+(N=40, ziarno 7, para+ortho):
+
+| | bez sprzężenia | z naprawionym uśrednianiem + sprzężeniem |
+|---|---|---|
+| promień lądowania, para (mediana) | \(7{,}73\) r* | \(561{,}6\) r* |
+| promień lądowania, ortho (mediana) | \(7{,}92\) r* | \(488{,}4\) r* |
+| promień terminalny | \(1530\) fm | \(\sim13\,800\) fm |
+| wiązanie terminalne | \(0{,}470\) keV | \(0{,}052\) keV |
+
+Mniej katastrofalne niż przed naprawą uśredniania (poprzednio zakres
+\(0{,}28\)–\(3939\) r*), ale wciąż eksplozja — mediana przesunięta o
+\(\sim60\)–\(70\times\). Sprzężenie zostało więc wycofane po raz drugi;
+naprawa uśredniania fazowego (realna, samodzielna poprawka, niezależna od
+pytania o sprzężenie) została zachowana. Pełne uzasadnienie i historia obu
+prób sprzężenia zwrotnego: komentarz przy `advanceSkippedDipolePrecession`
+w `modules/crem_collapse.hpp`. 39/39 PASS; produkcja (bez sprzężenia)
+niezmieniona co do cyfry względem stanu sprzed tego wątku.
+
 ### Sektor spinowy: co się okazało, gdy zaczęto go mierzyć
 
 Ta sekcja zbiera wątek, który przeszedł przez kilkanaście kroków i skończył się
