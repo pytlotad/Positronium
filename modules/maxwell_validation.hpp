@@ -891,6 +891,9 @@ int runMaxwellSelfTest(
         photonRecoilState.secondVelocity,secondMass);
     const double photonIncomingEnergy=
         photonFirstBefore.energy+photonSecondBefore.energy;
+    const double photonIncomingKinetic=
+        kineticEnergy(photonRecoilState.firstVelocity,firstMass)
+        +kineticEnergy(photonRecoilState.secondVelocity,secondMass);
     const Vec3 photonIncomingMomentum=
         photonFirstBefore.momentum+photonSecondBefore.momentum;
     const Vec3 photonIncomingComVelocity=photonIncomingMomentum
@@ -898,19 +901,34 @@ int runMaxwellSelfTest(
     Vec3 photonProbeDirection{0.31,-0.47,0.826};
     photonProbeDirection=photonProbeDirection
         *(1.0/photonProbeDirection.norm());
-    const double photonProbeEnergy=0.25*eCharge;
+    // Keep the recoil finite in units of the active pair instead of asking
+    // double precision to recover the same fixed 0.25 eV kick from both an
+    // electron and a proton rest-energy momentum.  One pair binding energy is
+    // still small beside the prepared state's O(0.025c) mechanical energy,
+    // remains equally meaningful for every selectable mass ratio, and keeps
+    // the mixed-pair recoil resolved below the strict 1e-8 closure bound
+    // without relaxing that bound.
+    const double photonProbeEnergy=
+        pairBindingEnergy(activePair);
     const StochasticPhotonRecoil photonRecoil=applyStochasticDipolePhoton(
         photonRecoilState,photonProbeEnergy,photonProbeDirection);
     const auto photonFirstAfter=two_body::fourMomentumFromVelocity(
         photonRecoilState.firstVelocity,firstMass);
     const auto photonSecondAfter=two_body::fourMomentumFromVelocity(
         photonRecoilState.secondVelocity,secondMass);
+    const double photonFinalKinetic=
+        kineticEnergy(photonRecoilState.firstVelocity,firstMass)
+        +kineticEnergy(photonRecoilState.secondVelocity,secondMass);
     const auto photonLab=two_body::boostFourMomentum(
         {photonProbeEnergy,photonProbeDirection*(photonProbeEnergy/c)},
         photonIncomingComVelocity);
     const double photonFourEnergyResidual=photonRecoil.emitted
-        ?std::abs(photonFirstAfter.energy+photonSecondAfter.energy
-            +photonLab.energy-photonIncomingEnergy)/photonProbeEnergy
+        // Rest energies are identical before and after and cancel exactly.
+        // Subtracting total energies first discarded the eV-scale recoil in
+        // the GeV-scale proton rest energy; the stable kinetic form tests the
+        // same four-energy identity without catastrophic cancellation.
+        ?std::abs(photonFinalKinetic+photonLab.energy
+            -photonIncomingKinetic)/photonProbeEnergy
         :std::numeric_limits<double>::infinity();
     const double photonFourMomentumResidual=photonRecoil.emitted
         ?(photonFirstAfter.momentum+photonSecondAfter.momentum
@@ -1466,7 +1484,16 @@ int runMaxwellSelfTest(
     // the orbital reaction.  Exercise that branch explicitly and restore the
     // process-wide option before any later validation probe observes it.
     const Vec3 savedExternalMagneticField=gExternalMagneticField;
-    gExternalMagneticField={0.23,-0.17,0.31};
+    const Vec3 secularExternalDirection{0.23,-0.17,0.31};
+    // A fixed field made this branch effectively zero for protonium: its
+    // internal precession set the elapsed time while the external turn fell
+    // below 1e-8 rad.  Match the external angular rate to the pair's own
+    // internal rate, keeping the test dimensionless across masses and g.
+    const double secularExternalFieldScale=secularAngularSpeed
+        /std::max(std::abs(firstGyromagneticRatioOf()),
+                  std::abs(secondGyromagneticRatioOf()));
+    gExternalMagneticField=secularExternalDirection
+        *(secularExternalFieldScale/secularExternalDirection.norm());
     const OrbitAveragedBmtAngularVelocities secularExternalRates=
         orbitAveragedBmtAngularVelocities(
             secularRadius,secularInitial.orbitalAngularMomentum,
@@ -2308,7 +2335,18 @@ int runMaxwellSelfTest(
         // at both discretizations.  R=0.2 is deliberately one of them, so the
         // headline numbers above appear inside the sweep too.
         {
-            constexpr std::array<double,3> sweptFactors{0.05,0.2,0.8};
+            // Preserve the 16x dimensionless radius span, but do not place a
+            // probe below its own declared spatial resolution.  For
+            // protonium 0.05*a_pair is only 2.9 fm, below nuclearCutoff; the
+            // resulting third-derivative subtraction is ill-conditioned and
+            // refinement measures more cancellation noise, not convergence.
+            // Other selectable pairs remain exactly at 0.05/0.2/0.8.
+            const double minimumSweptFactor=std::max(
+                0.05,1.25*nuclearCutoff/larmorProbeRadius);
+            const std::array<double,3> sweptFactors{
+                minimumSweptFactor,
+                4.0*minimumSweptFactor,
+                16.0*minimumSweptFactor};
             for(std::size_t index=0;index<sweptFactors.size();++index) {
                 balanceRadiusFactor=sweptFactors[index];
                 balanceTolerance=1.0e-6;
@@ -2470,7 +2508,12 @@ int runMaxwellSelfTest(
     }
 
     const auto trajectoryResidual=[](const State& value,const State& reference) {
-        const double lengthScale=std::max(separation(reference),nuclearCutoff);
+        // The old nuclearCutoff floor was an absolute hydrogen-scale length.
+        // It dwarfed protonium and made a failed heavy-pair trajectory look
+        // artificially accurate.  The active pair's own terminal surface is
+        // the smallest meaningful length for this dimensionless comparison.
+        const double lengthScale=std::max(
+            separation(reference),collisionBoundaryRadius);
         const double speedScale=std::max(
             (reference.firstVelocity-reference.secondVelocity).norm(),
             1.0e-6*c);
@@ -2637,6 +2680,9 @@ int runMaxwellSelfTest(
     std::array<double,3> cutoffEventResiduals{};
     const double sensitivityOrbitRadius=pairBohrRadius(activePair);
     const double sensitivityStartRadius=0.02*sensitivityOrbitRadius;
+    const double sensitivityTimeScale=std::sqrt(
+        pairReducedMass*sensitivityOrbitRadius*sensitivityOrbitRadius
+            *sensitivityOrbitRadius/pairCoulombStrength);
     const double sensitivityFirstShare=secondMass/(firstMass+secondMass);
     const double sensitivitySecondShare=firstMass/(firstMass+secondMass);
     const double sensitivityRadialSpeed=0.25*std::sqrt(
@@ -2646,8 +2692,13 @@ int runMaxwellSelfTest(
     cutoffInitial.secondPosition={-sensitivitySecondShare*sensitivityStartRadius,0,0};
     cutoffInitial.firstVelocity={-sensitivityFirstShare*sensitivityRadialSpeed,0,0};
     cutoffInitial.secondVelocity={sensitivitySecondShare*sensitivityRadialSpeed,0,0};
-    cutoffInitial.firstDipole={0,0,firstMagneticMoment};
-    cutoffInitial.secondDipole={0,0,secondMagneticMoment};
+    // This probe validates event localization at the cutoff.  Carrying the
+    // physical dipoles here mixed in a second question: for protonium their
+    // short-range barrier correctly prevents the radial plunge from ever
+    // reaching any of the three surfaces.  The regulator has its own probe
+    // below, so switch dipoles off and test one mechanism at a time.
+    cutoffInitial.firstDipole={};
+    cutoffInitial.secondDipole={};
     synchronizeCovariantDipoles(cutoffInitial);
     for(std::size_t index=0;index<cutoffFractions.size();++index) {
         const double cutoff=cutoffFractions[index]*sensitivityOrbitRadius;
@@ -2668,8 +2719,8 @@ int runMaxwellSelfTest(
         }
         if(advanced&&separation(value)<=cutoff) {
             const double fraction=separationCrossingFraction(before,value,cutoff);
-            cutoffArrivalTimes[index]=before.time
-                +fraction*(value.time-before.time);
+            cutoffArrivalTimes[index]=(before.time
+                +fraction*(value.time-before.time))/sensitivityTimeScale;
             const State event=interpolateState(before,value,fraction);
             cutoffEventResiduals[index]=std::abs(separation(event)-cutoff)/cutoff;
         } else {
@@ -2680,6 +2731,7 @@ int runMaxwellSelfTest(
 
     const std::array<double,3> regularizationRadiusFactors{0.5,1.0,2.0};
     std::array<State,3> regularizationScanStates{};
+    std::array<bool,3> regularizationScanAdvanced{};
     const double savedRegularizationRadius=magneticRegularizationRadius;
     const double regulatorProbeSeparation=4.0*savedRegularizationRadius;
     const double regulatorProbeSpeed=std::sqrt(
@@ -2694,22 +2746,32 @@ int runMaxwellSelfTest(
         -sensitivitySecondShare*regulatorProbeSeparation,0,0};
     regulatorInitial.firstVelocity={0,sensitivityFirstShare*regulatorProbeSpeed,0};
     regulatorInitial.secondVelocity={0,-sensitivitySecondShare*regulatorProbeSpeed,0};
-    regulatorInitial.firstDipole={0,0,firstMagneticMoment};
-    regulatorInitial.secondDipole={0,0,secondMagneticMoment};
-    regulatorInitial.firstProperDipole=regulatorInitial.firstDipole;
-    regulatorInitial.secondProperDipole=regulatorInitial.secondDipole;
+    // Proper moments are the independent representation.  Copying them into
+    // the lab slots as well is inconsistent once the particles move: the
+    // missing boosted electric dipoles produce a finite discontinuity on the
+    // first engine step that adaptive subdivision cannot converge away.
+    regulatorInitial.firstProperDipole={0,0,firstMagneticMoment};
+    regulatorInitial.secondProperDipole={0,0,secondMagneticMoment};
+    synchronizeCovariantDipoles(regulatorInitial);
     for(std::size_t index=0;index<regularizationRadiusFactors.size();++index) {
         magneticRegularizationRadius=
             savedRegularizationRadius*regularizationRadiusFactors[index];
         State value=regulatorInitial;
         ClassicalTrajectoryEngine engine(value,
-            {.relativeTolerance=1.0e-6,.maximumDepth=12,
+            {.relativeTolerance=1.0e-6,.maximumDepth=14,
              .compositionOrder=2,
              .reactionModel=ChargeRadiationReactionModel::disabled,
              .computeOutwardFlux=false});
         bool advanced=true;
-        for(int step=0;step<32&&advanced;++step)
-            advanced=engine.advance(value,regulatorProbePeriod/512.0);
+        // This is a local sensitivity probe, not a stability claim for an
+        // orbit whose regulator has deliberately been changed by 2x.  A
+        // 1/256-orbit window is long enough to separate all three responses
+        // from round-off while staying before the intentionally modified
+        // short-range potential can turn the comparison into a collision or
+        // escape experiment of its own.
+        for(int step=0;step<8&&advanced;++step)
+            advanced=engine.advance(value,regulatorProbePeriod/2048.0);
+        regularizationScanAdvanced[index]=advanced;
         if(!advanced) value.time=std::numeric_limits<double>::quiet_NaN();
         regularizationScanStates[index]=value;
     }
@@ -3564,6 +3626,8 @@ int runMaxwellSelfTest(
             [](double value){return std::isfinite(value)&&value<1.0e-10;})
         &&std::ranges::all_of(regularizationScanStates,
             [](const State& value){return isFinite(value);})
+        &&std::ranges::all_of(regularizationScanAdvanced,
+            [](bool value){return value;})
         &&std::ranges::all_of(regularizationTrajectoryResiduals,
             [](double value){return std::isfinite(value)&&value<1.0;})
         // Guards against a scan that accidentally stops routing the mutable
@@ -3875,9 +3939,9 @@ int runMaxwellSelfTest(
               << "history construct early/settled: "
               << startupEarlySensitivity << " / "
               << startupSettledSensitivity << '\n'
-              << "cutoff scan f=0.004/5/6 time: "
+              << "cutoff scan f=0.004/5/6 t/t_pair: "
               << cutoffArrivalTimes[0] << " / " << cutoffArrivalTimes[1]
-              << " / " << cutoffArrivalTimes[2] << " s\n"
+              << " / " << cutoffArrivalTimes[2] << '\n'
               << "cutoff event residuals: " << cutoffEventResiduals[0]
               << " / " << cutoffEventResiduals[1] << " / "
               << cutoffEventResiduals[2] << '\n'
@@ -3885,6 +3949,10 @@ int runMaxwellSelfTest(
               << regularizationTrajectoryResiduals[0] << " / "
               << regularizationTrajectoryResiduals[1] << " / "
               << regularizationTrajectoryResiduals[2] << '\n'
+              << "reg-radius scan advanced .5/1/2: "
+              << regularizationScanAdvanced[0] << " / "
+              << regularizationScanAdvanced[1] << " / "
+              << regularizationScanAdvanced[2] << '\n'
               << "history linear/H:  " << interpolationFine[0] << " / "
               << interpolationFine[1] << '\n'
               << "Hermite order:     " << hermiteConvergenceOrder << '\n'

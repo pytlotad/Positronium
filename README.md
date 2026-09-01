@@ -6305,6 +6305,44 @@ nadal etykietuje wychwycone stany jako „Para-/Ortho-Positronium" i zapisuje
 panele `collapse_time_distribution_*` z odniesieniem τ_exp z danych
 pozytonium, co dla innej pary jest mylące.
 
+Kontrakt wielu par jest egzekwowany przez
+`.github/workflows/pair-matrix.yml`. Macierz obejmuje dziewięć fizycznie
+różnych kombinacji gatunku o ładunku ujemnym i dodatnim:
+
+| ujemny \ dodatni | `positron` | `antimuon` | `proton` |
+| --- | --- | --- | --- |
+| `electron` | e⁻e⁺ | e⁻μ⁺ | e⁻p |
+| `muon` | μ⁻e⁺ | μ⁻μ⁺ | μ⁻p |
+| `antiproton` | p̄e⁺ | p̄μ⁺ | p̄p |
+
+Odwrócenie kolejności ról nie uruchamia drugiej, fizycznie identycznej pracy
+CI; każdy przebieg walidatora zawiera wymuszone kontrole
+`two-body-role-invariance` i `role-routing`. Dla każdej pozycji macierzy są
+publikowane **dwa niezależne wyniki**:
+
+- `validator`: pełne `positronium_validation --statistics-profile small`,
+- `production`: jedno zdarzenie eksperymentu 4 przez właściwy plik wykonywalny,
+  którego kod wyjścia rozróżnia `NumericalFailure` od poprawnego lub
+  prawostronnie ocenzurowanego wyniku.
+
+Lokalnie te same ścieżki uruchamiają odpowiednio:
+
+```bash
+make validation-pair PAIR=electron,proton
+make production-pair-smoke PAIR=electron,proton
+```
+
+Sondy wspólne dla gatunków nie używają już stałych skali pozytonium: energia
+testowego fotonu jest stałym ułamkiem energii wiązania aktywnej pary, błąd
+położenia jest normowany jej własną granicą zderzenia, czasy skanu powierzchni
+są podawane w jednostkach czasu Keplera pary, a skan bilansu radiacyjnego
+zachowuje rozpiętość 16× w `R/a_pair`, lecz nie schodzi poniżej
+`1.25*nuclearCutoff`, gdzie różnicowanie trzeciej pochodnej nie jest już
+rozdzielone. Skan powierzchni ma wyzerowane dipole, ponieważ sprawdza
+interpolację zdarzenia; osobna sonda regulatora sprawdza sektor dipolowy.
+Dzięki temu awaria bariery dipolowej nie może podszywać się pod awarię
+lokalizatora granicy.
+
 ### Klasyczna gęstość kontaktowa wzdłuż spirali
 
 Kwantowe tempo anihilacji jest rządzone gęstością w zerze,

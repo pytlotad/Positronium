@@ -1,0 +1,60 @@
+name: Pair matrix
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pair-matrix-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validator:
+    name: validator (${{ matrix.pair }})
+    runs-on: ubuntu-latest
+    container: rootproject/root:6.34.00-ubuntu24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        pair:
+          - electron,positron
+          - electron,antimuon
+          - electron,proton
+          - muon,positron
+          - muon,antimuon
+          - muon,proton
+          - antiproton,positron
+          - antiproton,antimuon
+          - antiproton,proton
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run numerical validator
+        run: make validation-pair PAIR="${{ matrix.pair }}"
+
+  production-smoke:
+    name: production (${{ matrix.pair }})
+    runs-on: ubuntu-latest
+    container: rootproject/root:6.34.00-ubuntu24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        pair:
+          - electron,positron
+          - electron,antimuon
+          - electron,proton
+          - muon,positron
+          - muon,antimuon
+          - muon,proton
+          - antiproton,positron
+          - antiproton,antimuon
+          - antiproton,proton
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run production trajectory
+        run: make production-pair-smoke PAIR="${{ matrix.pair }}"

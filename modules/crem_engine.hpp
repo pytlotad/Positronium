@@ -125,7 +125,13 @@ public:
     const StateHistory& history() const { return history_; }
 private:
     static double normalizedStepError(const State& coarse,const State& fine) {
-        const double lengthScale=std::max(separation(fine),nuclearCutoff);
+        // Error control must follow the selected pair.  The former universal
+        // nuclearCutoff floor exceeded a protonium orbit in the inner radius
+        // sweep, so a nominal relative tolerance became much looser exactly
+        // where the heavy-pair dynamics was hardest.  The pair's own terminal
+        // surface is the smallest resolved length in this engine.
+        const double lengthScale=std::max(
+            separation(fine),collisionBoundaryRadius);
         const double speedScale=std::max(
             (fine.firstVelocity-fine.secondVelocity).norm(),1.0e-6*c);
         return std::max({

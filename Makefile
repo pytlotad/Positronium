@@ -3,16 +3,20 @@ SANITIZER_CXX ?= clang++
 ROOT_CXXFLAGS := $(shell root-config --cflags)
 ROOT_LDFLAGS := $(shell root-config --libs)
 WARNINGS := -Wall -Wextra -Wpedantic
-CXXFLAGS := -O3 -march=native $(WARNINGS) $(ROOT_CXXFLAGS)
+PROJECT_CXX_STANDARD := -std=c++20
+CXXFLAGS := -O3 -march=native $(WARNINGS) $(ROOT_CXXFLAGS) $(PROJECT_CXX_STANDARD)
 LDFLAGS := $(ROOT_LDFLAGS)
 
 # Portable, path-independent compiler profile for archived/publication builds.
 # It deliberately contains neither -march=native nor -mtune=native.
-REPRO_CXXFLAGS := -O3 $(WARNINGS) $(ROOT_CXXFLAGS) \
+REPRO_CXXFLAGS := -O3 $(WARNINGS) $(ROOT_CXXFLAGS) $(PROJECT_CXX_STANDARD) \
 	-ffile-prefix-map=$(CURDIR)=. -fmacro-prefix-map=$(CURDIR)=. \
 	-frandom-seed=positronium
 SANITIZER_CXXFLAGS := -O1 -g $(WARNINGS) $(ROOT_CXXFLAGS) \
+	$(PROJECT_CXX_STANDARD) \
 	-fno-omit-frame-pointer -ffile-prefix-map=$(CURDIR)=.
+PAIR ?= electron,positron
+PAIR_SMOKE_ENERGY_EV ?= 20
 
 TARGET := positronium
 VALIDATION_TARGET := positronium_validation
@@ -24,6 +28,7 @@ SRC := positronium.cpp
 HEADERS := $(wildcard modules/*.hpp)
 
 .PHONY: all build validation validation-small validation-publication \
+	validation-pair production-pair-smoke \
 	reproducible reproducible-validation sanitizers sanitizers-check \
 	references-check toolchain-info run clean
 
@@ -38,6 +43,16 @@ validation-small: $(VALIDATION_TARGET)
 
 validation-publication: $(VALIDATION_TARGET)
 	./$(VALIDATION_TARGET) --statistics-profile publication
+
+# CI entry points deliberately remain separate.  A regression-suite failure
+# must not be reported as a failed production trajectory (or vice versa).
+validation-pair: $(VALIDATION_TARGET)
+	./$(VALIDATION_TARGET) --statistics-profile small --pair "$(PAIR)"
+
+production-pair-smoke: $(TARGET)
+	./$(TARGET) --mode statistical --phenomenon 4 --runs 1 --seed 42 \
+		--pair "$(PAIR)" --beam-energy-ev "$(PAIR_SMOKE_ENERGY_EV)" \
+		--theta-min-deg 5 --angle-bins 10
 
 reproducible: $(REPRO_TARGET)
 
