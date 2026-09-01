@@ -1976,11 +1976,20 @@ i uruchamia poleceniem:
 make sanitizers-check
 ```
 
-ASan ma wyłączone wykrywanie wycieków, ponieważ proces ładuje ROOT; nadal
-sprawdza błędy dostępu do pamięci. UBSan zatrzymuje test przy pierwszym
-wykrytym niezdefiniowanym zachowaniu. Sanitizatory domyślnie korzystają z
-`clang++` (niezależnie od produkcyjnego GCC); można to zmienić przez
-`SANITIZER_CXX=...`.
+Każdy profil buduje dwa binaria: walidator oraz pełny program produkcyjny bez
+`POSITRONIUM_VALIDATION_EXECUTABLE`. Po zestawie walidacyjnym uruchamiane są
+w katalogu tymczasowym dwa przebiegi produkcyjne: krótki, prawostronnie
+cenzurowany kolaps CREM oraz eksperyment 5. Pokrywają one odpowiednio
+`crem_collapse.hpp` oraz klasyfikację zderzeń, modele cenzurowania, analizę
+statystyczną i eksport PDF. ASan działa z włączonym LeakSanitizerem
+(`detect_leaks=1`). Jedyna reguła w `tools/lsan-root.supp` obejmuje alokacje
+zaczynające się wewnątrz znanej ścieżki `TDirectory::CloneObject`, używanej
+przez ROOT-owe `TPad::DrawClone`; nie wycisza wycieków programu, otaczającego
+eksportera ani innych ścieżek ROOT. UBSan zatrzymuje test przy pierwszym
+niezdefiniowanym zachowaniu. Sanitizatory domyślnie korzystają z `clang++`
+(niezależnie od produkcyjnego GCC); można to zmienić przez
+`SANITIZER_CXX=...`. Te same dwa profile są osobnymi zadaniami CI w
+`.github/workflows/sanitizers.yml`.
 
 Metadane bibliograficzne z niepustym DOI można porównać automatycznie z
 Crossref. Kontrola sprawdza składnię DOI, kanoniczny adres `doi.org`, istnienie
@@ -3222,13 +3231,14 @@ odtworzyć moc M1. W praktyce nie jest to luka — stany związane, które ta
 ścieżka liczy, mają M1 dokładnie zero, bo oba momenty wchodzą do koherentnej
 amplitudy M1 jako \(\mathbf m_1+\mathbf m_2\) i się znoszą.
 
-Bramka regresyjna `quantized-radiation-drain` pilnuje tego wprost: w trybie
+Bramka regresyjna `quantized-radiation-gating` pilnuje tego wprost: w trybie
 skwantowanym ciągła siła reakcji ładunku i drenaż rezerwuaru dipolowego muszą
-być **dokładnie** zerowe. Test ma moc rozróżniającą — na budowie z przywróconym
-ciągłym drenażem M1 czyta \(3{,}19\cdot10^{-13}\) i oblewa. Wcześniej żaden
-wymuszany test nie wykonywał w ogóle ścieżki stochastycznej, więc pomyłka w
-bramkowaniu (albo jej brak, czyli podwójne liczenie energii kanału) była
-niewidoczna.
+być **dokładnie** zerowe, ale reakcja orientacyjna musi pozostać włączona.
+Kontrolowany poprzeczny moment przechodzi przez tę samą funkcję bramkującą co
+krok produkcyjny: stan stochastyczny musi zmienić kierunek obu dipoli, kontrola
+`disabled` ma pozostać nieruchoma, a normy dipoli mają być zachowane. Dzięki
+temu test wykrywa zarówno podwójne liczenie energii, jak i przypadkowe
+wyłączenie momentu reakcyjnego; nie opiera się już na literalnym zerze.
 
 Niskoprędkościowym punktem odniesienia dla sprzężenia poruszającego się
 ładunku z poruszającym się dipolem drugiej cząstki jest człon lagrangianu
@@ -8351,8 +8361,8 @@ Efekt jest więc **wyłącznie po stronie para**.
 
 *Sprawdzone dokładniej — i to nie jest luka, tylko projekt.* Nazwałem to
 „gniazdem bez pary" i zaproponowałem naprawę przez włączenie drenażu.
-**Obie wersje tej naprawy zawodzą walidację** (38/39, pada
-`quantized-radiation-drain`): i „zawsze drenuj", i „drenuj wtedy, gdy działa
+**Obie wersje tej naprawy zawodzą walidację** (pada
+`quantized-radiation-gating`): i „zawsze drenuj", i „drenuj wtedy, gdy działa
 moment siły". Treścią tego checku jest dokładnie to, że w trybie skwantowanym
 **żadna energia nie może być usuwana w sposób ciągły** — wszystko ma wyjść w
 kwantach. Bramka nie jest niedopatrzeniem, tylko zapisaną decyzją, egzekwowaną.
@@ -8362,15 +8372,15 @@ Więc oryginalne zdanie było **poprawne**, tylko podałem dla niego słaby pow�
 żeby hazard fotonowy niósł udział M1, bo żadna inna droga nie przechodzi przez
 bramkę.
 
-*Co jest naprawdę zepsute, i co mnie zmyliło.* Komentarz przy tym checku wciąż
+*Co było naprawdę zepsute, i co mnie zmyliło.* Komentarz przy tym checku wciąż
 wymieniał **moment reakcji** wśród rzeczy, które muszą być zerem w trybie
-skwantowanym. Przestało to być prawdą, gdy bramkę rozdzielono na dwie flagi —
-co widać w drugim komentarzu, przy `quantizedDipoleTorqueDrain`: *„there is no
-longer a torque-suppression decision for it to confirm"*, a residuum momentu
-jest tam **celowo ustawiane na zero**, bo `applyDipoleRadiationTorque`
-renormalizuje to, co obraca (zmierzone \(1{,}35\cdot10^{-13}\) wobec
-\(1{,}37\cdot10^{-13}\) — brak rozdzielenia), a efekt wymaga pełnego
-inspiralu, nie testu jednostkowego.
+skwantowanym. Przestało to być prawdą, gdy bramkę rozdzielono na dwie flagi.
+Pierwsza próba kontroli normy dipola nie miała mocy rozróżniającej, ponieważ
+`applyDipoleRadiationTorque` z definicji renormalizuje obracany moment. Obecny
+`quantized-radiation-gating` podaje kontrolowany moment poprzeczny i mierzy
+zmianę **kierunku**: ścieżka stochastyczna obraca dipole, `disabled` pozostaje
+nieruchoma, a norma jest sprawdzana osobno. Nie ma już atrapy ustawianej na
+zero ani potrzeby całkowania pełnego inspiralu w tym teście bramki.
 
 Czytając nieaktualną klauzulę, para „moment włączony / drenaż wyłączony"
 wygląda na złamaną symetrię i naprawa wydaje się oczywista. Nie jest.
@@ -8379,10 +8389,10 @@ Klauzula poprawiona.
 *„Sektor M1 nie robi nic" — sprawdzone i za mocne.* Oparłem to na tym, że trzy
 konfiguracje (produkcja, drenaż włączony, moment wyłączony) dają identyczne
 **mediany**. To był zły pomiar: mediana czasu kolapsu nie jest wielkością, na
-którą działa moment siły — on obraca **momenty magnetyczne**. A kod sam
-zapowiadał wynik przeciwny, w komentarzu przy `quantizedDipoleTorqueDrain`:
-*„The torque's effect is real but needs a full inspiral to accumulate to
-something measurable."*
+którą działa moment siły — on obraca **momenty magnetyczne**. Rzeczywisty,
+nieprzeskalowany moment pozostaje jednak tak mały, że jego wpływ na pełną
+trajektorię trzeba mierzyć na długim inspiralu; kontrolowany test sprawdza
+wyłącznie poprawność routingu reakcji.
 
 Zmierzone na właściwej wielkości — dryf kąta wzajemnego \(\cos\) od
 przygotowania do stopu, sparowane z momentem i bez:

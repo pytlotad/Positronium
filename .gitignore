@@ -6,6 +6,8 @@
 /positronium_validation_reproducible
 /positronium_validation_asan
 /positronium_validation_ubsan
+/positronium_asan
+/positronium_ubsan
 *.o
 *.d
 

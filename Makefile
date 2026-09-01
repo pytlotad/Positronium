@@ -24,12 +24,16 @@ REPRO_TARGET := positronium_reproducible
 REPRO_VALIDATION_TARGET := positronium_validation_reproducible
 ASAN_VALIDATION_TARGET := positronium_validation_asan
 UBSAN_VALIDATION_TARGET := positronium_validation_ubsan
+ASAN_PRODUCTION_TARGET := positronium_asan
+UBSAN_PRODUCTION_TARGET := positronium_ubsan
+LSAN_SUPPRESSIONS := $(CURDIR)/tools/lsan-root.supp
 SRC := positronium.cpp
 HEADERS := $(wildcard modules/*.hpp)
 
 .PHONY: all build validation validation-small validation-publication \
 	validation-pair production-pair-smoke \
-	reproducible reproducible-validation sanitizers sanitizers-check \
+	reproducible reproducible-validation sanitizers asan-check ubsan-check \
+	sanitizers-check \
 	references-check toolchain-info run clean
 
 all: run
@@ -58,11 +62,23 @@ reproducible: $(REPRO_TARGET)
 
 reproducible-validation: $(REPRO_VALIDATION_TARGET)
 
-sanitizers: $(ASAN_VALIDATION_TARGET) $(UBSAN_VALIDATION_TARGET)
+sanitizers: $(ASAN_VALIDATION_TARGET) $(UBSAN_VALIDATION_TARGET) \
+	$(ASAN_PRODUCTION_TARGET) $(UBSAN_PRODUCTION_TARGET)
 
-sanitizers-check: sanitizers
-	ASAN_OPTIONS=detect_leaks=0 ./$(ASAN_VALIDATION_TARGET) --statistics-profile small
+asan-check: $(ASAN_VALIDATION_TARGET) $(ASAN_PRODUCTION_TARGET)
+	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 \
+		LSAN_OPTIONS=suppressions=$(LSAN_SUPPRESSIONS):print_suppressions=1 \
+		./$(ASAN_VALIDATION_TARGET) --statistics-profile small
+	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 \
+		LSAN_OPTIONS=suppressions=$(LSAN_SUPPRESSIONS):print_suppressions=1 \
+		./tools/run_sanitized_production_smoke.sh ./$(ASAN_PRODUCTION_TARGET)
+
+ubsan-check: $(UBSAN_VALIDATION_TARGET) $(UBSAN_PRODUCTION_TARGET)
 	UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 ./$(UBSAN_VALIDATION_TARGET) --statistics-profile small
+	UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 \
+		./tools/run_sanitized_production_smoke.sh ./$(UBSAN_PRODUCTION_TARGET)
+
+sanitizers-check: asan-check ubsan-check
 
 toolchain-info:
 	@$(CXX) --version | head -n 1
@@ -101,7 +117,16 @@ $(UBSAN_VALIDATION_TARGET): $(SRC) $(HEADERS)
 		-DPOSITRONIUM_ENABLE_FIELD_VALIDATION -DPOSITRONIUM_VALIDATION_EXECUTABLE \
 		-o $@ $(SRC) $(LDFLAGS) -fsanitize=undefined
 
+$(ASAN_PRODUCTION_TARGET): $(SRC) $(HEADERS)
+	$(SANITIZER_CXX) $(SANITIZER_CXXFLAGS) -fsanitize=address \
+		-o $@ $(SRC) $(LDFLAGS) -fsanitize=address
+
+$(UBSAN_PRODUCTION_TARGET): $(SRC) $(HEADERS)
+	$(SANITIZER_CXX) $(SANITIZER_CXXFLAGS) -fsanitize=undefined \
+		-o $@ $(SRC) $(LDFLAGS) -fsanitize=undefined
+
 clean:
 	rm -f $(TARGET) $(VALIDATION_TARGET) $(REPRO_TARGET) \
 		$(REPRO_VALIDATION_TARGET) $(ASAN_VALIDATION_TARGET) \
-		$(UBSAN_VALIDATION_TARGET)
+		$(UBSAN_VALIDATION_TARGET) $(ASAN_PRODUCTION_TARGET) \
+		$(UBSAN_PRODUCTION_TARGET)

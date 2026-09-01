@@ -1276,6 +1276,21 @@ void applyDipoleRadiationTorque(State& state,
     synchronizeCovariantDipoles(state);
 }
 
+bool dipoleRadiationTorqueEnabled(ChargeRadiationReactionModel model) {
+    // A stochastic photon supplies the linear recoil, but it does not rotate
+    // the magnetic moment which emitted it.  Keep that orientation reaction
+    // active in the quantized model; only the fully disabled reference turns
+    // every radiation-reaction channel off.
+    return model!=ChargeRadiationReactionModel::disabled;
+}
+
+void applyDipoleRadiationTorqueForModel(
+    State& state,const ParticleMultipoleRadiation& reaction,double dt,
+    ChargeRadiationReactionModel model) {
+    if(dipoleRadiationTorqueEnabled(model))
+        applyDipoleRadiationTorque(state,reaction,dt);
+}
+
 // f(r)=w(r)/r^3 and its derivatives.  Defining the regulator at the
 // vector-potential level ensures that every use of the dipole field employs
 // the same B=curl(A), including all derivatives of w.
@@ -2376,8 +2391,6 @@ void integrateElectrodynamicStep(State& s, double dt,
     const bool quantizedRadiation=
         reactionModel==ChargeRadiationReactionModel::stochasticElectricDipole
         ||reactionModel==ChargeRadiationReactionModel::disabled;
-    const bool applyDipoleReactionTorque=
-        reactionModel!=ChargeRadiationReactionModel::disabled;
     const double initialMechanicalEnergy=conservativeParticleEnergy(balanceStart);
     const CanonicalMomenta initialCanonical=canonicalMomenta(balanceStart);
     const Vec3 initialMechanicalMomentum=noetherMomentum(initialCanonical);
@@ -2394,8 +2407,8 @@ void integrateElectrodynamicStep(State& s, double dt,
         s.time = std::numeric_limits<double>::quiet_NaN();
         return;
     }
-    if(applyDipoleReactionTorque)
-        applyDipoleRadiationTorque(s,radiation,0.5*dt);
+    applyDipoleRadiationTorqueForModel(
+        s,radiation,0.5*dt,reactionModel);
     Vec3 firstMomentum = momentum(s.firstVelocity, firstMass)
         + (forces.first + radiation.chargeReaction.first) * (0.5 * dt);
     Vec3 secondMomentum = momentum(s.secondVelocity, secondMass)
@@ -2428,8 +2441,8 @@ void integrateElectrodynamicStep(State& s, double dt,
     trial.firstVelocity = velocityFromMomentum(firstMomentum, firstMass);
     trial.secondVelocity = velocityFromMomentum(secondMomentum, secondMass);
     applyDipolePrecession(trial, 0.5 * dt, history);
-    if(applyDipoleReactionTorque)
-        applyDipoleRadiationTorque(trial,trialRadiation,0.5*dt);
+    applyDipoleRadiationTorqueForModel(
+        trial,trialRadiation,0.5*dt,reactionModel);
     trial.firstAcceleration = relativisticAcceleration(trial.firstVelocity, trialForces.first, firstMass);
     trial.secondAcceleration = relativisticAcceleration(trial.secondVelocity, trialForces.second, secondMass);
     // Flux bookkeeping is accumulated from the COMMITTED state only, never
@@ -2517,7 +2530,7 @@ void integrateElectrodynamicStep(State& s, double dt,
     // orbitalRadiatedEnergy is a decomposition of the measured Poynting flux
     // and is not a sink.  Only the mechanical drain is gated.
     // SYMMETRY AUDIT.  Under a QUANTIZED reaction model the M1 channel exerts
-    // its reaction TORQUE (applyDipoleReactionTorque is true) while its energy
+    // its reaction TORQUE (dipoleRadiationTorqueEnabled is true) while its energy
     // drain is gated OFF, because the quantized channel is supposed to remove
     // the energy in photons instead.  The photon hazard is built from
     // larmorOrbitAveragedPower, which is the E1 power and contains no M1, so
@@ -2525,7 +2538,7 @@ void integrateElectrodynamicStep(State& s, double dt,
     //
     // THIS IS THE DESIGN, not a gap, and the audit's first reading of it as an
     // unpaired conjugate slot was wrong.  The gate is enforced: turning the
-    // drain on takes validation to 38/39 on quantized-radiation-drain, whose
+    // drain on fails quantized-radiation-gating, whose
     // whole content is that no energy may be removed continuously in this
     // mode.  Both repairs were tried -- unconditional draining, and draining
     // iff the torque is applied -- and both fail it.  So closing the gap

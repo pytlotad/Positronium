@@ -2048,13 +2048,16 @@ int runMaxwellSelfTest(
     // because this very check forbids any continuous energy removal in the
     // quantized mode.  The torque is a different conjugate slot and was
     // separated from the drain on purpose; see the note at
-    // quantizedDipoleTorqueDrain below for why it is set to zero rather than
-    // measured.
+    // quantizedDipoleTorqueTravel below for the explicit gate probe.
     double quantizedChargeReactionDrain=
         std::numeric_limits<double>::quiet_NaN();
     double quantizedDipoleConstraintDrain=
         std::numeric_limits<double>::quiet_NaN();
-    double quantizedDipoleTorqueDrain=
+    double quantizedDipoleTorqueTravel=
+        std::numeric_limits<double>::quiet_NaN();
+    double disabledDipoleTorqueTravel=
+        std::numeric_limits<double>::quiet_NaN();
+    double quantizedDipoleTorqueNormDrift=
         std::numeric_limits<double>::quiet_NaN();
     {
         const double larmorProbeRadius=pairBohrRadius(activePair);
@@ -2234,10 +2237,53 @@ int runMaxwellSelfTest(
                  .computeOutwardFlux=true,
                  .useRetardedExternalForces=true});
             const double constraintStart=quantizedState.dipoleConstraintEnergy;
-            const double firstDipoleNormStart=
-                quantizedState.firstProperDipole.norm();
-            const double secondDipoleNormStart=
-                quantizedState.secondProperDipole.norm();
+            // Exercise the exact model gate used by the production step with
+            // a controlled transverse torque.  The physical M1 torque at
+            // this radius only separates the two trajectories at round-off;
+            // scaling the input here makes the routing decision observable
+            // without changing the production dynamics or requiring a full
+            // inspiral.  Renormalization must preserve both dipole norms.
+            const State torqueStart=quantizedState;
+            ParticleMultipoleRadiation torqueProbe;
+            constexpr double torqueProbeStep=1.0e-24;
+            const Vec3 firstTransverse=cross(
+                torqueStart.firstProperDipole,Vec3{0.0,0.0,1.0});
+            const Vec3 secondTransverse=cross(
+                torqueStart.secondProperDipole,Vec3{0.0,1.0,0.0});
+            torqueProbe.firstDipoleTorque=firstTransverse
+                *(0.25*torqueStart.firstProperDipole.norm()
+                  /(firstTransverse.norm()
+                    *std::abs(firstGyromagneticRatioOf())*torqueProbeStep));
+            torqueProbe.secondDipoleTorque=secondTransverse
+                *(0.25*torqueStart.secondProperDipole.norm()
+                  /(secondTransverse.norm()
+                    *std::abs(secondGyromagneticRatioOf())*torqueProbeStep));
+            State quantizedTorqueState=torqueStart;
+            State disabledTorqueState=torqueStart;
+            applyDipoleRadiationTorqueForModel(quantizedTorqueState,torqueProbe,
+                torqueProbeStep,
+                ChargeRadiationReactionModel::stochasticElectricDipole);
+            applyDipoleRadiationTorqueForModel(disabledTorqueState,torqueProbe,
+                torqueProbeStep,ChargeRadiationReactionModel::disabled);
+            const auto dipoleDirectionTravel=[&](const State& state) {
+                return (state.firstProperDipole
+                        /state.firstProperDipole.norm()
+                       -torqueStart.firstProperDipole
+                        /torqueStart.firstProperDipole.norm()).norm()
+                    +(state.secondProperDipole
+                        /state.secondProperDipole.norm()
+                       -torqueStart.secondProperDipole
+                        /torqueStart.secondProperDipole.norm()).norm();
+            };
+            quantizedDipoleTorqueTravel=
+                dipoleDirectionTravel(quantizedTorqueState);
+            disabledDipoleTorqueTravel=
+                dipoleDirectionTravel(disabledTorqueState);
+            quantizedDipoleTorqueNormDrift=std::max(
+                std::abs(quantizedTorqueState.firstProperDipole.norm()
+                         /torqueStart.firstProperDipole.norm()-1.0),
+                std::abs(quantizedTorqueState.secondProperDipole.norm()
+                         /torqueStart.secondProperDipole.norm()-1.0));
             const double quantizedPeriod=2.0*pi*std::sqrt(
                 larmorReducedMass*larmorProbeRadius*larmorProbeRadius
                 *larmorProbeRadius/pairCoulombStrength);
@@ -2267,28 +2313,6 @@ int runMaxwellSelfTest(
                     std::abs(quantizedState.dipoleConstraintEnergy
                              -constraintStart)
                     /std::max(std::abs(quantizedState.radiatedEnergy),1.0e-300);
-                // The reaction TORQUE is no longer gated with the reservoir
-                // drain: the drain is off here (the photon carries that
-                // energy) while the torque RUNS, because the photon supplies
-                // linear recoil only and leaves the moment that radiated it
-                // unturned.  So this probe deliberately measures nothing --
-                // there is no longer a torque-suppression decision for it to
-                // confirm, and the drain check above covers the one gate
-                // that remains.
-                //
-                // Kept at zero rather than repurposed to check that the
-                // torque IS applied, for the reason the previous note
-                // records: applyDipoleRadiationTorque renormalizes what it
-                // turns, so the dipole norm is preserved either way (a norm
-                // probe read 1.35e-13 against 1.37e-13 on a build with the
-                // gates removed -- no separation at all), and a direction
-                // comparison against a torque-free reference sits at
-                // round-off at this configuration's M1 strength.  The
-                // torque's effect is real but needs a full inspiral to
-                // accumulate to something measurable, which is a statistics
-                // run, not a unit check.
-                quantizedDipoleTorqueDrain=0.0;
-                (void)firstDipoleNormStart;(void)secondDipoleNormStart;
             }
         }
         balanceDiagnostics={{
@@ -3756,6 +3780,10 @@ int runMaxwellSelfTest(
               << "quantized drain:  " << quantizedChargeReactionDrain << " / "
                  << quantizedDipoleConstraintDrain
                  << "  (charge force / dipole reservoir; both must be 0)\n"
+              << "quantized torque: " << quantizedDipoleTorqueTravel << " / "
+                 << disabledDipoleTorqueTravel << " / "
+                 << quantizedDipoleTorqueNormDrift
+                 << "  (stochastic travel / disabled travel / norm drift)\n"
               << "BMT norm (2 rad): " << bmtNormDriftActiveG << " / "
                  << bmtNormDriftHighBeta
                  << "  (production routine, no renormalization)\n"
@@ -4009,15 +4037,20 @@ int runMaxwellSelfTest(
         const char* name;
         bool passed;
     };
-    // Exactly zero is the right band for all three: these are gates, not
-    // approximations.  The torque residue is compared against round-off
-    // rather than 0 because the precession integrator itself renormalizes.
+    // The two energy gates are exact.  The controlled torque must rotate the
+    // stochastic state by a clearly resolved amount, leave the disabled
+    // reference unchanged, and preserve both proper-dipole norms.
     const bool quantizedRadiationOk=
         std::isfinite(quantizedChargeReactionDrain)
         && std::isfinite(quantizedDipoleConstraintDrain)
-        && std::isfinite(quantizedDipoleTorqueDrain)
+        && std::isfinite(quantizedDipoleTorqueTravel)
+        && std::isfinite(disabledDipoleTorqueTravel)
+        && std::isfinite(quantizedDipoleTorqueNormDrift)
         && quantizedChargeReactionDrain==0.0
-        && quantizedDipoleConstraintDrain==0.0;
+        && quantizedDipoleConstraintDrain==0.0
+        && quantizedDipoleTorqueTravel>0.1
+        && disabledDipoleTorqueTravel==0.0
+        && quantizedDipoleTorqueNormDrift<1.0e-12;
     const std::array<ValidationCheck,44> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
@@ -4051,7 +4084,7 @@ int runMaxwellSelfTest(
         {ValidationSection::AlgebraicIdentity,"bmt-precession-invariant",bmtPrecessionOk},
         {ValidationSection::AlgebraicIdentity,"coupled-secular-spin-orbit",secularSpinOrbitIdentityOk},
         {ValidationSection::Convergence,"coupled-secular-spin-orbit-convergence",secularSpinOrbitConvergenceOk},
-        {ValidationSection::AlgebraicIdentity,"quantized-radiation-drain",quantizedRadiationOk},
+        {ValidationSection::AlgebraicIdentity,"quantized-radiation-gating",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"state-integrity",stateIntegrityOk},
         {ValidationSection::NumericalRegression,"censoring-model",censoringModelOk},

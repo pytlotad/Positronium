@@ -1,0 +1,34 @@
+name: Sanitizers
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sanitizers-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  address:
+    name: ASan + LeakSanitizer
+    runs-on: ubuntu-latest
+    container: rootproject/root:6.34.00-ubuntu24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate memory safety in validator and production paths
+        run: make asan-check SANITIZER_CXX=g++
+
+  undefined-behavior:
+    name: UBSan
+    runs-on: ubuntu-latest
+    container: rootproject/root:6.34.00-ubuntu24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate undefined behavior in validator and production paths
+        run: make ubsan-check SANITIZER_CXX=g++

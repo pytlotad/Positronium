@@ -1,0 +1,6 @@
+# ROOT's TPad::DrawClone deserializes a temporary graphics object graph whose
+# shared, non-owning lists are intentionally retained by ROOT at process exit.
+# Suppress only allocations rooted in that library clone operation; leaks in
+# Positronium, in the surrounding exporter, or in any other ROOT path remain
+# visible to LeakSanitizer.
+leak:TDirectory::CloneObject
