@@ -7854,7 +7854,10 @@ Stan kroku zawiera teraz pełne wektory
 \(\mathbf L,\boldsymbol\mu_1,\boldsymbol\mu_2\). Dla każdego adaptacyjnego
 podkroku solver:
 
-1. oblicza 64-punktową średnią prędkości BMT po fazie orbitalnej,
+1. odtwarza mimośród z pełnej wartości momentu pędu,
+   $1-e^2=L^2/(\mu K a)$, i oblicza adaptacyjną średnią BMT po prawdziwej
+   elipsie Keplera (64 węzły dla koła, 192 przy $e^2=0{,}945$, najwyżej
+   512 blisko granicy parabolicznej),
 2. wykonuje predyktor do punktu środkowego dokładnymi obrotami Rodriguesa,
 3. odświeża pole na stanie pośrednim,
 4. obraca oba momenty przez cały podkrok,
@@ -7867,6 +7870,15 @@ więc próbki spinu raz na około \(1{,}66\) okresu precesji ani skoku
 \(\Delta\mathbf L=-\Delta\mathbf S\) dopisywanego po całym checkpointcie.
 Cały checkpoint stosuje symetryczny podział drugiego rzędu: pół kroku
 spin–orbita, pełny krok promieniowania/fotonów, pół kroku spin–orbita.
+Węzły są równomierne w anomalii ekscentrycznej, a każdy otrzymuje wagę
+$dM/dE=1-e\cos E$, więc średnia jest średnią po czasie, nie po kącie.
+Położenie zawiera $r=a(1-e\cos E)$, a prędkość zarówno składową radialną,
+jak i styczną. Dla stanów na nieeliptycznym brzegu $L\ge L_{\rm circ}$,
+które mogą powstać, gdy podoperator spinowy zmienia $L$ przy zamrożonym
+$a$, zachowana jest jawna projekcja $e=0$ stosowana przez resztę
+estymatora; w całej fizycznej dziedzinie eliptycznej wartość $L$ nie jest
+już pomijana.
+
 Pole zewnętrzne i ZPF są rozdzielone od pola wewnętrznego: ich moment siły
 zmienia \(\mathbf J\) pary i nie jest błędnie oddawany orbicie.
 
@@ -7878,10 +7890,14 @@ Nowy solver startuje od stanu początku checkpointu i przechodzi cały odcinek
 dokładnie raz.
 
 Walidacja sprawdza niezależnie zachowanie \(\mathbf J\), modułów obu momentów i
-zbieżność przy granicach kąta \(0{,}05/0{,}025/0{,}0125\) rad. W bieżącym
-teście reszta \(\mathbf J\) wynosi 0, dryf modułu \(2{,}2\cdot10^{-16}\), a
-błąd maleje około czterokrotnie po dwukrotnym zagęszczeniu, zgodnie z metodą
-drugiego rzędu. Zestaw walidacyjny przechodzi 44/44.
+zbieżność przy granicach kąta \(0{,}05/0{,}025/0{,}0125\) rad. Dodatkowa,
+niezależna sonda rozwiązuje równania Newtona dla orbity o
+\(e^2=0{,}945\) metodą RK4 w równych odstępach czasu i porównuje uśrednione
+tempo BMT z solverem produkcyjnym. Residuum BMT wynosi \(4{,}95\cdot10^{-8}\),
+a domknięcie referencyjnej orbity \(3{,}33\cdot10^{-7}\). W teście sprzężonym
+reszta \(\mathbf J\) wynosi 0, dryf modułu \(2{,}2\cdot10^{-16}\), a błąd
+maleje około czterokrotnie po dwukrotnym zagęszczeniu, zgodnie z metodą
+drugiego rzędu. Zestaw walidacyjny przechodzi 46/46.
 
 To domyka **klasyczny zredukowany model momentu pędu**, ale nie usuwa
 ograniczenia fizycznego opisanego dalej: klasyczne wektory nadal nie są

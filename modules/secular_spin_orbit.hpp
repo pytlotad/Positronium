@@ -68,6 +68,34 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
        ||!isFinite(secondDipole)) return result;
     const double orbitalNorm=orbitalAngularMomentum.norm();
     if(!(orbitalNorm>0.0)) return result;
+    // The secular state carries a and the full orbital L, hence it also
+    // carries the eccentricity; treating |L| as orientation-only silently
+    // replaced every osculating ellipse by a circle.  For the relative
+    // Coulomb problem
+    //
+    //     L^2 = mu K a (1-e^2),       K = k |q1 q2|.
+    //
+    // A value above the circular limit is not an ellipse with this energy.
+    // The wider collapse estimator already defines that over-circular seam as
+    // e=0: spin exchange can change L while this conservative sub-operator
+    // holds a fixed, and adding a new spin-energy equation here would be a
+    // different physical model.  Preserve that explicit projection only for
+    // L>=L_circular; throughout the physical elliptic domain |L| now determines
+    // the actual eccentricity instead of being discarded.
+    const double circularAngularMomentumSquared=
+        reducedMass*pairCoulombStrength*semiMajorAxis;
+    if(!(circularAngularMomentumSquared>0.0)
+       ||!std::isfinite(circularAngularMomentumSquared)) return result;
+    const double oneMinusEccentricitySquared=
+        orbitalNorm*orbitalNorm/circularAngularMomentumSquared;
+    if(!(oneMinusEccentricitySquared>0.0)
+       ||!std::isfinite(oneMinusEccentricitySquared)) return result;
+    const double boundedOneMinusEccentricitySquared=
+        std::min(1.0,oneMinusEccentricitySquared);
+    const double eccentricity=std::sqrt(std::max(
+        0.0,1.0-boundedOneMinusEccentricitySquared));
+    const double eccentricityComplement=
+        std::sqrt(boundedOneMinusEccentricitySquared);
     const Vec3 normal=orbitalAngularMomentum/orbitalNorm;
     const Vec3 seed=std::abs(normal.x)<0.9
         ?Vec3{1.0,0.0,0.0}:Vec3{0.0,1.0,0.0};
@@ -76,31 +104,49 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     if(!(radialNorm>0.0)) return result;
     radialHat=radialHat/radialNorm;
     const Vec3 tangentialHat=cross(normal,radialHat);
-    const double circularSpeed=std::sqrt(
-        pairCoulombStrength/(reducedMass*semiMajorAxis));
-    if(!std::isfinite(circularSpeed)||!(circularSpeed<c)) return result;
+    const double meanMotion=std::sqrt(pairCoulombStrength
+        /(reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis));
+    if(!std::isfinite(meanMotion)||!(meanMotion>0.0)) return result;
 
     const double totalMassHere=firstMass+secondMass;
     if(!(totalMassHere>0.0)) return result;
-    constexpr int phaseNodes=64;
+    // Uniform eccentric-anomaly nodes form a periodic trapezoidal quadrature.
+    // The factor dM/dE=1-e*cos(E) below converts it to a uniform-in-time
+    // average.  Sampling E instead of mean anomaly also resolves periapsis:
+    // at e^2=0.945 the old 64 midpoint samples in M skipped the narrow peak,
+    // whereas this grid contains E=0 exactly.  The analyticity strip narrows
+    // as e approaches one, so refine only eccentric orbits: a circle keeps the
+    // historical 64 evaluations, e^2=0.945 receives 192, and the cost is
+    // bounded near the parabolic limit.
+    const int phaseNodes=std::clamp(static_cast<int>(std::ceil(
+        128.0/std::sqrt(std::max(1.0-eccentricity,1.0e-12)))),64,512);
     Vec3 firstOmegaSum,secondOmegaSum;
     Vec3 firstExternalOmegaSum,secondExternalOmegaSum;
     for(int node=0;node<phaseNodes;++node) {
-        const double phase=2.0*pi*(node+0.5)
+        const double eccentricAnomaly=2.0*pi*node
             /static_cast<double>(phaseNodes);
-        const Vec3 radial=radialHat*std::cos(phase)
-            +tangentialHat*std::sin(phase);
-        const Vec3 tangential=radialHat*(-std::sin(phase))
-            +tangentialHat*std::cos(phase);
+        const double cosine=std::cos(eccentricAnomaly);
+        const double sine=std::sin(eccentricAnomaly);
+        const double timeWeight=1.0-eccentricity*cosine;
+        if(!(timeWeight>0.0)||!std::isfinite(timeWeight)) return result;
+        const Vec3 relativePosition=
+            radialHat*(semiMajorAxis*(cosine-eccentricity))
+            +tangentialHat*(semiMajorAxis*eccentricityComplement*sine);
+        const Vec3 relativeVelocity=
+            (radialHat*(-semiMajorAxis*meanMotion*sine)
+             +tangentialHat*(semiMajorAxis*meanMotion
+                 *eccentricityComplement*cosine))/timeWeight;
         State sample{};
         sample.firstPosition=
-            radial*(semiMajorAxis*secondMass/totalMassHere);
+            relativePosition*(secondMass/totalMassHere);
         sample.secondPosition=
-            radial*(-semiMajorAxis*firstMass/totalMassHere);
+            relativePosition*(-firstMass/totalMassHere);
         sample.firstVelocity=
-            tangential*(circularSpeed*secondMass/totalMassHere);
+            relativeVelocity*(secondMass/totalMassHere);
         sample.secondVelocity=
-            tangential*(-circularSpeed*firstMass/totalMassHere);
+            relativeVelocity*(-firstMass/totalMassHere);
+        if(!(sample.firstVelocity.norm()<c)
+           ||!(sample.secondVelocity.norm()<c)) return result;
         sample.firstDipole=firstDipole;
         sample.secondDipole=secondDipole;
         sample.firstProperDipole=firstDipole;
@@ -124,16 +170,16 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         }
         firstOmegaSum+=thomasBmtEffectiveField(
             sample.firstVelocity,fields.atFirst,firstGFactor)
-                *(-firstCharge/firstMass);
+                *(-firstCharge/firstMass*timeWeight);
         secondOmegaSum+=thomasBmtEffectiveField(
             sample.secondVelocity,fields.atSecond,secondGFactor)
-                *(-secondCharge/secondMass);
+                *(-secondCharge/secondMass*timeWeight);
         firstExternalOmegaSum+=thomasBmtEffectiveField(
             sample.firstVelocity,externalAtFirst,firstGFactor)
-                *(-firstCharge/firstMass);
+                *(-firstCharge/firstMass*timeWeight);
         secondExternalOmegaSum+=thomasBmtEffectiveField(
             sample.secondVelocity,externalAtSecond,secondGFactor)
-                *(-secondCharge/secondMass);
+                *(-secondCharge/secondMass*timeWeight);
     }
     result.first=firstOmegaSum*(1.0/static_cast<double>(phaseNodes));
     result.second=secondOmegaSum*(1.0/static_cast<double>(phaseNodes));

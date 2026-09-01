@@ -2535,12 +2535,18 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                ||!(advance.state.orbitalAngularMomentum.norm()>0.0)
                ||advance.relativeAngularMomentumResidual>1.0e-12) {
                 if(std::getenv("CREM_DEBUG"))
-                    std::cerr<<"  DIAG coupled spin-orbit failure: completed="
+                    std::cerr<<std::setprecision(17)
+                             <<"  DIAG coupled spin-orbit failure: completed="
                              <<advance.completed<<" substeps="
                              <<advance.substeps<<" maxAngle="
                              <<advance.maximumSubstepAngle<<" Jres="
                              <<advance.relativeAngularMomentumResidual
-                             <<std::endl;
+                             <<" a="<<semiMajorAxis<<" L="
+                             <<input.orbitalAngularMomentum.norm()
+                             <<" L2/Lcirc2="
+                             <<input.orbitalAngularMomentum.squaredNorm()
+                                /(reducedMass*pairCoulombStrength*semiMajorAxis)
+                             <<std::setprecision(6)<<std::endl;
                 result.calibrationOutcome=SimulationOutcome::NumericalFailure;
                 result.calibrationSeconds=simulatedTimeTotal;
                 result.calibrationSecondsLab=labFrameTimeTotal;

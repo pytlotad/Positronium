@@ -1518,8 +1518,11 @@ int runMaxwellSelfTest(
     const double secularRadius=pairBohrRadius(activePair);
     const Vec3 secularFirstDirection{0.31,-0.47,0.826619};
     const Vec3 secularSecondDirection{-0.62,0.19,0.761249};
+    // Keep (a,L) on the bound Kepler sheet.  The former vector had
+    // |L|>sqrt(mu*K*a), i.e. an imaginary eccentricity which the circular
+    // implementation could not notice because it ignored |L| altogether.
     const SecularSpinOrbitState secularInitial{
-        {0.17*hbar,-0.11*hbar,hbar},
+        {0.08*hbar,-0.05*hbar,0.78*hbar},
         secularFirstDirection
             *(firstMagneticMoment/secularFirstDirection.norm()),
         secularSecondDirection
@@ -1533,7 +1536,7 @@ int runMaxwellSelfTest(
         ?std::max(secularInitialRates.first.norm(),
                   secularInitialRates.second.norm()):0.0;
     const double secularElapsed=secularAngularSpeed>0.0
-        ?0.5/secularAngularSpeed:0.0;
+        ?0.2/secularAngularSpeed:0.0;
     const SecularSpinOrbitAdvance secularCoarse=
         advanceCoupledSecularSpinOrbit(
             secularInitial,secularRadius,pairReducedMass,secularElapsed,0.05);
@@ -1570,6 +1573,138 @@ int runMaxwellSelfTest(
             secularInitial,secularRadius,pairReducedMass,
             secularExternalSpeed>0.0?0.2/secularExternalSpeed:0.0,0.025);
     gExternalMagneticField=savedExternalMagneticField;
+
+    // Independent eccentric-orbit reference.  Production obtains the
+    // geometry analytically from eccentric anomaly.  This probe instead
+    // resolves Newton's dimensionless Kepler equations with RK4 at uniform
+    // laboratory-time intervals and averages the same instantaneous BMT
+    // observable along that mechanically evolved orbit.  It therefore catches
+    // all three defects of the former circular surrogate: fixed r=a, missing
+    // radial velocity and uniform geometric-phase rather than time weighting.
+    constexpr double secularReferenceEccentricitySquared=0.945;
+    const double secularReferenceEccentricity=
+        std::sqrt(secularReferenceEccentricitySquared);
+    // Keep the independent Kepler reference outside the production field
+    // floor for every species.  At a_pair the pbar-p probe would otherwise
+    // put periapsis at 1.6 fm, deep below its 193 fm floor, and compare an
+    // unregularized Newton orbit with deliberately frozen electrodynamics.
+    const double secularEccentricReferenceAxis=std::max(
+        secularRadius,10.0*separationFloor()
+            /(1.0-secularReferenceEccentricity));
+    const Vec3 secularReferenceNormal{0.0,0.0,1.0};
+    const Vec3 secularReferenceAngularMomentum=secularReferenceNormal*std::sqrt(
+        pairReducedMass*pairCoulombStrength*secularEccentricReferenceAxis
+        *(1.0-secularReferenceEccentricitySquared));
+    const OrbitAveragedBmtAngularVelocities secularEccentricAverage=
+        orbitAveragedBmtAngularVelocities(
+            secularEccentricReferenceAxis,secularReferenceAngularMomentum,
+            secularInitial.firstDipole,secularInitial.secondDipole,
+            pairReducedMass);
+    const Vec3 secularReferenceSeed=std::abs(secularReferenceNormal.x)<0.9
+        ?Vec3{1.0,0.0,0.0}:Vec3{0.0,1.0,0.0};
+    Vec3 secularReferenceRadial=cross(
+        secularReferenceSeed,secularReferenceNormal);
+    secularReferenceRadial=secularReferenceRadial
+        /secularReferenceRadial.norm();
+    const Vec3 secularReferenceTangential=cross(
+        secularReferenceNormal,secularReferenceRadial);
+    Vec3 dimensionlessPosition=secularReferenceRadial
+        *(1.0-secularReferenceEccentricity);
+    Vec3 dimensionlessVelocity=secularReferenceTangential*std::sqrt(
+        (1.0+secularReferenceEccentricity)
+        /(1.0-secularReferenceEccentricity));
+    const double secularReferenceMeanMotion=std::sqrt(pairCoulombStrength
+        /(pairReducedMass*secularEccentricReferenceAxis
+            *secularEccentricReferenceAxis*secularEccentricReferenceAxis));
+    const double totalPairMass=firstMass+secondMass;
+    const auto eccentricReferenceRates=[&](const Vec3& position,
+                                            const Vec3& velocity) {
+        State sample{};
+        const Vec3 relativePosition=position*secularEccentricReferenceAxis;
+        const Vec3 relativeVelocity=
+            velocity*(secularEccentricReferenceAxis
+                *secularReferenceMeanMotion);
+        sample.firstPosition=
+            relativePosition*(secondMass/totalPairMass);
+        sample.secondPosition=
+            relativePosition*(-firstMass/totalPairMass);
+        sample.firstVelocity=
+            relativeVelocity*(secondMass/totalPairMass);
+        sample.secondVelocity=
+            relativeVelocity*(-firstMass/totalPairMass);
+        sample.firstDipole=secularInitial.firstDipole;
+        sample.secondDipole=secularInitial.secondDipole;
+        sample.firstProperDipole=secularInitial.firstDipole;
+        sample.secondProperDipole=secularInitial.secondDipole;
+        const StateHistory history{State{sample}};
+        const LocalElectromagneticFields fields=
+            localRelativisticFields(sample,history);
+        return std::pair<Vec3,Vec3>{
+            thomasBmtEffectiveField(
+                sample.firstVelocity,fields.atFirst,firstGFactor)
+                *(-firstCharge/firstMass),
+            thomasBmtEffectiveField(
+                sample.secondVelocity,fields.atSecond,secondGFactor)
+                *(-secondCharge/secondMass)};
+    };
+    const auto dimensionlessKeplerDerivative=[](
+            const Vec3& position,const Vec3& velocity) {
+        const double radius=position.norm();
+        return std::pair<Vec3,Vec3>{
+            velocity,position*(-1.0/(radius*radius*radius))};
+    };
+    constexpr int resolvedEccentricOrbitSteps=32768;
+    constexpr int mechanicalSubstepsPerRateSample=32;
+    const double resolvedEccentricOrbitStep=
+        2.0*pi/static_cast<double>(
+            resolvedEccentricOrbitSteps*mechanicalSubstepsPerRateSample);
+    Vec3 resolvedFirstRateSum,resolvedSecondRateSum;
+    for(int step=0;step<resolvedEccentricOrbitSteps;++step) {
+        const auto rates=eccentricReferenceRates(
+            dimensionlessPosition,dimensionlessVelocity);
+        resolvedFirstRateSum+=rates.first;
+        resolvedSecondRateSum+=rates.second;
+        for(int mechanicalStep=0;
+            mechanicalStep<mechanicalSubstepsPerRateSample;++mechanicalStep) {
+            const auto k1=dimensionlessKeplerDerivative(
+                dimensionlessPosition,dimensionlessVelocity);
+            const auto k2=dimensionlessKeplerDerivative(
+                dimensionlessPosition
+                    +k1.first*(0.5*resolvedEccentricOrbitStep),
+                dimensionlessVelocity
+                    +k1.second*(0.5*resolvedEccentricOrbitStep));
+            const auto k3=dimensionlessKeplerDerivative(
+                dimensionlessPosition
+                    +k2.first*(0.5*resolvedEccentricOrbitStep),
+                dimensionlessVelocity
+                    +k2.second*(0.5*resolvedEccentricOrbitStep));
+            const auto k4=dimensionlessKeplerDerivative(
+                dimensionlessPosition+k3.first*resolvedEccentricOrbitStep,
+                dimensionlessVelocity+k3.second*resolvedEccentricOrbitStep);
+            dimensionlessPosition+=(k1.first+k2.first*2.0
+                +k3.first*2.0+k4.first)*(resolvedEccentricOrbitStep/6.0);
+            dimensionlessVelocity+=(k1.second+k2.second*2.0
+                +k3.second*2.0+k4.second)*(resolvedEccentricOrbitStep/6.0);
+        }
+    }
+    const Vec3 resolvedFirstRate=resolvedFirstRateSum
+        *(1.0/static_cast<double>(resolvedEccentricOrbitSteps));
+    const Vec3 resolvedSecondRate=resolvedSecondRateSum
+        *(1.0/static_cast<double>(resolvedEccentricOrbitSteps));
+    const double secularEccentricFirstResidual=
+        (secularEccentricAverage.first-resolvedFirstRate).norm()
+        /std::max(resolvedFirstRate.norm(),1.0e-300);
+    const double secularEccentricSecondResidual=
+        (secularEccentricAverage.second-resolvedSecondRate).norm()
+        /std::max(resolvedSecondRate.norm(),1.0e-300);
+    const double secularEccentricResolvedResidual=std::max(
+        secularEccentricFirstResidual,secularEccentricSecondResidual);
+    const double secularEccentricOrbitClosure=std::max(
+        (dimensionlessPosition
+            -secularReferenceRadial*(1.0-secularReferenceEccentricity)).norm(),
+        (dimensionlessVelocity-secularReferenceTangential*std::sqrt(
+            (1.0+secularReferenceEccentricity)
+            /(1.0-secularReferenceEccentricity))).norm());
     const double secularFirstNormDrift=secularReference.completed
         ?std::abs(secularReference.state.firstDipole.norm()
             /secularInitial.firstDipole.norm()-1.0)
@@ -1614,6 +1749,11 @@ int runMaxwellSelfTest(
         &&secularFineReferenceDifference
             <0.6*secularCoarseFineDifference
         &&secularFineReferenceDifference<1.0e-3;
+    const bool secularEccentricOrbitOk=secularEccentricAverage.valid
+        &&std::isfinite(secularEccentricResolvedResidual)
+        &&std::isfinite(secularEccentricOrbitClosure)
+        &&secularEccentricResolvedResidual<1.0e-5
+        &&secularEccentricOrbitClosure<1.0e-7;
 
     // ---------------------------------------------------------------------
     // Role routing in applyDipolePrecession().
@@ -3856,6 +3996,10 @@ int runMaxwellSelfTest(
               << "secular external dJ/hbar: "
                  << secularExternal.externalAngularMomentumTransfer.norm()/hbar
                  << '\n'
+              << "secular eccentric BMT/orbit: "
+                 << secularEccentricResolvedResidual << " / "
+                 << secularEccentricOrbitClosure
+                 << "  (e^2=" << secularReferenceEccentricitySquared << ")\n"
               << "role routing:     " << roleRoutingResidual
               << "  (obrot " << roleRoutingTravel << ")\n"
               << "particle boost F/R:" << covarianceForceResidual << " / "
@@ -4114,7 +4258,7 @@ int runMaxwellSelfTest(
         && quantizedDipoleTorqueTravel>0.1
         && disabledDipoleTorqueTravel==0.0
         && quantizedDipoleTorqueNormDrift<1.0e-12;
-    const std::array<ValidationCheck,45> regressionChecks{{
+    const std::array<ValidationCheck,46> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -4147,6 +4291,7 @@ int runMaxwellSelfTest(
         {ValidationSection::AlgebraicIdentity,"bmt-precession-invariant",bmtPrecessionOk},
         {ValidationSection::AlgebraicIdentity,"coupled-secular-spin-orbit",secularSpinOrbitIdentityOk},
         {ValidationSection::Convergence,"coupled-secular-spin-orbit-convergence",secularSpinOrbitConvergenceOk},
+        {ValidationSection::Convergence,"secular-eccentric-orbit",secularEccentricOrbitOk},
         {ValidationSection::AlgebraicIdentity,"quantized-radiation-gating",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"state-integrity",stateIntegrityOk},
