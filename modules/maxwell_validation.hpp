@@ -75,6 +75,69 @@ int runMaxwellSelfTest(
         &&std::abs(exponentialMean-1.0)<exponentialMeanTolerance
         &&std::abs(exponentialVariance-1.0)<exponentialVarianceTolerance;
 
+    // Experiment 5 models a circular 2D Gaussian transverse beam.  Exercise
+    // its production sampler directly: b/sigma must have Rayleigh moments
+    // E[b/sigma]=sqrt(pi/2), E[(b/sigma)^2]=2 and no preferred azimuth.  The
+    // old folded one-dimensional Gaussian fails both radial moments by a wide
+    // margin (sqrt(2/pi) and 1 respectively).
+    constexpr double impactTestSigma=1.0;
+    constexpr double impactTestMaximum=5.0*impactTestSigma;
+    std::mt19937_64 impactRandom(0x4352454d5f494d50ULL);
+    double normalizedImpactSum=0.0;
+    double normalizedImpactSquaredSum=0.0;
+    double impactAzimuthCosineSum=0.0;
+    double impactAzimuthSineSum=0.0;
+    bool impactSamplesValid=true;
+    for(std::uint64_t sample=0;sample<statisticalSampleCount;++sample) {
+        const IsotropicGaussianImpactSample impact=
+            sampleIsotropicGaussianImpact(
+                impactRandom,impactTestSigma,impactTestMaximum);
+        impactSamplesValid=impactSamplesValid
+            &&impact.valid(impactTestMaximum);
+        if (!impact.valid(impactTestMaximum)) continue;
+        const double normalizedImpact=impact.impactParameter/impactTestSigma;
+        normalizedImpactSum+=normalizedImpact;
+        normalizedImpactSquaredSum+=normalizedImpact*normalizedImpact;
+        if (impact.impactParameter>0.0) {
+            impactAzimuthCosineSum+=
+                impact.transverseY/impact.impactParameter;
+            impactAzimuthSineSum+=
+                impact.transverseZ/impact.impactParameter;
+        }
+    }
+    const double normalizedImpactMean=
+        normalizedImpactSum*inverseStatisticalSampleCount;
+    const double normalizedImpactSecondMoment=
+        normalizedImpactSquaredSum*inverseStatisticalSampleCount;
+    const double impactAzimuthVectorMean=std::hypot(
+        impactAzimuthCosineSum,impactAzimuthSineSum)
+        *inverseStatisticalSampleCount;
+    std::mt19937_64 impactReplayA(0x4352454d5f495250ULL);
+    std::mt19937_64 impactReplayB(0x4352454d5f495250ULL);
+    bool impactReplayExact=true;
+    for(int sample=0;sample<1024;++sample) {
+        const IsotropicGaussianImpactSample a=sampleIsotropicGaussianImpact(
+            impactReplayA,impactTestSigma,impactTestMaximum);
+        const IsotropicGaussianImpactSample b=sampleIsotropicGaussianImpact(
+            impactReplayB,impactTestSigma,impactTestMaximum);
+        impactReplayExact=impactReplayExact
+            &&a.transverseY==b.transverseY
+            &&a.transverseZ==b.transverseZ
+            &&a.impactParameter==b.impactParameter;
+    }
+    const double impactMeanTolerance=publicationStatistics?0.003:0.040;
+    const double impactSecondMomentTolerance=
+        publicationStatistics?0.006:0.12;
+    const double impactAzimuthTolerance=
+        publicationStatistics?0.002:0.040;
+    const bool impactParameterProfileOk=impactSamplesValid
+        &&impactReplayExact
+        &&std::abs(normalizedImpactMean-std::sqrt(pi/2.0))
+            <impactMeanTolerance
+        &&std::abs(normalizedImpactSecondMoment-2.0)
+            <impactSecondMomentTolerance
+        &&impactAzimuthVectorMean<impactAzimuthTolerance;
+
     // Cheap production-kinematics regressions.  These call the same builders
     // as experiments 3--5, so they detect role-dependent energy splits and a
     // return to Galilean velocity addition without running a trajectory.
@@ -2173,7 +2236,7 @@ int runMaxwellSelfTest(
             state.secondVelocity={0,-secondShare*sweptSpeed,0};
             ClassicalTrajectoryEngine engine(state,
                 {.relativeTolerance=balanceTolerance,.maximumDepth=14,
-                 .compositionOrder=2,.reactionModel=reaction,
+                 .reactionModel=reaction,
                  .computeOutwardFlux=true,
                  .useRetardedExternalForces=retarded});
             const double mechanicalStart=conservativeParticleEnergy(state);
@@ -2231,7 +2294,6 @@ int runMaxwellSelfTest(
             synchronizeCovariantDipoles(quantizedState);
             ClassicalTrajectoryEngine quantizedEngine(quantizedState,
                 {.relativeTolerance=1.0e-8,.maximumDepth=12,
-                 .compositionOrder=2,
                  .reactionModel=ChargeRadiationReactionModel
                      ::stochasticElectricDipole,
                  .computeOutwardFlux=true,
@@ -2441,10 +2503,10 @@ int runMaxwellSelfTest(
     // terms), so the reaction sector is right to three digits.  The far-field
     // energy itself is converged to 2e-5 across four decades of tolerance,
     // while the mechanical difference wanders by 12% over the same range.
-    // And refining the discretization moves the residual toward zero and
-    // through it -- order 2 at 1e-8 gives -1.0%, order 4 at 1e-10 gives
-    // +2.9%, against -5.9% at the production setting -- which a real leak
-    // could not do.  (Raising the retarded-history interpolation from cubic
+    // And refining the validated second-order discretization moves the
+    // residual from -5.9% at the production setting to about -1.0% at 1e-8,
+    // which a real leak could not do.  (Raising the retarded-history
+    // interpolation from cubic
     // to quintic Hermite, tried and reverted, moved it the WRONG way, to
     // -17%: the stored accelerations are only as mutually consistent with
     // the position/velocity samples as the second-order integrator makes
@@ -2622,7 +2684,6 @@ int runMaxwellSelfTest(
     State depthRejectedState=depthLimitInitial;
     ClassicalTrajectoryEngine depthLimitedEngine(depthLimitHistory,
         {.relativeTolerance=1.0e-6,.maximumDepth=0,
-         .compositionOrder=2,
          .reactionModel=ChargeRadiationReactionModel::disabled,
          .computeOutwardFlux=false});
     const std::size_t depthHistorySizeBefore=depthLimitedEngine.history().size();
@@ -2640,7 +2701,6 @@ int runMaxwellSelfTest(
     State depthResolvedState=depthLimitInitial;
     ClassicalTrajectoryEngine depthResolvingEngine(depthLimitHistory,
         {.relativeTolerance=1.0e-6,.maximumDepth=12,
-         .compositionOrder=2,
          .reactionModel=ChargeRadiationReactionModel::disabled,
          .computeOutwardFlux=false});
     const bool depthResolved=
@@ -2656,7 +2716,6 @@ int runMaxwellSelfTest(
         ClassicalTrajectoryEngine engine(
             causalInitialHistory(value,spanFactor,intervals,picardIterations),
             {.relativeTolerance=1.0e-7,.maximumDepth=14,
-             .compositionOrder=2,
              .reactionModel=ChargeRadiationReactionModel::disabled,
              .computeOutwardFlux=false});
         bool advanced=true;
@@ -2729,7 +2788,6 @@ int runMaxwellSelfTest(
         State value=cutoffInitial;
         ClassicalTrajectoryEngine engine(value,
             {.relativeTolerance=1.0e-6,.maximumDepth=12,
-             .compositionOrder=2,
              .reactionModel=ChargeRadiationReactionModel::disabled,
              .computeOutwardFlux=false});
         bool advanced=true;
@@ -2783,7 +2841,6 @@ int runMaxwellSelfTest(
         State value=regulatorInitial;
         ClassicalTrajectoryEngine engine(value,
             {.relativeTolerance=1.0e-6,.maximumDepth=14,
-             .compositionOrder=2,
              .reactionModel=ChargeRadiationReactionModel::disabled,
              .computeOutwardFlux=false});
         bool advanced=true;
@@ -4013,6 +4070,12 @@ int runMaxwellSelfTest(
               << exponentialVariance << " (expected 1 / 1)\n"
               << "statistics replay:  "
               << (statisticalReplayExact?"exact":"MISMATCH") << '\n'
+              << "impact <b/s>/<b2/s2>:" << normalizedImpactMean << " / "
+              << normalizedImpactSecondMoment
+              << " (Rayleigh: " << std::sqrt(pi/2.0) << " / 2)\n"
+              << "impact azimuth mean:" << impactAzimuthVectorMean << '\n'
+              << "impact replay:      "
+              << (impactReplayExact?"exact":"MISMATCH") << '\n'
               << "validation wall:    " << benchmarkSeconds << " s\n"
               << "field-step rate:    " << fieldStepsPerSecond << " steps/s\n"
               << "steps per ps:       " << estimatedStepsPerPicosecond << '\n'
@@ -4051,7 +4114,7 @@ int runMaxwellSelfTest(
         && quantizedDipoleTorqueTravel>0.1
         && disabledDipoleTorqueTravel==0.0
         && quantizedDipoleTorqueNormDrift<1.0e-12;
-    const std::array<ValidationCheck,44> regressionChecks{{
+    const std::array<ValidationCheck,45> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -4095,6 +4158,7 @@ int runMaxwellSelfTest(
         {ValidationSection::PhysicalDomain,"cutoff-and-regularization-scan",parameterSensitivityScanOk},
         {ValidationSection::Convergence,"retarded-interpolation",retardedInterpolationOk},
         {ValidationSection::NumericalRegression,"short-range-regularization",shortRangeRegularizationOk},
+        {ValidationSection::NumericalRegression,"interaction-impact-profile",impactParameterProfileOk},
         {ValidationSection::NumericalRegression,"stochastic-distributions",stochasticStatisticsOk}
     }};
     const auto sectionName=[](ValidationSection section) {

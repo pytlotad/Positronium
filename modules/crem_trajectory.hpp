@@ -285,7 +285,6 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
     SimulationStopReason stopReason=SimulationStopReason::NumericalFailure;
     ClassicalTrajectoryEngine trajectory(s,
         {.relativeTolerance=1.0e-5,.maximumDepth=12,
-         .compositionOrder=gIntegratorOrder,
          .reactionModel=reactionModel,
          .computeOutwardFlux=options.radiatedEnergyBookkeeping});
     if (options.collectFrames) {

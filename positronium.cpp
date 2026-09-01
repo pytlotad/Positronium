@@ -400,10 +400,6 @@ void pushStateWithGridField(State& state, const MaxwellBlock& field,
 // [[maybe_unused]] because the validation executable's main() never reaches
 // the trajectory constructors that read this, so GCC sees no use in that
 // build.
-// Order of the trajectory composition: 2 is the bare symmetric step, 4 the
-// Yoshida composition of three of them.  Two is the default and every result
-// in this repository was produced with it.
-[[maybe_unused]] int gIntegratorOrder = 2;
 [[maybe_unused]] ChargeRadiationReactionModel gRadiationReactionModel =
     ChargeRadiationReactionModel::stochasticElectricDipole;
 
@@ -546,7 +542,7 @@ inline bool gGroundStateEmissionFloor = false;
 // n>=2 branch), for comparison against the historical behaviour.
 // [[maybe_unused]] because quantumFor lives in crem_collapse.hpp, which is
 // only included outside the validation executable (see its #ifndef just
-// below) -- same reason as gIntegratorOrder above.
+// below).
 [[maybe_unused]] inline bool gBohrLevelPhotonEnergy = false;
 
 #include "modules/crem_engine.hpp"
@@ -563,6 +559,46 @@ inline bool gGroundStateEmissionFloor = false;
 // orbit-averaged Thomas-BMT transport with the orbital back-reaction evolved
 // in the same vector state.
 #include "modules/secular_spin_orbit.hpp"
+
+// A circular, isotropic 2D Gaussian beam has independent Gaussian transverse
+// coordinates.  Its radial impact parameter is therefore Rayleigh-distributed
+// (the area Jacobian contributes the factor b), not half-normal.  Keep this
+// sampler outside the production-only block so the validation executable tests
+// exactly the same implementation used by experiment 5.
+struct IsotropicGaussianImpactSample {
+    double transverseY = std::numeric_limits<double>::quiet_NaN();
+    double transverseZ = std::numeric_limits<double>::quiet_NaN();
+    double impactParameter = std::numeric_limits<double>::quiet_NaN();
+
+    bool valid(double maximumImpactParameter) const {
+        return std::isfinite(transverseY)
+            && std::isfinite(transverseZ)
+            && std::isfinite(impactParameter)
+            && impactParameter >= 0.0
+            && impactParameter <= maximumImpactParameter;
+    }
+};
+
+IsotropicGaussianImpactSample sampleIsotropicGaussianImpact(
+        std::mt19937_64& random, double transverseSigma,
+        double maximumImpactParameter) {
+    if (!(transverseSigma > 0.0)
+        || !std::isfinite(transverseSigma)
+        || !(maximumImpactParameter >= 0.0)
+        || !std::isfinite(maximumImpactParameter)) {
+        return {};
+    }
+    std::normal_distribution<double> transverseGaussian(0.0,transverseSigma);
+    for(int attempt=0;attempt<1000;++attempt) {
+        const double transverseY=transverseGaussian(random);
+        const double transverseZ=transverseGaussian(random);
+        const double impactParameter=std::hypot(transverseY,transverseZ);
+        if (impactParameter<=maximumImpactParameter) {
+            return {transverseY,transverseZ,impactParameter};
+        }
+    }
+    return {};
+}
 
 #ifndef POSITRONIUM_VALIDATION_EXECUTABLE
 // formatTableValue, cutoffTimeLabel, spinLabel (continuing the split of
@@ -2351,9 +2387,9 @@ BeamEvent simulateBeamEvent(
 
 // ---------------------------------------------------------------------------
 // Experiment 5 "Interactions": a first and a second particle are fired at
-// each other with a Gaussian centre-of-mass energy and a Gaussian impact
-// parameter centred on a head-on collision, both dipoles randomly oriented
-// in space.  Every trajectory is classified by what actually happens to it.
+// each other with Gaussian kinetic energies and an isotropic 2D Gaussian
+// transverse beam profile, both dipoles randomly oriented in space.  Every
+// trajectory is classified by what actually happens to it.
 // ---------------------------------------------------------------------------
 
 enum class InteractionOutcome {
@@ -2377,7 +2413,7 @@ struct InteractionConfiguration {
     double meanKineticEnergy = 0.0;      // per-particle laboratory energy [J]
     double kineticEnergySigma = 0.0;     // [J]
     double minimumKineticEnergy = 0.0;   // truncation of the Gaussian [J]
-    double impactParameterSigma = 0.0;   // [m], distribution centred on b=0
+    double impactParameterSigma = 0.0;   // [m], per-axis transverse beam sigma
     double matchingRadius = 0.0;         // [m], initial and escape separation
     double maximumFlightTime = 0.0;      // [s]
     // The bound phase is measured in orbits, not in absolute time: the orbital
@@ -2562,10 +2598,11 @@ InteractionConfiguration makeInteractionConfiguration(
     // correction" holds by a factor of 2.2 and no more.  Retuning that is a
     // separate decision about experiment 5's defaults, not part of making the
     // constant pair-relative, so it is left alone and written down instead.
-    // Keep the half-normal beam well inside the matching sphere for every
+    // Keep the 2D Gaussian beam well inside the matching sphere for every
     // species.  A fixed 25 pair radii is only picometres for true muonium and
     // protonium; clipping a 60 pm beam at R/2 then piles almost every event on
-    // one artificial impact parameter.  Five sigma fit below R/2 here.
+    // one artificial impact parameter.  Five per-axis sigma fit below R/2;
+    // the rejected Rayleigh tail then has probability exp(-25/2) ~= 3.7e-6.
     configuration.matchingRadius = std::max(
         25.0*pairBohrRadius(activePair),
         10.0*configuration.impactParameterSigma);
@@ -2614,9 +2651,6 @@ InteractionEvent simulateInteractionEvent(
         energyGaussian.param(std::normal_distribution<double>::param_type(
             configuration.meanKineticEnergy, configuration.kineticEnergySigma));
     }
-    std::normal_distribution<double> impactGaussian(
-        0.0, configuration.impactParameterSigma);
-
     InteractionEvent result;
     result.eventSeed = seed;
     // Each particle's kinetic energy is drawn on its own, so the two beams
@@ -2643,24 +2677,22 @@ InteractionEvent simulateInteractionEvent(
     };
     const double firstKineticEnergy = sampleKinetic();
     const double secondKineticEnergy = sampleKinetic();
-    // Gaussian around a head-on collision: the signed sample is folded, which
-    // is the half-normal radial profile of a beam centred on b=0.  Reject the
-    // negligible tail outside the matching sphere instead of clipping it;
-    // clipping creates a delta-like pile-up at exactly R/2 for a narrow atomic
-    // scale or a user-selected broad beam.
-    double impactParameter = std::numeric_limits<double>::quiet_NaN();
-    for (int attempt=0;attempt<1000;++attempt) {
-        const double sampledImpact=std::abs(impactGaussian(random));
-        if (sampledImpact <= 0.5*configuration.matchingRadius) {
-            impactParameter=sampledImpact;
-            break;
-        }
-    }
-    if (!std::isfinite(impactParameter)) return result;
+    // A circular 2D Gaussian spot has y,z ~ N(0,sigma^2), so its radial
+    // impact parameter follows Rayleigh(sigma).  Reject the negligible tail
+    // outside the matching sphere instead of clipping it; clipping would
+    // create a delta-like pile-up at exactly R/2.
+    const IsotropicGaussianImpactSample impact=
+        sampleIsotropicGaussianImpact(random,
+            configuration.impactParameterSigma,
+            0.5*configuration.matchingRadius);
+    if (!impact.valid(0.5*configuration.matchingRadius)) return result;
+    const double impactParameter=impact.impactParameter;
     result.impactParameter = impactParameter;
 
-    const double azimuth = 2.0*pi*uniform(random);
-    const Vec3 impactDirection{0.0, std::cos(azimuth), std::sin(azimuth)};
+    const Vec3 impactDirection=impactParameter>0.0
+        ? Vec3{0.0,impact.transverseY/impactParameter,
+                    impact.transverseZ/impactParameter}
+        : Vec3{0.0,1.0,0.0};
     const Vec3 beamDirection{1.0, 0.0, 0.0};
     const double longitudinalDistance = std::sqrt(
         configuration.matchingRadius*configuration.matchingRadius
@@ -4282,9 +4314,10 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
               << " eV, drawn independently, so the pair carries a net momentum "
                  "and the centre of mass moves; K_CM below is the invariant "
                  "derived from the two, and each trajectory is integrated in "
-                 "that COM frame.  b ~ |N(0, "
+                 "that COM frame.  (b_y,b_z) ~ N_2(0, sigma^2 I), hence "
+                 "b ~ Rayleigh(sigma = "
               << configuration.impactParameterSigma*1.0e12
-              << " pm)|, truncated by rejection at R_match/2; both dipoles "
+              << " pm), truncated by rejection at R_match/2; both dipoles "
                  "isotropic.\n"
               << "Start/escape separation " << configuration.matchingRadius*1.0e12
               << " pm; collision boundary "
@@ -4764,8 +4797,15 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
             plot_style::crem())
     }, 0.022);
 
-    const double impactUpper = std::max(1.0e-3,
-        4.0*configuration.impactParameterSigma*1.0e12);
+    // Four Rayleigh scales contain 99.966% of the ideal profile.  Still grow
+    // the plotted range when a finite sample contains a rarer accepted tail,
+    // so no scientifically relevant event disappears into ROOT's overflow
+    // bin merely because the radial law changed.
+    const double largestSampledImpact=allImpacts.empty()?0.0:
+        *std::max_element(allImpacts.begin(),allImpacts.end());
+    const double impactUpper = std::max({1.0e-3,
+        4.0*configuration.impactParameterSigma*1.0e12,
+        1.05*largestSampledImpact});
     TH1D impactHistogram("interaction_impact_parameter",
         "Sampled impact parameter;b [pm];Trajectories",
         histogramBins(allImpacts.size()), 0.0, impactUpper);
@@ -4802,10 +4842,10 @@ int showInteractionStatistics(std::uint64_t seed, int runCount,
     drawAnalysisBox(analysisBoxes, 0.48, 0.58, 0.95, 0.91, {
         AnalysisLine("Sampled: N = " + std::to_string(allImpacts.size()),
             plot_style::sampled()),
-        AnalysisLine("b #approx |N(0, " + compactNumber(
-            configuration.impactParameterSigma*1.0e12, 4) + " pm)|"
+        AnalysisLine("b #sim Rayleigh(#sigma = " + compactNumber(
+            configuration.impactParameterSigma*1.0e12, 4) + " pm)"
             + (impactSigmaPm > 0.0 ? "" : " (auto = l_{C})"), plot_style::sampled()),
-        AnalysisLine("half-normal, centred on a head-on collision",
+        AnalysisLine("isotropic 2D Gaussian transverse beam",
             plot_style::sampled()),
         AnalysisLine("#LTb#GT = " + compactNumber(mean(allImpacts), 4)
             + " pm, median = " + compactNumber(
@@ -5547,10 +5587,11 @@ int main(int argc, char** argv) {
                 if (zeroPointModes <= 0)
                     throw std::invalid_argument("--zpf-modes must be positive");
             } else if (argument == "--integrator-order") {
-                gIntegratorOrder = parseInt(argument, requireValue(argument));
-                if (gIntegratorOrder != 2 && gIntegratorOrder != 4)
-                    throw std::invalid_argument(
-                        "--integrator-order must be 2 or 4");
+                (void)requireValue(argument);
+                throw std::invalid_argument(
+                    "--integrator-order was removed: the retarded, dissipative "
+                    "production solver uses its validated adaptive symmetric "
+                    "second-order step");
             } else if (argument == "--zpf-band") {
                 const std::string value = requireValue(argument);
                 const std::size_t comma = value.find(',');
@@ -5692,10 +5733,7 @@ int main(int argc, char** argv) {
                 ? "stochastic (Poissonian E1-dipole photon kicks)"
                 : "automatic (blended individual/coherent)";
         std::cout << "Charge radiation reaction: " << reactionModelName << ".\n";
-        std::cout << "Trajectory composition order: " << gIntegratorOrder
-                  << (gIntegratorOrder==4
-                      ? " (Yoshida composition of three symmetric steps)"
-                      : " (bare symmetric step)") << ".\n";
+        std::cout << "Trajectory integrator: adaptive symmetric second-order step.\n";
         std::cout << "Pair: " << firstSpecies.name << " + "
                   << secondSpecies.name << " (reduced mass "
                   << pairReducedMass/electronMass << " m_e, Bohr radius "

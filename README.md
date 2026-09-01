@@ -658,9 +658,9 @@ zaszłyby jeszcze głębiej z cierpliwszym budżetem. Sprawdzone też: podniesie
 zmieniło NIC — identyczna awaria, identyczna głębokość, co do ostatniej
 cyfry — więc `20` już nasyca to, co ten konkretny budżet może dać; głębsza
 awaria wymagałaby czegoś innego niż więcej podpodziałów. Sprawdzone też
-`--integrator-order 4` na dwóch najgorszych ziarnach: pogorszenie na obu
-(awaria płytsza, czas \(3\)-\(4\times\) dłuższy) — potwierdza wcześniejsze
-ustalenie, że rząd kompozycji nie pomaga tutaj.
+ówczesny prototyp kompozycji Yoshidy na dwóch najgorszych ziarnach:
+pogorszenie na obu (awaria płytsza, czas \(3\)-\(4\times\) dłuższy) —
+potwierdza wcześniejsze ustalenie, że taka kompozycja nie pomaga tutaj.
 
 Koszt: \(5\)-\(20\times\) więcej czasu na próbę (z \(8\)-\(15\) s do
 \(40\)-\(260\)+ s), bo każdy kolejny punkt kontrolny bliżej dna kosztuje
@@ -1332,10 +1332,13 @@ przekroju czynnym (eksperymenty 3, 4) i próbki parametru zderzenia po
 `√(losowa liczba)` (jednorodnie po **polu**, nie po promieniu) to poprawna
 technika Monte Carlo dla ekstrakcji przekroju czynnego niezależnie od
 rzeczywistego profilu wiązki — nie jest to uproszczenie do naprawienia.
-Eksperyment 5 już wcześniej próbkuje energię kinetyczną obu cząstek z
-rozkładu Gaussa (`sampleKinetic`) i parametr zderzenia z rozkładu
-półnormalnego \(|\mathcal N(0,\sigma)|\), odzwierciedlając skończoną
-rozdzielczość energetyczną i ogniskowanie realnej wiązki. Eksperymenty 1/2
+Eksperyment 5 próbkuje energię kinetyczną obu cząstek z rozkładu Gaussa
+(`sampleKinetic`) oraz dwie niezależne składowe poprzeczne położenia wiązki
+\(b_y,b_z\sim\mathcal N(0,\sigma^2)\). Promień
+\(b=\sqrt{b_y^2+b_z^2}\) ma dzięki temu rozkład Rayleigha z właściwym
+jakobianem pola: \(\langle b\rangle=\sqrt{\pi/2}\,\sigma\), a azymut jest
+izotropowy. To przestrzenny profil kołowej plamki Gaussa, nie jednowymiarowy
+profil półnormalny. Eksperymenty 1/2
 (kolaps CREM) startują z ustalonego \(L=\hbar\) na promieniu Bohra pary —
 to nie próbka eksperymentalna, tylko warunek początkowy modelu klasycznego
 odtwarzającego zadaną energię wiązania (patrz komentarz przy
@@ -5464,8 +5467,9 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
 2. `Statistical analysis` wykonuje domyślnie **1000 trajektorii w każdym
    eksperymencie statystycznym**.
    Eksperyment 5 (`Interactions`) wystrzeliwuje 100 par naprzeciw siebie
-   z półgaussowskim parametrem zderzenia i **energią losowaną osobno dla każdej
-   cząstki** z tego samego rozkładu \(N(\mu,\sigma)\), po czym
+   z izotropowym dwuwymiarowym profilem Gaussa w płaszczyźnie poprzecznej
+   (czyli parametrem zderzenia o rozkładzie Rayleigha) i **energią losowaną
+   osobno dla każdej cząstki** z tego samego rozkładu \(N(\mu,\sigma)\), po czym
    klasyfikuje każdą trajektorię jako `Collision`, `Scattering`,
    `Para-Positronium` albo `Orto-Positronium` i podaje zestawienie liczności.
    Próg zderzenia to granica rozdzielczości modelu
@@ -5487,7 +5491,13 @@ Pierwsze pytanie programu wybiera jeden z dwóch trybów pracy:
    sfery, zegar orbit związanych i kryterium wychwytu należą do tej samej ramy;
    translacja środka masy nie może zmienić stanu związanego w niezwiązany.
    Parametr zderzenia (poprzeczny do osi wiązki) zachowuje wartość przy tym
-   boostcie, a izotropowe kierunki dipoli są losowane w COM.
+   boostcie, a izotropowe kierunki dipoli są losowane w COM. Opcja
+   `--interaction-bsigma-pm` określa odchylenie standardowe **każdej** z dwóch
+   współrzędnych poprzecznych; dlatego średni promień wynosi
+   \(\sqrt{\pi/2}\) razy tę wartość. Próbki poza `R_match/2` są ponawiane,
+   nie obcinane do granicy; automatycznie dobrany `R_match` umieszcza granicę
+   na co najmniej \(5\sigma\), gdzie odrzucony ogon ma prawdopodobieństwo
+   \(e^{-25/2}\approx3{,}7\cdot10^{-6}\).
 
    Zależność od pary jest przy tym silna i warto ją znać przed doborem
    \(\mu\). Przy równych masach pędy prawie się znoszą, środek masy prawie nie
@@ -6085,7 +6095,7 @@ cenzurowania estymatory Kaplana–Meiera zamiast tego modelu kategorii.
 | --- | --- |
 | `5_1_1_outcome_summary.pdf` | Klasyfikacja zakończeń: zderzenie, rozproszenie, para-Ps, orto-Ps, nierozstrzygnięte, awaria numeryczna. |
 | `5_1_2_collision_energy.pdf` | Wyliczona niezmiennicza energia w układzie środka masy, z zaznaczeniem podpróbki związanej. |
-| `5_1_3_impact_parameter.pdf` | Losowany parametr zderzenia (rozkład półnormalny), z podpróbką związaną. |
+| `5_1_3_impact_parameter.pdf` | Losowany parametr zderzenia (rozkład Rayleigha dla izotropowej 2D plamki Gaussa), z podpróbką związaną. |
 | `5_1_4_dipole_alignment.pdf` | Wyrównanie dipoli w stanach związanych, z progiem para/orto przy `+0,5`. Stosunek 1:3 wynika tu z **geometrii** progu na izotropowej sferze, a nie ze statystyki spinowej — zbieżność liczbowa jest przypadkowa. |
 | `5_1_5_collapse_time_distribution_para.pdf` | Histogram zmierzonych czasów kolapsu CREM schwytanych par sklasyfikowanych jako para-Ps (zwykle nieliczne: tylko te, których okno obserwacji pokryło pełny obieg Keplera). Oś prowadzona danymi, τ_exp jako pionowa linia tylko gdy się mieści w zasięgu. |
 | `5_1_6_collapse_time_distribution_ortho.pdf` | To samo dla klasy orto. |
@@ -6481,15 +6491,25 @@ powód, dla którego estymator odejmuje przebieg tła — kasuje zależny od faz
 ograniczony błąd schematu, a nie dryf. Nasuwało to receptę **wyższego rzędu**, a nie
 symplektyczności. Została zaimplementowana i **zmierzona jako gorsza**.
 
-Złożenie Yoshidy czwartego rzędu jest dostępne pod `--integrator-order 4`
-i domyślnie wyłączone. Porównane z krokiem bazowym przy tej samej tolerancji
-wypada źle na obu osiach naraz: przy \(10^{-7}\) daje błąd
+Prototyp złożenia Yoshidy został usunięty z silnika i publicznego CLI. Nie miał
+uzasadnionej własności czwartego rzędu dla tej ewolucji: ujemny środkowy krok
+oraz dwa kroki zewnętrzne czytały tę samą historię retardowaną zamrożoną na
+początku całej kompozycji, a produkcyjna dynamika zawiera dyssypację i nie jest
+odwracalna. Test `conservative reverse` dotyczy osobnego,
+chwilowego `integrateConservativeMidpoint`, więc nie stanowił dowodu dla
+`ClassicalTrajectoryEngine`. Stare `--integrator-order` kończy teraz przebieg
+jednoznacznym komunikatem; produkcja ma wyłącznie zwalidowany adaptacyjny krok
+symetryczny rzędu drugiego.
+
+Przed usunięciem prototyp porównano z krokiem bazowym przy tej samej tolerancji
+i wypadł źle na obu osiach naraz: przy \(10^{-7}\) dawał błąd
 \(1{,}62\cdot10^{-5}\) w \(16{,}9\) s wobec \(5{,}04\cdot10^{-6}\)
-w \(5{,}68\) s dla rzędu drugiego, czyli jest \(3{,}2\) raza mniej dokładne
-i \(3{,}0\) raza wolniejsze. Powodów jest kilka: krok środkowy biegnie wstecz
-w czasie, wszystkie trzy podkroki czytają historię zamrożoną na początku kroku,
-a kontroler adaptacyjny i tak wyrównuje błąd do tolerancji, więc wyższy rząd
-kupowałby najwyżej szybkość — i nie kupuje nawet jej.
+w \(5{,}68\) s dla rzędu drugiego, czyli był \(3{,}2\) raza mniej dokładny
+i \(3{,}0\) raza wolniejszy. Powodów jest kilka: krok środkowy biegł wstecz
+w czasie, wszystkie trzy podkroki czytały historię zamrożoną na początku kroku,
+a kontroler adaptacyjny i tak wyrównuje błąd do tolerancji. Nawet gdyby
+kompozycja zachowywała formalny wyższy rząd, mogłaby kupić najwyżej szybkość —
+a prototyp nie kupował nawet jej.
 
 Pomiar ujawnił przy tym próg, którego żadna z dwóch hipotez nie trafiała. Błąd
 nie schodzi poniżej około \(5\cdot10^{-6}\) niezależnie od tolerancji: przy
