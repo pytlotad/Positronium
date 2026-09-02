@@ -134,6 +134,21 @@ std::vector<SphereQuadraturePoint> sphereQuadrature(int directionCount) {
     return result;
 }
 
+// Defined below historicalDipoleKinematics/historicalElectricDipoleKinematics
+// (which they share with retardedMagneticDipoleField/
+// retardedElectricDipoleField), forward-declared here so
+// electromagneticFieldFluxRates can fold their contribution into the SAME
+// Poynting/stress integral as the charge field -- see that function's own
+// comment on why this is not just an addition.
+ElectromagneticField farZoneMagneticDipoleField(
+    const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
+    const Vec3& centre,const StateHistory& history,const State& present,
+    bool sourceIsFirst,bool radiationFieldOnly=false);
+ElectromagneticField farZoneElectricDipoleField(
+    const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
+    const Vec3& centre,const StateHistory& history,const State& present,
+    bool sourceIsFirst,bool radiationFieldOnly=false);
+
 ElectromagneticField farZoneChargeField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
@@ -202,8 +217,42 @@ FieldFluxRates electromagneticFieldFluxRates(
         const ElectromagneticField secondField=farZoneChargeField(
             observationPosition,normal,wavefrontTime,centre,history,state,
             false,secondCharge,sampling.radiationFieldOnly);
-        const Vec3 electric = firstField.electric + secondField.electric;
-        const Vec3 magnetic = firstField.magnetic + secondField.magnetic;
+        // Both particles' magnetic AND electric dipole fields, folded into
+        // the SAME point-by-point field sum the charge fields go into,
+        // before the Poynting vector and Maxwell stress are built from it --
+        // not added as separate power/momentum numbers afterward.  E1-M1 (and
+        // every other pair) interference is exactly what the cross terms of
+        // (E1+Edipole)x(B1+Bdipole) and the corresponding stress tensor
+        // carry; summing pre-computed E1 and M1 flux totals instead, as
+        // particleMultipoleRadiation used to, discards it identically,
+        // since it can shift directionality (and hence momentum/recoil)
+        // while contributing nothing at leading order to the total power.
+        const ElectromagneticField firstMagneticDipoleField=
+            farZoneMagneticDipoleField(observationPosition,normal,
+                wavefrontTime,centre,history,state,true,
+                sampling.radiationFieldOnly);
+        const ElectromagneticField secondMagneticDipoleField=
+            farZoneMagneticDipoleField(observationPosition,normal,
+                wavefrontTime,centre,history,state,false,
+                sampling.radiationFieldOnly);
+        const ElectromagneticField firstElectricDipoleField=
+            farZoneElectricDipoleField(observationPosition,normal,
+                wavefrontTime,centre,history,state,true,
+                sampling.radiationFieldOnly);
+        const ElectromagneticField secondElectricDipoleField=
+            farZoneElectricDipoleField(observationPosition,normal,
+                wavefrontTime,centre,history,state,false,
+                sampling.radiationFieldOnly);
+        const Vec3 electric = firstField.electric + secondField.electric
+            + firstMagneticDipoleField.electric
+            + secondMagneticDipoleField.electric
+            + firstElectricDipoleField.electric
+            + secondElectricDipoleField.electric;
+        const Vec3 magnetic = firstField.magnetic + secondField.magnetic
+            + firstMagneticDipoleField.magnetic
+            + secondMagneticDipoleField.magnetic
+            + firstElectricDipoleField.magnetic
+            + secondElectricDipoleField.magnetic;
         const Vec3 poynting = cross(electric, magnetic) / mu0;
         const double areaWeight=sampling.controlRadius
             *sampling.controlRadius*point.solidAngleWeight;
@@ -1241,12 +1290,15 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
             }
         }
     }
-    if(computeOutwardFlux) {
-        result.outwardFlux.energy += result.magneticDipoleFlux.energy;
-        result.outwardFlux.momentum += result.magneticDipoleFlux.momentum;
-        result.outwardFlux.angularMomentum +=
-            result.magneticDipoleFlux.angularMomentum;
-    }
+    // No longer added here: electromagneticFieldFluxRates now folds both
+    // particles' dipole fields into its own Poynting/stress integral (see
+    // its comment), so outwardFlux already carries magneticDipoleFlux's
+    // contribution -- with the E1-M1 (and dipole-dipole) interference terms
+    // this addition-of-separate-totals could never produce -- and adding it
+    // again here would double-count.  magneticDipoleFlux itself is
+    // unchanged and still computed unconditionally: the continuous
+    // reaction torque and the quantized channel's hazard both read it
+    // directly, independent of computeOutwardFlux.
     return result;
 }
 
@@ -1488,6 +1540,113 @@ ElectromagneticField retardedMagneticDipoleField(
                       *(inverseDistance*inverseDistance)
                   +cross(n,dipole.secondDerivative)
                       *(inverseDistance/c))*(coefficient*weight);
+    return {electric,magnetic};
+}
+
+// Far-zone counterparts of retardedMagneticDipoleField/
+// retardedElectricDipoleField above, forward-declared before
+// electromagneticFieldFluxRates for exactly the reason farZoneChargeField
+// exists rather than calling lienardWiechertField directly there: at
+// controlRadius ~ 1e6 bohr radii, solving observationTime-|observation-
+// source|/c=0 by direct subtraction cancels two nearly-equal, large
+// numbers, while wavefrontTime+n.(source-centre)/c never subtracts
+// anything bigger than the pair's own extent.  clampedSeparationVector's
+// Compton-barrier floor and shortRangeFieldWeight's smooth regulator are
+// both dropped: at this distance they sit at w=1 to within double-precision
+// noise, so the floor/regulator machinery would only reintroduce the same
+// cancellation risk for no effect on the result.  radiationFieldOnly drops
+// every term but the leading 1/r piece, mirroring farZoneChargeField's own
+// flag.
+ElectromagneticField farZoneMagneticDipoleField(
+    const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
+    const Vec3& centre,const StateHistory& history,const State& present,
+    bool sourceIsFirst,bool radiationFieldOnly) {
+    double emissionTime=wavefrontTime;
+    RetardedDipoleKinematics dipole=historicalDipoleKinematics(
+        history,present,sourceIsFirst,emissionTime);
+    for(int iteration=0;iteration<5;++iteration) {
+        const double refined=wavefrontTime
+            +dot(normal,dipole.position-centre)/c;
+        if(std::abs(refined-emissionTime)<=1.0e-30
+            +1.0e-14*std::abs(emissionTime)) {
+            emissionTime=refined;
+            break;
+        }
+        emissionTime=refined;
+        dipole=historicalDipoleKinematics(
+            history,present,sourceIsFirst,emissionTime);
+    }
+    dipole=historicalDipoleKinematics(
+        history,present,sourceIsFirst,emissionTime);
+    const Vec3 displacement=observationPosition-dipole.position;
+    const double distance=displacement.norm();
+    if(!(distance>std::numeric_limits<double>::min())) return {};
+    const Vec3 n=displacement/distance;
+    const double inverseDistance=1.0/distance;
+    constexpr double coefficient=mu0/(4.0*pi);
+    const Vec3 radiationMagnetic=cross(n,cross(n,dipole.secondDerivative))
+        *(inverseDistance/(c*c)*coefficient);
+    const Vec3 radiationElectric=cross(dipole.secondDerivative,n)
+        *(inverseDistance/c*coefficient);
+    if(radiationFieldOnly) return {radiationElectric,radiationMagnetic};
+    const Vec3 transverseFirstDerivative=
+        n*(3.0*dot(n,dipole.firstDerivative))-dipole.firstDerivative;
+    const Vec3 magnetic=regularizedDipoleField(displacement,dipole.moment)
+        +transverseFirstDerivative*(inverseDistance*inverseDistance/c
+            *coefficient)
+        +radiationMagnetic;
+    const Vec3 electric=cross(dipole.firstDerivative,n)
+            *(inverseDistance*inverseDistance*coefficient)
+        +radiationElectric;
+    return {electric,magnetic};
+}
+
+ElectromagneticField farZoneElectricDipoleField(
+    const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
+    const Vec3& centre,const StateHistory& history,const State& present,
+    bool sourceIsFirst,bool radiationFieldOnly) {
+    double emissionTime=wavefrontTime;
+    RetardedElectricDipoleKinematics dipole=
+        historicalElectricDipoleKinematics(
+            history,present,sourceIsFirst,emissionTime);
+    for(int iteration=0;iteration<5;++iteration) {
+        const double refined=wavefrontTime
+            +dot(normal,dipole.position-centre)/c;
+        if(std::abs(refined-emissionTime)<=1.0e-30
+            +1.0e-14*std::abs(emissionTime)) {
+            emissionTime=refined;
+            break;
+        }
+        emissionTime=refined;
+        dipole=historicalElectricDipoleKinematics(
+            history,present,sourceIsFirst,emissionTime);
+    }
+    dipole=historicalElectricDipoleKinematics(
+        history,present,sourceIsFirst,emissionTime);
+    const Vec3 displacement=observationPosition-dipole.position;
+    const double distance=displacement.norm();
+    if(!(distance>std::numeric_limits<double>::min())) return {};
+    const Vec3 n=displacement/distance;
+    const double inverseDistance=1.0/distance;
+    constexpr double electricCoefficient=1.0/(4.0*pi*epsilon0);
+    constexpr double magneticCoefficient=mu0/(4.0*pi);
+    const Vec3 radiationElectric=cross(n,cross(n,dipole.secondDerivative))
+        *(inverseDistance/(c*c)*electricCoefficient);
+    const Vec3 radiationMagnetic=cross(dipole.secondDerivative,n)
+        *(inverseDistance/c*magneticCoefficient);
+    if(radiationFieldOnly) return {radiationElectric,radiationMagnetic};
+    const Vec3 longitudinalMoment=
+        n*(3.0*dot(n,dipole.moment))-dipole.moment;
+    const Vec3 longitudinalFirstDerivative=
+        n*(3.0*dot(n,dipole.firstDerivative))-dipole.firstDerivative;
+    const Vec3 electric=(longitudinalMoment
+            *(inverseDistance*inverseDistance*inverseDistance)
+        +longitudinalFirstDerivative*(inverseDistance*inverseDistance/c))
+            *electricCoefficient
+        +radiationElectric;
+    const Vec3 magnetic=cross(dipole.firstDerivative,n)
+            *(inverseDistance*inverseDistance*magneticCoefficient)
+        +radiationMagnetic;
     return {electric,magnetic};
 }
 

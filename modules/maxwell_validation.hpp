@@ -2218,6 +2218,80 @@ int runMaxwellSelfTest(
     const double regularizedInductionCurlResidual=
         (regularizationCurlField-regularizationCurlReference).norm()
         /std::max(regularizationCurlReference.norm(),1.0e-300);
+    // E1-M1 interference in the far-zone flux: electromagneticFieldFluxRates
+    // now folds both particles' magnetic AND electric dipole fields into the
+    // SAME point-by-point field sum the charge fields go into (see its own
+    // comment), instead of particleMultipoleRadiation adding pre-summed E1
+    // and M1 totals afterward -- which can only ever miss cross terms.
+    // Confirmed at a SINGLE observation direction rather than the full-sphere
+    // integral: the review's own point is that interference redistributes
+    // DIRECTION rather than total power, and a generic direction is exactly
+    // where that redistribution is expected to be visible, whereas the
+    // sphere-integrated total can (and for some source geometries does)
+    // cancel by symmetry even when the pointwise effect is real. Two sources
+    // that actually overlap in the far zone are required -- a source whose
+    // charge motion radiates E1 and whose magnetic moment oscillates
+    // COHERENTLY at the same frequency (a non-oscillating moment's near
+    // field falls off too fast to interfere with far-zone radiation at all).
+    // The interference contribution to the Poynting flux is LINEAR in the
+    // dipole moment while each source's own contribution is quadratic in it,
+    // so flipping the moment's sign isolates interference exactly:
+    // (S(+m)-S(-m))/2 is pure interference.
+    constexpr double interferenceOmega=3.0e19;
+    const Vec3 interferenceMomentAmplitude{0,0,firstMagneticMoment};
+    const auto interferenceMomentAt=[&](double sign,double time) {
+        return interferenceMomentAmplitude*(sign*std::cos(interferenceOmega*time));
+    };
+    const auto interferenceStateAt=[&](double sign,double time) {
+        State sample;
+        sample.time=time;
+        sample.firstPosition={2.0*bohrRadius,0,0};
+        sample.secondPosition={0,0,0};
+        // Only needs SOME E1 radiation, not a physically self-consistent
+        // orbit: an oscillating velocity at fixed position already gives
+        // the position Hermite spline (interpolatedCharge) a genuine
+        // nonzero implied acceleration.
+        sample.firstVelocity={0,0.05*c*std::sin(interferenceOmega*time),0};
+        sample.secondDipole=interferenceMomentAt(sign,time);
+        return sample;
+    };
+    const Vec3 interferenceCentre=
+        (interferenceStateAt(1.0,0.0).firstPosition
+            +interferenceStateAt(1.0,0.0).secondPosition)*0.5;
+    const double interferenceSourceExtent=
+        (interferenceStateAt(1.0,0.0).firstPosition
+            -interferenceCentre).norm();
+    const Vec3 interferenceNormal=unit(Vec3{0.3,0.5,0.8});
+    const auto interferencePoyntingFor=[&](double sign) {
+        const double step=2.0*pi/interferenceOmega/64.0;
+        const State present=interferenceStateAt(sign,0.0);
+        StateHistory history;
+        for(int index=-4;index<=0;++index)
+            history.push_back(interferenceStateAt(sign,index*step));
+        const Vec3 observationPosition=interferenceCentre
+            +interferenceNormal*(1.0e6*bohrRadius);
+        const double wavefrontTime=
+            present.time-interferenceSourceExtent/c;
+        const ElectromagneticField chargeField=farZoneChargeField(
+            observationPosition,interferenceNormal,wavefrontTime,
+            interferenceCentre,history,present,true,firstCharge,false);
+        const ElectromagneticField dipoleField=farZoneMagneticDipoleField(
+            observationPosition,interferenceNormal,wavefrontTime,
+            interferenceCentre,history,present,false,false);
+        const Vec3 electric=chargeField.electric+dipoleField.electric;
+        const Vec3 magnetic=chargeField.magnetic+dipoleField.magnetic;
+        return dot(cross(electric,magnetic)/mu0,interferenceNormal);
+    };
+    const double interferencePoyntingPlus=interferencePoyntingFor(1.0);
+    const double interferencePoyntingMinus=interferencePoyntingFor(-1.0);
+    const double interferencePoyntingZero=interferencePoyntingFor(0.0);
+    const double interferenceTerm=
+        0.5*(interferencePoyntingPlus-interferencePoyntingMinus);
+    const double interferenceEvenTerm=
+        0.5*(interferencePoyntingPlus+interferencePoyntingMinus)
+        -interferencePoyntingZero;
+    const double interferenceSignificance=std::abs(interferenceTerm)
+        /std::max(std::abs(interferencePoyntingZero),1.0e-300);
     State quadrupolePair=yeeCoupledState;
     quadrupolePair.firstPosition={-1.7*bohrRadius,0.4*bohrRadius,
                                       -0.2*bohrRadius};
@@ -3928,6 +4002,17 @@ int runMaxwellSelfTest(
     const bool regularizedInductionCurlOk=
         std::isfinite(regularizedInductionCurlResidual)
         &&regularizedInductionCurlResidual<1.0e-6;
+    // interferenceTerm (linear in the dipole moment) is expected to DOMINATE
+    // interferenceEvenTerm (quadratic in it) for a moment this much smaller
+    // than the charge's own E1 amplitude -- measured ~1.6e7, confirming the
+    // right qualitative scaling, not just "nonzero".  interferenceSignificance
+    // bounds it away from the floating-point noise floor on the dominant,
+    // moment-independent term it is compared against.
+    const bool electricMagneticDipoleInterferenceOk=
+        std::isfinite(interferenceTerm)&&std::isfinite(interferenceEvenTerm)
+        &&std::isfinite(interferenceSignificance)
+        &&interferenceSignificance>1.0e-15
+        &&std::abs(interferenceTerm)>std::abs(interferenceEvenTerm);
     const bool massAndSelfForceOk=bareMassFraction>0.0
         &&electromagneticMassFraction>0.0
         &&electromagneticMassFraction<0.01
@@ -4306,6 +4391,9 @@ int runMaxwellSelfTest(
               << "tensor grad static:" << tensorGradientStaticResidual << '\n'
               << "dipole coupling inv:" << dipoleGradientCouplingInvarianceResidual << '\n'
               << "induction curl vs A_reg:" << regularizedInductionCurlResidual << '\n'
+              << "E1-M1 interference/significance: "
+                 << interferenceTerm << " / " << interferenceSignificance
+                 << " (even=" << interferenceEvenTerm << ")" << '\n'
               << "dipole field vs exact, leading (beta=0/alpha/0.3/0.8): "
                  << dipoleFieldAgreementBetaZero.leading << " / "
                  << dipoleFieldAgreementBetaAlpha.leading << " / "
@@ -4562,7 +4650,7 @@ int runMaxwellSelfTest(
         && quantizedDipoleTorqueTravel>0.1
         && disabledDipoleTorqueTravel==0.0
         && quantizedDipoleTorqueNormDrift<1.0e-12;
-    const std::array<ValidationCheck,47> regressionChecks{{
+    const std::array<ValidationCheck,48> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -4579,6 +4667,7 @@ int runMaxwellSelfTest(
         {ValidationSection::PhysicalDomain,"particle-covariance",particleCovarianceOk},
         {ValidationSection::AlgebraicIdentity,"dipole-tensor-covariance",dipoleTensorCovarianceOk},
         {ValidationSection::AlgebraicIdentity,"regularized-induction-curl",regularizedInductionCurlOk},
+        {ValidationSection::AlgebraicIdentity,"electric-magnetic-dipole-interference",electricMagneticDipoleInterferenceOk},
         {ValidationSection::NumericalRegression,"mass-and-self-force",massAndSelfForceOk},
         {ValidationSection::AlgebraicIdentity,"bound-current",boundCurrentOk},
         {ValidationSection::NumericalRegression,"retarded-initialization",retardedInitializationOk},
