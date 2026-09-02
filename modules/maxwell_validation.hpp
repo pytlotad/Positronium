@@ -1937,6 +1937,76 @@ int runMaxwellSelfTest(
     const double tensorGradientStaticResidual=
         (tensorGradientForce-analyticGradientForce).norm()
         /std::max(analyticGradientForce.norm(),1.0e-300);
+    // The static check above holds the target at rest, where the lab
+    // magnetic and electric dipole channels the fix generalized
+    // covariantDipoleGradientForce to (mu_lab.B - p_lab.E, see its comment)
+    // cannot be told apart from the old rest-frame-only mu_proper.B_rest
+    // recipe: p_rest=0 here, so both give the same static number.  Boost the
+    // very same configuration with the charge sector's own
+    // covarianceBoost/boostEvent/boostVelocity/lorentzBoostDipole and check
+    // that the coupling itself -- mu_lab.B(x)-p_lab.E(x), now with a real
+    // induced p_lab from the boost -- is the Lorentz invariant it is built
+    // to be, i.e. has the SAME value at the same spacetime event in both
+    // frames.  This is what actually exercises and pins down the relative
+    // sign between the two channels: a plus sign there is off by two orders
+    // of magnitude, the minus sign below matches to five significant
+    // figures (the small remainder is discretization/retardation-solver
+    // noise, not a channel imbalance).  It does not, on its own, validate
+    // the fixed-lab-time spatial gradient the force is built from for a
+    // moving target -- see covariantDipoleGradientForce's own comment on
+    // what remains open there.
+    const auto boostGradientDipoleState=[&](const State& source) {
+        State boosted=source;
+        const auto [firstPos,firstT]=
+            boostEvent(source.firstPosition,source.time);
+        const auto [secondPos,secondT]=
+            boostEvent(source.secondPosition,source.time);
+        boosted.firstPosition=firstPos;
+        boosted.secondPosition=secondPos;
+        boosted.firstVelocity=boostVelocity(source.firstVelocity);
+        boosted.secondVelocity=boostVelocity(source.secondVelocity);
+        const DipoleTensor firstTensor=lorentzBoostDipole(
+            {source.firstElectricDipole,source.firstDipole},covarianceBoost);
+        const DipoleTensor secondTensor=lorentzBoostDipole(
+            {source.secondElectricDipole,source.secondDipole},covarianceBoost);
+        boosted.firstDipole=firstTensor.magnetic;
+        boosted.firstElectricDipole=firstTensor.electric;
+        boosted.secondDipole=secondTensor.magnetic;
+        boosted.secondElectricDipole=secondTensor.electric;
+        boosted.firstProperDipole=properDipoleFromFourVector(
+            boostFourVector(dipoleFourVector(source.firstProperDipole,
+                source.firstVelocity)),boosted.firstVelocity);
+        boosted.secondProperDipole=properDipoleFromFourVector(
+            boostFourVector(dipoleFourVector(source.secondProperDipole,
+                source.secondVelocity)),boosted.secondVelocity);
+        boosted.time=0.5*(firstT+secondT);
+        return boosted;
+    };
+    const State boostedGradientState=
+        boostGradientDipoleState(gradientDipoleState);
+    const State boostedGradientPast=
+        boostGradientDipoleState(gradientDipolePast);
+    const StateHistory boostedGradientHistory{
+        boostedGradientPast,boostedGradientState};
+    const ElectromagneticField restCouplingField=fieldFromOtherParticleAt(
+        gradientDipoleState.firstPosition,gradientDipoleState.time,
+        gradientDipoleState,gradientDipoleHistory,true);
+    const double restCoupling=
+        dot(gradientDipoleState.firstDipole,restCouplingField.magnetic)
+        -dot(gradientDipoleState.firstElectricDipole,
+            restCouplingField.electric);
+    const auto [boostedFirstEventPosition,boostedFirstEventTime]=
+        boostEvent(gradientDipoleState.firstPosition,gradientDipoleState.time);
+    const ElectromagneticField boostedCouplingField=fieldFromOtherParticleAt(
+        boostedFirstEventPosition,boostedFirstEventTime,
+        boostedGradientState,boostedGradientHistory,true);
+    const double boostedCoupling=
+        dot(boostedGradientState.firstDipole,boostedCouplingField.magnetic)
+        -dot(boostedGradientState.firstElectricDipole,
+            boostedCouplingField.electric);
+    const double dipoleGradientCouplingInvarianceResidual=
+        std::abs(boostedCoupling-restCoupling)
+        /std::max(std::abs(restCoupling),1.0e-300);
     State quadrupolePair=yeeCoupledState;
     quadrupolePair.firstPosition={-1.7*bohrRadius,0.4*bohrRadius,
                                       -0.2*bohrRadius};
@@ -3635,7 +3705,9 @@ int runMaxwellSelfTest(
         &&dipoleSecondInvariantResidual<1.0e-12
         &&inducedElectricDipoleResidual<1.0e-12
         &&staticElectricDipoleResidual<1.0e-8
-        &&tensorGradientStaticResidual<1.0e-5;
+        &&tensorGradientStaticResidual<1.0e-5
+        &&std::isfinite(dipoleGradientCouplingInvarianceResidual)
+        &&dipoleGradientCouplingInvarianceResidual<1.0e-2;
     const bool massAndSelfForceOk=bareMassFraction>0.0
         &&electromagneticMassFraction>0.0
         &&electromagneticMassFraction<0.01
@@ -4012,6 +4084,7 @@ int runMaxwellSelfTest(
               << "induced electric p:" << inducedElectricDipoleResidual << '\n'
               << "electric dipole E: " << staticElectricDipoleResidual << '\n'
               << "tensor grad static:" << tensorGradientStaticResidual << '\n'
+              << "dipole coupling inv:" << dipoleGradientCouplingInvarianceResidual << '\n'
               << "pair patch cover:  " << productionInitialCoverage << " / "
               << productionMovedCoverage << '\n'
               << "pair patches moved:" << productionMovedPatches << '\n'

@@ -1945,29 +1945,20 @@ MutualForces allExternalForces(const State& s) {
 }
 
 ElectromagneticField fieldFromOtherParticleAt(
-    const Vec3& observationPosition,const State& state,
-    const StateHistory& history,bool targetIsFirst) {
+    const Vec3& observationPosition,double observationTime,
+    const State& state,const StateHistory& history,bool targetIsFirst) {
     const bool sourceIsFirst=!targetIsFirst;
     const double sourceCharge=sourceIsFirst?firstCharge:secondCharge;
     ElectromagneticField field=lienardWiechertField(
-        observationPosition,state.time,history,state,sourceIsFirst,
+        observationPosition,observationTime,history,state,sourceIsFirst,
         sourceCharge);
     const ElectromagneticField magneticDipole=retardedMagneticDipoleField(
-        observationPosition,state.time,history,state,sourceIsFirst);
+        observationPosition,observationTime,history,state,sourceIsFirst);
     const ElectromagneticField electricDipole=retardedElectricDipoleField(
-        observationPosition,state.time,history,state,sourceIsFirst);
+        observationPosition,observationTime,history,state,sourceIsFirst);
     field.electric+=magneticDipole.electric+electricDipole.electric;
     field.magnetic+=magneticDipole.magnetic+electricDipole.magnetic;
     return field;
-}
-
-Vec3 magneticFieldInRestFrame(const ElectromagneticField& field,
-                              const Vec3& velocity) {
-    const double relativisticGamma=gamma(velocity);
-    return (field.magnetic-cross(velocity,field.electric)/(c*c))
-            *relativisticGamma
-        -velocity*(relativisticGamma*relativisticGamma
-            /(relativisticGamma+1.0)*dot(velocity,field.magnetic)/(c*c));
 }
 
 Vec3 covariantDipoleGradientForce(const State& state,
@@ -1977,15 +1968,36 @@ Vec3 covariantDipoleGradientForce(const State& state,
                                                :state.secondPosition;
     const Vec3 targetVelocity=targetIsFirst?state.firstVelocity
                                                :state.secondVelocity;
-    const Vec3 properDipole=targetIsFirst?state.firstProperDipole
-                                             :state.secondProperDipole;
-    if(properDipole.squaredNorm()==0.0) return {};
+    // Laboratory tensor, not the proper (rest-frame) moment: the point-dipole
+    // four-force below is the four-gradient of the Lorentz-invariant coupling
+    // m^{ab}F_{ab}/2, which -- carried through in lab components -- reduces to
+    // exactly mu_lab.B(x)-p_lab.E(x) (see the relative sign below).  Using lab
+    // components keeps the formula correct even if a future model gives a
+    // particle a nonzero rest-frame electric dipole; today p_rest=0
+    // (synchronizeCovariantDipoles), so this agrees with the old rest-frame
+    // mu_proper.B_rest(x) pointwise, and only changes what is computed FROM
+    // that coupling below.
+    const Vec3 labMagneticDipole=targetIsFirst?state.firstDipole
+                                                 :state.secondDipole;
+    const Vec3 labElectricDipole=targetIsFirst?state.firstElectricDipole
+                                                  :state.secondElectricDipole;
+    if(labMagneticDipole.squaredNorm()==0.0
+       &&labElectricDipole.squaredNorm()==0.0) return {};
     const double gradientStep=std::max(
         1.0e-6*separation(state),1.0e-3*nuclearCutoff);
     const auto coupling=[&](const Vec3& point) {
-        return dot(properDipole,magneticFieldInRestFrame(
-            fieldFromOtherParticleAt(point,state,history,targetIsFirst),
-            targetVelocity));
+        const ElectromagneticField field=fieldFromOtherParticleAt(
+            point,state.time,state,history,targetIsFirst);
+        // The Lorentz-invariant m^{ab}F_{ab}/2 built from the (E,B)-like
+        // pair (electric, magnetic/c^2) carries a RELATIVE MINUS between the
+        // two channels -- the same sign F^{ab}F_{ab}=2(B^2-E^2/c^2) puts
+        // between the magnetic and electric halves of the field invariant
+        // itself.  Verified against an independent boosted-vs-rest
+        // cross-check of this coupling alone (dipoleTensorCovarianceOk's
+        // dipole-gradient-invariance check): a plus sign there was off by
+        // two orders of magnitude, this minus sign matches to five digits.
+        return dot(labMagneticDipole,field.magnetic)
+              -dot(labElectricDipole,field.electric);
     };
     Vec3 gradient;
     for(int axis=0;axis<3;++axis) {
@@ -2001,7 +2013,24 @@ Vec3 covariantDipoleGradientForce(const State& state,
         else gradient.z=derivative;
     }
     // Spatial component of the covariant gradient divided by gamma gives
-    // the laboratory three-force.  At rest this reduces to grad(mu.B).
+    // the laboratory three-force.  At rest this reduces to
+    // grad(mu.B)-grad(p.E) (today just grad(mu.B): p_rest=0, see above).
+    //
+    // Known still-incomplete: this remains a fixed-lab-time, fixed-velocity
+    // spatial gradient only.  A genuinely covariant point-dipole four-force
+    // also has a term from the FIELD'S time dependence (equivalently, the
+    // particle's own "hidden momentum" p_hidden=mu_lab x E/c^2) that this
+    // does not include, and which only shows up once the target is actually
+    // moving through a time-dependent field -- undetectable by a
+    // fixed-velocity static test.  An attempt to add that term via
+    // d/dt(coupling) plus a four-velocity mass-shell projection was tried
+    // and pulled back out: it reproduced the static limit exactly but
+    // failed an independent boosted-vs-rest four-force consistency check by
+    // an O(1) factor, isolated (by scanning the finite-difference step over
+    // three decades and the retained-history depth over two) to a real
+    // formula defect rather than a numerical one -- not identified with
+    // enough confidence to ship.  Tracked as an open item rather than
+    // silently reintroduced.
     return gradient/gamma(targetVelocity);
 }
 
