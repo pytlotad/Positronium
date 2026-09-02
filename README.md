@@ -7856,7 +7856,7 @@ podkroku solver:
 
 1. odtwarza mimośród z pełnej wartości momentu pędu,
    $1-e^2=L^2/(\mu K a)$, i oblicza adaptacyjną średnią BMT po prawdziwej
-   elipsie Keplera (64 węzły dla koła, 192 przy $e^2=0{,}945$, najwyżej
+   elipsie Keplera (64 węzły dla koła, 256 przy $e^2=0{,}945$, najwyżej
    512 blisko granicy parabolicznej),
 2. wykonuje predyktor do punktu środkowego dokładnymi obrotami Rodriguesa,
 3. odświeża pole na stanie pośrednim,
@@ -7893,11 +7893,13 @@ Walidacja sprawdza niezależnie zachowanie \(\mathbf J\), modułów obu momentó
 zbieżność przy granicach kąta \(0{,}05/0{,}025/0{,}0125\) rad. Dodatkowa,
 niezależna sonda rozwiązuje równania Newtona dla orbity o
 \(e^2=0{,}945\) metodą RK4 w równych odstępach czasu i porównuje uśrednione
-tempo BMT z solverem produkcyjnym. Residuum BMT wynosi \(4{,}95\cdot10^{-8}\),
-a domknięcie referencyjnej orbity \(3{,}33\cdot10^{-7}\). W teście sprzężonym
+tempo BMT z solverem produkcyjnym. Dla elektronu–pozytonu residuum BMT wynosi
+\(3{,}07\cdot10^{-9}\), a domknięcie referencyjnej orbity
+\(1{,}98\cdot10^{-8}\); dla najcięższej pary proton–antyproton residuum BMT
+wynosi \(5{,}12\cdot10^{-6}\) przy tym samym domknięciu. W teście sprzężonym
 reszta \(\mathbf J\) wynosi 0, dryf modułu \(2{,}2\cdot10^{-16}\), a błąd
 maleje około czterokrotnie po dwukrotnym zagęszczeniu, zgodnie z metodą
-drugiego rzędu. Zestaw walidacyjny przechodzi 46/46.
+drugiego rzędu. Zestaw walidacyjny przechodzi 48/48.
 
 To domyka **klasyczny zredukowany model momentu pędu**, ale nie usuwa
 ograniczenia fizycznego opisanego dalej: klasyczne wektory nadal nie są

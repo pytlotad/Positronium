@@ -121,11 +121,14 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     // average.  Sampling E instead of mean anomaly also resolves periapsis:
     // at e^2=0.945 the old 64 midpoint samples in M skipped the narrow peak,
     // whereas this grid contains E=0 exactly.  The analyticity strip narrows
-    // as e approaches one, so refine only eccentric orbits: a circle keeps the
-    // historical 64 evaluations, e^2=0.945 receives 192, and the cost is
-    // bounded near the parabolic limit.
-    const int phaseNodes=std::clamp(static_cast<int>(std::ceil(
-        128.0/std::sqrt(std::max(1.0-eccentricity,1.0e-12)))),64,512);
+    // as e approaches one, so refine only eccentric orbits.  Nested powers of
+    // two avoid the aliasing seen with unrelated node counts: a circle keeps
+    // the historical 64 evaluations, e^2=0.945 receives 256, and the cost is
+    // bounded at 512 near the parabolic limit.
+    const double targetPhaseNodes=
+        32.0/std::sqrt(std::max(1.0-eccentricity,1.0e-12));
+    int phaseNodes=64;
+    while(phaseNodes<512&&phaseNodes<targetPhaseNodes) phaseNodes*=2;
     Vec3 firstOmegaSum,secondOmegaSum;
     Vec3 firstExternalOmegaSum,secondExternalOmegaSum;
     for(int node=0;node<phaseNodes;++node) {
