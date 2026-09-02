@@ -32,6 +32,16 @@ struct OrbitAveragedBmtAngularVelocities {
     // not |mu''(<omega>)|^2.  See the accumulation below for why the gap is
     // not a refinement but the leading term.
     double coherentSecondDerivativeSquared=0.0;
+    // < osculatingOrbitalFrequency >, the orbit average of the SAME
+    // instantaneous frequency the ZPF band is tuned to at every node, and the
+    // rate at which the pair's integrated orbital phase actually grows.  It is
+    // NOT the mean motion: osculatingOrbitalFrequency goes as r^-3/2, so it
+    // swings by ((1+e)/(1-e))^3/2 around an eccentric orbit -- 595x at
+    // e^2=0.945 -- and its time average comes out 1.5978 n there, not n.  The
+    // two coincide only for a circle.  advanceCoupledSecularSpinOrbit advances
+    // zeroPointPhase by this, so the secular path accumulates the same
+    // integrated phase the mechanical path does one step at a time.
+    double averagedOrbitalFrequency=0.0;
     int phaseNodes=0;
     bool valid=false;
 };
@@ -217,6 +227,7 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     result.phaseNodes=phaseNodes;
     Vec3 firstOmegaSum,secondOmegaSum;
     Vec3 firstExternalOmegaSum,secondExternalOmegaSum;
+    double orbitalFrequencySum=0.0;
     // Instantaneous rates kept per node, not just their running sum: the M1
     // power below needs omega(E) itself and its derivative, neither of which
     // survives averaging.
@@ -282,6 +293,12 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
             externalAtSecond.electric+=secondElectric;
             externalAtSecond.magnetic+=secondMagnetic;
         }
+        // The band frequency this node's ZPF was actually sampled at, both
+        // here and inside localRelativisticFields (which reads it off the
+        // same sample), time-weighted into the orbit average the phase
+        // advance needs.
+        orbitalFrequencySum+=
+            osculatingOrbitalFrequency(sample)*timeWeight;
         const Vec3 firstOmega=thomasBmtEffectiveField(
             sample.firstVelocity,fields.atFirst,firstGFactor)
                 *(-firstCharge/firstMass);
@@ -361,6 +378,8 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     result.coherentSecondDerivativeSquared=
         secondDerivativeSquaredSum/nodeCount;
 
+    result.averagedOrbitalFrequency=
+        orbitalFrequencySum/static_cast<double>(phaseNodes);
     result.first=firstOmegaSum*(1.0/static_cast<double>(phaseNodes));
     result.second=secondOmegaSum*(1.0/static_cast<double>(phaseNodes));
     result.firstExternal=
@@ -370,7 +389,9 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     result.valid=isFinite(result.first)&&isFinite(result.second)
         &&isFinite(result.firstExternal)&&isFinite(result.secondExternal)
         &&std::isfinite(result.coherentSecondDerivativeSquared)
-        &&result.coherentSecondDerivativeSquared>=0.0;
+        &&result.coherentSecondDerivativeSquared>=0.0
+        &&std::isfinite(result.averagedOrbitalFrequency)
+        &&result.averagedOrbitalFrequency>0.0;
     return result;
 }
 
@@ -418,14 +439,30 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         return first/firstGyromagneticRatio
             +second/secondGyromagneticRatio;
     };
-    // Same mean motion orbitAveragedBmtAngularVelocities computes
-    // internally (semiMajorAxis is fixed for this whole call, so it is
-    // fixed here too): the ZPF phase advances at the pair's real orbital
-    // frequency, exactly the quantity osculatingOrbitalFrequency*dt
-    // advances State::zeroPointPhase by on the mechanical path -- not left
-    // at the initial value for the whole checkpoint, let alone frozen at 0.
-    const double meanMotion=std::sqrt(pairCoulombStrength
-        /(reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis));
+    // The ZPF phase advances at the orbit-averaged OSCULATING orbital
+    // frequency, which is what the mechanical path integrates one step at a
+    // time (electrodynamics.hpp advances State::zeroPointPhase by
+    // osculatingOrbitalFrequency(s)*dt), and what every node of the
+    // quadrature tunes its own ZPF band to.
+    //
+    // This used to advance by the MEAN MOTION instead, with a comment
+    // asserting that was "exactly the quantity osculatingOrbitalFrequency*dt
+    // advances State::zeroPointPhase by on the mechanical path".  It is not,
+    // and only a circle hides the difference: osculatingOrbitalFrequency is
+    // built from the instantaneous separation, sqrt(K/(mu r^3)), so it goes
+    // as r^-3/2 while the mean motion is fixed at a^-3/2.  Around the
+    // validation's own eccentric reference (e^2=0.945) the instantaneous
+    // value runs from 0.361 n at apoapsis to 214.7 n at periapsis, a swing of
+    // 595x, and its TIME AVERAGE is 1.5978 n -- so the secular path was
+    // accumulating ZPF phase ~60% slower than the mechanical path does over
+    // the same elapsed time, putting the two on different realizations of the
+    // same field.  Taking the average from the same orbit walk that samples
+    // the field costs nothing and makes them agree by construction; at e=0 it
+    // reduces to the mean motion identically, so circular orbits are
+    // unchanged.
+    // Taken per substep from the rates below rather than computed here: it
+    // depends on the eccentricity, which the transported orbital angular
+    // momentum changes as the substeps proceed.
     const Vec3 initialAngularMomentum=
         initial.orbitalAngularMomentum
         +spinTotal(initial.firstDipole,initial.secondDipole);
@@ -481,7 +518,8 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
                 result.state.orbitalAngularMomentum,orbitalMid);
             midpointRates=orbitAveragedBmtAngularVelocities(
                 semiMajorAxis,orbitalMid,firstMid,secondMid,reducedMass,
-                result.state.zeroPointPhase+meanMotion*(0.5*dt),
+                result.state.zeroPointPhase
+                    +startRates.averagedOrbitalFrequency*(0.5*dt),
                 periapsisMid);
             if(!midpointRates.valid) return result;
             const double midpointAngle=dt*std::max(
@@ -515,7 +553,9 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         result.state.secondDipole=secondAfter;
         result.state.orbitalAngularMomentum=orbitalAfter;
         result.state.periapsisDirection=periapsisAfter;
-        result.state.zeroPointPhase+=meanMotion*dt;
+        // Midpoint rate, matching how the rotations themselves are accepted.
+        result.state.zeroPointPhase+=
+            midpointRates.averagedOrbitalFrequency*dt;
         transportedAngularMomentum=angularMomentumAfter;
         result.maximumSubstepAngle=std::max(result.maximumSubstepAngle,
             dt*std::max(midpointRates.first.norm(),

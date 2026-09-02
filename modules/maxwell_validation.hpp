@@ -1636,6 +1636,69 @@ int runMaxwellSelfTest(
             pairReducedMass,0.0,secularReferenceRadial,nodes)
                 .coherentSecondDerivativeSquared;
     };
+    // --- ZPF phase rate: the secular path must integrate what the
+    // --- mechanical path integrates ---
+    //
+    // The mechanical path advances State::zeroPointPhase by
+    // osculatingOrbitalFrequency(s)*dt, which is built from the INSTANTANEOUS
+    // separation and so goes as r^-3/2.  advanceCoupledSecularSpinOrbit
+    // advances the same phase across a whole checkpoint, so the rate it uses
+    // has to be that quantity's orbit average, not the mean motion: the two
+    // agree only for a circle.  Checked here against an independent closed
+    // form, since <(r/a)^-3/2> weighted by dt is
+    //
+    //     (1/2pi) INT (1-e cos E)^-3/2 (1-e cos E) dE
+    //         = (1/2pi) INT (1-e cos E)^-1/2 dE,
+    //
+    // evaluated below by direct quadrature in E rather than by reusing the
+    // module's own node loop, so a defect in that loop cannot hide here.
+    // Circular orbits must reproduce the mean motion identically.
+    const auto averagedOsculatingFrequencyReference=[&](double eccentricity) {
+        constexpr int referenceNodes=200000;
+        double sum=0.0;
+        for(int node=0;node<referenceNodes;++node) {
+            const double eccentricAnomaly=2.0*pi
+                *(static_cast<double>(node)+0.5)
+                /static_cast<double>(referenceNodes);
+            sum+=1.0/std::sqrt(1.0-eccentricity*std::cos(eccentricAnomaly));
+        }
+        return sum/static_cast<double>(referenceNodes);
+    };
+    const double secularEccentricMeanMotion=std::sqrt(pairCoulombStrength
+        /(pairReducedMass*secularEccentricReferenceAxis
+            *secularEccentricReferenceAxis*secularEccentricReferenceAxis));
+    const double secularPhaseRateRatio=
+        secularEccentricAverage.averagedOrbitalFrequency
+        /secularEccentricMeanMotion;
+    const double secularPhaseRateExpected=
+        averagedOsculatingFrequencyReference(secularReferenceEccentricity);
+    const double secularPhaseRateResidual=
+        std::abs(secularPhaseRateRatio-secularPhaseRateExpected)
+        /std::max(secularPhaseRateExpected,1.0e-300);
+    // Circular limit: the average must collapse onto the mean motion exactly,
+    // so this fix cannot have disturbed circular orbits.
+    const Vec3 circularPhaseAngularMomentum=secularReferenceNormal*std::sqrt(
+        pairReducedMass*pairCoulombStrength*secularEccentricReferenceAxis);
+    const OrbitAveragedBmtAngularVelocities circularPhaseAverage=
+        orbitAveragedBmtAngularVelocities(
+            secularEccentricReferenceAxis,circularPhaseAngularMomentum,
+            secularInitial.firstDipole,secularInitial.secondDipole,
+            pairReducedMass,0.0,secularReferenceRadial);
+    const double circularPhaseRateResidual=circularPhaseAverage.valid
+        ?std::abs(circularPhaseAverage.averagedOrbitalFrequency
+                  -secularEccentricMeanMotion)/secularEccentricMeanMotion
+        :std::numeric_limits<double>::infinity();
+    const bool secularZeroPointPhaseRateOk=
+        secularEccentricAverage.valid&&circularPhaseAverage.valid
+        &&std::isfinite(secularPhaseRateRatio)
+        &&std::isfinite(secularPhaseRateResidual)
+        // The node schedule resolves this integrand far better than it
+        // resolves the M1 one, so this is a tight bar, not a nominal one.
+        &&secularPhaseRateResidual<1.0e-3
+        // And it must actually DIFFER from the mean motion here, or the
+        // check would pass equally on the bug it exists to catch.
+        &&secularPhaseRateRatio>1.2
+        &&circularPhaseRateResidual<1.0e-12;
     const double secularM1Coarse=secularM1AverageAtNodes(512);
     const double secularM1Medium=secularM1AverageAtNodes(1024);
     const double secularM1Fine=secularM1AverageAtNodes(2048);
@@ -4660,6 +4723,10 @@ int runMaxwellSelfTest(
               << coherentReactionMomentumResidual << '\n'
               << "coherent M1 +/-:     " << alignedMagneticPowerRatio << " / "
               << cancellingMagneticPowerRatio << '\n'
+              << "ZPF phase rate/n:   " << secularPhaseRateRatio
+                 << " (expected " << secularPhaseRateExpected
+                 << ", circular residual " << circularPhaseRateResidual
+                 << ")\n"
               << "M1 orbit avg 512/1k/2k: " << secularM1Coarse << " / "
                  << secularM1Medium << " / " << secularM1Fine
                  << "  (order " << (secularM1CoarseChange
@@ -4825,7 +4892,7 @@ int runMaxwellSelfTest(
         && quantizedDipoleTorqueTravel>0.1
         && disabledDipoleTorqueTravel==0.0
         && quantizedDipoleTorqueNormDrift<1.0e-12;
-    const std::array<ValidationCheck,49> regressionChecks{{
+    const std::array<ValidationCheck,50> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -4862,6 +4929,7 @@ int runMaxwellSelfTest(
         {ValidationSection::Convergence,"coupled-secular-spin-orbit-convergence",secularSpinOrbitConvergenceOk},
         {ValidationSection::Convergence,"secular-eccentric-orbit",secularEccentricOrbitOk},
         {ValidationSection::Convergence,"m1-secular-orbit-average",secularM1OrbitAverageOk},
+        {ValidationSection::AlgebraicIdentity,"secular-zpf-phase-rate",secularZeroPointPhaseRateOk},
         {ValidationSection::AlgebraicIdentity,"quantized-radiation-gating",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"state-integrity",stateIntegrityOk},
