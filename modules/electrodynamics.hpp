@@ -217,16 +217,32 @@ FieldFluxRates electromagneticFieldFluxRates(
         const ElectromagneticField secondField=farZoneChargeField(
             observationPosition,normal,wavefrontTime,centre,history,state,
             false,secondCharge,sampling.radiationFieldOnly);
-        // Both particles' magnetic AND electric dipole fields, folded into
-        // the SAME point-by-point field sum the charge fields go into,
-        // before the Poynting vector and Maxwell stress are built from it --
-        // not added as separate power/momentum numbers afterward.  E1-M1 (and
-        // every other pair) interference is exactly what the cross terms of
+        // Both particles' magnetic dipole fields, folded into the SAME
+        // point-by-point field sum the charge fields go into, before the
+        // Poynting vector and Maxwell stress are built from it -- not added
+        // as separate power/momentum numbers afterward.  E1-M1 (and every
+        // other pair) interference is exactly what the cross terms of
         // (E1+Edipole)x(B1+Bdipole) and the corresponding stress tensor
         // carry; summing pre-computed E1 and M1 flux totals instead, as
         // particleMultipoleRadiation used to, discards it identically,
         // since it can shift directionality (and hence momentum/recoil)
         // while contributing nothing at leading order to the total power.
+        //
+        // No separate farZoneElectricDipoleField call: firstElectricDipole/
+        // secondElectricDipole are not an independent moment, they are
+        // exactly the motional electric dipole lorentzBoostDipole produces
+        // from boosting this SAME rest-frame magnetic moment (see
+        // synchronizeCovariantDipoles).  farZoneMagneticDipoleField's exact
+        // relativistic construction already carries that motional channel
+        // -- it is a single boosted current loop's field, not two
+        // independent point-multipole sources -- so folding in the electric
+        // solver here would double-count it.  It stayed load-bearing back
+        // when the magnetic channel was only the low-velocity
+        // approximation and genuinely lacked that piece; now that it is the
+        // exact field, adding it back is exactly the bug this replaces.
+        // The standalone electric-dipole solver itself is untouched, for
+        // its own tests and for a possible future genuine (non-motional)
+        // electric dipole moment.
         const ElectromagneticField firstMagneticDipoleField=
             farZoneMagneticDipoleField(observationPosition,normal,
                 wavefrontTime,centre,history,state,true,
@@ -235,24 +251,21 @@ FieldFluxRates electromagneticFieldFluxRates(
             farZoneMagneticDipoleField(observationPosition,normal,
                 wavefrontTime,centre,history,state,false,
                 sampling.radiationFieldOnly);
-        const ElectromagneticField firstElectricDipoleField=
-            farZoneElectricDipoleField(observationPosition,normal,
-                wavefrontTime,centre,history,state,true,
-                sampling.radiationFieldOnly);
-        const ElectromagneticField secondElectricDipoleField=
-            farZoneElectricDipoleField(observationPosition,normal,
-                wavefrontTime,centre,history,state,false,
-                sampling.radiationFieldOnly);
         const Vec3 electric = firstField.electric + secondField.electric
             + firstMagneticDipoleField.electric
-            + secondMagneticDipoleField.electric
-            + firstElectricDipoleField.electric
-            + secondElectricDipoleField.electric;
+            + secondMagneticDipoleField.electric;
         const Vec3 magnetic = firstField.magnetic + secondField.magnetic
             + firstMagneticDipoleField.magnetic
-            + secondMagneticDipoleField.magnetic
-            + firstElectricDipoleField.magnetic
-            + secondElectricDipoleField.magnetic;
+            + secondMagneticDipoleField.magnetic;
+        if(std::getenv("POSITRONIUM_DEBUG_FIELDS")) {
+            static int farDebugSamples=0;
+            if(farDebugSamples++<20)
+                std::cerr<<"FAR_DEBUG t="<<state.time
+                    <<" chargeE="<<(firstField.electric+secondField.electric).norm()
+                    <<" mE="<<(firstMagneticDipoleField.electric
+                        +secondMagneticDipoleField.electric).norm()
+                    <<" totalE="<<electric.norm()<<'\n';
+        }
         const Vec3 poynting = cross(electric, magnetic) / mu0;
         const double areaWeight=sampling.controlRadius
             *sampling.controlRadius*point.solidAngleWeight;
@@ -386,7 +399,13 @@ double boundedDerivativeStep(const StateHistory& history,
     if(!(span>0.0)||!std::isfinite(span)) return 0.0;
     const double usable=std::min(requestedStep,
         span/static_cast<double>(stencilReach));
-    return usable>0.0?usable:0.0;
+    // Arbitrarily shrinking h next to the oldest retained node turns a
+    // derivative into subtraction of nearly identical interpolants divided
+    // by an arbitrarily small number.  Once less than one millionth of the
+    // requested stencil fits, the history contains no numerically resolvable
+    // derivative at that event; report the documented zero fallback.
+    if(!(usable>0.0)||usable<1.0e-6*requestedStep) return 0.0;
+    return usable;
 }
 
 // Position, velocity and the ONE lab dipole a retarded source sample needs.
@@ -541,6 +560,65 @@ RetardedElectricDipoleKinematics historicalElectricDipoleKinematics(
         const Vec3 after=sample(time+derivativeStep);
         first=(after-before)/(2.0*derivativeStep);
         second=(after-moment*2.0+before)/(derivativeStep*derivativeStep);
+    }
+    return {sourceIsFirst?middle.firstPosition:middle.secondPosition,
+            sourceIsFirst?middle.firstVelocity:middle.secondVelocity,
+            moment,first,second};
+}
+
+// Moment entering a localized source integral, as distinct from the spatial
+// component of the covariant dipole tensor stored in State.  A constant-time
+// volume element contracts by gamma, hence P_source=p_lab/gamma and
+// M_source=mu_lab/gamma (Sautbekov's moving-moment transformation).  Taking
+// the derivatives after this conversion is essential for accelerated motion:
+// simply dividing p_dot or mu_dot by gamma would omit derivatives of gamma.
+RetardedElectricDipoleKinematics historicalIntegratedDipoleKinematics(
+    const StateHistory& history,const State& present,bool sourceIsFirst,
+    double time,bool electricMoment) {
+    double derivativeStep=1.0e-24;
+    if(history.size()>=2) derivativeStep=std::max(derivativeStep,
+        2.0*(history.back().time-history[history.size()-2].time));
+    derivativeStep=boundedDerivativeStep(history,time,derivativeStep,2);
+    const auto sample=[&](double sampleTime) {
+        const State state=historicalState(history,present,sampleTime);
+        const Vec3 velocity=sourceIsFirst
+            ?state.firstVelocity:state.secondVelocity;
+        const Vec3 laboratoryMoment=electricMoment
+            ?(sourceIsFirst?state.firstElectricDipole
+                           :state.secondElectricDipole)
+            :(sourceIsFirst?state.firstDipole:state.secondDipole);
+        return laboratoryMoment/gamma(velocity);
+    };
+    const State middle=historicalState(history,present,time);
+    const Vec3 moment=sample(time);
+    if(!(derivativeStep>0.0)) {
+        return {sourceIsFirst?middle.firstPosition:middle.secondPosition,
+                sourceIsFirst?middle.firstVelocity:middle.secondVelocity,
+                moment,{},{}};
+    }
+    Vec3 first,second;
+    if(derivativeStep>0.0) {
+        if(time+derivativeStep>present.time) {
+            const Vec3 before=sample(time-derivativeStep);
+            const Vec3 twiceBefore=sample(time-2.0*derivativeStep);
+            first=(moment*3.0-before*4.0+twiceBefore)
+                /(2.0*derivativeStep);
+            second=(moment-before*2.0+twiceBefore)
+                /(derivativeStep*derivativeStep);
+        } else if(time-derivativeStep<history.front().time) {
+            const Vec3 after=sample(time+derivativeStep);
+            const Vec3 twiceAfter=sample(time+2.0*derivativeStep);
+            first=(after*4.0-moment*3.0-twiceAfter)
+                /(2.0*derivativeStep);
+            second=(twiceAfter-after*2.0+moment)
+                /(derivativeStep*derivativeStep);
+        } else {
+            const Vec3 before=sample(time-derivativeStep);
+            const Vec3 after=sample(time+derivativeStep);
+            first=(after-before)/(2.0*derivativeStep);
+            second=(after-moment*2.0+before)
+                /(derivativeStep*derivativeStep);
+        }
     }
     return {sourceIsFirst?middle.firstPosition:middle.secondPosition,
             sourceIsFirst?middle.firstVelocity:middle.secondVelocity,
@@ -1387,27 +1465,19 @@ Vec3 regularizedDipoleField(const Vec3& sourceToTarget,
                             double regularizationRadius=magneticRegularizationRadius,
                             double exponent=magneticRegularizationExponent);
 
-// Low-velocity approximation: finds the retarded position of the source but
+// Low-velocity baseline: finds the retarded position of the source but
 // then applies the potential of a dipole essentially at rest in the lab
 // frame (missing the kappa=1-n.beta convection factor, direction aberration,
 // and the velocity-coupled pieces of the acceleration-order terms that an
 // arbitrarily moving/accelerated point dipole's exact field has -- see
-// Sautbekov for the closed form). Still the production formula: an EXACT
-// replacement was built (retardedElectricDipoleFieldExact, below the static
-// sector) as the eps->0 limit of two Lienard-Wiechert point charges, and it
-// does correctly reproduce this formula at low beta -- but it stacks enough
-// nested finite differences (historicalElectricDipoleKinematics's own
-// derivative stencil, resampled at every Newton-iteration candidate time,
-// inside a two-pole difference, potentially inside
-// covariantDipoleGradientForce's own spatial-gradient difference) to
-// sometimes starve the adaptive integrator's error control at very small
-// step sizes -- a robustness regression the correctness fix would not be
-// worth here. dipoleFieldLowVelocityAgreement in maxwell_validation.hpp
-// measures the actual gap between the two formulas over beta, so the
-// domain this approximation is good to is a measurement, not a guess.
-ElectromagneticField retardedElectricDipoleField(
+// Sautbekov for the closed form).  Kept as the regularized baseline used by
+// retardedElectricDipoleField below: production adds the exact relativistic
+// point-dipole correction and retains this model only inside the declared
+// short-range smoothing core.
+ElectromagneticField retardedElectricDipoleFieldLowVelocity(
     const Vec3& observationPosition,double observationTime,
-    const StateHistory& history,const State& present,bool sourceIsFirst) {
+    const StateHistory& history,const State& present,bool sourceIsFirst,
+    bool regularized=true) {
     ChargeKinematics source=historicalCharge(
         history,present,sourceIsFirst,observationTime);
     double retardedTime=observationTime
@@ -1441,7 +1511,7 @@ ElectromagneticField retardedElectricDipoleField(
     // "freeze at the barrier" rule as the conservative sector.
     const double fieldDistance=std::max(distance,separationFloor());
     const double inverseDistance=1.0/fieldDistance;
-    const double weight=shortRangeFieldWeight(fieldDistance);
+    const double weight=regularized?shortRangeFieldWeight(fieldDistance):1.0;
     const auto longitudinalPattern=[&](const Vec3& moment) {
         return n*(3.0*dot(n,moment))-moment;
     };
@@ -1459,18 +1529,16 @@ ElectromagneticField retardedElectricDipoleField(
     return {electric,magnetic};
 }
 
-// Low-velocity approximation, same limitation and same "still the
-// production formula, for the same robustness reason" status as
-// retardedElectricDipoleField above: it follows directly from
+// Low-velocity baseline, with the same limitation as
+// retardedElectricDipoleFieldLowVelocity above.  It follows directly from
 // A=mu0/(4pi)[m(t_r)x n/r^2 + mdot(t_r)x n/(c r)], the potential of a
 // dipole essentially at rest in the lab frame, missing kappa, aberration,
 // and the velocity-coupled acceleration-order terms.  See
-// retardedMagneticDipoleFieldExact below for the exact replacement and
-// dipoleFieldLowVelocityAgreement in maxwell_validation.hpp for how far
-// apart the two actually are over beta.
-ElectromagneticField retardedMagneticDipoleField(
+// retardedMagneticDipoleFieldExact below for the relativistic correction.
+ElectromagneticField retardedMagneticDipoleFieldLowVelocity(
     const Vec3& observationPosition,double observationTime,
-    const StateHistory& history,const State& present,bool sourceIsFirst) {
+    const StateHistory& history,const State& present,bool sourceIsFirst,
+    bool regularized=true) {
     ChargeKinematics source=historicalCharge(
         history,present,sourceIsFirst,observationTime);
     double retardedTime=observationTime
@@ -1505,7 +1573,7 @@ ElectromagneticField retardedMagneticDipoleField(
         clampedSeparationVector(displacement,separationFloor());
     const double fieldDistance=clampedDisplacement.norm();
     const double inverseDistance=1.0/fieldDistance;
-    const double weight=shortRangeFieldWeight(fieldDistance);
+    const double weight=regularized?shortRangeFieldWeight(fieldDistance):1.0;
     constexpr double coefficient=mu0/(4.0*pi);
     const auto transversePattern=[&](const Vec3& moment) {
         return n*(3.0*dot(n,moment))-moment;
@@ -1528,9 +1596,11 @@ ElectromagneticField retardedMagneticDipoleField(
     // (see regularizedInductionCurlResidual in maxwell_validation.hpp).
     const Vec3 missingInductionCurlTerm=
         (dipole.firstDerivative-n*dot(n,dipole.firstDerivative))
-        *(shortRangeFieldWeightDerivative(fieldDistance)/(c*fieldDistance))
+        *((regularized?shortRangeFieldWeightDerivative(fieldDistance):0.0)
+            /(c*fieldDistance))
         *coefficient;
-    Vec3 magnetic=regularizedDipoleField(clampedDisplacement,dipole.moment)
+    Vec3 magnetic=regularizedDipoleField(clampedDisplacement,dipole.moment,
+                    regularized?magneticRegularizationRadius:0.0)
                  +(transversePattern(dipole.firstDerivative)
                       *(inverseDistance*inverseDistance/c)
                   +cross(n,cross(n,dipole.secondDerivative))
@@ -1543,111 +1613,141 @@ ElectromagneticField retardedMagneticDipoleField(
     return {electric,magnetic};
 }
 
-// Far-zone counterparts of retardedMagneticDipoleField/
-// retardedElectricDipoleField above, forward-declared before
-// electromagneticFieldFluxRates for exactly the reason farZoneChargeField
-// exists rather than calling lienardWiechertField directly there: at
-// controlRadius ~ 1e6 bohr radii, solving observationTime-|observation-
-// source|/c=0 by direct subtraction cancels two nearly-equal, large
-// numbers, while wavefrontTime+n.(source-centre)/c never subtracts
-// anything bigger than the pair's own extent.  clampedSeparationVector's
-// Compton-barrier floor and shortRangeFieldWeight's smooth regulator are
-// both dropped: at this distance they sit at w=1 to within double-precision
-// noise, so the floor/regulator machinery would only reintroduce the same
-// cancellation risk for no effect on the result.  radiationFieldOnly drops
-// every term but the leading 1/r piece, mirroring farZoneChargeField's own
-// flag.
+// Far-zone form of the same two-pole limit used by the local field below.
+// Its retarded-time equation is written in wavefront form so it never
+// subtracts two O(controlRadius/c) numbers.  Each pole retains its own
+// kappa, aberrated direction and acceleration field; radiationFieldOnly
+// removes only the 1/R^2 velocity field, exactly as farZoneChargeField does.
+template<class MomentSampler>
+ElectromagneticField farZoneTwoChargeLimitDipoleField(
+    const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
+    const Vec3& centre,const StateHistory& history,const State& present,
+    bool sourceIsFirst,bool radiationFieldOnly,
+    MomentSampler&& momentAt) {
+    const double controlRadius=(observationPosition-centre).norm();
+    if(!(controlRadius>std::numeric_limits<double>::min())) return {};
+    Vec3 referenceMoment,referenceFirst,referenceSecond;
+    momentAt(wavefrontTime,referenceMoment,referenceFirst,referenceSecond);
+    if(!isFinite(referenceMoment)||!isFinite(referenceFirst)
+       ||!isFinite(referenceSecond)) return {};
+    // The pole separation must stay a fixed small fraction of the SOURCE's
+    // own scale, not of the control radius.  The near-field
+    // twoChargeLimitDipoleField above can use the observer distance for
+    // this because observer and source sit at comparable range there; a
+    // far-zone control sphere is deliberately parked many wavelengths out
+    // to isolate the radiation field, and tying eps to that arbitrary
+    // radius would grow the two-charge construction's own O(eps^2)
+    // multipole truncation error right along with it -- worse at larger,
+    // supposedly "farther into the far zone", radii, which is exactly
+    // backwards.  The source's own distance from the pair's centre is the
+    // right scale: it is what actually limits how large a pole separation
+    // can stay while still standing in for a point dipole.
+    const ChargeKinematics wavefrontCharge=historicalCharge(
+        history,present,sourceIsFirst,wavefrontTime);
+    const double sourceScale=std::max(
+        (wavefrontCharge.position-centre).norm(),separationFloor());
+    const double referenceTime=sourceScale/c;
+    const double momentScale=std::max({referenceMoment.norm(),
+        referenceFirst.norm()*referenceTime,
+        referenceSecond.norm()*referenceTime*referenceTime});
+    constexpr double poleSeparationFraction=1.0e-5;
+    const double poleCharge=momentScale
+        /(poleSeparationFraction*sourceScale);
+    if(!(poleCharge>0.0)||!std::isfinite(poleCharge)) return {};
+    const auto poleKinematics=[&](double sign,double time,
+            Vec3& position,Vec3& velocity,Vec3& acceleration) {
+        const ChargeKinematics charge=historicalCharge(
+            history,present,sourceIsFirst,time);
+        Vec3 moment,first,second;
+        momentAt(time,moment,first,second);
+        const double inversePole=sign/(2.0*poleCharge);
+        position=charge.position+moment*inversePole;
+        velocity=charge.velocity+first*inversePole;
+        acceleration=charge.acceleration+second*inversePole;
+    };
+    bool polesValid=true;
+    const auto poleField=[&](double sign) {
+        double emissionTime=wavefrontTime;
+        Vec3 position,velocity,acceleration;
+        for(int iteration=0;iteration<8;++iteration) {
+            poleKinematics(sign,emissionTime,position,velocity,acceleration);
+            const double refined=wavefrontTime
+                +dot(normal,position-centre)/c;
+            if(std::abs(refined-emissionTime)<=1.0e-30
+               +1.0e-14*std::abs(emissionTime)) {
+                emissionTime=refined;
+                break;
+            }
+            emissionTime=refined;
+        }
+        poleKinematics(sign,emissionTime,position,velocity,acceleration);
+        if(!isFinite(position)||!isFinite(velocity)||!isFinite(acceleration)) {
+            polesValid=false;
+            return ElectromagneticField{};
+        }
+        const Vec3 displacement=observationPosition-position;
+        const double distance=displacement.norm();
+        if(!(distance>std::numeric_limits<double>::min()))
+            return ElectromagneticField{};
+        const Vec3 direction=displacement/distance;
+        Vec3 beta=velocity/c;
+        const double betaNorm=beta.norm();
+        if(betaNorm>0.999) beta=beta*(0.999/betaNorm);
+        const double kappa=std::max(1.0e-8,1.0-dot(direction,beta));
+        const Vec3 velocityField=(direction-beta)
+            *((1.0-beta.squaredNorm())
+                /(kappa*kappa*kappa*distance*distance));
+        const Vec3 accelerationField=cross(direction,
+            cross(direction-beta,acceleration))
+            /(c*c*kappa*kappa*kappa*distance);
+        const Vec3 electric=(radiationFieldOnly?accelerationField
+            :velocityField+accelerationField)*(coulomb*sign*poleCharge);
+        if(!isFinite(electric)) {
+            polesValid=false;
+            return ElectromagneticField{};
+        }
+        return ElectromagneticField{electric,cross(direction,electric)/c};
+    };
+    const ElectromagneticField positive=poleField(1.0);
+    const ElectromagneticField negative=poleField(-1.0);
+    if(!polesValid) return {};
+    return {positive.electric+negative.electric,
+            positive.magnetic+negative.magnetic};
+}
+
 ElectromagneticField farZoneMagneticDipoleField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly) {
-    double emissionTime=wavefrontTime;
-    RetardedDipoleKinematics dipole=historicalDipoleKinematics(
-        history,present,sourceIsFirst,emissionTime);
-    for(int iteration=0;iteration<5;++iteration) {
-        const double refined=wavefrontTime
-            +dot(normal,dipole.position-centre)/c;
-        if(std::abs(refined-emissionTime)<=1.0e-30
-            +1.0e-14*std::abs(emissionTime)) {
-            emissionTime=refined;
-            break;
-        }
-        emissionTime=refined;
-        dipole=historicalDipoleKinematics(
-            history,present,sourceIsFirst,emissionTime);
-    }
-    dipole=historicalDipoleKinematics(
-        history,present,sourceIsFirst,emissionTime);
-    const Vec3 displacement=observationPosition-dipole.position;
-    const double distance=displacement.norm();
-    if(!(distance>std::numeric_limits<double>::min())) return {};
-    const Vec3 n=displacement/distance;
-    const double inverseDistance=1.0/distance;
-    constexpr double coefficient=mu0/(4.0*pi);
-    const Vec3 radiationMagnetic=cross(n,cross(n,dipole.secondDerivative))
-        *(inverseDistance/(c*c)*coefficient);
-    const Vec3 radiationElectric=cross(dipole.secondDerivative,n)
-        *(inverseDistance/c*coefficient);
-    if(radiationFieldOnly) return {radiationElectric,radiationMagnetic};
-    const Vec3 transverseFirstDerivative=
-        n*(3.0*dot(n,dipole.firstDerivative))-dipole.firstDerivative;
-    const Vec3 magnetic=regularizedDipoleField(displacement,dipole.moment)
-        +transverseFirstDerivative*(inverseDistance*inverseDistance/c
-            *coefficient)
-        +radiationMagnetic;
-    const Vec3 electric=cross(dipole.firstDerivative,n)
-            *(inverseDistance*inverseDistance*coefficient)
-        +radiationElectric;
-    return {electric,magnetic};
+    const ElectromagneticField dual=farZoneTwoChargeLimitDipoleField(
+        observationPosition,normal,wavefrontTime,centre,history,present,
+        sourceIsFirst,radiationFieldOnly,
+        [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
+            const RetardedElectricDipoleKinematics dipole=
+                historicalIntegratedDipoleKinematics(
+                    history,present,sourceIsFirst,time,false);
+            moment=dipole.moment/(c*c);
+            first=dipole.firstDerivative/(c*c);
+            second=dipole.secondDerivative/(c*c);
+        });
+    return {dual.magnetic*(-c*c),dual.electric};
 }
 
 ElectromagneticField farZoneElectricDipoleField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly) {
-    double emissionTime=wavefrontTime;
-    RetardedElectricDipoleKinematics dipole=
-        historicalElectricDipoleKinematics(
-            history,present,sourceIsFirst,emissionTime);
-    for(int iteration=0;iteration<5;++iteration) {
-        const double refined=wavefrontTime
-            +dot(normal,dipole.position-centre)/c;
-        if(std::abs(refined-emissionTime)<=1.0e-30
-            +1.0e-14*std::abs(emissionTime)) {
-            emissionTime=refined;
-            break;
-        }
-        emissionTime=refined;
-        dipole=historicalElectricDipoleKinematics(
-            history,present,sourceIsFirst,emissionTime);
-    }
-    dipole=historicalElectricDipoleKinematics(
-        history,present,sourceIsFirst,emissionTime);
-    const Vec3 displacement=observationPosition-dipole.position;
-    const double distance=displacement.norm();
-    if(!(distance>std::numeric_limits<double>::min())) return {};
-    const Vec3 n=displacement/distance;
-    const double inverseDistance=1.0/distance;
-    constexpr double electricCoefficient=1.0/(4.0*pi*epsilon0);
-    constexpr double magneticCoefficient=mu0/(4.0*pi);
-    const Vec3 radiationElectric=cross(n,cross(n,dipole.secondDerivative))
-        *(inverseDistance/(c*c)*electricCoefficient);
-    const Vec3 radiationMagnetic=cross(dipole.secondDerivative,n)
-        *(inverseDistance/c*magneticCoefficient);
-    if(radiationFieldOnly) return {radiationElectric,radiationMagnetic};
-    const Vec3 longitudinalMoment=
-        n*(3.0*dot(n,dipole.moment))-dipole.moment;
-    const Vec3 longitudinalFirstDerivative=
-        n*(3.0*dot(n,dipole.firstDerivative))-dipole.firstDerivative;
-    const Vec3 electric=(longitudinalMoment
-            *(inverseDistance*inverseDistance*inverseDistance)
-        +longitudinalFirstDerivative*(inverseDistance*inverseDistance/c))
-            *electricCoefficient
-        +radiationElectric;
-    const Vec3 magnetic=cross(dipole.firstDerivative,n)
-            *(inverseDistance*inverseDistance*magneticCoefficient)
-        +radiationMagnetic;
-    return {electric,magnetic};
+    return farZoneTwoChargeLimitDipoleField(
+        observationPosition,normal,wavefrontTime,centre,history,present,
+        sourceIsFirst,radiationFieldOnly,
+        [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
+            const RetardedElectricDipoleKinematics dipole=
+                historicalIntegratedDipoleKinematics(
+                    history,present,sourceIsFirst,time,true);
+            moment=dipole.moment;
+            first=dipole.firstDerivative;
+            second=dipole.secondDerivative;
+        });
 }
 
 // Exact retarded field of a point dipole moving and accelerating
@@ -1671,29 +1771,60 @@ ElectromagneticField farZoneElectricDipoleField(
 // coefficient onto B_m's exactly, and B_p(m/c^2)=-E_m/c^2 the same way).
 //
 // eps is set from poleSeparationFraction*referenceDistance rather than a
-// fixed length: shrinking it lowers the O(eps) quadrupole-leakage error but
-// raises floating-point cancellation error from summing two nearly
-// cancelling monopole fields, so the right scale depends on how far away
-// the observation point is, not on any fixed atomic length.
-// poleSeparationFraction=1e-8 balances the two at roughly 1e-8 relative
-// accuracy in double precision (the same "root of machine epsilon" step
-// size finite-difference derivatives everywhere else in this codebase use).
+// fixed length.  The two poles are symmetric, so the first omitted multipole
+// is O(eps^2), while cancellation contributes O(machine-epsilon/eps).
+// Balancing those errors calls for the cube root of machine epsilon, not its
+// square root: 1e-5 retains about eleven useful relative digits in the
+// uniform-motion probes and is substantially less noisy inside the outer
+// spatial gradient used by covariantDipoleGradientForce.
 template<class MomentSampler>
 ElectromagneticField twoChargeLimitDipoleField(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
-    MomentSampler&& momentAt) {
+    double poleSeparationFraction,MomentSampler&& momentAt) {
     const ChargeKinematics nowCharge=historicalCharge(
         history,present,sourceIsFirst,observationTime);
-    Vec3 nowMoment,nowFirst,nowSecond;
-    momentAt(observationTime,nowMoment,nowFirst,nowSecond);
-    if(nowMoment.squaredNorm()==0.0&&nowFirst.squaredNorm()==0.0
-       &&nowSecond.squaredNorm()==0.0) return {};
+    double centralRetardedTime=observationTime
+        -(observationPosition-nowCharge.position).norm()/c;
+    for(int iteration=0;iteration<16;++iteration) {
+        const ChargeKinematics charge=historicalCharge(
+            history,present,sourceIsFirst,centralRetardedTime);
+        const Vec3 displacement=observationPosition-charge.position;
+        const double distance=displacement.norm();
+        if(!(distance>std::numeric_limits<double>::min())) return {};
+        const Vec3 direction=displacement/distance;
+        const double residual=centralRetardedTime+distance/c-observationTime;
+        const double derivative=std::max(
+            1.0e-8,1.0-dot(direction,charge.velocity/c));
+        const double refined=centralRetardedTime-residual/derivative;
+        if(std::abs(refined-centralRetardedTime)<=1.0e-30
+           +1.0e-14*std::abs(centralRetardedTime)) {
+            centralRetardedTime=refined;
+            break;
+        }
+        centralRetardedTime=refined;
+    }
+    const ChargeKinematics referenceCharge=historicalCharge(
+        history,present,sourceIsFirst,centralRetardedTime);
+    Vec3 referenceMoment,referenceFirst,referenceSecond;
+    momentAt(centralRetardedTime,referenceMoment,
+        referenceFirst,referenceSecond);
+    if(!isFinite(referenceMoment)||!isFinite(referenceFirst)
+       ||!isFinite(referenceSecond)) return {};
+    if(referenceMoment.squaredNorm()==0.0
+       &&referenceFirst.squaredNorm()==0.0
+       &&referenceSecond.squaredNorm()==0.0) return {};
     const double referenceDistance=std::max(
-        (observationPosition-nowCharge.position).norm(),separationFloor());
-    constexpr double poleSeparationFraction=1.0e-8;
+        (observationPosition-referenceCharge.position).norm(),
+        separationFloor());
+    if(!(poleSeparationFraction>0.0)
+       ||!std::isfinite(poleSeparationFraction)) return {};
     const double poleSeparation=poleSeparationFraction*referenceDistance;
-    const double poleCharge=nowMoment.norm()/poleSeparation;
+    const double referenceTime=referenceDistance/c;
+    const double momentScale=std::max({referenceMoment.norm(),
+        referenceFirst.norm()*referenceTime,
+        referenceSecond.norm()*referenceTime*referenceTime});
+    const double poleCharge=momentScale/poleSeparation;
     if(!(poleCharge>0.0)||!std::isfinite(poleCharge)) return {};
     const auto poleKinematics=[&](double sign,double time,
             Vec3& position,Vec3& velocity,Vec3& acceleration) {
@@ -1708,9 +1839,7 @@ ElectromagneticField twoChargeLimitDipoleField(
     };
     const auto poleField=[&](double sign) -> ElectromagneticField {
         Vec3 position,velocity,acceleration;
-        poleKinematics(sign,observationTime,position,velocity,acceleration);
-        double retardedTime=observationTime
-            -(observationPosition-position).norm()/c;
+        double retardedTime=centralRetardedTime;
         for(int iteration=0;iteration<16;++iteration) {
             poleKinematics(sign,retardedTime,position,velocity,acceleration);
             const Vec3 displacement=observationPosition-position;
@@ -1770,31 +1899,55 @@ ElectromagneticField twoChargeLimitDipoleField(
     return total;
 }
 
-// Exact but NOT on the production path (see twoChargeLimitDipoleField's
-// comment on why: it is numerically noisier than the low-velocity formula
-// below by roughly the number of nested finite-difference layers it stacks
-// -- historicalElectricDipoleKinematics's own derivative stencil, sampled at
-// every Newton-iteration candidate time, inside a two-pole difference, often
-// inside covariantDipoleGradientForce's own outer spatial-gradient
-// difference -- enough to occasionally starve the adaptive integrator's
-// error control at very small step sizes; see
-// dipoleFieldLowVelocityAgreement in maxwell_validation.hpp for how large
-// the gap to the production formula actually is over beta).  Kept as the
-// reference that measurement uses, and as the closed-form validation this
-// file's low-velocity formulas are checked against in their own comments.
-// Unused (hence [[maybe_unused]]) in the plain production build: its only
-// caller is maxwell_validation.hpp, compiled in
-// POSITRONIUM_ENABLE_FIELD_VALIDATION builds only -- same status as
-// advanceCovariantBmt above.
-[[maybe_unused]] ElectromagneticField retardedElectricDipoleFieldExact(
+// Exact point-dipole field before the model's short-range smoothing.  This
+// remains separately named so validation can inspect the regularized
+// production wrapper against its unsmoothed limit.
+bool historicalDipoleSourceIsStatic(const StateHistory& history,
+    const State& present,bool sourceIsFirst,bool electricMoment) {
+    const Vec3 position=sourceIsFirst
+        ?present.firstPosition:present.secondPosition;
+    const Vec3 moment=electricMoment
+        ?(sourceIsFirst?present.firstElectricDipole
+                       :present.secondElectricDipole)
+        :(sourceIsFirst?present.firstDipole:present.secondDipole);
+    const Vec3 velocity=sourceIsFirst
+        ?present.firstVelocity:present.secondVelocity;
+    const Vec3 acceleration=sourceIsFirst
+        ?present.firstAcceleration:present.secondAcceleration;
+    if(velocity.squaredNorm()!=0.0||acceleration.squaredNorm()!=0.0)
+        return false;
+    return std::ranges::all_of(history,[&](const State& state) {
+        const Vec3 historicalPosition=sourceIsFirst
+            ?state.firstPosition:state.secondPosition;
+        const Vec3 historicalVelocity=sourceIsFirst
+            ?state.firstVelocity:state.secondVelocity;
+        const Vec3 historicalAcceleration=sourceIsFirst
+            ?state.firstAcceleration:state.secondAcceleration;
+        const Vec3 historicalMoment=electricMoment
+            ?(sourceIsFirst?state.firstElectricDipole
+                           :state.secondElectricDipole)
+            :(sourceIsFirst?state.firstDipole:state.secondDipole);
+        return (historicalPosition-position).squaredNorm()==0.0
+            &&historicalVelocity.squaredNorm()==0.0
+            &&historicalAcceleration.squaredNorm()==0.0
+            &&(historicalMoment-moment).squaredNorm()==0.0;
+    });
+}
+
+ElectromagneticField retardedElectricDipoleFieldExact(
     const Vec3& observationPosition,double observationTime,
-    const StateHistory& history,const State& present,bool sourceIsFirst) {
+    const StateHistory& history,const State& present,bool sourceIsFirst,
+    double poleSeparationFraction=1.0e-5) {
+    if(historicalDipoleSourceIsStatic(
+            history,present,sourceIsFirst,true))
+        return retardedElectricDipoleFieldLowVelocity(observationPosition,
+            observationTime,history,present,sourceIsFirst,false);
     return twoChargeLimitDipoleField(observationPosition,observationTime,
-        history,present,sourceIsFirst,
+        history,present,sourceIsFirst,poleSeparationFraction,
         [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
             const RetardedElectricDipoleKinematics dipole=
-                historicalElectricDipoleKinematics(
-                    history,present,sourceIsFirst,time);
+                historicalIntegratedDipoleKinematics(
+                    history,present,sourceIsFirst,time,true);
             moment=dipole.moment;
             first=dipole.firstDerivative;
             second=dipole.secondDerivative;
@@ -1806,22 +1959,96 @@ ElectromagneticField twoChargeLimitDipoleField(
 // p=m/c^2; the actual magnetic-dipole field is that field's vacuum dual,
 // (E,B)_m = (-c^2 B_p, E_p) -- see twoChargeLimitDipoleField's comment for
 // the cross-check against this file's low-velocity formulas that pins down
-// this exact sign and scale.  Same "not on the production path" status as
-// retardedElectricDipoleFieldExact above, same reason, same
-// [[maybe_unused]] for the plain production build.
-[[maybe_unused]] ElectromagneticField retardedMagneticDipoleFieldExact(
+// this exact sign and scale.
+ElectromagneticField retardedMagneticDipoleFieldExact(
     const Vec3& observationPosition,double observationTime,
-    const StateHistory& history,const State& present,bool sourceIsFirst) {
+    const StateHistory& history,const State& present,bool sourceIsFirst,
+    double poleSeparationFraction=1.0e-5) {
+    if(historicalDipoleSourceIsStatic(
+            history,present,sourceIsFirst,false))
+        return retardedMagneticDipoleFieldLowVelocity(observationPosition,
+            observationTime,history,present,sourceIsFirst,false);
     const ElectromagneticField dual=twoChargeLimitDipoleField(
         observationPosition,observationTime,history,present,sourceIsFirst,
+        poleSeparationFraction,
         [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
-            const RetardedDipoleKinematics dipole=
-                historicalDipoleKinematics(history,present,sourceIsFirst,time);
+            const RetardedElectricDipoleKinematics dipole=
+                historicalIntegratedDipoleKinematics(
+                    history,present,sourceIsFirst,time,false);
             moment=dipole.moment/(c*c);
             first=dipole.firstDerivative/(c*c);
             second=dipole.secondDerivative/(c*c);
         });
     return {dual.magnetic*(-c*c),dual.electric};
+}
+
+// Production fields: the full moving-point-dipole result everywhere the
+// short-range regulator is inactive, and a smooth correction to the existing
+// regularized potential inside its core.  Written as
+//
+//   F_reg = F_low,reg + w(r) [F_exact,point - F_low,point]
+//
+// so the static curl(A_reg) and its induction product-rule term are preserved
+// exactly at short range, while kappa, aberration, convective and motional
+// channels approach the exact result with the same declared weight.  In the
+// physical exterior w is one to round-off and the wrappers return the exact
+// field directly, avoiding two unnecessary low-velocity evaluations.
+ElectromagneticField retardedElectricDipoleField(
+    const Vec3& observationPosition,double observationTime,
+    const StateHistory& history,const State& present,bool sourceIsFirst) {
+    const ChargeKinematics current=historicalCharge(
+        history,present,sourceIsFirst,observationTime);
+    const double rawDistance=(observationPosition-current.position).norm();
+    const double modelFloor=separationFloor();
+    if(modelFloor>0.0&&!(rawDistance>modelFloor))
+        return retardedElectricDipoleFieldLowVelocity(observationPosition,
+            observationTime,history,present,sourceIsFirst,true);
+    const double transition=modelFloor>0.0?std::clamp(
+        (rawDistance-modelFloor)/modelFloor,0.0,1.0):1.0;
+    const double domainWeight=transition*transition*(3.0-2.0*transition);
+    const double weight=shortRangeFieldWeight(rawDistance)*domainWeight;
+    const ElectromagneticField exact=retardedElectricDipoleFieldExact(
+        observationPosition,observationTime,history,present,sourceIsFirst);
+    if(weight>=1.0-1.0e-14) return exact;
+    const ElectromagneticField regularizedLow=
+        retardedElectricDipoleFieldLowVelocity(observationPosition,
+            observationTime,history,present,sourceIsFirst,true);
+    const ElectromagneticField pointLow=
+        retardedElectricDipoleFieldLowVelocity(observationPosition,
+            observationTime,history,present,sourceIsFirst,false);
+    return {regularizedLow.electric
+                +(exact.electric-pointLow.electric)*weight,
+            regularizedLow.magnetic
+                +(exact.magnetic-pointLow.magnetic)*weight};
+}
+
+ElectromagneticField retardedMagneticDipoleField(
+    const Vec3& observationPosition,double observationTime,
+    const StateHistory& history,const State& present,bool sourceIsFirst) {
+    const ChargeKinematics current=historicalCharge(
+        history,present,sourceIsFirst,observationTime);
+    const double rawDistance=(observationPosition-current.position).norm();
+    const double modelFloor=separationFloor();
+    if(modelFloor>0.0&&!(rawDistance>modelFloor))
+        return retardedMagneticDipoleFieldLowVelocity(observationPosition,
+            observationTime,history,present,sourceIsFirst,true);
+    const double transition=modelFloor>0.0?std::clamp(
+        (rawDistance-modelFloor)/modelFloor,0.0,1.0):1.0;
+    const double domainWeight=transition*transition*(3.0-2.0*transition);
+    const double weight=shortRangeFieldWeight(rawDistance)*domainWeight;
+    const ElectromagneticField exact=retardedMagneticDipoleFieldExact(
+        observationPosition,observationTime,history,present,sourceIsFirst);
+    if(weight>=1.0-1.0e-14) return exact;
+    const ElectromagneticField regularizedLow=
+        retardedMagneticDipoleFieldLowVelocity(observationPosition,
+            observationTime,history,present,sourceIsFirst,true);
+    const ElectromagneticField pointLow=
+        retardedMagneticDipoleFieldLowVelocity(observationPosition,
+            observationTime,history,present,sourceIsFirst,false);
+    return {regularizedLow.electric
+                +(exact.electric-pointLow.electric)*weight,
+            regularizedLow.magnetic
+                +(exact.magnetic-pointLow.magnetic)*weight};
 }
 
 Vec3 regularizedDipoleVectorPotential(const Vec3& sourceToTarget,
@@ -1976,20 +2203,14 @@ LocalElectromagneticFields localRelativisticFields(
         s.firstPosition,s.time,history,s,false);
     const ElectromagneticField firstDipole=retardedMagneticDipoleField(
         s.secondPosition,s.time,history,s,true);
-    const ElectromagneticField secondElectricDipole=
-        retardedElectricDipoleField(
-            s.firstPosition,s.time,history,s,false);
-    const ElectromagneticField firstElectricDipole=
-        retardedElectricDipoleField(
-            s.secondPosition,s.time,history,s,true);
-    atFirst.electric+=secondDipole.electric
-        +secondElectricDipole.electric;
-    atFirst.magnetic+=secondDipole.magnetic
-        +secondElectricDipole.magnetic;
-    atSecond.electric+=firstDipole.electric
-        +firstElectricDipole.electric;
-    atSecond.magnetic+=firstDipole.magnetic
-        +firstElectricDipole.magnetic;
+    // These electric components are generated by the exact moving magnetic
+    // dipoles themselves.  State's electric dipoles are the boosted
+    // components of those same proper magnetic moments, not extra sources;
+    // adding them here separately would count the motional channel twice.
+    atFirst.electric+=secondDipole.electric;
+    atFirst.magnetic+=secondDipole.magnetic;
+    atSecond.electric+=firstDipole.electric;
+    atSecond.magnetic+=firstDipole.magnetic;
     // The external field is uniform, so both roles see the same addition and
     // no gradient force follows from it.  Adding it here rather than only in
     // the force sums is what carries it into Thomas-BMT precession, which for
@@ -2344,10 +2565,8 @@ ElectromagneticField fieldFromOtherParticleAt(
         sourceCharge);
     const ElectromagneticField magneticDipole=retardedMagneticDipoleField(
         observationPosition,observationTime,history,state,sourceIsFirst);
-    const ElectromagneticField electricDipole=retardedElectricDipoleField(
-        observationPosition,observationTime,history,state,sourceIsFirst);
-    field.electric+=magneticDipole.electric+electricDipole.electric;
-    field.magnetic+=magneticDipole.magnetic+electricDipole.magnetic;
+    field.electric+=magneticDipole.electric;
+    field.magnetic+=magneticDipole.magnetic;
     return field;
 }
 
@@ -2373,8 +2592,15 @@ Vec3 covariantDipoleGradientForce(const State& state,
                                                   :state.secondElectricDipole;
     if(labMagneticDipole.squaredNorm()==0.0
        &&labElectricDipole.squaredNorm()==0.0) return {};
+    // The moving-dipole field is evaluated as a symmetric pole limit.  Its
+    // own cancellation error is ~1e-10; differentiating it with the former
+    // 1e-6*r step amplified that floor to ~1e-4 and made the adaptive force
+    // estimate history-dependent for heavy pairs.  A 1e-4*r stencil leaves
+    // O(h^2)=1e-8 spatial truncation while limiting that amplification to
+    // ~1e-6.  The independent boosted coupling and trajectory convergence
+    // checks below/within validation guard both sides of this balance.
     const double gradientStep=std::max(
-        1.0e-6*separation(state),1.0e-3*nuclearCutoff);
+        1.0e-4*separation(state),1.0e-3*nuclearCutoff);
     const auto coupling=[&](const Vec3& point) {
         const ElectromagneticField field=fieldFromOtherParticleAt(
             point,state.time,state,history,targetIsFirst);
@@ -2434,23 +2660,29 @@ MutualForces retardedExternalForces(const State& s,
         s.firstPosition,s.time,history,s,false);
     const ElectromagneticField firstDipoleField=retardedMagneticDipoleField(
         s.secondPosition,s.time,history,s,true);
-    const ElectromagneticField secondElectricDipoleField=
-        retardedElectricDipoleField(
-            s.firstPosition,s.time,history,s,false);
-    const ElectromagneticField firstElectricDipoleField=
-        retardedElectricDipoleField(
-            s.secondPosition,s.time,history,s,true);
+    if(std::getenv("POSITRONIUM_DEBUG_FIELDS")) {
+        static int debugSamples=0;
+        if(debugSamples++<24) {
+            const ElectromagneticField secondMagneticLow=
+                retardedMagneticDipoleFieldLowVelocity(
+                    s.firstPosition,s.time,history,s,false,true);
+            std::cerr<<"DIPOLE_DEBUG t="<<s.time
+                <<" r="<<separation(s)
+                <<" beta="<<s.firstVelocity.norm()/c<<"/"
+                <<s.secondVelocity.norm()/c
+                <<" Bexact/low="<<secondDipoleField.magnetic.norm()<<"/"
+                <<secondMagneticLow.magnetic.norm()
+                <<" Eexact/low="<<secondDipoleField.electric.norm()<<"/"
+                <<secondMagneticLow.electric.norm()<<'\n';
+        }
+    }
     const MutualForces chargeCharge{
         lorentzForce(firstCharge,s.firstVelocity,
-            {secondField.electric+secondDipoleField.electric
-                +secondElectricDipoleField.electric,
-             secondField.magnetic+secondDipoleField.magnetic
-                +secondElectricDipoleField.magnetic}),
+            {secondField.electric+secondDipoleField.electric,
+             secondField.magnetic+secondDipoleField.magnetic}),
         lorentzForce(secondCharge,s.secondVelocity,
-            {firstField.electric+firstDipoleField.electric
-                +firstElectricDipoleField.electric,
-             firstField.magnetic+firstDipoleField.magnetic
-                +firstElectricDipoleField.magnetic})};
+            {firstField.electric+firstDipoleField.electric,
+             firstField.magnetic+firstDipoleField.magnetic})};
 
     const MutualForces tensorGradient{
         covariantDipoleGradientForce(s,history,true),
@@ -2820,13 +3052,26 @@ void integrateElectrodynamicStep(State& s, double dt,
     const Vec3 initialMechanicalAngularMomentum=
         noetherAngularMomentum(balanceStart,initialCanonical);
     applyDipolePrecession(s, 0.5 * dt, history);
+    if(std::getenv("POSITRONIUM_DEBUG_DIPOLE")&&!isFinite(s))
+        std::cerr<<"STEP_DEBUG nonfinite-after-precession t="<<s.time
+            <<" dt="<<dt<<'\n';
     MutualForces forces = useRetardedExternalForces
         ?retardedExternalForces(s,history):allExternalForces(s);
+    if(std::getenv("POSITRONIUM_DEBUG_DIPOLE")
+       &&(!isFinite(forces.first)||!isFinite(forces.second)))
+        std::cerr<<"STEP_DEBUG nonfinite-forces t="<<s.time
+            <<" dt="<<dt<<'\n';
     const ParticleMultipoleRadiation radiation =
         particleMultipoleRadiation(
             s,forces,history,computeOutwardFlux,reactionModel,
             useRetardedExternalForces);
     if (!finiteRadiationResponse(radiation)) {
+        if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+            std::cerr<<"STEP_DEBUG nonfinite-radiation t="<<s.time
+                <<" dt="<<dt<<" flux="<<radiation.outwardFlux.energy
+                <<" lead="<<radiation.leadingElectricDipolePower
+                <<" m="<<radiation.magneticDipoleFlux.energy
+                <<" ll="<<radiation.landauLifshitzValidity<<'\n';
         s.time = std::numeric_limits<double>::quiet_NaN();
         return;
     }
@@ -2849,11 +3094,21 @@ void integrateElectrodynamicStep(State& s, double dt,
 
     const MutualForces trialForces = useRetardedExternalForces
         ?retardedExternalForces(trial,history):allExternalForces(trial);
+    if(std::getenv("POSITRONIUM_DEBUG_DIPOLE")
+       &&(!isFinite(trialForces.first)||!isFinite(trialForces.second)))
+        std::cerr<<"STEP_DEBUG nonfinite-trial-forces t="<<trial.time
+            <<" dt="<<dt<<'\n';
     const ParticleMultipoleRadiation trialRadiation =
         particleMultipoleRadiation(
             trial,trialForces,history,computeOutwardFlux,reactionModel,
             useRetardedExternalForces);
     if (!finiteRadiationResponse(trialRadiation)) {
+        if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+            std::cerr<<"STEP_DEBUG nonfinite-trial-radiation t="<<trial.time
+                <<" dt="<<dt<<" flux="<<trialRadiation.outwardFlux.energy
+                <<" lead="<<trialRadiation.leadingElectricDipolePower
+                <<" m="<<trialRadiation.magneticDipoleFlux.energy
+                <<" ll="<<trialRadiation.landauLifshitzValidity<<'\n';
         s.time = std::numeric_limits<double>::quiet_NaN();
         return;
     }

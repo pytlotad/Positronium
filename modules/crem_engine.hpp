@@ -142,10 +142,22 @@ private:
                          StateHistory& acceptedHistory) {
         const double requestedEndTime=start.time+dt;
         if(!(requestedEndTime>start.time)||!std::isfinite(requestedEndTime)) {
+            if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+                std::cerr<<"ENGINE_DEBUG reason=request-time dt="<<dt
+                    <<" t="<<start.time<<" depth="<<depth<<'\n';
             return false;
         }
+        const char* rejectionReason="accuracy";
+        double rejectionMetric=std::numeric_limits<double>::quiet_NaN();
         const auto subdivide=[&]() {
-            if(depth>=accuracy_.maximumDepth) return false;
+            if(depth>=accuracy_.maximumDepth) {
+                if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+                    std::cerr<<"ENGINE_DEBUG reason="<<rejectionReason
+                        <<" metric="<<rejectionMetric<<" depth="<<depth
+                        <<" dt="<<dt<<" t="<<start.time
+                        <<" r="<<separation(start)<<'\n';
+                return false;
+            }
             State midpoint;
             StateHistory midpointHistory;
             if(!advanceAdaptive(start,history,0.5*dt,depth+1,
@@ -161,8 +173,16 @@ private:
         State coarse=start;
         integrateElectrodynamicStep(coarse,dt,history,false,
             accuracy_.reactionModel,accuracy_.useRetardedExternalForces);
-        if(!isFinite(coarse)) return subdivide();
-        if(!(coarse.time>start.time)) return false;
+        if(!isFinite(coarse)) {
+            rejectionReason="coarse-nonfinite";
+            return subdivide();
+        }
+        if(!(coarse.time>start.time)) {
+            if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+                std::cerr<<"ENGINE_DEBUG reason=coarse-time dt="<<dt
+                    <<" t="<<start.time<<" depth="<<depth<<'\n';
+            return false;
+        }
 
         // The two half-steps are the path that *becomes* the trajectory when
         // the step is accepted, so they carry the complete bookkeeping from
@@ -174,18 +194,37 @@ private:
         integrateElectrodynamicStep(fine,0.5*dt,fineHistory,
             accuracy_.computeOutwardFlux,accuracy_.reactionModel,
             accuracy_.useRetardedExternalForces);
-        if(!isFinite(fine)) return subdivide();
-        if(!(fine.time>start.time)) return false;
+        if(!isFinite(fine)) {
+            rejectionReason="fine1-nonfinite";
+            return subdivide();
+        }
+        if(!(fine.time>start.time)) {
+            if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+                std::cerr<<"ENGINE_DEBUG reason=fine1-time dt="<<dt
+                    <<" t="<<start.time<<" depth="<<depth<<'\n';
+            return false;
+        }
         const double midpointTime=fine.time;
         appendStateHistory(fineHistory,fine);
         integrateElectrodynamicStep(fine,0.5*dt,fineHistory,
             accuracy_.computeOutwardFlux,accuracy_.reactionModel,
             accuracy_.useRetardedExternalForces);
-        if(!isFinite(fine)) return subdivide();
-        if(!(fine.time>midpointTime)) return false;
+        if(!isFinite(fine)) {
+            rejectionReason="fine2-nonfinite";
+            return subdivide();
+        }
+        if(!(fine.time>midpointTime)) {
+            if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+                std::cerr<<"ENGINE_DEBUG reason=fine2-time dt="<<dt
+                    <<" t="<<start.time<<" depth="<<depth<<'\n';
+            return false;
+        }
 
         const double error=normalizedStepError(coarse,fine);
-        if(!std::isfinite(error)) return subdivide();
+        if(!std::isfinite(error)) {
+            rejectionReason="error-nonfinite";
+            return subdivide();
+        }
         if(error<=accuracy_.relativeTolerance) {
             appendStateHistory(fineHistory,fine);
             accepted=fine;
@@ -196,6 +235,7 @@ private:
         // alternative acceptance rule.  Returning false activates the caller's
         // recovery ladder instead of silently committing an under-resolved
         // trajectory.
+        rejectionMetric=error;
         return subdivide();
     }
     StateHistory history_;

@@ -1886,6 +1886,13 @@ int runMaxwellSelfTest(
         (movingRadiation.space-expectedRadiation.space).norm()
             /std::max({expectedRadiation.space.norm(),
                        std::abs(expectedRadiation.time),1.0e-300}));
+    if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+        std::cerr<<"COV_RAD_DEBUG restE="<<covarianceRest.radiatedEnergy
+            <<" movingE="<<covarianceMoving.radiatedEnergy
+            <<" expectedE="<<expectedRadiation.time*c
+            <<" restP="<<covarianceRest.radiatedMomentum.norm()
+            <<" movingP="<<covarianceMoving.radiatedMomentum.norm()
+            <<" expectedP="<<expectedRadiation.space.norm()<<'\n';
     const FieldFluxRates covarianceRestFlux=electromagneticFieldFluxRates(
         covarianceRest,covarianceRestEngine.history(),
         {194,1.0e6*bohrRadius,true});
@@ -2037,39 +2044,22 @@ int runMaxwellSelfTest(
     const double dipoleGradientCouplingInvarianceResidual=
         std::abs(boostedCoupling-restCoupling)
         /std::max(std::abs(restCoupling),1.0e-300);
-    // How much does the low-velocity dipole field formula (the production
-    // retardedElectricDipoleField/retardedMagneticDipoleField, quoted as an
-    // approximation in positronium.cpp's top comment) actually differ from
-    // the exact retarded field of an arbitrarily moving point dipole
-    // (retardedElectricDipoleFieldExact/retardedMagneticDipoleFieldExact,
-    // the eps->0 limit of two Lienard-Wiechert point charges -- see
-    // twoChargeLimitDipoleField)?  A source in uniform motion (zero
-    // acceleration, constant lab-frame moment) isolates exactly the missing
-    // kappa=1-n.beta and direction-aberration corrections the low-velocity
-    // formula drops, at a sequence of speeds spanning the atomic scale
-    // (beta~alpha, where the model is actually used) up to a highly
-    // relativistic one (beta=0.8, well outside it).
+    // Convergence of the production moving-dipole field against an independent
+    // pole separation.  Both evaluations take the eps->0 limit of two exact
+    // Lienard-Wiechert charges, but production uses eps/r=1e-5 while the
+    // reference halves it.  Their agreement therefore checks that neither
+    // the O(eps^2) omitted multipole nor O(machine-epsilon/eps) cancellation
+    // controls the answer.  Uniform motion isolates the kappa, aberration and
+    // motional pieces that the former low-velocity production formula lacked,
+    // from beta~alpha through beta=0.8.
     //
     // Two different things are measured, because they do not degrade the
     // same way. "leading" tracks the channel each formula already has at
     // v=0 (E of the electric dipole, B of the magnetic one) -- this is
-    // where kappa/aberration act as a genuine, smoothly growing correction
-    // to an existing term. "motional" tracks the OPPOSITE channel (B of
-    // the electric dipole, E of the magnetic one): with a constant
-    // lab-frame moment (no firstDerivative/secondDerivative to drive it)
-    // the low-velocity formula produces exactly zero there at any speed,
-    // while a moving dipole -- exact or not -- has a genuine motional
-    // field (the same p~(v x mu)/c^2 effect the dipole-tensor boost carries
-    // as its induced electric dipole). That channel is not a smoothly
-    // growing miss, it is a term the approximation cannot represent AT ALL
-    // once beta>0, so it saturates near 1 immediately instead of tracking
-    // beta -- reported for the record, not as a graded measurement.
-    //
-    // Neither is asserted against a hand-picked bound: the two formulas
-    // agree closely at beta=0 (checked below) and are expected to diverge
-    // past beta~alpha, but nothing here derives how fast, so the scan is
-    // reported as an informational diagnostic and only the beta=0
-    // agreement is an enforced check.
+    // where finite-separation convergence corrects an existing term.
+    // "motional" tracks the opposite channel (B of the electric dipole, E
+    // of the magnetic one), which used to be identically absent from
+    // production.  It is now graded at every nonzero beta.
     struct DipoleFieldAgreement { double leading=0.0, motional=0.0; };
     const auto dipoleFieldAgreementAtBeta=[&](double beta) {
         State movingDipoleState;
@@ -2091,13 +2081,13 @@ int runMaxwellSelfTest(
                 movingDipoleHistory,movingDipoleState,false);
         const ElectromagneticField exactElectric=
             retardedElectricDipoleFieldExact(movingDipoleState.firstPosition,
-                0.0,movingDipoleHistory,movingDipoleState,false);
+                0.0,movingDipoleHistory,movingDipoleState,false,5.0e-6);
         const ElectromagneticField approximateMagnetic=
             retardedMagneticDipoleField(movingDipoleState.firstPosition,0.0,
                 movingDipoleHistory,movingDipoleState,false);
         const ElectromagneticField exactMagnetic=
             retardedMagneticDipoleFieldExact(movingDipoleState.firstPosition,
-                0.0,movingDipoleHistory,movingDipoleState,false);
+                0.0,movingDipoleHistory,movingDipoleState,false,5.0e-6);
         const double electricScale=std::max(exactElectric.electric.norm(),
             1.0e-300);
         const double magneticScale=std::max(exactMagnetic.magnetic.norm(),
@@ -4023,12 +4013,22 @@ int runMaxwellSelfTest(
         &&tensorGradientStaticResidual<1.0e-5
         &&std::isfinite(dipoleGradientCouplingInvarianceResidual)
         &&dipoleGradientCouplingInvarianceResidual<1.0e-2
-        // motional is deliberately not checked at beta=0: the true motional
-        // field vanishes there for BOTH formulas, so its ratio compares one
-        // side's exact zero to the other's floating-point noise floor and
-        // is meaningless at any tolerance -- see its own comment above.
+        // Motional fields vanish at beta=0, so only their nonzero-beta values
+        // have a meaningful relative normalization.
         &&std::isfinite(dipoleFieldAgreementBetaZero.leading)
-        &&dipoleFieldAgreementBetaZero.leading<1.0e-4;
+        &&std::isfinite(dipoleFieldAgreementBetaAlpha.leading)
+        &&std::isfinite(dipoleFieldAgreementBetaModerate.leading)
+        &&std::isfinite(dipoleFieldAgreementBetaFast.leading)
+        &&std::isfinite(dipoleFieldAgreementBetaAlpha.motional)
+        &&std::isfinite(dipoleFieldAgreementBetaModerate.motional)
+        &&std::isfinite(dipoleFieldAgreementBetaFast.motional)
+        &&dipoleFieldAgreementBetaZero.leading<1.0e-4
+        &&dipoleFieldAgreementBetaAlpha.leading<1.0e-4
+        &&dipoleFieldAgreementBetaModerate.leading<1.0e-4
+        &&dipoleFieldAgreementBetaFast.leading<1.0e-4
+        &&dipoleFieldAgreementBetaAlpha.motional<1.0e-4
+        &&dipoleFieldAgreementBetaModerate.motional<1.0e-4
+        &&dipoleFieldAgreementBetaFast.motional<1.0e-4;
     const bool regularizedInductionCurlOk=
         std::isfinite(regularizedInductionCurlResidual)
         &&regularizedInductionCurlResidual<1.0e-6;
@@ -4420,7 +4420,9 @@ int runMaxwellSelfTest(
               << "particle boost F/R:" << covarianceForceResidual << " / "
               << covarianceRadiationResidual << '\n'
               << "boost accumulated R:" << covarianceAccumulatedRadiationResidual
-              << '\n'
+                 << " (restE=" << covarianceRest.radiatedEnergy
+                 << ", movingE=" << covarianceMoving.radiatedEnergy
+                 << ", expectedE=" << expectedRadiation.time*c << ")" << '\n'
               << "dipole boost back:  " << dipoleTensorRoundtrip << '\n'
               << "dipole invariants:  " << dipoleFirstInvariantResidual << " / "
               << dipoleSecondInvariantResidual << '\n'
@@ -4432,12 +4434,12 @@ int runMaxwellSelfTest(
               << "E1-M1 interference/significance: "
                  << interferenceTerm << " / " << interferenceSignificance
                  << " (even=" << interferenceEvenTerm << ")" << '\n'
-              << "dipole field vs exact, leading (beta=0/alpha/0.3/0.8): "
+              << "dipole pole convergence, leading (beta=0/alpha/0.3/0.8): "
                  << dipoleFieldAgreementBetaZero.leading << " / "
                  << dipoleFieldAgreementBetaAlpha.leading << " / "
                  << dipoleFieldAgreementBetaModerate.leading << " / "
                  << dipoleFieldAgreementBetaFast.leading << '\n'
-              << "  ...motional channel, same betas: "
+              << "  ...motional convergence, same betas: "
                  << dipoleFieldAgreementBetaZero.motional << " / "
                  << dipoleFieldAgreementBetaAlpha.motional << " / "
                  << dipoleFieldAgreementBetaModerate.motional << " / "

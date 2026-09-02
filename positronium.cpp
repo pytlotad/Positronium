@@ -76,24 +76,20 @@
 #include "modules/visual_gui_controls.hpp"
 
 // Approximate relativistic two-body electrodynamics in SI units. Mutual
-// Charge-charge forces use mutually retarded Lienard-Wiechert fields;
-// dipole couplings remain low-velocity approximations (missing the
-// kappa=1-n.beta convection factor and direction aberration an arbitrarily
-// moving/accelerated point dipole's exact field has -- see Sautbekov for the
-// closed form) and radiation reaction uses a local, order-reduced
-// electric-dipole model. How much the dipole approximation actually costs is
-// measured, not asserted: modules/electrodynamics.hpp's
-// retardedElectricDipoleFieldExact/retardedMagneticDipoleFieldExact
-// implement the exact moving-dipole field independently (as the zero-
-// separation limit of two Lienard-Wiechert point charges, not by hand-
-// deriving Sautbekov's formula), and
-// dipoleFieldLowVelocityAgreement in maxwell_validation.hpp compares the
-// two over a beta scan: agreement is ~1e-5 at beta=0, ~1% at beta=alpha
-// (where this model actually operates), and degrades to ~45%/~99% by
-// beta=0.3/0.8. The exact fields are not on the production path -- their
-// nested finite differences add enough numerical noise to occasionally
-// starve the adaptive integrator's error control -- so this is a validated
-// bound on the existing approximation's error, not yet a drop-in fix.
+// charge-charge forces use retarded Lienard-Wiechert fields.  Moving electric
+// and magnetic point dipoles use the symmetric two-pole limit of the same
+// exact fields, including kappa=1-n.beta, aberration and the convective/
+// acceleration channels.  The source-integrated moments are obtained from
+// the laboratory dipole tensor with the moving-volume 1/gamma factor before
+// time differentiation (the transformation derived by Sautbekov).  The old
+// low-velocity potential remains only as the baseline of the declared
+// short-range regularizer; outside its smooth core the production result is
+// the relativistic point-dipole field directly.  Validation compares the
+// production pole separation with an independently halved one and enforces
+// both leading and motional channels through beta=0.8.  The overall model is
+// still approximate: it treats the sources as point multipoles outside the
+// regulator, uses finite retarded history, and radiation reaction remains a
+// local, order-reduced electric-dipole model.
 namespace {
 using positronium::objects::Vec3;
 using positronium::objects::State;

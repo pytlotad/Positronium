@@ -10204,6 +10204,51 @@ linear` w `positronium_validation`), bez progu pass/fail (jak inne
 diagnostyki w tym audycie), żeby przyszła zmiana nie pogorszyła jej po
 cichu.
 
+### Relatywistyczne pole poruszającego się dipola w produkcji
+
+**Naprawione.** Dawne `retardedElectricDipoleField` i
+`retardedMagneticDipoleField` znajdowały położenie retardowane, lecz następnie
+używały potencjału dipola praktycznie spoczywającego w laboratorium. Brakowało
+czynnika konwekcyjnego \(\kappa=1-\hat n\cdot\boldsymbol\beta\), aberracji oraz
+sprzężonych z prędkością członów pola. Nie był to problem samego testu:
+zmierzony błąd głównego kanału wynosił około `1,08%` już przy `β=α`, `44,95%`
+przy `β=0,3` i `99,59%` przy `β=0,8`, a kanał motionalny był nieobecny.
+
+Ścieżka produkcyjna korzysta teraz z granicy symetrycznej pary fikcyjnych
+ładunków `±q`, z których każdy generuje pełne pole Liénarda–Wiecherta. Ich
+odległość reprezentuje chwilowy dipol, a przejście do małej separacji odtwarza
+punktowy dipol ruchomy bez ręcznego przepisywania rozbudowanego wzoru
+zamkniętego. Moment całkowy źródła jest obliczany jako moment laboratoryjny
+podzielony przez `γ` **przed** różniczkowaniem; uwzględnia to kontrakcję
+elementu objętości i pochodne `γ` przy ruchu przyspieszonym, zgodnie z
+transformacją źródła wyprowadzoną przez Sautbekova. Ta sama konstrukcja działa
+zarówno w lokalnych siłach i precesji BMT, jak i w produkcyjnym strumieniu pola
+dalekiego. Dla dipola magnetycznego używana jest dualność próżniowa.
+
+Separacja biegunów wynosi `10⁻⁵` odległości obserwacji. Dla pary symetrycznej
+błąd pominiętego multipola jest rzędu kwadratu separacji, a błąd kasowania
+numerycznego rośnie odwrotnie do niej, więc właściwą skalą jest pierwiastek
+sześcienny z precyzji maszynowej. Walidator liczy niezależne odniesienie z
+separacją dwukrotnie mniejszą i wymusza zgodność `<10⁻⁴` dla kanału głównego i
+motionalnego przy `β=α`, `0,3` oraz `0,8` (oraz statycznego kanału głównego).
+Bieżące maksymalne residuum to `2,33·10⁻¹⁰`; residuum kowariancji energii
+sprzężenia dipolowego spadło do `8,11·10⁻¹¹`.
+
+Regulator krótkiego zasięgu zachowuje dotychczasowy, gładki potencjał wewnątrz
+zadeklarowanego rdzenia. Poprawka relatywistyczna jest do niego dołączana
+gładko jako
+\(F_{reg}=F_{low,reg}+w(r)[F_{exact}-F_{low,point}]\); poza rdzeniem
+`w=1` i zwracane jest bezpośrednio pełne pole. Nie jest to model rozmiaru
+wewnętrznego cząstki ani pełne samooddziaływanie: pozostają jawne ograniczenia
+punktowego multipola, skończonej historii oraz lokalnej, zredukowanej reakcji
+promieniowania.
+
+Po zmianie pełna walidacja pary elektron–pozyton przechodzi **48/48**.
+Zbieżność pola dalekiego, normalizacja Larmora, bilanse oraz próby regulatora
+pozostają w swoich wcześniejszych progach. Koszt całej walidacji wzrósł z
+około `81,2 s` do `88,1 s` (około `8,5%`), więc usunięcie błędu rzędu
+jedności dla szybkich cząstek nie wymaga osobnego, nieopłacalnego solvera.
+
 ## Literatura pomocnicza
 
 1. NIST, *2022 CODATA Recommended Values of the Fundamental Physical
@@ -10239,6 +10284,8 @@ cichu.
 13. H. J. Bhabha, *The Scattering of Positrons by Electrons with Exchange
     on Dirac's Theory of the Positron*,
     [Proc. R. Soc. A 154, 195 (1936)](https://doi.org/10.1098/rspa.1936.0046).
+14. S. S. Sautbekov, *The vector potential of a point magnetic dipole*,
+    [arXiv:1806.07089](https://arxiv.org/abs/1806.07089).
 
 Literatura uzasadnia użyte elementy elektrodynamiki klasycznej i wejścia
 generatora zaniku, ale nie waliduje fenomenologicznego utożsamienia orientacji
