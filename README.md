@@ -7851,8 +7851,8 @@ Powyższy akapit opisuje stan historyczny. Produkcja nie używa już ani
 `advanceCoupledSecularSpinOrbit` w `modules/secular_spin_orbit.hpp`.
 
 Stan kroku zawiera teraz pełne wektory
-\(\mathbf L,\boldsymbol\mu_1,\boldsymbol\mu_2\). Dla każdego adaptacyjnego
-podkroku solver:
+\(\mathbf L,\boldsymbol\mu_1,\boldsymbol\mu_2\) oraz kierunek perycentrum.
+Dla każdego adaptacyjnego podkroku solver:
 
 1. odtwarza mimośród z pełnej wartości momentu pędu,
    $1-e^2=L^2/(\mu K a)$, i oblicza adaptacyjną średnią BMT po prawdziwej
@@ -7879,6 +7879,13 @@ $a$, zachowana jest jawna projekcja $e=0$ stosowana przez resztę
 estymatora; w całej fizycznej dziedzinie eliptycznej wartość $L$ nie jest
 już pomijana.
 
+Kierunek perycentrum jest rzutowany na aktualną płaszczyznę orbity i
+transportowany minimalnym obrotem, gdy wymiana spin–orbita albo emisja fotonu
+pochyla $\mathbf L$. Ta sama płaszczyzna i linia apsyd są używane przez średnią
+BMT i przez mechanicznie rozwiązywaną orbitę checkpointu; wcześniejsze
+odtwarzanie każdego checkpointu w globalnej płaszczyźnie XY zmieniało
+geometrię dipoli po takim pochyleniu.
+
 Pole zewnętrzne i ZPF są rozdzielone od pola wewnętrznego: ich moment siły
 zmienia \(\mathbf J\) pary i nie jest błędnie oddawany orbicie.
 
@@ -7893,10 +7900,14 @@ Walidacja sprawdza niezależnie zachowanie \(\mathbf J\), modułów obu momentó
 zbieżność przy granicach kąta \(0{,}05/0{,}025/0{,}0125\) rad. Dodatkowa,
 niezależna sonda rozwiązuje równania Newtona dla orbity o
 \(e^2=0{,}945\) metodą RK4 w równych odstępach czasu i porównuje uśrednione
-tempo BMT z solverem produkcyjnym. Dla elektronu–pozytonu residuum BMT wynosi
-\(3{,}07\cdot10^{-9}\), a domknięcie referencyjnej orbity
-\(1{,}98\cdot10^{-8}\); dla najcięższej pary proton–antyproton residuum BMT
-wynosi \(5{,}12\cdot10^{-6}\) przy tym samym domknięciu. W teście sprzężonym
+tempo BMT z solverem produkcyjnym. Orbita jest celowo obrócona względem osi
+układu współrzędnych, dzięki czemu test obejmuje również przenoszenie linii
+apsyd. Produkcja używa 256 próbek pola, referencja 32 768, czyli **128 razy
+mniej**, nie licząc 1 048 576 kroków RK4 potrzebnych samej referencji. Dla
+elektronu–pozytonu residuum BMT wynosi \(3{,}39\cdot10^{-9}\), a domknięcie
+referencyjnej orbity \(2{,}01\cdot10^{-8}\); dla najcięższej pary
+proton–antyproton residuum BMT
+wynosi \(7{,}39\cdot10^{-6}\) przy tym samym domknięciu. W teście sprzężonym
 reszta \(\mathbf J\) wynosi 0, dryf modułu \(2{,}2\cdot10^{-16}\), a błąd
 maleje około czterokrotnie po dwukrotnym zagęszczeniu, zgodnie z metodą
 drugiego rzędu. Zestaw walidacyjny przechodzi 48/48.

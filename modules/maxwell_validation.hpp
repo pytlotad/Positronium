@@ -1518,20 +1518,26 @@ int runMaxwellSelfTest(
     const double secularRadius=pairBohrRadius(activePair);
     const Vec3 secularFirstDirection{0.31,-0.47,0.826619};
     const Vec3 secularSecondDirection{-0.62,0.19,0.761249};
+    const Vec3 secularInitialAngularMomentum{
+        0.08*hbar,-0.05*hbar,0.78*hbar};
+    const Vec3 secularInitialPeriapsis=orbitPlaneDirection(
+        secularInitialAngularMomentum,Vec3{0.71,0.43,-0.19});
     // Keep (a,L) on the bound Kepler sheet.  The former vector had
     // |L|>sqrt(mu*K*a), i.e. an imaginary eccentricity which the circular
     // implementation could not notice because it ignored |L| altogether.
     const SecularSpinOrbitState secularInitial{
-        {0.08*hbar,-0.05*hbar,0.78*hbar},
+        secularInitialAngularMomentum,
         secularFirstDirection
             *(firstMagneticMoment/secularFirstDirection.norm()),
         secularSecondDirection
-            *(secondMagneticMoment/secularSecondDirection.norm())};
+            *(secondMagneticMoment/secularSecondDirection.norm()),
+        0.0,secularInitialPeriapsis};
     const OrbitAveragedBmtAngularVelocities secularInitialRates=
         orbitAveragedBmtAngularVelocities(
             secularRadius,secularInitial.orbitalAngularMomentum,
             secularInitial.firstDipole,secularInitial.secondDipole,
-            pairReducedMass);
+            pairReducedMass,secularInitial.zeroPointPhase,
+            secularInitial.periapsisDirection);
     const double secularAngularSpeed=secularInitialRates.valid
         ?std::max(secularInitialRates.first.norm(),
                   secularInitialRates.second.norm()):0.0;
@@ -1564,7 +1570,8 @@ int runMaxwellSelfTest(
         orbitAveragedBmtAngularVelocities(
             secularRadius,secularInitial.orbitalAngularMomentum,
             secularInitial.firstDipole,secularInitial.secondDipole,
-            pairReducedMass);
+            pairReducedMass,secularInitial.zeroPointPhase,
+            secularInitial.periapsisDirection);
     const double secularExternalSpeed=secularExternalRates.valid
         ?std::max(secularExternalRates.first.norm(),
                   secularExternalRates.second.norm()):0.0;
@@ -1591,21 +1598,19 @@ int runMaxwellSelfTest(
     const double secularEccentricReferenceAxis=std::max(
         secularRadius,10.0*separationFloor()
             /(1.0-secularReferenceEccentricity));
-    const Vec3 secularReferenceNormal{0.0,0.0,1.0};
+    Vec3 secularReferenceNormal{0.37,-0.41,0.833};
+    secularReferenceNormal=secularReferenceNormal
+        /secularReferenceNormal.norm();
     const Vec3 secularReferenceAngularMomentum=secularReferenceNormal*std::sqrt(
         pairReducedMass*pairCoulombStrength*secularEccentricReferenceAxis
         *(1.0-secularReferenceEccentricitySquared));
+    const Vec3 secularReferenceRadial=orbitPlaneDirection(
+        secularReferenceAngularMomentum,Vec3{0.68,0.53,-0.21});
     const OrbitAveragedBmtAngularVelocities secularEccentricAverage=
         orbitAveragedBmtAngularVelocities(
             secularEccentricReferenceAxis,secularReferenceAngularMomentum,
             secularInitial.firstDipole,secularInitial.secondDipole,
-            pairReducedMass);
-    const Vec3 secularReferenceSeed=std::abs(secularReferenceNormal.x)<0.9
-        ?Vec3{1.0,0.0,0.0}:Vec3{0.0,1.0,0.0};
-    Vec3 secularReferenceRadial=cross(
-        secularReferenceSeed,secularReferenceNormal);
-    secularReferenceRadial=secularReferenceRadial
-        /secularReferenceRadial.norm();
+            pairReducedMass,0.0,secularReferenceRadial);
     const Vec3 secularReferenceTangential=cross(
         secularReferenceNormal,secularReferenceRadial);
     Vec3 dimensionlessPosition=secularReferenceRadial
@@ -1718,6 +1723,22 @@ int runMaxwellSelfTest(
         ?std::abs(secularReference.state.secondDipole.norm()
             /secularInitial.secondDipole.norm()-1.0)
         :std::numeric_limits<double>::infinity();
+    const auto apsidalGeometryResidual=[](
+            const SecularSpinOrbitAdvance& advance) {
+        if(!advance.completed) return std::numeric_limits<double>::infinity();
+        const double orbitalNorm=advance.state.orbitalAngularMomentum.norm();
+        if(!(orbitalNorm>0.0))
+            return std::numeric_limits<double>::infinity();
+        return std::max(
+            std::abs(advance.state.periapsisDirection.norm()-1.0),
+            std::abs(dot(advance.state.periapsisDirection,
+                advance.state.orbitalAngularMomentum/orbitalNorm)));
+    };
+    const double secularApsidalGeometryResidual=std::max({
+        apsidalGeometryResidual(secularCoarse),
+        apsidalGeometryResidual(secularFine),
+        apsidalGeometryResidual(secularReference),
+        apsidalGeometryResidual(secularExternal)});
     const auto secularDifference=[&](const SecularSpinOrbitState& first,
                                      const SecularSpinOrbitState& second) {
         const double firstGyromagneticRatio=firstGyromagneticRatioOf();
@@ -1743,7 +1764,8 @@ int runMaxwellSelfTest(
         &&secularCoarse.relativeAngularMomentumResidual<1.0e-12
         &&secularFine.relativeAngularMomentumResidual<1.0e-12
         &&secularReference.relativeAngularMomentumResidual<1.0e-12
-        &&secularFirstNormDrift<1.0e-12&&secularSecondNormDrift<1.0e-12;
+        &&secularFirstNormDrift<1.0e-12&&secularSecondNormDrift<1.0e-12
+        &&secularApsidalGeometryResidual<1.0e-12;
     const bool secularExternalTorqueOk=secularExternalRates.valid
         &&secularExternal.completed
         &&secularExternal.relativeAngularMomentumResidual<1.0e-12
@@ -1755,6 +1777,9 @@ int runMaxwellSelfTest(
             <0.6*secularCoarseFineDifference
         &&secularFineReferenceDifference<1.0e-3;
     const bool secularEccentricOrbitOk=secularEccentricAverage.valid
+        &&secularEccentricAverage.phaseNodes==256
+        &&resolvedEccentricOrbitSteps
+            >=100*secularEccentricAverage.phaseNodes
         &&std::isfinite(secularEccentricResolvedResidual)
         &&std::isfinite(secularEccentricOrbitClosure)
         &&secularEccentricResolvedResidual<1.0e-5
@@ -4370,6 +4395,9 @@ int runMaxwellSelfTest(
                  << secularReference.relativeAngularMomentumResidual << " / "
                  << std::max(secularFirstNormDrift,secularSecondNormDrift)
                  << "\n"
+              << "secular apsidal geometry: "
+                 << secularApsidalGeometryResidual
+                 << "  (unit length / perpendicular to L)\n"
               << "secular spin coarse/fine/ref: "
                  << secularCoarseFineDifference << " / "
                  << secularFineReferenceDifference << "  ("
@@ -4381,7 +4409,12 @@ int runMaxwellSelfTest(
               << "secular eccentric BMT/orbit: "
                  << secularEccentricResolvedResidual << " / "
                  << secularEccentricOrbitClosure
-                 << "  (e^2=" << secularReferenceEccentricitySquared << ")\n"
+                 << "  (e^2=" << secularReferenceEccentricitySquared
+                 << ", nodes=" << secularEccentricAverage.phaseNodes
+                 << ", reference ratio="
+                 << resolvedEccentricOrbitSteps
+                        /std::max(1,secularEccentricAverage.phaseNodes)
+                 << "x)\n"
               << "role routing:     " << roleRoutingResidual
               << "  (obrot " << roleRoutingTravel << ")\n"
               << "particle boost F/R:" << covarianceForceResidual << " / "

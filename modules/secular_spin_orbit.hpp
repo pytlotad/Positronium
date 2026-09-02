@@ -24,6 +24,7 @@ struct OrbitAveragedBmtAngularVelocities {
     // two-body system; only the remainder receives an orbital reaction.
     Vec3 firstExternal;
     Vec3 secondExternal;
+    int phaseNodes=0;
     bool valid=false;
 };
 
@@ -37,6 +38,12 @@ struct SecularSpinOrbitState {
     // the same quantity osculatingOrbitalFrequency*dt advances it by on
     // the mechanical path), not a phase frozen at 0 for every checkpoint.
     double zeroPointPhase=0.0;
+    // Unit vector towards periapsis.  L fixes only the orbital plane; for an
+    // eccentric orbit the apsidal line is additional physical data because
+    // the strongest r^-3 fields are sampled preferentially near periapsis.
+    // A zero vector is accepted as a backwards-compatible "unspecified"
+    // value and replaced by a deterministic in-plane direction.
+    Vec3 periapsisDirection;
 };
 
 struct SecularSpinOrbitAdvance {
@@ -63,15 +70,65 @@ Vec3 rotateDipoleByAngularVelocity(const Vec3& dipole,
         +axis*(dot(axis,dipole)*(1.0-cosine));
 }
 
+// Project a preferred apsidal direction into the plane normal to L.  Keeping
+// this operation in one place prevents the secular quadrature and the
+// mechanically resolved checkpoint orbit from silently choosing different
+// planes or different periapsides.
+Vec3 orbitPlaneDirection(const Vec3& orbitalAngularMomentum,
+                         const Vec3& preferredDirection) {
+    const double orbitalNorm=orbitalAngularMomentum.norm();
+    if(!(orbitalNorm>0.0)||!std::isfinite(orbitalNorm)) return {};
+    const Vec3 normal=orbitalAngularMomentum/orbitalNorm;
+    if(isFinite(preferredDirection)) {
+        const Vec3 projected=preferredDirection
+            -normal*dot(preferredDirection,normal);
+        const double projectedNorm=projected.norm();
+        if(projectedNorm>1.0e-14*std::max(1.0,preferredDirection.norm()))
+            return projected/projectedNorm;
+    }
+    const Vec3 seed=std::abs(normal.x)<0.9
+        ?Vec3{1.0,0.0,0.0}:Vec3{0.0,1.0,0.0};
+    const Vec3 fallback=cross(seed,normal);
+    const double fallbackNorm=fallback.norm();
+    return fallbackNorm>0.0?fallback/fallbackNorm:Vec3{};
+}
+
+// Minimal-rotation transport of the apsidal line when spin exchange or a
+// photon tilts L.  The reduced model has no independent Runge-Lenz equation;
+// parallel transport is the neutral closure that introduces no arbitrary
+// rotation about the new normal.  Projection at the end removes round-off.
+Vec3 transportOrbitPlaneDirection(const Vec3& direction,
+                                   const Vec3& oldAngularMomentum,
+                                   const Vec3& newAngularMomentum) {
+    const double oldNorm=oldAngularMomentum.norm();
+    const double newNorm=newAngularMomentum.norm();
+    if(!(oldNorm>0.0)||!(newNorm>0.0))
+        return orbitPlaneDirection(newAngularMomentum,direction);
+    const Vec3 oldNormal=oldAngularMomentum/oldNorm;
+    const Vec3 newNormal=newAngularMomentum/newNorm;
+    const Vec3 radial=orbitPlaneDirection(oldAngularMomentum,direction);
+    const Vec3 rotationAxisVector=cross(oldNormal,newNormal);
+    const double sine=rotationAxisVector.norm();
+    const double cosine=std::clamp(dot(oldNormal,newNormal),-1.0,1.0);
+    Vec3 transported=radial;
+    if(sine>1.0e-15) {
+        const Vec3 axis=rotationAxisVector/sine;
+        transported=radial*cosine+cross(axis,radial)*sine
+            +axis*(dot(axis,radial)*(1.0-cosine));
+    }
+    return orbitPlaneDirection(newAngularMomentum,transported);
+}
+
 OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         double semiMajorAxis,const Vec3& orbitalAngularMomentum,
         const Vec3& firstDipole,const Vec3& secondDipole,
-        double reducedMass,double accumulatedZeroPointPhase=0.0) {
+        double reducedMass,double accumulatedZeroPointPhase=0.0,
+        Vec3 periapsisDirection={}) {
     OrbitAveragedBmtAngularVelocities result;
     if(!(semiMajorAxis>0.0)||!(reducedMass>0.0)
        ||!std::isfinite(semiMajorAxis)||!std::isfinite(reducedMass)
        ||!isFinite(orbitalAngularMomentum)||!isFinite(firstDipole)
-       ||!isFinite(secondDipole)) return result;
+       ||!isFinite(secondDipole)||!isFinite(periapsisDirection)) return result;
     const double orbitalNorm=orbitalAngularMomentum.norm();
     if(!(orbitalNorm>0.0)) return result;
     // The secular state carries a and the full orbital L, hence it also
@@ -103,12 +160,10 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     const double eccentricityComplement=
         std::sqrt(boundedOneMinusEccentricitySquared);
     const Vec3 normal=orbitalAngularMomentum/orbitalNorm;
-    const Vec3 seed=std::abs(normal.x)<0.9
-        ?Vec3{1.0,0.0,0.0}:Vec3{0.0,1.0,0.0};
-    Vec3 radialHat=cross(seed,normal);
+    const Vec3 radialHat=orbitPlaneDirection(
+        orbitalAngularMomentum,periapsisDirection);
     const double radialNorm=radialHat.norm();
     if(!(radialNorm>0.0)) return result;
-    radialHat=radialHat/radialNorm;
     const Vec3 tangentialHat=cross(normal,radialHat);
     const double meanMotion=std::sqrt(pairCoulombStrength
         /(reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis));
@@ -129,6 +184,7 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         32.0/std::sqrt(std::max(1.0-eccentricity,1.0e-12));
     int phaseNodes=64;
     while(phaseNodes<512&&phaseNodes<targetPhaseNodes) phaseNodes*=2;
+    result.phaseNodes=phaseNodes;
     Vec3 firstOmegaSum,secondOmegaSum;
     Vec3 firstExternalOmegaSum,secondExternalOmegaSum;
     for(int node=0;node<phaseNodes;++node) {
@@ -170,6 +226,7 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         // would reconstruct from this same proper moment and velocity.
         sample.firstProperDipole=firstDipole;
         sample.secondProperDipole=secondDipole;
+        sample.zeroPointPhase=accumulatedZeroPointPhase;
         synchronizeCovariantDipoles(sample);
         const StateHistory sampleHistory{State{sample}};
         const LocalElectromagneticFields fields=
@@ -219,10 +276,18 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         int maximumSubsteps=65536) {
     SecularSpinOrbitAdvance result;
     result.state=initial;
+    if(isFinite(initial.orbitalAngularMomentum)
+       &&isFinite(initial.periapsisDirection)
+       &&initial.orbitalAngularMomentum.norm()>0.0) {
+        result.state.periapsisDirection=orbitPlaneDirection(
+            initial.orbitalAngularMomentum,initial.periapsisDirection);
+    }
     if(elapsedTime==0.0) {
         result.completed=isFinite(initial.orbitalAngularMomentum)
             &&isFinite(initial.firstDipole)&&isFinite(initial.secondDipole)
-            &&std::isfinite(initial.zeroPointPhase);
+            &&std::isfinite(initial.zeroPointPhase)
+            &&isFinite(initial.periapsisDirection)
+            &&result.state.periapsisDirection.norm()>0.0;
         result.relativeAngularMomentumResidual=result.completed?0.0:
             std::numeric_limits<double>::infinity();
         return result;
@@ -234,7 +299,9 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
        ||!std::isfinite(maximumRotationPerSubstep)
        ||!isFinite(initial.orbitalAngularMomentum)
        ||!isFinite(initial.firstDipole)||!isFinite(initial.secondDipole)
-       ||!std::isfinite(initial.zeroPointPhase)) {
+       ||!std::isfinite(initial.zeroPointPhase)
+       ||!isFinite(initial.periapsisDirection)
+       ||!(result.state.periapsisDirection.norm()>0.0)) {
         return result;
     }
     const double firstGyromagneticRatio=firstGyromagneticRatioOf();
@@ -271,7 +338,8 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
             orbitAveragedBmtAngularVelocities(
                 semiMajorAxis,result.state.orbitalAngularMomentum,
                 result.state.firstDipole,result.state.secondDipole,
-                reducedMass,result.state.zeroPointPhase);
+                reducedMass,result.state.zeroPointPhase,
+                result.state.periapsisDirection);
         if(!startRates.valid) return result;
         const double startSpeed=std::max(
             startRates.first.norm(),startRates.second.norm());
@@ -303,9 +371,13 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
             midpointAngularMomentum=transportedAngularMomentum
                 +startExternalTorque*(0.5*dt);
             orbitalMid=midpointAngularMomentum-spinTotal(firstMid,secondMid);
+            const Vec3 periapsisMid=transportOrbitPlaneDirection(
+                result.state.periapsisDirection,
+                result.state.orbitalAngularMomentum,orbitalMid);
             midpointRates=orbitAveragedBmtAngularVelocities(
                 semiMajorAxis,orbitalMid,firstMid,secondMid,reducedMass,
-                result.state.zeroPointPhase+meanMotion*(0.5*dt));
+                result.state.zeroPointPhase+meanMotion*(0.5*dt),
+                periapsisMid);
             if(!midpointRates.valid) return result;
             const double midpointAngle=dt*std::max(
                 midpointRates.first.norm(),midpointRates.second.norm());
@@ -329,10 +401,15 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
             angularMomentumAfter-spinTotal(firstAfter,secondAfter);
         if(!isFinite(orbitalAfter)||!(orbitalAfter.norm()>1.0e-300))
             return result;
+        const Vec3 periapsisAfter=transportOrbitPlaneDirection(
+            result.state.periapsisDirection,
+            result.state.orbitalAngularMomentum,orbitalAfter);
+        if(!(periapsisAfter.norm()>0.0)) return result;
 
         result.state.firstDipole=firstAfter;
         result.state.secondDipole=secondAfter;
         result.state.orbitalAngularMomentum=orbitalAfter;
+        result.state.periapsisDirection=periapsisAfter;
         result.state.zeroPointPhase+=meanMotion*dt;
         transportedAngularMomentum=angularMomentumAfter;
         result.maximumSubstepAngle=std::max(result.maximumSubstepAngle,

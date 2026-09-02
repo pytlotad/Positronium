@@ -434,10 +434,12 @@ double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity) {
 double coherentMagneticDipoleOrbitAveragedPower(
         double semiMajorAxis,const Vec3& orbitalAngularMomentum,
         const Vec3& firstDipole,const Vec3& secondDipole,
-        double reducedMass) {
+        double reducedMass,double zeroPointPhase=0.0,
+        Vec3 periapsisDirection={}) {
     const OrbitAveragedBmtAngularVelocities rates=
         orbitAveragedBmtAngularVelocities(semiMajorAxis,
-            orbitalAngularMomentum,firstDipole,secondDipole,reducedMass);
+            orbitalAngularMomentum,firstDipole,secondDipole,reducedMass,
+            zeroPointPhase,periapsisDirection);
     if(!rates.valid) return 0.0;
     const auto steadyPrecessionSecondDerivative=
         [](const Vec3& dipole,const Vec3& angularVelocity) {
@@ -928,14 +930,16 @@ double regularizedPeriod(const OsculatingElements& elements,
 // thing the osculating representation genuinely does not know: where in its
 // orbital plane the pair is.
 //
-// osculatingPeriapsisState resets the plane to canonical x-y and puts the
-// separation along +x, and says so -- that is sound for a collapse-time
-// estimate, which cares only about |E| and |L|.  It is NOT sound for the
-// angular factor mu1.mu2 - 3(mu1.n)(mu2.n), which depends on the direction
-// of n relative to the moments.  Using that convention's n = x gives an
-// answer that is not merely imprecise but can carry the WRONG SIGN: checked
-// against the correct average on random configurations, -0.268 against
-// +0.484 in one of four trials.
+// Older osculating checkpoints reset the plane to canonical x-y and put the
+// separation along +x.  That was sound for a collapse-time estimate using
+// only |E| and |L|, but not for the angular factor
+// mu1.mu2 - 3(mu1.n)(mu2.n), which depends on the direction of n relative to
+// the moments.  Using that convention's n = x gave an answer that was not
+// merely imprecise but could carry the WRONG SIGN: checked against the
+// correct average on random configurations, -0.268 against +0.484 in one of
+// four trials.  The checkpoint now carries a real apsidal line, but this
+// terminal-energy diagnostic deliberately retains its phase-marginalized
+// definition so it stays independent of an unobserved terminal anomaly.
 //
 // The true anomaly at termination is unknowable here for the same reason the
 // photon-firing code states for its own emission azimuth: only the elements
@@ -1304,14 +1308,17 @@ bool fullPotentialOrbit(const OsculatingElements& elements,
 }
 
 // Fresh State at periapsis for the given osculating elements, carrying the
-// supplied dipole vectors over unchanged.  The orbital plane is reset to the
-// canonical x-y plane every time: only the (E,L) magnitudes are propagated
-// secularly, and the plane orientation is irrelevant to a collapse-time
-// estimate, so nothing is lost by not tracking it.
+// supplied dipole vectors and ZPF phase over unchanged.  Both the plane and
+// apsidal line are the same ones used by the eccentric secular BMT average;
+// resetting them to global x-y would change the dipole geometry whenever the
+// coupled spin-orbit solve or a photon tilted L.
 State osculatingPeriapsisState(const OsculatingElements& elements,
                                double attractionParameter,
                                const Vec3& firstDipole,
-                               const Vec3& secondDipole) {
+                               const Vec3& secondDipole,
+                               const Vec3& orbitalAngularMomentumDirection,
+                               const Vec3& periapsisDirection,
+                               double zeroPointPhase) {
     // regularizedPeriapsis(), not the naive formula: below separationFloor()
     // the naive value systematically overshoots how close the pair can
     // actually get (it assumes the force keeps growing as 1/r^2 rather than
@@ -1326,8 +1333,16 @@ State osculatingPeriapsisState(const OsculatingElements& elements,
         elements,attractionParameter,separationFloor());
     const double tangentialSpeed=periapsis>0.0
         ?elements.specificAngularMomentum/periapsis:0.0;
-    const Vec3 relativePosition{periapsis,0.0,0.0};
-    const Vec3 relativeVelocity{0.0,tangentialSpeed,0.0};
+    const Vec3 orbitalAngularMomentum=orbitalAngularMomentumDirection
+        *elements.specificAngularMomentum;
+    const Vec3 radialDirection=orbitPlaneDirection(
+        orbitalAngularMomentum,periapsisDirection);
+    const double orbitalNorm=orbitalAngularMomentumDirection.norm();
+    const Vec3 normal=orbitalNorm>0.0
+        ?orbitalAngularMomentumDirection/orbitalNorm:Vec3{0.0,0.0,1.0};
+    const Vec3 tangentialDirection=cross(normal,radialDirection);
+    const Vec3 relativePosition=radialDirection*periapsis;
+    const Vec3 relativeVelocity=tangentialDirection*tangentialSpeed;
     State s;
     s.firstPosition=relativePosition*(secondMass/(firstMass+secondMass));
     s.secondPosition=relativePosition*(-firstMass/(firstMass+secondMass));
@@ -1335,6 +1350,7 @@ State osculatingPeriapsisState(const OsculatingElements& elements,
     s.secondVelocity=relativeVelocity*(-firstMass/(firstMass+secondMass));
     s.firstDipole=firstDipole;
     s.secondDipole=secondDipole;
+    s.zeroPointPhase=zeroPointPhase;
     return s;
 }
 
@@ -1397,13 +1413,9 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     // Inert whenever --zpf is off: amplitudeCoefficient is then 0 and
     // sample()/gradientForce() both return early regardless of phase.
     double zeroPointPhase=0.0;
-    // Orbital plane orientation, kept ONLY for stochasticElectricDipole (see
-    // its own use below): OsculatingElements itself carries no direction,
-    // only magnitudes, which is exactly right for the continuous models
-    // (an in-plane reaction force never tilts the plane, so the direction
-    // would just sit there unread) but not for individual photon kicks,
-    // whose emission angle relative to this axis is physical, not
-    // arbitrary.
+    // Orbital plane orientation.  OsculatingElements carries only magnitudes,
+    // while the eccentric BMT average, the reconstructed measurement orbit
+    // and individual photon kicks all need a common physical plane.
     //
     // FIXED: used to be seedRun.frames.front().noetherAngularMomentum,
     // normalized, on the claim (in this very comment) that "the dipole/spin
@@ -1453,6 +1465,31 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     angularMomentumDirection=angularMomentumDirection.squaredNorm()>0.0
         ?angularMomentumDirection*(1.0/angularMomentumDirection.norm())
         :Vec3{0.0,0.0,1.0};
+
+    // The apsidal line is independent information for e>0.  Recover the
+    // Runge-Lenz direction from the two very closely spaced seed frames.  A
+    // circular orbit has no unique periapsis, so retain its initial radial
+    // direction as a harmless gauge choice.  Project once more onto the
+    // recovered plane to remove finite-difference round-off.
+    Vec3 periapsisDirection=firstRelativePosition;
+    const double seedFrameDt=seedRun.frames.size()>1
+        ?seedRun.frames.back().time-seedRun.frames.front().time:0.0;
+    if(seedFrameDt>0.0&&firstRelativePosition.norm()>0.0) {
+        const Vec3 relativeVelocityEstimate=
+            (secondRelativePosition-firstRelativePosition)/seedFrameDt;
+        const Vec3 specificAngularMomentumVector=
+            cross(firstRelativePosition,relativeVelocityEstimate);
+        const Vec3 eccentricityVector=
+            cross(relativeVelocityEstimate,specificAngularMomentumVector)
+                /attractionParameter
+            -firstRelativePosition/firstRelativePosition.norm();
+        if(isFinite(eccentricityVector)
+           &&eccentricityVector.norm()>1.0e-8)
+            periapsisDirection=eccentricityVector;
+    }
+    periapsisDirection=orbitPlaneDirection(
+        angularMomentumDirection,periapsisDirection);
+    if(!(periapsisDirection.norm()>0.0)) return result;
 
     // Osculating elements of the prepared orbit and the closed-form classical
     // prediction they imply.  The run is stopped when the PERIAPSIS reaches
@@ -1717,7 +1754,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             std::cerr<<apsidalLine.str()<<std::endl;
         }
         const State measurementState=osculatingPeriapsisState(
-            elements,attractionParameter,firstDipole,secondDipole);
+            elements,attractionParameter,firstDipole,secondDipole,
+            angularMomentumDirection,periapsisDirection,zeroPointPhase);
         // regularizedPeriod(), not the naive formula: this sizes the ONE
         // orbit the measurement below actually integrates, and the naive
         // period stops matching a true orbit of the clamped force law
@@ -2518,7 +2556,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                       /(attractionParameter*attractionParameter))))
               +coherentMagneticDipoleOrbitAveragedPower(
                   semiMajorAxisForLoss,orbitalAngularMomentumVector,
-                  firstDipole,secondDipole,reducedMass))
+                  firstDipole,secondDipole,reducedMass,zeroPointPhase,
+                  periapsisDirection))
                  *period/reducedMass
             :0.0;
         if(isStochastic
@@ -2598,7 +2637,8 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             const SecularSpinOrbitState input{
                 angularMomentumDirection
                     *(elements.specificAngularMomentum*reducedMass),
-                firstDipole,secondDipole,zeroPointPhase};
+                firstDipole,secondDipole,zeroPointPhase,
+                periapsisDirection};
             const SecularSpinOrbitAdvance advance=
                 advanceCoupledSecularSpinOrbit(
                     input,semiMajorAxis,reducedMass,
@@ -2627,6 +2667,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             firstDipole=advance.state.firstDipole;
             secondDipole=advance.state.secondDipole;
             zeroPointPhase=advance.state.zeroPointPhase;
+            periapsisDirection=advance.state.periapsisDirection;
             const double orbitalNorm=
                 advance.state.orbitalAngularMomentum.norm();
             angularMomentumDirection=
@@ -3653,6 +3694,9 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         orbitalAngularMomentumBefore-photonSpinAngularMomentum;
                     const double directionTrialNorm=directionTrial.norm();
                     if(directionTrialNorm>1.0e-300) {
+                        periapsisDirection=transportOrbitPlaneDirection(
+                            periapsisDirection,orbitalAngularMomentumBefore,
+                            directionTrial);
                         angularMomentumDirection=
                             directionTrial*(1.0/directionTrialNorm);
                     }
