@@ -1876,6 +1876,68 @@ int runMaxwellSelfTest(
     const double covarianceForceResidual=
         (movingFirstForce.space-expectedFirstForce.space).norm()
         /std::max(expectedFirstForce.space.norm(),1.0e-300);
+    // Isolates covariantDipoleGradientForce's OWN boost consistency, unlike
+    // covarianceForceResidual above: that one bundles the mutual charge-charge
+    // Lorentz force in with it, and in this configuration the Coulomb force
+    // dominates the dipole-dipole coupling by orders of magnitude, so a
+    // defect confined to the gradient force alone would be invisible there.
+    // covarianceRest/covarianceMoving both carry a real orbital velocity
+    // (unlike gradientDipoleState's target-at-rest setup, whose own comment
+    // says it cannot exercise this), so this is the first check able to see
+    // covariantDipoleGradientForce's documented open item: the missing
+    // field-time-dependence/hidden-momentum term.
+    const Vec3 restDipoleGradientForce=covariantDipoleGradientForce(
+        covarianceRest,covarianceRestEngine.history(),true);
+    const Vec3 movingDipoleGradientForce=covariantDipoleGradientForce(
+        covarianceMoving,covarianceMovingEngine.history(),true);
+    const FourVector expectedDipoleGradientForce=boostFourVector(
+        fourForce(covarianceRest.firstVelocity,restDipoleGradientForce));
+    const FourVector movingDipoleGradientFourForce=fourForce(
+        covarianceMoving.firstVelocity,movingDipoleGradientForce);
+    const double dipoleGradientForceCovarianceResidual=
+        (movingDipoleGradientFourForce.space
+            -expectedDipoleGradientForce.space).norm()
+        /std::max(expectedDipoleGradientForce.space.norm(),1.0e-300);
+    // Second-particle analogue, at a DIFFERENT velocity, position and dipole
+    // moment.  A scalar fudge fit to the first-particle residual alone would
+    // still pass here only by coincidence; a genuine fix has no reason to
+    // prefer one particle over the other.
+    const Vec3 restDipoleGradientForceSecond=covariantDipoleGradientForce(
+        covarianceRest,covarianceRestEngine.history(),false);
+    const Vec3 movingDipoleGradientForceSecond=covariantDipoleGradientForce(
+        covarianceMoving,covarianceMovingEngine.history(),false);
+    const FourVector expectedDipoleGradientForceSecond=boostFourVector(
+        fourForce(covarianceRest.secondVelocity,restDipoleGradientForceSecond));
+    const FourVector movingDipoleGradientFourForceSecond=fourForce(
+        covarianceMoving.secondVelocity,movingDipoleGradientForceSecond);
+    const double dipoleGradientForceCovarianceResidualSecond=
+        (movingDipoleGradientFourForceSecond.space
+            -expectedDipoleGradientForceSecond.space).norm()
+        /std::max(expectedDipoleGradientForceSecond.space.norm(),1.0e-300);
+    // DU/Dt in each frame, for the same target.  U is a Lorentz invariant, so
+    // d/dt of it along the worldline is d/dtau divided by gamma, and the ratio
+    // between the frames must therefore be exactly 1/gamma_boost.  Measured:
+    // 0.93675939 against 1/1.0675210=0.93675939, seven digits.  That is what
+    // localizes the boost defect above.  U itself, and its transport along the
+    // trajectory, are covariant to the last digit measured; what fails is the
+    // fixed-lab-time SPATIAL gradient taken from it, which is a factor of 265
+    // out.  So the open item is not "the coupling is wrong" and not "a
+    // hidden-momentum force is missing" -- see covariantDipoleGradientForce's
+    // own comment for the two candidate terms that were tried and ruled out.
+    const double restDipoleCouplingRate=dipoleCouplingMaterialRate(
+        covarianceRest,covarianceRestEngine.history(),true);
+    const double movingDipoleCouplingRate=dipoleCouplingMaterialRate(
+        covarianceMoving,covarianceMovingEngine.history(),true);
+    const double dipoleCouplingRateBoostRatio=movingDipoleCouplingRate
+        /(std::abs(restDipoleCouplingRate)>0.0?restDipoleCouplingRate:1.0);
+    if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
+        std::cerr<<"GRAD_FORCE_DEBUG rest="<<restDipoleGradientForce.norm()
+            <<" moving="<<movingDipoleGradientForce.norm()
+            <<" expected="<<expectedDipoleGradientForce.space.norm()
+            <<" residual="<<dipoleGradientForceCovarianceResidual
+            <<" residual2="<<dipoleGradientForceCovarianceResidualSecond
+            <<" rateRest="<<restDipoleCouplingRate
+            <<" rateMoving="<<movingDipoleCouplingRate<<'\n';
     const FourVector expectedRadiation=boostFourVector({
         covarianceRest.radiatedEnergy/c,covarianceRest.radiatedMomentum});
     const FourVector movingRadiation{covarianceMoving.radiatedEnergy/c,
@@ -4419,6 +4481,11 @@ int runMaxwellSelfTest(
               << "  (obrot " << roleRoutingTravel << ")\n"
               << "particle boost F/R:" << covarianceForceResidual << " / "
               << covarianceRadiationResidual << '\n'
+              << "dipole grad boost F:" << dipoleGradientForceCovarianceResidual
+                 << " / " << dipoleGradientForceCovarianceResidualSecond
+                 << "  (OPEN: fixed-lab-time gradient is not a four-vector;"
+                    " coupling rate ratio " << dipoleCouplingRateBoostRatio
+                 << " vs gamma " << covarianceBoostGamma << ")\n"
               << "boost accumulated R:" << covarianceAccumulatedRadiationResidual
                  << " (restE=" << covarianceRest.radiatedEnergy
                  << ", movingE=" << covarianceMoving.radiatedEnergy
@@ -4783,6 +4850,8 @@ int runMaxwellSelfTest(
              <<"  BMT vs effective-field comparison\n"
              <<"  flux-normalized reaction residual across heavy pairs\n"
              <<"  pair-field balance identities closed by boundField*\n"
+             <<"  dipole gradient force under boost -- a MEASURED OPEN GAP,"
+               " not a passing check\n"
              <<"  performance, memory and wall-clock estimates\n";
     std::cout<<"\nEnforced checks:     "
              <<(regressionChecks.size()-static_cast<std::size_t>(failedChecks))

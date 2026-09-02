@@ -2570,6 +2570,62 @@ ElectromagneticField fieldFromOtherParticleAt(
     return field;
 }
 
+// Material derivative DU/Dt of the invariant dipole coupling U=mu_lab.B-p_lab.E
+// along the target's own worldline, with the MOMENTS HELD FIXED: the covariant
+// four-gradient below differentiates the FIELD the particle moves through, and
+// the moments' own evolution is the separate torque/BMT channel
+// (applyDipolePrecession), not part of this force.  So U is resampled with the
+// present mu_lab/p_lab against the field at the retarded-solved position the
+// worldline actually had at each sample time -- both the field's explicit time
+// dependence and the transport term v.grad U at once, which is exactly
+// u^b d_b U / gamma.
+//
+// The route NOT taken, and why: the obvious closed form for the missing piece
+// is Vaidman's (Am. J. Phys. 58, 978) and Hnizdo's (Am. J. Phys. 65, 55)
+// hidden momentum p_hidden=mu_lab x E/c^2, added as -d(p_hidden)/dt.  It was
+// implemented and measured here first, and it is WRONG as a general term: the
+// scale factor needed to null dipoleGradientForceCovarianceResidual came out
+// as exactly 2(1+gamma_boost) -- 4.135042 at the covariance test's 0.35c and
+// 4.5 at 0.6c, both to six digits.  A force law cannot depend on the boost
+// one happens to test it from, so that form is merely PARALLEL to the true
+// term in this geometry, not equal to it.  Vaidman's result is a low-velocity
+// statement about a loop in an external field, not a covariant force law, and
+// promoting it to one is the trap.  The mass-shell projection below has no
+// free coefficient at all, which is why it can be checked rather than fitted.
+double dipoleCouplingMaterialRate(const State& state,
+                                  const StateHistory& history,
+                                  bool targetIsFirst) {
+    const Vec3 labMagneticDipole=targetIsFirst?state.firstDipole
+                                                 :state.secondDipole;
+    const Vec3 labElectricDipole=targetIsFirst?state.firstElectricDipole
+                                                  :state.secondElectricDipole;
+    const auto couplingAt=[&](double sampleTime) {
+        const State sampled=historicalState(history,state,sampleTime);
+        const Vec3 position=targetIsFirst?sampled.firstPosition
+                                          :sampled.secondPosition;
+        const ElectromagneticField field=fieldFromOtherParticleAt(
+            position,sampleTime,state,history,targetIsFirst);
+        return dot(labMagneticDipole,field.magnetic)
+              -dot(labElectricDipole,field.electric);
+    };
+    // Backward stencil only: state.time IS present.time here (this is always
+    // evaluated at the target's current instant, never a retarded one), so a
+    // centred difference would need historicalState() to extrapolate past
+    // present.time, which it does by stretching the last interpolation
+    // interval rather than by an independent sample -- exactly the silent
+    // wrong-derivative trap boundedDerivativeStep's own comment warns about.
+    double derivativeStep=1.0e-24;
+    if(history.size()>=2) derivativeStep=std::max(derivativeStep,
+        2.0*(history.back().time-history[history.size()-2].time));
+    derivativeStep=boundedDerivativeStep(history,state.time,derivativeStep,2);
+    if(!(derivativeStep>0.0)) return 0.0;
+    const double now=couplingAt(state.time);
+    const double before=couplingAt(state.time-derivativeStep);
+    const double twiceBefore=couplingAt(state.time-2.0*derivativeStep);
+    const double rate=(now*3.0-before*4.0+twiceBefore)/(2.0*derivativeStep);
+    return std::isfinite(rate)?rate:0.0;
+}
+
 Vec3 covariantDipoleGradientForce(const State& state,
                                   const StateHistory& history,
                                   bool targetIsFirst) {
@@ -2630,23 +2686,60 @@ Vec3 covariantDipoleGradientForce(const State& state,
     }
     // Spatial component of the covariant gradient divided by gamma gives
     // the laboratory three-force.  At rest this reduces to
-    // grad(mu.B)-grad(p.E) (today just grad(mu.B): p_rest=0, see above).
+    // grad(mu.B)-grad(p.E) (today just grad(mu.B): p_rest=0, see above),
+    // and THAT limit is independently anchored: tensorGradientStaticResidual
+    // checks it against regularizedDipoleForce's closed form to 7.4e-6.
     //
-    // Known still-incomplete: this remains a fixed-lab-time, fixed-velocity
-    // spatial gradient only.  A genuinely covariant point-dipole four-force
-    // also has a term from the FIELD'S time dependence (equivalently, the
-    // particle's own "hidden momentum" p_hidden=mu_lab x E/c^2) that this
-    // does not include, and which only shows up once the target is actually
-    // moving through a time-dependent field -- undetectable by a
-    // fixed-velocity static test.  An attempt to add that term via
-    // d/dt(coupling) plus a four-velocity mass-shell projection was tried
-    // and pulled back out: it reproduced the static limit exactly but
-    // failed an independent boosted-vs-rest four-force consistency check by
-    // an O(1) factor, isolated (by scanning the finite-difference step over
-    // three decades and the retained-history depth over two) to a real
-    // formula defect rather than a numerical one -- not identified with
-    // enough confidence to ship.  Tracked as an open item rather than
-    // silently reintroduced.
+    // Known still-incomplete, and now MEASURED rather than only described.
+    // dipoleGradientForceCovarianceResidual in maxwell_validation.hpp boosts
+    // this force alone -- isolated from the charge-charge Lorentz force that
+    // swamps it in covarianceForceResidual, and evaluated on states that
+    // actually carry velocity, which gradientDipoleState's target-at-rest
+    // setup cannot -- and compares the two frames as four-forces.  The gap
+    // is a factor of 265: the same configuration gives 3.26e-18 N at rest
+    // and 8.15e-16 N boosted to 0.35c, where a genuine four-force's spatial
+    // part may only change by O(gamma)=1.07.  Since the rest branch is the
+    // anchored one, it is the BOOSTED evaluation of this fixed-lab-time
+    // gradient that is wrong.
+    //
+    // Three things are now ruled out, so the next attempt need not repeat
+    // them:
+    //
+    //  - It is not numerical.  The boosted value is stable to six digits
+    //    across three decades of gradientStep (1e-3 to 1e-6 of r), so it is
+    //    not the pole-limit cancellation floor amplified by differencing.
+    //
+    //  - It is not Vaidman's hidden momentum.  Adding -d/dt(mu_lab x E/c^2)
+    //    (Am. J. Phys. 58, 978; Am. J. Phys. 65, 55) does null the residual,
+    //    but only with a scale factor of exactly 2(1+gamma_boost): 4.135042
+    //    at the test's 0.35c and 4.5 at 0.6c, both to six digits.  A force
+    //    law cannot know the boost it is being tested from, so that form is
+    //    merely PARALLEL to the missing term in this geometry.  Vaidman's
+    //    result is a low-velocity statement about a current loop in an
+    //    external field, not a covariant force law; promoting it to one is
+    //    the trap, and it is very probably the O(1) factor the earlier
+    //    attempt recorded here.
+    //
+    //  - It is not the mass-shell projection of the coupling's four-gradient
+    //    either.  F^a = d^a U - u^a(u.dU)/c^2 gives the extra lab term
+    //    -gamma v (DU/Dt)/c^2, which is real, carries no free coefficient
+    //    and vanishes at rest -- but it measures 2.6e-20 N against a 8.2e-16
+    //    N discrepancy, four orders of magnitude too small to be the answer.
+    //    dipoleCouplingMaterialRate above computes DU/Dt and is kept for
+    //    that measurement, which also supplies the sharpest localization of
+    //    the defect: the boosted-to-rest ratio of DU/Dt comes out as
+    //    0.93675939 against 1/gamma_boost=0.93675939, seven digits, exactly
+    //    the time dilation an invariant scalar's worldline derivative must
+    //    show.  U and its transport are covariant to the last digit
+    //    measured; only the spatial gradient taken from U is not.
+    //
+    // So the open item is narrower than "add a hidden-momentum term": it is
+    // that grad U on the LAB's simultaneity slice is not the spatial part of
+    // a four-vector for a moving target, and what replaces it has to be
+    // derived (Mathisson-Papapetrou-Dixon momentum-velocity relation under a
+    // stated spin supplementary condition) rather than borrowed.  Tracked as
+    // an open item rather than silently shipped: an unvalidated correction
+    // that happens to null one geometry is worse than a documented gap.
     return gradient/gamma(targetVelocity);
 }
 
