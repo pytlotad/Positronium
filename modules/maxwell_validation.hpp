@@ -2096,6 +2096,128 @@ int runMaxwellSelfTest(
         dipoleFieldAgreementAtBeta(0.3);
     const DipoleFieldAgreement dipoleFieldAgreementBetaFast=
         dipoleFieldAgreementAtBeta(0.8);
+    // retardedMagneticDipoleField declares its dynamic terms as coming from
+    // A_reg=w(r)[m(t_r)xn/r^2+mdot(t_r)xn/(cr)], but only multiplied the
+    // unregularized induction/radiation formulas by w(r) -- not the full
+    // curl(A_reg)=w curl(A)+grad(w) x A the product rule requires.  Check
+    // this directly rather than by re-deriving the missing term by eye a
+    // second time: evaluate the SAME A_reg at six points straddling a probe
+    // in the regularization transition zone (r=regularization radius, where
+    // dw/dr itself peaks), take its numerical curl, and compare to the same
+    // formula retardedMagneticDipoleField
+    // uses for its magnetic output.
+    //
+    // Probed with the weight profile directly (shortRangeFieldWeight,
+    // shortRangeFieldWeightDerivative, regularizedDipoleField), not through
+    // retardedMagneticDipoleField itself: for e+e- specifically,
+    // magneticRegularizationRadius's own transition zone sits inside
+    // separationFloor()'s Compton-barrier floor (83.6 fm vs 193.3 fm), so
+    // routing through the production function at a separation where the
+    // weight profile actually varies would also pull in
+    // clampedSeparationVector's floor -- a separate, unrelated
+    // regularization this finding says nothing about.  Testing the formula
+    // directly at a raw separation isolates the one thing being fixed; a
+    // source at rest keeps the retarded time an explicit r/c with no Newton
+    // solve or StateHistory needed either.
+    // Chosen so omega*regularizationRadius/c ~ 0.5: the induction term
+    // (mdot, order beta=omega r/c relative to the static term) must
+    // actually be a non-negligible fraction of the static term right at the
+    // probe below for the missing piece to show up as more than noise.
+    const double regularizationCurlOmega=
+        0.5*c/magneticRegularizationRadius;
+    const Vec3 regularizationCurlMomentAmplitude{
+        0.3*secondMagneticMoment,-0.7*secondMagneticMoment,
+        0.2*secondMagneticMoment};
+    const auto regularizationCurlMomentAt=[&](double tau) {
+        return regularizationCurlMomentAmplitude*std::cos(
+            regularizationCurlOmega*tau);
+    };
+    const auto regularizationCurlMomentRateAt=[&](double tau) {
+        return regularizationCurlMomentAmplitude
+            *(-regularizationCurlOmega*std::sin(regularizationCurlOmega*tau));
+    };
+    const auto regularizationCurlMomentAccelerationAt=[&](double tau) {
+        return regularizationCurlMomentAmplitude
+            *(-regularizationCurlOmega*regularizationCurlOmega
+                *std::cos(regularizationCurlOmega*tau));
+    };
+    const auto regularizationCurlVectorPotentialAt=[&](const Vec3& point) {
+        const double distance=point.norm();
+        const Vec3 direction=point/distance;
+        const double tau=-distance/c;
+        return (cross(regularizationCurlMomentAt(tau),direction)
+                    /(distance*distance)
+                +cross(regularizationCurlMomentRateAt(tau),direction)/(c*distance))
+            *(mu0/(4.0*pi)*shortRangeFieldWeight(distance));
+    };
+    const Vec3 regularizationCurlDirection=unit(Vec3{0.267,0.535,0.802});
+    const Vec3 regularizationCurlProbePoint=
+        regularizationCurlDirection*(1.0*magneticRegularizationRadius);
+    const double regularizationCurlStep=
+        1.0e-6*regularizationCurlProbePoint.norm();
+    Vec3 regularizationCurlReference;
+    for(int axis=0;axis<3;++axis) {
+        Vec3 offset;
+        if(axis==0) offset.x=regularizationCurlStep;
+        else if(axis==1) offset.y=regularizationCurlStep;
+        else offset.z=regularizationCurlStep;
+        const Vec3 plus=regularizationCurlVectorPotentialAt(
+            regularizationCurlProbePoint+offset);
+        const Vec3 minus=regularizationCurlVectorPotentialAt(
+            regularizationCurlProbePoint-offset);
+        const Vec3 derivative=(plus-minus)/(2.0*regularizationCurlStep);
+        // curl components: (dAz/dy-dAy/dz, dAx/dz-dAz/dx, dAy/dx-dAx/dy).
+        // Each axis contributes its column of that antisymmetric
+        // combination; summing all three assembles the full curl.
+        if(axis==0) {
+            regularizationCurlReference.y-=derivative.z;
+            regularizationCurlReference.z+=derivative.y;
+        } else if(axis==1) {
+            regularizationCurlReference.z-=derivative.x;
+            regularizationCurlReference.x+=derivative.z;
+        } else {
+            regularizationCurlReference.x-=derivative.y;
+            regularizationCurlReference.y+=derivative.x;
+        }
+    }
+    const double regularizationCurlDistance=regularizationCurlProbePoint.norm();
+    const double regularizationCurlTau=-regularizationCurlDistance/c;
+    const Vec3 regularizationCurlMoment=
+        regularizationCurlMomentAt(regularizationCurlTau);
+    const Vec3 regularizationCurlMomentRate=
+        regularizationCurlMomentRateAt(regularizationCurlTau);
+    const Vec3 regularizationCurlMomentAcceleration=
+        regularizationCurlMomentAccelerationAt(regularizationCurlTau);
+    const auto regularizationCurlTransversePattern=[&](const Vec3& v) {
+        return regularizationCurlDirection*(3.0*dot(regularizationCurlDirection,v))
+            -v;
+    };
+    const double regularizationCurlInverseDistance=1.0/regularizationCurlDistance;
+    const double regularizationCurlWeight=
+        shortRangeFieldWeight(regularizationCurlDistance);
+    constexpr double regularizationCurlCoefficient=mu0/(4.0*pi);
+    // Exactly retardedMagneticDipoleField's own missingInductionCurlTerm,
+    // evaluated here at the raw distance.
+    const Vec3 regularizationCurlMissingTerm=
+        (regularizationCurlMomentRate-regularizationCurlDirection
+            *dot(regularizationCurlDirection,regularizationCurlMomentRate))
+        *(shortRangeFieldWeightDerivative(regularizationCurlDistance)
+            /(c*regularizationCurlDistance))
+        *regularizationCurlCoefficient;
+    const Vec3 regularizationCurlField=
+        regularizedDipoleField(regularizationCurlProbePoint,
+            regularizationCurlMoment)
+        +(regularizationCurlTransversePattern(regularizationCurlMomentRate)
+              *(regularizationCurlInverseDistance*regularizationCurlInverseDistance
+                  /c)
+          +cross(regularizationCurlDirection,cross(regularizationCurlDirection,
+              regularizationCurlMomentAcceleration))
+              *(regularizationCurlInverseDistance/(c*c)))
+            *(regularizationCurlCoefficient*regularizationCurlWeight)
+        +regularizationCurlMissingTerm;
+    const double regularizedInductionCurlResidual=
+        (regularizationCurlField-regularizationCurlReference).norm()
+        /std::max(regularizationCurlReference.norm(),1.0e-300);
     State quadrupolePair=yeeCoupledState;
     quadrupolePair.firstPosition={-1.7*bohrRadius,0.4*bohrRadius,
                                       -0.2*bohrRadius};
@@ -3803,6 +3925,9 @@ int runMaxwellSelfTest(
         // is meaningless at any tolerance -- see its own comment above.
         &&std::isfinite(dipoleFieldAgreementBetaZero.leading)
         &&dipoleFieldAgreementBetaZero.leading<1.0e-4;
+    const bool regularizedInductionCurlOk=
+        std::isfinite(regularizedInductionCurlResidual)
+        &&regularizedInductionCurlResidual<1.0e-6;
     const bool massAndSelfForceOk=bareMassFraction>0.0
         &&electromagneticMassFraction>0.0
         &&electromagneticMassFraction<0.01
@@ -4180,6 +4305,7 @@ int runMaxwellSelfTest(
               << "electric dipole E: " << staticElectricDipoleResidual << '\n'
               << "tensor grad static:" << tensorGradientStaticResidual << '\n'
               << "dipole coupling inv:" << dipoleGradientCouplingInvarianceResidual << '\n'
+              << "induction curl vs A_reg:" << regularizedInductionCurlResidual << '\n'
               << "dipole field vs exact, leading (beta=0/alpha/0.3/0.8): "
                  << dipoleFieldAgreementBetaZero.leading << " / "
                  << dipoleFieldAgreementBetaAlpha.leading << " / "
@@ -4436,7 +4562,7 @@ int runMaxwellSelfTest(
         && quantizedDipoleTorqueTravel>0.1
         && disabledDipoleTorqueTravel==0.0
         && quantizedDipoleTorqueNormDrift<1.0e-12;
-    const std::array<ValidationCheck,46> regressionChecks{{
+    const std::array<ValidationCheck,47> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -4452,6 +4578,7 @@ int runMaxwellSelfTest(
         {ValidationSection::AlgebraicIdentity,"covariance",covarianceOk},
         {ValidationSection::PhysicalDomain,"particle-covariance",particleCovarianceOk},
         {ValidationSection::AlgebraicIdentity,"dipole-tensor-covariance",dipoleTensorCovarianceOk},
+        {ValidationSection::AlgebraicIdentity,"regularized-induction-curl",regularizedInductionCurlOk},
         {ValidationSection::NumericalRegression,"mass-and-self-force",massAndSelfForceOk},
         {ValidationSection::AlgebraicIdentity,"bound-current",boundCurrentOk},
         {ValidationSection::NumericalRegression,"retarded-initialization",retardedInitializationOk},

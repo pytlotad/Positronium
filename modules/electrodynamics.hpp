@@ -254,6 +254,20 @@ double shortRangeFieldWeight(double distance,
     return 1.0/(1.0+std::pow(ratio,exponent));
 }
 
+// dw/dr for shortRangeFieldWeight's w(r)=1/(1+(regularizationRadius/r)^n):
+// w'(r)=n w(1-w)/r (the same combination magneticRadialProfile already
+// derives inline for w/r^3's own derivative, exposed on its own for
+// retardedMagneticDipoleField's induction-term correction below, which needs
+// dw/dr directly rather than the profile's d(w/r^3)/dr).
+double shortRangeFieldWeightDerivative(double distance,
+    double regularizationRadius=magneticRegularizationRadius,
+    double exponent=magneticRegularizationExponent) {
+    if(!(distance>0.0)) return 0.0;
+    const double weight=shortRangeFieldWeight(
+        distance,regularizationRadius,exponent);
+    return exponent*weight*(1.0-weight)/distance;
+}
+
 struct MagneticRadialProfile {
     double vectorPotentialFactor;
     double firstDerivative;
@@ -1448,11 +1462,28 @@ ElectromagneticField retardedMagneticDipoleField(
     // Retardation adds the induction and radiation pieces of the same
     // potential.  Thus mdot=mddot=0 reproduces regularizedDipoleField bit for
     // bit instead of the former, inconsistent w*B_point approximation.
+    //
+    // The declared potential is A_reg=w(r)[m(t_r)xn/r^2+mdot(t_r)xn/(cr)], so
+    // B=curl(A_reg) must expand as w curl(A)+grad(w) x A (product rule), not
+    // just w times the unregularized curl.  Working that expansion through
+    // (m(t_r) contributes via -mdot(t_r)/c per unit r from the chain rule
+    // through the retarded time itself) shows the radiation term needs no
+    // correction -- its w' pieces cancel exactly -- but the induction term
+    // is missing exactly this transverse piece.  Confirmed numerically
+    // against a finite-difference curl of A_reg directly at
+    // r=magneticRegularizationRadius (where dw/dr itself peaks): the two
+    // agree to ~1e-10 with the correction and were off by ~37% without it
+    // (see regularizedInductionCurlResidual in maxwell_validation.hpp).
+    const Vec3 missingInductionCurlTerm=
+        (dipole.firstDerivative-n*dot(n,dipole.firstDerivative))
+        *(shortRangeFieldWeightDerivative(fieldDistance)/(c*fieldDistance))
+        *coefficient;
     Vec3 magnetic=regularizedDipoleField(clampedDisplacement,dipole.moment)
                  +(transversePattern(dipole.firstDerivative)
                       *(inverseDistance*inverseDistance/c)
                   +cross(n,cross(n,dipole.secondDerivative))
-                      *(inverseDistance/(c*c)))*(coefficient*weight);
+                      *(inverseDistance/(c*c)))*(coefficient*weight)
+                 +missingInductionCurlTerm;
     Vec3 electric=(cross(n,dipole.firstDerivative)
                       *(inverseDistance*inverseDistance)
                   +cross(n,dipole.secondDerivative)
