@@ -2007,6 +2007,95 @@ int runMaxwellSelfTest(
     const double dipoleGradientCouplingInvarianceResidual=
         std::abs(boostedCoupling-restCoupling)
         /std::max(std::abs(restCoupling),1.0e-300);
+    // How much does the low-velocity dipole field formula (the production
+    // retardedElectricDipoleField/retardedMagneticDipoleField, quoted as an
+    // approximation in positronium.cpp's top comment) actually differ from
+    // the exact retarded field of an arbitrarily moving point dipole
+    // (retardedElectricDipoleFieldExact/retardedMagneticDipoleFieldExact,
+    // the eps->0 limit of two Lienard-Wiechert point charges -- see
+    // twoChargeLimitDipoleField)?  A source in uniform motion (zero
+    // acceleration, constant lab-frame moment) isolates exactly the missing
+    // kappa=1-n.beta and direction-aberration corrections the low-velocity
+    // formula drops, at a sequence of speeds spanning the atomic scale
+    // (beta~alpha, where the model is actually used) up to a highly
+    // relativistic one (beta=0.8, well outside it).
+    //
+    // Two different things are measured, because they do not degrade the
+    // same way. "leading" tracks the channel each formula already has at
+    // v=0 (E of the electric dipole, B of the magnetic one) -- this is
+    // where kappa/aberration act as a genuine, smoothly growing correction
+    // to an existing term. "motional" tracks the OPPOSITE channel (B of
+    // the electric dipole, E of the magnetic one): with a constant
+    // lab-frame moment (no firstDerivative/secondDerivative to drive it)
+    // the low-velocity formula produces exactly zero there at any speed,
+    // while a moving dipole -- exact or not -- has a genuine motional
+    // field (the same p~(v x mu)/c^2 effect the dipole-tensor boost carries
+    // as its induced electric dipole). That channel is not a smoothly
+    // growing miss, it is a term the approximation cannot represent AT ALL
+    // once beta>0, so it saturates near 1 immediately instead of tracking
+    // beta -- reported for the record, not as a graded measurement.
+    //
+    // Neither is asserted against a hand-picked bound: the two formulas
+    // agree closely at beta=0 (checked below) and are expected to diverge
+    // past beta~alpha, but nothing here derives how fast, so the scan is
+    // reported as an informational diagnostic and only the beta=0
+    // agreement is an enforced check.
+    struct DipoleFieldAgreement { double leading=0.0, motional=0.0; };
+    const auto dipoleFieldAgreementAtBeta=[&](double beta) {
+        State movingDipoleState;
+        movingDipoleState.firstPosition={2.0*bohrRadius,0,0};
+        movingDipoleState.secondPosition={0,0,0};
+        movingDipoleState.secondVelocity={0,beta*c,0};
+        movingDipoleState.secondDipole={0,0,secondMagneticMoment};
+        movingDipoleState.secondElectricDipole={0.3*eCharge*bohrRadius,
+            0,0.1*eCharge*bohrRadius};
+        State movingDipolePast=movingDipoleState;
+        const double pastOffset=8.0*bohrRadius/c;
+        movingDipolePast.time=-pastOffset;
+        movingDipolePast.secondPosition=movingDipoleState.secondPosition
+            -movingDipoleState.secondVelocity*pastOffset;
+        const StateHistory movingDipoleHistory{
+            movingDipolePast,movingDipoleState};
+        const ElectromagneticField approximateElectric=
+            retardedElectricDipoleField(movingDipoleState.firstPosition,0.0,
+                movingDipoleHistory,movingDipoleState,false);
+        const ElectromagneticField exactElectric=
+            retardedElectricDipoleFieldExact(movingDipoleState.firstPosition,
+                0.0,movingDipoleHistory,movingDipoleState,false);
+        const ElectromagneticField approximateMagnetic=
+            retardedMagneticDipoleField(movingDipoleState.firstPosition,0.0,
+                movingDipoleHistory,movingDipoleState,false);
+        const ElectromagneticField exactMagnetic=
+            retardedMagneticDipoleFieldExact(movingDipoleState.firstPosition,
+                0.0,movingDipoleHistory,movingDipoleState,false);
+        const double electricScale=std::max(exactElectric.electric.norm(),
+            1.0e-300);
+        const double magneticScale=std::max(exactMagnetic.magnetic.norm(),
+            1.0e-300);
+        const double motionalElectricScale=std::max(
+            exactMagnetic.electric.norm(),1.0e-300);
+        const double motionalMagneticScale=std::max(
+            exactElectric.magnetic.norm(),1.0e-300);
+        return DipoleFieldAgreement{
+            std::max(
+                (approximateElectric.electric-exactElectric.electric).norm()
+                    /electricScale,
+                (approximateMagnetic.magnetic-exactMagnetic.magnetic).norm()
+                    /magneticScale),
+            std::max(
+                (approximateMagnetic.electric-exactMagnetic.electric).norm()
+                    /motionalElectricScale,
+                (approximateElectric.magnetic-exactElectric.magnetic).norm()
+                    /motionalMagneticScale)};
+    };
+    const DipoleFieldAgreement dipoleFieldAgreementBetaZero=
+        dipoleFieldAgreementAtBeta(0.0);
+    const DipoleFieldAgreement dipoleFieldAgreementBetaAlpha=
+        dipoleFieldAgreementAtBeta(fineStructureConstant);
+    const DipoleFieldAgreement dipoleFieldAgreementBetaModerate=
+        dipoleFieldAgreementAtBeta(0.3);
+    const DipoleFieldAgreement dipoleFieldAgreementBetaFast=
+        dipoleFieldAgreementAtBeta(0.8);
     State quadrupolePair=yeeCoupledState;
     quadrupolePair.firstPosition={-1.7*bohrRadius,0.4*bohrRadius,
                                       -0.2*bohrRadius};
@@ -3707,7 +3796,13 @@ int runMaxwellSelfTest(
         &&staticElectricDipoleResidual<1.0e-8
         &&tensorGradientStaticResidual<1.0e-5
         &&std::isfinite(dipoleGradientCouplingInvarianceResidual)
-        &&dipoleGradientCouplingInvarianceResidual<1.0e-2;
+        &&dipoleGradientCouplingInvarianceResidual<1.0e-2
+        // motional is deliberately not checked at beta=0: the true motional
+        // field vanishes there for BOTH formulas, so its ratio compares one
+        // side's exact zero to the other's floating-point noise floor and
+        // is meaningless at any tolerance -- see its own comment above.
+        &&std::isfinite(dipoleFieldAgreementBetaZero.leading)
+        &&dipoleFieldAgreementBetaZero.leading<1.0e-4;
     const bool massAndSelfForceOk=bareMassFraction>0.0
         &&electromagneticMassFraction>0.0
         &&electromagneticMassFraction<0.01
@@ -4085,6 +4180,16 @@ int runMaxwellSelfTest(
               << "electric dipole E: " << staticElectricDipoleResidual << '\n'
               << "tensor grad static:" << tensorGradientStaticResidual << '\n'
               << "dipole coupling inv:" << dipoleGradientCouplingInvarianceResidual << '\n'
+              << "dipole field vs exact, leading (beta=0/alpha/0.3/0.8): "
+                 << dipoleFieldAgreementBetaZero.leading << " / "
+                 << dipoleFieldAgreementBetaAlpha.leading << " / "
+                 << dipoleFieldAgreementBetaModerate.leading << " / "
+                 << dipoleFieldAgreementBetaFast.leading << '\n'
+              << "  ...motional channel, same betas: "
+                 << dipoleFieldAgreementBetaZero.motional << " / "
+                 << dipoleFieldAgreementBetaAlpha.motional << " / "
+                 << dipoleFieldAgreementBetaModerate.motional << " / "
+                 << dipoleFieldAgreementBetaFast.motional << '\n'
               << "pair patch cover:  " << productionInitialCoverage << " / "
               << productionMovedCoverage << '\n'
               << "pair patches moved:" << productionMovedPatches << '\n'
