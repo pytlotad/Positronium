@@ -24,6 +24,14 @@ struct OrbitAveragedBmtAngularVelocities {
     // two-body system; only the remainder receives an orbital reaction.
     Vec3 firstExternal;
     Vec3 secondExternal;
+    // < |d2(mu1+mu2)/dt2|^2 >, the orbit average of the SQUARED coherent
+    // second derivative of the pair's total moment -- the quantity the M1
+    // Larmor power is actually proportional to.  It is accumulated here, at
+    // each phase node, rather than reconstructed downstream from the averaged
+    // rates above, because those are two different numbers: < |mu''|^2 > is
+    // not |mu''(<omega>)|^2.  See the accumulation below for why the gap is
+    // not a refinement but the leading term.
+    double coherentSecondDerivativeSquared=0.0;
     int phaseNodes=0;
     bool valid=false;
 };
@@ -123,7 +131,7 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         double semiMajorAxis,const Vec3& orbitalAngularMomentum,
         const Vec3& firstDipole,const Vec3& secondDipole,
         double reducedMass,double accumulatedZeroPointPhase=0.0,
-        Vec3 periapsisDirection={}) {
+        Vec3 periapsisDirection={},int phaseNodeOverride=0) {
     OrbitAveragedBmtAngularVelocities result;
     if(!(semiMajorAxis>0.0)||!(reducedMass>0.0)
        ||!std::isfinite(semiMajorAxis)||!std::isfinite(reducedMass)
@@ -177,16 +185,45 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     // at e^2=0.945 the old 64 midpoint samples in M skipped the narrow peak,
     // whereas this grid contains E=0 exactly.  The analyticity strip narrows
     // as e approaches one, so refine only eccentric orbits.  Nested powers of
-    // two avoid the aliasing seen with unrelated node counts: a circle keeps
-    // the historical 64 evaluations, e^2=0.945 receives 256, and the cost is
-    // bounded at 512 near the parabolic limit.
+    // two avoid the aliasing seen with unrelated node counts, and a circle
+    // keeps the historical 64 evaluations.
+    //
+    // The schedule's CONSTANT is set by the M1 average below, not by the rate
+    // average this function is named for, because the two integrands are not
+    // equally peaked.  omega itself rises as (1-e cos E)^-3 towards periapsis,
+    // but |mu''|^2 carries omega' as well and rises as (1-e cos E)^-8: at
+    // e^2=0.945 that is 2.7e12 between apoapsis and periapsis against 4.6e4
+    // for the rate.  Measured refinement ladder for the M1 average at that
+    // eccentricity (validation's m1-secular-orbit-average prints it):
+    //
+    //     64      128     256     512     1024    2048   nodes
+    //     -70.8%  -29.5%  -8.6%   -2.2%   -0.57%  -0.14% against the limit
+    //     0.71    1.97    3.28    3.80    3.95           convergence order
+    //
+    // so the old 32/sqrt(1-e) constant, which selects 256 here, sat in the
+    // pre-asymptotic regime where the order ratio has not yet reached 4 and
+    // the value is still climbing by tens of percent per refinement.  Doubling
+    // the constant to 64 selects 512 and lands inside the asymptotic regime;
+    // the cap is raised to 2048 for the near-parabolic tail.  Circular orbits
+    // are unaffected (target 64, unchanged), so the extra cost falls only on
+    // the eccentric orbits that need it.
     const double targetPhaseNodes=
-        32.0/std::sqrt(std::max(1.0-eccentricity,1.0e-12));
+        64.0/std::sqrt(std::max(1.0-eccentricity,1.0e-12));
     int phaseNodes=64;
-    while(phaseNodes<512&&phaseNodes<targetPhaseNodes) phaseNodes*=2;
+    while(phaseNodes<2048&&phaseNodes<targetPhaseNodes) phaseNodes*=2;
+    // Validation refines this deliberately to measure the quadrature's own
+    // convergence -- see the m1-secular-orbit-average check.
+    if(phaseNodeOverride>=8) phaseNodes=phaseNodeOverride;
     result.phaseNodes=phaseNodes;
     Vec3 firstOmegaSum,secondOmegaSum;
     Vec3 firstExternalOmegaSum,secondExternalOmegaSum;
+    // Instantaneous rates kept per node, not just their running sum: the M1
+    // power below needs omega(E) itself and its derivative, neither of which
+    // survives averaging.
+    std::vector<Vec3> firstOmegaNodes(static_cast<std::size_t>(phaseNodes));
+    std::vector<Vec3> secondOmegaNodes(static_cast<std::size_t>(phaseNodes));
+    std::vector<double> timeWeightNodes(
+        static_cast<std::size_t>(phaseNodes));
     for(int node=0;node<phaseNodes;++node) {
         const double eccentricAnomaly=2.0*pi*node
             /static_cast<double>(phaseNodes);
@@ -245,12 +282,17 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
             externalAtSecond.electric+=secondElectric;
             externalAtSecond.magnetic+=secondMagnetic;
         }
-        firstOmegaSum+=thomasBmtEffectiveField(
+        const Vec3 firstOmega=thomasBmtEffectiveField(
             sample.firstVelocity,fields.atFirst,firstGFactor)
-                *(-firstCharge/firstMass*timeWeight);
-        secondOmegaSum+=thomasBmtEffectiveField(
+                *(-firstCharge/firstMass);
+        const Vec3 secondOmega=thomasBmtEffectiveField(
             sample.secondVelocity,fields.atSecond,secondGFactor)
-                *(-secondCharge/secondMass*timeWeight);
+                *(-secondCharge/secondMass);
+        firstOmegaNodes[static_cast<std::size_t>(node)]=firstOmega;
+        secondOmegaNodes[static_cast<std::size_t>(node)]=secondOmega;
+        timeWeightNodes[static_cast<std::size_t>(node)]=timeWeight;
+        firstOmegaSum+=firstOmega*timeWeight;
+        secondOmegaSum+=secondOmega*timeWeight;
         firstExternalOmegaSum+=thomasBmtEffectiveField(
             sample.firstVelocity,externalAtFirst,firstGFactor)
                 *(-firstCharge/firstMass*timeWeight);
@@ -258,6 +300,67 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
             sample.secondVelocity,externalAtSecond,secondGFactor)
                 *(-secondCharge/secondMass*timeWeight);
     }
+    // --- Orbit-averaged coherent M1 second derivative, < |mu''|^2 > ---
+    //
+    // For a moment of fixed magnitude carried by a precession omega(t),
+    // mu' = omega x mu exactly, hence
+    //
+    //     mu'' = omega' x mu + omega x (omega x mu).
+    //
+    // Both terms matter, and the FIRST is normally the larger one.  omega
+    // varies over the orbit on the orbital timescale, so |omega'| ~ n |omega|
+    // with n the mean motion, making the two terms' ratio |omega'x mu| /
+    // |omega x (omega x mu)| ~ n/|omega|.  For a spin-orbit precession -- a
+    // fine-structure-scale rate -- n/|omega| is large, so dropping omega' does
+    // not lose a correction, it loses the leading term.
+    //
+    // The average that the M1 Larmor power needs is < |mu''|^2 >, taken over
+    // the orbit, and NOT |mu''|^2 rebuilt from the orbit-averaged rates above.
+    // The two differ for the usual Jensen reason and the gap is not small
+    // here: the power is quartic in omega, while omega itself swings by
+    // (1+e)^3/(1-e)^3 between apoapsis and periapsis for an r^-3 field, so an
+    // average taken before squaring discards precisely the periapsis spike
+    // that dominates the emission.  Both particles are summed at each phase
+    // node BEFORE squaring, so the coherence between mu1'' and mu2'' -- and
+    // its correlation with orbital phase -- is kept; summing two separately
+    // averaged powers would discard exactly that cross term.
+    //
+    // omega' is taken on the same periodic node ring, by central difference in
+    // eccentric anomaly and the chain rule dE/dt = n/(1-e cos E): the nodes
+    // are uniform in E and the ring is closed, so the difference is spectrally
+    // clean and needs no extra field evaluations.
+    const double nodeCount=static_cast<double>(phaseNodes);
+    const double eccentricAnomalyStep=2.0*pi/nodeCount;
+    double secondDerivativeSquaredSum=0.0;
+    for(int node=0;node<phaseNodes;++node) {
+        const std::size_t here=static_cast<std::size_t>(node);
+        const std::size_t next=static_cast<std::size_t>(
+            (node+1)%phaseNodes);
+        const std::size_t previous=static_cast<std::size_t>(
+            (node+phaseNodes-1)%phaseNodes);
+        const double timeWeight=timeWeightNodes[here];
+        if(!(timeWeight>0.0)) return result;
+        const double eccentricAnomalyRate=meanMotion/timeWeight;
+        const Vec3 firstOmegaRate=
+            (firstOmegaNodes[next]-firstOmegaNodes[previous])
+                *(eccentricAnomalyRate/(2.0*eccentricAnomalyStep));
+        const Vec3 secondOmegaRate=
+            (secondOmegaNodes[next]-secondOmegaNodes[previous])
+                *(eccentricAnomalyRate/(2.0*eccentricAnomalyStep));
+        const Vec3 totalSecondDerivative=
+            cross(firstOmegaRate,firstDipole)
+            +cross(firstOmegaNodes[here],
+                cross(firstOmegaNodes[here],firstDipole))
+            +cross(secondOmegaRate,secondDipole)
+            +cross(secondOmegaNodes[here],
+                cross(secondOmegaNodes[here],secondDipole));
+        if(!isFinite(totalSecondDerivative)) return result;
+        secondDerivativeSquaredSum+=
+            totalSecondDerivative.squaredNorm()*timeWeight;
+    }
+    result.coherentSecondDerivativeSquared=
+        secondDerivativeSquaredSum/nodeCount;
+
     result.first=firstOmegaSum*(1.0/static_cast<double>(phaseNodes));
     result.second=secondOmegaSum*(1.0/static_cast<double>(phaseNodes));
     result.firstExternal=
@@ -265,7 +368,9 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     result.secondExternal=
         secondExternalOmegaSum*(1.0/static_cast<double>(phaseNodes));
     result.valid=isFinite(result.first)&&isFinite(result.second)
-        &&isFinite(result.firstExternal)&&isFinite(result.secondExternal);
+        &&isFinite(result.firstExternal)&&isFinite(result.secondExternal)
+        &&std::isfinite(result.coherentSecondDerivativeSquared)
+        &&result.coherentSecondDerivativeSquared>=0.0;
     return result;
 }
 

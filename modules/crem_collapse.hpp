@@ -405,20 +405,35 @@ double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity) {
 }
 
 // Orbit-averaged coherent M1 power from the pair's OWN carried magnetic
-// moments, steadily precessing at the orbit-averaged Thomas-BMT rates
-// orbitAveragedBmtAngularVelocities already derives for the coupled secular
-// spin-orbit solver (secular_spin_orbit.hpp).  For a moment precessing at
-// fixed angular velocity omega with unchanging magnitude and unchanging
-// angle to omega, d(dipole)/dt=omega x dipole exactly -- the same relation
-// rotateDipoleByAngularVelocity already uses to advance it -- so
-// d^2(dipole)/dt^2=omega x (omega x dipole), no assumption beyond what
-// advancing the secular state already makes.  Coherent because amplitudes
-// add before squaring (the second derivative of mu=mu1+mu2, not the sum of
-// the two particles' individual powers), matching
+// moments, precessing at the Thomas-BMT rates orbitAveragedBmtAngularVelocities
+// derives for the coupled secular spin-orbit solver (secular_spin_orbit.hpp).
+// Coherent because amplitudes add before squaring (the second derivative of
+// mu=mu1+mu2, not the sum of the two particles' individual powers), matching
 // coherentMagneticDipoleRadiationReaction's mu0/(6 pi c^3) coefficient
 // exactly.  Two precession rates rather than one shared rate: they differ
 // whenever the gyromagnetic ratios do (e.g. p+e-), and nothing here assumes
 // otherwise.
+//
+// The average is a REAL orbit average of the squared second derivative,
+// < |mu1''(E)+mu2''(E)|^2 >, accumulated node by node inside
+// orbitAveragedBmtAngularVelocities (which already walks the eccentric
+// anomaly with the fields in hand, so this costs no extra field evaluation).
+// It previously built mu'' out of the orbit-AVERAGED rates and squared that
+// instead, which is a different quantity in two ways, neither of them a
+// refinement:
+//
+//   - |mu''(<omega>)|^2 is not < |mu''(omega)|^2 >.  The power is quartic in
+//     omega while omega itself swings by (1+e)^3/(1-e)^3 across an eccentric
+//     orbit, so averaging before squaring throws away the periapsis spike
+//     that dominates the emission, and loses the correlation between the two
+//     moments' contributions and the orbital phase.
+//
+//   - It dropped omega' x mu from mu'' = omega' x mu + omega x (omega x mu)
+//     altogether, because a single averaged rate is by construction constant.
+//     That term is not small: |omega'| ~ n |omega| over the orbit, so it
+//     exceeds the retained one by n/|omega|, which for a fine-structure-scale
+//     spin-orbit precession is large.  The old form was missing the leading
+//     term, not a correction to it.
 //
 // Previously missing from expectedLossPerOrbit below with the justification
 // that "the osculating elements carry no spin state for an M1 power to be
@@ -441,14 +456,7 @@ double coherentMagneticDipoleOrbitAveragedPower(
             orbitalAngularMomentum,firstDipole,secondDipole,reducedMass,
             zeroPointPhase,periapsisDirection);
     if(!rates.valid) return 0.0;
-    const auto steadyPrecessionSecondDerivative=
-        [](const Vec3& dipole,const Vec3& angularVelocity) {
-            return cross(angularVelocity,cross(angularVelocity,dipole));
-        };
-    const Vec3 totalSecondDerivative=
-        steadyPrecessionSecondDerivative(firstDipole,rates.first)
-        +steadyPrecessionSecondDerivative(secondDipole,rates.second);
-    return mu0*totalSecondDerivative.squaredNorm()/(6.0*pi*c*c*c);
+    return mu0*rates.coherentSecondDerivativeSquared/(6.0*pi*c*c*c);
 }
 
 // --- Eccentric-orbit harmonic content, CREM_HARMONIC ---

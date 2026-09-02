@@ -1611,6 +1611,69 @@ int runMaxwellSelfTest(
             secularEccentricReferenceAxis,secularReferenceAngularMomentum,
             secularInitial.firstDipole,secularInitial.secondDipole,
             pairReducedMass,0.0,secularReferenceRadial);
+    // --- Secular M1 orbit average: convergence, and that it IS an average ---
+    //
+    // coherentMagneticDipoleOrbitAveragedPower is proportional to
+    // < |mu1''(E)+mu2''(E)|^2 >, accumulated node by node.  Two things need
+    // guarding, and neither was checkable while the quantity was rebuilt
+    // downstream from the averaged rates.
+    //
+    // Convergence first.  mu'' contains omega' x mu, so the quadrature
+    // DIFFERENTIATES omega(E) by central difference on the node ring, and
+    // |mu''|^2 is peaked as (1-e cos E)^-8 against the rate average's
+    // (1-e cos E)^-3.  That makes this number, not the rates, the binding
+    // constraint on orbitAveragedBmtAngularVelocities' node schedule -- see
+    // its own comment for the measured ladder and why the constant there was
+    // doubled.  The nodes tested here (512/1024/2048) are the asymptotic
+    // regime: below ~512 at this eccentricity the order ratio has not yet
+    // reached 4 and the value is still climbing tens of percent per
+    // refinement, so a check anchored there would be measuring the
+    // pre-asymptotic transient rather than the answer.
+    const auto secularM1AverageAtNodes=[&](int nodes) {
+        return orbitAveragedBmtAngularVelocities(
+            secularEccentricReferenceAxis,secularReferenceAngularMomentum,
+            secularInitial.firstDipole,secularInitial.secondDipole,
+            pairReducedMass,0.0,secularReferenceRadial,nodes)
+                .coherentSecondDerivativeSquared;
+    };
+    const double secularM1Coarse=secularM1AverageAtNodes(512);
+    const double secularM1Medium=secularM1AverageAtNodes(1024);
+    const double secularM1Fine=secularM1AverageAtNodes(2048);
+    const double secularM1CoarseChange=
+        std::abs(secularM1Medium-secularM1Coarse);
+    const double secularM1FineChange=std::abs(secularM1Fine-secularM1Medium);
+    const double secularM1RelativeChange=secularM1FineChange
+        /std::max(std::abs(secularM1Fine),1.0e-300);
+    // And that it is an average of the square rather than a square of the
+    // average.  Rebuilding mu'' from the orbit-averaged rates -- what this
+    // used to do -- is a strictly smaller number: it drops omega' x mu, whose
+    // ratio to the retained term is ~n/|omega| (large for a fine-structure
+    // precession), and it averages before squaring a quartic-in-omega
+    // quantity, discarding the periapsis spike.  Measured on the production
+    // ground-state orbit the true average is ~1.9e9 times the naive one, and
+    // the (n/|omega|)^2 estimate independently predicts ~3.5e8, so this
+    // margin is enormous and the check only has to catch a regression to the
+    // old form, not police a tight number.
+    const Vec3 secularM1NaiveSecondDerivative=
+        cross(secularEccentricAverage.first,
+            cross(secularEccentricAverage.first,secularInitial.firstDipole))
+        +cross(secularEccentricAverage.second,
+            cross(secularEccentricAverage.second,secularInitial.secondDipole));
+    const double secularM1NaiveRatio=secularM1Fine
+        /std::max(secularM1NaiveSecondDerivative.squaredNorm(),1.0e-300);
+    const bool secularM1OrbitAverageOk=
+        secularEccentricAverage.valid
+        &&std::isfinite(secularM1Coarse)&&secularM1Coarse>0.0
+        &&std::isfinite(secularM1Medium)&&secularM1Medium>0.0
+        &&std::isfinite(secularM1Fine)&&secularM1Fine>0.0
+        // Refinement converges, and at the expected second order.  The 2.5
+        // floor is loose against the 4.0 a central difference gives, and
+        // tight against the 1.0 a noise-dominated derivative would give.
+        &&secularM1FineChange<secularM1CoarseChange
+        &&secularM1CoarseChange>2.5*secularM1FineChange
+        &&secularM1RelativeChange<1.0e-2
+        // Still a real average, not the collapsed naive form.
+        &&secularM1NaiveRatio>1.0e3;
     const Vec3 secularReferenceTangential=cross(
         secularReferenceNormal,secularReferenceRadial);
     Vec3 dimensionlessPosition=secularReferenceRadial
@@ -1663,7 +1726,7 @@ int runMaxwellSelfTest(
         return std::pair<Vec3,Vec3>{
             velocity,position*(-1.0/(radius*radius*radius))};
     };
-    constexpr int resolvedEccentricOrbitSteps=32768;
+    constexpr int resolvedEccentricOrbitSteps=65536;
     constexpr int mechanicalSubstepsPerRateSample=32;
     const double resolvedEccentricOrbitStep=
         2.0*pi/static_cast<double>(
@@ -1777,7 +1840,7 @@ int runMaxwellSelfTest(
             <0.6*secularCoarseFineDifference
         &&secularFineReferenceDifference<1.0e-3;
     const bool secularEccentricOrbitOk=secularEccentricAverage.valid
-        &&secularEccentricAverage.phaseNodes==256
+        &&secularEccentricAverage.phaseNodes==512
         &&resolvedEccentricOrbitSteps
             >=100*secularEccentricAverage.phaseNodes
         &&std::isfinite(secularEccentricResolvedResidual)
@@ -4597,6 +4660,11 @@ int runMaxwellSelfTest(
               << coherentReactionMomentumResidual << '\n'
               << "coherent M1 +/-:     " << alignedMagneticPowerRatio << " / "
               << cancellingMagneticPowerRatio << '\n'
+              << "M1 orbit avg 512/1k/2k: " << secularM1Coarse << " / "
+                 << secularM1Medium << " / " << secularM1Fine
+                 << "  (order " << (secularM1CoarseChange
+                     /std::max(secularM1FineChange,1.0e-300))
+                 << ", vs naive x" << secularM1NaiveRatio << ")\n"
               << "coherent M1 T/J/P/PC:" << magneticTorqueResidual << " / "
               << magneticAngularFluxResidual << " / "
               << magneticMomentumResidual << " / "
@@ -4757,7 +4825,7 @@ int runMaxwellSelfTest(
         && quantizedDipoleTorqueTravel>0.1
         && disabledDipoleTorqueTravel==0.0
         && quantizedDipoleTorqueNormDrift<1.0e-12;
-    const std::array<ValidationCheck,48> regressionChecks{{
+    const std::array<ValidationCheck,49> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -4793,6 +4861,7 @@ int runMaxwellSelfTest(
         {ValidationSection::AlgebraicIdentity,"coupled-secular-spin-orbit",secularSpinOrbitIdentityOk},
         {ValidationSection::Convergence,"coupled-secular-spin-orbit-convergence",secularSpinOrbitConvergenceOk},
         {ValidationSection::Convergence,"secular-eccentric-orbit",secularEccentricOrbitOk},
+        {ValidationSection::Convergence,"m1-secular-orbit-average",secularM1OrbitAverageOk},
         {ValidationSection::AlgebraicIdentity,"quantized-radiation-gating",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"state-integrity",stateIntegrityOk},
