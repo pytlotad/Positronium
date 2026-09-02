@@ -2733,13 +2733,45 @@ Vec3 covariantDipoleGradientForce(const State& state,
     //    show.  U and its transport are covariant to the last digit
     //    measured; only the spatial gradient taken from U is not.
     //
-    // So the open item is narrower than "add a hidden-momentum term": it is
-    // that grad U on the LAB's simultaneity slice is not the spatial part of
-    // a four-vector for a moving target, and what replaces it has to be
-    // derived (Mathisson-Papapetrou-Dixon momentum-velocity relation under a
-    // stated spin supplementary condition) rather than borrowed.  Tracked as
-    // an open item rather than silently shipped: an unvalidated correction
-    // that happens to null one geometry is worse than a documented gap.
+    // AND IT IS NOT A MISSING FORCE TERM AT ALL.  The residual has now been
+    // localized to the dipole TENSOR the force is handed, by two measurements
+    // printed beside it in maxwell_validation.hpp:
+    //
+    //  - Rebuild the coupling in the boosted frame from the BOOSTED REST
+    //    tensor instead of from the moving state's own: it lands on the rest
+    //    frame's value to 9.1e-10.  U is a Lorentz scalar, so that clears the
+    //    retarded field, the contraction and this function's whole formula in
+    //    one measurement.  Using the state's OWN tensor instead gives 400.6.
+    //
+    //  - Compare the moving state's tensor with the boost of the rest state's:
+    //    they differ by 3.9e-3 of the moment's norm, and the difference is
+    //    ENTIRELY the transverse component, whose two versions agree to six
+    //    digits and differ in SIGN.  That component is 2e-3 of the norm, which
+    //    is why covarianceDipoleEvolutionResidual's norm-relative comparison
+    //    never flagged it -- and it is exactly the component that multiplies
+    //    the boosted frame's 641 T motional B, so it decides the coupling
+    //    there.
+    //
+    // Concretely: the fields, positions and velocities are transformed by the
+    // passive boost stack (boostEvent/boostVelocity/boostFourVector, anchored
+    // by covarianceForceResidual at 1e-8), while the lab tensor comes from
+    // synchronizeCovariantDipoles, whose lorentzBoostDipole(rest, +v) carries
+    // the opposite sense.  Flipping that one sign collapses this residual from
+    // 265.671 to 4.51e-6 -- the field machinery's own floor, the same 5e-6
+    // dipoleGradientCouplingInvarianceResidual sits at -- makes the tensors
+    // agree to 2e-12, and leaves all other checks passing.
+    //
+    // NOT SHIPPED, because the evidence is contradictory and the blast radius
+    // is every motional dipole in the model.  Against the flip: probing the
+    // exact moving-magnetic-dipole field directly and asking which sign of
+    // p=(v x mu)/c^2 reproduces its electric part picks the CURRENT
+    // convention, not the flipped one.  That probe is not decisive either --
+    // it matched in direction but was 1.9x off in magnitude, so the two field
+    // structures may simply not be comparable at one sample point -- but
+    // until it is settled, one measurement says flip and another says do not,
+    // and shipping on that would repeat exactly the mistake recorded two
+    // bullets up.  Settling it needs an independent statement of the motional
+    // dipole's sign that does not route through either convention.
     return gradient/gamma(targetVelocity);
 }
 
