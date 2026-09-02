@@ -446,7 +446,24 @@ double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity) {
 // (see crem_trajectory.hpp's ground-state-floor comment and README's Sonda
 // 4). Only ortho (S=1, parallel spins, anti-aligned moments) has the exact
 // cancellation the removed justification described.
-double coherentMagneticDipoleOrbitAveragedPower(
+// Power AND the axis an M1 photon from this channel is emitted about, returned
+// together because both come from the same orbit walk and re-running it just
+// to recover the axis would double the cost of every checkpoint.  The axis is
+// cross(m,mdot) for the COHERENT moment m=mu1+mu2, matching what the resolved
+// mechanical path (crem_trajectory.hpp) builds from
+// historicalDipoleKinematics: an M1 photon does not come from the orbiting
+// charge, so it must not be drawn about the orbital normal.  mdot is taken
+// from the same orbit-averaged rates the power is, mdot=omega1 x mu1 +
+// omega2 x mu2.
+struct CoherentMagneticDipoleEmission {
+    double power=0.0;
+    // Zero when the coherent moment is not precessing (m parallel to mdot, or
+    // either vanishing).  Callers fall back to the orbital normal there, as
+    // the mechanical path does: a non-precessing coherent moment radiates
+    // negligibly, so only the AXIS estimate degenerates, never the power.
+    Vec3 precessionAxis;
+};
+CoherentMagneticDipoleEmission coherentMagneticDipoleOrbitAveragedEmission(
         double semiMajorAxis,const Vec3& orbitalAngularMomentum,
         const Vec3& firstDipole,const Vec3& secondDipole,
         double reducedMass,double zeroPointPhase=0.0,
@@ -455,8 +472,15 @@ double coherentMagneticDipoleOrbitAveragedPower(
         orbitAveragedBmtAngularVelocities(semiMajorAxis,
             orbitalAngularMomentum,firstDipole,secondDipole,reducedMass,
             zeroPointPhase,periapsisDirection);
-    if(!rates.valid) return 0.0;
-    return mu0*rates.coherentSecondDerivativeSquared/(6.0*pi*c*c*c);
+    if(!rates.valid) return {};
+    CoherentMagneticDipoleEmission emission;
+    emission.power=mu0*rates.coherentSecondDerivativeSquared/(6.0*pi*c*c*c);
+    const Vec3 coherentMoment=firstDipole+secondDipole;
+    const Vec3 coherentMomentRate=cross(rates.first,firstDipole)
+        +cross(rates.second,secondDipole);
+    const Vec3 axis=cross(coherentMoment,coherentMomentRate);
+    if(isFinite(axis)&&axis.norm()>0.0) emission.precessionAxis=axis;
+    return emission;
 }
 
 // --- Eccentric-orbit harmonic content, CREM_HARMONIC ---
@@ -2555,17 +2579,30 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             -attractionParameter/(2.0*elements.specificEnergy);
         const Vec3 orbitalAngularMomentumVector=angularMomentumDirection
             *(elements.specificAngularMomentum*reducedMass);
+        // The two channels are kept SEPARATE from here on, not pre-summed.
+        // They differ in more than magnitude: E1 comes from the orbiting
+        // charge, so it carries the Kepler harmonic series and radiates about
+        // the orbital normal, while M1 comes from the precessing coherent
+        // moment, which has neither.  Summing them here and drawing every
+        // photon as E1 -- what this used to do -- gives the M1 share the wrong
+        // spectrum and the wrong axis.  See the emission block below.
+        const double electricPowerForLoss=isStochastic
+            ?larmorOrbitAveragedPower(
+                 semiMajorAxisForLoss,
+                 std::sqrt(std::max(0.0,1.0+2.0*elements.specificEnergy
+                     *elements.specificAngularMomentum
+                     *elements.specificAngularMomentum
+                     /(attractionParameter*attractionParameter))))
+            :0.0;
+        const CoherentMagneticDipoleEmission magneticEmissionForLoss=
+            isStochastic
+                ?coherentMagneticDipoleOrbitAveragedEmission(
+                     semiMajorAxisForLoss,orbitalAngularMomentumVector,
+                     firstDipole,secondDipole,reducedMass,zeroPointPhase,
+                     periapsisDirection)
+                :CoherentMagneticDipoleEmission{};
         const double expectedLossPerOrbit=isStochastic
-            ?(larmorOrbitAveragedPower(
-                  semiMajorAxisForLoss,
-                  std::sqrt(std::max(0.0,1.0+2.0*elements.specificEnergy
-                      *elements.specificAngularMomentum
-                      *elements.specificAngularMomentum
-                      /(attractionParameter*attractionParameter))))
-              +coherentMagneticDipoleOrbitAveragedPower(
-                  semiMajorAxisForLoss,orbitalAngularMomentumVector,
-                  firstDipole,secondDipole,reducedMass,zeroPointPhase,
-                  periapsisDirection))
+            ?(electricPowerForLoss+magneticEmissionForLoss.power)
                  *period/reducedMass
             :0.0;
         if(isStochastic
@@ -2906,10 +2943,38 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 // nothing ever fires), so the rate itself has to go to zero.
                 const bool atGroundState=gGroundStateEmissionFloor
                     &&elements.specificEnergy<=groundStateSpecificEnergy();
-                const double skipHazard=atGroundState?0.0
-                    :lossPerOrbit*reducedMass
-                    /hazardReference
+                // Per-channel hazards, because the two channels convert power
+                // into COUNTS at different quanta.  E1 is spread over the
+                // Kepler harmonic series, so its rate carries the S(e)
+                // suppression hazardReference folds in; M1 comes from the
+                // precessing coherent moment, which has no orbital harmonic
+                // structure at all, so applying S(e) to it would invent an
+                // event-rate suppression for a spectrum that was never spread
+                // (at e=0.9 that is a factor of 16).  Its quantum is the
+                // unsuppressed reference, the same unified hbar*omega_orb the
+                // resolved mechanical path deliberately uses for M1.
+                //
+                // The envelope identity below is preserved EXACTLY by this
+                // split, and not by coincidence: each channel's hazard is
+                // (its energy)/(its reference), so multiplying each back by
+                // its own reference and summing returns the total energy
+                // whatever the two references are.  That is the same reason
+                // the identity never depended on hazardReference's value.
+                const double magneticLossFraction=
+                    (electricPowerForLoss+magneticEmissionForLoss.power)>0.0
+                        ?magneticEmissionForLoss.power
+                            /(electricPowerForLoss
+                              +magneticEmissionForLoss.power)
+                        :0.0;
+                const double skipEnergy=lossPerOrbit*reducedMass
                     *static_cast<double>(orbitsToSkip)*integralFactor;
+                const double electricSkipHazard=atGroundState?0.0
+                    :skipEnergy*(1.0-magneticLossFraction)/hazardReference;
+                const double magneticSkipHazard=
+                    (atGroundState||!(photonEnergyReference>0.0))?0.0
+                    :skipEnergy*magneticLossFraction/photonEnergyReference;
+                const double skipHazard=
+                    electricSkipHazard+magneticSkipHazard;
                 double hazardConsumedThisSkip=0.0;
                 // Hazard-side reassembly of the same checkpoint envelope
                 // (see the three totals' comment on CremCollapseEstimate).
@@ -2948,8 +3013,14 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         :1.0;
                     const double envelopeHere=
                         (updatedEnergyMagnitude-energyMagnitude)*reducedMass;
+                    // Each channel reassembled against its OWN quantum, so
+                    // this stays the same total energy the single-channel
+                    // form gave: hazard_E1*ref_E1 + hazard_M1*ref_M1 =
+                    // skipEnergy either way.
                     const double hazardSideHere=
-                        skipHazard*hazardReference*meanInSkipGrowth;
+                        (electricSkipHazard*hazardReference
+                         +magneticSkipHazard*photonEnergyReference)
+                            *meanInSkipGrowth;
                     result.classicalEnvelopeEnergyJoules+=envelopeHere;
                     result.expectedQuantizedEnergyJoules+=hazardSideHere;
                     // ENFORCED, per checkpoint, not per batch.  This is an
@@ -3155,7 +3226,53 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // should reflect the orbit it actually fired from,
                     // refreshed above for every photon after the first in
                     // the same cascade (README point E4).
-                    const int harmonicNumber=harmonicCorrection
+                    // Which channel THIS photon belongs to, drawn with
+                    // probability equal to that channel's share of the
+                    // combined COUNT rate (not power: a rare, large quantum
+                    // still fires only once).  The two hazards above are
+                    // already counts, so their ratio is exactly that share.
+                    // Mirrors the resolved mechanical path's own channel draw
+                    // in crem_trajectory.hpp.
+                    const double magneticChannelShare=skipHazard>0.0
+                        ?magneticSkipHazard/skipHazard:0.0;
+                    // CREM_FORCE_M1 overrides the channel probability, the
+                    // same "anything other than the physical value is a
+                    // numerical experiment" shape as --zpf-scale.  It exists
+                    // because the M1 branch is otherwise unreachable in
+                    // practice and so would ship untested: the measured share
+                    // runs 4.8e-19 at the n=2 start to 8.5e-15 by the time the
+                    // orbit has tightened, i.e. no M1 photon is ever drawn in
+                    // a real run.  Forced to 1 it confirms what the branch
+                    // does -- harmonicNumber comes out 1 for every photon, and
+                    // the emission direction stops lying on the orbital normal
+                    // (measured: cos(theta) from its own axis 0.943 against
+                    // dot(direction, Ldir) 0.888 for the same photon).
+                    const char* forcedMagneticShare=std::getenv("CREM_FORCE_M1");
+                    const bool magneticPhoton=skipHazard>0.0
+                        &&drawUniformUnit(stochasticSkipStream)
+                            <(forcedMagneticShare
+                                ?std::atof(forcedMagneticShare)
+                                :magneticChannelShare);
+                    if(std::getenv("CREM_DEBUG_M1"))
+                        std::cerr<<"    M1_CHANNEL share="<<magneticChannelShare
+                            <<" magneticPhoton="<<magneticPhoton
+                            <<" precessionAxis="
+                            <<magneticEmissionForLoss.precessionAxis.norm()
+                            <<" P_M1/P_E1="<<(electricPowerForLoss>0.0
+                                ?magneticEmissionForLoss.power
+                                    /electricPowerForLoss:0.0)<<'\n';
+                    // An M1 photon carries NO orbital harmonic.  The harmonic
+                    // series eccentricOrbitHarmonicNumber samples is the
+                    // Fourier content of the Kepler orbit itself -- the
+                    // orbiting charge's E1 spectrum -- and the precessing
+                    // coherent moment simply does not have it; its emission
+                    // sits near the precession rate, which is why the
+                    // mechanical path keeps M1 at the unified fundamental
+                    // too.  Drawing an n=39 harmonic for an M1 photon would
+                    // multiply its energy by a spectral structure belonging
+                    // to a different source.
+                    const int harmonicNumber=(harmonicCorrection
+                                              &&!magneticPhoton)
                         ?std::max(1,static_cast<int>(std::lround(
                             eccentricOrbitHarmonicNumber(
                                 effectiveEccentricityHere,
@@ -3219,13 +3336,26 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         if(roomToFloor<=0.0) break;
                         photonEnergy=std::min(photonEnergy,roomToFloor);
                     }
-                    // Photon emission angle relative to the CURRENT orbital
-                    // plane normal, drawn from the actual angular pattern of
-                    // a rotating (not linearly oscillating) E1 dipole:
+                    // Photon emission angle relative to THIS PHOTON'S OWN
+                    // rotation axis, drawn from the actual angular pattern of
+                    // a rotating (not linearly oscillating) dipole:
                     // dP/dOmega proportional to (1+cos^2(theta)), theta from
-                    // the angular-momentum axis -- maximal along the axis,
-                    // half that in the plane, not the sin^2(theta)
+                    // that axis -- maximal along it, half that in the plane
+                    // perpendicular to it, not the sin^2(theta)
                     // (in-plane-maximal) pattern of a single linear dipole.
+                    //
+                    // The (1+cos^2) LAW is shared by both channels, because
+                    // both are rotating dipoles; what is NOT shared is the
+                    // axis.  E1 rotates with the orbiting charge, so its axis
+                    // is the orbital normal.  M1 is the coherent moment
+                    // mu1+mu2 precessing, whose rotation axis is
+                    // cross(m,mdot) -- a completely different direction, and
+                    // in general not even close to the orbital normal.  Using
+                    // the orbital normal for both, as this used to, points
+                    // the M1 share's whole angular distribution (and hence
+                    // its recoil) along the wrong axis.  Same fallback rule
+                    // as the mechanical path: an unresolvable precession axis
+                    // reverts to the orbital normal.
                     // Inverted in closed form via Cardano's formula for the
                     // depressed cubic mu^3+3mu+(4-8u)=0 that solving
                     // CDF(mu)=u for this distribution reduces to (mu=cos
@@ -3242,19 +3372,29 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     const double cosThetaFromAxis=
                         signedCbrt(-cardanoQ/2.0+cardanoSqrt)
                         +signedCbrt(-cardanoQ/2.0-cardanoSqrt);
-                    // Shared orthonormal basis (e1,e2) perpendicular to the
-                    // current orbital-plane normal -- reused below for both
-                    // the photon's own emission azimuth (real recoil) and
-                    // the tilt axis (unknown-phase random walk).  Nothing
-                    // physical ties a "reference" azimuth to either use, so
-                    // one basis serves both.
+                    // This photon's own rotation axis, per the channel drawn
+                    // above.  magneticEmissionForLoss.precessionAxis is left
+                    // zero when the coherent moment is not actually
+                    // precessing, which is the documented fallback to the
+                    // orbital normal.
+                    Vec3 photonEmissionAxis=angularMomentumDirection;
+                    if(magneticPhoton
+                       &&magneticEmissionForLoss.precessionAxis.norm()>0.0) {
+                        photonEmissionAxis=
+                            magneticEmissionForLoss.precessionAxis
+                            *(1.0/magneticEmissionForLoss
+                                  .precessionAxis.norm());
+                    }
+                    // Orthonormal basis (e1,e2) perpendicular to THIS
+                    // photon's emission axis.  Nothing physical ties a
+                    // "reference" azimuth to it, so any basis will do.
                     const Vec3 seedAxis=
-                        std::abs(angularMomentumDirection.z)<0.9
+                        std::abs(photonEmissionAxis.z)<0.9
                             ?Vec3{0.0,0.0,1.0}:Vec3{1.0,0.0,0.0};
-                    Vec3 inPlaneFirst=cross(angularMomentumDirection,seedAxis);
+                    Vec3 inPlaneFirst=cross(photonEmissionAxis,seedAxis);
                     inPlaneFirst=inPlaneFirst*(1.0/inPlaneFirst.norm());
                     const Vec3 inPlaneSecond=
-                        cross(angularMomentumDirection,inPlaneFirst);
+                        cross(photonEmissionAxis,inPlaneFirst);
                     const double sinThetaFromAxis=std::sqrt(std::max(0.0,
                         1.0-cosThetaFromAxis*cosThetaFromAxis));
                     // Linear-momentum recoil, the fix this whole block
@@ -3271,7 +3411,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     const double photonAzimuth=
                         2.0*pi*drawUniformUnit(stochasticSkipStream);
                     const Vec3 photonDirection=
-                        angularMomentumDirection*cosThetaFromAxis
+                        photonEmissionAxis*cosThetaFromAxis
                         +(inPlaneFirst*std::cos(photonAzimuth)
                           +inPlaneSecond*std::sin(photonAzimuth))
                             *sinThetaFromAxis;

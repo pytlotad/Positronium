@@ -505,13 +505,21 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
         // choice of omega.  Only the granularity and the shot statistics
         // depend on it.
         //
-        // The secular estimator in crem_collapse.hpp stays E1-only, and
-        // cannot be otherwise: it integrates the hazard analytically across
-        // skipped orbits from the osculating elements alone, which carry no
-        // spin state for an M1 power to be reconstructed from.  That is not
-        // a gap in practice -- the bound phenomena that path runs measure
-        // M1 identically zero, because the pair's two moments enter the
-        // coherent M1 amplitude as m1+m2 and cancel.
+        // The secular estimator in crem_collapse.hpp carries M1 too, and by
+        // the same channel split as here: it draws each skipped photon's
+        // channel from the two hazards' ratio, gives an M1 photon the
+        // coherent moment's precession axis instead of the orbital normal,
+        // and withholds the Kepler harmonic series from it.  This comment
+        // used to say that path was E1-only and "cannot be otherwise",
+        // because the osculating elements carry no spin state -- true when
+        // written, false since the coupled secular spin-orbit solver began
+        // carrying firstDipole/secondDipole through that same checkpoint
+        // loop.  It also claimed the bound phenomena measure M1 identically
+        // zero through m1+m2 cancelling; that holds only for ortho (S=1,
+        // parallel spins, anti-aligned moments).  Para (S=0) has ALIGNED
+        // moments -- opposite charges invert the spin-moment relation -- so
+        // its M1 amplitude adds rather than cancels.  See
+        // coherentMagneticDipoleOrbitAveragedEmission's own comment.
         if(reactionModel==ChargeRadiationReactionModel::stochasticElectricDipole) {
             const MutualForces stepForces=
                 retardedExternalForces(s,trajectory.history());
