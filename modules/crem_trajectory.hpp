@@ -626,9 +626,51 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                         * (firstMass/(firstMass+secondMass));
                     const Vec3 orbitalNormal=cross(
                         separationVector,relativeMomentum);
+                    // Which channel THIS photon belongs to, drawn with
+                    // probability equal to that channel's share of the
+                    // combined power quantizedPower sums (E1 charge, M1
+                    // magnetic dipole, E2 charge quadrupole -- see the
+                    // comment above quantizedPower).  The unified hazard
+                    // still fires at the orbital rate for every channel
+                    // (that choice is deliberately unchanged: mean radiated
+                    // energy is P for any quantum size, see above), but a
+                    // photon attributed to M1 should not be drawn from the
+                    // orbiting-charge dipole's own angular law -- it comes
+                    // from the coherent moment m=m1+m2 precessing, whose
+                    // rotation axis is cross(m,mdot), not the orbital
+                    // normal.  Falls back to the orbital normal if the
+                    // moment is not actually precessing (m and mdot
+                    // parallel, or either vanishing): direction is then
+                    // irrelevant to first order anyway, since a
+                    // non-precessing coherent moment radiates negligibly
+                    // (this photon's very existence already means
+                    // quantizedPower includes a real M1 share, but a
+                    // vanishing cross product only zeroes the AXIS
+                    // estimate, not the power upstream).
+                    Vec3 photonAxis=orbitalNormal;
+                    if(quantizedPower>0.0
+                       &&drawUniformUnit(stochasticPhotonStream)
+                           <stepRadiation.magneticDipoleFlux.energy
+                               /quantizedPower) {
+                        const RetardedDipoleKinematics firstMoment=
+                            historicalDipoleKinematics(
+                                trajectory.history(),s,true,s.time);
+                        const RetardedDipoleKinematics secondMoment=
+                            historicalDipoleKinematics(
+                                trajectory.history(),s,false,s.time);
+                        const Vec3 coherentMoment=
+                            firstMoment.moment+secondMoment.moment;
+                        const Vec3 coherentMomentRate=
+                            firstMoment.firstDerivative
+                            +secondMoment.firstDerivative;
+                        const Vec3 precessionAxis=
+                            cross(coherentMoment,coherentMomentRate);
+                        if(precessionAxis.norm()>1.0e-300)
+                            photonAxis=precessionAxis;
+                    }
                     const Vec3 photonDirection=
                         sampleRotatingDipolePhotonDirection(
-                            orbitalNormal,stochasticPhotonStream);
+                            photonAxis,stochasticPhotonStream);
                     // KINEMATIC CEILING, and why nothing here tries to
                     // raise it.  applyStochasticDipolePhoton moves only the
                     // velocities: the positions, and therefore the potential

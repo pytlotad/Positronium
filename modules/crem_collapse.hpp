@@ -404,6 +404,51 @@ double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity) {
     return circular*dipoleEccentricityFactor(eccentricity);
 }
 
+// Orbit-averaged coherent M1 power from the pair's OWN carried magnetic
+// moments, steadily precessing at the orbit-averaged Thomas-BMT rates
+// orbitAveragedBmtAngularVelocities already derives for the coupled secular
+// spin-orbit solver (secular_spin_orbit.hpp).  For a moment precessing at
+// fixed angular velocity omega with unchanging magnitude and unchanging
+// angle to omega, d(dipole)/dt=omega x dipole exactly -- the same relation
+// rotateDipoleByAngularVelocity already uses to advance it -- so
+// d^2(dipole)/dt^2=omega x (omega x dipole), no assumption beyond what
+// advancing the secular state already makes.  Coherent because amplitudes
+// add before squaring (the second derivative of mu=mu1+mu2, not the sum of
+// the two particles' individual powers), matching
+// coherentMagneticDipoleRadiationReaction's mu0/(6 pi c^3) coefficient
+// exactly.  Two precession rates rather than one shared rate: they differ
+// whenever the gyromagnetic ratios do (e.g. p+e-), and nothing here assumes
+// otherwise.
+//
+// Previously missing from expectedLossPerOrbit below with the justification
+// that "the osculating elements carry no spin state for an M1 power to be
+// reconstructed from" and that the bound phenomena this path measures have
+// it cancel exactly.  Both were true before the coupled secular spin-orbit
+// solver started carrying firstDipole/secondDipole through this same
+// checkpoint loop, and the second is specifically false for para-positronium
+// (S=0): its moments are ALIGNED, not cancelling -- opposite charges invert
+// the spin-moment relation, so anti-parallel spins give parallel moments
+// (see crem_trajectory.hpp's ground-state-floor comment and README's Sonda
+// 4). Only ortho (S=1, parallel spins, anti-aligned moments) has the exact
+// cancellation the removed justification described.
+double coherentMagneticDipoleOrbitAveragedPower(
+        double semiMajorAxis,const Vec3& orbitalAngularMomentum,
+        const Vec3& firstDipole,const Vec3& secondDipole,
+        double reducedMass) {
+    const OrbitAveragedBmtAngularVelocities rates=
+        orbitAveragedBmtAngularVelocities(semiMajorAxis,
+            orbitalAngularMomentum,firstDipole,secondDipole,reducedMass);
+    if(!rates.valid) return 0.0;
+    const auto steadyPrecessionSecondDerivative=
+        [](const Vec3& dipole,const Vec3& angularVelocity) {
+            return cross(angularVelocity,cross(angularVelocity,dipole));
+        };
+    const Vec3 totalSecondDerivative=
+        steadyPrecessionSecondDerivative(firstDipole,rates.first)
+        +steadyPrecessionSecondDerivative(secondDipole,rates.second);
+    return mu0*totalSecondDerivative.squaredNorm()/(6.0*pi*c*c*c);
+}
+
 // --- Eccentric-orbit harmonic content, CREM_HARMONIC ---
 //
 // electricDipoleRadiatedPower/larmorOrbitAveragedPower above give the exact
@@ -2440,13 +2485,29 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // right substitute, not an approximation invented for convenience.
         // (isStochastic itself is declared above, by the guard that needs
         // it first.)
+        //
+        // The coherent M1 term added below uses the checkpoint's OWN
+        // carried firstDipole/secondDipole -- not run.finalState's -- for
+        // the same reason advanceSpinOrbitHalf does further down: they are
+        // this checkpoint's authoritative current moments, and
+        // orbitalAngularMomentumVector matches exactly what
+        // advanceSpinOrbitHalf reconstructs from angularMomentumDirection.
+        // See coherentMagneticDipoleOrbitAveragedPower's own comment for why
+        // this is no longer skipped.
+        const double semiMajorAxisForLoss=
+            -attractionParameter/(2.0*elements.specificEnergy);
+        const Vec3 orbitalAngularMomentumVector=angularMomentumDirection
+            *(elements.specificAngularMomentum*reducedMass);
         const double expectedLossPerOrbit=isStochastic
-            ?larmorOrbitAveragedPower(
-                  -attractionParameter/(2.0*elements.specificEnergy),
+            ?(larmorOrbitAveragedPower(
+                  semiMajorAxisForLoss,
                   std::sqrt(std::max(0.0,1.0+2.0*elements.specificEnergy
                       *elements.specificAngularMomentum
                       *elements.specificAngularMomentum
                       /(attractionParameter*attractionParameter))))
+              +coherentMagneticDipoleOrbitAveragedPower(
+                  semiMajorAxisForLoss,orbitalAngularMomentumVector,
+                  firstDipole,secondDipole,reducedMass))
                  *period/reducedMass
             :0.0;
         if(isStochastic
