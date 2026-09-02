@@ -1632,10 +1632,15 @@ int runMaxwellSelfTest(
             relativeVelocity*(secondMass/totalPairMass);
         sample.secondVelocity=
             relativeVelocity*(-firstMass/totalPairMass);
-        sample.firstDipole=secularInitial.firstDipole;
-        sample.secondDipole=secularInitial.secondDipole;
+        // Matches the fix in orbitAveragedBmtAngularVelocities
+        // (secular_spin_orbit.hpp) exactly: secularInitial.firstDipole is
+        // the PROPER moment, and this node's velocity is nonzero, so the
+        // lab dipole (and the induced electric dipole) must come from the
+        // boost, not a raw copy -- otherwise this "independent" reference
+        // would share the very approximation it exists to catch.
         sample.firstProperDipole=secularInitial.firstDipole;
         sample.secondProperDipole=secularInitial.secondDipole;
+        synchronizeCovariantDipoles(sample);
         const StateHistory history{State{sample}};
         const LocalElectromagneticFields fields=
             localRelativisticFields(sample,history);

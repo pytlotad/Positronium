@@ -72,6 +72,33 @@ struct ZeroPointField {
             magnetic+=magneticDirection[n]*(amplitude*wave/c);
         }
     }
+    // Translational force on a magnetic dipole from the SPATIAL variation
+    // of this field, F=grad(moment.B(r)).  Unlike the mutual dipole-dipole
+    // force (whose source moves, so its gradient needs a numerical
+    // difference), every mode here is a genuine plane wave with a known
+    // closed-form spatial gradient: for B_n=magneticDirection[n]*(amplitude
+    // /c)*cos(k_n.r+psi_n), grad(moment.B_n) = -moment.magneticDirection[n]
+    // *(amplitude/c)*waveNumber_n*sin(k_n.r+psi_n)*direction[n], since
+    // k_n=waveNumber_n*direction[n] and grad(dot(direction[n],r)) is just
+    // direction[n]. Called only where the dipole actually sits (each
+    // particle's own position), not summed over both the way sample() is
+    // used for the mutual-field bookkeeping in localRelativisticFields.
+    Vec3 gradientForce(const Vec3& position,double orbitalFrequency,
+                       double accumulatedPhase,const Vec3& moment) const {
+        Vec3 force;
+        if(!(orbitalFrequency>0.0)) return force;
+        const double amplitude=amplitudeCoefficient
+            *orbitalFrequency*orbitalFrequency;
+        for(std::size_t n=0;n<direction.size();++n) {
+            const double waveNumber=frequencyFactor[n]*orbitalFrequency/c;
+            const double phaseValue=dot(direction[n],position)*waveNumber
+                -frequencyFactor[n]*accumulatedPhase+phase[n];
+            const double momentDotMagnetic=dot(moment,magneticDirection[n]);
+            force=force-direction[n]*(momentDotMagnetic*(amplitude/c)
+                *waveNumber*std::sin(phaseValue));
+        }
+        return force;
+    }
 };
 ZeroPointField gZeroPointField;
 

@@ -2320,9 +2320,13 @@ MutualForces allExternalForces(const State& s) {
         gZeroPointField.sample(s.secondPosition,orbitalFrequency,
                                s.zeroPointPhase,secondElectric,secondMagnetic);
         externalField.first=externalField.first+lorentzForce(firstCharge,
-            s.firstVelocity,{firstElectric,firstMagnetic});
+            s.firstVelocity,{firstElectric,firstMagnetic})
+            +gZeroPointField.gradientForce(s.firstPosition,orbitalFrequency,
+                s.zeroPointPhase,s.firstDipole);
         externalField.second=externalField.second+lorentzForce(secondCharge,
-            s.secondVelocity,{secondElectric,secondMagnetic});
+            s.secondVelocity,{secondElectric,secondMagnetic})
+            +gZeroPointField.gradientForce(s.secondPosition,orbitalFrequency,
+                s.zeroPointPhase,s.secondDipole);
     }
     return {positionForces.first + velocityForces.first
                 + mixedMagneticForces.first + externalField.first,
@@ -2464,9 +2468,13 @@ MutualForces retardedExternalForces(const State& s,
         gZeroPointField.sample(s.secondPosition,orbitalFrequency,
                                s.zeroPointPhase,secondElectric,secondMagnetic);
         externalField.first=externalField.first+lorentzForce(firstCharge,
-            s.firstVelocity,{firstElectric,firstMagnetic});
+            s.firstVelocity,{firstElectric,firstMagnetic})
+            +gZeroPointField.gradientForce(s.firstPosition,orbitalFrequency,
+                s.zeroPointPhase,s.firstDipole);
         externalField.second=externalField.second+lorentzForce(secondCharge,
-            s.secondVelocity,{secondElectric,secondMagnetic});
+            s.secondVelocity,{secondElectric,secondMagnetic})
+            +gZeroPointField.gradientForce(s.secondPosition,orbitalFrequency,
+                s.zeroPointPhase,s.secondDipole);
     }
     return {chargeCharge.first+tensorGradient.first+externalField.first,
             chargeCharge.second+tensorGradient.second+externalField.second};

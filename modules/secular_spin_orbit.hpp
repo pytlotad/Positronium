@@ -31,6 +31,12 @@ struct SecularSpinOrbitState {
     Vec3 orbitalAngularMomentum;
     Vec3 firstDipole;
     Vec3 secondDipole;
+    // Mirrors State::zeroPointPhase for the orbit-averaged treatment: the
+    // ZPF sampled inside orbitAveragedBmtAngularVelocities needs the
+    // pair's REAL accumulated phase (advanced by the mean motion below,
+    // the same quantity osculatingOrbitalFrequency*dt advances it by on
+    // the mechanical path), not a phase frozen at 0 for every checkpoint.
+    double zeroPointPhase=0.0;
 };
 
 struct SecularSpinOrbitAdvance {
@@ -60,7 +66,7 @@ Vec3 rotateDipoleByAngularVelocity(const Vec3& dipole,
 OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         double semiMajorAxis,const Vec3& orbitalAngularMomentum,
         const Vec3& firstDipole,const Vec3& secondDipole,
-        double reducedMass) {
+        double reducedMass,double accumulatedZeroPointPhase=0.0) {
     OrbitAveragedBmtAngularVelocities result;
     if(!(semiMajorAxis>0.0)||!(reducedMass>0.0)
        ||!std::isfinite(semiMajorAxis)||!std::isfinite(reducedMass)
@@ -147,10 +153,21 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
             relativeVelocity*(-firstMass/totalMassHere);
         if(!(sample.firstVelocity.norm()<c)
            ||!(sample.secondVelocity.norm()<c)) return result;
-        sample.firstDipole=firstDipole;
-        sample.secondDipole=secondDipole;
+        // firstDipole/secondDipole (the arguments, and what
+        // SecularSpinOrbitState/rotateDipoleByAngularVelocity actually
+        // transport) are the PROPER moments: a fixed-magnitude vector
+        // precessing under pure rotation is only self-consistent with BMT
+        // physics if it is the rest-frame moment BMT actually describes.
+        // Copying that value into the lab slot directly (as this used to)
+        // skipped the boost the node's own nonzero firstVelocity/
+        // secondVelocity calls for -- synchronizeCovariantDipoles derives
+        // the lab dipole AND the induced electric dipole
+        // (dipole~(v x mu)/c^2) that localRelativisticFields below needs to
+        // see the same tensor allExternalForces/retardedExternalForces
+        // would reconstruct from this same proper moment and velocity.
         sample.firstProperDipole=firstDipole;
         sample.secondProperDipole=secondDipole;
+        synchronizeCovariantDipoles(sample);
         const StateHistory sampleHistory{State{sample}};
         const LocalElectromagneticFields fields=
             localRelativisticFields(sample,sampleHistory);
@@ -160,9 +177,9 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
             Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
             const double orbitalFrequency=osculatingOrbitalFrequency(sample);
             gZeroPointField.sample(sample.firstPosition,orbitalFrequency,
-                sample.zeroPointPhase,firstElectric,firstMagnetic);
+                accumulatedZeroPointPhase,firstElectric,firstMagnetic);
             gZeroPointField.sample(sample.secondPosition,orbitalFrequency,
-                sample.zeroPointPhase,secondElectric,secondMagnetic);
+                accumulatedZeroPointPhase,secondElectric,secondMagnetic);
             externalAtFirst.electric+=firstElectric;
             externalAtFirst.magnetic+=firstMagnetic;
             externalAtSecond.electric+=secondElectric;
@@ -201,7 +218,8 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
     result.state=initial;
     if(elapsedTime==0.0) {
         result.completed=isFinite(initial.orbitalAngularMomentum)
-            &&isFinite(initial.firstDipole)&&isFinite(initial.secondDipole);
+            &&isFinite(initial.firstDipole)&&isFinite(initial.secondDipole)
+            &&std::isfinite(initial.zeroPointPhase);
         result.relativeAngularMomentumResidual=result.completed?0.0:
             std::numeric_limits<double>::infinity();
         return result;
@@ -212,7 +230,8 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
        ||!std::isfinite(reducedMass)
        ||!std::isfinite(maximumRotationPerSubstep)
        ||!isFinite(initial.orbitalAngularMomentum)
-       ||!isFinite(initial.firstDipole)||!isFinite(initial.secondDipole)) {
+       ||!isFinite(initial.firstDipole)||!isFinite(initial.secondDipole)
+       ||!std::isfinite(initial.zeroPointPhase)) {
         return result;
     }
     const double firstGyromagneticRatio=firstGyromagneticRatioOf();
@@ -224,6 +243,14 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         return first/firstGyromagneticRatio
             +second/secondGyromagneticRatio;
     };
+    // Same mean motion orbitAveragedBmtAngularVelocities computes
+    // internally (semiMajorAxis is fixed for this whole call, so it is
+    // fixed here too): the ZPF phase advances at the pair's real orbital
+    // frequency, exactly the quantity osculatingOrbitalFrequency*dt
+    // advances State::zeroPointPhase by on the mechanical path -- not left
+    // at the initial value for the whole checkpoint, let alone frozen at 0.
+    const double meanMotion=std::sqrt(pairCoulombStrength
+        /(reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis));
     const Vec3 initialAngularMomentum=
         initial.orbitalAngularMomentum
         +spinTotal(initial.firstDipole,initial.secondDipole);
@@ -240,7 +267,8 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         const OrbitAveragedBmtAngularVelocities startRates=
             orbitAveragedBmtAngularVelocities(
                 semiMajorAxis,result.state.orbitalAngularMomentum,
-                result.state.firstDipole,result.state.secondDipole,reducedMass);
+                result.state.firstDipole,result.state.secondDipole,
+                reducedMass,result.state.zeroPointPhase);
         if(!startRates.valid) return result;
         const double startSpeed=std::max(
             startRates.first.norm(),startRates.second.norm());
@@ -273,7 +301,8 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
                 +startExternalTorque*(0.5*dt);
             orbitalMid=midpointAngularMomentum-spinTotal(firstMid,secondMid);
             midpointRates=orbitAveragedBmtAngularVelocities(
-                semiMajorAxis,orbitalMid,firstMid,secondMid,reducedMass);
+                semiMajorAxis,orbitalMid,firstMid,secondMid,reducedMass,
+                result.state.zeroPointPhase+meanMotion*(0.5*dt));
             if(!midpointRates.valid) return result;
             const double midpointAngle=dt*std::max(
                 midpointRates.first.norm(),midpointRates.second.norm());
@@ -301,6 +330,7 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         result.state.firstDipole=firstAfter;
         result.state.secondDipole=secondAfter;
         result.state.orbitalAngularMomentum=orbitalAfter;
+        result.state.zeroPointPhase+=meanMotion*dt;
         transportedAngularMomentum=angularMomentumAfter;
         result.maximumSubstepAngle=std::max(result.maximumSubstepAngle,
             dt*std::max(midpointRates.first.norm(),

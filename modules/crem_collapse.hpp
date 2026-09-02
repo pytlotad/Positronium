@@ -1386,6 +1386,17 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             seedRun.initial.orbitalAngularMomentum/reducedMass)};
     Vec3 firstDipole=seedRun.frames.front().firstDipole;
     Vec3 secondDipole=seedRun.frames.front().secondDipole;
+    // Carried the same way firstDipole/secondDipole are: the checkpoint's
+    // own accumulated ZPF phase, advanced by advanceSpinOrbitHalf below
+    // instead of being resampled at 0 on every node the way it used to be
+    // (see orbitAveragedBmtAngularVelocities's own comment on why the node
+    // sampler needs the real value).  Frame (what seedRun exposes) carries
+    // no phase to seed this from, so it starts at 0 -- matching every fresh
+    // State's own default and the seed run's own necessarily short elapsed
+    // time -- and accumulates correctly for the checkpoints after it.
+    // Inert whenever --zpf is off: amplitudeCoefficient is then 0 and
+    // sample()/gradientForce() both return early regardless of phase.
+    double zeroPointPhase=0.0;
     // Orbital plane orientation, kept ONLY for stochasticElectricDipole (see
     // its own use below): OsculatingElements itself carries no direction,
     // only magnitudes, which is exactly right for the continuous models
@@ -2587,7 +2598,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             const SecularSpinOrbitState input{
                 angularMomentumDirection
                     *(elements.specificAngularMomentum*reducedMass),
-                firstDipole,secondDipole};
+                firstDipole,secondDipole,zeroPointPhase};
             const SecularSpinOrbitAdvance advance=
                 advanceCoupledSecularSpinOrbit(
                     input,semiMajorAxis,reducedMass,
@@ -2615,6 +2626,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             }
             firstDipole=advance.state.firstDipole;
             secondDipole=advance.state.secondDipole;
+            zeroPointPhase=advance.state.zeroPointPhase;
             const double orbitalNorm=
                 advance.state.orbitalAngularMomentum.norm();
             angularMomentumDirection=
