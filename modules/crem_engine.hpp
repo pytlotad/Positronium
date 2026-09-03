@@ -234,6 +234,31 @@ private:
                                 const double error=
                                     normalizedStepError(coarse,fine);
                                 std::cerr<<"  "<<error;
+                                // Which retarded term moves with dt.  Evaluated
+                                // at the coarse endpoint: the charge's
+                                // Lienard-Wiechert Lorentz force, the retarded
+                                // magnetic dipole field's own contribution, and
+                                // covariantDipoleGradientForce, which runs its
+                                // own six-point spatial stencil and so has the
+                                // most machinery to be discontinuous in.
+                                if(liveCase.retarded
+                                   &&std::getenv("CREM_DEBUG_ORDER_TERMS")) {
+                                    const ElectromagneticField lw=
+                                        lienardWiechertField(
+                                            coarse.firstPosition,coarse.time,
+                                            history,coarse,false,secondCharge);
+                                    const ElectromagneticField dip=
+                                        retardedMagneticDipoleField(
+                                            coarse.firstPosition,coarse.time,
+                                            history,coarse,false);
+                                    const Vec3 grad=
+                                        covariantDipoleGradientForce(
+                                            coarse,history,true);
+                                    std::cerr<<"{LW="<<lw.electric.norm()
+                                        <<" dipE="<<dip.electric.norm()
+                                        <<" dipB="<<dip.magnetic.norm()
+                                        <<" grad="<<grad.norm()<<"}";
+                                }
                                 if(halving>0&&error>0.0)
                                     std::cerr<<"("<<previous/error<<"x)";
                                 previous=error;

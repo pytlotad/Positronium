@@ -2688,17 +2688,37 @@ Vec3 covariantDipoleGradientForce(const State& state,
               +dot(labElectricDipole,field.electric);
     };
     Vec3 gradient;
+    double probePlus[3]={},probeMinus[3]={};
     for(int axis=0;axis<3;++axis) {
         Vec3 offset;
         if(axis==0) offset.x=gradientStep;
         else if(axis==1) offset.y=gradientStep;
         else offset.z=gradientStep;
-        const double derivative=(coupling(targetPosition+offset)
-                                -coupling(targetPosition-offset))
-                               /(2.0*gradientStep);
+        const double plus=coupling(targetPosition+offset);
+        const double minus=coupling(targetPosition-offset);
+        probePlus[axis]=plus;
+        probeMinus[axis]=minus;
+        const double derivative=(plus-minus)/(2.0*gradientStep);
         if(axis==0) gradient.x=derivative;
         else if(axis==1) gradient.y=derivative;
         else gradient.z=derivative;
+    }
+    // CREM_DEBUG_GRAD: dump the six stencil couplings when the assembled
+    // gradient comes out anomalously large.  The gradient is a difference of
+    // near-equal couplings, so either one probe point is an outlier (a
+    // retarded-solve or formula-branch flip at that point) or all six are
+    // sane and the blow-up is the cancellation losing its conditioning.
+    // These two are distinguishable only by looking at the six.
+    if(std::getenv("CREM_DEBUG_GRAD")
+       &&gradient.norm()/gamma(targetVelocity)>1.0e-3) {
+        std::cerr<<std::setprecision(12)<<"GRAD anomaly |grad|="
+            <<gradient.norm()/gamma(targetVelocity)
+            <<" step="<<gradientStep<<" r="<<separation(state);
+        for(int axis=0;axis<3;++axis)
+            std::cerr<<"  ax"<<axis<<"[+"<<probePlus[axis]
+                <<" -"<<probeMinus[axis]
+                <<" d"<<(probePlus[axis]-probeMinus[axis])<<"]";
+        std::cerr<<std::setprecision(6)<<'\n';
     }
     // Spatial component of the covariant gradient divided by gamma gives
     // the laboratory three-force.  At rest this reduces to
