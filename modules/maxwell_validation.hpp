@@ -9,6 +9,133 @@ int runMaxwellSelfTest(
             StatisticalValidationProfile::Small) {
     const auto benchmarkStart=std::chrono::steady_clock::now();
 
+    // CREM_DEBUG_ORDER: step-doubling convergence order of the mechanical
+    // step, sector by sector, at the radius where the collapse's one ortho
+    // numerical failure occurs (r ~ 1.06e-12 m).  Written to chase the
+    // suspicion that the retarded-history stencils or the pole-limit dipole
+    // field lose smoothness as dt shrinks.  They do NOT, and the measurement
+    // is kept because that is worth not re-suspecting.
+    //
+    // useRetardedExternalForces=false swaps the retarded Lienard-Wiechert
+    // plus pole-limit dipole fields for the conservative Coulomb-Darwin
+    // force, and the reaction model switches independently, so the four
+    // combinations separate the sectors.  Measured, every one of them:
+    //
+    //     4.00x per halving, held for ~10 halvings, in all four cases
+    //
+    // i.e. the step-doubling error goes as dt^2 whether the retarded sector
+    // is in or out and whether radiation reaction is on or off.  Neither
+    // named candidate degrades it.
+    //
+    // Two things that measurement does say, though.
+    //
+    // First, dt^2 is not what a SYMMETRIC SECOND-ORDER step should give
+    // here: comparing one step against two half steps cancels the leading
+    // term, so a second-order method lands at dt^3, eight per halving.  Four
+    // per halving is what a first-order method gives.  That is uniform
+    // across all four sectors including pure Coulomb with no reaction -- the
+    // smoothest case available -- so it is a property of the step itself,
+    // not of any field term, and it is unrelated to the failure being
+    // chased.  Not pursued further here.
+    //
+    // Second, past ~10 halvings the ratios stop meaning anything -- measured
+    // 3.43, 5.25, 1.33, 3.00, 384 and, in another sector, 13544 and 1.1e-4.
+    // That sets in exactly as the metric reaches ~1e-16, i.e. double
+    // precision's own round-off, and erratic ratios rather than a new power
+    // law are its signature.  It is a floor, not an order change.
+    //
+    // What this probe does NOT reproduce is the failing trajectory's error
+    // MAGNITUDE: at a comparable dt it measures ~1e-13 where that trajectory
+    // reports 9.4e-4, nine orders apart.  So the failure involves something
+    // this synthetic state does not carry, and the search for it should
+    // start there rather than with the two exonerated candidates.
+    if(std::getenv("CREM_DEBUG_ORDER")) {
+        const double probeRadius=1.056e-12;
+        const double probeSpeed=std::sqrt(
+            pairCoulombStrength/(pairReducedMass*probeRadius));
+        const auto makeProbe=[&]() {
+            State probe{};
+            probe.firstPosition={0.5*probeRadius,0,0};
+            probe.secondPosition={-0.5*probeRadius,0,0};
+            probe.firstVelocity={0,0.5*probeSpeed,0};
+            probe.secondVelocity={0,-0.5*probeSpeed,0};
+            probe.firstProperDipole={0,0,firstMagneticMoment};
+            probe.secondProperDipole={0,0,-secondMagneticMoment};
+            synchronizeCovariantDipoles(probe);
+            return probe;
+        };
+        const auto stepError=[&](double dt,bool retarded,
+                                 ChargeRadiationReactionModel model,
+                                 const StateHistory& history) {
+            State coarse=makeProbe();
+            integrateElectrodynamicStep(coarse,dt,history,false,model,retarded);
+            State fine=makeProbe();
+            StateHistory fineHistory=history;
+            integrateElectrodynamicStep(fine,0.5*dt,fineHistory,false,model,
+                                        retarded);
+            integrateElectrodynamicStep(fine,0.5*dt,fineHistory,false,model,
+                                        retarded);
+            const double lengthScale=std::max(separation(fine),
+                collisionBoundaryRadius);
+            const double speedScale=std::max(
+                (fine.firstVelocity-fine.secondVelocity).norm(),1.0e-6*c);
+            return std::max({
+                (coarse.firstPosition-fine.firstPosition).norm()/lengthScale,
+                (coarse.secondPosition-fine.secondPosition).norm()/lengthScale,
+                (coarse.firstVelocity-fine.firstVelocity).norm()/speedScale,
+                (coarse.secondVelocity-fine.secondVelocity).norm()/speedScale});
+        };
+        // A real retarded history, built by advancing the probe, so the
+        // history stencils have genuine nodes to interpolate rather than a
+        // single synthetic frame.
+        const auto buildHistory=[&](ChargeRadiationReactionModel builderModel) {
+            State builder=makeProbe();
+            ClassicalTrajectoryEngine builderEngine(builder,
+                {1.0e-7,14,builderModel,false,true});
+            const double buildStep=2.0*pi*probeRadius/probeSpeed/512.0;
+            for(int step=0;step<48;++step)
+                builderEngine.advance(builder,buildStep);
+            return builderEngine.history();
+        };
+        const StateHistory probeHistory=
+            buildHistory(ChargeRadiationReactionModel::disabled);
+        // Same history, but built under the stochastic model, so the retarded
+        // past contains real photon KICKS -- velocity discontinuities that the
+        // history stencils must then interpolate across.
+        const StateHistory kickedHistory=
+            buildHistory(ChargeRadiationReactionModel::stochasticElectricDipole);
+        struct OrderCase { const char* name; bool retarded;
+                           ChargeRadiationReactionModel model; };
+        const OrderCase cases[]={
+            {"retarded+LL   ",true,
+             ChargeRadiationReactionModel::individualLandauLifshitz},
+            {"retarded+noRR ",true,ChargeRadiationReactionModel::disabled},
+            {"Coulomb+LL    ",false,
+             ChargeRadiationReactionModel::individualLandauLifshitz},
+            {"Coulomb+noRR  ",false,ChargeRadiationReactionModel::disabled}};
+        std::cerr<<"ORDER probe r="<<probeRadius<<" smoothNodes="
+                 <<probeHistory.size()<<" kickedNodes="<<kickedHistory.size()
+                 <<'\n';
+        for(int kicked=0;kicked<1;++kicked) {
+            const StateHistory& history=kicked?kickedHistory:probeHistory;
+            for(const OrderCase& probeCase:cases) {
+                double previous=0.0;
+                std::cerr<<"ORDER "<<(kicked?"kicked  ":"smooth  ")
+                         <<probeCase.name;
+                for(int halving=0;halving<15;++halving) {
+                    const double dt=1.0e-22/std::pow(2.0,halving);
+                    const double error=stepError(dt,probeCase.retarded,
+                                                 probeCase.model,history);
+                    std::cerr<<"  "<<error;
+                    if(halving>0&&error>0.0)
+                        std::cerr<<"("<<previous/error<<"x)";
+                    previous=error;
+                }
+                std::cerr<<'\n';
+            }
+        }
+    }
+
     // Fixed-seed distribution checks for the stochastic photon sector.  The
     // small profile is cheap enough for every regression run; publication is
     // deliberately much larger and tightens the tolerances approximately as
