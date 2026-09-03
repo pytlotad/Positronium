@@ -2743,6 +2743,11 @@ Vec3 covariantDipoleGradientForce(const State& state,
     // because E.B = 0 surfaces are generic in a dipole field.
     static const bool traceProbes=std::getenv("CREM_DEBUG_PROBES")!=nullptr;
     double probeRatio[6]={},probeNMu[6]={},probeCosEB[6]={},probeEoverB[6]={};
+    // The probes differ ONLY in which axis they step along, so if a dependence
+    // survives it is on the step direction, not the line of sight.  Logged
+    // signed: the + and - probes of one axis share |cos| with the pole axis,
+    // and only one of them degenerates, so an unsigned angle cannot explain it.
+    double probeDMu[6]={},probeDN[6]={};
     int probeIndex=0;
     const auto coupling=[&](const Vec3& point) {
         ElectromagneticField field=fieldFromOtherParticleAt(
@@ -2828,6 +2833,12 @@ Vec3 covariantDipoleGradientForce(const State& state,
             probeCosEB[probeIndex]=(eNorm>0.0&&bNorm>0.0)
                 ?dot(field.electric,field.magnetic)/(eNorm*bNorm):0.0;
             probeEoverB[probeIndex]=bNorm>0.0?eNorm/(c*bNorm):0.0;
+            const Vec3 stepVector=point-targetPosition;
+            const double stepNorm=stepVector.norm();
+            probeDMu[probeIndex]=(stepNorm>0.0&&momentNorm>0.0)
+                ?dot(stepVector,probeMoment)/(stepNorm*momentNorm):0.0;
+            probeDN[probeIndex]=(stepNorm>0.0&&sightNorm>0.0)
+                ?dot(stepVector,sight)/(stepNorm*sightNorm):0.0;
             ++probeIndex;
         }
         return dot(labMagneticDipole,field.magnetic)
@@ -2884,7 +2895,8 @@ Vec3 covariantDipoleGradientForce(const State& state,
                     <<" ratio="<<probeRatio[slot]
                     <<" n.mu="<<probeNMu[slot]
                     <<" cos(E,B)="<<probeCosEB[slot]
-                    <<" |E|/c|B|="<<probeEoverB[slot]
+                    <<" d.mu="<<probeDMu[slot]
+                    <<" d.n="<<probeDN[slot]
                     <<(probeRatio[slot]>poleCancellationLimit
                         ?"   <-- DEGENERATE":"")<<'\n';
         }
