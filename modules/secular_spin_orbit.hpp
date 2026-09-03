@@ -299,6 +299,27 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         // advance needs.
         orbitalFrequencySum+=
             osculatingOrbitalFrequency(sample)*timeWeight;
+        // CREM_DEBUG_FIELDSYM: para is mirror-symmetric in position, velocity
+        // and moment, so the two local fields should have equal magnitude and
+        // the two precession rates with them.  Printed at one node so the
+        // symmetry can be checked rather than argued.
+        if(std::getenv("CREM_DEBUG_FIELDSYM")&&node==0) {
+            static int fieldSymSamples=0;
+            if(fieldSymSamples++<3)
+                std::cerr<<"FIELDSYM |B1|="<<fields.atFirst.magnetic.norm()
+                    <<" |B2|="<<fields.atSecond.magnetic.norm()
+                    <<" ratio="<<fields.atFirst.magnetic.norm()
+                        /std::max(fields.atSecond.magnetic.norm(),1.0e-300)
+                    <<" |E1|="<<fields.atFirst.electric.norm()
+                    <<" |E2|="<<fields.atSecond.electric.norm()
+                    <<" |p1|="<<sample.firstElectricDipole.norm()
+                    <<" |p2|="<<sample.secondElectricDipole.norm()
+                    <<" p1.p2/|p||p|="<<dot(sample.firstElectricDipole,
+                        sample.secondElectricDipole)
+                        /std::max(sample.firstElectricDipole.norm()
+                                 *sample.secondElectricDipole.norm(),1.0e-300)
+                    <<'\n';
+        }
         const Vec3 firstOmega=thomasBmtEffectiveField(
             sample.firstVelocity,fields.atFirst,firstGFactor)
                 *(-firstCharge/firstMass);
@@ -549,6 +570,35 @@ SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
             result.state.orbitalAngularMomentum,orbitalAfter);
         if(!(periapsisAfter.norm()>0.0)) return result;
 
+        // CREM_DEBUG_ALIGN: the mutual angle obeys
+        // d(mu1.mu2)/dt = (omega1-omega2).(mu1 x mu2), so an exactly collinear
+        // pair is a FIXED POINT of the transport whichever way it is collinear.
+        // What separates para from ortho is therefore not which torque acts but
+        // whether that fixed point is stable, and the quantity that decides it
+        // is the rate DIFFERENCE.  Printed against the rates themselves so a
+        // difference that is merely small can be told from one that vanishes.
+        if(std::getenv("CREM_DEBUG_ALIGN")) {
+            static int alignSamples=0;
+            if(alignSamples++<6) {
+                const Vec3 rateDifference=
+                    midpointRates.first-midpointRates.second;
+                const Vec3 momentCross=cross(firstBefore,secondBefore);
+                const double firstNorm=firstBefore.norm();
+                const double secondNorm=secondBefore.norm();
+                std::cerr<<"ALIGN cos="
+                    <<dot(firstBefore,secondBefore)
+                        /std::max(firstNorm*secondNorm,1.0e-300)
+                    <<" |w1|="<<midpointRates.first.norm()
+                    <<" |w2|="<<midpointRates.second.norm()
+                    <<" |w1-w2|="<<rateDifference.norm()
+                    <<" rel="<<rateDifference.norm()
+                        /std::max(midpointRates.first.norm(),1.0e-300)
+                    <<" |mu1xmu2|/mumu="<<momentCross.norm()
+                        /std::max(firstNorm*secondNorm,1.0e-300)
+                    <<" dcos/dt="<<dot(rateDifference,momentCross)
+                        /std::max(firstNorm*secondNorm,1.0e-300)<<'\n';
+            }
+        }
         result.state.firstDipole=firstAfter;
         result.state.secondDipole=secondAfter;
         result.state.orbitalAngularMomentum=orbitalAfter;

@@ -1925,14 +1925,54 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // identity below was checked separately at cos = -0.9, -0.4, 0,
             // +0.4 and +0.9, so the vanishing happens INSIDE each class.
             //
-            // The isotropy that assumes is not merely an initial condition:
-            // it survives the dynamics.  Opposite charges give opposite q/m,
-            // which suggests the perpendicular components counter-rotate and
-            // wash the mutual angle out -- measured, they do not.  cos runs
-            // 0.885 -> 0.893, 0.552 -> 0.552, -0.765 -> -0.765 from seed to
-            // termination, the largest excursion seen being 0.15.  Opposite
-            // charges reverse the spin-moment relation along WITH q/m, so
-            // both moments precess the same way about a common B_BMT.
+            // DOES THE MUTUAL ANGLE HOLD?  For ortho yes, exactly.  For para
+            // no, and the correction matters here because the averaging above
+            // is stated at FIXED mutual angle.
+            //
+            // An earlier version of this comment claimed the angle survives
+            // the dynamics for both, quoting cos runs of 0.885 -> 0.893,
+            // 0.552 -> 0.552 and -0.765 -> -0.765 with "the largest excursion
+            // seen being 0.15".  Re-measured with CREM_DEBUG_CHANNEL those
+            // numbers do not reproduce: the same 0.552 seed now runs
+            // 0.552 -> 0.373, and starting from an exactly aligned para pair
+            // the angle reaches 0.42, 0.10 and even -0.12, an excursion of
+            // 1.12.  Para crossed the 0.5 classification threshold in 5 of 11
+            // trajectories.  Ortho, by contrast, holds cos = -1 to 1e-14 over
+            // the whole inspiral.
+            //
+            // The mechanism, measured rather than argued (CREM_DEBUG_ALIGN,
+            // CREM_DEBUG_FIELDSYM).  Transport gives
+            //
+            //     d(mu1.mu2)/dt = (omega1 - omega2) . (mu1 x mu2),
+            //
+            // so BOTH collinear states are fixed points and what separates
+            // them is stability, i.e. whether omega1 - omega2 vanishes.  It
+            // does for ortho and does not for para, because the two particles
+            // do not see the same field:
+            //
+            //     para    |B1|=1.357  |B2|=2.200  ratio 0.617   p1.p2 = -1
+            //     ortho   |B1|=2.200  |B2|=2.200  ratio 1       p1.p2 = +1
+            //
+            // The electric fields are equal in both; the whole asymmetry is
+            // magnetic and tracks the MOTIONAL electric dipole exactly.  That
+            // is forced, not incidental: p = gamma (v x mu)/c^2 is odd in v
+            // and even in mu, so with v2 = -v1 the ortho pair (mu2 = -mu1)
+            // has p2 = +p1 and stays symmetric, while the para pair
+            // (mu2 = +mu1) has p2 = -p1 and does not.  Para's mirror symmetry
+            // is broken by its own motional dipole.
+            //
+            // Consequently omega1 - omega2 is 60% of omega1 for para at
+            // --level 1 and identically zero for ortho, the para figure
+            // scaling as 1/n across levels 1/2/3 (0.602, 0.270, 0.174) the
+            // way the partner-dipole-to-motional field ratio does -- so it
+            // grows toward the terminal radius, which is where this term is
+            // being used.  d(cos)/dt tracks |mu1 x mu2| linearly, as the
+            // identity requires (-4.0e9 at 0.020, -8.0e9 at 0.040).
+            //
+            // OPEN, and deliberately not patched here: the azimuth average
+            // below is derived at fixed mutual angle, and for para that
+            // premise does not hold over a collapse.  What it costs has not
+            // been measured.
             //
             // WHY THEY DO NOT ALIGN, corrected.  An earlier version argued
             // that B_BMT is dominated by the motional v x E/c^2, which lies
