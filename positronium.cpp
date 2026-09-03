@@ -530,6 +530,33 @@ inline bool gDeterministicEmission = true;
 // the n=1 cascade-time reading documented above.
 inline bool gGroundStateEmissionFloor = false;
 
+// SPIN QUANTIZATION, split out of --ground-state-floor and defaulted ON.
+//
+// S=0 and S=1 are exact states, so the two moments are exactly aligned or
+// exactly anti-aligned -- never somewhere in a band.  Opposite charges invert
+// the spin-moment relation, so ANTI-parallel spins (para, S=0) give ALIGNED
+// moments and |mu1+mu2| = 2mu, while ortho (S=1) gives |mu1+mu2| = 0 exactly.
+// That is what makes the coherent M1 channel a real para/ortho asymmetry
+// rather than a label.
+//
+// Sampled from a BAND instead -- para drawn from cos >= 0.5, ortho from
+// everything below -- the asymmetry is destroyed, and measurably so, which is
+// why this is now the default rather than an option.  Measured over the
+// sampled configurations at --level 1: |mu1+mu2| came out 1.775-1.942 mu for
+// para against 1.271-1.716 mu for ortho, i.e. ortho carrying 63-86% of para's
+// net moment instead of zero, and the resulting M1 shares were comparable
+// (ortho's largest, 9.0e-13 of E1, exceeded para's 2.5e-13).  The band also
+// puts para's lower edge exactly ON the classification threshold, so half the
+// para trajectories precessed across it during the inspiral (6 of 12).
+//
+// It was previously reachable only through --ground-state-floor, which
+// ALSO zeroes the emission hazard at n=1 and therefore stops every trajectory
+// before it reaches the collision boundary (measured: 0 of 4 collapses).  The
+// two are independent physical assertions and are now independent switches:
+// this one fixes the initial mutual angle, that one closes the ladder from
+// below.  --no-spin-quantization restores the band sampling.
+inline bool gSpinQuantization = true;
+
 // The second of the three imported quantum facts (see
 // gGroundStateEmissionFloor's comment).  quantumFor (crem_collapse.hpp) needs
 // a photon energy for the secular estimator's hazard bookkeeping; it has
@@ -5505,6 +5532,12 @@ int main(int argc, char** argv) {
                 gGroundStateEmissionFloor = false;  // now the default; kept
                                                     // so existing command
                                                     // lines keep working
+            } else if (argument == "--spin-quantization") {
+                gSpinQuantization = true;           // the default; see the
+                                                    // flag's own comment
+            } else if (argument == "--no-spin-quantization") {
+                gSpinQuantization = false;          // restores the band
+                                                    // sampling this replaced
             } else if (argument == "--bohr-photon-energy") {
                 gBohrLevelPhotonEnergy = true;      // restores the historical
                                                     // level-difference rule

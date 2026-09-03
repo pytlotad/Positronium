@@ -1062,13 +1062,20 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // ANTI-parallel spins (para, S=0) give ALIGNED moments -- see the README's
     // Sonda 4, where that reversal is derived and measured.
     //
-    // Like the other two floors this is IMPORTED.  It does not derive the
+    // Like the other imported facts this is IMPORTED.  It does not derive the
     // photon count: 2 against 3 is a statement about the final state's
     // C-parity, and this model has no annihilation dynamics at all -- no
     // contact channel and no rate, established separately.  What it buys is
     // that the channel difference becomes a property of the configuration
     // rather than of the --phenomenon switch.
-    if(gGroundStateEmissionFloor && (sampledScenario==2||sampledScenario==3)) {
+    //
+    // Gated on gSpinQuantization, which is ON by default and independent of
+    // --ground-state-floor.  It used to ride on that flag, which also zeroes
+    // the emission hazard at n=1 and so stopped every trajectory before the
+    // collision boundary -- meaning the one configuration that realizes this
+    // asymmetry was exactly the one that could never be run to annihilation.
+    // See gSpinQuantization's comment for the measured cost of the band.
+    if(gSpinQuantization && (sampledScenario==2||sampledScenario==3)) {
         const double sign = sampledScenario==2 ? 1.0 : -1.0;
         s.secondDipole = s.firstDipole
             * (sign*secondMagneticMoment/firstMagneticMoment);

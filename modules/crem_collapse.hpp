@@ -2104,6 +2104,29 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.annihilationPhotonEnergies=annihilationPhotonEnergiesFor(
                 result.annihilationInvariantEnergy,
                 selectedPhenomenon==1,stochasticSkipStream);
+            // CREM_DEBUG_CHANNEL: how close this trajectory ran to the
+            // para/ortho classification edge, and whether the moments it
+            // ENDS with still sit on the side the photon multiplicity was
+            // taken from.  The multiplicity above comes from
+            // selectedPhenomenon, fixed before the inspiral; the mutual
+            // angle is transported through it by the secular spin-orbit
+            // solver, so the two can in principle disagree at the end.
+            if(std::getenv("CREM_DEBUG_CHANNEL")) {
+                const double seedCos=dot(seedRun.frames.front().firstDipole,
+                    seedRun.frames.front().secondDipole)
+                    /(firstMagneticMoment*secondMagneticMoment);
+                const double endCos=dot(firstDipole,secondDipole)
+                    /(firstMagneticMoment*secondMagneticMoment);
+                const bool seedPara=seedCos>=0.5;
+                const bool endPara=endCos>=0.5;
+                std::cerr<<"CHANNEL seedCos="<<seedCos<<" endCos="<<endCos
+                    <<" drift="<<(endCos-seedCos)
+                    <<" marginToEdge="<<std::abs(endCos-0.5)
+                    <<" emitted="<<(selectedPhenomenon==1?"2gamma":"3gamma")
+                    <<" seedClass="<<(seedPara?"para":"ortho")
+                    <<" endClass="<<(endPara?"para":"ortho")
+                    <<(seedPara!=endPara?"  *** CROSSED ***":"")<<'\n';
+            }
             if(std::getenv("CREM_DEBUG"))
                 std::cerr<<std::setprecision(12)
                          <<"  FINAL (periapsis/light-crossing cutoff): t_S'="
