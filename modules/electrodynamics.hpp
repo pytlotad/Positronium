@@ -419,14 +419,24 @@ inline State historicalState(const StateHistory& history, const State& present,
             return state.time<requestedTime;
         });
     if(newer==history.begin()) return *newer;
+    // A non-positive span means the two samples carry the same instant, so
+    // there is nothing between them to interpolate and the endpoint IS the
+    // answer.  The floor this used to divide by, 1.0e-300, did not say that:
+    // it turned a zero span into an extrapolation factor of up to infinity,
+    // and interpolateVector then scaled the sampled dipoles by ~1e244.  Their
+    // sum of squares overflowed, interpolateDipole's rescale divided
+    // infinity by infinity, and the far-zone dipole field received a NaN
+    // moment.  Measured on a bound para orbit: 120 of 6575645 calls.
     if(newer!=history.end()) {
         const State& older=*std::prev(newer);
-        return interpolateState(older,*newer,
-            (time-older.time)/std::max(newer->time-older.time,1.0e-300));
+        const double span=newer->time-older.time;
+        if(!(span>0.0)) return *newer;
+        return interpolateState(older,*newer,(time-older.time)/span);
     }
     const State& older=history.back();
-    return interpolateState(older,present,
-        (time-older.time)/std::max(present.time-older.time,1.0e-300));
+    const double span=present.time-older.time;
+    if(!(span>0.0)) return present;
+    return interpolateState(older,present,(time-older.time)/span);
 }
 
 // Largest step a backward stencil may use if it must stay inside the retained
@@ -493,8 +503,13 @@ inline RetardedSourceSample historicalSource(const StateHistory& history,
     if(newer==history.begin()) return pick(*newer);
     const State& older=(newer!=history.end())?*std::prev(newer):history.back();
     const State& target=(newer!=history.end())?*newer:present;
-    const double fraction=(time-older.time)
-        /std::max(target.time-older.time,1.0e-300);
+    // Same degeneracy as in historicalState above: a non-positive span means
+    // the two samples share an instant, and dividing by a 1.0e-300 floor
+    // turned that into an extrapolation factor of up to infinity instead of
+    // saying so.  The endpoint is the answer.
+    const double span=target.time-older.time;
+    if(!(span>0.0)) return pick(target);
+    const double fraction=(time-older.time)/span;
     const RetardedSourceSample a=pick(older);
     const RetardedSourceSample b=pick(target);
     return {interpolateVector(a.position,b.position,fraction),

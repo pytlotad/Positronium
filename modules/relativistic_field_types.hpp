@@ -24,9 +24,14 @@ using positronium::objects::dot;
 // The zero-vector guard replaces a bare v/v.norm(), which returned NaN for a
 // null argument (audit point 3.2).  No production call site passes a zero
 // vector, so the returned values are unchanged wherever unit() was defined.
+//
+// The test is > 0 rather than > DBL_MIN because Vec3::norm() no longer
+// underflows: it now reports the true length of a vector whose components are
+// too small to square, so this can divide by it.  Every component is at most
+// the norm, so the ratios cannot overflow even when the norm is subnormal.
 inline Vec3 unit(const Vec3& v) {
     const double n = v.norm();
-    return n > std::numeric_limits<double>::min() ? v / n : Vec3{};
+    return n > 0.0 ? v / n : Vec3{};
 }
 
 struct FourVector { double time=0.0; Vec3 space; }; // x^0=ct convention
