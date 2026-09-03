@@ -1607,7 +1607,31 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     // model's depth range).  centreOfMassVelocity starts at the true
     // zero and only ever moves because a photon kicked it.
     const double totalMass=firstMass+secondMass;
-    Vec3 centreOfMassVelocity{0.0,0.0,0.0};
+    // Seeded from the pair's ACTUAL centre-of-mass velocity rather than
+    // hardwired to zero.  For every default run that is still exactly zero,
+    // because the bound initial conditions are prepared at zero total
+    // momentum -- the sentence above still describes them.  What it no longer
+    // does is silently discard a drift the caller asked for
+    // (CREM_COM_DRIFT), which is what made that switch unmeasurable.
+    //
+    // Note what this does and does not change, because the distinction is the
+    // whole point.  A common drift is a BOOST, and the pair's internal
+    // evolution is boost-invariant, so the proper-time collapse
+    // (simulatedTimeTotal, and calibrationSeconds with it) must NOT move and
+    // does not: the secular quadrature keeps working in the pair's own frame,
+    // which is correct and is deliberately left alone.  The drift's one
+    // physical consequence is on the LAB clock, and that is exactly what
+    // labFrameTimeTotal already integrates through gammaFromBeta -- it was
+    // simply never given a nonzero beta to integrate at the start.  The
+    // photon Doppler/aberration block downstream picks the same beta up for
+    // free.
+    // Inverted relativistically from the pair's total (Noether) momentum by
+    // the same helper the trajectory sector uses, so a 0.3 c drift reads back
+    // as 0.3 c rather than p/M.
+    const Vec3 seededCentreOfMassVelocity=velocityFromMomentum(
+        seedRun.frames.front().noetherMomentum,totalMass);
+    Vec3 centreOfMassVelocity=isFinite(seededCentreOfMassVelocity)
+        ?seededCentreOfMassVelocity:Vec3{0.0,0.0,0.0};
 
     const auto wallClockStart=std::chrono::steady_clock::now();
     const auto wallClockSpent=[&]() {
