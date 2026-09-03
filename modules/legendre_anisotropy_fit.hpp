@@ -6,13 +6,16 @@
 // by the annihilation-generator unit test.  The production panels plot the
 // exact isotropic reference instead of fitting a sampled one.
 //
-// Extracted verbatim from positronium.cpp (continuing the split of engine,
-// experiments and ROOT presentation apart -- see the session notes; this
-// slice is validation-only rather than engine/experiment/presentation, so
-// it is entirely POSITRONIUM_ENABLE_FIELD_VALIDATION-gated, same as in the
-// original).  Textually included at the same point inside positronium.cpp's
-// shared anonymous namespace it always occupied.  Not yet a standalone,
-// order-independent header.
+// Self-contained and order-independent.  The whole body is
+// POSITRONIUM_ENABLE_FIELD_VALIDATION-gated, as it was in positronium.cpp,
+// which means an isolation probe that does not define that macro compiles an
+// empty file and proves nothing -- probe this one with the macro set.
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <limits>
+#include <vector>
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 struct LegendreFitSummary {
@@ -22,7 +25,7 @@ struct LegendreFitSummary {
     bool atBoundary = false;
 };
 
-LegendreFitSummary fitSecondLegendreAnisotropy(
+inline LegendreFitSummary fitSecondLegendreAnisotropy(
     const std::vector<double>& cosines) {
     LegendreFitSummary result;
     std::vector<double> secondLegendre;
