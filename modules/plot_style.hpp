@@ -32,16 +32,25 @@
 //
 // Fill colour is reserved for classification (experiment 5) and uses pale tints
 // that cannot be mistaken for the saturated provenance outlines.
+#include <TColor.h>
+#include <TH1D.h>
+#include <TStyle.h>
+
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <string>
+
 namespace plot_style {
 
-int crem()         { return TColor::GetColor("#0072B2"); }
-int sampled()      { return TColor::GetColor("#E69F00"); }
-int experimental() { return TColor::GetColor("#009E73"); }
-int theory()       { return TColor::GetColor("#D55E00"); }
-int qed()          { return TColor::GetColor("#CC79A7"); }
+inline int crem()         { return TColor::GetColor("#0072B2"); }
+inline int sampled()      { return TColor::GetColor("#E69F00"); }
+inline int experimental() { return TColor::GetColor("#009E73"); }
+inline int theory()       { return TColor::GetColor("#D55E00"); }
+inline int qed()          { return TColor::GetColor("#CC79A7"); }
 
 // Pale classification fills, in the order of InteractionOutcome.
-int classificationFill(std::size_t slot) {
+inline int classificationFill(std::size_t slot) {
     static const std::array<const char*,6> tints{
         "#E8A0A0",  // Collision
         "#8FC3E8",  // Scattering
@@ -54,7 +63,7 @@ int classificationFill(std::size_t slot) {
 
 // Legend text naming only the provenances a given panel actually contains, so
 // the key stays short and never claims something the panel does not show.
-std::string key(bool hasCrem, bool hasSampled, bool hasExperimental,
+inline std::string key(bool hasCrem, bool hasSampled, bool hasExperimental,
                 bool hasTheory) {
     std::string result = "colours: ";
     bool first = true;
@@ -73,7 +82,7 @@ std::string key(bool hasCrem, bool hasSampled, bool hasExperimental,
 
 } // namespace plot_style
 
-void styleHistogram(TH1D& histogram, int color) {
+inline void styleHistogram(TH1D& histogram, int color) {
     histogram.SetDirectory(nullptr);
     histogram.SetLineColor(color);
     histogram.SetFillColorAlpha(color, 0.45);
@@ -87,7 +96,7 @@ void styleHistogram(TH1D& histogram, int color) {
 // whose bins are literal trajectory/event counts -- not on the handful that
 // hold a derived physical quantity (differential cross sections, weighted
 // spectra), where a bin's "count" is not the number being reported.
-void styleBinCounts(TH1D& histogram) {
+inline void styleBinCounts(TH1D& histogram) {
     histogram.SetMarkerSize(1.3);
     // TH1 has no per-histogram text format; ROOT reads it from TStyle at
     // paint time, so this is a (harmless, idempotent) global style edit.

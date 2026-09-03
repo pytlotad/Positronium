@@ -6,16 +6,32 @@
 // modules/retarded_charge_kinematics.hpp's lienardWiechertField and its
 // electrodynamics.hpp siblings all share.
 //
-// Extracted verbatim from positronium.cpp (Stage 0 of splitting engine,
-// experiments and ROOT presentation apart -- see the session notes).
-// Textually included at the same point inside positronium.cpp's shared
-// anonymous namespace it always occupied, so it depends on that namespace
-// already having in scope: Vec3 and dot().  Not yet a standalone,
-// order-independent header.
+// Self-contained and order-independent: it pulls in its own Vec3 and dot()
+// and names them through using-declarations rather than reopening
+// namespace positronium.  That distinction matters, because this header is
+// still textually included inside positronium.cpp's anonymous namespace:
+// reopening a named namespace there would create {anonymous}::positronium
+// and hide the real ::positronium from every later lookup.
 
-Vec3 unit(const Vec3& v) { return v / v.norm(); }
+#include "vector3.hpp"
+
+#include <cmath>
+#include <limits>
+
+using positronium::objects::Vec3;
+using positronium::objects::dot;
+
+// The zero-vector guard replaces a bare v/v.norm(), which returned NaN for a
+// null argument (audit point 3.2).  No production call site passes a zero
+// vector, so the returned values are unchanged wherever unit() was defined.
+inline Vec3 unit(const Vec3& v) {
+    const double n = v.norm();
+    return n > std::numeric_limits<double>::min() ? v / n : Vec3{};
+}
+
 struct FourVector { double time=0.0; Vec3 space; }; // x^0=ct convention
 struct ElectromagneticField { Vec3 electric, magnetic; };
-double minkowskiDot(const FourVector& first,const FourVector& second) {
+
+inline double minkowskiDot(const FourVector& first,const FourVector& second) {
     return first.time*second.time-dot(first.space,second.space);
 }

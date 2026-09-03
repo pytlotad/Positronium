@@ -11,13 +11,19 @@
 // #ifndef POSITRONIUM_VALIDATION_EXECUTABLE region positronium.cpp opens
 // well before this #include -- so this header needs no guard of its own.
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <limits>
+#include <vector>
+
 struct GaussianFitSummary {
     double mean = std::numeric_limits<double>::quiet_NaN();
     double sigma = std::numeric_limits<double>::quiet_NaN();
     std::size_t count = 0;
 };
 
-GaussianFitSummary gaussianMaximumLikelihood(const std::vector<double>& values) {
+inline GaussianFitSummary gaussianMaximumLikelihood(const std::vector<double>& values) {
     GaussianFitSummary result;
     result.mean = 0.0;
     double secondMoment = 0.0;

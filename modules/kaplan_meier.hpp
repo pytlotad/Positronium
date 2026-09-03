@@ -32,6 +32,12 @@
 // #ifndef POSITRONIUM_VALIDATION_EXECUTABLE region positronium.cpp opens
 // well before this #include -- so this header needs no guard of its own.
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <limits>
+#include <vector>
+
 // One trajectory's contribution to a right-censored survival sample.
 // observed=true means the collapse was actually seen at `time`; observed=false
 // means the run stopped at `time` with the pair still bound, so all that is
@@ -68,7 +74,7 @@ struct KaplanMeierEstimate {
 // simulated time it reached, and averaging only the completed runs throws that
 // away -- badly, because the budget preferentially stops the widest orbits,
 // which are exactly the slowest to collapse.
-KaplanMeierEstimate kaplanMeier(std::vector<SurvivalObservation> sample) {
+inline KaplanMeierEstimate kaplanMeier(std::vector<SurvivalObservation> sample) {
     KaplanMeierEstimate result;
     sample.erase(std::remove_if(sample.begin(),sample.end(),
         [](const SurvivalObservation& o) {

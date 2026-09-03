@@ -27,6 +27,9 @@ inline constexpr double electronGFactor = 2.00231930436092;
 // used instead of quoting the bare Bohr magneton as the dipole strength.
 inline constexpr double electronMagneticMoment = 0.5*electronGFactor*bohrMagneton;
 inline constexpr double coulombConstant = 1.0/(4.0*pi*epsilon0);
+inline constexpr double c = speedOfLight;
+inline constexpr double eCharge = elementaryCharge;
+inline constexpr double coulomb = coulombConstant;
 inline constexpr double bohrRadius = 5.29177210903e-11;
 // Bohr radius of the POSITRONIUM system.  a0 above is hydrogen's, built from
 // the electron mass; positronium's reduced mass is mu = m_e/2, so its scale is

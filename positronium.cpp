@@ -97,9 +97,10 @@ using positronium::objects::StateHistory;
 using positronium::objects::DipoleTensor;
 using namespace positronium::parameters;
 namespace two_body = positronium::kinematics;
-constexpr double c=speedOfLight;
-constexpr double eCharge=elementaryCharge;
-constexpr double coulomb=coulombConstant;
+// c, eCharge and coulomb are the shorthand spellings of speedOfLight,
+// elementaryCharge and coulombConstant.  They now live beside the constants
+// they alias, in modules/physical_constants.hpp, and arrive here through the
+// using-directive above; defining them again would make every use ambiguous.
 
 // activePair and every role-scoped global derived from it, the
 // gyromagneticRatio helpers, applyPair/applyPairFromOption,
@@ -108,12 +109,11 @@ constexpr double coulomb=coulombConstant;
 // comment).
 #include "modules/pair_configuration.hpp"
 
-double dot(const Vec3& a,const Vec3& b);
+// dot() and cross() are defined in modules/vector3.hpp beside Vec3 itself,
+// so argument-dependent lookup finds them for every Vec3 argument without a
+// declaration here.  gamma() still needs one: it is defined much further
+// down, in modules/relativistic_kinematics.hpp.
 double gamma(const Vec3& velocity);
-
-Vec3 cross(const Vec3& a, const Vec3& b) {
-    return {a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x};
-}
 
 // ZeroPointField, gZeroPointField, makeZeroPointField (continuing the split
 // of engine/experiments/ROOT presentation apart -- see the header's own
@@ -164,8 +164,6 @@ double dipoleSecondInvariant(const DipoleTensor& dipole) {
 // clampedPairGeometry, separation (Stage 0 of splitting engine/experiments/
 // ROOT presentation apart -- see the header's own comment).
 #include "modules/pair_geometry.hpp"
-
-double dot(const Vec3& a, const Vec3& b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
 
 // ChargeKinematics, interpolatedCharge, historicalCharge,
 // lienardWiechertField (Stage 0 of splitting engine/experiments/ROOT
@@ -598,45 +596,12 @@ inline bool gSpinQuantization = true;
 // in the same vector state.
 #include "modules/secular_spin_orbit.hpp"
 
-// A circular, isotropic 2D Gaussian beam has independent Gaussian transverse
-// coordinates.  Its radial impact parameter is therefore Rayleigh-distributed
-// (the area Jacobian contributes the factor b), not half-normal.  Keep this
-// sampler outside the production-only block so the validation executable tests
-// exactly the same implementation used by experiment 5.
-struct IsotropicGaussianImpactSample {
-    double transverseY = std::numeric_limits<double>::quiet_NaN();
-    double transverseZ = std::numeric_limits<double>::quiet_NaN();
-    double impactParameter = std::numeric_limits<double>::quiet_NaN();
-
-    bool valid(double maximumImpactParameter) const {
-        return std::isfinite(transverseY)
-            && std::isfinite(transverseZ)
-            && std::isfinite(impactParameter)
-            && impactParameter >= 0.0
-            && impactParameter <= maximumImpactParameter;
-    }
-};
-
-IsotropicGaussianImpactSample sampleIsotropicGaussianImpact(
-        std::mt19937_64& random, double transverseSigma,
-        double maximumImpactParameter) {
-    if (!(transverseSigma > 0.0)
-        || !std::isfinite(transverseSigma)
-        || !(maximumImpactParameter >= 0.0)
-        || !std::isfinite(maximumImpactParameter)) {
-        return {};
-    }
-    std::normal_distribution<double> transverseGaussian(0.0,transverseSigma);
-    for(int attempt=0;attempt<1000;++attempt) {
-        const double transverseY=transverseGaussian(random);
-        const double transverseZ=transverseGaussian(random);
-        const double impactParameter=std::hypot(transverseY,transverseZ);
-        if (impactParameter<=maximumImpactParameter) {
-            return {transverseY,transverseZ,impactParameter};
-        }
-    }
-    return {};
-}
+// splitMix64, histogramBins, IsotropicGaussianImpactSample and
+// sampleIsotropicGaussianImpact (continuing the split of engine/experiments/
+// ROOT presentation apart -- see the header's own comment).  This include
+// sits OUTSIDE the production-only region below on purpose: the validation
+// executable tests exactly the impact sampler experiment 5 uses.
+#include "modules/sampling_utilities.hpp"
 
 #ifndef POSITRONIUM_VALIDATION_EXECUTABLE
 // formatTableValue, cutoffTimeLabel, spinLabel (continuing the split of
@@ -647,10 +612,6 @@ IsotropicGaussianImpactSample sampleIsotropicGaussianImpact(
 // setDipoleArrow (continuing the split of engine/experiments/ROOT
 // presentation apart -- see the header's own comment).
 #include "modules/dipole_arrow_drawing.hpp"
-
-// splitMix64, histogramBins (continuing the split of engine/experiments/
-// ROOT presentation apart -- see the header's own comment).
-#include "modules/sampling_utilities.hpp"
 
 // plot_style namespace, styleHistogram, styleBinCounts (continuing the
 // split of engine/experiments/ROOT presentation apart -- see the header's
