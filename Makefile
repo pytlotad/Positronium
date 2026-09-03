@@ -34,7 +34,7 @@ HEADERS := $(wildcard modules/*.hpp)
 	validation-pair production-pair-smoke \
 	reproducible reproducible-validation sanitizers asan-check ubsan-check \
 	sanitizers-check \
-	references-check toolchain-info run clean
+	references-check header-isolation-check toolchain-info run clean
 
 all: run
 
@@ -88,6 +88,11 @@ toolchain-info:
 
 references-check:
 	python3 tools/validate_references.py ScientificalReferences.txt
+
+# Every modules/*.hpp must compile on its own.  This is a syntax-only sweep, so
+# it costs seconds; run it after touching any header's includes.
+header-isolation-check:
+	./tools/check_header_isolation.sh
 
 run: $(TARGET)
 	./$(TARGET)

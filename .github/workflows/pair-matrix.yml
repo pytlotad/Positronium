@@ -13,6 +13,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Every modules/*.hpp must still compile on its own.  Cheap (syntax-only,
+  # seconds) and it catches the regression the pair matrix cannot see: a header
+  # that works only because positronium.cpp included something before it.
+  header-isolation:
+    name: header isolation
+    runs-on: ubuntu-latest
+    container: rootproject/root:6.34.00-ubuntu24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile every module header standalone
+        run: make header-isolation-check
+
   validator:
     name: validator (${{ matrix.pair }})
     runs-on: ubuntu-latest
