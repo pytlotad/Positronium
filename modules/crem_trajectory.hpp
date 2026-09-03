@@ -995,6 +995,49 @@ SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     const Vec3 relativeVelocity{radialSpeed, tangentialSpeed, 0.0};
     s.firstVelocity = relativeVelocity * (secondMass / (firstMass + secondMass));
     s.secondVelocity = relativeVelocity * (-firstMass / (firstMass + secondMass));
+    // CREM_COM_DRIFT: give the WHOLE pair a common velocity, in units of c,
+    // normal to the orbital plane.  Off by default; any nonzero value is a
+    // numerical experiment, the same shape as --zpf-scale's "anything other
+    // than 1 is not the physical field".
+    //
+    // The bound initial conditions are otherwise prepared at exactly zero
+    // total momentum, so the two velocities are equal and opposite.  A common
+    // drift is what makes both share a velocity SENSE, and it is not a
+    // cosmetic relabelling of the frame for the dipole sector: the motional
+    // electric dipole is p_i = gamma (v_i x mu_i)/c^2, so with v_1 = -v_2 the
+    // drift-free pair has para's two p cancel and ortho's add, while a common
+    // drift contributes the same v_drift x mu_i to both and therefore reverses
+    // which channel adds.  That is the asymmetry this switch exists to expose;
+    // it is deliberately applied normal to the plane so the internal orbit is
+    // untouched and the drift enters as a boost rather than as a perturbed
+    // orbit.
+    //
+    // SCOPE, measured, and the reason to read this before trusting a result
+    // from it: the drift reaches the mechanical seed run and the carried
+    // dipoles, but NOT the secular collapse estimator, which is frame-locked
+    // to the pair's zero-momentum frame twice over -- estimateCremCollapse
+    // holds centreOfMassVelocity at zero by construction ("starts at the true
+    // zero and only ever moves because a photon kicked it"), and
+    // orbitAveragedBmtAngularVelocities rebuilds every quadrature node's
+    // velocities from the orbital elements as +-relativeVelocity*(m/M), with
+    // no drift term.  So a common drift is projected straight back out of the
+    // collapse integral.  Measured at 0.30 c: the Kaplan-Meier collapse time
+    // does not move at all (147.818 ps para and 147.819 -> 147.820 ps ortho,
+    // against a 12-run sigma/mean of 1e-5), while the pair's total motional
+    // dipole changes by 86x.  A null collapse-time result from this switch is
+    // therefore a statement about the estimator's scope, NOT about physics,
+    // and must not be reported as one.  Making it a real measurement means
+    // seeding centreOfMassVelocity from the initial state and carrying the
+    // drift into the quadrature -- both of which touch that documented
+    // zero-momentum assumption deliberately.
+    if(const char* driftText=std::getenv("CREM_COM_DRIFT")) {
+        const double drift=std::atof(driftText)*c;
+        if(std::isfinite(drift)&&drift!=0.0) {
+            const Vec3 driftVelocity{0.0,0.0,drift};
+            s.firstVelocity=s.firstVelocity+driftVelocity;
+            s.secondVelocity=s.secondVelocity+driftVelocity;
+        }
+    }
 
     s.firstDipole = randomDirection() * firstMagneticMoment;
     // SPIN QUANTIZATION, third floor of --ground-state-floor and the one that
