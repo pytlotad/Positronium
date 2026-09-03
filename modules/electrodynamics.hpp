@@ -2745,11 +2745,35 @@ Vec3 covariantDipoleGradientForce(const State& state,
                 point,state.time,state,history,targetIsFirst,retreatFraction);
             if(gPoleCancellationRatio<=poleCancellationLimit)
                 field=retreated;
-            if(std::getenv("CREM_DEBUG_RETREAT"))
+            static const bool traceRetreat=
+                std::getenv("CREM_DEBUG_RETREAT")!=nullptr;
+            if(traceRetreat) {
+                // Does the degenerate geometry have a signature?  Each pole
+                // alone is photon-like by construction (B = n x E / c), so
+                // E.B and E^2-c^2B^2 vanish for it identically; the SUM of
+                // the two need not, which makes those invariants meaningful
+                // here.  Printed with the line-of-sight/moment angle, so a
+                // null-field or perpendicular-axis coincidence would show.
+                const bool sourceIsFirst=!targetIsFirst;
+                const Vec3 sourcePosition=sourceIsFirst?state.firstPosition
+                                                       :state.secondPosition;
+                const Vec3 sourceMoment=sourceIsFirst?state.firstDipole
+                                                     :state.secondDipole;
+                const Vec3 sight=point-sourcePosition;
+                const double sightNorm=sight.norm();
+                const double momentNorm=sourceMoment.norm();
+                const double eNorm=field.electric.norm();
+                const double bNorm=field.magnetic.norm();
                 std::cerr<<"RETREAT ratio="<<flagged
                     <<" after="<<gPoleCancellationRatio
                     <<(gPoleCancellationRatio<=poleCancellationLimit
-                        ?" accepted":" REJECTED")<<'\n';
+                        ?" accepted":" REJECTED")
+                    <<" n.mu="<<(sightNorm>0.0&&momentNorm>0.0
+                        ?dot(sight,sourceMoment)/(sightNorm*momentNorm):0.0)
+                    <<" cos(E,B)="<<(eNorm>0.0&&bNorm>0.0
+                        ?dot(field.electric,field.magnetic)/(eNorm*bNorm):0.0)
+                    <<" |E|/c|B|="<<(bNorm>0.0?eNorm/(c*bNorm):0.0)<<'\n';
+            }
         }
         // RELATIVE PLUS between the two channels.  This is the potential the
         // force is the gradient of, so the elementary requirement settles it:
@@ -2872,6 +2896,49 @@ Vec3 covariantDipoleGradientForce(const State& state,
             std::cerr<<"  ax"<<axis<<"[+"<<probePlus[axis]
                 <<" -"<<probeMinus[axis]
                 <<" d"<<(probePlus[axis]-probeMinus[axis])<<"]";
+        // Does the degenerate probe have a GEOMETRIC signature?  Each pole
+        // alone is photon-like by construction (B = n x E / c), so E.B and
+        // E^2 - c^2 B^2 both vanish for it identically; the SUM of the two
+        // poles need not, which makes those invariants meaningful for the
+        // assembled dipole field.  Printed with the line-of-sight/moment
+        // angle, so a null-field or perpendicular-axis coincidence at the
+        // bad probe would show up directly.
+        {
+            const bool sourceIsFirst=!targetIsFirst;
+            const Vec3 sourcePosition=sourceIsFirst?state.firstPosition
+                                                   :state.secondPosition;
+            const Vec3 sourceMoment=sourceIsFirst?state.firstDipole
+                                                 :state.secondDipole;
+            for(int axis=0;axis<3;++axis) {
+                Vec3 offset;
+                if(axis==0) offset.x=gradientStep;
+                else if(axis==1) offset.y=gradientStep;
+                else offset.z=gradientStep;
+                const Vec3 probe=targetPosition+offset;
+                const ElectromagneticField dipoleField=
+                    retardedMagneticDipoleFieldExact(probe,state.time,
+                        history,state,sourceIsFirst);
+                const Vec3 sight=probe-sourcePosition;
+                const double sightNorm=sight.norm();
+                const double momentNorm=sourceMoment.norm();
+                const double electricNorm=dipoleField.electric.norm();
+                const double magneticNorm=dipoleField.magnetic.norm();
+                const double eDotB=dot(dipoleField.electric,
+                                       dipoleField.magnetic);
+                const double invariant=electricNorm*electricNorm
+                    -c*c*magneticNorm*magneticNorm;
+                std::cerr<<"\n  geo"<<axis
+                    <<" n.mu="<<(sightNorm>0.0&&momentNorm>0.0
+                        ?dot(sight,sourceMoment)/(sightNorm*momentNorm):0.0)
+                    <<" cos(E,B)="<<(electricNorm>0.0&&magneticNorm>0.0
+                        ?eDotB/(electricNorm*magneticNorm):0.0)
+                    <<" (E2-c2B2)/(E2+c2B2)="
+                    <<invariant/std::max(electricNorm*electricNorm
+                        +c*c*magneticNorm*magneticNorm,1.0e-300)
+                    <<" |E|/c|B|="<<(magneticNorm>0.0
+                        ?electricNorm/(c*magneticNorm):0.0);
+            }
+        }
         // eps SWEEP at each probe.  The two-charge construction is a device
         // for the eps->0 limit, so the question that decides what to do about
         // a degenerate probe is whether shrinking eps recovers the answer
