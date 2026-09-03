@@ -1777,6 +1777,16 @@ ElectromagneticField farZoneElectricDipoleField(
 // square root: 1e-5 retains about eleven useful relative digits in the
 // uniform-motion probes and is substantially less noisy inside the outer
 // spatial gradient used by covariantDipoleGradientForce.
+// CREM_DEBUG_GRAD reads this: the last few twoChargeLimitDipoleField calls,
+// so an outlier probe of covariantDipoleGradientForce's stencil can be traced
+// to the field evaluation that produced it.  Diagnostic only.
+struct TwoChargeLimitTrace {
+    int centralIterations=0;
+    double centralResidual=0.0, poleCharge=0.0, momentScale=0.0;
+    bool earlyReturn=false;
+};
+inline thread_local TwoChargeLimitTrace gTwoChargeTrace[8];
+inline thread_local int gTwoChargeTraceCount=0;
 template<class MomentSampler>
 ElectromagneticField twoChargeLimitDipoleField(
     const Vec3& observationPosition,double observationTime,
@@ -1786,14 +1796,19 @@ ElectromagneticField twoChargeLimitDipoleField(
         history,present,sourceIsFirst,observationTime);
     double centralRetardedTime=observationTime
         -(observationPosition-nowCharge.position).norm()/c;
+    TwoChargeLimitTrace& trace=
+        gTwoChargeTrace[gTwoChargeTraceCount++ & 7];
+    trace=TwoChargeLimitTrace{};
     for(int iteration=0;iteration<16;++iteration) {
+        trace.centralIterations=iteration+1;
         const ChargeKinematics charge=historicalCharge(
             history,present,sourceIsFirst,centralRetardedTime);
         const Vec3 displacement=observationPosition-charge.position;
         const double distance=displacement.norm();
-        if(!(distance>std::numeric_limits<double>::min())) return {};
+        if(!(distance>std::numeric_limits<double>::min())) { trace.earlyReturn=true; return {}; }
         const Vec3 direction=displacement/distance;
         const double residual=centralRetardedTime+distance/c-observationTime;
+        trace.centralResidual=residual;
         const double derivative=std::max(
             1.0e-8,1.0-dot(direction,charge.velocity/c));
         const double refined=centralRetardedTime-residual/derivative;
@@ -1810,22 +1825,25 @@ ElectromagneticField twoChargeLimitDipoleField(
     momentAt(centralRetardedTime,referenceMoment,
         referenceFirst,referenceSecond);
     if(!isFinite(referenceMoment)||!isFinite(referenceFirst)
-       ||!isFinite(referenceSecond)) return {};
+       ||!isFinite(referenceSecond)) { trace.earlyReturn=true; return {}; }
     if(referenceMoment.squaredNorm()==0.0
        &&referenceFirst.squaredNorm()==0.0
-       &&referenceSecond.squaredNorm()==0.0) return {};
+       &&referenceSecond.squaredNorm()==0.0) { trace.earlyReturn=true; return {}; }
     const double referenceDistance=std::max(
         (observationPosition-referenceCharge.position).norm(),
         separationFloor());
     if(!(poleSeparationFraction>0.0)
-       ||!std::isfinite(poleSeparationFraction)) return {};
+       ||!std::isfinite(poleSeparationFraction)) { trace.earlyReturn=true; return {}; }
     const double poleSeparation=poleSeparationFraction*referenceDistance;
     const double referenceTime=referenceDistance/c;
     const double momentScale=std::max({referenceMoment.norm(),
         referenceFirst.norm()*referenceTime,
         referenceSecond.norm()*referenceTime*referenceTime});
     const double poleCharge=momentScale/poleSeparation;
-    if(!(poleCharge>0.0)||!std::isfinite(poleCharge)) return {};
+    trace.poleCharge=poleCharge;
+    trace.momentScale=momentScale;
+    if(!(poleCharge>0.0)||!std::isfinite(poleCharge)) {
+        trace.earlyReturn=true; return {}; }
     const auto poleKinematics=[&](double sign,double time,
             Vec3& position,Vec3& velocity,Vec3& acceleration) {
         const ChargeKinematics charge=
@@ -1844,7 +1862,7 @@ ElectromagneticField twoChargeLimitDipoleField(
             poleKinematics(sign,retardedTime,position,velocity,acceleration);
             const Vec3 displacement=observationPosition-position;
             const double distance=displacement.norm();
-            if(!(distance>std::numeric_limits<double>::min())) return {};
+            if(!(distance>std::numeric_limits<double>::min())) { trace.earlyReturn=true; return {}; }
             const Vec3 direction=displacement/distance;
             const double residual=retardedTime+distance/c-observationTime;
             const double derivative=std::max(1.0e-8,
@@ -1859,7 +1877,7 @@ ElectromagneticField twoChargeLimitDipoleField(
         poleKinematics(sign,retardedTime,position,velocity,acceleration);
         const Vec3 displacement=observationPosition-position;
         const double distance=displacement.norm();
-        if(!(distance>std::numeric_limits<double>::min())) return {};
+        if(!(distance>std::numeric_limits<double>::min())) { trace.earlyReturn=true; return {}; }
         const Vec3 direction=displacement/distance;
         const double fieldDistance=
             std::max({distance,nuclearCutoff,separationFloor()});
@@ -1887,7 +1905,7 @@ ElectromagneticField twoChargeLimitDipoleField(
             /(c*c*kappa*kappa*kappa*fieldDistance);
         const Vec3 electric=(velocityField+accelerationField)
             *(coulomb*sign*poleCharge);
-        if(!isFinite(electric)) return {};
+        if(!isFinite(electric)) { trace.earlyReturn=true; return {}; }
         return {electric,cross(direction,electric)/c};
     };
     const ElectromagneticField positivePole=poleField(1.0);
@@ -1895,7 +1913,7 @@ ElectromagneticField twoChargeLimitDipoleField(
     const ElectromagneticField total{
         positivePole.electric+negativePole.electric,
         positivePole.magnetic+negativePole.magnetic};
-    if(!isFinite(total.electric)||!isFinite(total.magnetic)) return {};
+    if(!isFinite(total.electric)||!isFinite(total.magnetic)) { trace.earlyReturn=true; return {}; }
     return total;
 }
 
@@ -2689,6 +2707,8 @@ Vec3 covariantDipoleGradientForce(const State& state,
     };
     Vec3 gradient;
     double probePlus[3]={},probeMinus[3]={};
+    double channelPlusMagnetic[3]={},channelPlusElectric[3]={};
+    double channelMinusMagnetic[3]={},channelMinusElectric[3]={};
     for(int axis=0;axis<3;++axis) {
         Vec3 offset;
         if(axis==0) offset.x=gradientStep;
@@ -2696,6 +2716,18 @@ Vec3 covariantDipoleGradientForce(const State& state,
         else offset.z=gradientStep;
         const double plus=coupling(targetPosition+offset);
         const double minus=coupling(targetPosition-offset);
+        static const bool traceChannels=
+            std::getenv("CREM_DEBUG_GRAD")!=nullptr;
+        if(traceChannels) {
+            const ElectromagneticField fp=fieldFromOtherParticleAt(
+                targetPosition+offset,state.time,state,history,targetIsFirst);
+            channelPlusMagnetic[axis]=dot(labMagneticDipole,fp.magnetic);
+            channelPlusElectric[axis]=dot(labElectricDipole,fp.electric);
+            const ElectromagneticField fm=fieldFromOtherParticleAt(
+                targetPosition-offset,state.time,state,history,targetIsFirst);
+            channelMinusMagnetic[axis]=dot(labMagneticDipole,fm.magnetic);
+            channelMinusElectric[axis]=dot(labElectricDipole,fm.electric);
+        }
         probePlus[axis]=plus;
         probeMinus[axis]=minus;
         const double derivative=(plus-minus)/(2.0*gradientStep);
@@ -2709,8 +2741,9 @@ Vec3 covariantDipoleGradientForce(const State& state,
     // retarded-solve or formula-branch flip at that point) or all six are
     // sane and the blow-up is the cancellation losing its conditioning.
     // These two are distinguishable only by looking at the six.
-    if(std::getenv("CREM_DEBUG_GRAD")
-       &&gradient.norm()/gamma(targetVelocity)>1.0e-3) {
+    static const bool traceAnomaly=
+        std::getenv("CREM_DEBUG_GRAD")!=nullptr;
+    if(traceAnomaly&&gradient.norm()/gamma(targetVelocity)>1.0e-3) {
         std::cerr<<std::setprecision(12)<<"GRAD anomaly |grad|="
             <<gradient.norm()/gamma(targetVelocity)
             <<" step="<<gradientStep<<" r="<<separation(state);
@@ -2718,6 +2751,25 @@ Vec3 covariantDipoleGradientForce(const State& state,
             std::cerr<<"  ax"<<axis<<"[+"<<probePlus[axis]
                 <<" -"<<probeMinus[axis]
                 <<" d"<<(probePlus[axis]-probeMinus[axis])<<"]";
+        // The two channels separately: U is their SUM, so if each is large
+        // and they nearly cancel, the outlier is a cancellation failure
+        // rather than a bad field evaluation.
+        for(int axis=0;axis<3;++axis)
+            std::cerr<<"\n  ch"<<axis
+                <<" +[muB "<<channelPlusMagnetic[axis]
+                <<" pE "<<channelPlusElectric[axis]<<"]"
+                <<" -[muB "<<channelMinusMagnetic[axis]
+                <<" pE "<<channelMinusElectric[axis]<<"]";
+        // The six field evaluations behind those couplings, most recent last.
+        std::cerr<<"\n  traces";
+        for(int slot=0;slot<8;++slot) {
+            const TwoChargeLimitTrace& t=
+                gTwoChargeTrace[(gTwoChargeTraceCount+slot)&7];
+            std::cerr<<" [it"<<t.centralIterations
+                <<" res"<<t.centralResidual
+                <<" q"<<t.poleCharge
+                <<(t.earlyReturn?" EARLY":"")<<"]";
+        }
         std::cerr<<std::setprecision(6)<<'\n';
     }
     // Spatial component of the covariant gradient divided by gamma gives
