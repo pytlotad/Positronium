@@ -1783,6 +1783,10 @@ ElectromagneticField farZoneElectricDipoleField(
 struct TwoChargeLimitTrace {
     int centralIterations=0;
     double centralResidual=0.0, poleCharge=0.0, momentScale=0.0;
+    // The construction is a DIFFERENCE of two large point-charge fields, so
+    // how much of each survives the subtraction is the number that says
+    // whether its output can be trusted at a given geometry.
+    double poleMagnitude=0.0, sumMagnitude=0.0;
     bool earlyReturn=false;
 };
 inline thread_local TwoChargeLimitTrace gTwoChargeTrace[8];
@@ -1913,6 +1917,9 @@ ElectromagneticField twoChargeLimitDipoleField(
     const ElectromagneticField total{
         positivePole.electric+negativePole.electric,
         positivePole.magnetic+negativePole.magnetic};
+    trace.poleMagnitude=std::max(positivePole.magnetic.norm(),
+                                 negativePole.magnetic.norm());
+    trace.sumMagnitude=total.magnetic.norm();
     if(!isFinite(total.electric)||!isFinite(total.magnetic)) { trace.earlyReturn=true; return {}; }
     return total;
 }
@@ -2708,6 +2715,7 @@ Vec3 covariantDipoleGradientForce(const State& state,
     Vec3 gradient;
     double probePlus[3]={},probeMinus[3]={};
     double channelPlusMagnetic[3]={},channelPlusElectric[3]={};
+    double lwPlusMagnetic[3]={},dipPlusMagnetic[3]={};
     double channelMinusMagnetic[3]={},channelMinusElectric[3]={};
     for(int axis=0;axis<3;++axis) {
         Vec3 offset;
@@ -2719,6 +2727,14 @@ Vec3 covariantDipoleGradientForce(const State& state,
         static const bool traceChannels=
             std::getenv("CREM_DEBUG_GRAD")!=nullptr;
         if(traceChannels) {
+            const bool sourceIsFirst=!targetIsFirst;
+            const ElectromagneticField lwPlus=lienardWiechertField(
+                targetPosition+offset,state.time,history,state,sourceIsFirst,
+                sourceIsFirst?firstCharge:secondCharge);
+            const ElectromagneticField dipPlus=retardedMagneticDipoleField(
+                targetPosition+offset,state.time,history,state,sourceIsFirst);
+            lwPlusMagnetic[axis]=lwPlus.magnetic.norm();
+            dipPlusMagnetic[axis]=dipPlus.magnetic.norm();
             const ElectromagneticField fp=fieldFromOtherParticleAt(
                 targetPosition+offset,state.time,state,history,targetIsFirst);
             channelPlusMagnetic[axis]=dot(labMagneticDipole,fp.magnetic);
@@ -2755,6 +2771,9 @@ Vec3 covariantDipoleGradientForce(const State& state,
         // and they nearly cancel, the outlier is a cancellation failure
         // rather than a bad field evaluation.
         for(int axis=0;axis<3;++axis)
+            std::cerr<<"\n  src"<<axis<<" +[|B_LW| "<<lwPlusMagnetic[axis]
+                <<" |B_dip| "<<dipPlusMagnetic[axis]<<"]";
+        for(int axis=0;axis<3;++axis)
             std::cerr<<"\n  ch"<<axis
                 <<" +[muB "<<channelPlusMagnetic[axis]
                 <<" pE "<<channelPlusElectric[axis]<<"]"
@@ -2766,8 +2785,10 @@ Vec3 covariantDipoleGradientForce(const State& state,
             const TwoChargeLimitTrace& t=
                 gTwoChargeTrace[(gTwoChargeTraceCount+slot)&7];
             std::cerr<<" [it"<<t.centralIterations
-                <<" res"<<t.centralResidual
-                <<" q"<<t.poleCharge
+                <<" |pole|"<<t.poleMagnitude
+                <<" |sum|"<<t.sumMagnitude
+                <<" keep"<<(t.poleMagnitude>0.0
+                    ?t.sumMagnitude/t.poleMagnitude:0.0)
                 <<(t.earlyReturn?" EARLY":"")<<"]";
         }
         std::cerr<<std::setprecision(6)<<'\n';
