@@ -156,6 +156,92 @@ private:
                         <<" metric="<<rejectionMetric<<" depth="<<depth
                         <<" dt="<<dt<<" t="<<start.time
                         <<" r="<<separation(start)<<'\n';
+                // CREM_DEBUG_ORDER_LIVE: the same step-doubling sweep
+                // CREM_DEBUG_ORDER runs on a synthetic state, but on the REAL
+                // one that is failing, with its REAL retarded history, and
+                // with the force sectors switched out the same way.
+                //
+                // This is what identified the ortho collapse's one numerical
+                // failure, and it had to be run here rather than on a
+                // synthetic state because the synthetic probe gave a FALSE
+                // NEGATIVE: with 94 smooth history nodes it showed a clean
+                // 4.00x per halving in every sector and exonerated the
+                // retarded fields.  The real failure carries 31 nodes and
+                // behaves completely differently.  Measured at r=1.056e-12 m,
+                // dtFail=5.714e-25 s, sweeping dt from 16x down to 1/32x:
+                //
+                //   retarded  1.89e-9  9.31e-10  4.67e-10  3.77e-3  9.45e-4
+                //             3.19e-13  2.58e-13  1.38e-13  2.30e-14  1.20e-14
+                //   Coulomb   4.14e-11 1.04e-11 2.60e-12 6.52e-13 1.63e-13
+                //             4.10e-14 1.04e-14 2.55e-15 6.13e-16 2.91e-16
+                //
+                // Coulomb-only, on the identical state and history, is clean
+                // to four digits (3.99x throughout).  The retarded sector
+                // spikes SEVEN orders between adjacent step sizes, passes
+                // through exactly the 9.45e-4 the engine rejects on, then
+                // drops TEN orders.  So it is not a lost convergence order at
+                // all, it is a discontinuity in dt.  Radiation reaction is
+                // irrelevant: the two retarded rows are bit-identical with it
+                // on and off.
+                //
+                // One mechanism was proposed and REFUTED here, which is worth
+                // recording so it is not proposed again: boundedDerivativeStep
+                // returning its hard zero fallback would flip derivatives
+                // discontinuously, but counting its firings around each trial
+                // step gives 0 for every retarded step including the anomalous
+                // one, and 108 for every Coulomb step -- constantly firing in
+                // the sector that stays smooth, never firing in the sector
+                // that jumps.  (The Coulomb count is allExternalForces' own
+                // single-node history, where span=0 by construction.)
+                //
+                // Left narrowed but not pinned: the retarded-time solve, and
+                // historicalState's piecewise interpolation across a 31-node
+                // history, which is the difference from the 94-node synthetic
+                // case that hid the effect.
+                if(std::getenv("CREM_DEBUG_ORDER_LIVE")) {
+                    static int liveSweeps=0;
+                    if(liveSweeps++<1) {
+                        struct LiveCase { const char* name; bool retarded;
+                                          ChargeRadiationReactionModel model; };
+                        const LiveCase liveCases[]={
+                            {"retarded+prod",true,accuracy_.reactionModel},
+                            {"retarded+noRR",true,
+                             ChargeRadiationReactionModel::disabled},
+                            {"Coulomb +prod",false,accuracy_.reactionModel},
+                            {"Coulomb +noRR",false,
+                             ChargeRadiationReactionModel::disabled}};
+                        std::cerr<<"LIVE state r="<<separation(start)
+                            <<" historyNodes="<<history.size()
+                            <<" dtFail="<<dt<<'\n';
+                        for(const LiveCase& liveCase:liveCases) {
+                            double previous=0.0;
+                            std::cerr<<"LIVE "<<liveCase.name;
+                            for(int halving=0;halving<10;++halving) {
+                                const double sweepStep=
+                                    dt*std::pow(2.0,4.0-halving);
+                                State coarse=start;
+                                integrateElectrodynamicStep(coarse,sweepStep,
+                                    history,false,liveCase.model,
+                                    liveCase.retarded);
+                                State fine=start;
+                                StateHistory fineHistory=history;
+                                integrateElectrodynamicStep(fine,
+                                    0.5*sweepStep,fineHistory,false,
+                                    liveCase.model,liveCase.retarded);
+                                integrateElectrodynamicStep(fine,
+                                    0.5*sweepStep,fineHistory,false,
+                                    liveCase.model,liveCase.retarded);
+                                const double error=
+                                    normalizedStepError(coarse,fine);
+                                std::cerr<<"  "<<error;
+                                if(halving>0&&error>0.0)
+                                    std::cerr<<"("<<previous/error<<"x)";
+                                previous=error;
+                            }
+                            std::cerr<<'\n';
+                        }
+                    }
+                }
                 return false;
             }
             State midpoint;
