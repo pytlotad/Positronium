@@ -2819,6 +2819,9 @@ InteractionEvent simulateInteractionEvent(
     std::size_t alignmentCount = 0;
     double alignmentMean = 0.0;
     double alignmentSecondMoment = 0.0;
+    // Alignment at the instant of capture, kept beside the running mean so the
+    // two classifications can be compared (CREM_DEBUG_CAPTURE).
+    double alignmentAtCapture = std::numeric_limits<double>::quiet_NaN();
 
     const double reducedMass = firstMass*secondMass
                                  / (firstMass + secondMass);
@@ -2952,6 +2955,7 @@ InteractionEvent simulateInteractionEvent(
         if (bound) {
             const double alignment = dipoleAlignmentOf(state);
             if (std::isfinite(alignment)) {
+                if (alignmentCount == 0) alignmentAtCapture = alignment;
                 ++alignmentCount;
                 const double delta = alignment - alignmentMean;
                 alignmentMean += delta/static_cast<double>(alignmentCount);
@@ -3072,7 +3076,50 @@ InteractionEvent simulateInteractionEvent(
                 // i.e. the singlet.  The 0.5 threshold on an initially isotropic
                 // relative orientation also reproduces the 1:3 para:ortho
                 // statistical weight, which is a useful consistency check.
-                const bool parallelMoments = alignmentMean >= 0.5;
+                //
+                // Classified from the alignment AT CAPTURE, not from the
+                // running mean over the observation window.  Two reasons, and
+                // the first is that the justification above names the initial
+                // orientation: the mean is taken over a window in which the
+                // classical mutual angle wanders, so its distribution is not
+                // the isotropic one the 1:3 weight is derived from, and the
+                // consistency check would be grading itself against the wrong
+                // expectation.  The second is physical -- S is fixed when the
+                // pair forms and conserved after, so the spin state is not a
+                // time average of a drifting angle.
+                //
+                // Measured with CREM_DEBUG_CAPTURE: the window drift is small
+                // here, |d(cos)| ~ 0.0007-0.028 over a few orbits (far below
+                // the collapse path's order-one excursions), but it is not
+                // negligible against the threshold.  One capture in a sample
+                // of eight sat 0.0003 from the cut and drifted 0.0163, so the
+                // mean classified it opposite to its own formation state; the
+                // rate this happens at is about |drift|/2, i.e. ~1%.
+                //
+                // alignmentMean and its spread stay as reported diagnostics;
+                // only the classification moves.
+                const bool parallelMoments =
+                    std::isfinite(alignmentAtCapture) ? alignmentAtCapture >= 0.5
+                                                      : alignmentMean >= 0.5;
+                if (std::getenv("CREM_DEBUG_CAPTURE")) {
+                    const double spread = alignmentCount > 1
+                        ? std::sqrt(alignmentSecondMoment
+                            /static_cast<double>(alignmentCount-1))
+                        : 0.0;
+                    std::cerr << "CAPTURE atCapture=" << alignmentAtCapture
+                        << " mean=" << alignmentMean
+                        << " drift=" << (alignmentMean-alignmentAtCapture)
+                        << " spread=" << spread
+                        << " samples=" << alignmentCount
+                        << " atCaptureClass="
+                        << (alignmentAtCapture >= 0.5 ? "para" : "ortho")
+                        << " meanClass="
+                        << (alignmentMean >= 0.5 ? "para" : "ortho")
+                        << " used=" << (parallelMoments ? "para" : "ortho")
+                        << ((alignmentAtCapture >= 0.5)
+                                != (alignmentMean >= 0.5)
+                            ? "  *** THE TWO DISAGREE ***" : "") << '\n';
+                }
                 return finish(parallelMoments
                     ? InteractionOutcome::ParaPositronium
                     : InteractionOutcome::OrthoPositronium, state);
