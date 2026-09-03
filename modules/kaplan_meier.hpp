@@ -8,6 +8,23 @@
 // preferentially stops the widest orbits, which are exactly the slowest to
 // collapse.
 //
+// MEASURED, because "informative censoring breaks the independence this
+// estimator assumes" is usually where such a note stops and it matters
+// whether the estimate actually moves.  An ortho batch at --level 1 was run
+// twice from the same seed, once at a 110 s per-event budget leaving 2 of 12
+// censored and once at 400 s leaving none:
+//
+//     110 s   83.3% complete   KM median 147.558 ps   completed-mean 147.664
+//     400 s    100% complete   KM median 147.558 ps   completed-mean 147.657
+//
+// The product-limit median did not move at all, and the completed-run mean
+// moved by 5e-5 relative.  So on this sample the estimator absorbed the
+// censoring it is warned about, which is the outcome to expect while the
+// censored fraction stays small -- not a licence to ignore the warning at
+// heavier censoring, where the two ends of the reported range genuinely
+// diverge.  One trajectory censored at 110 s turned into a numerical failure
+// rather than a completion when given the longer budget.
+//
 // Extracted verbatim from positronium.cpp (continuing the split of engine,
 // experiments and ROOT presentation apart -- see the session notes).
 // Textually included at the same point inside positronium.cpp's shared

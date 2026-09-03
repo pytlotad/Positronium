@@ -1156,7 +1156,13 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                          "axis, which breaks the independence Kaplan-Meier assumes."
                          "  Raise --crem-wallclock-budget-s\n  until the completion "
                          "fraction approaches 100%; the two ends then converge onto "
-                         "the true value.\n";
+                         "the true value.\n"
+                         "  The budget needed is CHANNEL-DEPENDENT: measured at "
+                         "--level 1, para completes 12/12 at 110 s while\n  ortho "
+                         "still leaves 2/12 censored and needs about 4x that.  "
+                         "Ortho's collapse-time spread is\n  ~55x para's "
+                         "(sigma/mean 9.2e-4 against 1.7e-5), so it has far more "
+                         "trajectories in the slow tail\n  the budget cuts.\n";
         }
     }
     std::cout << "Model: full CREM mechanical integration under the active "
