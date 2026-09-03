@@ -2047,13 +2047,120 @@ int runMaxwellSelfTest(
     // boost stack produces do not carry the same convention.  See
     // covariantDipoleGradientForce's comment for why that is reported rather
     // than patched.
+    // --- Which velocity builds a lab dipole tensor: +v or -v? ---
+    //
+    // Everything above measures the SYMPTOM.  This measures the convention
+    // itself, in isolation: no trajectory, no retardation, no comparison
+    // between two different field structures -- just the requirement that the
+    // scalar U = mu.B - p.E take the same value in two frames.
+    //
+    // The field boost used here is anchored first, and not against
+    // lorentzBoostDipole (that would be circular): a point charge is placed
+    // at rest, its Coulomb field is transformed by the formula below, and the
+    // result is compared with what lienardWiechertField independently
+    // computes for the SAME charge in uniform motion.  Only once that agrees
+    // is the same formula used to boost the probe field.
+    const auto boostElectromagneticField=[&](const ElectromagneticField& field,
+                                             const Vec3& frameVelocity) {
+        const double speedSquared=frameVelocity.squaredNorm();
+        if(!(speedSquared>0.0)) return field;
+        const double boostGamma=gamma(frameVelocity);
+        const double longitudinal=boostGamma*boostGamma
+            /(boostGamma+1.0)/(c*c);
+        return ElectromagneticField{
+            (field.electric+cross(frameVelocity,field.magnetic))*boostGamma
+                -frameVelocity*(longitudinal
+                    *dot(frameVelocity,field.electric)),
+            (field.magnetic-cross(frameVelocity,field.electric)/(c*c))
+                *boostGamma
+                -frameVelocity*(longitudinal
+                    *dot(frameVelocity,field.magnetic))};
+    };
+    // Anchor: a charge at rest, boosted, against lienardWiechertField's own
+    // uniformly-moving-charge field at the corresponding event.
+    double fieldBoostAnchorResidual=
+        std::numeric_limits<double>::infinity();
+    {
+        const Vec3 probeOffset{3.0*bohrRadius,5.0*bohrRadius,-2.0*bohrRadius};
+        const Vec3 chargeBoost{0.0,0.0,0.42*c};
+        State restCharge{};
+        restCharge.secondPosition={};
+        restCharge.firstPosition=probeOffset;
+        StateHistory restHistory;
+        for(int node=-40;node<=0;++node) {
+            State past=restCharge;
+            past.time=static_cast<double>(node)*bohrRadius/c;
+            restHistory.push_back(past);
+        }
+        const ElectromagneticField restCoulomb=lienardWiechertField(
+            probeOffset,0.0,restHistory,restCharge,false,secondCharge);
+        const ElectromagneticField predicted=
+            boostElectromagneticField(restCoulomb,chargeBoost);
+        // Same charge, now in uniform motion at -chargeBoost, sampled at the
+        // boosted image of the same event.
+        const auto movingChargeStateAt=[&](double time) {
+            State moving{};
+            moving.time=time;
+            moving.secondVelocity=chargeBoost*-1.0;
+            moving.secondPosition=chargeBoost*(-time);
+            moving.firstVelocity=chargeBoost*-1.0;
+            moving.firstPosition=probeOffset+chargeBoost*(-time);
+            return moving;
+        };
+        StateHistory movingHistory;
+        for(int node=-40;node<=0;++node)
+            movingHistory.push_back(movingChargeStateAt(
+                static_cast<double>(node)*bohrRadius/c));
+        const State movingNow=movingChargeStateAt(0.0);
+        const ElectromagneticField movingActual=lienardWiechertField(
+            movingNow.firstPosition,0.0,movingHistory,movingNow,false,
+            secondCharge);
+        const double scale=std::max({predicted.electric.norm(),
+            predicted.magnetic.norm()*c,1.0e-300});
+        fieldBoostAnchorResidual=std::max(
+            (movingActual.electric-predicted.electric).norm()/scale,
+            (movingActual.magnetic-predicted.magnetic).norm()*c/scale);
+    }
+    // With the field boost anchored, the convention test itself.
+    const Vec3 conventionBoost{0.0,0.0,0.35*c};
+    const Vec3 conventionProperMoment{0.31e-26,-0.27e-26,0.91e-26};
+    const ElectromagneticField conventionField{
+        {2.4e9,5.14e11,-8.1e10},{0.7,-1.3,-8.844}};
+    const double conventionRestCoupling=
+        dot(conventionProperMoment,conventionField.magnetic);
+    const ElectromagneticField conventionBoostedField=
+        boostElectromagneticField(conventionField,conventionBoost);
+    // Target is at rest in the unprimed frame, so in the primed frame it
+    // moves with -conventionBoost.
+    const Vec3 conventionMovingVelocity=conventionBoost*-1.0;
+    // The tensor is rebuilt from the SAME proper moment at the boosted
+    // frame's own velocity -- how a moving particle physically carries it,
+    // and what synchronizeCovariantDipoles does (whose +v is confirmed
+    // correct independently: the four-current transformation rho'=gamma(rho
+    // -V.j/c^2) with rho=0, together with INT r_i j_k dV = eps_ikl m_l for a
+    // steady loop, gives p=gamma(v x m)/c^2, which lorentzBoostDipole(m,+v)
+    // reproduces to 1.7e-16).  With the transport thus fixed, the only free
+    // choice left is the coupling's relative sign, and the two are compared
+    // head to head.
+    const DipoleTensor conventionMovingTensor=lorentzBoostDipole(
+        {{},conventionProperMoment},conventionMovingVelocity);
+    const double conventionCouplingPlus=
+        dot(conventionMovingTensor.magnetic,conventionBoostedField.magnetic)
+        +dot(conventionMovingTensor.electric,conventionBoostedField.electric);
+    const double conventionCouplingMinus=
+        dot(conventionMovingTensor.magnetic,conventionBoostedField.magnetic)
+        -dot(conventionMovingTensor.electric,conventionBoostedField.electric);
+    // Production's sign.  Must be invariant.
+    const double dipoleTensorFrameBoostResidual=
+        std::abs(conventionCouplingPlus-conventionRestCoupling)
+        /std::max(std::abs(conventionRestCoupling),1.0e-300);
+    // The sign this used to carry.  Must NOT be, or the check is vacuous.
+    const double dipoleTensorOwnVelocityResidual=
+        std::abs(conventionCouplingMinus-conventionRestCoupling)
+        /std::max(std::abs(conventionRestCoupling),1.0e-300);
     const DipoleTensor movingTensorFromBoostedRest=lorentzBoostDipole(
         {covarianceRest.firstElectricDipole,covarianceRest.firstDipole},
         covarianceBoost);
-    const double dipoleTensorBoostAlignmentResidual=
-        (covarianceMoving.firstDipole
-            -movingTensorFromBoostedRest.magnetic).norm()
-        /std::max(movingTensorFromBoostedRest.magnetic.norm(),1.0e-300);
     const ElectromagneticField covarianceRestFieldAtFirst=
         fieldFromOtherParticleAt(covarianceRest.firstPosition,
             covarianceRest.time,covarianceRest,
@@ -2094,10 +2201,33 @@ int runMaxwellSelfTest(
         fourForce(covarianceRest.secondVelocity,restDipoleGradientForceSecond));
     const FourVector movingDipoleGradientFourForceSecond=fourForce(
         covarianceMoving.secondVelocity,movingDipoleGradientForceSecond);
+    // ENFORCED.  This is the check that caught the coupling's relative sign,
+    // and the only one able to: it boosts the assembled dipole gradient FORCE,
+    // isolated from the charge-charge Lorentz force that swamps it in
+    // covarianceForceResidual, on states that actually carry velocity, which
+    // gradientDipoleState's target-at-rest setup cannot.  It read 265.671 with
+    // the old minus sign and reads 4.5e-6 with the corrected plus, so the
+    // threshold below is loose against the field machinery's own 5e-6 floor
+    // and tighter by seven orders than the defect it exists to catch.
     const double dipoleGradientForceCovarianceResidualSecond=
         (movingDipoleGradientFourForceSecond.space
             -expectedDipoleGradientForceSecond.space).norm()
         /std::max(expectedDipoleGradientForceSecond.space.norm(),1.0e-300);
+
+    const bool dipoleGradientForceCovarianceOk=
+        std::isfinite(dipoleGradientForceCovarianceResidual)
+        &&std::isfinite(dipoleGradientForceCovarianceResidualSecond)
+        &&dipoleGradientForceCovarianceResidual<1.0e-4
+        &&dipoleGradientForceCovarianceResidualSecond<1.0e-4
+        // The isolated convention probe, enforced alongside it: production's
+        // relative plus must be invariant under physical transport, and the
+        // former minus must not be -- otherwise this check could pass while
+        // silently admitting the sign back.
+        &&std::isfinite(fieldBoostAnchorResidual)
+        &&fieldBoostAnchorResidual<0.05
+        &&std::isfinite(dipoleTensorFrameBoostResidual)
+        &&dipoleTensorFrameBoostResidual<1.0e-9
+        &&dipoleTensorOwnVelocityResidual>1.0;
     // DU/Dt in each frame, for the same target.  U is a Lorentz invariant, so
     // d/dt of it along the worldline is d/dtau divided by gamma, and the ratio
     // between the frames must therefore be exactly 1/gamma_boost.  Measured:
@@ -2264,6 +2394,12 @@ int runMaxwellSelfTest(
         boosted.secondProperDipole=properDipoleFromFourVector(
             boostFourVector(dipoleFourVector(source.secondProperDipole,
                 source.secondVelocity)),boosted.secondVelocity);
+        // Rebuild the LAB tensor from that proper moment at this frame's own
+        // velocity, which is how the moving state physically carries it (and
+        // what synchronizeCovariantDipoles does everywhere else).  Carrying
+        // an actively-boosted tensor instead is what let this probe certify
+        // the wrong relative sign for years: the two errors cancelled.
+        synchronizeCovariantDipoles(boosted);
         boosted.time=0.5*(firstT+secondT);
         return boosted;
     };
@@ -2278,7 +2414,7 @@ int runMaxwellSelfTest(
         gradientDipoleState,gradientDipoleHistory,true);
     const double restCoupling=
         dot(gradientDipoleState.firstDipole,restCouplingField.magnetic)
-        -dot(gradientDipoleState.firstElectricDipole,
+        +dot(gradientDipoleState.firstElectricDipole,
             restCouplingField.electric);
     const auto [boostedFirstEventPosition,boostedFirstEventTime]=
         boostEvent(gradientDipoleState.firstPosition,gradientDipoleState.time);
@@ -2287,7 +2423,7 @@ int runMaxwellSelfTest(
         boostedGradientState,boostedGradientHistory,true);
     const double boostedCoupling=
         dot(boostedGradientState.firstDipole,boostedCouplingField.magnetic)
-        -dot(boostedGradientState.firstElectricDipole,
+        +dot(boostedGradientState.firstElectricDipole,
             boostedCouplingField.electric);
     const double dipoleGradientCouplingInvarianceResidual=
         std::abs(boostedCoupling-restCoupling)
@@ -4687,19 +4823,17 @@ int runMaxwellSelfTest(
               << covarianceRadiationResidual << '\n'
               << "dipole grad boost F:" << dipoleGradientForceCovarianceResidual
                  << " / " << dipoleGradientForceCovarianceResidualSecond
-                 << "  (OPEN, see below)\n"
-              << "  localized to the dipole tensor, not to a missing force"
-                 " term:\n"
-              << "    tensor vs boosted rest tensor: "
-                 << dipoleTensorBoostAlignmentResidual
-                 << " (transverse component sign-flipped)\n"
-              << "    coupling from boosted tensor:  "
-                 << dipoleCouplingBoostedTensorResidual
-                 << "  <- invariant, so field/contraction are sound\n"
-              << "    coupling from state tensor:    "
-                 << dipoleCouplingStateTensorResidual
-                 << "  <- what the force actually uses\n"
-              << "    coupling rate ratio " << dipoleCouplingRateBoostRatio
+                 << "  (265.671 with the coupling's former relative minus)\n"
+              << "  supporting measurements for the m.B+p.E sign:\n"
+              << "    field-boost anchor vs Lienard-Wiechert: "
+                 << fieldBoostAnchorResidual << '\n'
+              << "    U invariance under physical transport, m.B-p.E / m.B+p.E: "
+                 << dipoleTensorOwnVelocityResidual << " / "
+                 << dipoleTensorFrameBoostResidual << '\n'
+              << "    same on the trajectory states, state / boosted tensor: "
+                 << dipoleCouplingStateTensorResidual << " / "
+                 << dipoleCouplingBoostedTensorResidual << '\n'
+              << "    DU/Dt boost ratio " << dipoleCouplingRateBoostRatio
                  << " vs 1/gamma " << (1.0/covarianceBoostGamma) << '\n'
               << "boost accumulated R:" << covarianceAccumulatedRadiationResidual
                  << " (restE=" << covarianceRest.radiatedEnergy
@@ -4981,7 +5115,7 @@ int runMaxwellSelfTest(
         && quantizedDipoleTorqueTravel>0.1
         && disabledDipoleTorqueTravel==0.0
         && quantizedDipoleTorqueNormDrift<1.0e-12;
-    const std::array<ValidationCheck,50> regressionChecks{{
+    const std::array<ValidationCheck,51> regressionChecks{{
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
@@ -5019,6 +5153,7 @@ int runMaxwellSelfTest(
         {ValidationSection::Convergence,"secular-eccentric-orbit",secularEccentricOrbitOk},
         {ValidationSection::Convergence,"m1-secular-orbit-average",secularM1OrbitAverageOk},
         {ValidationSection::AlgebraicIdentity,"secular-zpf-phase-rate",secularZeroPointPhaseRateOk},
+        {ValidationSection::AlgebraicIdentity,"dipole-gradient-force-covariance",dipoleGradientForceCovarianceOk},
         {ValidationSection::AlgebraicIdentity,"quantized-radiation-gating",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
         {ValidationSection::NumericalRegression,"state-integrity",stateIntegrityOk},
@@ -5076,8 +5211,6 @@ int runMaxwellSelfTest(
              <<"  BMT vs effective-field comparison\n"
              <<"  flux-normalized reaction residual across heavy pairs\n"
              <<"  pair-field balance identities closed by boundField*\n"
-             <<"  dipole gradient force under boost -- a MEASURED OPEN GAP,"
-               " not a passing check\n"
              <<"  performance, memory and wall-clock estimates\n";
     std::cout<<"\nEnforced checks:     "
              <<(regressionChecks.size()-static_cast<std::size_t>(failedChecks))

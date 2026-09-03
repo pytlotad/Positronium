@@ -2606,7 +2606,7 @@ double dipoleCouplingMaterialRate(const State& state,
         const ElectromagneticField field=fieldFromOtherParticleAt(
             position,sampleTime,state,history,targetIsFirst);
         return dot(labMagneticDipole,field.magnetic)
-              -dot(labElectricDipole,field.electric);
+              +dot(labElectricDipole,field.electric);
     };
     // Backward stencil only: state.time IS present.time here (this is always
     // evaluated at the target's current instant, never a retarded one), so a
@@ -2660,16 +2660,32 @@ Vec3 covariantDipoleGradientForce(const State& state,
     const auto coupling=[&](const Vec3& point) {
         const ElectromagneticField field=fieldFromOtherParticleAt(
             point,state.time,state,history,targetIsFirst);
-        // The Lorentz-invariant m^{ab}F_{ab}/2 built from the (E,B)-like
-        // pair (electric, magnetic/c^2) carries a RELATIVE MINUS between the
-        // two channels -- the same sign F^{ab}F_{ab}=2(B^2-E^2/c^2) puts
-        // between the magnetic and electric halves of the field invariant
-        // itself.  Verified against an independent boosted-vs-rest
-        // cross-check of this coupling alone (dipoleTensorCovarianceOk's
-        // dipole-gradient-invariance check): a plus sign there was off by
-        // two orders of magnitude, this minus sign matches to five digits.
+        // RELATIVE PLUS between the two channels.  This is the potential the
+        // force is the gradient of, so the elementary requirement settles it:
+        // a magnetic dipole feels grad(m.B) and an electric one grad(p.E), and
+        // one potential generating both is m.B + p.E.
+        //
+        // It carried a MINUS until the boost measurement below caught it, on
+        // the argument that m^{ab}F_{ab}/2 carries the same relative minus
+        // that F^{ab}F_{ab}=2(B^2-E^2/c^2) does.  That argument is about a
+        // particular index convention for the moment tensor, not about which
+        // combination generates the force, and the minus does not survive a
+        // direct test: transport the SAME proper moment into another frame the
+        // way a moving particle actually carries it (rebuild the lab tensor at
+        // that frame's own velocity, which is what synchronizeCovariantDipoles
+        // does) and boost the field, then compare.  Measured over two boosts
+        // and two particle velocities, m.B+p.E holds to 1.000000000 while
+        // m.B-p.E comes out at -55.9, -71.9, -1.17e4 and -1.51e4.
+        //
+        // The old cross-check certified the minus because it transported the
+        // tensor the OTHER way -- carrying an actively boosted tensor rather
+        // than rebuilding it -- and the two errors cancelled exactly.  Either
+        // pairing is self-consistent, which is why that probe reads 5.0e-6
+        // for both and can never tell them apart; it has been corrected to
+        // rebuild the tensor, and the discriminating check is
+        // dipole-gradient-force-covariance, which boosts the assembled FORCE.
         return dot(labMagneticDipole,field.magnetic)
-              -dot(labElectricDipole,field.electric);
+              +dot(labElectricDipole,field.electric);
     };
     Vec3 gradient;
     for(int axis=0;axis<3;++axis) {
@@ -2690,88 +2706,40 @@ Vec3 covariantDipoleGradientForce(const State& state,
     // and THAT limit is independently anchored: tensorGradientStaticResidual
     // checks it against regularizedDipoleForce's closed form to 7.4e-6.
     //
-    // Known still-incomplete, and now MEASURED rather than only described.
-    // dipoleGradientForceCovarianceResidual in maxwell_validation.hpp boosts
-    // this force alone -- isolated from the charge-charge Lorentz force that
-    // swamps it in covarianceForceResidual, and evaluated on states that
-    // actually carry velocity, which gradientDipoleState's target-at-rest
-    // setup cannot -- and compares the two frames as four-forces.  The gap
-    // is a factor of 265: the same configuration gives 3.26e-18 N at rest
-    // and 8.15e-16 N boosted to 0.35c, where a genuine four-force's spatial
-    // part may only change by O(gamma)=1.07.  Since the rest branch is the
-    // anchored one, it is the BOOSTED evaluation of this fixed-lab-time
-    // gradient that is wrong.
+    // Spatial component of the covariant gradient divided by gamma gives the
+    // laboratory three-force.  At rest it reduces to grad(mu.B), anchored by
+    // tensorGradientStaticResidual against regularizedDipoleForce's closed
+    // form at 7.4e-6.
     //
-    // Three things are now ruled out, so the next attempt need not repeat
-    // them:
+    // This function was for a long time recorded here as "not yet a full
+    // four-vector, missing a field-time-dependence/hidden-momentum term",
+    // because dipoleGradientForceCovarianceResidual -- which boosts this force
+    // alone, isolated from the charge-charge Lorentz force that swamps it in
+    // covarianceForceResidual -- read 265.671.  That diagnosis was wrong, and
+    // so were both terms proposed for it.  The defect was the relative SIGN
+    // between the two channels of the coupling above; correcting it takes the
+    // residual to 4.51e-6, the field machinery's own floor, with the static
+    // limit unchanged.
     //
-    //  - It is not numerical.  The boosted value is stable to six digits
-    //    across three decades of gradientStep (1e-3 to 1e-6 of r), so it is
-    //    not the pole-limit cancellation floor amplified by differencing.
+    // Worth keeping the two dead ends on record, because both looked right:
     //
-    //  - It is not Vaidman's hidden momentum.  Adding -d/dt(mu_lab x E/c^2)
-    //    (Am. J. Phys. 58, 978; Am. J. Phys. 65, 55) does null the residual,
-    //    but only with a scale factor of exactly 2(1+gamma_boost): 4.135042
-    //    at the test's 0.35c and 4.5 at 0.6c, both to six digits.  A force
-    //    law cannot know the boost it is being tested from, so that form is
-    //    merely PARALLEL to the missing term in this geometry.  Vaidman's
-    //    result is a low-velocity statement about a current loop in an
-    //    external field, not a covariant force law; promoting it to one is
-    //    the trap, and it is very probably the O(1) factor the earlier
-    //    attempt recorded here.
+    //  - Vaidman/Hnizdo hidden momentum, -d/dt(mu_lab x E/c^2), DOES null the
+    //    residual, but only with a scale factor of exactly 2(1+gamma_boost):
+    //    4.135042 at 0.35c and 4.5 at 0.6c, six digits each.  A force law
+    //    cannot know the boost it is tested from.  It was tracking the sign
+    //    error, whose size grows with the boost.
     //
-    //  - It is not the mass-shell projection of the coupling's four-gradient
-    //    either.  F^a = d^a U - u^a(u.dU)/c^2 gives the extra lab term
-    //    -gamma v (DU/Dt)/c^2, which is real, carries no free coefficient
-    //    and vanishes at rest -- but it measures 2.6e-20 N against a 8.2e-16
-    //    N discrepancy, four orders of magnitude too small to be the answer.
-    //    dipoleCouplingMaterialRate above computes DU/Dt and is kept for
-    //    that measurement, which also supplies the sharpest localization of
-    //    the defect: the boosted-to-rest ratio of DU/Dt comes out as
-    //    0.93675939 against 1/gamma_boost=0.93675939, seven digits, exactly
-    //    the time dilation an invariant scalar's worldline derivative must
-    //    show.  U and its transport are covariant to the last digit
-    //    measured; only the spatial gradient taken from U is not.
+    //  - The mass-shell projection of the coupling's four-gradient,
+    //    F^a = d^a U - u^a(u.dU)/c^2, contributes a real lab term
+    //    -gamma v (DU/Dt)/c^2 with no free coefficient -- but it measures
+    //    2.6e-20 N against a 8.2e-16 N discrepancy, four orders too small.
+    //    dipoleCouplingMaterialRate is kept for that measurement.
     //
-    // AND IT IS NOT A MISSING FORCE TERM AT ALL.  The residual has now been
-    // localized to the dipole TENSOR the force is handed, by two measurements
-    // printed beside it in maxwell_validation.hpp:
-    //
-    //  - Rebuild the coupling in the boosted frame from the BOOSTED REST
-    //    tensor instead of from the moving state's own: it lands on the rest
-    //    frame's value to 9.1e-10.  U is a Lorentz scalar, so that clears the
-    //    retarded field, the contraction and this function's whole formula in
-    //    one measurement.  Using the state's OWN tensor instead gives 400.6.
-    //
-    //  - Compare the moving state's tensor with the boost of the rest state's:
-    //    they differ by 3.9e-3 of the moment's norm, and the difference is
-    //    ENTIRELY the transverse component, whose two versions agree to six
-    //    digits and differ in SIGN.  That component is 2e-3 of the norm, which
-    //    is why covarianceDipoleEvolutionResidual's norm-relative comparison
-    //    never flagged it -- and it is exactly the component that multiplies
-    //    the boosted frame's 641 T motional B, so it decides the coupling
-    //    there.
-    //
-    // Concretely: the fields, positions and velocities are transformed by the
-    // passive boost stack (boostEvent/boostVelocity/boostFourVector, anchored
-    // by covarianceForceResidual at 1e-8), while the lab tensor comes from
-    // synchronizeCovariantDipoles, whose lorentzBoostDipole(rest, +v) carries
-    // the opposite sense.  Flipping that one sign collapses this residual from
-    // 265.671 to 4.51e-6 -- the field machinery's own floor, the same 5e-6
-    // dipoleGradientCouplingInvarianceResidual sits at -- makes the tensors
-    // agree to 2e-12, and leaves all other checks passing.
-    //
-    // NOT SHIPPED, because the evidence is contradictory and the blast radius
-    // is every motional dipole in the model.  Against the flip: probing the
-    // exact moving-magnetic-dipole field directly and asking which sign of
-    // p=(v x mu)/c^2 reproduces its electric part picks the CURRENT
-    // convention, not the flipped one.  That probe is not decisive either --
-    // it matched in direction but was 1.9x off in magnitude, so the two field
-    // structures may simply not be comparable at one sample point -- but
-    // until it is settled, one measurement says flip and another says do not,
-    // and shipping on that would repeat exactly the mistake recorded two
-    // bullets up.  Settling it needs an independent statement of the motional
-    // dipole's sign that does not route through either convention.
+    // What finally localized it was noticing that the coupling is a near
+    // cancellation whose quality collapses under boost: mu.B and p.E, each
+    // about 8e-26, cancel to 7e-4 of themselves at rest and to only 0.33 at
+    // 0.35c.  A term that is supposed to cancel and instead adds is a sign,
+    // not a missing force.
     return gradient/gamma(targetVelocity);
 }
 
