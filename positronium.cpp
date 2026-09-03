@@ -68,6 +68,14 @@
 #include "modules/root_export.hpp"
 #include "modules/statistics_archive.hpp"
 
+// Every modules/*.hpp is self-contained and order-independent, so they are
+// included here at GLOBAL scope, together, in the ordinary C++ way -- rather
+// than one at a time inside the anonymous namespace below, at the point each
+// one happened to be needed, which is how this file grew.  The two
+// conditional groups are configuration, not ordering: the Maxwell backend
+// belongs to the validation build, and the reporting/statistics headers are
+// compiled out of the validation executable.
+
 // gSimulationPaused/gExitRequested/gVisualSimulationComplete/gStopButton/gVisualCanvas/
 // gVisualObservationBox/gVisualPhenomenon/gVisualExitSaveAttempted,
 // SetVisualObservationStatus, ToggleSimulation,
@@ -90,13 +98,6 @@
 // still approximate: it treats the sources as point multipoles outside the
 // regulator, uses finite retarded history, and radiation reaction remains a
 // local, order-reduced electric-dipole model.
-namespace {
-using positronium::objects::Vec3;
-using positronium::objects::State;
-using positronium::objects::StateHistory;
-using positronium::objects::DipoleTensor;
-using namespace positronium::parameters;
-namespace two_body = positronium::kinematics;
 // c, eCharge and coulomb are the shorthand spellings of speedOfLight,
 // elementaryCharge and coulombConstant.  They now live beside the constants
 // they alias, in modules/physical_constants.hpp, and arrive here through the
@@ -108,12 +109,6 @@ namespace two_body = positronium::kinematics;
 // engine/experiments/ROOT presentation apart -- see the header's own
 // comment).
 #include "modules/pair_configuration.hpp"
-
-// dot() and cross() are defined in modules/vector3.hpp beside Vec3 itself,
-// so argument-dependent lookup finds them for every Vec3 argument without a
-// declaration here.  gamma() still needs one: it is defined much further
-// down, in modules/relativistic_kinematics.hpp.
-double gamma(const Vec3& velocity);
 
 // ZeroPointField, gZeroPointField, makeZeroPointField (continuing the split
 // of engine/experiments/ROOT presentation apart -- see the header's own
@@ -166,7 +161,6 @@ double gamma(const Vec3& velocity);
 // regularizedDipoleVectorPotential and initializeRetardedPairFields moved
 // to modules/maxwell_validation.hpp, the only caller of any of them.
 
-
 // precessDipole, relativisticBorisPush, pushStateWithYeeField and
 // pushStateWithGridField used to sit here, between the Maxwell backend
 // and electrodynamics.hpp, purely because they need
@@ -190,9 +184,7 @@ double gamma(const Vec3& velocity);
 // Argument parsing further down still assigns to them: this file includes
 // crem_trajectory.hpp long before that point.
 
-
 #include "modules/crem_engine.hpp"
-
 
 // LegendreFitSummary, fitSecondLegendreAnisotropy -- validation-only
 // (continuing the split of engine/experiments/ROOT presentation apart --
@@ -244,6 +236,19 @@ double gamma(const Vec3& velocity);
 #include "modules/analysis_reporting.hpp"
 
 #include "modules/crem_collapse.hpp"
+#endif
+
+namespace {
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::DipoleTensor;
+using namespace positronium::parameters;
+namespace two_body = positronium::kinematics;
+
+// Reopened for the experiment/reporting code itself, which runs to the #endif
+// roughly 4700 lines below.  The includes it used to wrap moved above.
+#ifndef POSITRONIUM_VALIDATION_EXECUTABLE
 
 // runCount counts full CREM trajectories, which cost seconds each and set the
 // collapse-time panel's statistics.  decayEventCount counts events of the
@@ -514,7 +519,6 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         ?100.0*static_cast<double>(survival.eventCount)
              /static_cast<double>(usableTrajectories)
         :0.0;
-
 
     const GaussianFitSummary initialPeriodMoments=
         gaussianMaximumLikelihood(initialPeriods);
