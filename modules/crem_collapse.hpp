@@ -1744,6 +1744,11 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             elements,attractionParameter,firstDipole,secondDipole,
             angularMomentumDirection,reducedMass);
         if(!(periapsis>0.0)||!std::isfinite(periapsis)) {
+            if(std::getenv("CREM_DEBUG"))
+                std::cerr<<"  DIAG failure=periapsis periapsis="<<periapsis
+                         <<" specificEnergy="<<elements.specificEnergy
+                         <<" specificAngularMomentum="
+                         <<elements.specificAngularMomentum<<std::endl;
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             return result;
         }
@@ -4087,10 +4092,27 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // carried moments, rather than from run.finalState, counts that orbit
         // exactly once over the two half-steps.
         if(!advanceSpinOrbitHalf(
-               -attractionParameter/(2.0*elements.specificEnergy)))
+               -attractionParameter/(2.0*elements.specificEnergy))) {
+            // Bare return: calibrationOutcome is whatever it was, and if
+            // nothing has set it this is still its NumericalFailure default,
+            // so the trajectory is reported as a numerical failure with no
+            // diagnostic at all.  Name it.
+            if(std::getenv("CREM_DEBUG"))
+                std::cerr<<"  DIAG failure=spin-orbit-half-second"
+                         <<" specificEnergy="<<elements.specificEnergy
+                         <<" specificAngularMomentum="
+                         <<elements.specificAngularMomentum
+                         <<" a="<<(-attractionParameter
+                             /(2.0*elements.specificEnergy))<<std::endl;
             return result;
+        }
         if(!(elements.specificEnergy<0.0)||!std::isfinite(elements.specificEnergy)
            ||!std::isfinite(elements.specificAngularMomentum)) {
+            if(std::getenv("CREM_DEBUG"))
+                std::cerr<<"  DIAG failure=elements-after-second-half"
+                         <<" specificEnergy="<<elements.specificEnergy
+                         <<" specificAngularMomentum="
+                         <<elements.specificAngularMomentum<<std::endl;
             result.calibrationOutcome=SimulationOutcome::NumericalFailure;
             result.calibrationSeconds=simulatedTimeTotal;
             result.calibrationSecondsLab=labFrameTimeTotal;

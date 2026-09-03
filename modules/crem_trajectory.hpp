@@ -283,8 +283,38 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
     double finalRadiatedEnergy = s.radiatedEnergy;
     SimulationOutcome outcome = SimulationOutcome::NumericalFailure;
     SimulationStopReason stopReason=SimulationStopReason::NumericalFailure;
+    // maximumDepth is overridable (CREM_MAX_DEPTH) because it is the knob one
+    // reaches for when a trajectory dies with reason=accuracy, and measuring
+    // that it does NOT help is the useful result.
+    //
+    // MEASURED on the one ortho trajectory in twelve that fails this way at
+    // --level 1 (it is a genuine accuracy stop, not a divergence: the state
+    // stays finite and the error is bounded).  Raising the limit from 12 to
+    // 16, i.e. four more halvings:
+    //
+    //     depth 12   dt 5.714e-25 s   achieved error 9.451e-4
+    //     depth 16   dt 3.571e-26 s   achieved error 5.911e-5
+    //
+    // The error does fall, by 15.99 against a dt ratio of 16.00 -- so it
+    // scales as dt^1.  A symmetric SECOND-order step judged by step doubling
+    // should scale as dt^3, eight per halving and 4096 over four.  Getting
+    // first order means the local error here is not the integrator's own
+    // truncation; something in the force evaluation near the bottom is not
+    // smoothing out as the step shrinks.  The retarded-history stencils and
+    // the pole-limit dipole field are the candidates, neither confirmed.
+    //
+    // The practical consequence is that depth is a treadmill, not a fix: at
+    // dt^1 each decade of error costs about 3.3 more levels and the work
+    // doubles per level, and the trajectory fails at the bit-identical point
+    // either way (same r = 1.056e-12 m, same specificEnergy = -8.7425e13).
+    // 12 is therefore kept, and the failure is reported as a numerical
+    // failure rather than papered over -- which is the right outcome: at
+    // depth 12 the achieved error is 9.4e-4 against a 1e-5 tolerance, and
+    // silently accepting that would be worse than discarding the trajectory.
     ClassicalTrajectoryEngine trajectory(s,
-        {.relativeTolerance=1.0e-5,.maximumDepth=12,
+        {.relativeTolerance=1.0e-5,
+         .maximumDepth=(std::getenv("CREM_MAX_DEPTH")
+             ?std::atoi(std::getenv("CREM_MAX_DEPTH")):12),
          .reactionModel=reactionModel,
          .computeOutwardFlux=options.radiatedEnergyBookkeeping});
     if (options.collectFrames) {
