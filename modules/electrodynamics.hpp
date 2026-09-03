@@ -1791,6 +1791,14 @@ struct TwoChargeLimitTrace {
 };
 inline thread_local TwoChargeLimitTrace gTwoChargeTrace[8];
 inline thread_local int gTwoChargeTraceCount=0;
+// Cancellation quality of the most recent twoChargeLimitDipoleField call,
+// as |sum|/|pole| divided by the pole separation fraction it was built with.
+// The construction is designed so the subtraction retains a fraction eps/d of
+// each pole, so this ratio is ~1 whenever the geometry is benign and large
+// when it is not.  Measured: 1.09 on healthy probes, 197 on the degenerate
+// one.  Callers that can afford to re-evaluate use it to notice that the
+// value they just received is not trustworthy.
+inline thread_local double gPoleCancellationRatio=0.0;
 template<class MomentSampler>
 ElectromagneticField twoChargeLimitDipoleField(
     const Vec3& observationPosition,double observationTime,
@@ -1800,11 +1808,18 @@ ElectromagneticField twoChargeLimitDipoleField(
         history,present,sourceIsFirst,observationTime);
     double centralRetardedTime=observationTime
         -(observationPosition-nowCharge.position).norm()/c;
-    TwoChargeLimitTrace& trace=
-        gTwoChargeTrace[gTwoChargeTraceCount++ & 7];
-    trace=TwoChargeLimitTrace{};
+    // Tracing is diagnostic and this is a hot path -- several thread_local
+    // writes per call, one of them inside the Newton loop -- so it is gated.
+    // Leaving it ungated cost a measurable slowdown: a para batch that
+    // completed 12 of 12 at a 45 s budget dropped to 6 of 12.
+    static const bool traceTwoCharge=
+        std::getenv("CREM_DEBUG_GRAD")!=nullptr;
+    static thread_local TwoChargeLimitTrace discardedTrace;
+    TwoChargeLimitTrace& trace=traceTwoCharge
+        ?gTwoChargeTrace[gTwoChargeTraceCount++ & 7]:discardedTrace;
+    if(traceTwoCharge) trace=TwoChargeLimitTrace{};
     for(int iteration=0;iteration<16;++iteration) {
-        trace.centralIterations=iteration+1;
+        if(traceTwoCharge) trace.centralIterations=iteration+1;
         const ChargeKinematics charge=historicalCharge(
             history,present,sourceIsFirst,centralRetardedTime);
         const Vec3 displacement=observationPosition-charge.position;
@@ -1812,7 +1827,7 @@ ElectromagneticField twoChargeLimitDipoleField(
         if(!(distance>std::numeric_limits<double>::min())) { trace.earlyReturn=true; return {}; }
         const Vec3 direction=displacement/distance;
         const double residual=centralRetardedTime+distance/c-observationTime;
-        trace.centralResidual=residual;
+        if(traceTwoCharge) trace.centralResidual=residual;
         const double derivative=std::max(
             1.0e-8,1.0-dot(direction,charge.velocity/c));
         const double refined=centralRetardedTime-residual/derivative;
@@ -1844,8 +1859,8 @@ ElectromagneticField twoChargeLimitDipoleField(
         referenceFirst.norm()*referenceTime,
         referenceSecond.norm()*referenceTime*referenceTime});
     const double poleCharge=momentScale/poleSeparation;
-    trace.poleCharge=poleCharge;
-    trace.momentScale=momentScale;
+    if(traceTwoCharge) { trace.poleCharge=poleCharge;
+                         trace.momentScale=momentScale; }
     if(!(poleCharge>0.0)||!std::isfinite(poleCharge)) {
         trace.earlyReturn=true; return {}; }
     const auto poleKinematics=[&](double sign,double time,
@@ -1917,9 +1932,15 @@ ElectromagneticField twoChargeLimitDipoleField(
     const ElectromagneticField total{
         positivePole.electric+negativePole.electric,
         positivePole.magnetic+negativePole.magnetic};
-    trace.poleMagnitude=std::max(positivePole.magnetic.norm(),
-                                 negativePole.magnetic.norm());
-    trace.sumMagnitude=total.magnetic.norm();
+    const double poleMagnitude=std::max(positivePole.magnetic.norm(),
+                                        negativePole.magnetic.norm());
+    const double sumMagnitude=total.magnetic.norm();
+    gPoleCancellationRatio=
+        (poleMagnitude>0.0&&poleSeparationFraction>0.0)
+            ?(sumMagnitude/poleMagnitude)/poleSeparationFraction
+            :0.0;
+    if(traceTwoCharge) { trace.poleMagnitude=poleMagnitude;
+                         trace.sumMagnitude=sumMagnitude; }
     if(!isFinite(total.electric)||!isFinite(total.magnetic)) { trace.earlyReturn=true; return {}; }
     return total;
 }
@@ -2049,7 +2070,8 @@ ElectromagneticField retardedElectricDipoleField(
 
 ElectromagneticField retardedMagneticDipoleField(
     const Vec3& observationPosition,double observationTime,
-    const StateHistory& history,const State& present,bool sourceIsFirst) {
+    const StateHistory& history,const State& present,bool sourceIsFirst,
+    double poleSeparationFraction=1.0e-5) {
     const ChargeKinematics current=historicalCharge(
         history,present,sourceIsFirst,observationTime);
     const double rawDistance=(observationPosition-current.position).norm();
@@ -2062,7 +2084,8 @@ ElectromagneticField retardedMagneticDipoleField(
     const double domainWeight=transition*transition*(3.0-2.0*transition);
     const double weight=shortRangeFieldWeight(rawDistance)*domainWeight;
     const ElectromagneticField exact=retardedMagneticDipoleFieldExact(
-        observationPosition,observationTime,history,present,sourceIsFirst);
+        observationPosition,observationTime,history,present,sourceIsFirst,
+        poleSeparationFraction);
     if(weight>=1.0-1.0e-14) return exact;
     const ElectromagneticField regularizedLow=
         retardedMagneticDipoleFieldLowVelocity(observationPosition,
@@ -2582,14 +2605,16 @@ MutualForces allExternalForces(const State& s) {
 
 ElectromagneticField fieldFromOtherParticleAt(
     const Vec3& observationPosition,double observationTime,
-    const State& state,const StateHistory& history,bool targetIsFirst) {
+    const State& state,const StateHistory& history,bool targetIsFirst,
+    double poleSeparationFraction=1.0e-5) {
     const bool sourceIsFirst=!targetIsFirst;
     const double sourceCharge=sourceIsFirst?firstCharge:secondCharge;
     ElectromagneticField field=lienardWiechertField(
         observationPosition,observationTime,history,state,sourceIsFirst,
         sourceCharge);
     const ElectromagneticField magneticDipole=retardedMagneticDipoleField(
-        observationPosition,observationTime,history,state,sourceIsFirst);
+        observationPosition,observationTime,history,state,sourceIsFirst,
+        poleSeparationFraction);
     field.electric+=magneticDipole.electric;
     field.magnetic+=magneticDipole.magnetic;
     return field;
@@ -2682,9 +2707,50 @@ Vec3 covariantDipoleGradientForce(const State& state,
     // checks below/within validation guard both sides of this balance.
     const double gradientStep=std::max(
         1.0e-4*separation(state),1.0e-3*nuclearCutoff);
+    // DETECT AND RETREAT.  The moving-dipole field is built as the eps->0
+    // limit of two point charges, so the subtraction that produces it retains
+    // only a fraction eps/d of each pole.  At most geometries that is exactly
+    // what happens and the result is independent of eps to nine or ten digits.
+    // At a rare few it is not: measured, one probe of this very stencil
+    // retained 180x too much and returned a field 7.5x oversized, which is
+    // what makes this force discontinuous in the integrator's step size and
+    // kills the trajectory with reason=accuracy.
+    //
+    // gPoleCancellationRatio is that retention divided by its design value, so
+    // ~1 when the construction is behaving (measured 1.09) and large when it
+    // is not (measured 197).  It costs two norms of vectors already computed,
+    // so the healthy path -- which the scan below found to be 466 of 466
+    // sampled geometries -- pays nothing at all.
+    //
+    // On detection the separation retreats by two decades rather than being
+    // refined gradually, and that is not a free choice: the error is NOT
+    // monotone in eps.  Sweeping the degenerate probe gave 892k, 2.16M, 6.79M,
+    // 23.4M for eps/d = 1e-4, 3e-5, 1e-5, 3e-6 before collapsing to the
+    // correct 907.8k at 1e-6 and 1e-7.  Halving from production would land on
+    // 3e-6, four times WORSE than where it started, so anything that refines
+    // in small steps makes this defect worse.
+    //
+    // The retreat then verifies itself: if the fallback's own cancellation is
+    // also anomalous the original value is kept, which leaves today's
+    // behaviour (a reported numerical failure) rather than substituting a
+    // silently different force.
+    constexpr double poleCancellationLimit=30.0;
+    constexpr double retreatFraction=1.0e-7;
     const auto coupling=[&](const Vec3& point) {
-        const ElectromagneticField field=fieldFromOtherParticleAt(
+        ElectromagneticField field=fieldFromOtherParticleAt(
             point,state.time,state,history,targetIsFirst);
+        if(gPoleCancellationRatio>poleCancellationLimit) {
+            const double flagged=gPoleCancellationRatio;
+            const ElectromagneticField retreated=fieldFromOtherParticleAt(
+                point,state.time,state,history,targetIsFirst,retreatFraction);
+            if(gPoleCancellationRatio<=poleCancellationLimit)
+                field=retreated;
+            if(std::getenv("CREM_DEBUG_RETREAT"))
+                std::cerr<<"RETREAT ratio="<<flagged
+                    <<" after="<<gPoleCancellationRatio
+                    <<(gPoleCancellationRatio<=poleCancellationLimit
+                        ?" accepted":" REJECTED")<<'\n';
+        }
         // RELATIVE PLUS between the two channels.  This is the potential the
         // force is the gradient of, so the elementary requirement settles it:
         // a magnetic dipole feels grad(m.B) and an electric one grad(p.E), and
