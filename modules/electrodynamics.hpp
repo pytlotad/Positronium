@@ -2767,6 +2767,31 @@ Vec3 covariantDipoleGradientForce(const State& state,
             std::cerr<<"  ax"<<axis<<"[+"<<probePlus[axis]
                 <<" -"<<probeMinus[axis]
                 <<" d"<<(probePlus[axis]-probeMinus[axis])<<"]";
+        // eps SWEEP at each probe.  The two-charge construction is a device
+        // for the eps->0 limit, so the question that decides what to do about
+        // a degenerate probe is whether shrinking eps recovers the answer
+        // there (then eps is simply too coarse for that geometry) or whether
+        // it stays erratic (then the degeneracy is directional and no scalar
+        // eps fixes it).  Measured here rather than assumed.
+        {
+            const bool sourceIsFirst=!targetIsFirst;
+            static const double fractions[]={1.0e-4,3.0e-5,1.0e-5,
+                                             3.0e-6,1.0e-6,1.0e-7};
+            for(int axis=0;axis<3;++axis) {
+                Vec3 offset;
+                if(axis==0) offset.x=gradientStep;
+                else if(axis==1) offset.y=gradientStep;
+                else offset.z=gradientStep;
+                std::cerr<<"\n  eps"<<axis;
+                for(const double fraction:fractions) {
+                    const ElectromagneticField swept=
+                        retardedMagneticDipoleFieldExact(
+                            targetPosition+offset,state.time,history,state,
+                            sourceIsFirst,fraction);
+                    std::cerr<<" "<<swept.magnetic.norm();
+                }
+            }
+        }
         // The two channels separately: U is their SUM, so if each is large
         // and they nearly cancel, the outlier is a cancellation failure
         // rather than a bad field evaluation.
