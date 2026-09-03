@@ -2757,6 +2757,45 @@ Vec3 covariantDipoleGradientForce(const State& state,
     // retarded-solve or formula-branch flip at that point) or all six are
     // sane and the blow-up is the cancellation losing its conditioning.
     // These two are distinguishable only by looking at the six.
+    // CREM_DEBUG_EPS_SCAN: is a two-decade shrink of the pole separation
+    // safe GENERALLY, or only at the one geometry measured so far?  The error
+    // structure has a peak, so a fixed retreat target could land on an
+    // equivalent peak elsewhere.  Sampled sparsely along a real collapse,
+    // which sweeps four decades of separation on its own.
+    static const bool scanEps=
+        std::getenv("CREM_DEBUG_EPS_SCAN")!=nullptr;
+    if(scanEps) {
+        // Bucketed by DECADE of separation, not by call count: sampling every
+        // Nth call spends the whole budget in the outer orbit, which is
+        // exactly where nothing goes wrong.  At most 24 samples per decade.
+        static thread_local int scanPerDecade[16]={};
+        const double scanSeparation=separation(state);
+        const int scanDecade=scanSeparation>0.0
+            ?std::clamp(static_cast<int>(-std::log10(scanSeparation)),0,15):0;
+        if(scanPerDecade[scanDecade]<24) {
+            ++scanPerDecade[scanDecade];
+            const bool sourceIsFirst=!targetIsFirst;
+            static const double scanFractions[]={1.0e-4,3.0e-5,1.0e-5,3.0e-6,
+                                                 1.0e-6,3.0e-7,1.0e-7,1.0e-8};
+            // All THREE axes: the degeneracy that started this appeared on
+            // y, and sampling only x misses it by construction.
+            for(int scanAxis=0;scanAxis<3;++scanAxis) {
+                Vec3 scanOffset;
+                if(scanAxis==0) scanOffset.x=gradientStep;
+                else if(scanAxis==1) scanOffset.y=gradientStep;
+                else scanOffset.z=gradientStep;
+                std::cerr<<"EPSSCAN r="<<separation(state);
+                for(const double fraction:scanFractions) {
+                    const ElectromagneticField swept=
+                        retardedMagneticDipoleFieldExact(
+                            targetPosition+scanOffset,state.time,history,state,
+                            sourceIsFirst,fraction);
+                    std::cerr<<" "<<swept.magnetic.norm();
+                }
+                std::cerr<<'\n';
+            }
+        }
+    }
     static const bool traceAnomaly=
         std::getenv("CREM_DEBUG_GRAD")!=nullptr;
     if(traceAnomaly&&gradient.norm()/gamma(targetVelocity)>1.0e-3) {
