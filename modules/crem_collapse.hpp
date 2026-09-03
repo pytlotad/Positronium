@@ -1969,10 +1969,30 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // being used.  d(cos)/dt tracks |mu1 x mu2| linearly, as the
             // identity requires (-4.0e9 at 0.020, -8.0e9 at 0.040).
             //
-            // OPEN, and deliberately not patched here: the azimuth average
-            // below is derived at fixed mutual angle, and for para that
-            // premise does not hold over a collapse.  What it costs has not
-            // been measured.
+            // DOES THIS INVALIDATE THE AZIMUTH AVERAGE BELOW?  No, and the
+            // question is worth closing explicitly because the drift above
+            // makes it look as though it should.
+            //
+            // The average holds the moments fixed while the SEPARATION sweeps
+            // one azimuth.  It is evaluated instantaneously, from the
+            // transported terminal moments -- para reaches it carrying
+            // cos = 0.42, not the +1 it started with -- so what it needs is
+            // not a mutual angle constant over the collapse, only a
+            // precession slow against ONE ORBIT.  Measured at the terminal
+            // radius, which is both where the term is used and the worst case
+            // (the precession rate rises toward periapsis faster than the
+            // orbital rate does), via CREM_DEBUG_AZIMUTH:
+            //
+            //     w_orb ~ 1e18 rad/s, w_prec ~ 2-3.5e15, ratio 1e-3 to 3e-3,
+            //     i.e. the moments turn 0.007-0.020 rad per orbit.
+            //
+            // Two orders of margin.  Taking the 0.02 rad worst case as a
+            // bound on the relative error of U_dip, and U_dip/W ~ 6e-8 with
+            // U_dip ~ 1e-20 J against W ~ 1022 keV, the cost to the photon
+            // energies is ~1e-9 relative -- six orders below the ~0.15% line
+            // broadening this sector is credited with just above.  The drift
+            // is real physics that the average correctly consumes, not an
+            // error in it.
             //
             // WHY THEY DO NOT ALIGN, corrected.  An earlier version argued
             // that B_BMT is dominated by the motional v x E/c^2, which lies
@@ -2134,10 +2154,49 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // depends on the direction of n relative to the moments.  See
             // azimuthAveragedDipoleEnergy for the measurement that shows the
             // convention can flip the sign.
+            const double terminalPeriapsis=regularizedPeriapsis(
+                elements,attractionParameter,separationFloor());
             result.terminalDipoleEnergy=azimuthAveragedDipoleEnergy(
-                regularizedPeriapsis(elements,attractionParameter,
-                                     separationFloor()),
+                terminalPeriapsis,
                 firstDipole,secondDipole,angularMomentumDirection);
+            // CREM_DEBUG_AZIMUTH: the average above holds the moments fixed
+            // while the separation sweeps one azimuth, so what it needs is
+            // not a mutual angle constant over the COLLAPSE -- it is
+            // evaluated instantaneously, from the transported terminal
+            // moments -- but a precession slow against ONE ORBIT.  The ratio
+            // that decides it is omega_precession/omega_orbital at the radius
+            // where the term is actually used, which is the terminal one, and
+            // that is the worst case: the precession rate rises toward
+            // periapsis faster than the orbital rate does.
+            if(std::getenv("CREM_DEBUG_AZIMUTH")) {
+                const double terminalOrbital=terminalPeriapsis>0.0
+                    ?std::sqrt(pairCoulombStrength
+                        /(reducedMass*terminalPeriapsis*terminalPeriapsis
+                          *terminalPeriapsis))
+                    :0.0;
+                const OrbitAveragedBmtAngularVelocities terminalRates=
+                    orbitAveragedBmtAngularVelocities(
+                        -attractionParameter
+                            /(2.0*elements.specificEnergy),
+                        angularMomentumDirection
+                            *(elements.specificAngularMomentum*reducedMass),
+                        firstDipole,secondDipole,reducedMass,zeroPointPhase,
+                        periapsisDirection);
+                const double precession=terminalRates.valid
+                    ?std::max(terminalRates.first.norm(),
+                              terminalRates.second.norm())
+                    :std::numeric_limits<double>::quiet_NaN();
+                std::cerr<<"AZIMUTH r_p="<<terminalPeriapsis
+                    <<" w_orb="<<terminalOrbital
+                    <<" w_prec="<<precession
+                    <<" ratio="<<precession/std::max(terminalOrbital,1.0e-300)
+                    <<" turnPerOrbit_rad="
+                    <<2.0*pi*precession/std::max(terminalOrbital,1.0e-300)
+                    <<" cos="<<dot(firstDipole,secondDipole)
+                        /std::max(firstDipole.norm()*secondDipole.norm(),
+                                  1.0e-300)
+                    <<" U_dip="<<result.terminalDipoleEnergy<<'\n';
+            }
             result.annihilationInvariantEnergy=
                 (firstMass+secondMass)*c*c-result.terminalBindingEnergy
                 +result.terminalDipoleEnergy;
