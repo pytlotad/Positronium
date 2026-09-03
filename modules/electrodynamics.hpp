@@ -2736,9 +2736,21 @@ Vec3 covariantDipoleGradientForce(const State& state,
     // silently different force.
     constexpr double poleCancellationLimit=30.0;
     constexpr double retreatFraction=1.0e-7;
+    // CREM_DEBUG_PROBES: log ALL six stencil probes, not only the ones that
+    // trip the detector, so healthy and degenerate can be compared within the
+    // SAME stencil -- same instant, same source geometry, same moment.
+    // Without that control an E.B sign change at the bad probe means nothing,
+    // because E.B = 0 surfaces are generic in a dipole field.
+    static const bool traceProbes=std::getenv("CREM_DEBUG_PROBES")!=nullptr;
+    double probeRatio[6]={},probeNMu[6]={},probeCosEB[6]={},probeEoverB[6]={};
+    int probeIndex=0;
     const auto coupling=[&](const Vec3& point) {
         ElectromagneticField field=fieldFromOtherParticleAt(
             point,state.time,state,history,targetIsFirst);
+        // Captured BEFORE the retreat, which overwrites the global with its
+        // own (healthy) value -- reading it afterwards reports 1.09 for every
+        // probe and hides exactly what is being looked for.
+        const double asEvaluatedRatio=gPoleCancellationRatio;
         if(gPoleCancellationRatio>poleCancellationLimit) {
             const double flagged=gPoleCancellationRatio;
             const ElectromagneticField retreated=fieldFromOtherParticleAt(
@@ -2799,6 +2811,25 @@ Vec3 covariantDipoleGradientForce(const State& state,
         // for both and can never tell them apart; it has been corrected to
         // rebuild the tensor, and the discriminating check is
         // dipole-gradient-force-covariance, which boosts the assembled FORCE.
+        if(traceProbes&&probeIndex<6) {
+            const bool probeSourceIsFirst=!targetIsFirst;
+            const Vec3 probeSource=probeSourceIsFirst?state.firstPosition
+                                                     :state.secondPosition;
+            const Vec3 probeMoment=probeSourceIsFirst?state.firstDipole
+                                                     :state.secondDipole;
+            const Vec3 sight=point-probeSource;
+            const double sightNorm=sight.norm();
+            const double momentNorm=probeMoment.norm();
+            const double eNorm=field.electric.norm();
+            const double bNorm=field.magnetic.norm();
+            probeRatio[probeIndex]=asEvaluatedRatio;
+            probeNMu[probeIndex]=(sightNorm>0.0&&momentNorm>0.0)
+                ?dot(sight,probeMoment)/(sightNorm*momentNorm):0.0;
+            probeCosEB[probeIndex]=(eNorm>0.0&&bNorm>0.0)
+                ?dot(field.electric,field.magnetic)/(eNorm*bNorm):0.0;
+            probeEoverB[probeIndex]=bNorm>0.0?eNorm/(c*bNorm):0.0;
+            ++probeIndex;
+        }
         return dot(labMagneticDipole,field.magnetic)
               +dot(labElectricDipole,field.electric);
     };
@@ -2840,6 +2871,23 @@ Vec3 covariantDipoleGradientForce(const State& state,
         if(axis==0) gradient.x=derivative;
         else if(axis==1) gradient.y=derivative;
         else gradient.z=derivative;
+    }
+    if(traceProbes&&probeIndex==6) {
+        bool anyDegenerate=false;
+        for(int slot=0;slot<6;++slot)
+            if(probeRatio[slot]>poleCancellationLimit) anyDegenerate=true;
+        static thread_local int probeDumps=0;
+        if(anyDegenerate&&probeDumps++<3) {
+            std::cerr<<"PROBES r="<<separation(state)<<'\n';
+            for(int slot=0;slot<6;++slot)
+                std::cerr<<"  ax"<<(slot/2)<<(slot%2?'-':'+')
+                    <<" ratio="<<probeRatio[slot]
+                    <<" n.mu="<<probeNMu[slot]
+                    <<" cos(E,B)="<<probeCosEB[slot]
+                    <<" |E|/c|B|="<<probeEoverB[slot]
+                    <<(probeRatio[slot]>poleCancellationLimit
+                        ?"   <-- DEGENERATE":"")<<'\n';
+        }
     }
     // CREM_DEBUG_GRAD: dump the six stencil couplings when the assembled
     // gradient comes out anomalously large.  The gradient is a difference of
