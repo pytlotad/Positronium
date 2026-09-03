@@ -6,17 +6,31 @@
 // curve for a histogram, and the two "did the save succeed" reporters for
 // plot and archive exports.
 //
-// Extracted verbatim from positronium.cpp (continuing the split of engine,
-// experiments and ROOT presentation apart -- see the session notes).
-// Textually included at the same point inside positronium.cpp's shared
-// anonymous namespace, itself already inside an
-// #ifndef POSITRONIUM_VALIDATION_EXECUTABLE region positronium.cpp opens
-// well before this #include -- so this header needs no guard of its own.
-// Depends on that namespace already having in scope: GaussianFitSummary
-// (modules/gaussian_fit.hpp, included earlier), root_export::ExportResult,
-// statistics_archive::OperationResult.
+// Self-contained and order-independent: GaussianFitSummary,
+// root_export::ExportResult and statistics_archive::OperationResult arrive
+// with their own headers rather than from the surrounding namespace.
 
-std::string compactNumber(double value, int precision = 5) {
+#include "gaussian_fit.hpp"
+#include "physical_constants.hpp"
+#include "root_export.hpp"
+#include "statistics_archive.hpp"
+
+#include <TF1.h>
+#include <TH1D.h>
+#include <TPaveText.h>
+#include <Rtypes.h>
+
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
+using positronium::parameters::pi;
+
+inline std::string compactNumber(double value, int precision = 5) {
     std::ostringstream output;
     output << std::setprecision(precision) << value;
     return output.str();
@@ -41,7 +55,7 @@ struct AnalysisLine {
     AnalysisLine(const char* t, int c = kBlack) : text(t), color(c) {}
 };
 
-TPaveText* drawAnalysisBox(std::vector<std::unique_ptr<TPaveText>>& storage,
+inline TPaveText* drawAnalysisBox(std::vector<std::unique_ptr<TPaveText>>& storage,
                            double x1, double y1, double x2, double y2,
                            const std::vector<AnalysisLine>& lines,
                            double textSize = 0.027) {
@@ -59,7 +73,7 @@ TPaveText* drawAnalysisBox(std::vector<std::unique_ptr<TPaveText>>& storage,
     return result;
 }
 
-std::unique_ptr<TF1> gaussianMleOverlay(const std::string& name,
+inline std::unique_ptr<TF1> gaussianMleOverlay(const std::string& name,
                                         const GaussianFitSummary& fit,
                                         const TH1D& histogram, int color) {
     if (fit.count < 2 || !(fit.sigma > 0.0) || !std::isfinite(fit.sigma)) {
@@ -79,7 +93,7 @@ std::unique_ptr<TF1> gaussianMleOverlay(const std::string& name,
     return function;
 }
 
-void reportExports(const std::vector<root_export::ExportResult>& results) {
+inline void reportExports(const std::vector<root_export::ExportResult>& results) {
     for (const root_export::ExportResult& result : results) {
         if (result) {
             std::cout << "Saved plot: " << result.path.string() << '\n';
@@ -90,7 +104,7 @@ void reportExports(const std::vector<root_export::ExportResult>& results) {
     }
 }
 
-bool reportArchiveOperation(const statistics_archive::OperationResult& result,
+inline bool reportArchiveOperation(const statistics_archive::OperationResult& result,
                             const char* description) {
     if (result) {
         std::cout << "Saved " << description << ": "

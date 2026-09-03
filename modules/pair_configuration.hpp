@@ -7,19 +7,29 @@
 // quantities derived from them, and applyPair/applyPairFromOption, which is
 // how --pair changes any of it at startup.
 //
-// Extracted verbatim from positronium.cpp (continuing the split of engine,
-// experiments and ROOT presentation apart -- see the session notes).
-// Textually included at the same point inside positronium.cpp's shared
-// anonymous namespace it always occupied (right after the namespace opens
-// and its own using-declarations/c/eCharge/coulomb constants, which stay in
-// positronium.cpp since a namespace-opening brace has no business living
-// separately from its close), so it depends on that namespace already
-// having in scope: Vec3, ParticlePair, ParticleSpecies, defaultPair,
-// magnitude(), isAttracting(), chargeProduct(), speciesByName(),
-// selectableSpeciesList(), magneticMoment(), dipoleRegularizationRadius(),
-// collisionBoundaryOf(), magneticRegularizationRadius,
-// collisionBoundaryRadius, the c/eCharge/coulomb constants.  Not yet a
-// standalone, order-independent header.
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters -- the same one positronium.cpp
+// carries, and the readable choice here because nearly every line below
+// reaches into that namespace -- rather than reopening namespace positronium.
+// That distinction matters: the header is still textually included inside
+// positronium.cpp's anonymous namespace, where reopening a named namespace
+// would create {anonymous}::positronium and hide the real one from every
+// later lookup.
+//
+// Every global below is `inline`, so including this header from more than one
+// translation unit gives the linker one definition rather than several.
+
+#include "particle_species.hpp"
+#include "physical_constants.hpp"
+#include "vector3.hpp"
+
+#include <cmath>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+
+using positronium::objects::Vec3;
+using namespace positronium::parameters;
 
 // The two ROLES the dynamics integrates, as opposed to the species that fill
 // them.  Every force law below refers to "first" and "second"; which particles
@@ -34,15 +44,15 @@
 // and the field solver rather than by folding these scalars.  They are
 // constant-initialized to the default pair, so a run that never passes --pair
 // is bit-identical to the old build.
-ParticlePair activePair=defaultPair;
-ParticleSpecies firstSpecies=activePair.first;
-ParticleSpecies secondSpecies=activePair.second;
-double firstMass=firstSpecies.mass;
-double secondMass=secondSpecies.mass;
-double firstCharge=firstSpecies.charge;
-double secondCharge=secondSpecies.charge;
-double firstGFactor=firstSpecies.gFactor;
-double secondGFactor=secondSpecies.gFactor;
+inline ParticlePair activePair=defaultPair;
+inline ParticleSpecies firstSpecies=activePair.first;
+inline ParticleSpecies secondSpecies=activePair.second;
+inline double firstMass=firstSpecies.mass;
+inline double secondMass=secondSpecies.mass;
+inline double firstCharge=firstSpecies.charge;
+inline double secondCharge=secondSpecies.charge;
+inline double firstGFactor=firstSpecies.gFactor;
+inline double secondGFactor=secondSpecies.gFactor;
 
 // Gyromagnetic ratio relating the intrinsic moment to the intrinsic spin,
 // mu = gamma S with gamma = g q / (2 m).  The g belongs here and was missing
@@ -53,21 +63,21 @@ double secondGFactor=secondSpecies.gFactor;
 // 1.00116 hbar, i.e. the reported intrinsic angular momentum was inflated by
 // g = 2.0023, and the dipole's response to a radiation-reaction torque,
 // d(mu) = gamma tau dt, was weaker by the same factor.
-double gyromagneticRatio(double charge,double mass,double gFactor) {
+inline double gyromagneticRatio(double charge,double mass,double gFactor) {
     return gFactor*charge/(2.0*mass);
 }
-double firstGyromagneticRatioOf() {
+inline double firstGyromagneticRatioOf() {
     return gyromagneticRatio(firstCharge,firstMass,firstGFactor);
 }
-double secondGyromagneticRatioOf() {
+inline double secondGyromagneticRatioOf() {
     return gyromagneticRatio(secondCharge,secondMass,secondGFactor);
 }
 // Magnitudes differ between roles for every pair except a particle and its
 // own antiparticle: the proton carries 1.41e-26 J/T against the electron's
 // 9.28e-24, four hundred times smaller.  Code that reached for one role's
 // moment while dressing the other was correct only by that accident.
-double firstMagneticMoment=magneticMoment(firstSpecies);
-double secondMagneticMoment=magneticMoment(secondSpecies);
+inline double firstMagneticMoment=magneticMoment(firstSpecies);
+inline double secondMagneticMoment=magneticMoment(secondSpecies);
 
 // Pair-level quantities.  These three replace the e^2 that used to be written
 // out wherever two charges met, and they are NOT interchangeable:
@@ -85,11 +95,11 @@ double secondMagneticMoment=magneticMoment(secondSpecies);
 //                       e+e- that collapses to -e and |d| = e|r|, which is why
 //                       the old code could write e and be right; for a pair
 //                       with unequal masses it does not.
-double pairChargeProduct=firstCharge*secondCharge;
-double pairCoulombStrength=coulomb*magnitude(pairChargeProduct);
-double pairDipoleCharge=
+inline double pairChargeProduct=firstCharge*secondCharge;
+inline double pairCoulombStrength=coulomb*magnitude(pairChargeProduct);
+inline double pairDipoleCharge=
     (firstCharge*secondMass-secondCharge*firstMass)/(firstMass+secondMass);
-double pairReducedMass=firstMass*secondMass/(firstMass+secondMass);
+inline double pairReducedMass=firstMass*secondMass/(firstMass+secondMass);
 
 // Point every role constant at a different pair.  Called once, from argument
 // parsing, before anything integrates.
@@ -101,7 +111,7 @@ double pairReducedMass=firstMass*secondMass/(firstMass+secondMass);
 // business integrating.  A repelling pair has no bound states at all, so
 // every experiment built around capture and inspiral would be meaningless
 // rather than merely inaccurate.
-void applyPair(const ParticlePair& pair) {
+inline void applyPair(const ParticlePair& pair) {
     if(!isAttracting(pair))
         throw std::invalid_argument(std::string("pair ")+pair.first.name+"+"
             +pair.second.name+" repels; it has no bound states");
@@ -134,7 +144,7 @@ void applyPair(const ParticlePair& pair) {
 }
 
 // Parse "first,second" as the command line spells it.
-void applyPairFromOption(const std::string& value) {
+inline void applyPairFromOption(const std::string& value) {
     const std::size_t comma=value.find(',');
     if(comma==std::string::npos)
         throw std::invalid_argument(
@@ -155,7 +165,7 @@ void applyPairFromOption(const std::string& value) {
 // through: the instantaneous force sum, the retarded force sum, and the local
 // field each particle sees, the last of which carries it into Thomas-BMT
 // precession for both roles.
-Vec3 gExternalMagneticField;
+inline Vec3 gExternalMagneticField;
 
 // Earth's field is about this, and it is the value the startup question
 // offers.  Worth knowing before reading the output: at 50 uT the cyclotron

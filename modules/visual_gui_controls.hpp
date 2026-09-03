@@ -5,27 +5,37 @@
 // namespace: ROOT's TButton invokes ToggleSimulation through the Cling
 // interpreter by name, which needs ordinary external linkage.
 //
-// Extracted verbatim from positronium.cpp (the presentation side of
-// splitting engine/experiments/ROOT presentation apart -- see the session
-// notes; this is the first slice that is not "engine").  Included at the
-// same point positronium.cpp always had it, before the anonymous namespace
-// opens, so it depends on root_export.hpp (already included earlier) and
-// ROOT's TButton/TCanvas/TApplication (gApplication) being visible, which
-// they are from the top-of-file #include block.
+// Self-contained and order-independent: it pulls in root_export.hpp and the
+// ROOT headers for TButton/TCanvas/TPaveText/TApplication itself rather than
+// relying on positronium.cpp's top-of-file block.
+//
+// The flags and callbacks stay at namespace scope with EXTERNAL linkage, which
+// `inline` preserves -- Cling resolves ToggleSimulation and ExitSimulation by
+// name when TButton fires them, and cannot see an internal-linkage symbol.
+
+#include "root_export.hpp"
+
+#include <TApplication.h>
+#include <TButton.h>
+#include <TCanvas.h>
+#include <TPaveText.h>
+#include <Rtypes.h>
+
+#include <iostream>
 
 // These functions are intentionally global: ROOT's TButton invokes its action
 // through the interpreter while the animation loop observes these flags.
-bool gSimulationPaused = false;
-bool gExitRequested = false;
-bool gVisualSimulationComplete = false;
-TButton* gStopButton = nullptr;
-TCanvas* gVisualCanvas = nullptr;
-TPaveText* gVisualObservationBox = nullptr;
-int gVisualPhenomenon = 0;
-bool gVisualExitSaveAttempted = false;
+inline bool gSimulationPaused = false;
+inline bool gExitRequested = false;
+inline bool gVisualSimulationComplete = false;
+inline TButton* gStopButton = nullptr;
+inline TCanvas* gVisualCanvas = nullptr;
+inline TPaveText* gVisualObservationBox = nullptr;
+inline int gVisualPhenomenon = 0;
+inline bool gVisualExitSaveAttempted = false;
 
-void SetVisualObservationStatus(const char* headline,const char* detail,
-                                int color) {
+inline void SetVisualObservationStatus(const char* headline,
+                                       const char* detail, int color) {
     if(!gVisualObservationBox) return;
     gVisualObservationBox->Clear();
     gVisualObservationBox->SetTextColor(color);
@@ -33,12 +43,12 @@ void SetVisualObservationStatus(const char* headline,const char* detail,
     gVisualObservationBox->AddText(detail);
 }
 
-void ToggleSimulation() {
+inline void ToggleSimulation() {
     gSimulationPaused = !gSimulationPaused;
     // Update immediately on the click, not only on the next animation frame.
     if (gStopButton) gStopButton->SetTitle(gSimulationPaused ? "START" : "STOP");
 }
-void ExitSimulation() {
+inline void ExitSimulation() {
     gExitRequested = true;
     if(gVisualCanvas&&gVisualPhenomenon>=1&&gVisualPhenomenon<=4) {
         // EXIT censors an observation only while integration is still in

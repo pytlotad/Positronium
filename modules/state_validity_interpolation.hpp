@@ -8,18 +8,29 @@
 // terminal events and historical samples are produced without re-running
 // the integrator.
 //
-// Extracted from positronium.cpp during Stage 0 of splitting engine,
-// experiments and ROOT presentation apart.  Textually included at the same
-// point inside positronium.cpp's shared anonymous namespace it always
-// occupied, so it depends on that namespace already having in scope: Vec3,
-// State, two_body::subluminal().  Not yet a standalone, order-independent
-// header.
+// Self-contained and order-independent.  It names what it needs through
+// using-declarations rather than reopening namespace positronium: the header
+// is still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
 
-bool isFinite(const Vec3& value) {
+#include "dipole_tensor.hpp"
+#include "state.hpp"
+#include "two_body_kinematics.hpp"
+#include "vector3.hpp"
+
+#include <cmath>
+
+namespace two_body = positronium::kinematics;
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+
+inline bool isFinite(const Vec3& value) {
     return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
 }
 
-bool isFinite(const State& state) {
+inline bool isFinite(const State& state) {
     return isFinite(state.firstPosition) && isFinite(state.secondPosition)
         && isFinite(state.firstVelocity) && isFinite(state.secondVelocity)
         && two_body::subluminal(state.firstVelocity)
@@ -52,11 +63,11 @@ bool isFinite(const State& state) {
         && std::isfinite(state.previousMismatchEnergy);
 }
 
-Vec3 interpolateVector(const Vec3& before, const Vec3& after, double fraction) {
+inline Vec3 interpolateVector(const Vec3& before, const Vec3& after, double fraction) {
     return before + (after - before) * fraction;
 }
 
-Vec3 interpolateDipole(const Vec3& before, const Vec3& after, double fraction) {
+inline Vec3 interpolateDipole(const Vec3& before, const Vec3& after, double fraction) {
     Vec3 result = interpolateVector(before, after, fraction);
     const double targetNorm = before.norm() + (after.norm() - before.norm()) * fraction;
     const double resultNorm = result.norm();
@@ -64,7 +75,7 @@ Vec3 interpolateDipole(const Vec3& before, const Vec3& after, double fraction) {
     return result;
 }
 
-State interpolateState(const State& before, const State& after, double fraction) {
+inline State interpolateState(const State& before, const State& after, double fraction) {
     // At an endpoint every field, including the committed-step cache, has an
     // exact meaning.  Returning the operand also avoids avoidable round-off.
     if(fraction==0.0) return before;

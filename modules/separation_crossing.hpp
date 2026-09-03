@@ -6,14 +6,23 @@
 // already-integrated steps without re-running the integrator at finer
 // resolution.
 //
-// Extracted verbatim from positronium.cpp (Stage 0 of splitting engine,
-// experiments and ROOT presentation apart -- see the session notes).
-// Textually included at the same point inside positronium.cpp's shared
-// anonymous namespace it always occupied, so it depends on that namespace
-// already having in scope: Vec3, State, dot().  Not yet a standalone,
-// order-independent header.
+// Self-contained and order-independent.  It names what it needs through
+// using-declarations rather than reopening namespace positronium: the header
+// is still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
 
-double separationCrossingFraction(const State& before,const State& after,
+#include "state.hpp"
+#include "vector3.hpp"
+
+#include <algorithm>
+#include <cmath>
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::dot;
+
+inline double separationCrossingFraction(const State& before,const State& after,
                                   double targetSeparation) {
     const Vec3 initial=before.firstPosition-before.secondPosition;
     const Vec3 change=(after.firstPosition-after.secondPosition)-initial;

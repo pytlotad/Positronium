@@ -3,16 +3,23 @@
 // Lays out the three ROOT 3D polylines (shaft, two arrowhead barbs) that
 // draw one dipole moment as an arrow in the visual-mode 3D view.
 //
-// Extracted verbatim from positronium.cpp (continuing the split of engine,
-// experiments and ROOT presentation apart -- see the session notes).
-// Textually included at the same point inside positronium.cpp's shared
-// anonymous namespace, itself already inside an
-// #ifndef POSITRONIUM_VALIDATION_EXECUTABLE region positronium.cpp opens
-// well before this #include -- so this header needs no guard of its own.
-// Depends on that namespace already having in scope: Vec3, unit(), cross().
+// Self-contained and order-independent.  Vec3/cross() and unit() arrive with
+// vector3.hpp and relativistic_field_types.hpp rather than from the
+// surrounding namespace, and TPolyLine3D with its own ROOT header.
 
-void setDipoleArrow(TPolyLine3D& shaft, TPolyLine3D& leftHead, TPolyLine3D& rightHead,
-                    const Vec3& centre, const Vec3& dipole) {
+#include "relativistic_field_types.hpp"
+#include "vector3.hpp"
+
+#include <TPolyLine3D.h>
+
+#include <cmath>
+
+using positronium::objects::Vec3;
+using positronium::objects::cross;
+
+inline void setDipoleArrow(TPolyLine3D& shaft, TPolyLine3D& leftHead,
+                           TPolyLine3D& rightHead,
+                           const Vec3& centre, const Vec3& dipole) {
     const Vec3 direction = unit(dipole);
     const Vec3 tip = centre + direction * 0.31;
     const Vec3 helper = std::abs(direction.z) < 0.8 ? Vec3{0, 0, 1} : Vec3{0, 1, 0};

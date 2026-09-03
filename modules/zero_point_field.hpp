@@ -5,12 +5,28 @@
 // committed result was produced with -- see gZeroPointField's own use
 // sites for how it enters the force sum only when active().
 //
-// Extracted verbatim from positronium.cpp (continuing the split of engine,
-// experiments and ROOT presentation apart -- see the session notes).
-// Textually included at the same point inside positronium.cpp's shared
-// anonymous namespace it always occupied, so it depends on that namespace
-// already having in scope: Vec3, the c/hbar/pi/epsilon0 constants, dot(),
-// cross().  Not yet a standalone, order-independent header.
+// Self-contained and order-independent.  It names what it needs through
+// using-declarations rather than reopening namespace positronium: the header
+// is still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
+
+#include "physical_constants.hpp"
+#include "vector3.hpp"
+
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <random>
+#include <vector>
+
+using positronium::objects::Vec3;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using positronium::parameters::c;
+using positronium::parameters::epsilon0;
+using positronium::parameters::hbar;
+using positronium::parameters::pi;
 
 // Classical zero-point field of stochastic electrodynamics: a random,
 // homogeneous, isotropic radiation field with spectral energy density
@@ -100,14 +116,16 @@ struct ZeroPointField {
         return force;
     }
 };
-ZeroPointField gZeroPointField;
+// One shared instance, `inline` so the header can be included from more than
+// one translation unit without the linker seeing two definitions.
+inline ZeroPointField gZeroPointField;
 
 // scale multiplies the field AMPLITUDE, so 1 is the full zero-point level and
 // the absorbed power scales as scale^2.  Anything other than 1 is a numerical
 // experiment, not the physical field.
-ZeroPointField makeZeroPointField(double lowFactor,double highFactor,
-                                  int modeCount,double scale,
-                                  std::uint64_t seed) {
+inline ZeroPointField makeZeroPointField(double lowFactor,double highFactor,
+                                         int modeCount,double scale,
+                                         std::uint64_t seed) {
     ZeroPointField field;
     if(!(scale>0.0)||modeCount<=0||!(highFactor>lowFactor)) return field;
     const double lowFourth=std::pow(lowFactor,4.0);

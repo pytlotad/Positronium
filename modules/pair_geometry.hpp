@@ -7,13 +7,27 @@
 // that modules/retarded_charge_kinematics.hpp -- and essentially everything
 // downstream of it -- builds on.
 //
-// Extracted verbatim from positronium.cpp (Stage 0 of splitting engine,
-// experiments and ROOT presentation apart -- see the session notes on why
-// and what stays behind).  Textually included at the same point inside
-// positronium.cpp's shared anonymous namespace it always occupied, so it
-// depends on that namespace already having in scope: Vec3, State,
-// activePair, isPositronium(), comptonBarrierRadius.  Not yet a standalone,
-// order-independent header.
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
+
+#include "pair_configuration.hpp"
+#include "particle_species.hpp"
+#include "physical_constants.hpp"
+#include "state.hpp"
+#include "vector3.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::dot;
+using namespace positronium::parameters;
 
 // Rescales a source-to-target separation to an effective distance
 // sqrt(r^2+floor^2), keeping its direction -- Plummer-style gravitational
@@ -43,7 +57,7 @@
 // that magnitude is exactly floor there (sqrt(0+floor^2)), so the general
 // formula already gives the right answer -- the special case below exists
 // only to avoid dividing trueSeparation by a zero trueDistance.
-Vec3 clampedSeparationVector(const Vec3& trueSeparation, double floor) {
+inline Vec3 clampedSeparationVector(const Vec3& trueSeparation, double floor) {
     if (!(floor > 0.0)) return trueSeparation;
     const double trueDistance = trueSeparation.norm();
     const double effectiveDistance =
@@ -59,7 +73,7 @@ Vec3 clampedSeparationVector(const Vec3& trueSeparation, double floor) {
 // and would not mean the same thing for any other pair. No regularization
 // for other pairs yet -- this is deliberately narrower than "every pair"
 // until an analogous barrier is derived for them.
-double separationFloor() {
+inline double separationFloor() {
     return isPositronium(activePair) ? comptonBarrierRadius : 0.0;
 }
 
@@ -75,7 +89,7 @@ struct PairGeometry {
 // step-error normalization, and every other diagnostic that must say where
 // the pair actually is, not where the force laws pretend it is.  Force laws
 // use clampedPairGeometry() below instead; nothing here changes for them.
-PairGeometry pairGeometry(const State& s) {
+inline PairGeometry pairGeometry(const State& s) {
     const Vec3 firstMinusSecond = s.firstPosition - s.secondPosition;
     const double distanceSquared = firstMinusSecond.squaredNorm();
     const double distance = std::sqrt(distanceSquared);
@@ -92,7 +106,7 @@ PairGeometry pairGeometry(const State& s) {
 // diverge on a close encounter; termination logic and diagnostics keep
 // reading the true pairGeometry() above so they still report what actually
 // happened.
-PairGeometry clampedPairGeometry(const State& s) {
+inline PairGeometry clampedPairGeometry(const State& s) {
     const Vec3 firstMinusSecond = clampedSeparationVector(
         s.firstPosition - s.secondPosition, separationFloor());
     const double distanceSquared = firstMinusSecond.squaredNorm();
@@ -104,4 +118,4 @@ PairGeometry clampedPairGeometry(const State& s) {
             inverseDistanceSquared * inverseDistanceSquared};
 }
 
-double separation(const State& s) { return pairGeometry(s).distance; }
+inline double separation(const State& s) { return pairGeometry(s).distance; }
