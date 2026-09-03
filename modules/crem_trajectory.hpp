@@ -5,10 +5,239 @@
 // that prepares a positronium-scale initial condition and classifies what it
 // turns into.
 //
-// Textual module, included from inside the anonymous namespace of
-// positronium.cpp and inside the production #ifndef.  Contains no ROOT.
+// Contains no ROOT.
+//
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
 
-Frame makeFrame(const State& s) {
+#include "crem_engine.hpp"
+#include "pair_configuration.hpp"
+#include "physical_constants.hpp"
+#include "secular_spin_orbit.hpp"
+#include "separation_crossing.hpp"
+#include "simulation_interface.hpp"
+#include "state.hpp"
+#include "vector3.hpp"
+#include "zero_point_field.hpp"
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+#include <iostream>
+#include <limits>
+#include <random>
+#include <vector>
+
+namespace two_body = positronium::kinematics;
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::DipoleTensor;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using namespace positronium::parameters;
+
+// Run-time switches for the CREM engine, set once from the command line and
+// read by this header and by crem_collapse.hpp, which includes it.  They were
+// loose in positronium.cpp between the module includes; they belong with the
+// code that reads them, and their being there is what stopped this header
+// compiling on its own.
+
+// Selected once from --radiation-reaction and read by every trajectory
+// constructed below (visual, beam and interaction experiments alike).
+// Defaults to stochasticElectricDipole (radiation ON): the same E1 dipole
+// power individualLandauLifshitz would remove as a continuous drag force is
+// instead banked as Poissonian hazard and paid out in discrete,
+// momentum-conserving photon kicks -- see the enum's own comment in
+// electrodynamics.hpp for why (deterministic drag has no photon to report;
+// --emission deterministic bypasses the Poisson draw but still uses this
+// channel).  estimateCremCollapse now measures the classical inspiral
+// mechanically rather than assuming it, so it needs some such channel
+// switched on to observe anything; --radiation-reaction individual restores
+// the continuous-drag alternative.
+// [[maybe_unused]] because the validation executable's main() never reaches
+// the trajectory constructors that read this, so GCC sees no use in that
+// build.
+[[maybe_unused]] inline ChargeRadiationReactionModel gRadiationReactionModel =
+    ChargeRadiationReactionModel::stochasticElectricDipole;
+
+// Starting separation the bound scenarios are PREPARED at, a_n = n^2 a_pair
+// (a_pair itself comes from the pair's measured magnetic moment -- see
+// pairBohrRadius's own comment -- the one length scale this model actually
+// has to start an inspiral from).  Not a claim that the pair occupies "the
+// n-th energy level" as a physical eigenstate: with the ground-state floor
+// and the Bohr-ladder photon energy both off by default (see
+// gGroundStateEmissionFloor, gBohrLevelPhotonEnergy below), nothing in the
+// default run treats this as a quantized level any more than any other
+// starting radius would be -- it is just where the classical inspiral begins.
+// n is still an integer and a_n still scales as n^2 purely so --level stays
+// a convenient, backward-comparable way to pick a starting separation.
+//
+// Kept at 2, not 1, for a reason that survives both defaults above: on the
+// Bohr ladder the instantaneous-kick emission ceiling is exactly
+//
+//     hbar*omega / E_kinetic = 2/n
+//
+// (virial: a circular orbit's kinetic energy equals its binding energy), so
+// a photon of hbar*omega cannot be paid for at n=1 or n=2 and fits from n=3
+// up -- a constraint on the mechanical trajectory's stochastic photon-kick
+// reaction model, independent of the secular ladder machinery
+// the other two defaults switch off.  Measured across all four phenomena,
+// the model never leaves n <= 1.09, so this ceiling covers its whole
+// operating range regardless of where the ladder concept itself is used.
+//
+// a_n = n^2 a_pair and the tangential band is quoted in units of the circular
+// speed AT that separation, so the sampled spread in L/(n hbar) is unchanged
+// and only the level moves.
+inline int gInitialPrincipalLevel = 2;
+
+// Whether the quantized emission draws its next threshold from Exp(1) (a
+// genuine Poisson process, available via --emission poisson) or fires
+// deterministically as soon as one quantum's worth of energy has
+// accumulated -- the default since the measurement below.
+//
+// The two differ by ONE constant, and the reason is worth stating because it
+// makes the deterministic variant nearly free.  The banked hazard is
+//
+//     integral(rate dt) = integral(P/E_photon dt) = (radiated energy)/E_photon,
+//
+// i.e. the accumulated loss measured in quanta.  Firing at a fixed threshold
+// of 1 therefore means "emit exactly when the orbit has continuously lost one
+// photon's worth of energy" -- the orbit still descends continuously, and the
+// level crossing itself is the trigger.  Firing at an Exp(1) threshold
+// instead is what turns that into spontaneous emission with its shot noise.
+//
+// Both are production models, not probes.  They serve the same direction --
+// a DETERMINISTIC determination of the quantum parameters -- and differ in
+// how far along it they go.  The photon ENERGY is already fixed by the orbit
+// in both (correspondence, or the level spacing where a ladder exists);
+// deterministic emission fixes its TIMING too, leaving nothing about the
+// quantum drawn at random.
+//
+// The departure this makes from the conventional description is worth
+// stating plainly rather than hiding: spontaneous emission is normally
+// modelled as Poissonian, and that used to be why Poisson was the default.
+// What changed the answer is that the "sharp preparation" -- the pair now
+// starts on an EXACT circular Bohr orbit (e=0), not a sampled eccentricity
+// band -- removed the last non-shot-noise source of collapse-time spread.
+// Re-measured after that change (N=100, seed 7, level 2 -> 1): Poisson
+// sigma/mean = 0.883 (matches the old 0.894 within sampling noise), while
+// deterministic sigma/mean = 4.0e-11 -- floating-point noise, not physics,
+// because every trajectory now shares the identical circular Larmor rate and
+// there is nothing left for the threshold draw to average over. The mean is
+// preserved as claimed: 6398.9+/-568.1 ps (Poisson) against 6206.4 ps
+// (deterministic), 0.34 standard errors apart. Poisson's entire reported
+// spread is therefore shot noise around that same number, not a competing
+// physical prediction, so deterministic is the better default estimator of
+// the trajectory itself; --emission poisson remains available for whoever
+// specifically wants the spontaneous-emission statistics.
+inline bool gDeterministicEmission = true;
+
+// The same standing as --zpf, and aimed at the same gap: CREM is a classical
+// radiative inspiral with nothing to halt it at the pair Bohr radius, so left
+// alone the collapse runs past the ground state and ends wherever the
+// electrodynamics itself stops it -- the Compton barrier, or (measured, the
+// large majority of the time -- see the README's Compton-barrier
+// re-measurement) a numerical retardation-time safety margin first.
+//
+// --zpf tried to supply a stopping mechanism from outside, by coupling a
+// classical zero-point field and looking for a fluctuation-dissipation
+// balance.  That failed: the resonant band moves the collapse time by 0.3%,
+// wider bands only pump the orbit toward escape, and the balance condition
+// could not even be measured (see the README's ZPF section).
+//
+// This flag tries the opposite tack.  Instead of a mechanism, it imports ONE
+// quantum fact and nothing else: the Bohr ladder terminates, so there is no
+// state below n=1 for a photon to leave the pair in.  Emission is refused
+// whenever it would bind the pair tighter than the ground state.
+//
+// It is a CLOSURE, not a derivation.  It does not explain why no lower state
+// exists; it asserts it, and any result obtained with it has to be read that
+// way.  What it buys over --zpf is that it carries no free parameter, no band
+// edge to choose, no mode count to converge, and no cost.  --ground-state-floor
+// restores it.
+//
+// OFF BY DEFAULT, on request, to leave the classical electrodynamics running
+// unmodified: this closure, gBohrLevelPhotonEnergy below, and the choice of
+// L=n*hbar starting separation (gInitialPrincipalLevel, now documented as a
+// starting radius rather than a claimed energy level) are the three places
+// this file imports a discrete quantum fact rather than deriving one, and
+// this is the first to go.  Measured (N=100x2, seed 7, --no-ground-state-floor
+// equivalent, both channels): 97-98% of trajectories stop on the retardation
+// safety margin, 2-3% on the Compton barrier, "landed at periapsis" spans a
+// smooth 0.26-15.3 r* with no clustering, and para/ortho are statistically
+// indistinguishable -- i.e. what the bare electrodynamics produces here is
+// continuous scatter, not a rediscovered ladder.
+//
+// WHAT THE REPORTED TIME MEANS WITH THE FLOOR OFF: a classical inspiral time
+// to wherever the electrodynamics actually stops (Compton barrier or
+// retardation margin), NOT a cascade to n=1 and NOT an annihilation
+// lifetime -- this model has no annihilation dynamics at all, no contact
+// channel and no rate, established separately.  --ground-state-floor restores
+// the n=1 cascade-time reading documented above.
+inline bool gGroundStateEmissionFloor = false;
+
+// SPIN QUANTIZATION, split out of --ground-state-floor and defaulted ON.
+//
+// S=0 and S=1 are exact states, so the two moments are exactly aligned or
+// exactly anti-aligned -- never somewhere in a band.  Opposite charges invert
+// the spin-moment relation, so ANTI-parallel spins (para, S=0) give ALIGNED
+// moments and |mu1+mu2| = 2mu, while ortho (S=1) gives |mu1+mu2| = 0 exactly.
+// That is what makes the coherent M1 channel a real para/ortho asymmetry
+// rather than a label.
+//
+// Sampled from a BAND instead -- para drawn from cos >= 0.5, ortho from
+// everything below -- the asymmetry is destroyed, and measurably so, which is
+// why this is now the default rather than an option.  Measured over the
+// sampled configurations at --level 1: |mu1+mu2| came out 1.775-1.942 mu for
+// para against 1.271-1.716 mu for ortho, i.e. ortho carrying 63-86% of para's
+// net moment instead of zero, and the resulting M1 shares were comparable
+// (ortho's largest, 9.0e-13 of E1, exceeded para's 2.5e-13).  The band also
+// puts para's lower edge exactly ON the classification threshold, so half the
+// para trajectories precessed across it during the inspiral (6 of 12).
+//
+// It was previously reachable only through --ground-state-floor, which
+// ALSO zeroes the emission hazard at n=1 and therefore stops every trajectory
+// before it reaches the collision boundary (measured: 0 of 4 collapses).  The
+// two are independent physical assertions and are now independent switches:
+// this one fixes the initial mutual angle, that one closes the ladder from
+// below.  --no-spin-quantization restores the band sampling.
+inline bool gSpinQuantization = true;
+
+// The second of the three imported quantum facts (see
+// gGroundStateEmissionFloor's comment).  quantumFor (crem_collapse.hpp) needs
+// a photon energy for the secular estimator's hazard bookkeeping; it has
+// always had two candidates available, the Bohr LEVEL DIFFERENCE E(n)-E(n-1)
+// where the ladder has a rung below, and hbar*omega_orb -- the value the
+// orbit's own frequency actually produces, with no ladder concept at all --
+// as the fallback everywhere the ladder does not reach (n<2, or now,
+// unconditionally, whenever this flag is off).
+//
+// hbar*omega_orb is not a worse number by construction: it is the
+// correspondence-principle value, and measured, dE(n->n-1)/hbar*omega_orb is
+// close to 1 (1.0152 at n=100, 1.0523 at n=30) everywhere except close to the
+// ground state, where the ladder's spacing stops resembling the local orbital
+// frequency at all (a factor of 3 off at n=2) -- see quantumFor's own comment
+// for the measurement.  Choosing it unconditionally means the photon energy
+// this file reports is always something the electrodynamics itself produces,
+// never a level difference imported from the quantum ladder.
+//
+// OFF BY DEFAULT, on request, alongside gGroundStateEmissionFloor above.
+// --bohr-photon-energy restores the level-difference rule (quantumFor's own
+// n>=2 branch), for comparison against the historical behaviour.
+// [[maybe_unused]] because quantumFor lives in crem_collapse.hpp, which is
+// only included outside the validation executable (see its #ifndef just
+// below).
+[[maybe_unused]] inline bool gBohrLevelPhotonEnergy = false;
+
+inline Frame makeFrame(const State& s) {
     // TRUE geometry: only for the reported radius below, which must say
     // where the pair actually is, not where the force laws pretend it is.
     const PairGeometry geometry = pairGeometry(s);
@@ -66,7 +295,7 @@ Frame makeFrame(const State& s) {
 // header is included (line ~1213 vs. this header's ~1174), so it is not yet
 // visible here.  Same well-known bit-mixer, just under its own name to avoid
 // masking the later declaration.
-std::uint64_t stochasticPhotonHash64(std::uint64_t value) {
+inline std::uint64_t stochasticPhotonHash64(std::uint64_t value) {
     value += 0x9e3779b97f4a7c15ULL;
     value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9ULL;
     value = (value ^ (value >> 27)) * 0x94d049bb133111ebULL;
@@ -78,7 +307,7 @@ std::uint64_t stochasticPhotonHash64(std::uint64_t value) {
 // the standard thinning/inverse-CDF construction of an inhomogeneous
 // Poisson process: accumulate hazard = integral(rate dt) and fire whenever
 // it crosses a freshly-drawn Exp(1) threshold.
-double drawExponentialUnit(std::uint64_t& streamState) {
+inline double drawExponentialUnit(std::uint64_t& streamState) {
     streamState = stochasticPhotonHash64(streamState);
     // Upper 53 bits -> a double uniform in (0,1]; excluding 0 keeps log finite.
     const double uniform =
@@ -92,7 +321,7 @@ double drawExponentialUnit(std::uint64_t& streamState) {
 // (see gDeterministicEmission for why that is the same thing as emitting on
 // a level crossing).  The stream is advanced either way, so switching modes
 // does not shift every later draw in the run.
-double drawEmissionThreshold(std::uint64_t& streamState) {
+inline double drawEmissionThreshold(std::uint64_t& streamState) {
     const double exponential=drawExponentialUnit(streamState);
     return gDeterministicEmission ? 1.0 : exponential;
 }
@@ -100,7 +329,7 @@ double drawEmissionThreshold(std::uint64_t& streamState) {
 // Draws one uniform variate in [0,1) from the same stream, advancing it in
 // place.  Same bit construction as drawExponentialUnit's own intermediate
 // uniform, just returned directly instead of being fed through -log().
-double drawUniformUnit(std::uint64_t& streamState) {
+inline double drawUniformUnit(std::uint64_t& streamState) {
     streamState = stochasticPhotonHash64(streamState);
     return static_cast<double>(streamState >> 11) * (1.0 / 9007199254740992.0);
 }
@@ -110,7 +339,7 @@ double drawUniformUnit(std::uint64_t& streamState) {
 // cubic inverse below is the same closed-form sampler used by the secular
 // collapse path; keeping it here makes the mechanical and skipped-orbit paths
 // consume the same physical angular law.
-Vec3 sampleRotatingDipolePhotonDirection(const Vec3& orbitalNormal,
+inline Vec3 sampleRotatingDipolePhotonDirection(const Vec3& orbitalNormal,
                                          std::uint64_t& streamState) {
     Vec3 axis=orbitalNormal;
     const double axisNorm=axis.norm();
@@ -146,7 +375,7 @@ struct StochasticPhotonRecoil {
 // rejected without modifying the state.  This replaces the old capped kick,
 // which could remove all relative kinetic energy while still crediting an
 // unrelated photon and did not conserve the pair+photon momentum.
-StochasticPhotonRecoil applyStochasticDipolePhoton(
+inline StochasticPhotonRecoil applyStochasticDipolePhoton(
     State& s,double photonEnergy,const Vec3& photonDirection) {
     StochasticPhotonRecoil result;
     if(!(photonEnergy>0.0)||!std::isfinite(photonEnergy)) return result;
@@ -220,7 +449,7 @@ StochasticPhotonRecoil applyStochasticDipolePhoton(
     return result;
 }
 
-const char* phenomenonName(Phenomenon phenomenon) {
+inline const char* phenomenonName(Phenomenon phenomenon) {
     switch (phenomenon) {
         case Phenomenon::DirectCollision: return "Direct collision";
         case Phenomenon::Scattering: return "Scattering";
@@ -250,7 +479,7 @@ struct MechanicalTrajectoryResult {
 // simulate(), which samples its own random initial condition, and the
 // secular CREM collapse estimator, which reconstructs a fresh osculating
 // state after each measured orbit instead of sampling one.
-MechanicalTrajectoryResult runMechanicalTrajectory(State s,
+inline MechanicalTrajectoryResult runMechanicalTrajectory(State s,
                                                     double observationTime,
                                                     double trajectoryCutoff,
                                                     const SimulationOptions& options,
@@ -888,7 +1117,7 @@ MechanicalTrajectoryResult runMechanicalTrajectory(State s,
             finalRadiatedEnergy, maximumBeta, std::move(frames)};
 }
 
-SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
+inline SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
                           SimulationOptions options = {}) {
     const double reducedMass = firstMass * secondMass / (firstMass + secondMass);
     // Every scenario starts at the positronium scale, not hydrogen's.  The

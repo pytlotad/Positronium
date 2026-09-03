@@ -124,19 +124,10 @@ double gamma(const Vec3& velocity);
 // presentation apart -- see the header's own comment).
 #include "modules/lorentz_boost_dipole.hpp"
 
-#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
-// Lorentz invariants of the polarization-magnetization tensor.  Only the
-// covariance tests consume them, so they are not compiled into the production
-// binary at all.
-double dipoleFirstInvariant(const DipoleTensor& dipole) {
-    return dipole.magnetic.squaredNorm()
-        -c*c*dipole.electric.squaredNorm();
-}
+// dipoleFirstInvariant, dipoleSecondInvariant,
+// regularizedDipoleVectorPotential and initializeRetardedPairFields moved
+// to modules/maxwell_validation.hpp, the only caller of any of them.
 
-double dipoleSecondInvariant(const DipoleTensor& dipole) {
-    return c*dot(dipole.electric,dipole.magnetic);
-}
-#endif
 // unit, FourVector, ElectromagneticField, minkowskiDot (Stage 0 of
 // splitting engine/experiments/ROOT presentation apart -- see the header's
 // own comment).
@@ -171,415 +162,34 @@ double dipoleSecondInvariant(const DipoleTensor& dipole) {
 // on from the surrounding namespace).
 #include "modules/retarded_charge_kinematics.hpp"
 
-#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
-Vec3 regularizedDipoleVectorPotential(const Vec3& observationPosition,
-                                      const Vec3& sourcePosition,
-                                      const Vec3& dipole,double radius) {
-    const Vec3 displacement=observationPosition-sourcePosition;
-    const double distance=displacement.norm();
-    if(distance<=std::numeric_limits<double>::min()||dipole.squaredNorm()==0.0)
-        return {};
-    const double u=distance/(std::sqrt(2.0)*radius);
-    const double formFactor=std::erf(u)-2.0*u*std::exp(-u*u)/std::sqrt(pi);
-    return cross(dipole,displacement)
-        *(mu0/(4.0*pi)*formFactor/(distance*distance*distance));
-}
+// dipoleFirstInvariant, dipoleSecondInvariant,
+// regularizedDipoleVectorPotential and initializeRetardedPairFields moved
+// to modules/maxwell_validation.hpp, the only caller of any of them.
 
-void initializeRetardedPairFields(MaxwellBlock& block,const State& state,
-                                  const StateHistory& history,
-                                  int projectionIterations=400) {
-    const RelativisticChargeCloud first{firstCharge,chargeCloudRestRadius};
-    const RelativisticChargeCloud second{secondCharge,chargeCloudRestRadius};
-    block.clearSources();
-    block.depositCloud(first,state.firstPosition,state.firstVelocity);
-    block.depositCloud(second,state.secondPosition,state.secondVelocity);
-    block.depositCovariantDipole(state.firstPosition,state.firstVelocity,
-                                 state.firstDipole);
-    block.depositCovariantDipole(state.secondPosition,state.secondVelocity,
-                                 state.secondDipole);
-    block.finalizeBoundInstantaneous();
-    block.clearFields();
-    std::vector<Vec3> dipoleVectorPotential(block.cells().size());
-    for(int k=0;k<block.cellsPerAxis();++k)
-        for(int j=0;j<block.cellsPerAxis();++j)
-            for(int i=0;i<block.cellsPerAxis();++i) {
-                const Vec3 position=block.cellPosition(i,j,k);
-                const ElectromagneticField fromFirst=lienardWiechertField(
-                    position,state.time,history,state,true,firstCharge,
-                    chargeCloudRestRadius);
-                const ElectromagneticField fromSecond=lienardWiechertField(
-                    position,state.time,history,state,false,secondCharge,
-                    chargeCloudRestRadius);
-                const Vec3 dipolePotential=
-                    regularizedDipoleVectorPotential(position,state.firstPosition,
-                        state.firstDipole,chargeCloudRestRadius)
-                   +regularizedDipoleVectorPotential(position,state.secondPosition,
-                        state.secondDipole,chargeCloudRestRadius);
-                dipoleVectorPotential[(static_cast<std::size_t>(k)
-                    *block.cellsPerAxis()+j)*block.cellsPerAxis()+i]=dipolePotential;
-                block.replaceFieldAt(position,
-                    fromFirst.electric+fromSecond.electric,
-                    fromFirst.magnetic+fromSecond.magnetic);
-            }
-    block.addMagneticCurl(dipoleVectorPotential);
-    // Preserve the retarded transverse content while matching the discrete
-    // extended sources and eliminating grid-level magnetic monopoles.
-    block.projectElectricGaussConstraint(projectionIterations);
-    block.projectMagneticDivergenceConstraint(projectionIterations);
-}
-#endif
 
-#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
-// Rodrigues precession used only by the grid-coupled pusher in the field
-// validation build; production dipole transport goes through the covariant
-// BMT integrator in advanceCovariantBmt().
-void precessDipole(Vec3& dipole,const Vec3& field,
-                   double gyromagneticRatio,double dt) {
-    const double dipoleMagnitude=dipole.norm();
-    if(dipoleMagnitude==0.0) return;
-    const double fieldMagnitude = field.norm();
-    if (fieldMagnitude == 0.0) return;
-    const Vec3 axis = field / fieldMagnitude;
-    // d(mu)/dt = gamma mu x B. rotatedAround uses B x mu for a positive
-    // angle, hence the minus sign.
-    const double angle = -gyromagneticRatio * fieldMagnitude * dt;
-    // Rodrigues rotation preserves the magnitude of the magnetic moment.
-    const Vec3 rotated = dipole * std::cos(angle) + cross(axis, dipole) * std::sin(angle)
-                       + axis * ((axis.x*dipole.x + axis.y*dipole.y + axis.z*dipole.z) * (1.0 - std::cos(angle)));
-    dipole=rotated*(dipoleMagnitude/rotated.norm());
-}
-#endif
+// precessDipole, relativisticBorisPush, pushStateWithYeeField and
+// pushStateWithGridField used to sit here, between the Maxwell backend
+// and electrodynamics.hpp, purely because they need
+// thomasBmtEffectiveField from the latter.  They moved to
+// modules/maxwell_validation.hpp, the only place that calls them, which
+// sits above both and so reaches it without a forward declaration.
 
 // gamma, momentum, kineticEnergy, velocityFromMomentum,
 // synchronizeCovariantDipoles (Stage 0 of splitting engine/experiments/ROOT
 // presentation apart -- see the header's own comment).
 #include "modules/relativistic_kinematics.hpp"
-Vec3 thomasBmtEffectiveField(const Vec3& velocity,
-                             const ElectromagneticField& field,
-                             double gFactor);
-
-#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
-// Relativistic Boris rotation written in momentum variables.  Electric
-// half-kicks surround a magnetic rotation evaluated with the intermediate
-// Lorentz factor; the map is time reversible and cannot produce |v|>=c.
-Vec3 relativisticBorisPush(const Vec3& momentumBefore, double charge,
-                           double mass, const Vec3& electric,
-                           const Vec3& magnetic, double dt) {
-    const Vec3 momentumMinus=momentumBefore+electric*(0.5*charge*dt);
-    const double gammaMinus=std::sqrt(1.0
-        +momentumMinus.squaredNorm()/(mass*mass*c*c));
-    const Vec3 t=magnetic*(charge*dt/(2.0*gammaMinus*mass));
-    const Vec3 s=t*(2.0/(1.0+t.squaredNorm()));
-    const Vec3 momentumPrime=momentumMinus+cross(momentumMinus,t);
-    const Vec3 momentumPlus=momentumMinus+cross(momentumPrime,s);
-    return momentumPlus+electric*(0.5*charge*dt);
-}
-
-// Production-order particle/Yee coupling. The gathered staggered fields push
-// both particles first; their complete old-to-new trajectories then deposit
-// rho^{n+1} and J^{n+1/2}. Maxwell therefore receives a source satisfying its
-// own discrete continuity equation and needs no Poisson repair.
-void pushStateWithYeeField(State& state,YeeMaxwellBlock& field,double dt) {
-    const State before=state;
-    const auto [firstElectric,firstMagnetic]=
-        field.interpolateField(before.firstPosition);
-    const auto [secondElectric,secondMagnetic]=
-        field.interpolateField(before.secondPosition);
-    const Vec3 firstMomentum=relativisticBorisPush(
-        momentum(before.firstVelocity,firstMass),firstCharge,firstMass,
-        firstElectric,firstMagnetic,dt);
-    const Vec3 secondMomentum=relativisticBorisPush(
-        momentum(before.secondVelocity,secondMass),secondCharge,secondMass,
-        secondElectric,secondMagnetic,dt);
-    state.firstVelocity=velocityFromMomentum(firstMomentum,firstMass);
-    state.secondVelocity=velocityFromMomentum(secondMomentum,secondMass);
-    state.firstPosition=before.firstPosition+state.firstVelocity*dt;
-    state.secondPosition=before.secondPosition+state.secondVelocity*dt;
-    state.firstAcceleration=(state.firstVelocity-before.firstVelocity)/dt;
-    state.secondAcceleration=(state.secondVelocity-before.secondVelocity)/dt;
-    field.clearSources();
-    field.depositGaussianEsirkepov(firstCharge,chargeCloudRestRadius,
-        before.firstPosition,before.firstVelocity,state.firstPosition,
-        state.firstVelocity,dt);
-    field.depositGaussianEsirkepov(secondCharge,chargeCloudRestRadius,
-        before.secondPosition,before.secondVelocity,state.secondPosition,
-        state.secondVelocity,dt);
-    field.depositCovariantDipoleYee(state.firstPosition,
-        state.firstVelocity,state.firstDipole,chargeCloudRestRadius);
-    field.depositCovariantDipoleYee(state.secondPosition,
-        state.secondVelocity,state.secondDipole,chargeCloudRestRadius);
-    field.finalizeBoundSources(dt);
-    field.advance(dt);
-    state.time+=dt;
-}
-
-void pushStateWithGridField(State& state, const MaxwellBlock& field,
-                            double dt, bool reciprocalDipoles=false,
-                            const State* samplingState=nullptr,
-                            const ElectromagneticField& firstSelfField={},
-                            const ElectromagneticField& secondSelfField={},
-                            const DynamicSelfFieldCalibration* firstCalibration=nullptr,
-                            const DynamicSelfFieldCalibration* secondCalibration=nullptr) {
-    const State& sample=samplingState?*samplingState:state;
-    auto [firstElectric,firstMagnetic]=
-        field.interpolateField(sample.firstPosition);
-    auto [secondElectric,secondMagnetic]=
-        field.interpolateField(sample.secondPosition);
-    const ElectromagneticField currentFirstSelf=firstCalibration
-        ?firstCalibration->field(field,sample.firstPosition,
-                                    sample.firstVelocity,firstCharge):firstSelfField;
-    const ElectromagneticField currentSecondSelf=secondCalibration
-        ?secondCalibration->field(field,sample.secondPosition,
-                                    sample.secondVelocity,secondCharge):secondSelfField;
-    firstElectric=firstElectric-currentFirstSelf.electric;
-    firstMagnetic=firstMagnetic-currentFirstSelf.magnetic;
-    secondElectric=secondElectric-currentSecondSelf.electric;
-    secondMagnetic=secondMagnetic-currentSecondSelf.magnetic;
-    const GridDipoleInteraction firstDipoleInteraction=reciprocalDipoles
-        ?field.dipoleInteraction(sample.firstPosition,sample.firstDipole)
-        :GridDipoleInteraction{};
-    const GridDipoleInteraction secondDipoleInteraction=reciprocalDipoles
-        ?field.dipoleInteraction(sample.secondPosition,sample.secondDipole)
-        :GridDipoleInteraction{};
-    if(!reciprocalDipoles) {
-        precessDipole(state.firstDipole,
-            thomasBmtEffectiveField(state.firstVelocity,
-                {firstElectric,firstMagnetic},firstGFactor),
-            firstCharge/firstMass,0.5*dt);
-        precessDipole(state.secondDipole,
-            thomasBmtEffectiveField(state.secondVelocity,
-                {secondElectric,secondMagnetic},secondGFactor),
-            secondCharge/secondMass,0.5*dt);
-    }
-    const Vec3 firstMomentum=relativisticBorisPush(
-        momentum(state.firstVelocity,firstMass),firstCharge,firstMass,
-        firstElectric,firstMagnetic,dt)+firstDipoleInteraction.force*dt;
-    const Vec3 secondMomentum=relativisticBorisPush(
-        momentum(state.secondVelocity,secondMass),secondCharge,secondMass,
-        secondElectric,secondMagnetic,dt)+secondDipoleInteraction.force*dt;
-    state.firstVelocity=velocityFromMomentum(firstMomentum,firstMass);
-    state.secondVelocity=velocityFromMomentum(secondMomentum,secondMass);
-    state.firstPosition+=state.firstVelocity*dt;
-    state.secondPosition+=state.secondVelocity*dt;
-    if(reciprocalDipoles) {
-        const double firstGyromagneticRatio=firstGyromagneticRatioOf();
-        const double secondGyromagneticRatio=secondGyromagneticRatioOf();
-        const double firstNorm=state.firstDipole.norm();
-        const double secondNorm=state.secondDipole.norm();
-        state.firstDipole+=firstDipoleInteraction.torque
-                            *(firstGyromagneticRatio*dt);
-        state.secondDipole+=secondDipoleInteraction.torque
-                            *(secondGyromagneticRatio*dt);
-        if(state.firstDipole.norm()>0.0)
-            state.firstDipole=state.firstDipole*(firstNorm/state.firstDipole.norm());
-        if(state.secondDipole.norm()>0.0)
-            state.secondDipole=state.secondDipole*(secondNorm/state.secondDipole.norm());
-        state.dipoleConstraintEnergy+=(firstDipoleInteraction.fieldPower
-            +secondDipoleInteraction.fieldPower
-            -dot(firstDipoleInteraction.force,state.firstVelocity)
-            -dot(secondDipoleInteraction.force,state.secondVelocity))*dt;
-    } else {
-        precessDipole(state.firstDipole,
-            thomasBmtEffectiveField(state.firstVelocity,
-                {firstElectric,firstMagnetic},firstGFactor),
-            firstCharge/firstMass,0.5*dt);
-        precessDipole(state.secondDipole,
-            thomasBmtEffectiveField(state.secondVelocity,
-                {secondElectric,secondMagnetic},secondGFactor),
-            secondCharge/secondMass,0.5*dt);
-    }
-    state.time+=dt;
-}
-#endif
 
 #include "modules/electrodynamics.hpp"
 
-// Selected once from --radiation-reaction and read by every trajectory
-// constructed below (visual, beam and interaction experiments alike).
-// Defaults to stochasticElectricDipole (radiation ON): the same E1 dipole
-// power individualLandauLifshitz would remove as a continuous drag force is
-// instead banked as Poissonian hazard and paid out in discrete,
-// momentum-conserving photon kicks -- see the enum's own comment in
-// electrodynamics.hpp for why (deterministic drag has no photon to report;
-// --emission deterministic bypasses the Poisson draw but still uses this
-// channel).  estimateCremCollapse now measures the classical inspiral
-// mechanically rather than assuming it, so it needs some such channel
-// switched on to observe anything; --radiation-reaction individual restores
-// the continuous-drag alternative.
-// [[maybe_unused]] because the validation executable's main() never reaches
-// the trajectory constructors that read this, so GCC sees no use in that
-// build.
-[[maybe_unused]] ChargeRadiationReactionModel gRadiationReactionModel =
-    ChargeRadiationReactionModel::stochasticElectricDipole;
+// The six run-time switches that used to stand here -- the radiation
+// reaction model, the initial principal level, deterministic emission,
+// the ground-state emission floor, spin quantization and the Bohr photon
+// energy -- moved to modules/crem_trajectory.hpp.  That header and
+// crem_collapse.hpp, which includes it, are the only readers, and leaving
+// the flags here is what kept crem_trajectory.hpp from compiling alone.
+// Argument parsing further down still assigns to them: this file includes
+// crem_trajectory.hpp long before that point.
 
-// Starting separation the bound scenarios are PREPARED at, a_n = n^2 a_pair
-// (a_pair itself comes from the pair's measured magnetic moment -- see
-// pairBohrRadius's own comment -- the one length scale this model actually
-// has to start an inspiral from).  Not a claim that the pair occupies "the
-// n-th energy level" as a physical eigenstate: with the ground-state floor
-// and the Bohr-ladder photon energy both off by default (see
-// gGroundStateEmissionFloor, gBohrLevelPhotonEnergy below), nothing in the
-// default run treats this as a quantized level any more than any other
-// starting radius would be -- it is just where the classical inspiral begins.
-// n is still an integer and a_n still scales as n^2 purely so --level stays
-// a convenient, backward-comparable way to pick a starting separation.
-//
-// Kept at 2, not 1, for a reason that survives both defaults above: on the
-// Bohr ladder the instantaneous-kick emission ceiling is exactly
-//
-//     hbar*omega / E_kinetic = 2/n
-//
-// (virial: a circular orbit's kinetic energy equals its binding energy), so
-// a photon of hbar*omega cannot be paid for at n=1 or n=2 and fits from n=3
-// up -- a constraint on the mechanical trajectory's stochastic photon-kick
-// reaction model, independent of the secular ladder machinery
-// the other two defaults switch off.  Measured across all four phenomena,
-// the model never leaves n <= 1.09, so this ceiling covers its whole
-// operating range regardless of where the ladder concept itself is used.
-//
-// a_n = n^2 a_pair and the tangential band is quoted in units of the circular
-// speed AT that separation, so the sampled spread in L/(n hbar) is unchanged
-// and only the level moves.
-inline int gInitialPrincipalLevel = 2;
-
-// Whether the quantized emission draws its next threshold from Exp(1) (a
-// genuine Poisson process, available via --emission poisson) or fires
-// deterministically as soon as one quantum's worth of energy has
-// accumulated -- the default since the measurement below.
-//
-// The two differ by ONE constant, and the reason is worth stating because it
-// makes the deterministic variant nearly free.  The banked hazard is
-//
-//     integral(rate dt) = integral(P/E_photon dt) = (radiated energy)/E_photon,
-//
-// i.e. the accumulated loss measured in quanta.  Firing at a fixed threshold
-// of 1 therefore means "emit exactly when the orbit has continuously lost one
-// photon's worth of energy" -- the orbit still descends continuously, and the
-// level crossing itself is the trigger.  Firing at an Exp(1) threshold
-// instead is what turns that into spontaneous emission with its shot noise.
-//
-// Both are production models, not probes.  They serve the same direction --
-// a DETERMINISTIC determination of the quantum parameters -- and differ in
-// how far along it they go.  The photon ENERGY is already fixed by the orbit
-// in both (correspondence, or the level spacing where a ladder exists);
-// deterministic emission fixes its TIMING too, leaving nothing about the
-// quantum drawn at random.
-//
-// The departure this makes from the conventional description is worth
-// stating plainly rather than hiding: spontaneous emission is normally
-// modelled as Poissonian, and that used to be why Poisson was the default.
-// What changed the answer is that the "sharp preparation" -- the pair now
-// starts on an EXACT circular Bohr orbit (e=0), not a sampled eccentricity
-// band -- removed the last non-shot-noise source of collapse-time spread.
-// Re-measured after that change (N=100, seed 7, level 2 -> 1): Poisson
-// sigma/mean = 0.883 (matches the old 0.894 within sampling noise), while
-// deterministic sigma/mean = 4.0e-11 -- floating-point noise, not physics,
-// because every trajectory now shares the identical circular Larmor rate and
-// there is nothing left for the threshold draw to average over. The mean is
-// preserved as claimed: 6398.9+/-568.1 ps (Poisson) against 6206.4 ps
-// (deterministic), 0.34 standard errors apart. Poisson's entire reported
-// spread is therefore shot noise around that same number, not a competing
-// physical prediction, so deterministic is the better default estimator of
-// the trajectory itself; --emission poisson remains available for whoever
-// specifically wants the spontaneous-emission statistics.
-inline bool gDeterministicEmission = true;
-
-// The same standing as --zpf, and aimed at the same gap: CREM is a classical
-// radiative inspiral with nothing to halt it at the pair Bohr radius, so left
-// alone the collapse runs past the ground state and ends wherever the
-// electrodynamics itself stops it -- the Compton barrier, or (measured, the
-// large majority of the time -- see the README's Compton-barrier
-// re-measurement) a numerical retardation-time safety margin first.
-//
-// --zpf tried to supply a stopping mechanism from outside, by coupling a
-// classical zero-point field and looking for a fluctuation-dissipation
-// balance.  That failed: the resonant band moves the collapse time by 0.3%,
-// wider bands only pump the orbit toward escape, and the balance condition
-// could not even be measured (see the README's ZPF section).
-//
-// This flag tries the opposite tack.  Instead of a mechanism, it imports ONE
-// quantum fact and nothing else: the Bohr ladder terminates, so there is no
-// state below n=1 for a photon to leave the pair in.  Emission is refused
-// whenever it would bind the pair tighter than the ground state.
-//
-// It is a CLOSURE, not a derivation.  It does not explain why no lower state
-// exists; it asserts it, and any result obtained with it has to be read that
-// way.  What it buys over --zpf is that it carries no free parameter, no band
-// edge to choose, no mode count to converge, and no cost.  --ground-state-floor
-// restores it.
-//
-// OFF BY DEFAULT, on request, to leave the classical electrodynamics running
-// unmodified: this closure, gBohrLevelPhotonEnergy below, and the choice of
-// L=n*hbar starting separation (gInitialPrincipalLevel, now documented as a
-// starting radius rather than a claimed energy level) are the three places
-// this file imports a discrete quantum fact rather than deriving one, and
-// this is the first to go.  Measured (N=100x2, seed 7, --no-ground-state-floor
-// equivalent, both channels): 97-98% of trajectories stop on the retardation
-// safety margin, 2-3% on the Compton barrier, "landed at periapsis" spans a
-// smooth 0.26-15.3 r* with no clustering, and para/ortho are statistically
-// indistinguishable -- i.e. what the bare electrodynamics produces here is
-// continuous scatter, not a rediscovered ladder.
-//
-// WHAT THE REPORTED TIME MEANS WITH THE FLOOR OFF: a classical inspiral time
-// to wherever the electrodynamics actually stops (Compton barrier or
-// retardation margin), NOT a cascade to n=1 and NOT an annihilation
-// lifetime -- this model has no annihilation dynamics at all, no contact
-// channel and no rate, established separately.  --ground-state-floor restores
-// the n=1 cascade-time reading documented above.
-inline bool gGroundStateEmissionFloor = false;
-
-// SPIN QUANTIZATION, split out of --ground-state-floor and defaulted ON.
-//
-// S=0 and S=1 are exact states, so the two moments are exactly aligned or
-// exactly anti-aligned -- never somewhere in a band.  Opposite charges invert
-// the spin-moment relation, so ANTI-parallel spins (para, S=0) give ALIGNED
-// moments and |mu1+mu2| = 2mu, while ortho (S=1) gives |mu1+mu2| = 0 exactly.
-// That is what makes the coherent M1 channel a real para/ortho asymmetry
-// rather than a label.
-//
-// Sampled from a BAND instead -- para drawn from cos >= 0.5, ortho from
-// everything below -- the asymmetry is destroyed, and measurably so, which is
-// why this is now the default rather than an option.  Measured over the
-// sampled configurations at --level 1: |mu1+mu2| came out 1.775-1.942 mu for
-// para against 1.271-1.716 mu for ortho, i.e. ortho carrying 63-86% of para's
-// net moment instead of zero, and the resulting M1 shares were comparable
-// (ortho's largest, 9.0e-13 of E1, exceeded para's 2.5e-13).  The band also
-// puts para's lower edge exactly ON the classification threshold, so half the
-// para trajectories precessed across it during the inspiral (6 of 12).
-//
-// It was previously reachable only through --ground-state-floor, which
-// ALSO zeroes the emission hazard at n=1 and therefore stops every trajectory
-// before it reaches the collision boundary (measured: 0 of 4 collapses).  The
-// two are independent physical assertions and are now independent switches:
-// this one fixes the initial mutual angle, that one closes the ladder from
-// below.  --no-spin-quantization restores the band sampling.
-inline bool gSpinQuantization = true;
-
-// The second of the three imported quantum facts (see
-// gGroundStateEmissionFloor's comment).  quantumFor (crem_collapse.hpp) needs
-// a photon energy for the secular estimator's hazard bookkeeping; it has
-// always had two candidates available, the Bohr LEVEL DIFFERENCE E(n)-E(n-1)
-// where the ladder has a rung below, and hbar*omega_orb -- the value the
-// orbit's own frequency actually produces, with no ladder concept at all --
-// as the fallback everywhere the ladder does not reach (n<2, or now,
-// unconditionally, whenever this flag is off).
-//
-// hbar*omega_orb is not a worse number by construction: it is the
-// correspondence-principle value, and measured, dE(n->n-1)/hbar*omega_orb is
-// close to 1 (1.0152 at n=100, 1.0523 at n=30) everywhere except close to the
-// ground state, where the ladder's spacing stops resembling the local orbital
-// frequency at all (a factor of 3 off at n=2) -- see quantumFor's own comment
-// for the measurement.  Choosing it unconditionally means the photon energy
-// this file reports is always something the electrodynamics itself produces,
-// never a level difference imported from the quantum ladder.
-//
-// OFF BY DEFAULT, on request, alongside gGroundStateEmissionFloor above.
-// --bohr-photon-energy restores the level-difference rule (quantumFor's own
-// n>=2 branch), for comparison against the historical behaviour.
-// [[maybe_unused]] because quantumFor lives in crem_collapse.hpp, which is
-// only included outside the validation executable (see its #ifndef just
-// below).
-[[maybe_unused]] inline bool gBohrLevelPhotonEnergy = false;
 
 #include "modules/crem_engine.hpp"
 

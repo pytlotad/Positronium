@@ -2,9 +2,14 @@
 
 // Coupled orbit-averaged classical spin-orbit transport.
 //
-// This module is included after electrodynamics.hpp, inside the program's
-// anonymous namespace.  It deliberately advances the three angular-momentum
-// reservoirs together:
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
+//
+// It deliberately advances the three angular-momentum reservoirs together:
 //
 //     J = L_orbit + mu_1/gamma_1 + mu_2/gamma_2.
 //
@@ -15,6 +20,28 @@
 // external/ZPF field is tracked separately and changes the pair's J instead
 // of being spuriously fed into L.  Radiation and photon kicks remain separate
 // dissipative operators in crem_collapse.hpp.
+
+#include "electrodynamics.hpp"
+#include "pair_configuration.hpp"
+#include "physical_constants.hpp"
+#include "state.hpp"
+#include "state_validity_interpolation.hpp"
+#include "vector3.hpp"
+#include "zero_point_field.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+namespace two_body = positronium::kinematics;
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::DipoleTensor;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using namespace positronium::parameters;
 
 struct OrbitAveragedBmtAngularVelocities {
     Vec3 first;
@@ -74,7 +101,7 @@ struct SecularSpinOrbitAdvance {
     Vec3 externalAngularMomentumTransfer;
 };
 
-Vec3 rotateDipoleByAngularVelocity(const Vec3& dipole,
+inline Vec3 rotateDipoleByAngularVelocity(const Vec3& dipole,
                                    const Vec3& angularVelocity,
                                    double elapsedTime) {
     if(elapsedTime==0.0) return dipole;
@@ -92,7 +119,7 @@ Vec3 rotateDipoleByAngularVelocity(const Vec3& dipole,
 // this operation in one place prevents the secular quadrature and the
 // mechanically resolved checkpoint orbit from silently choosing different
 // planes or different periapsides.
-Vec3 orbitPlaneDirection(const Vec3& orbitalAngularMomentum,
+inline Vec3 orbitPlaneDirection(const Vec3& orbitalAngularMomentum,
                          const Vec3& preferredDirection) {
     const double orbitalNorm=orbitalAngularMomentum.norm();
     if(!(orbitalNorm>0.0)||!std::isfinite(orbitalNorm)) return {};
@@ -115,7 +142,7 @@ Vec3 orbitPlaneDirection(const Vec3& orbitalAngularMomentum,
 // photon tilts L.  The reduced model has no independent Runge-Lenz equation;
 // parallel transport is the neutral closure that introduces no arbitrary
 // rotation about the new normal.  Projection at the end removes round-off.
-Vec3 transportOrbitPlaneDirection(const Vec3& direction,
+inline Vec3 transportOrbitPlaneDirection(const Vec3& direction,
                                    const Vec3& oldAngularMomentum,
                                    const Vec3& newAngularMomentum) {
     const double oldNorm=oldAngularMomentum.norm();
@@ -137,7 +164,7 @@ Vec3 transportOrbitPlaneDirection(const Vec3& direction,
     return orbitPlaneDirection(newAngularMomentum,transported);
 }
 
-OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
+inline OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         double semiMajorAxis,const Vec3& orbitalAngularMomentum,
         const Vec3& firstDipole,const Vec3& secondDipole,
         double reducedMass,double accumulatedZeroPointPhase=0.0,
@@ -416,7 +443,7 @@ OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     return result;
 }
 
-SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
+inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         const SecularSpinOrbitState& initial,double semiMajorAxis,
         double reducedMass,double elapsedTime,
         double maximumRotationPerSubstep=0.05,

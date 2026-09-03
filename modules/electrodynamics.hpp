@@ -1,8 +1,61 @@
 #pragma once
 
 // Particle-particle interactions, radiation bookkeeping and the shared
-// relativistic integration step. This header is included inside the
-// implementation namespace after the field-solver types are defined.
+// relativistic integration step.
+//
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
+//
+// The MaxwellBlock in particleFieldTotals below is why this header includes
+// the validation backend, and is also why the grid-coupled pushers do NOT
+// live there: they need thomasBmtEffectiveField from here, which would close
+// a cycle.  They sit in maxwell_validation.hpp, above both.
+
+#include "dipole_tensor.hpp"
+#include "pair_configuration.hpp"
+#include "pair_geometry.hpp"
+#include "physical_constants.hpp"
+#include "relativistic_field_types.hpp"
+#include "relativistic_kinematics.hpp"
+#include "retarded_charge_kinematics.hpp"
+#include "state.hpp"
+#include "state_validity_interpolation.hpp"
+#include "two_body_kinematics.hpp"
+#include "vector3.hpp"
+#include "zero_point_field.hpp"
+
+// Only particleFieldTotals below needs the Maxwell backend, and it exists only
+// in the validation build.  Pulling the whole Yee/AMR/CPML backend into the
+// production translation unit, which has never seen it, would be a change of
+// substance dressed as an include cleanup.
+#ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
+#include "maxwell_validation_backend.hpp"
+#endif
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <deque>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <random>
+#include <vector>
+
+namespace two_body = positronium::kinematics;
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::DipoleTensor;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using namespace positronium::parameters;
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 struct ParticleFieldTotals {
@@ -10,7 +63,7 @@ struct ParticleFieldTotals {
     Vec3 momentum, angularMomentum;
 };
 
-ParticleFieldTotals particleFieldTotals(const State& state,
+inline ParticleFieldTotals particleFieldTotals(const State& state,
                                          const MaxwellBlock& field) {
     const Vec3 firstMomentum=momentum(state.firstVelocity,firstMass);
     const Vec3 secondMomentum=momentum(state.secondVelocity,secondMass);
@@ -35,7 +88,7 @@ ParticleFieldTotals particleFieldTotals(const State& state,
 // constant: it is 2.0023 for a lepton but 5.5857 for a proton, so a pair need
 // not share one.  Passing the measured value rather than the classical
 // point-dipole g=1 makes the anomalous precession a QED input.
-Vec3 thomasBmtEffectiveField(const Vec3& velocity,
+inline Vec3 thomasBmtEffectiveField(const Vec3& velocity,
                              const ElectromagneticField& field,
                              double gFactor) {
     const double anomaly = 0.5 * (gFactor - 2.0);
@@ -49,12 +102,12 @@ Vec3 thomasBmtEffectiveField(const Vec3& velocity,
              * ((anomaly + 1.0 / (relativisticGamma + 1.0)) / c);
 }
 
-Vec3 relativisticAcceleration(const Vec3& velocity, const Vec3& force, double mass) {
+inline Vec3 relativisticAcceleration(const Vec3& velocity, const Vec3& force, double mass) {
     const double velocityForce = dot(velocity, force);
     return (force - velocity * (velocityForce / (c*c))) / (gamma(velocity) * mass);
 }
 
-Vec3 lorentzForce(double charge, const Vec3& velocity, const ElectromagneticField& field) {
+inline Vec3 lorentzForce(double charge, const Vec3& velocity, const ElectromagneticField& field) {
     return (field.electric + cross(velocity, field.magnetic)) * charge;
 }
 
@@ -80,7 +133,7 @@ struct SphereQuadraturePoint {
 // low electromagnetic multipoles without the small preferred-axis bias of a
 // finite Fibonacci lattice.  We retain the latter as a diagnostic fallback
 // for non-tabulated direction counts used by convergence tests.
-std::vector<SphereQuadraturePoint> sphereQuadrature(int directionCount) {
+inline std::vector<SphereQuadraturePoint> sphereQuadrature(int directionCount) {
     std::vector<SphereQuadraturePoint> result;
     if(directionCount==50) {
         const auto add=[&](double x,double y,double z,double normalizedWeight) {
@@ -149,7 +202,7 @@ ElectromagneticField farZoneElectricDipoleField(
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly=false);
 
-ElectromagneticField farZoneChargeField(
+inline ElectromagneticField farZoneChargeField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool first,double charge,bool radiationFieldOnly=false) {
@@ -185,7 +238,7 @@ ElectromagneticField farZoneChargeField(
     return {electric,cross(direction,electric)/c};
 }
 
-FieldFluxRates electromagneticFieldFluxRates(
+inline FieldFluxRates electromagneticFieldFluxRates(
     const State& state, const StateHistory& history,
     FarFieldSampling sampling={}) {
     if(sampling.directionCount<1||!(sampling.controlRadius>0.0)
@@ -308,7 +361,7 @@ struct LocalElectromagneticFields {
     ElectromagneticField atFirst, atSecond;
 };
 
-double shortRangeFieldWeight(double distance,
+inline double shortRangeFieldWeight(double distance,
     double regularizationRadius=magneticRegularizationRadius,
     double exponent=magneticRegularizationExponent) {
     if(!(distance>0.0)) return 0.0;
@@ -321,7 +374,7 @@ double shortRangeFieldWeight(double distance,
 // derives inline for w/r^3's own derivative, exposed on its own for
 // retardedMagneticDipoleField's induction-term correction below, which needs
 // dw/dr directly rather than the profile's d(w/r^3)/dr).
-double shortRangeFieldWeightDerivative(double distance,
+inline double shortRangeFieldWeightDerivative(double distance,
     double regularizationRadius=magneticRegularizationRadius,
     double exponent=magneticRegularizationExponent) {
     if(!(distance>0.0)) return 0.0;
@@ -349,7 +402,7 @@ struct DipoleDerivatives { Vec3 first, second; };
 DipoleDerivatives thomasBmtDipoleDerivatives(
     const State& s,const StateHistory& history);
 
-State historicalState(const StateHistory& history, const State& present,
+inline State historicalState(const StateHistory& history, const State& present,
                       double time) {
     if (history.empty()) return present;
     const State& earliest = history.front();
@@ -391,7 +444,7 @@ State historicalState(const StateHistory& history, const State& present,
 // evaluationTime is the centre of the stencil, which for retarded sources is
 // earlier than present.time; measuring the span from present.time instead
 // would still let a retarded stencil run off the front of the deque.
-double boundedDerivativeStep(const StateHistory& history,
+inline double boundedDerivativeStep(const StateHistory& history,
                              double evaluationTime,
                              double requestedStep, int stencilReach) {
     if(history.empty()||stencilReach<1) return 0.0;
@@ -417,7 +470,7 @@ double boundedDerivativeStep(const StateHistory& history,
 // that ARE used is identical to interpolateState's, so results are unchanged.
 struct RetardedSourceSample { Vec3 position, velocity, moment; };
 
-RetardedSourceSample historicalSource(const StateHistory& history,
+inline RetardedSourceSample historicalSource(const StateHistory& history,
                                       const State& present,
                                       bool sourceIsFirst, double time) {
     const auto pick=[sourceIsFirst](const State& state) {
@@ -449,7 +502,7 @@ RetardedSourceSample historicalSource(const StateHistory& history,
             interpolateDipole(a.moment,b.moment,fraction)};
 }
 
-RetardedDipoleKinematics historicalDipoleKinematics(
+inline RetardedDipoleKinematics historicalDipoleKinematics(
     const StateHistory& history, const State& present, bool sourceIsFirst,
     double time) {
     double derivativeStep=1.0e-24;
@@ -522,7 +575,7 @@ RetardedDipoleKinematics historicalDipoleKinematics(
             moment(middle),first,second,third};
 }
 
-RetardedElectricDipoleKinematics historicalElectricDipoleKinematics(
+inline RetardedElectricDipoleKinematics historicalElectricDipoleKinematics(
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double time) {
     double derivativeStep=1.0e-24;
@@ -572,7 +625,7 @@ RetardedElectricDipoleKinematics historicalElectricDipoleKinematics(
 // M_source=mu_lab/gamma (Sautbekov's moving-moment transformation).  Taking
 // the derivatives after this conversion is essential for accelerated motion:
 // simply dividing p_dot or mu_dot by gamma would omit derivatives of gamma.
-RetardedElectricDipoleKinematics historicalIntegratedDipoleKinematics(
+inline RetardedElectricDipoleKinematics historicalIntegratedDipoleKinematics(
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double time,bool electricMoment) {
     double derivativeStep=1.0e-24;
@@ -659,7 +712,7 @@ struct ElectricQuadrupole {
     }
 };
 
-ElectricQuadrupole electricQuadrupole(const State& state) {
+inline ElectricQuadrupole electricQuadrupole(const State& state) {
     // Centre of mass as origin.  For a NEUTRAL pair the quadrupole is origin
     // independent only when the dipole moment also vanishes; this pair carries
     // d = q1 r1 + q2 r2 != 0, so where the expansion is centred is a physical
@@ -701,7 +754,7 @@ ElectricQuadrupole electricQuadrupole(const State& state) {
     return result;
 }
 
-ElectricQuadrupole electricQuadrupoleThirdDerivative(
+inline ElectricQuadrupole electricQuadrupoleThirdDerivative(
     const State& state,const StateHistory& history) {
     double derivativeStep=1.0e-24;
     if(history.size()>=2) derivativeStep=std::max(derivativeStep,
@@ -725,11 +778,11 @@ ElectricQuadrupole electricQuadrupoleThirdDerivative(
 // d = q1 r1 + q2 r2.  The old form e*(r2 - r1) is the same thing only when the
 // charges are equal and opposite AND the centre of mass is at the origin; it
 // is written out here so neither condition is silently assumed.
-Vec3 electricDipoleMoment(const State& state) {
+inline Vec3 electricDipoleMoment(const State& state) {
     return state.firstPosition*firstCharge+state.secondPosition*secondCharge;
 }
 
-Vec3 electricDipoleThirdDerivativeAtStep(
+inline Vec3 electricDipoleThirdDerivativeAtStep(
     const State& state,const StateHistory& history,double derivativeStep) {
     // Five-point backward stencil: samples state.time .. state.time-4h.
     derivativeStep=boundedDerivativeStep(history,state.time,derivativeStep,4);
@@ -749,7 +802,7 @@ Vec3 electricDipoleThirdDerivativeAtStep(
 // The coarse probe doubles it and its 5-point stencil then reaches 8h, so the
 // base must fit eight times into the retained history for the two probes to be
 // genuinely different rather than both saturating at the same clamped value.
-double electricDipoleDerivativeStep(const StateHistory& history,
+inline double electricDipoleDerivativeStep(const StateHistory& history,
                                     const State& present) {
     double derivativeStep=1.0e-24;
     if(history.size()>=2) derivativeStep=std::max(derivativeStep,
@@ -757,13 +810,13 @@ double electricDipoleDerivativeStep(const StateHistory& history,
     return boundedDerivativeStep(history,present.time,derivativeStep,8);
 }
 
-Vec3 electricDipoleThirdDerivative(const State& state,
+inline Vec3 electricDipoleThirdDerivative(const State& state,
                                    const StateHistory& history) {
     return electricDipoleThirdDerivativeAtStep(
         state,history,electricDipoleDerivativeStep(history,state));
 }
 
-MutualForces coherentElectricDipoleReaction(
+inline MutualForces coherentElectricDipoleReaction(
     const State& state,const StateHistory& history) {
     // The common Abraham-Lorentz radiation field of a compact neutral
     // source.  Its work is -|p_ddot|^2/(6 pi eps0 c^3) up to the reversible
@@ -1122,7 +1175,7 @@ enum class ChargeRadiationReactionModel {
     stochasticElectricDipole
 };
 
-double electricQuadrupoleRadiatedPower(
+inline double electricQuadrupoleRadiatedPower(
     const State& state,const StateHistory& history) {
     const ElectricQuadrupole third=
         electricQuadrupoleThirdDerivative(state,history);
@@ -1146,7 +1199,7 @@ MutualForces individualLandauLifshitzSelfForces(
     const State& state, const MutualForces& external,
     const StateHistory& history,bool includeMutual=true);
 
-DipoleRadiationReaction coherentMagneticDipoleRadiationReaction(
+inline DipoleRadiationReaction coherentMagneticDipoleRadiationReaction(
     const RetardedDipoleKinematics& first,
     const RetardedDipoleKinematics& second) {
     constexpr double coefficient=mu0/(6.0*pi*c*c*c);
@@ -1195,7 +1248,7 @@ DipoleRadiationReaction coherentMagneticDipoleRadiationReaction(
     return result;
 }
 
-DipoleRadiationReaction dipoleRadiationReaction(
+inline DipoleRadiationReaction dipoleRadiationReaction(
     const State& state,const StateHistory& history) {
     const RetardedDipoleKinematics first=historicalDipoleKinematics(
         history,state,true,state.time);
@@ -1223,7 +1276,7 @@ struct ParticleMultipoleRadiation {
     bool coherentSelected = false;
 };
 
-ParticleMultipoleRadiation particleMultipoleRadiation(
+inline ParticleMultipoleRadiation particleMultipoleRadiation(
     const State& state, const MutualForces& externalForces,
     const StateHistory& history,bool computeOutwardFlux=true,
     ChargeRadiationReactionModel reactionModel=
@@ -1380,7 +1433,7 @@ ParticleMultipoleRadiation particleMultipoleRadiation(
     return result;
 }
 
-bool finiteRadiationResponse(const ParticleMultipoleRadiation& response) {
+inline bool finiteRadiationResponse(const ParticleMultipoleRadiation& response) {
     return std::isfinite(response.outwardFlux.energy)
         && std::isfinite(response.leadingElectricDipolePower)
         && std::isfinite(response.magneticDipoleFlux.energy)
@@ -1399,7 +1452,7 @@ bool finiteRadiationResponse(const ParticleMultipoleRadiation& response) {
         && isFinite(response.outwardFlux.angularMomentum);
 }
 
-void applyDipoleRadiationTorque(State& state,
+inline void applyDipoleRadiationTorque(State& state,
                                 const ParticleMultipoleRadiation& reaction,
                                 double dt) {
     const double firstGyromagneticRatio=firstGyromagneticRatioOf();
@@ -1420,7 +1473,7 @@ void applyDipoleRadiationTorque(State& state,
     synchronizeCovariantDipoles(state);
 }
 
-bool dipoleRadiationTorqueEnabled(ChargeRadiationReactionModel model) {
+inline bool dipoleRadiationTorqueEnabled(ChargeRadiationReactionModel model) {
     // A stochastic photon supplies the linear recoil, but it does not rotate
     // the magnetic moment which emitted it.  Keep that orientation reaction
     // active in the quantized model; only the fully disabled reference turns
@@ -1428,7 +1481,7 @@ bool dipoleRadiationTorqueEnabled(ChargeRadiationReactionModel model) {
     return model!=ChargeRadiationReactionModel::disabled;
 }
 
-void applyDipoleRadiationTorqueForModel(
+inline void applyDipoleRadiationTorqueForModel(
     State& state,const ParticleMultipoleRadiation& reaction,double dt,
     ChargeRadiationReactionModel model) {
     if(dipoleRadiationTorqueEnabled(model))
@@ -1438,7 +1491,7 @@ void applyDipoleRadiationTorqueForModel(
 // f(r)=w(r)/r^3 and its derivatives.  Defining the regulator at the
 // vector-potential level ensures that every use of the dipole field employs
 // the same B=curl(A), including all derivatives of w.
-MagneticRadialProfile magneticRadialProfile(double distance,
+inline MagneticRadialProfile magneticRadialProfile(double distance,
     double regularizationRadius=magneticRegularizationRadius,
     double exponent=magneticRegularizationExponent) {
     if(!(distance>0.0)) return {};
@@ -1474,7 +1527,7 @@ Vec3 regularizedDipoleField(const Vec3& sourceToTarget,
 // retardedElectricDipoleField below: production adds the exact relativistic
 // point-dipole correction and retains this model only inside the declared
 // short-range smoothing core.
-ElectromagneticField retardedElectricDipoleFieldLowVelocity(
+inline ElectromagneticField retardedElectricDipoleFieldLowVelocity(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
     bool regularized=true) {
@@ -1535,7 +1588,7 @@ ElectromagneticField retardedElectricDipoleFieldLowVelocity(
 // dipole essentially at rest in the lab frame, missing kappa, aberration,
 // and the velocity-coupled acceleration-order terms.  See
 // retardedMagneticDipoleFieldExact below for the relativistic correction.
-ElectromagneticField retardedMagneticDipoleFieldLowVelocity(
+inline ElectromagneticField retardedMagneticDipoleFieldLowVelocity(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
     bool regularized=true) {
@@ -1619,7 +1672,7 @@ ElectromagneticField retardedMagneticDipoleFieldLowVelocity(
 // kappa, aberrated direction and acceleration field; radiationFieldOnly
 // removes only the 1/R^2 velocity field, exactly as farZoneChargeField does.
 template<class MomentSampler>
-ElectromagneticField farZoneTwoChargeLimitDipoleField(
+inline ElectromagneticField farZoneTwoChargeLimitDipoleField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly,
@@ -1715,7 +1768,7 @@ ElectromagneticField farZoneTwoChargeLimitDipoleField(
             positive.magnetic+negative.magnetic};
 }
 
-ElectromagneticField farZoneMagneticDipoleField(
+inline ElectromagneticField farZoneMagneticDipoleField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly) {
@@ -1733,7 +1786,7 @@ ElectromagneticField farZoneMagneticDipoleField(
     return {dual.magnetic*(-c*c),dual.electric};
 }
 
-ElectromagneticField farZoneElectricDipoleField(
+inline ElectromagneticField farZoneElectricDipoleField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly) {
@@ -1800,7 +1853,7 @@ inline thread_local int gTwoChargeTraceCount=0;
 // value they just received is not trustworthy.
 inline thread_local double gPoleCancellationRatio=0.0;
 template<class MomentSampler>
-ElectromagneticField twoChargeLimitDipoleField(
+inline ElectromagneticField twoChargeLimitDipoleField(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double poleSeparationFraction,MomentSampler&& momentAt) {
@@ -1948,7 +2001,7 @@ ElectromagneticField twoChargeLimitDipoleField(
 // Exact point-dipole field before the model's short-range smoothing.  This
 // remains separately named so validation can inspect the regularized
 // production wrapper against its unsmoothed limit.
-bool historicalDipoleSourceIsStatic(const StateHistory& history,
+inline bool historicalDipoleSourceIsStatic(const StateHistory& history,
     const State& present,bool sourceIsFirst,bool electricMoment) {
     const Vec3 position=sourceIsFirst
         ?present.firstPosition:present.secondPosition;
@@ -1980,7 +2033,7 @@ bool historicalDipoleSourceIsStatic(const StateHistory& history,
     });
 }
 
-ElectromagneticField retardedElectricDipoleFieldExact(
+inline ElectromagneticField retardedElectricDipoleFieldExact(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double poleSeparationFraction=1.0e-5) {
@@ -2006,7 +2059,7 @@ ElectromagneticField retardedElectricDipoleFieldExact(
 // (E,B)_m = (-c^2 B_p, E_p) -- see twoChargeLimitDipoleField's comment for
 // the cross-check against this file's low-velocity formulas that pins down
 // this exact sign and scale.
-ElectromagneticField retardedMagneticDipoleFieldExact(
+inline ElectromagneticField retardedMagneticDipoleFieldExact(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double poleSeparationFraction=1.0e-5) {
@@ -2039,7 +2092,7 @@ ElectromagneticField retardedMagneticDipoleFieldExact(
 // channels approach the exact result with the same declared weight.  In the
 // physical exterior w is one to round-off and the wrappers return the exact
 // field directly, avoiding two unnecessary low-velocity evaluations.
-ElectromagneticField retardedElectricDipoleField(
+inline ElectromagneticField retardedElectricDipoleField(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst) {
     const ChargeKinematics current=historicalCharge(
@@ -2068,7 +2121,7 @@ ElectromagneticField retardedElectricDipoleField(
                 +(exact.magnetic-pointLow.magnetic)*weight};
 }
 
-ElectromagneticField retardedMagneticDipoleField(
+inline ElectromagneticField retardedMagneticDipoleField(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double poleSeparationFraction=1.0e-5) {
@@ -2099,7 +2152,7 @@ ElectromagneticField retardedMagneticDipoleField(
                 +(exact.magnetic-pointLow.magnetic)*weight};
 }
 
-Vec3 regularizedDipoleVectorPotential(const Vec3& sourceToTarget,
+inline Vec3 regularizedDipoleVectorPotential(const Vec3& sourceToTarget,
                                       const Vec3& sourceDipole) {
     constexpr double magneticConstant = mu0 / (4.0 * pi);
     const MagneticRadialProfile profile = magneticRadialProfile(sourceToTarget.norm());
@@ -2109,7 +2162,7 @@ Vec3 regularizedDipoleVectorPotential(const Vec3& sourceToTarget,
 
 // B=curl(A) for A=mu0/(4 pi) f(r) mu x r.  In particular, this is not
 // merely w times the unregularized point-dipole field.
-Vec3 regularizedDipoleField(const Vec3& sourceToTarget,const Vec3& sourceDipole,
+inline Vec3 regularizedDipoleField(const Vec3& sourceToTarget,const Vec3& sourceDipole,
                             double regularizationRadius,double exponent) {
     constexpr double magneticConstant = mu0 / (4.0 * pi);
     const double distance = sourceToTarget.norm();
@@ -2124,7 +2177,7 @@ Vec3 regularizedDipoleField(const Vec3& sourceToTarget,const Vec3& sourceDipole,
           + n * (dot(sourceDipole, n) * radialCoefficient)) * magneticConstant;
 }
 
-double regularizedDipoleInteractionEnergy(const Vec3& sourceToTarget,
+inline double regularizedDipoleInteractionEnergy(const Vec3& sourceToTarget,
     const Vec3& targetDipole,const Vec3& sourceDipole,
     double regularizationRadius=magneticRegularizationRadius,
     double exponent=magneticRegularizationExponent) {
@@ -2133,7 +2186,7 @@ double regularizedDipoleInteractionEnergy(const Vec3& sourceToTarget,
 }
 
 // F=-grad(U), U=-mu_target.B_source, using the same regularized field above.
-Vec3 regularizedDipoleForce(const Vec3& sourceToTarget,
+inline Vec3 regularizedDipoleForce(const Vec3& sourceToTarget,
                             const Vec3& targetDipole,const Vec3& sourceDipole,
                             double regularizationRadius=magneticRegularizationRadius,
                             double exponent=magneticRegularizationExponent) {
@@ -2158,14 +2211,14 @@ Vec3 regularizedDipoleForce(const Vec3& sourceToTarget,
             * (radialCoefficient / distance)) * magneticConstant;
 }
 
-MutualForces coulombForces(const State& s) {
+inline MutualForces coulombForces(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const Vec3 first = geometry.firstMinusSecond
                         * (-pairCoulombStrength * geometry.inverseDistanceCubed);
     return {first, first * -1.0};
 }
 
-MutualForces mutualForces(const State& s) {
+inline MutualForces mutualForces(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const MutualForces electrostatic = coulombForces(s);
     const Vec3 dipoleOnFirst = regularizedDipoleForce(
@@ -2174,7 +2227,7 @@ MutualForces mutualForces(const State& s) {
             electrostatic.second - dipoleOnFirst};
 }
 
-Vec3 darwinForceOnFirst(const Vec3& firstVelocity, const Vec3& secondVelocity,
+inline Vec3 darwinForceOnFirst(const Vec3& firstVelocity, const Vec3& secondVelocity,
                         const Vec3& secondLeadingAcceleration,
                         const Vec3& firstMinusSecond, double chargeProduct) {
     const double distance = firstMinusSecond.norm();
@@ -2205,7 +2258,7 @@ Vec3 darwinForceOnFirst(const Vec3& firstVelocity, const Vec3& secondVelocity,
     return spatialDerivative - momentumDerivative;
 }
 
-MutualForces darwinForces(const State& s) {
+inline MutualForces darwinForces(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const MutualForces leading = coulombForces(s);
     const Vec3 firstLeadingAcceleration = leading.first / firstMass;
@@ -2221,7 +2274,7 @@ MutualForces darwinForces(const State& s) {
     };
 }
 
-double darwinInteractionEnergy(const State& s) {
+inline double darwinInteractionEnergy(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const Vec3 n = geometry.firstMinusSecond * geometry.inverseDistance;
     const double chargeProduct = pairChargeProduct;
@@ -2234,14 +2287,14 @@ double darwinInteractionEnergy(const State& s) {
 // This is the rail the orbit-following zero-point band rides on: as the orbit
 // tightens the frequency rises and the whole band rises with it, instead of
 // being left behind at the value the orbit had when the run started.
-double osculatingOrbitalFrequency(const State& s) {
+inline double osculatingOrbitalFrequency(const State& s) {
     const double radius=separation(s);
     if(!(radius>0.0)) return 0.0;
     return std::sqrt(pairCoulombStrength
         /(pairReducedMass*radius*radius*radius));
 }
 
-LocalElectromagneticFields localRelativisticFields(
+inline LocalElectromagneticFields localRelativisticFields(
     const State& s, const StateHistory& history) {
     ElectromagneticField atFirst = lienardWiechertField(
         s.firstPosition, s.time, history, s, false, secondCharge);
@@ -2282,7 +2335,7 @@ LocalElectromagneticFields localRelativisticFields(
     return {atFirst, atSecond};
 }
 
-DipoleDerivatives thomasBmtDipoleDerivatives(
+inline DipoleDerivatives thomasBmtDipoleDerivatives(
     const State& s, const StateHistory& history) {
     const LocalElectromagneticFields fields = localRelativisticFields(s, history);
     const Vec3 firstEffectiveField = thomasBmtEffectiveField(
@@ -2297,7 +2350,7 @@ DipoleDerivatives thomasBmtDipoleDerivatives(
     };
 }
 
-FourVector dipoleFourVector(const Vec3& properDipole,const Vec3& velocity) {
+inline FourVector dipoleFourVector(const Vec3& properDipole,const Vec3& velocity) {
     const double relativisticGamma=gamma(velocity);
     const double projection=dot(velocity,properDipole);
     return {relativisticGamma*projection/c,
@@ -2305,14 +2358,14 @@ FourVector dipoleFourVector(const Vec3& properDipole,const Vec3& velocity) {
             /(relativisticGamma+1.0)*projection/(c*c))};
 }
 
-Vec3 properDipoleFromFourVector(const FourVector& dipole,
+inline Vec3 properDipoleFromFourVector(const FourVector& dipole,
                                 const Vec3& velocity) {
     const double relativisticGamma=gamma(velocity);
     return dipole.space-velocity*(relativisticGamma
         /(relativisticGamma+1.0)*dipole.time/c);
 }
 
-FourVector electromagneticTensorAction(const ElectromagneticField& field,
+inline FourVector electromagneticTensorAction(const ElectromagneticField& field,
                                         const FourVector& vector) {
     return {dot(field.electric,vector.space)/c,
         field.electric*(vector.time/c)+cross(vector.space,field.magnetic)};
@@ -2322,7 +2375,7 @@ FourVector electromagneticTensorAction(const ElectromagneticField& field,
 // comment below for why) -- kept for the self-consistency checks in
 // maxwell_validation.hpp (POSITRONIUM_ENABLE_FIELD_VALIDATION only), hence
 // unused in the plain production build.
-[[maybe_unused]] Vec3 advanceCovariantBmt(const Vec3& properDipole,
+[[maybe_unused]] inline Vec3 advanceCovariantBmt(const Vec3& properDipole,
                          const Vec3& velocity,
                          const ElectromagneticField& field,
                          double chargeToMass,double laboratoryDt,
@@ -2382,7 +2435,7 @@ FourVector electromagneticTensorAction(const ElectromagneticField& field,
 // states is what makes synchronizeCovariantDipoles's forward boost readable,
 // and it is the cheapest place to record it.  Delete it freely if that stops
 // being worth a function.
-[[maybe_unused]] Vec3 inverseTensorBoostMagnetic(const Vec3& labVector,const Vec3& velocity) {
+[[maybe_unused]] inline Vec3 inverseTensorBoostMagnetic(const Vec3& labVector,const Vec3& velocity) {
     const double speedSquared=velocity.squaredNorm();
     if(!(speedSquared>0.0)) return labVector;
     const Vec3 axis=velocity*(1.0/std::sqrt(speedSquared));
@@ -2436,7 +2489,7 @@ FourVector electromagneticTensorAction(const ElectromagneticField& field,
 // SPECIFICATION of what that closed form must solve, and the validation
 // suite checks the solver against it, so it is deliberately kept rather
 // than folded into the solver.
-[[maybe_unused]] Vec3 properDipolePrecessionRate(const Vec3& properDipole,const Vec3& velocity,
+[[maybe_unused]] inline Vec3 properDipolePrecessionRate(const Vec3& properDipole,const Vec3& velocity,
                                 const ElectromagneticField& field,
                                 double chargeToMass,double gFactor) {
     return cross(properDipole,
@@ -2478,7 +2531,7 @@ FourVector electromagneticTensorAction(const ElectromagneticField& field,
 // instead of being quietly removed.  The validation suite's
 // bmt-precession-invariant check guards the same property from the other
 // side.
-Vec3 advanceThomasBmtDipole(const Vec3& properDipole,const Vec3& velocity,
+inline Vec3 advanceThomasBmtDipole(const Vec3& properDipole,const Vec3& velocity,
                             const ElectromagneticField& field,
                             double chargeToMass,double laboratoryDt,
                             double gFactor) {
@@ -2497,7 +2550,7 @@ Vec3 advanceThomasBmtDipole(const Vec3& properDipole,const Vec3& velocity,
         +axis*(dot(axis,properDipole)*(1.0-cosine));
 }
 
-void applyDipolePrecession(State& s, double dt,
+inline void applyDipolePrecession(State& s, double dt,
                            const StateHistory& history) {
     synchronizeCovariantDipoles(s);
     const LocalElectromagneticFields fields = localRelativisticFields(s, history);
@@ -2541,7 +2594,7 @@ struct ChargeDipolePairForces { Vec3 onCharge, onDipole; };
 // represents the same physics through state.firstElectricDipole.  It is not:
 // allExternalForces uses this one and retardedExternalForces uses that one,
 // and the two force sums are alternatives, never summed together.
-ChargeDipolePairForces chargeDipolePairForces(
+inline ChargeDipolePairForces chargeDipolePairForces(
     const Vec3& relativeVelocity, double charge, const Vec3& sourceDipole,
     const Vec3& sourceDipoleDerivative, const Vec3& sourceToCharge) {
     const double distance = sourceToCharge.norm();
@@ -2555,7 +2608,7 @@ ChargeDipolePairForces chargeDipolePairForces(
     return {onCharge, onCharge * -1.0};
 }
 
-MutualForces chargeDipoleForces(const State& s, const StateHistory& history) {
+inline MutualForces chargeDipoleForces(const State& s, const StateHistory& history) {
     const DipoleDerivatives derivatives = thomasBmtDipoleDerivatives(s, history);
     const Vec3 firstMinusSecond = clampedSeparationVector(
         s.firstPosition - s.secondPosition, separationFloor());
@@ -2573,7 +2626,7 @@ MutualForces chargeDipoleForces(const State& s, const StateHistory& history) {
             secondChargeFirstDipole.onCharge + firstChargeSecondDipole.onDipole};
 }
 
-MutualForces allExternalForces(const State& s) {
+inline MutualForces allExternalForces(const State& s) {
     const MutualForces positionForces = mutualForces(s);
     const MutualForces velocityForces = darwinForces(s);
     const StateHistory localHistory{State{s}};
@@ -2603,7 +2656,7 @@ MutualForces allExternalForces(const State& s) {
                 + mixedMagneticForces.second + externalField.second};
 }
 
-ElectromagneticField fieldFromOtherParticleAt(
+inline ElectromagneticField fieldFromOtherParticleAt(
     const Vec3& observationPosition,double observationTime,
     const State& state,const StateHistory& history,bool targetIsFirst,
     double poleSeparationFraction=1.0e-5) {
@@ -2642,7 +2695,7 @@ ElectromagneticField fieldFromOtherParticleAt(
 // statement about a loop in an external field, not a covariant force law, and
 // promoting it to one is the trap.  The mass-shell projection below has no
 // free coefficient at all, which is why it can be checked rather than fitted.
-double dipoleCouplingMaterialRate(const State& state,
+inline double dipoleCouplingMaterialRate(const State& state,
                                   const StateHistory& history,
                                   bool targetIsFirst) {
     const Vec3 labMagneticDipole=targetIsFirst?state.firstDipole
@@ -2676,7 +2729,7 @@ double dipoleCouplingMaterialRate(const State& state,
     return std::isfinite(rate)?rate:0.0;
 }
 
-Vec3 covariantDipoleGradientForce(const State& state,
+inline Vec3 covariantDipoleGradientForce(const State& state,
                                   const StateHistory& history,
                                   bool targetIsFirst) {
     const Vec3 targetPosition=targetIsFirst?state.firstPosition
@@ -3093,7 +3146,7 @@ Vec3 covariantDipoleGradientForce(const State& state,
     return gradient/gamma(targetVelocity);
 }
 
-MutualForces retardedExternalForces(const State& s,
+inline MutualForces retardedExternalForces(const State& s,
                                     const StateHistory& history) {
     const ElectromagneticField secondField = lienardWiechertField(
         s.firstPosition, s.time, history, s, false, secondCharge);
@@ -3160,7 +3213,7 @@ struct CanonicalMomenta { Vec3 first, second; };
 // Canonical momenta obtained from the conservative low-velocity action.  The
 // q-mu contributions occur with opposite signs on the charge and on the
 // dipole carrier; the Darwin terms do not cancel particle by particle.
-CanonicalMomenta canonicalMomenta(const State& s) {
+inline CanonicalMomenta canonicalMomenta(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const Vec3 n = geometry.firstMinusSecond * geometry.inverseDistance;
     const double chargeProduct = pairChargeProduct;
@@ -3189,27 +3242,27 @@ CanonicalMomenta canonicalMomenta(const State& s) {
 // canonical momenta once per call: three times per frame and four times per
 // accepted integration step, each redoing the pair geometry, the relativistic
 // momenta and two regularized dipole vector potentials.
-Vec3 noetherMomentum(const CanonicalMomenta& canonical) {
+inline Vec3 noetherMomentum(const CanonicalMomenta& canonical) {
     return canonical.first + canonical.second;
 }
 
-Vec3 noetherMomentum(const State& s) {
+inline Vec3 noetherMomentum(const State& s) {
     return noetherMomentum(canonicalMomenta(s));
 }
 
-double canonicalMomentumScale(const CanonicalMomenta& canonical) {
+inline double canonicalMomentumScale(const CanonicalMomenta& canonical) {
     return canonical.first.norm() + canonical.second.norm();
 }
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
 // Production callers already hold the canonical momenta and use the overload
 // above; only the Yee-coupling tests start from a bare state.
-double canonicalMomentumScale(const State& s) {
+inline double canonicalMomentumScale(const State& s) {
     return canonicalMomentumScale(canonicalMomenta(s));
 }
 #endif
 
-Vec3 noetherAngularMomentum(const State& s,
+inline Vec3 noetherAngularMomentum(const State& s,
                             const CanonicalMomenta& canonical) {
     const double firstGyromagneticRatio = firstGyromagneticRatioOf();
     const double secondGyromagneticRatio = secondGyromagneticRatioOf();
@@ -3220,7 +3273,7 @@ Vec3 noetherAngularMomentum(const State& s,
     return orbital + intrinsic;
 }
 
-Vec3 noetherAngularMomentum(const State& s) {
+inline Vec3 noetherAngularMomentum(const State& s) {
     return noetherAngularMomentum(s, canonicalMomenta(s));
 }
 
@@ -3268,7 +3321,7 @@ Vec3 noetherAngularMomentum(const State& s) {
 // charge, the velocity AND the direction to the field point all reverse.  The
 // measured 27x ortho/para asymmetry in the energy-balance residual is what
 // caught that.
-double chargeDipoleInteractionEnergy(const State& state) {
+inline double chargeDipoleInteractionEnergy(const State& state) {
     const Vec3 firstMinusSecond = clampedSeparationVector(
         state.firstPosition - state.secondPosition, separationFloor());
     const double distance = firstMinusSecond.norm();
@@ -3284,7 +3337,7 @@ double chargeDipoleInteractionEnergy(const State& state) {
     return std::isfinite(energy) ? energy : 0.0;
 }
 
-double conservativeParticleEnergy(const State& state) {
+inline double conservativeParticleEnergy(const State& state) {
     const PairGeometry geometry=clampedPairGeometry(state);
     const double kinetic=kineticEnergy(state.firstVelocity,firstMass)
         +kineticEnergy(state.secondVelocity,secondMass);
@@ -3297,12 +3350,12 @@ double conservativeParticleEnergy(const State& state) {
         +darwinInteractionEnergy(state)+state.dipoleConstraintEnergy;
 }
 
-FourVector fourVelocity(const Vec3& velocity) {
+inline FourVector fourVelocity(const Vec3& velocity) {
     const double relativisticGamma = gamma(velocity);
     return {relativisticGamma * c, velocity * relativisticGamma};
 }
 
-FourVector fourForce(const Vec3& velocity, const Vec3& force) {
+inline FourVector fourForce(const Vec3& velocity, const Vec3& force) {
     const double relativisticGamma = gamma(velocity);
     return {relativisticGamma * dot(force, velocity) / c,
             force * relativisticGamma};
@@ -3310,7 +3363,7 @@ FourVector fourForce(const Vec3& velocity, const Vec3& force) {
 
 // chargeCoupling is q_i^2 for a self term and q_i q_j for the mutual one; it
 // used to be a hard-wired e^2, which made both correct only for unit charges.
-Vec3 reducedOrderSelfForce(const Vec3& velocity,
+inline Vec3 reducedOrderSelfForce(const Vec3& velocity,
                            const FourVector& beforeForce,
                            const FourVector& afterForce,
                            double laboratoryDerivativeStep,
@@ -3335,7 +3388,7 @@ Vec3 reducedOrderSelfForce(const Vec3& velocity,
     return orthogonalDerivative.space * (characteristicTime / relativisticGamma);
 }
 
-MutualForces individualLandauLifshitzSelfForces(
+inline MutualForces individualLandauLifshitzSelfForces(
     const State& s, const MutualForces& external,
     const StateHistory& history,bool includeMutual) {
     const Vec3 firstAcceleration = relativisticAcceleration(s.firstVelocity, external.first,
@@ -3424,7 +3477,7 @@ MutualForces individualLandauLifshitzSelfForces(
 // evaluated directly from the external-force accelerations; it does not read
 // boundFieldEnergy or any residual accumulator and can therefore serve as an
 // independent balance diagnostic.
-[[maybe_unused]] double explicitChargeSchottEnergy(
+[[maybe_unused]] inline double explicitChargeSchottEnergy(
     const State& state,const MutualForces& externalForces) {
     const Vec3 firstAcceleration=relativisticAcceleration(
         state.firstVelocity,externalForces.first,firstMass);
@@ -3440,7 +3493,7 @@ MutualForces individualLandauLifshitzSelfForces(
 
 // Relativistic predictor-corrector update with mutually retarded fields and
 // an individual, reduced-order Landau-Lifshitz self-force for each charge.
-void integrateElectrodynamicStep(State& s, double dt,
+inline void integrateElectrodynamicStep(State& s, double dt,
                                  const StateHistory& history,
                                  bool computeOutwardFlux=true,
                                  ChargeRadiationReactionModel reactionModel=
@@ -3753,7 +3806,7 @@ void integrateElectrodynamicStep(State& s, double dt,
     s = trial;
 }
 
-void appendStateHistory(StateHistory& history, const State& state) {
+inline void appendStateHistory(StateHistory& history, const State& state) {
     const double retentionTime = std::max(1.0e-20, 4.0 * separation(state) / c);
     // Node SPACING follows the retarded window, not the integration step.
     //
@@ -3879,7 +3932,7 @@ void appendStateHistory(StateHistory& history, const State& state) {
 // deliberately separate from the causal retarded/radiating engine: applying
 // the same converged midpoint solve with -dt must recover the initial state.
 // Only the time-reversibility test uses it, so it stays out of production.
-void integrateConservativeMidpoint(
+inline void integrateConservativeMidpoint(
     State& state,double dt,int iterations=8) {
     if(dt==0.0||!std::isfinite(dt)) return;
     const State start=state;

@@ -1,10 +1,286 @@
 #pragma once
 
 // End-to-end numerical validation of the optional Maxwell field backend.
+//
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
+
+// This header, like the backend it drives, exists only in the validation
+// build: positronium.cpp includes it inside
+// #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION, and its body reaches for
+// ParticleFieldTotals, which electrodynamics.hpp defines only in that
+// configuration.  Say so rather than failing hundreds of lines later.
+#ifndef POSITRONIUM_ENABLE_FIELD_VALIDATION
+#error "modules/maxwell_validation.hpp is part of the validation build; compile with -DPOSITRONIUM_ENABLE_FIELD_VALIDATION"
+#endif
+
+#include "crem_trajectory.hpp"
+#include "electrodynamics.hpp"
+#include "sampling_utilities.hpp"
+#include "maxwell_validation_backend.hpp"
+#include "censoring_analysis.hpp"
+#include "physical_constants.hpp"
+#include "qed_reference.hpp"
+#include "root_export.hpp"
+#include "secular_spin_orbit.hpp"
+#include "state.hpp"
+#include "vector3.hpp"
+
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <random>
+#include <vector>
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::DipoleTensor;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using namespace positronium::parameters;
+
+// The grid-coupled particle pushers, and the Rodrigues precession only they
+// use.  They lived in positronium.cpp between the Maxwell backend and
+// electrodynamics.hpp, which is a cycle waiting to happen: the backend
+// defines the MaxwellBlock they push against, while thomasBmtEffectiveField
+// comes from electrodynamics.  This header sits above both, and is the only
+// caller, so here they need no forward declaration at all.
+
+// The tensor invariants and the retarded-field initializer that the covariance
+// and coupled-field tests below consume.  They were in positronium.cpp for the
+// same reason the pushers were: nowhere else to put them while these headers
+// still leaned on the surrounding namespace.
+// Lorentz invariants of the polarization-magnetization tensor.  Only the
+// covariance tests consume them, so they are not compiled into the production
+// binary at all.
+inline double dipoleFirstInvariant(const DipoleTensor& dipole) {
+    return dipole.magnetic.squaredNorm()
+        -c*c*dipole.electric.squaredNorm();
+}
+
+inline double dipoleSecondInvariant(const DipoleTensor& dipole) {
+    return c*dot(dipole.electric,dipole.magnetic);
+}
+
+inline Vec3 regularizedDipoleVectorPotential(const Vec3& observationPosition,
+                                             const Vec3& sourcePosition,
+                                             const Vec3& dipole,double radius) {
+    const Vec3 displacement=observationPosition-sourcePosition;
+    const double distance=displacement.norm();
+    if(distance<=std::numeric_limits<double>::min()||dipole.squaredNorm()==0.0)
+        return {};
+    const double u=distance/(std::sqrt(2.0)*radius);
+    const double formFactor=std::erf(u)-2.0*u*std::exp(-u*u)/std::sqrt(pi);
+    return cross(dipole,displacement)
+        *(mu0/(4.0*pi)*formFactor/(distance*distance*distance));
+}
+
+inline void initializeRetardedPairFields(MaxwellBlock& block,
+                                         const State& state,
+                                         const StateHistory& history,
+                                         int projectionIterations=400) {
+    const RelativisticChargeCloud first{firstCharge,chargeCloudRestRadius};
+    const RelativisticChargeCloud second{secondCharge,chargeCloudRestRadius};
+    block.clearSources();
+    block.depositCloud(first,state.firstPosition,state.firstVelocity);
+    block.depositCloud(second,state.secondPosition,state.secondVelocity);
+    block.depositCovariantDipole(state.firstPosition,state.firstVelocity,
+                                 state.firstDipole);
+    block.depositCovariantDipole(state.secondPosition,state.secondVelocity,
+                                 state.secondDipole);
+    block.finalizeBoundInstantaneous();
+    block.clearFields();
+    std::vector<Vec3> dipoleVectorPotential(block.cells().size());
+    for(int k=0;k<block.cellsPerAxis();++k)
+        for(int j=0;j<block.cellsPerAxis();++j)
+            for(int i=0;i<block.cellsPerAxis();++i) {
+                const Vec3 position=block.cellPosition(i,j,k);
+                const ElectromagneticField fromFirst=lienardWiechertField(
+                    position,state.time,history,state,true,firstCharge,
+                    chargeCloudRestRadius);
+                const ElectromagneticField fromSecond=lienardWiechertField(
+                    position,state.time,history,state,false,secondCharge,
+                    chargeCloudRestRadius);
+                const Vec3 dipolePotential=
+                    regularizedDipoleVectorPotential(position,state.firstPosition,
+                        state.firstDipole,chargeCloudRestRadius)
+                   +regularizedDipoleVectorPotential(position,state.secondPosition,
+                        state.secondDipole,chargeCloudRestRadius);
+                dipoleVectorPotential[(static_cast<std::size_t>(k)
+                    *block.cellsPerAxis()+j)*block.cellsPerAxis()+i]=dipolePotential;
+                block.replaceFieldAt(position,
+                    fromFirst.electric+fromSecond.electric,
+                    fromFirst.magnetic+fromSecond.magnetic);
+            }
+    block.addMagneticCurl(dipoleVectorPotential);
+    // Preserve the retarded transverse content while matching the discrete
+    // extended sources and eliminating grid-level magnetic monopoles.
+    block.projectElectricGaussConstraint(projectionIterations);
+    block.projectMagneticDivergenceConstraint(projectionIterations);
+}
+// Rodrigues precession used only by the grid-coupled pusher in the field
+// validation build; production dipole transport goes through the covariant
+// BMT integrator in advanceCovariantBmt().
+inline void precessDipole(Vec3& dipole,const Vec3& field,
+                          double gyromagneticRatio,double dt) {
+    const double dipoleMagnitude=dipole.norm();
+    if(dipoleMagnitude==0.0) return;
+    const double fieldMagnitude = field.norm();
+    if (fieldMagnitude == 0.0) return;
+    const Vec3 axis = field / fieldMagnitude;
+    // d(mu)/dt = gamma mu x B. rotatedAround uses B x mu for a positive
+    // angle, hence the minus sign.
+    const double angle = -gyromagneticRatio * fieldMagnitude * dt;
+    // Rodrigues rotation preserves the magnitude of the magnetic moment.
+    const Vec3 rotated = dipole * std::cos(angle) + cross(axis, dipole) * std::sin(angle)
+                       + axis * ((axis.x*dipole.x + axis.y*dipole.y + axis.z*dipole.z) * (1.0 - std::cos(angle)));
+    dipole=rotated*(dipoleMagnitude/rotated.norm());
+}
+
+// Relativistic Boris rotation written in momentum variables.  Electric
+// half-kicks surround a magnetic rotation evaluated with the intermediate
+// Lorentz factor; the map is time reversible and cannot produce |v|>=c.
+inline Vec3 relativisticBorisPush(const Vec3& momentumBefore, double charge,
+                                  double mass, const Vec3& electric,
+                                  const Vec3& magnetic, double dt) {
+    const Vec3 momentumMinus=momentumBefore+electric*(0.5*charge*dt);
+    const double gammaMinus=std::sqrt(1.0
+        +momentumMinus.squaredNorm()/(mass*mass*c*c));
+    const Vec3 t=magnetic*(charge*dt/(2.0*gammaMinus*mass));
+    const Vec3 s=t*(2.0/(1.0+t.squaredNorm()));
+    const Vec3 momentumPrime=momentumMinus+cross(momentumMinus,t);
+    const Vec3 momentumPlus=momentumMinus+cross(momentumPrime,s);
+    return momentumPlus+electric*(0.5*charge*dt);
+}
+
+// Production-order particle/Yee coupling. The gathered staggered fields push
+// both particles first; their complete old-to-new trajectories then deposit
+// rho^{n+1} and J^{n+1/2}. Maxwell therefore receives a source satisfying its
+// own discrete continuity equation and needs no Poisson repair.
+inline void pushStateWithYeeField(State& state,YeeMaxwellBlock& field,
+                                  double dt) {
+    const State before=state;
+    const auto [firstElectric,firstMagnetic]=
+        field.interpolateField(before.firstPosition);
+    const auto [secondElectric,secondMagnetic]=
+        field.interpolateField(before.secondPosition);
+    const Vec3 firstMomentum=relativisticBorisPush(
+        momentum(before.firstVelocity,firstMass),firstCharge,firstMass,
+        firstElectric,firstMagnetic,dt);
+    const Vec3 secondMomentum=relativisticBorisPush(
+        momentum(before.secondVelocity,secondMass),secondCharge,secondMass,
+        secondElectric,secondMagnetic,dt);
+    state.firstVelocity=velocityFromMomentum(firstMomentum,firstMass);
+    state.secondVelocity=velocityFromMomentum(secondMomentum,secondMass);
+    state.firstPosition=before.firstPosition+state.firstVelocity*dt;
+    state.secondPosition=before.secondPosition+state.secondVelocity*dt;
+    state.firstAcceleration=(state.firstVelocity-before.firstVelocity)/dt;
+    state.secondAcceleration=(state.secondVelocity-before.secondVelocity)/dt;
+    field.clearSources();
+    field.depositGaussianEsirkepov(firstCharge,chargeCloudRestRadius,
+        before.firstPosition,before.firstVelocity,state.firstPosition,
+        state.firstVelocity,dt);
+    field.depositGaussianEsirkepov(secondCharge,chargeCloudRestRadius,
+        before.secondPosition,before.secondVelocity,state.secondPosition,
+        state.secondVelocity,dt);
+    field.depositCovariantDipoleYee(state.firstPosition,
+        state.firstVelocity,state.firstDipole,chargeCloudRestRadius);
+    field.depositCovariantDipoleYee(state.secondPosition,
+        state.secondVelocity,state.secondDipole,chargeCloudRestRadius);
+    field.finalizeBoundSources(dt);
+    field.advance(dt);
+    state.time+=dt;
+}
+
+inline void pushStateWithGridField(State& state,
+                                   const MaxwellBlock& field,
+                            double dt, bool reciprocalDipoles=false,
+                            const State* samplingState=nullptr,
+                            const ElectromagneticField& firstSelfField={},
+                            const ElectromagneticField& secondSelfField={},
+                            const DynamicSelfFieldCalibration* firstCalibration=nullptr,
+                            const DynamicSelfFieldCalibration* secondCalibration=nullptr) {
+    const State& sample=samplingState?*samplingState:state;
+    auto [firstElectric,firstMagnetic]=
+        field.interpolateField(sample.firstPosition);
+    auto [secondElectric,secondMagnetic]=
+        field.interpolateField(sample.secondPosition);
+    const ElectromagneticField currentFirstSelf=firstCalibration
+        ?firstCalibration->field(field,sample.firstPosition,
+                                    sample.firstVelocity,firstCharge):firstSelfField;
+    const ElectromagneticField currentSecondSelf=secondCalibration
+        ?secondCalibration->field(field,sample.secondPosition,
+                                    sample.secondVelocity,secondCharge):secondSelfField;
+    firstElectric=firstElectric-currentFirstSelf.electric;
+    firstMagnetic=firstMagnetic-currentFirstSelf.magnetic;
+    secondElectric=secondElectric-currentSecondSelf.electric;
+    secondMagnetic=secondMagnetic-currentSecondSelf.magnetic;
+    const GridDipoleInteraction firstDipoleInteraction=reciprocalDipoles
+        ?field.dipoleInteraction(sample.firstPosition,sample.firstDipole)
+        :GridDipoleInteraction{};
+    const GridDipoleInteraction secondDipoleInteraction=reciprocalDipoles
+        ?field.dipoleInteraction(sample.secondPosition,sample.secondDipole)
+        :GridDipoleInteraction{};
+    if(!reciprocalDipoles) {
+        precessDipole(state.firstDipole,
+            thomasBmtEffectiveField(state.firstVelocity,
+                {firstElectric,firstMagnetic},firstGFactor),
+            firstCharge/firstMass,0.5*dt);
+        precessDipole(state.secondDipole,
+            thomasBmtEffectiveField(state.secondVelocity,
+                {secondElectric,secondMagnetic},secondGFactor),
+            secondCharge/secondMass,0.5*dt);
+    }
+    const Vec3 firstMomentum=relativisticBorisPush(
+        momentum(state.firstVelocity,firstMass),firstCharge,firstMass,
+        firstElectric,firstMagnetic,dt)+firstDipoleInteraction.force*dt;
+    const Vec3 secondMomentum=relativisticBorisPush(
+        momentum(state.secondVelocity,secondMass),secondCharge,secondMass,
+        secondElectric,secondMagnetic,dt)+secondDipoleInteraction.force*dt;
+    state.firstVelocity=velocityFromMomentum(firstMomentum,firstMass);
+    state.secondVelocity=velocityFromMomentum(secondMomentum,secondMass);
+    state.firstPosition+=state.firstVelocity*dt;
+    state.secondPosition+=state.secondVelocity*dt;
+    if(reciprocalDipoles) {
+        const double firstGyromagneticRatio=firstGyromagneticRatioOf();
+        const double secondGyromagneticRatio=secondGyromagneticRatioOf();
+        const double firstNorm=state.firstDipole.norm();
+        const double secondNorm=state.secondDipole.norm();
+        state.firstDipole+=firstDipoleInteraction.torque
+                            *(firstGyromagneticRatio*dt);
+        state.secondDipole+=secondDipoleInteraction.torque
+                            *(secondGyromagneticRatio*dt);
+        if(state.firstDipole.norm()>0.0)
+            state.firstDipole=state.firstDipole*(firstNorm/state.firstDipole.norm());
+        if(state.secondDipole.norm()>0.0)
+            state.secondDipole=state.secondDipole*(secondNorm/state.secondDipole.norm());
+        state.dipoleConstraintEnergy+=(firstDipoleInteraction.fieldPower
+            +secondDipoleInteraction.fieldPower
+            -dot(firstDipoleInteraction.force,state.firstVelocity)
+            -dot(secondDipoleInteraction.force,state.secondVelocity))*dt;
+    } else {
+        precessDipole(state.firstDipole,
+            thomasBmtEffectiveField(state.firstVelocity,
+                {firstElectric,firstMagnetic},firstGFactor),
+            firstCharge/firstMass,0.5*dt);
+        precessDipole(state.secondDipole,
+            thomasBmtEffectiveField(state.secondVelocity,
+                {secondElectric,secondMagnetic},secondGFactor),
+            secondCharge/secondMass,0.5*dt);
+    }
+    state.time+=dt;
+}
 
 enum class StatisticalValidationProfile { Small, Publication };
 
-int runMaxwellSelfTest(
+inline int runMaxwellSelfTest(
         StatisticalValidationProfile statisticalProfile=
             StatisticalValidationProfile::Small) {
     const auto benchmarkStart=std::chrono::steady_clock::now();

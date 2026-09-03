@@ -4,12 +4,48 @@
 // prepared bound state into a measured classical inspiral time, together with
 // the closed-form electrodynamic references it is compared against.
 //
-// Textual module, like the other headers here: it is included once, from
-// inside the anonymous namespace of positronium.cpp and inside the production
-// #ifndef, so everything it needs (State, the trajectory engine, simulate(),
-// splitMix64) is already in scope.  It deliberately contains no ROOT: nothing
-// in this file draws anything, and the panels that display these results live
-// in positronium.cpp.
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
+//
+// It deliberately contains no ROOT: nothing in this file draws anything, and
+// the panels that display these results live in positronium.cpp.
+
+#include "analysis_reporting.hpp"
+#include "crem_trajectory.hpp"
+#include "kaplan_meier.hpp"
+#include "physical_constants.hpp"
+#include "sampling_utilities.hpp"
+#include "secular_spin_orbit.hpp"
+#include "simulation_interface.hpp"
+#include "state.hpp"
+#include "statistics_archive.hpp"
+#include "vector3.hpp"
+
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <mutex>
+#include <stdexcept>
+#include <thread>
+#include <vector>
+
+namespace two_body = positronium::kinematics;
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using namespace positronium::parameters;
 
 // One stochasticElectricDipole photon (modules/electrodynamics.hpp), recorded
 // as it would be measured by a fixed, distant lab observer rather than in the
@@ -251,7 +287,7 @@ struct CremCollapseEstimate {
 // energies are closed onto W exactly -- momentum conservation for three
 // massless quanta requires them to sum to W and to be constructible as a
 // closed triangle, which x1+x2+x3 = 2 with each x <= 1 guarantees.
-std::vector<double> annihilationPhotonEnergiesFor(
+inline std::vector<double> annihilationPhotonEnergiesFor(
         double invariantEnergy,bool para,std::uint64_t& stream) {
     if(!(invariantEnergy>0.0)||!std::isfinite(invariantEnergy)) return {};
     if(para) return {0.5*invariantEnergy,0.5*invariantEnergy};
@@ -386,7 +422,7 @@ inline double classicalInspiralCoefficient() {
 // (1 + 73e^2/24 + 37e^4/96)/(1-e^2)^(7/2), which belongs to QUADRUPOLE
 // (gravitational) radiation with P ~ r^-6 and is far larger: at e = 0.5 the
 // two differ by more than a factor of two.
-double dipoleEccentricityFactor(double eccentricity) {
+inline double dipoleEccentricityFactor(double eccentricity) {
     const double e2=eccentricity*eccentricity;
     if(!(e2<1.0)) return std::numeric_limits<double>::quiet_NaN();
     return (1.0+0.5*e2)/std::pow(1.0-e2,2.5);
@@ -394,7 +430,7 @@ double dipoleEccentricityFactor(double eccentricity) {
 
 // Larmor power of the coherent electric dipole, orbit-averaged over the
 // Kepler ellipse with the given elements.
-double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity) {
+inline double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity) {
     if(!(semiMajorAxis>0.0)) return std::numeric_limits<double>::quiet_NaN();
     // |d''| = |q_eff| k|q1 q2| / (mu a^2), so P = |d''|^2/(6 pi eps0 c^3).
     const double secondDerivative=magnitude(pairDipoleCharge)
@@ -463,7 +499,7 @@ struct CoherentMagneticDipoleEmission {
     // negligibly, so only the AXIS estimate degenerates, never the power.
     Vec3 precessionAxis;
 };
-CoherentMagneticDipoleEmission coherentMagneticDipoleOrbitAveragedEmission(
+inline CoherentMagneticDipoleEmission coherentMagneticDipoleOrbitAveragedEmission(
         double semiMajorAxis,const Vec3& orbitalAngularMomentum,
         const Vec3& firstDipole,const Vec3& secondDipole,
         double reducedMass,double zeroPointPhase=0.0,
@@ -579,7 +615,7 @@ CoherentMagneticDipoleEmission coherentMagneticDipoleOrbitAveragedEmission(
 // assumption anywhere), removing the gate entirely: every entry is a
 // real, independently computed number, not an extrapolation, so there
 // is no boundary left to be conservative about.
-double interpolateMonotonicTable(
+inline double interpolateMonotonicTable(
         const double* keys,const double* values,int count,double key) {
     if(key<=keys[0]) return values[0];
     if(key>=keys[count-1]) return values[count-1];
@@ -595,7 +631,7 @@ double interpolateMonotonicTable(
 
 // S(e): hazard-rate suppression from spreading power over many harmonics
 // instead of crediting it all to n=1 (see derivation above).
-double eccentricOrbitHazardSuppression(double eccentricity) {
+inline double eccentricOrbitHazardSuppression(double eccentricity) {
     static constexpr double keys[]={0.0000,0.0500,0.1000,0.1500,0.2000,
         0.2500,0.3000,0.3500,0.4000,0.4500,0.5000,0.5500,0.6000,0.6500,
         0.7000,0.7500,0.8000,0.8500,0.9000,0.9300,0.9500,0.9700,0.9900};
@@ -621,7 +657,7 @@ double eccentricOrbitHazardSuppression(double eccentricity) {
 // conservative ceiling for the near-never-hit u->1 edge of a continuous
 // draw, not a truncation artifact the way an earlier draft's naive
 // summation cutoff was.
-double eccentricOrbitHarmonicNumber(double eccentricity,double uniformDraw) {
+inline double eccentricOrbitHarmonicNumber(double eccentricity,double uniformDraw) {
     static constexpr double eccentricityGrid[]={0.0000,0.1000,0.2000,
         0.3000,0.4000,0.5000,0.6000,0.6500,0.7000,0.7500,0.8000,0.8500,
         0.9000,0.9300,0.9450,0.9600,0.9700,0.9800};
@@ -672,7 +708,7 @@ double eccentricOrbitHarmonicNumber(double eccentricity,double uniformDraw) {
 // Time for the closed-form inspiral to carry the orbit from a_i to a_f at
 // fixed eccentricity.  Radiation actually circularizes the orbit, so holding
 // e fixed is an approximation; it is stated on the panel that uses this.
-double classicalInspiralSeconds(double initialSemiMajorAxis,
+inline double classicalInspiralSeconds(double initialSemiMajorAxis,
                                 double finalSemiMajorAxis,
                                 double eccentricity) {
     const double factor=dipoleEccentricityFactor(eccentricity);
@@ -685,7 +721,7 @@ double classicalInspiralSeconds(double initialSemiMajorAxis,
 // Periapsis distance of the two-body Kepler ellipse with the given specific
 // (per unit reduced mass) energy and angular momentum -- the same formula
 // simulate() already uses for its InitialConditions.predictedClosestApproach.
-double osculatingPeriapsis(const OsculatingElements& elements,
+inline double osculatingPeriapsis(const OsculatingElements& elements,
                            double attractionParameter) {
     if(!(elements.specificAngularMomentum!=0.0)) return 0.0;
     const double eccentricity=std::sqrt(std::max(0.0,1.0
@@ -698,7 +734,7 @@ double osculatingPeriapsis(const OsculatingElements& elements,
 
 // Apoapsis of the two-body Kepler ellipse -- osculatingPeriapsis's mirror
 // root (a(1+e) instead of a(1-e)).  Infinity for an unbound (e>=1) orbit.
-double osculatingApoapsis(const OsculatingElements& elements,
+inline double osculatingApoapsis(const OsculatingElements& elements,
                           double attractionParameter) {
     const double L=elements.specificAngularMomentum;
     if(!(L!=0.0)) return 0.0;
@@ -711,7 +747,7 @@ double osculatingApoapsis(const OsculatingElements& elements,
 
 // Unperturbed Kepler period at the given specific energy; used only to size
 // the one-orbit measurement window, not to compute the reported lifetime.
-double osculatingPeriod(double specificEnergy,double attractionParameter) {
+inline double osculatingPeriod(double specificEnergy,double attractionParameter) {
     const double semiMajorAxis=-attractionParameter/(2.0*specificEnergy);
     return 2.0*pi*std::sqrt(semiMajorAxis*semiMajorAxis*semiMajorAxis
         /attractionParameter);
@@ -734,7 +770,7 @@ double osculatingPeriod(double specificEnergy,double attractionParameter) {
 // branch for r above/below floor here at all -- one formula, everywhere,
 // which is what removes the kink in the force that stalled the adaptive
 // integrator at the old floor crossing.
-double regularizedPotentialEnergy(double r,double attractionParameter,
+inline double regularizedPotentialEnergy(double r,double attractionParameter,
                                   double floor) {
     return -(attractionParameter/floor)*std::atan(floor/r);
 }
@@ -757,7 +793,7 @@ double regularizedPotentialEnergy(double r,double attractionParameter,
 // of precision: bisection's absolute convergence over even a wildly
 // oversized bracket reaches machine precision at the relevant scale well
 // within the iteration budget below regardless of how tight the guess was.
-double criticalRadius(double L,double attractionParameter,double floor) {
+inline double criticalRadius(double L,double attractionParameter,double floor) {
     const auto cubic=[&](double r) {
         return attractionParameter*r*r*r-L*L*(r*r+floor*floor);
     };
@@ -819,7 +855,7 @@ struct RegularizedTurningPoints {
 // genuinely circular orbit); beyond it the naive values are returned as the
 // least-bad fallback, since fabricating a root that is not there would be
 // worse than saying so.
-RegularizedTurningPoints regularizedTurningPoints(
+inline RegularizedTurningPoints regularizedTurningPoints(
     const OsculatingElements& elements,double attractionParameter,
     double floor) {
     const double naivePeriapsis=
@@ -862,7 +898,7 @@ RegularizedTurningPoints regularizedTurningPoints(
     return {0.5*(periapsisLo+periapsisHi),0.5*(apoapsisLo+apoapsisHi),true};
 }
 
-double regularizedPeriapsis(const OsculatingElements& elements,
+inline double regularizedPeriapsis(const OsculatingElements& elements,
                             double attractionParameter,double floor) {
     return regularizedTurningPoints(elements,attractionParameter,floor)
         .periapsis;
@@ -900,7 +936,7 @@ double regularizedPeriapsis(const OsculatingElements& elements,
 // for), and always running the same quadrature -- rather than shortcutting
 // to osculatingPeriod() far from the barrier -- keeps this function as
 // simple as regularizedTurningPoints() above for the same reason.
-double regularizedPeriod(const OsculatingElements& elements,
+inline double regularizedPeriod(const OsculatingElements& elements,
                          double attractionParameter,double floor) {
     const double naive=osculatingPeriod(
         elements.specificEnergy,attractionParameter);
@@ -991,7 +1027,7 @@ double regularizedPeriod(const OsculatingElements& elements,
 // The radial profile is the regularized one the field code uses, so this
 // agrees with regularizedDipoleInteractionEnergy term by term and reduces to
 // the point-dipole result where the regulator is inactive.
-double azimuthAveragedDipoleEnergy(double separation,
+inline double azimuthAveragedDipoleEnergy(double separation,
                                    const Vec3& firstDipole,
                                    const Vec3& secondDipole,
                                    const Vec3& orbitNormal) {
@@ -1041,7 +1077,7 @@ double azimuthAveragedDipoleEnergy(double separation,
 // repulsive enough that no radius below the current orbit is accessible, the
 // pair stalls rather than continuing inward, and the stall radius is returned:
 // that is a physical outcome the Coulomb-only rule could not express.
-double dipoleAwarePeriapsis(const OsculatingElements& elements,
+inline double dipoleAwarePeriapsis(const OsculatingElements& elements,
                             double attractionParameter,
                             const Vec3& firstDipole,const Vec3& secondDipole,
                             const Vec3& orbitNormal,double reducedMass) {
@@ -1232,7 +1268,7 @@ double dipoleAwarePeriapsis(const OsculatingElements& elements,
 // was made dipole-aware while the harmonic, period and eccentricity layer
 // stayed Keplerian, so the size of that remaining inconsistency is worth
 // being able to measure rather than assume.
-double apsidalAngleOverPi(const OsculatingElements& elements,
+inline double apsidalAngleOverPi(const OsculatingElements& elements,
                           double attractionParameter,
                           const Vec3& firstDipole,const Vec3& secondDipole,
                           const Vec3& orbitNormal,double reducedMass) {
@@ -1291,7 +1327,7 @@ double apsidalAngleOverPi(const OsculatingElements& elements,
 // stopping rule is not.  Returns false when the frozen (E,L) admits no radial
 // band -- which for a near-circular orbit means the perturbation moved the
 // effective-potential minimum past E, not that no orbit exists.
-bool fullPotentialOrbit(const OsculatingElements& elements,
+inline bool fullPotentialOrbit(const OsculatingElements& elements,
                         double attractionParameter,
                         const Vec3& firstDipole,const Vec3& secondDipole,
                         const Vec3& orbitNormal,double reducedMass,
@@ -1344,7 +1380,7 @@ bool fullPotentialOrbit(const OsculatingElements& elements,
 // apsidal line are the same ones used by the eccentric secular BMT average;
 // resetting them to global x-y would change the dipole geometry whenever the
 // coupled spin-orbit solve or a photon tilted L.
-State osculatingPeriapsisState(const OsculatingElements& elements,
+inline State osculatingPeriapsisState(const OsculatingElements& elements,
                                double attractionParameter,
                                const Vec3& firstDipole,
                                const Vec3& secondDipole,
@@ -1404,7 +1440,7 @@ State osculatingPeriapsisState(const OsculatingElements& elements,
 // force would be: with the reaction force disabled, the very first measured
 // orbit shows zero energy loss and the estimate correctly reports no
 // collapse instead of iterating uselessly.
-CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
+inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                            int selectedPhenomenon,
                                            double wallClockBudgetSeconds) {
     CremCollapseEstimate result;
@@ -4159,7 +4195,7 @@ CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
 // table's own eccentricity grid ends at 0.98 and its last quantile column is
 // a deliberate 1.5x cap: at e=0.99, S(e)=0.000853 asks for <n>=1172, which a
 // capped table cannot represent and never claimed to.
-void verifyHarmonicEnergyIdentity() {
+inline void verifyHarmonicEnergyIdentity() {
     constexpr int sampleCount=20001;
     constexpr double band=0.10;
     static constexpr double eccentricities[]={0.0,0.1,0.2,0.3,0.4,0.5,0.6,
@@ -4190,7 +4226,7 @@ void verifyHarmonicEnergyIdentity() {
     }
 }
 
-std::vector<CremCollapseEstimate> runCremCollapseExperiment(
+inline std::vector<CremCollapseEstimate> runCremCollapseExperiment(
     std::uint64_t masterSeed,int selectedPhenomenon,int runCount,
     double wallClockBudgetSeconds) {
     // Keep the safety boundary valid for non-CLI callers too.  In particular,

@@ -2,6 +2,38 @@
 
 // Optional finite-difference Maxwell backend: Yee grid, AMR, CPML and
 // extended charge/current deposition. Included only by the validation build.
+//
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
+
+#include "dipole_tensor.hpp"
+#include "physical_constants.hpp"
+#include "relativistic_field_types.hpp"
+#include "relativistic_kinematics.hpp"
+#include "state.hpp"
+#include "two_body_kinematics.hpp"
+#include "vector3.hpp"
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <future>
+#include <memory>
+#include <numeric>
+#include <vector>
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::DipoleTensor;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using namespace positronium::parameters;
 
 // Smooth finite-size source used by the Maxwell-field backend.  The Gaussian
 // is spherical in the instantaneous rest frame.  In the laboratory it is
@@ -50,7 +82,7 @@ struct AntisymmetricTensor {
     std::array<std::array<double,4>,4> component{};
 };
 
-RankTwoTensor lorentzBoostMatrix(const Vec3& velocity) {
+inline RankTwoTensor lorentzBoostMatrix(const Vec3& velocity) {
     RankTwoTensor boost;
     const double g=gamma(velocity); const Vec3 beta=velocity/c;
     boost.component[0][0]=g;
@@ -66,7 +98,7 @@ RankTwoTensor lorentzBoostMatrix(const Vec3& velocity) {
     return boost;
 }
 
-FourVector transform(const RankTwoTensor& matrix,const FourVector& vector) {
+inline FourVector transform(const RankTwoTensor& matrix,const FourVector& vector) {
     const std::array<double,4> input{vector.time,vector.space.x,vector.space.y,vector.space.z};
     std::array<double,4> output{};
     for(int i=0;i<4;++i) for(int j=0;j<4;++j)
@@ -74,7 +106,7 @@ FourVector transform(const RankTwoTensor& matrix,const FourVector& vector) {
     return {output[0],{output[1],output[2],output[3]}};
 }
 
-RankTwoTensor transform(const RankTwoTensor& boost,const RankTwoTensor& tensor) {
+inline RankTwoTensor transform(const RankTwoTensor& boost,const RankTwoTensor& tensor) {
     RankTwoTensor result;
     for(int m=0;m<4;++m) for(int n=0;n<4;++n)
         for(int a=0;a<4;++a) for(int b=0;b<4;++b)
@@ -83,7 +115,7 @@ RankTwoTensor transform(const RankTwoTensor& boost,const RankTwoTensor& tensor) 
     return result;
 }
 
-AntisymmetricTensor transform(const RankTwoTensor& boost,
+inline AntisymmetricTensor transform(const RankTwoTensor& boost,
                               const AntisymmetricTensor& tensor) {
     AntisymmetricTensor result;
     for(int m=0;m<4;++m) for(int n=0;n<4;++n)

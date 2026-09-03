@@ -8,26 +8,39 @@
 // siblings in electrodynamics.hpp (retardedElectricDipoleField,
 // retardedMagneticDipoleField) all build on.
 //
-// Extracted verbatim from positronium.cpp (Stage 0 of splitting engine,
-// experiments and ROOT presentation into separately reasoned-about pieces --
-// see the README/session notes on why and what stays behind).  This header
-// is textually included at the same point inside positronium.cpp's shared
-// anonymous namespace it always occupied, so it depends on that namespace
-// already having in scope: Vec3, State, StateHistory, ElectromagneticField,
-// the c/coulomb/pi/nuclearCutoff constants, dot(), cross(), and
-// separationFloor() -- all still declared earlier in positronium.cpp itself.
-// It is not yet a standalone, order-independent header; making it one (so it
-// could be pulled into a real compiled library) is a later step.
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
+
+#include "pair_geometry.hpp"
+#include "physical_constants.hpp"
+#include "relativistic_field_types.hpp"
+#include "state.hpp"
+#include "vector3.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using namespace positronium::parameters;
 
 struct ChargeKinematics { Vec3 position, velocity, acceleration; };
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
-Vec3 lerp(const Vec3& first,const Vec3& second,double fraction) {
+inline Vec3 lerp(const Vec3& first,const Vec3& second,double fraction) {
     return first+(second-first)*fraction;
 }
 #endif
 
-ChargeKinematics interpolatedCharge(const State& older, const State& newer, bool first, double time) {
+inline ChargeKinematics interpolatedCharge(const State& older, const State& newer, bool first, double time) {
     const double span = newer.time - older.time;
     if(!(span>0.0)) {
         return {first?newer.firstPosition:newer.secondPosition,
@@ -65,7 +78,7 @@ ChargeKinematics interpolatedCharge(const State& older, const State& newer, bool
 }
 
 #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION
-ChargeKinematics linearlyInterpolatedCharge(const State& older,
+inline ChargeKinematics linearlyInterpolatedCharge(const State& older,
     const State& newer,bool first,double time) {
     const double span=newer.time-older.time;
     const double fraction=span>0.0
@@ -80,7 +93,7 @@ ChargeKinematics linearlyInterpolatedCharge(const State& older,
 }
 #endif
 
-ChargeKinematics historicalCharge(const StateHistory& history,
+inline ChargeKinematics historicalCharge(const StateHistory& history,
                                    const State& present, bool first,
                                    double time) {
     const State& earliest = history.empty() ? present : history.front();
@@ -118,7 +131,7 @@ ChargeKinematics historicalCharge(const StateHistory& history,
 }
 
 // Mutual, retarded Lienard-Wiechert field of a moving point charge.
-ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
+inline ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
                                           double observationTime,
                                           const StateHistory& history,
                                           const State& presentState,
@@ -134,7 +147,17 @@ ElectromagneticField lienardWiechertField(const Vec3& observationPosition,
             history, presentState, sourceIsFirst, retardedTime);
         const Vec3 retardedDisplacement=observationPosition-source.position;
         const double retardedDistance=retardedDisplacement.norm();
-        const Vec3 retardedDirection=retardedDisplacement/retardedDistance;
+        // A coincident observation point leaves the direction undefined, and
+        // the bare division below then returns NaN, which propagates through
+        // every later iterate and out of the loop (audit point 3.1).  At
+        // coincidence the light cone is flat: the residual is the time
+        // difference alone, and a zero direction makes lightConeDerivative
+        // exactly 1 below, which is the correct Newton step for that case.
+        // Every retardedDistance above the smallest normal double takes the
+        // same arithmetic as before.
+        const Vec3 retardedDirection=
+            retardedDistance>std::numeric_limits<double>::min()
+                ? retardedDisplacement/retardedDistance : Vec3{};
         const double lightConeResidual=retardedTime+retardedDistance/c
                                       -observationTime;
         const double lightConeDerivative=std::max(1.0e-8,

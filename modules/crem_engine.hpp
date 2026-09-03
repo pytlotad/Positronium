@@ -5,12 +5,42 @@
 // it.  This is the step-size machinery -- error probe, subdivision, history
 // retention -- as opposed to the force laws in electrodynamics.hpp.
 //
-// Textual module, included from inside the anonymous namespace of
-// positronium.cpp.  Unlike the other two CREM headers this one sits OUTSIDE
-// the production #ifndef: positronium_validation drives the same engine.
-// Contains no ROOT.
+// Unlike the other two CREM headers this one sits OUTSIDE the production
+// #ifndef: positronium_validation drives the same engine.  Contains no ROOT.
+//
+// Self-contained and order-independent.  It names what it needs through a
+// using-directive on positronium::parameters and using-declarations for the
+// object types, rather than reopening namespace positronium: the header is
+// still textually included inside positronium.cpp's anonymous namespace,
+// where reopening a named namespace would create {anonymous}::positronium and
+// hide the real one from every later lookup.
 
-StateHistory causalInitialHistory(const State& initial,double spanFactor=8.0,
+#include "electrodynamics.hpp"
+#include "pair_geometry.hpp"
+#include "physical_constants.hpp"
+#include "retarded_charge_kinematics.hpp"
+#include "state.hpp"
+#include "state_validity_interpolation.hpp"
+#include "vector3.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <deque>
+#include <iostream>
+#include <limits>
+
+namespace two_body = positronium::kinematics;
+
+using positronium::objects::Vec3;
+using positronium::objects::State;
+using positronium::objects::StateHistory;
+using positronium::objects::DipoleTensor;
+using positronium::objects::cross;
+using positronium::objects::dot;
+using namespace positronium::parameters;
+
+inline StateHistory causalInitialHistory(const State& initial,double spanFactor=8.0,
                                   int intervalCount=64,
                                   int picardIterations=2) {
     State endpoint=initial;
