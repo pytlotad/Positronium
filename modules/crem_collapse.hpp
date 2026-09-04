@@ -2913,6 +2913,23 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                          <<advance.maximumSubstepAngle<<" Jres="
                          <<advance.relativeAngularMomentumResidual
                          <<" L="<<elements.specificAngularMomentum<<std::endl;
+            // CREM_TILT: the angle between the pair's magnetic-moment axis and
+            // the orbital angular momentum, sampled wherever the secular
+            // transport has just moved both.  The orbit-averaged radial
+            // dipole-dipole force carries P2(cos tilt), so <P2> over the
+            // ensemble decides whether the para/ortho sign survives averaging
+            // or cancels.  Isotropic tilts give <P2>=0 exactly.
+            if(std::getenv("CREM_TILT")) {
+                const double firstNorm=firstDipole.norm();
+                const double secondNorm=secondDipole.norm();
+                if(firstNorm>0.0&&secondNorm>0.0)
+                    std::printf("CREM_TILT %.9e %.9e %.9f %.9f\n",
+                                simulatedTimeTotal,semiMajorAxis,
+                                dot(firstDipole,angularMomentumDirection)
+                                    /firstNorm,
+                                dot(secondDipole,angularMomentumDirection)
+                                    /secondNorm);
+            }
             return true;
         };
         if(!advanceSpinOrbitHalf(
