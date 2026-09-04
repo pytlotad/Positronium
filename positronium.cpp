@@ -5,6 +5,38 @@
 // should identify the Positronium repository at
 // https://github.com/pytlotad/Positronium and credit the CREM model author,
 // Tadeusz Slawomir Pytlos (tadeusz.slawomir.pytlos@gmail.com).
+//
+//
+// READ README.md BEFORE INVESTIGATING ANYTHING.  This applies to human
+// readers and, emphatically, to AI assistants working on this repository.
+//
+// README.md is 607 kB and carries roughly 174 numbered sections and probes.
+// It is not an overview of the code: it is the project's LAB NOTEBOOK.  Most
+// questions worth asking here have already been asked, measured, and written
+// up in it -- including the ones that look like fresh bugs.  It also records
+// the answers that turned out to be WRONG, and why, which is information you
+// cannot reconstruct from the source.
+//
+// Before measuring anything, grep it:
+//
+//     grep -n -i "<your topic>" README.md
+//
+// Some of what is in there, as a sense of range: why para and ortho behave
+// identically despite differing lifetimes; what the emission quantum is and
+// why hbar*omega is the wrong one below n=1; why the collapse median moves
+// 45% under a quantum substitution while the energy removed is invariant;
+// which conservation laws close and which do not, and against what reference;
+// the dead ends, with the measurements that killed them.
+//
+// This is not politeness.  A session that skipped this step spent several
+// rounds re-deriving the stopping-rule analysis in section O, proposed a
+// weaker account of the same effect, and had to withdraw it -- after the
+// README had already explained it further.  Six claims from that session were
+// withdrawn for the same reason.  Searching first costs one command.
+//
+// The counterpart obligation: when you measure something new, WRITE IT THERE.
+// Findings that live only in commit messages are findings the next reader
+// will pay to rediscover.
 
 #include <TApplication.h>
 #include <TBox.h>
