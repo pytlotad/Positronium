@@ -4257,8 +4257,37 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         ?preselectedHelicity
                         :(drawUniformUnit(stochasticSkipStream)
                             <helicityPlusProbability?1.0:-1.0);
-                    const Vec3 photonSpinAngularMomentum=
-                        photonDirection*(helicity*hbar);
+                    // CREM_AXIAL_SPIN: take the photon's angular momentum as
+                    // hbar on the ORBITAL axis, rather than hbar along its own
+                    // direction of flight.
+                    //
+                    // The reason is that hbar*h*n is only the SPIN part, and
+                    // for this radiation that is half the answer.  Averaged
+                    // over the model's own emission pattern (1+cos^2 theta)
+                    // and its own helicity split, <h cos(theta)> = 1/2
+                    // exactly, so hbar*h*n carries 0.5/omega of angular
+                    // momentum per unit energy.  The classical rotating
+                    // dipole it stands for carries 1/omega -- checked here
+                    // against the textbook formulas, d. x d.. over |d..|^2,
+                    // which gives 1.000000/omega.  The missing half is the
+                    // field's ORBITAL angular momentum, the exp(i phi)
+                    // azimuthal phase of a rotating dipole's field, which no
+                    // spin vector along n can represent.
+                    //
+                    // In multipole language an E1 photon from a circular
+                    // current is a j=1, m=+-1 state about the ORBITAL axis, so
+                    // the quantity that is conserved and quantised is J_z on
+                    // that axis, not a spin along n.  Taking it that way makes
+                    // dE/dL = hbar*omega/hbar = omega, which is exactly the
+                    // dE/dL a circular Kepler orbit has -- so the energy and
+                    // angular-momentum losses become consistent by
+                    // construction, with no ceiling on the photon energy and
+                    // no tilt of the plane.
+                    const bool axialSpin=
+                        std::getenv("CREM_AXIAL_SPIN")!=nullptr;
+                    const Vec3 photonSpinAngularMomentum=axialSpin
+                        ?angularMomentumDirection*hbar
+                        :photonDirection*(helicity*hbar);
                     const Vec3 orbitalAngularMomentumBefore=
                         angularMomentumDirection
                             *(elements.specificAngularMomentum*reducedMass);
@@ -4339,8 +4368,7 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             *(elements.specificAngularMomentum*reducedMass);
                         const Vec3 change=(orbitalAfter+spinAfter)
                                          -(orbitalBefore+spinBefore);
-                        const Vec3 photonSpin=
-                            photonDirection*(helicity*hbar);
+                        const Vec3 photonSpin=photonSpinAngularMomentum;
                         gPhotonBalanceAudit.angularSamples.fetch_add(
                             1,std::memory_order_relaxed);
                         const double residualHbar=
@@ -4385,8 +4413,19 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             *elements.specificAngularMomentum
                             *elements.specificAngularMomentum
                             /(attractionParameter*attractionParameter);
+                        // The classical relation a circular orbit obeys is
+                        // dE/dL = omega, so the angular momentum that SHOULD
+                        // accompany this photon is E_gamma/omega.  Printed
+                        // beside what k(e) actually removed, both in hbar.
+                        const double omegaHere=2.0*pi/period;
+                        const double demandedHbar=
+                            photonEnergy/(omegaHere*hbar);
+                        const double removedHbar=
+                            std::abs(emissionLBefore
+                                     -elements.specificAngularMomentum)
+                            *reducedMass/hbar;
                         std::printf("CREM_REACH %.9e %.9e %.9e %.9e %.9e"
-                                    " %.9e %.9e\n",
+                                    " %.9e %.9e %.9e %.9e\n",
                             emissionEnergyBefore>0.0||emissionEnergyBefore<0.0
                                 ?elements.specificEnergy/emissionEnergyBefore
                                 :0.0,
@@ -4396,7 +4435,8 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             axisTurn,
                             (centreOfMassVelocity-emissionComBefore).norm(),
                             photonEnergy,
-                            eccentricitySquaredHere,eccentricitySquaredAfter);
+                            eccentricitySquaredHere,eccentricitySquaredAfter,
+                            demandedHbar,removedHbar);
                     }
                     radiatedEnergyTotal+=photonEnergy;
                     result.quantizedEmittedEnergyJoules+=photonEnergy;
