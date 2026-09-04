@@ -15,20 +15,56 @@ oraz autora modelu CREM: **Tadeusz Sławomir Pytlos**, dostępnego pod adresem
 
 ## Status i zakres modelu
 
-Program jest numeryczną wizualizacją **klasycznej, fenomenologicznej** dynamiki
-elektronu i pozytonu w próżni. Łączy elektrostatykę, magnetyzm poruszających się
-ładunków, klasyczne oddziaływanie dwóch dipoli magnetycznych, relatywistyczną
-kinematykę oraz przybliżony opis emisji i reakcji promieniowania.
+**CREM jest próbą alternatywnego odwzorowania — w oparciu o klasyczną fizykę —
+wyników uzyskiwanych doświadczalnie bądź za pośrednictwem fizyki kwantowej.**
+To jest deklarowany cel modelu i kryterium, wobec którego należy go oceniać.
+Pytanie brzmi: jak daleko sięga klasyczna elektrodynamika dwóch naładowanych,
+obdarzonych momentem magnetycznym punktów, zanim zabraknie jej opisu, i które z
+wielkości mierzonych w laboratorium albo liczonych w QED da się tą drogą
+odtworzyć.
+
+Narzędziem jest numeryczne całkowanie **klasycznej** dynamiki elektronu i
+pozytonu w próżni: elektrostatyka, magnetyzm poruszających się ładunków,
+klasyczne oddziaływanie dwóch dipoli magnetycznych, kinematyka relatywistyczna
+oraz emisja i reakcja promieniowania. Żaden człon nie jest dopasowywany do
+danych; wszystkie wychodzą z praw klasycznych i stałych CODATA.
+
+Taki program ma sens tylko wtedy, gdy równie wyraźnie mówi, **gdzie
+odwzorowanie działa, a gdzie zawodzi**. Stan na dziś, wyłącznie z pomiarów
+udokumentowanych niżej w tym pliku:
+
+*Co zostało odtworzone.* Klasyczne tempo emisji dipolowej w stanie podstawowym
+ma **tę samą potęgę stałej struktury subtelnej** co wiodące tempo anihilacji
+parapozytonium — oba \(\alpha^5m_ec^2/\hbar\) — i różni się od niego wyłącznie
+liczbą wymierną rzędu jedności (\(1/3\) wobec \(1/2\)), co daje \(186{,}74\) ps
+wobec zmierzonych \(124{,}49\) ps. Po stronie klasycznej ta potęga ma
+strukturalne wyprowadzenie, po stronie QED bierze się z zupełnie innego
+rachunku. Zgodność współczynnika \(O(1)\) pozostaje w tym modelu
+niewyjaśniona i **nie jest wyprowadzeniem anihilacji**. Rozpraszanie odtwarza
+przekrój Rutherforda z jedną normalizacją.
+
+*Czego odtworzyć się NIE udało, i to jest wynik negatywny, nie luka.* Stosunek
+czasów życia para do orto, wynoszący w rzeczywistości około \(1000\), **nie
+wychodzi**: oba kanały dają statystycznie ten sam rozkład czasu kolapsu, bo
+różnią się wyłącznie sprzężeniem dipol-dipol na poziomie \(10^{-6}\) energii
+Coulomba. Prawdziwa różnica pochodzi z reguły wyboru \(2\gamma/3\gamma\), czyli
+z zachowania parzystości ładunkowej w procesie, którego ten model w ogóle nie
+zawiera — nie ma tu kanału kontaktowego ani tempa anihilacji. Osiemnaście sond
+w sekcji L bada tę granicę wprost.
+
+*Gdzie kończy się dziedzina.* \(93{,}4\%\) przebiegu kolapsu odbywa się poniżej
+\(n=1\), gdzie żadna drabina poziomów nie istnieje, a przyjęty kwant emisji
+\(\hbar\omega\) przekracza energię wiązania pary jak \(2/n\) — przy zmierzonym
+zasięgu \(n=0{,}36\) pięć i pół raza. To nie jest usterka do naprawienia, tylko
+granica stosowalności opisu, świadomie przekraczana i tak oznaczona.
 
 W trybie wizualnym nazwy `Para-positronium` i `Ortho-positronium` oznaczają
 dwie klasy związanych trajektorii rozróżniane orientacją klasycznych momentów
 dipolowych. Nie są one klasycznym wyprowadzeniem rzeczywistych stanów para- i
-ortopozytonium. Spin, statystyka stanów i anihilacja są zjawiskami kwantowymi.
-Dlatego wyniki dynamiki orbitalnej służą do badania konsekwencji przyjętego
-modelu klasycznego, a nie do ilościowego przewidywania własności fizycznego
-pozytonium. Tryb statystyczny stanów związanych korzysta z osobnego, jawnie
-oznaczonego generatora zaniku w idealnej próżni; nie udaje, że anihilacja
-wynika z dojścia klasycznej trajektorii do małej odległości.
+ortopozytonium: spin, statystyka stanów i anihilacja są zjawiskami kwantowymi.
+Tryb statystyczny stanów związanych korzysta z osobnego, jawnie oznaczonego
+generatora zaniku w idealnej próżni; nie udaje, że anihilacja wynika z dojścia
+klasycznej trajektorii do małej odległości.
 
 ### Promień regularyzacji dipola magnetycznego
 

@@ -2,7 +2,29 @@ name: Pair matrix
 
 on:
   push:
+    paths-ignore:
+      # Documentation and generated output cannot change what the code
+      # computes, so they do not earn a pair matrix, a sanitizer run or an
+      # hour of CI.  Anything that CAN change a result -- sources, headers,
+      # Makefile, workflows, tools -- is not listed here and still triggers
+      # everything.
+      - '**.md'
+      - 'README.ap'
+      - 'PRISM_INSTRUCTIONS.md'
+      - 'distributions/**'
+      - 'LICENSE'
   pull_request:
+    paths-ignore:
+      # Documentation and generated output cannot change what the code
+      # computes, so they do not earn a pair matrix, a sanitizer run or an
+      # hour of CI.  Anything that CAN change a result -- sources, headers,
+      # Makefile, workflows, tools -- is not listed here and still triggers
+      # everything.
+      - '**.md'
+      - 'README.ap'
+      - 'PRISM_INSTRUCTIONS.md'
+      - 'distributions/**'
+      - 'LICENSE'
   workflow_dispatch:
 
 permissions:
