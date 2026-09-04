@@ -3168,9 +3168,6 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 // level-difference rule, always report what the orbit's own
                 // frequency produces.  See its own comment in positronium.cpp.
                 if(!gBohrLevelPhotonEnergy) return classical;
-                if(level>=2.0) ++gQuantumCensusLadderAbove2;
-                else if(level>1.0) ++gQuantumCensusBelow2;
-                else ++gQuantumCensusBelow1;
                 // LADDER BELOW n=2 (CREM_LADDER_BELOW_2).
                 //
                 // The n>=2 gate is unreachable in practice: the orbit starts
@@ -3183,12 +3180,22 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 // calls the physically right quantum there.  Below n=1 there
                 // is no state to land on and the classical value returns,
                 // which is what --ground-state-floor exists to avoid reaching.
+                // The census counts what is RETURNED, not what range the
+                // level happens to fall in.  Counting the range said the
+                // ladder had fired in 100% of calls on a run where every one
+                // of them returned the classical value, because the extension
+                // was off -- exactly the silent no-op this reporting exists to
+                // expose.
                 if(level>=2.0) {
+                    ++gQuantumCensusLadderAbove2;
                     const double lower=level-1.0;
                     return bindingScale*(1.0/(lower*lower)-1.0/(level*level));
                 }
-                if(std::getenv("CREM_LADDER_BELOW_2")&&level>1.0)
+                if(std::getenv("CREM_LADDER_BELOW_2")&&level>1.0) {
+                    ++gQuantumCensusBelow2;
                     return bindingScale*(1.0-1.0/(level*level));
+                }
+                ++gQuantumCensusBelow1;
                 return classical;
             };
             // Single call, not a second copy of the rule: keeping the

@@ -4986,13 +4986,24 @@ namespace { struct CausalityReport { ~CausalityReport() {
         a.worstFutureSeconds.load()); } } gCausalityReport; }
 
 namespace { struct QuantumCensusReport { ~QuantumCensusReport() {
-    if(!std::getenv("CREM_QUANTUM_CENSUS")||gQuantumCensusTotal==0) return;
+    // Reported whenever the ladder is ASKED for, not only under the probe
+    // variable.  --bohr-photon-energy used to be able to do nothing at all and
+    // say nothing about it: in the default configuration its n >= 2 branch is
+    // never reached, so the run is identical to hbar*omega and the flag looks
+    // like it worked.  A flag that silently no-ops is worse than no flag.
+    if((!std::getenv("CREM_QUANTUM_CENSUS")&&!gBohrLevelPhotonEnergy)
+       ||gQuantumCensusTotal==0) return;
+    if(gBohrLevelPhotonEnergy&&gQuantumCensusLadderAbove2==0
+       &&gQuantumCensusBelow2==0)
+        std::fprintf(stderr,
+            "\n[quantum] --bohr-photon-energy HAD NO EFFECT on this run:"
+            " the ladder was never reached.\n");
     const double total=static_cast<double>(gQuantumCensusTotal);
     std::fprintf(stderr,
         "\n[quantum] quantumFor calls %llu\n"
         "[quantum]   ladder, n >= 2      %llu (%.2f%%)\n"
         "[quantum]   ladder, 1 < n < 2   %llu (%.2f%%)\n"
-        "[quantum]   no ladder, n <= 1   %llu (%.2f%%)\n",
+        "[quantum]   no ladder returned  %llu (%.2f%%)\n",
         gQuantumCensusTotal,
         gQuantumCensusLadderAbove2,100.0*gQuantumCensusLadderAbove2/total,
         gQuantumCensusBelow2,100.0*gQuantumCensusBelow2/total,
@@ -5516,6 +5527,24 @@ int main(int argc, char** argv) {
                       // trajectories came back as numerical failures on seed
                       // 42 with a 500 s budget, against four of four clean
                       // collapses with the floor added.
+                      // The ladder's only branch cuts at n >= 2, and a run
+                      // prepared AT n = 2 radiates a little before its first
+                      // photon: the level is 1.9999951 by then and only falls.
+                      // Measured, 0 of 20 emissions and 0.00% of quantum
+                      // evaluations reach it.  Say so at startup rather than
+                      // after an hour of wall clock.
+                      << ((gBohrLevelPhotonEnergy
+                           &&gInitialPrincipalLevel<=2
+                           &&!std::getenv("CREM_LADDER_BELOW_2"))
+                          ? "  WARNING: --bohr-photon-energy will not fire "
+                            "from --level 2 or below. Its branch cuts at "
+                            "n >= 2 and the level is already 1.9999951 at the "
+                            "first emission, so this run is identical to "
+                            "hbar*omega. Use --level 3 or higher, or "
+                            "CREM_LADDER_BELOW_2=1 with --ground-state-floor. "
+                            "The census printed at exit says what actually "
+                            "happened.\n"
+                          : "")
                       << ((gBohrLevelPhotonEnergy&&!gGroundStateEmissionFloor)
                           ? "  WARNING: --bohr-photon-energy without "
                             "--ground-state-floor. The ladder has no lowest "
