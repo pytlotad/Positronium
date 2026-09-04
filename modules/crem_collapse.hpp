@@ -3768,6 +3768,12 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // c^2 p_f/E_f.  This remains exact at every accumulated
                     // recoil speed and replaces the former Newtonian
                     // -p_gamma/M velocity increment plus kinetic correction.
+                    // CREM_EMISSION_REACH: what one emission actually moves.
+                    const Vec3 emissionAxisBefore=angularMomentumDirection;
+                    const Vec3 emissionComBefore=centreOfMassVelocity;
+                    const double emissionEnergyBefore=elements.specificEnergy;
+                    const double emissionLBefore=
+                        elements.specificAngularMomentum;
                     const double restEnergy=totalMass*c*c;
                     const double invariantEnergyBefore=
                         restEnergy+reducedMass*elements.specificEnergy;
@@ -4199,6 +4205,21 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     elements.specificAngularMomentum=
                         clampAboveGroundStateAngularMomentum(
                             classicalAngularMomentumMagnitude);
+                    if(std::getenv("CREM_EMISSION_REACH")) {
+                        const double axisTurn=std::acos(std::clamp(
+                            dot(emissionAxisBefore,angularMomentumDirection),
+                            -1.0,1.0))*180.0/pi;
+                        std::printf("CREM_REACH %.9e %.9e %.9e %.9e %.9e\n",
+                            emissionEnergyBefore>0.0||emissionEnergyBefore<0.0
+                                ?elements.specificEnergy/emissionEnergyBefore
+                                :0.0,
+                            emissionLBefore>0.0
+                                ?elements.specificAngularMomentum/emissionLBefore
+                                :0.0,
+                            axisTurn,
+                            (centreOfMassVelocity-emissionComBefore).norm(),
+                            photonEnergy);
+                    }
                     radiatedEnergyTotal+=photonEnergy;
                     result.quantizedEmittedEnergyJoules+=photonEnergy;
                     ++result.emittedPhotonCount;
