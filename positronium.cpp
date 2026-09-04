@@ -5871,6 +5871,40 @@ int main(int argc, char** argv) {
                   << " kg m/s\n"
                   << "field |J_rad|:  " << frames.back().radiatedAngularMomentum.norm()/hbar
                   << " hbar\n"
+                  // The bound-field reservoirs for MOMENTUM and ANGULAR
+                  // momentum, with the same ratio the energy line already
+                  // carries.  They were computed at every step and never
+                  // reported, so the classical balance could be read for the
+                  // energy and not for the other two -- which is the half of
+                  // it that matters if the claim is a classical reproduction:
+                  // the identity below closes by construction, because
+                  // boundField* is DEFINED as what closes it, and the honest
+                  // question is how much of the mechanical loss the radiated
+                  // field actually accounts for.  A ratio near zero means the
+                  // far field carries it; a large one means the reservoir
+                  // does, and the balance is closed by definition rather than
+                  // by physics.
+                  // Normalised against the CHARACTERISTIC scales the two
+                  // identity lines below already use, not against the radiated
+                  // amounts.  Dividing by those was the first thing tried and
+                  // it is misleading: for a symmetric pair the net radiated
+                  // momentum vanishes by symmetry, so |P_bound|/|P_rad| came
+                  // out 1.6e12 from dividing one negligible number by another.
+                  // Against the orbit's own scale both reservoirs read as what
+                  // they are.
+                  << "bound field |P|: "
+                  << frames.back().boundFieldMomentum.norm()
+                  << " kg m/s ("
+                  << frames.back().boundFieldMomentum.norm()
+                     /std::max(frames.front().canonicalMomentumScale,
+                               firstMass*c*1.0e-15)*100.0
+                  << "% of characteristic p)\n"
+                  << "bound field |J|: "
+                  << frames.back().boundFieldAngularMomentum.norm()/hbar
+                  << " hbar ("
+                  << frames.back().boundFieldAngularMomentum.norm()
+                     /angularMomentumScale*100.0
+                  << "% of characteristic J)\n"
                   << "identity |dP|:  " << momentumDrift.norm() << " kg m/s ("
                   << relativeMomentumDrift * 100.0 << "% of characteristic p)\n"
                   << "identity |dJ|:  " << angularMomentumDrift.norm() / hbar << " hbar ("
