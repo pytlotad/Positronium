@@ -39,6 +39,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <cstdio>
 #include <cstring>
 #include <deque>
 #include <exception>
@@ -4964,7 +4965,28 @@ int showStatisticalAnalysis(std::uint64_t seed, int selectedPhenomenon,
 #endif
 } // namespace
 
+namespace { struct CausalityReport { ~CausalityReport() {
+    const CausalityAudit& a=gCausalityAudit;
+    if(!a.enabled) return;
+    std::fprintf(stderr,
+        "\n[causality] field evaluations          %llu\n"
+        "[causality] ADVANCED light-cone roots   %llu (worst %.3e s)\n"
+        "[causality] observation later than now  %llu\n"
+        "[causality] CONVERGED reads of a future source %llu (worst %.3e s)\n"
+        "[causality] worst light-cone closure    %.3e relative,"
+        " above 1e-6 in %llu\n"
+        "[causality] history samples             %llu, transient Newton"
+        " iterates in the future %llu (worst %.3e s)\n",
+        a.fieldCalls.load(),
+        a.advancedRoots.load(),a.worstAdvancedSeconds.load(),
+        a.observationAheadOfPresent.load(),
+        a.futureAtConvergedRead.load(),a.worstConvergedFutureSeconds.load(),
+        a.worstLightConeResidual.load(),a.unconverged.load(),
+        a.historyCalls.load(),a.futureSamples.load(),
+        a.worstFutureSeconds.load()); } } gCausalityReport; }
+
 int main(int argc, char** argv) {
+    gCausalityAudit.enabled=std::getenv("CREM_CAUSALITY")!=nullptr;
     std::cout
         << "CREM attribution: publications based on this program or modified "
            "versions should cite https://github.com/pytlotad/Positronium and "

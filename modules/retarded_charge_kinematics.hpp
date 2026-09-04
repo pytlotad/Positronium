@@ -22,8 +22,43 @@
 #include "vector3.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <limits>
+
+// CREM_CAUSALITY audit counters.  A retarded field is causal only if every
+// source sample it reads lies at or before the present, and only if the root
+// the light-cone solve lands on is the RETARDED one (t_ret <= t_obs) rather
+// than the advanced one, which the same quadratic also admits.  These count
+// violations rather than asserting, so one run reports how often and how badly
+// instead of stopping at the first.
+//
+// Atomic, and every test computed from local values.  The first version of
+// this audit used a plain bool to mark "inside the converged read" and plain
+// counters, which the collapse experiment's worker threads raced: it reported
+// hundreds of acausal converged reads that a single-threaded run of the same
+// seeds showed to be zero.  The lesson is in the instrument, not the code
+// under test, so the instrument is now safe to run either way.
+struct CausalityAudit {
+    std::atomic<unsigned long long> historyCalls{0}, futureSamples{0};
+    std::atomic<unsigned long long> fieldCalls{0}, advancedRoots{0};
+    std::atomic<unsigned long long> unconverged{0}, futureAtConvergedRead{0};
+    std::atomic<unsigned long long> observationAheadOfPresent{0};
+    std::atomic<double> worstFutureSeconds{0.0};
+    std::atomic<double> worstAdvancedSeconds{0.0};
+    std::atomic<double> worstConvergedFutureSeconds{0.0};
+    std::atomic<double> worstLightConeResidual{0.0};
+    bool enabled=false;
+};
+inline CausalityAudit gCausalityAudit;
+
+// max() on an atomic double, for the "worst seen" fields above.
+inline void recordWorst(std::atomic<double>& worst,double candidate) {
+    double seen=worst.load(std::memory_order_relaxed);
+    while(candidate>seen
+          &&!worst.compare_exchange_weak(seen,candidate,
+                                         std::memory_order_relaxed)) {}
+}
 
 using positronium::objects::Vec3;
 using positronium::objects::State;
@@ -96,6 +131,18 @@ inline ChargeKinematics linearlyInterpolatedCharge(const State& older,
 inline ChargeKinematics historicalCharge(const StateHistory& history,
                                    const State& present, bool first,
                                    double time) {
+    if(gCausalityAudit.enabled) {
+        gCausalityAudit.historyCalls.fetch_add(1,std::memory_order_relaxed);
+        // Sampling a source later than the present state is reading the
+        // future.  A transient overshoot of an intermediate Newton iterate is
+        // discarded by the next one; what must never happen is the CONVERGED
+        // read doing it, and that is checked at the call site below.
+        const double ahead=time-present.time;
+        if(ahead>0.0) {
+            gCausalityAudit.futureSamples.fetch_add(1,std::memory_order_relaxed);
+            recordWorst(gCausalityAudit.worstFutureSeconds,ahead);
+        }
+    }
     const State& earliest = history.empty() ? present : history.front();
     if (time <= earliest.time) {
         const double delta = time - earliest.time;
@@ -181,6 +228,36 @@ inline ElectromagneticField lienardWiechertField(const Vec3& observationPosition
     source = historicalCharge(history, presentState, sourceIsFirst, retardedTime);
     const Vec3 displacement = observationPosition - source.position;
     const double distance = displacement.norm();
+    if(gCausalityAudit.enabled) {
+        gCausalityAudit.fieldCalls.fetch_add(1,std::memory_order_relaxed);
+        // The field must not be asked for later than the last committed state.
+        if(observationTime>presentState.time)
+            gCausalityAudit.observationAheadOfPresent.fetch_add(
+                1,std::memory_order_relaxed);
+        // The advanced root of the same light-cone equation sits after the
+        // observation time.  Landing on it is an acausal solution, not a
+        // convergence failure, and is counted separately from one.
+        const double advanced=retardedTime-observationTime;
+        if(advanced>0.0) {
+            gCausalityAudit.advancedRoots.fetch_add(1,std::memory_order_relaxed);
+            recordWorst(gCausalityAudit.worstAdvancedSeconds,advanced);
+        }
+        // The converged read itself, which is the one that enters the field.
+        const double convergedAhead=retardedTime-presentState.time;
+        if(convergedAhead>0.0) {
+            gCausalityAudit.futureAtConvergedRead.fetch_add(
+                1,std::memory_order_relaxed);
+            recordWorst(gCausalityAudit.worstConvergedFutureSeconds,
+                        convergedAhead);
+        }
+        // Light-cone closure: the separation must equal c times the delay.
+        const double residual=std::abs(
+            (observationTime-retardedTime)*c-distance);
+        const double scale=std::max(distance,std::numeric_limits<double>::min());
+        recordWorst(gCausalityAudit.worstLightConeResidual,residual/scale);
+        if(residual/scale>1.0e-6)
+            gCausalityAudit.unconverged.fetch_add(1,std::memory_order_relaxed);
+    }
     if(distance<=std::numeric_limits<double>::min()) return {};
     const Vec3 direction = displacement / distance;
     // Trial stages may cross the declared boundary before the enclosing event
