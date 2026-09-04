@@ -406,6 +406,19 @@ struct PhotonBalanceAudit {
     std::atomic<double> sumMagnitudeOverrideHbar{0.0};
     std::atomic<double> worstMagnitudeOverrideHbar{0.0};
     bool enabled=false;
+
+    // Same reason as CausalityAudit::reset: atomics do not copy-assign, and
+    // the validation suite needs to start each run from zero.
+    void reset() {
+        emissions=0; negativeEnergy=0; offShellPhoton=0; belowThreshold=0;
+        angularSamples=0;
+        worstNullResidual=0.0; worstFrameEnergyDifference=0.0;
+        worstScalarVectorMismatch=0.0; worstThresholdDeficit=0.0;
+        worstBinding=0.0; worstAngularResidualHbar=0.0;
+        sumAngularResidualHbar=0.0; worstOrbitalChangeHbar=0.0;
+        sumOrbitalChangeHbar=0.0; sumMagnitudeOverrideHbar=0.0;
+        worstMagnitudeOverrideHbar=0.0;
+    }
 };
 inline PhotonBalanceAudit gPhotonBalanceAudit;
 

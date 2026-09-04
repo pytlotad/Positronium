@@ -5518,7 +5518,103 @@ inline int runMaxwellSelfTest(
         && quantizedDipoleTorqueTravel>0.1
         && disabledDipoleTorqueTravel==0.0
         && quantizedDipoleTorqueNormDrift<1.0e-12;
-    const std::array<ValidationCheck,51> regressionChecks{{
+    // RETARDED-FIELD CAUSALITY, as an enforced check rather than a probe
+    // nobody arms.  Three conditions decide whether a retarded field is
+    // causal: the light-cone solve must land on the RETARDED root and not the
+    // advanced one the same quadratic also admits; the converged read must
+    // not sample the source later than the last committed state; and the
+    // cone must close, |r_obs - r_src(t_ret)| = c (t_obs - t_ret).  All three
+    // measured clean over millions of evaluations when this was written; the
+    // point of the check is that they stay that way.
+    gCausalityAudit.reset();
+    gCausalityAudit.enabled=true;
+    for(int causalitySeed=1;causalitySeed<=3;++causalitySeed) {
+        SimulationOptions causalityOptions;
+        causalityOptions.collectFrames=false;
+        causalityOptions.radiatedEnergyBookkeeping=false;
+        simulate(static_cast<std::uint64_t>(causalitySeed),1,causalityOptions);
+    }
+    gCausalityAudit.enabled=false;
+    const bool retardedCausalityOk=
+        gCausalityAudit.fieldCalls.load()>1000
+        && gCausalityAudit.advancedRoots.load()==0
+        && gCausalityAudit.futureAtConvergedRead.load()==0
+        && gCausalityAudit.observationAheadOfPresent.load()==0
+        && gCausalityAudit.unconverged.load()==0
+        && gCausalityAudit.worstLightConeResidual.load()<1.0e-6;
+
+    // PHOTON FOUR-MOMENTUM BALANCE, likewise.  The invariant statement is
+    // that what the pair loses must be null and forward in time: dE > 0 and
+    // dE^2 - |dp|^2 c^2 = 0.  Driven directly rather than through
+    // trajectories, because the stochastic emission is far too rare to reach
+    // that way -- mean emission time about 1e-10 s against the 1e-14 s a
+    // trajectory of this length covers.  The kinematic rejection is exercised
+    // too: roughly seven draws in ten are refused as forbidden, and a run
+    // where none were would mean the guard had stopped working.
+    gPhotonBalanceAudit.reset();
+    gPhotonBalanceAudit.enabled=true;
+    std::mt19937_64 photonBalanceStream(20260904u);
+    std::uniform_real_distribution<double> photonBalanceSigned(-1.0,1.0);
+    std::uniform_real_distribution<double> photonBalanceUnit(0.0,1.0);
+    long long photonBalanceDraws=0;
+    for(int photonTrial=0;photonTrial<20000;++photonTrial) {
+        const auto randomDirection=[&]{
+            const double z=photonBalanceSigned(photonBalanceStream);
+            const double planar=std::sqrt(std::max(0.0,1.0-z*z));
+            const double azimuth=2.0*pi*photonBalanceUnit(photonBalanceStream);
+            return Vec3{planar*std::cos(azimuth),planar*std::sin(azimuth),z};
+        };
+        State photonState{};
+        const double relativeSpeed=
+            0.9*photonBalanceUnit(photonBalanceStream)
+               *photonBalanceUnit(photonBalanceStream)*c;
+        const Vec3 relative=randomDirection()*relativeSpeed;
+        photonState.firstVelocity=relative*(secondMass/(firstMass+secondMass));
+        photonState.secondVelocity=relative*(-firstMass/(firstMass+secondMass));
+        const Vec3 drift=randomDirection()
+            *(0.8*photonBalanceUnit(photonBalanceStream)*c);
+        photonState.firstVelocity=photonState.firstVelocity+drift;
+        photonState.secondVelocity=photonState.secondVelocity+drift;
+        if(!(photonState.firstVelocity.norm()<c)
+           ||!(photonState.secondVelocity.norm()<c)) continue;
+        const double photonEnergyDraw=std::pow(10.0,
+            -19.0+13.0*photonBalanceUnit(photonBalanceStream));
+        ++photonBalanceDraws;
+        applyStochasticDipolePhoton(photonState,photonEnergyDraw,
+                                    randomDirection());
+    }
+    gPhotonBalanceAudit.enabled=false;
+    const unsigned long long photonBalanceEmitted=
+        gPhotonBalanceAudit.emissions.load();
+    // What is asserted strictly and what is not, deliberately.
+    //
+    // Strict: the energy removed must be positive and the residual pair must
+    // stay on shell.  Both are physical requirements on the emission and both
+    // measured exactly clean.
+    //
+    // NOT strict: the null condition dE^2 = |dp|^2 c^2.  Its residual is
+    // dominated by cancellation in the AUDIT's own subtraction, not by the
+    // emission -- recovering an eV photon from the difference of two MeV pair
+    // energies throws away log10(E_pair/dE) digits, and the median residual
+    // tracks 1e-16 * E_pair/dE linearly across four decades.  The per-emission
+    // flag sits three orders above that floor and still catches the tail: one
+    // draw in 5609 on this seed, none in 56047 on another.  Asserting zero
+    // outliers would be asserting a property of the measurement.  A genuine
+    // off-shell photon would put the residual at order unity, so the check is
+    // a loose absolute bound, which that would fail by seven orders.
+    const bool photonMomentumBalanceOk=
+        photonBalanceEmitted>1000
+        && photonBalanceEmitted<static_cast<unsigned long long>(
+               photonBalanceDraws)
+        && gPhotonBalanceAudit.negativeEnergy.load()==0
+        && gPhotonBalanceAudit.belowThreshold.load()==0
+        && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
+
+    const std::array<ValidationCheck,53> regressionChecks{{
+        {ValidationSection::PhysicalDomain,"retarded-field-causality",
+         retardedCausalityOk},
+        {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
+         photonMomentumBalanceOk},
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},

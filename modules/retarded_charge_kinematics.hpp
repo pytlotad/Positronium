@@ -49,6 +49,16 @@ struct CausalityAudit {
     std::atomic<double> worstConvergedFutureSeconds{0.0};
     std::atomic<double> worstLightConeResidual{0.0};
     bool enabled=false;
+
+    // Atomics are not copy-assignable, so clearing needs a member rather than
+    // an assignment from a fresh instance.  The validation suite arms, runs
+    // and asserts, so it has to be able to start from zero.
+    void reset() {
+        historyCalls=0; futureSamples=0; fieldCalls=0; advancedRoots=0;
+        unconverged=0; futureAtConvergedRead=0; observationAheadOfPresent=0;
+        worstFutureSeconds=0.0; worstAdvancedSeconds=0.0;
+        worstConvergedFutureSeconds=0.0; worstLightConeResidual=0.0;
+    }
 };
 inline CausalityAudit gCausalityAudit;
 
