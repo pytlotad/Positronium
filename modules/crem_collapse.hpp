@@ -4498,7 +4498,7 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             *reducedMass/hbar;
                         std::printf("CREM_REACH %.9e %.9e %.9e %.9e %.9e"
                                     " %.9e %.9e %.9e %.9e %.9e %d %.9e"
-                                    " %.9e\n",
+                                    " %.9e %.9e\n",
                             emissionEnergyBefore>0.0||emissionEnergyBefore<0.0
                                 ?elements.specificEnergy/emissionEnergyBefore
                                 :0.0,
@@ -4517,8 +4517,12 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                 /std::max(reducedMass
                                     *std::abs(emissionEnergyBefore),
                                     std::numeric_limits<double>::min())),
-                            // and the orbital angular momentum in hbar
-                            emissionLBefore*reducedMass/hbar);
+                            // the orbital angular momentum in hbar
+                            emissionLBefore*reducedMass/hbar,
+                            // and the simulated time at this emission, which
+                            // is what the waiting time between photons is
+                            // read from.
+                            simulatedTimeTotal);
                     }
                     radiatedEnergyTotal+=photonEnergy;
                     result.quantizedEmittedEnergyJoules+=photonEnergy;
