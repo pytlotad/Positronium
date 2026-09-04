@@ -4874,6 +4874,16 @@ jako przybliżenie promienia oskulacyjnego w chwili checkpointu \(29\)
 zamiast dokładnej wartości) — to już nie wniosek przez eliminację, tylko
 bezpośrednia, ilościowa zgodność przewidywania z pomiarem.
 
+**Zdanie „przyciągająca dla para, odpychająca dla orto" jest jednak
+przypadkiem szczególnym podanym jako wynik ogólny, i sonda 18 je
+poprawia.** Znak składowej DC nie jest własnością kanału: zależy od kąta
+między osią momentów a momentem pędu orbity, zmienia się w kącie
+magicznym \(54{,}7°\), a uśredniony po izotropowych orientacjach znika
+tożsamościowo. Zmierzone na zespole, para wychodzi netto **odpychająca**,
+a orto zgodne z zerem — czyli ani jedna połowa tej dychotomii, ani jej
+symetria. Sama liczba \(6\cdot10^{-6}\) i jej rząd wielkości pozostają
+w mocy; poprawiony jest znak i to, czym ten efekt jest.
+
 *Sonda 8 — czy ta mikroskopijna rozbieżność kiedykolwiek zmienia
 harmonikę lub wynik, w praktyce.* Partia \(N=30\) dopasowanych
 trajektorii para/orto (to samo ziarno): **identyczny rozkład wyników**
@@ -5306,15 +5316,150 @@ Poissona (sonda 17) — mechanizm realny i ilościowo zmierzony
 (\(P\sim3\times10^{-9}\)–\(2\times10^{-6}\) na zdarzenie fotonowe, rosnąco
 z każdym kolejnym fotonem tej samej trajektorii), ale w \(959\)
 sprawdzonych zdarzeniach i partii \(N=30\) (sonda 8) nigdy nieaktywowany.
+
+*Sonda 18 — czy znak składowej DC (sonda 7) przeżywa uśrednienie po
+zespole, i dlaczego nie.* Sonda 7 policzyła składową DC dla jednej
+orientacji dipoli i podała jej znak jako własność kanału. Sprawdzone na
+zespole, tak nie jest.
+
+**Struktura kątowa.** Uśredniona po orbicie RADIALNA siła dipol-dipol,
+policzona z produkcyjnego `regularizedDipoleForce`, niesie drugi wielomian
+Legendre'a kąta \(\alpha\) między osią momentów a momentem pędu orbity:
+
+\[
+  \langle F_r\rangle = +2{,}06\cdot10^{-13}\,\mathrm{N}\cdot P_2(\cos\alpha)
+  \quad\text{(para)},\qquad
+  -2{,}06\cdot10^{-13}\,\mathrm{N}\cdot P_2(\cos\alpha)\quad\text{(orto)}
+\]
+
+przy \(a_{Ps}\). Konwencja znaku sprawdzona nie z lektury kodu, tylko na
+czterech konfiguracjach podręcznikowych: momenty ustawione wzdłuż osi
+separacji przyciągają się (\(-4{,}12\cdot10^{-13}\) N), obok siebie
+prostopadle odpychają (\(+2{,}06\cdot10^{-13}\) N), a przy przeciwnym
+ustawieniu oba znaki się odwracają. Stosunek \(-2\) między nimi to sama
+struktura \(P_2\), wychodząca niezależnie.
+
+Znak zmienia się więc w **kącie magicznym** \(\arccos(1/\sqrt3)=54{,}7°\),
+a nie na granicy kanałów: dla para momenty w płaszczyźnie orbity
+przyciągają, wzdłuż normalnej odpychają i to dwa razy silniej.
+
+**Gdyby nachylenia były izotropowe, efekt znikałby tożsamościowo**, bo
+\(\langle P_2\rangle=0\) po sferze. Sampler istotnie losuje kierunek
+momentu izotropowo, identycznie w obu kanałach (zmierzone \(P_2\) jak
+wylosowane: \(-0{,}0009\pm0{,}0310\) dla obu, ta sama cyfra, bo zużywają
+ten sam strumień losowy). Pytanie jest więc wyłącznie o to, czy przebieg
+tę izotropię utrzymuje.
+
+**Nie utrzymuje jej — ale tylko w para.** Sonda `CREM_TILT` (bramkowana
+zmienną środowiskową, obok `CREM_DEBUG`) drukuje nachylenie przed i po
+każdym półkroku transportu sekularnego oraz siłę radialną policzoną
+kwadraturą po prawdziwej elipsie oskulacyjnej, z Keplerowską wagą
+\(r^2\,d\nu\). Agregacja: `tools/tilt_ensemble.py`. Po \(200\)
+trajektoriach na kanał (ziarno \(101\), potwierdzone na \(120\) przy
+ziarnie \(999\)):
+
+```
+                       P2 jak wylosowane   po jednym półkroku   d|cos| sparowane
+para                   -0,0009 +/- 0,0310  +0,1384 +/- 0,0337   +0,0825 +/- 0,0030
+orto                   -0,0009 +/- 0,0310  -0,0009 +/- 0,0310   -0,0000 +/- 0,0000
+
+                       siła radialna (kwadratura po elipsie)     udział odpychających
+para                   +2,981e-16 N +/- 2,02e-17  (14,8 sigma)   72,0%  (izotropia 42,3%)
+orto                   +7,28e-19 N  +/- 1,76e-17  (zgodne z 0)   57,5%  (izotropia 57,7%)
+```
+
+Udziały procentowe są niezależnym testem tej samej rzeczy: siła para idzie
+jak \(+P_2\), więc izotropia dałaby \(42{,}3\%\) odpychających, a wychodzi
+\(72{,}0\%\); siła orto idzie jak \(-P_2\), więc izotropia dałaby
+\(57{,}7\%\), a wychodzi \(57{,}5\%\) — izotropia co do cyfry.
+
+**To nie jest aliasing dużego kroku sekularnego.** Momenty obracają się o
+\(\sim100°\) na półkrok, co jest realnym powodem do podejrzeń, więc ten sam
+transport puszczony samodzielnie — bez fotonów, bez kurczenia orbity, bez
+cenzury zegarowej, z podkrokami ograniczonymi do \(0{,}05\) rad, \(600\)
+izotropowych orientacji przez \(1\) ns przy \(n=2\) — odtwarza wynik: para
+przechodzi z \(+0{,}009\) do średniej czasowej \(+0{,}218\), orto zostaje
+na \(-0{,}002\) przy zmianie \(|\cos|\) rzędu \(7\cdot10^{-6}\). Wcześniejszy
+przebieg tego samego probierza nie widział nic tylko dlatego, że trwał
+\(30\) ps; alignment narasta przez setki pikosekund.
+
+**Dlaczego dodatnie \(P_2\).** Przeszukanie stabilności, start z zadanego
+nachylenia, para, \(n=2\), \(1\) ns, uśrednione po azymucie:
+
+```
+start   0    15     30     45     60     75     90    105    135    165   180 deg
+koniec  0   7,6   15,1   34,7   59,8   63,4   90   113,9  140,5  167,9   180
+```
+
+\(0°\) i \(180°\) są atraktorami, \(90°\) niestabilną granią między nimi.
+Orto zachowuje **każdy** kąt startowy co do piątego miejsca. Para jest więc
+przyciągana do OSI orbity, nie do kierunku — a oś to \(P_2=+1\), czyli
+odpychanie.
+
+Mechanizm, zmierzony, nie wyargumentowany. Dryf nachylenia skaluje się z
+momentem jak potęga \(2{,}10\), \(2{,}18\), \(2{,}31\) (kolejne podwojenia
+skali, w reżimie krótkiego czasu, żeby nie łapać różnych faz libracji),
+czyli **kwadratowo**. Człon napędowy ma zatem moment dwa razy: każda
+cząstka precesuje w polu dipolowym partnera, a to pole samo jest
+proporcjonalne do momentu, więc oś precesji zależy od orientacji samego
+momentu. Kwadratowość jest parzysta względem \(\boldsymbol\mu\to-\boldsymbol\mu\)
+i dlatego wybiera oś, a nie zwrot — dokładnie tak, jak pokazuje tabela.
+
+Że dotyczy to tylko para, wynika z asymetrii ustalonej wcześniej w tej
+pracy (`bd50ee8`): ruchowy dipol elektryczny \(p=\gamma(\mathbf v\times
+\boldsymbol\mu)/c^2\) jest nieparzysty w prędkości i parzysty w momencie,
+więc przy \(\mathbf v_2=-\mathbf v_1\) orto (\(\boldsymbol\mu_2=-\boldsymbol\mu_1\))
+zachowuje \(p_2=+p_1\), pozostaje lustrzanie symetryczne, \(\omega_1=\omega_2\),
+i cała konfiguracja obraca się sztywno, zachowując wszystkie kąty. Para
+(\(\boldsymbol\mu_2=+\boldsymbol\mu_1\)) dostaje \(p_2=-p_1\), symetria pęka
+i ruch może być sekularny. Do tego para ma niezerowy wypadkowy moment,
+\(|\boldsymbol\mu_1+\boldsymbol\mu_2|=1{,}86\cdot10^{-23}\) J/T, wobec
+dokładnie zera dla orto.
+
+**Dwie hipotezy sprawdzone i odrzucone**, obie wysunięte w trakcie tej
+sondy. Pierwsza: że winne jest rozjeżdżanie się momentów z `bd50ee8`.
+Stłumione przez rzutowanie \(\boldsymbol\mu_2\) na \(\boldsymbol\mu_1\) po
+każdym kroku, efekt zostaje (\(+0{,}136\) zamiast \(+0{,}192\)) — dokłada
+\(\sim30\%\), nie jest przyczyną. Druga: energia orientacji wypadkowego
+momentu w polu własnych krążących ładunków. Zmierzona, ma minimum przy
+\(0°\) i głębokość \(3{,}54\cdot10^{-6}\) eV dla para, a dla orto jest
+tożsamościowo zerowa przy każdym kącie — **ładnie tłumaczy, dlaczego orto
+nie robi nic, ale nie tłumaczy para**, bo człon \(-\mathbf M\cdot\mathbf B\)
+faworyzowałby wyłącznie \(0°\), a \(180°\) przyciąga tak samo mocno.
+
+**Skala się nie zmienia.** \(2{,}5\cdot10^{-6}\) siły Coulomba, ten sam
+rząd, który program podaje we własnym ostrzeżeniu, i ten sam, co w sondzie
+7. Żaden wynik dotyczący czasu kolapsu nie jest tym naruszony — poprawione
+jest to, CZYM ten efekt jest, nie jak duży. Zespół osiąga zresztą
+\(\langle P_2\rangle\approx+0{,}22\), a nie \(+1\), bo dryf jest wolny
+wobec czasu przebiegu i nałożona jest na niego libracja.
+
+*Ostrzeżenie metodologiczne, sprawdzone na sobie.* Wcześniejszy odczyt tego
+samego pomiaru z \(30\) trajektorii dawał orto \(-0{,}14\) i para \(+0{,}17\)
+i wyglądał na symetryczny rozdział między kanałami. To był szum próbkowania
+po obu stronach. Dopiero \(200\) trajektorii i statystyka sparowana go
+usunęły. Trzydzieści trajektorii do tego pytania nie wystarcza.
+
 Wciąż bez podstaw do systematycznie różnych harmonik między kanałami,
-teraz bez domieszki znacznie większego, niepowiązanego artefaktu.
-Siedemnaście niezależnych sond, w tym cztery własne pomyłki znalezione i
-skorygowane w trakcie (sonda 9: błąd rozwijania kąta; sonda 10→11:
+teraz bez domieszki znacznie większego, niepowiązanego artefaktu. Jest
+natomiast, od sondy 18, podstawa do różnego ZNAKU sekularnej poprawki
+dipol-dipol: para wychodzi na zespole netto odpychająca
+(\(+2{,}98\cdot10^{-16}\) N, \(14{,}8\) sigma), orto zgodne z zerem — bo
+tylko para dryfuje z izotropowego rozkładu nachyleń, w którym efekt
+znikałby tożsamościowo. To korekta znaku i natury efektu, nie jego skali:
+\(\sim10^{-6}\) energii Coulomba jak było, więc harmoniki i czasy kolapsu
+zostają nietknięte.
+
+Osiemnaście niezależnych sond, w tym siedem własnych pomyłek znalezionych i
+skorygowanych w trakcie (sonda 9: błąd rozwijania kąta; sonda 10→11:
 przedwczesny wniosek o skokowym charakterze; `noetherAngularMomentum` z
 sondy 12 — błąd sprzed wielu sesji, wykryty dopiero teraz; sonda 15:
 pomyłka o czynnik \(1000\) w ręcznym szacunku `vcm`, złapana natychmiast
-przeliczeniem) — dokładnie taki proces, jaki ta cała sekcja miała
-demonstrować.
+przeliczeniem; oraz w samej sondzie 18: dwie odrzucone hipotezy o
+mechanizmie — rozjeżdżanie momentów i energia \(-\mathbf M\cdot\mathbf B\)
+— i przedwczesny odczyt z \(30\) trajektorii, który wyglądał na symetryczny
+rozdział i okazał się szumem) — dokładnie taki proces, jaki ta cała sekcja
+miała demonstrować.
 
 **M. Walidacja produkcyjna, pełna skala: wszystkie pięć eksperymentów
 statystycznych, \(N=1000\), e⁺e⁻, bez zewnętrznego pola magnetycznego.**
