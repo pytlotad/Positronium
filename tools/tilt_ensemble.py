@@ -1,31 +1,35 @@
 #!/usr/bin/env python3
-"""Aggregate CREM_TILT probe output into the ensemble average that decides
+"""Aggregate CREM_TILT probe output into the ensemble statistic that decides
 whether the para/ortho dipole-dipole sign survives averaging.
 
 The probe (modules/crem_collapse.hpp, gated on CREM_TILT) prints one line per
 secular spin-orbit half-step:
 
-    CREM_TILT <time_s> <semiMajorAxis_m> <cos_tilt_1> <cos_tilt_2>
+    CREM_TILT <time_s> <a_m> <cos_after_1> <cos_after_2> <cos_before_1>
 
-cos_tilt is the cosine of the angle between each particle's magnetic moment and
-the orbital angular momentum.  The orbit-averaged RADIAL dipole-dipole force
-carries the second Legendre polynomial P2(cos tilt) = (3cos^2-1)/2, so the
-ensemble mean <P2> is the quantity of interest:
+cos is the cosine of the angle between a particle's magnetic moment and the
+orbital angular momentum -- the tilt.  "before" is the state the half-step was
+handed, "after" is what it left behind, so the pair brackets one application of
+the coupled transport and makes the comparison paired.
 
-    <P2> = 0  -> the attraction/repulsion cancels over the ensemble, and
-                 "para attracts, ortho repels" is a statement about one
-                 geometry rather than about the state.
-    <P2> != 0 -> a systematic sign survives, and the channels really do differ
-                 in the sign of their dipole-dipole shift.
+Why the tilt is the quantity.  The orbit-averaged RADIAL dipole-dipole force
+carries the second Legendre polynomial of the tilt,
 
-Isotropic tilts give <P2> = 0 exactly, with per-sample sd(P2) = sqrt(1/5),
-hence a standard error of 0.447/sqrt(N).
+    F_r  =  +2.06e-13 N * P2(cos tilt)     for para (aligned moments)
+    F_r  =  -2.06e-13 N * P2(cos tilt)     for ortho (anti-aligned)
+
+at the pair Bohr radius, so P2 = +1 (moments along the orbit normal) is
+repulsive for para, P2 = -1/2 (moments in the orbital plane) is attractive for
+it, and the sign crosses zero at the magic angle, 54.7 degrees.  "Para attracts
+and ortho repels" is therefore a statement about the tilt distribution, not
+about the spin state.  Isotropic tilts give <P2> = 0 exactly, with per-sample
+sd(P2) = sqrt(1/5) and hence a standard error of 0.447/sqrt(N).
 
 Usage:
     CREM_TILT=1 ./positronium --mode statistical --phenomenon 1 \
-        --runs 40 --seed 7 --crem-wallclock-budget-s 25 > para.log
+        --runs 200 --seed 101 --crem-wallclock-budget-s 8 > para.log
     CREM_TILT=1 ./positronium --mode statistical --phenomenon 2 \
-        --runs 40 --seed 7 --crem-wallclock-budget-s 25 > ortho.log
+        --runs 200 --seed 101 --crem-wallclock-budget-s 8 > ortho.log
     python3 tools/tilt_ensemble.py para.log ortho.log
 """
 import math
@@ -33,14 +37,14 @@ import sys
 
 
 def read(path):
-    """Rows of (time, semiMajorAxis, cosTilt1, cosTilt2) from a run log."""
+    """Rows of (time, a, cosAfter1, cosAfter2, cosBefore1)."""
     rows = []
     with open(path) as handle:
         for line in handle:
             if not line.startswith("CREM_TILT "):
                 continue
             parts = line.split()
-            if len(parts) != 5:
+            if len(parts) != 6:
                 continue
             try:
                 rows.append(tuple(float(value) for value in parts[1:]))
@@ -49,78 +53,65 @@ def read(path):
     return rows
 
 
-def split_trajectories(rows):
-    """The probe restarts each trajectory at t = 0."""
-    runs, current = [], []
-    for row in rows:
-        if row[0] == 0.0 and current:
-            runs.append(current)
-            current = []
-        current.append(row)
-    if current:
-        runs.append(current)
-    return runs
-
-
 def legendre2(cosine):
     return 0.5 * (3.0 * cosine * cosine - 1.0)
 
 
+def moments(values):
+    """Mean and standard error of the mean."""
+    count = len(values)
+    if count == 0:
+        return float("nan"), float("nan"), 0
+    mean = sum(values) / count
+    if count == 1:
+        return mean, float("nan"), 1
+    variance = sum((v - mean) ** 2 for v in values) / (count - 1)
+    return mean, math.sqrt(variance / count), count
+
+
+def verdict(mean, error):
+    if error != error or error == 0.0:
+        return "exactly unchanged" if mean == 0.0 else "no error estimate"
+    sigmas = abs(mean) / error
+    return "consistent with zero" if sigmas < 3.0 else f"NONZERO ({sigmas:.1f} sigma)"
+
+
+def line(label, values):
+    mean, error, count = moments(values)
+    print(f"  {label:<34} {mean:>+9.4f} +/- {error:<8.4f} N={count:<5} "
+          f"{verdict(mean, error)}")
+
+
 def summarize(label, rows):
     if not rows:
-        print(f"{label}: no CREM_TILT samples -- was the run built with the "
-              f"probe and started with CREM_TILT=1?")
+        print(f"\n=== {label} ===\n  no CREM_TILT samples -- was the run started "
+              f"with CREM_TILT=1?")
         return
-    runs = split_trajectories(rows)
-    values = [legendre2(row[2]) for row in rows]
-    count = len(values)
-    mean = sum(values) / count
-    # Samples inside one trajectory are correlated, so quote the error two ways:
-    # naive per-sample, and per-trajectory, which is the honest one.
-    naive = 0.4472135955 / math.sqrt(count)
-    per_run = [sum(legendre2(r[2]) for r in run) / len(run) for run in runs]
-    if len(per_run) > 1:
-        run_mean = sum(per_run) / len(per_run)
-        variance = sum((v - run_mean) ** 2 for v in per_run) / (len(per_run) - 1)
-        run_error = math.sqrt(variance / len(per_run))
-    else:
-        run_mean, run_error = per_run[0], float("nan")
-
+    # The first half-step of each trajectory carries the tilt exactly as the
+    # sampler drew it, which is the isotropic null this is tested against.
+    first = [row for row in rows if row[0] == 0.0]
     print(f"\n=== {label} ===")
-    print(f"trajectories                 {len(runs)}")
-    print(f"samples                      {count}")
-    print(f"time span                    0 .. {max(r[0] for r in rows):.4g} s")
-    print(f"<cos^2 tilt>                 {sum(r[2]**2 for r in rows)/count:.5f}"
-          f"   (isotropic 0.33333)")
-    print(f"<P2> per sample              {mean:+.5f} +/- {naive:.5f} (naive)")
-    print(f"<P2> per trajectory          {run_mean:+.5f} +/- {run_error:.5f}"
-          f"   <- use this one")
-    if run_error == run_error and run_error > 0.0:
-        sigmas = abs(run_mean) / run_error
-        print(f"distance from zero           {sigmas:.2f} sigma -> "
-              f"{'CONSISTENT WITH ZERO' if sigmas < 3.0 else 'NONZERO'}")
+    print(f"  trajectories {len(first)}, samples {len(rows)}, "
+          f"time span 0 .. {max(r[0] for r in rows):.4g} s")
+    line("P2 as sampled, before transport", [legendre2(r[4]) for r in first])
+    line("P2 after one half-step", [legendre2(r[2]) for r in first])
+    line("P2 over every sample", [legendre2(r[2]) for r in rows])
+    line("d|cos tilt| per half-step, paired",
+         [abs(r[2]) - abs(r[4]) for r in first])
+    print(f"  <cos^2 tilt> over every sample      "
+          f"{sum(r[2]**2 for r in rows)/len(rows):.5f}   (isotropic 0.33333)")
 
-    print("\ncos(tilt) histogram (isotropic is flat at 10% per bin):")
-    bins = [0] * 10
-    for row in rows:
-        bins[min(9, int((row[2] + 1.0) / 2.0 * 10))] += 1
-    for index, hits in enumerate(bins):
-        share = 100.0 * hits / count
-        print(f"  [{-1.0+0.2*index:+.1f},{-1.0+0.2*(index+1):+.1f})"
-              f"  {share:5.1f}%  {'#' * int(round(share * 1.5))}")
-
-    print("\n<P2> against time, to show whether the run drives it away from 0:")
     span = max(r[0] for r in rows)
     if span > 0.0:
-        print(f"  {'t window [ps]':<22} {'<P2>':<12} samples")
-        for bin_index in range(5):
-            lo, hi = span * bin_index / 5, span * (bin_index + 1) / 5
-            window = [legendre2(r[2]) for r in rows if lo <= r[0] < hi
-                      or (bin_index == 4 and r[0] == hi)]
-            if not window:
-                continue
-            print(f"  {lo*1e12:>9.4g}..{hi*1e12:<10.4g} "
-                  f"{sum(window)/len(window):<+12.5f} {len(window)}")
+        print("\n  P2 against time (late windows are few surviving trajectories,"
+              "\n  so read them as survivorship, not as a trend):")
+        for index in range(4):
+            lo, hi = span * index / 4, span * (index + 1) / 4
+            window = [legendre2(r[2]) for r in rows
+                      if lo <= r[0] < hi or (index == 3 and r[0] == hi)]
+            if window:
+                print(f"    {lo*1e12:>8.4g}..{hi*1e12:<9.4g} ps  "
+                      f"{sum(window)/len(window):>+8.4f}  ({len(window)} samples)")
 
 
 def main():
@@ -130,8 +121,8 @@ def main():
     labels = ["PARA (aligned moments)", "ORTHO (anti-aligned moments)"]
     for index, path in enumerate(sys.argv[1:]):
         summarize(labels[index] if index < len(labels) else path, read(path))
-    print("\nReminder: samples within one trajectory are correlated, which is "
-          "why\nthe per-trajectory error is the one to quote.")
+    print("\nSamples inside one trajectory are correlated; the per-trajectory\n"
+          "rows above (everything but 'over every sample') avoid that.")
     return 0
 
 

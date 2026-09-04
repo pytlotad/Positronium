@@ -2866,6 +2866,8 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // between the two sectors and lets the entire checkpoint's photon
         // hazard see a stale orbital plane.
         const auto advanceSpinOrbitHalf=[&](double semiMajorAxis) {
+            const Vec3 tiltProbeDipoleBefore=firstDipole;
+            const Vec3 tiltProbeAxisBefore=angularMomentumDirection;
             const SecularSpinOrbitState input{
                 angularMomentumDirection
                     *(elements.specificAngularMomentum*reducedMass),
@@ -2922,13 +2924,16 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             if(std::getenv("CREM_TILT")) {
                 const double firstNorm=firstDipole.norm();
                 const double secondNorm=secondDipole.norm();
-                if(firstNorm>0.0&&secondNorm>0.0)
-                    std::printf("CREM_TILT %.9e %.9e %.9f %.9f\n",
+                const double beforeNorm=tiltProbeDipoleBefore.norm();
+                if(firstNorm>0.0&&secondNorm>0.0&&beforeNorm>0.0)
+                    std::printf("CREM_TILT %.9e %.9e %.9f %.9f %.9f\n",
                                 simulatedTimeTotal,semiMajorAxis,
                                 dot(firstDipole,angularMomentumDirection)
                                     /firstNorm,
                                 dot(secondDipole,angularMomentumDirection)
-                                    /secondNorm);
+                                    /secondNorm,
+                                dot(tiltProbeDipoleBefore,tiltProbeAxisBefore)
+                                    /beforeNorm);
             }
             return true;
         };
