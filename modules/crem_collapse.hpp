@@ -2925,15 +2925,65 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 const double firstNorm=firstDipole.norm();
                 const double secondNorm=secondDipole.norm();
                 const double beforeNorm=tiltProbeDipoleBefore.norm();
+                // The radial dipole-dipole force averaged over the ACTUAL
+                // osculating ellipse, with Kepler's dt ~ r^2 dnu weighting and
+                // the run's own dipoles, plane and eccentricity.  Reported
+                // beside the tilt so the sign can be read off the force
+                // itself rather than reconstructed from P2(cos tilt), which
+                // holds only for a circular orbit and frozen moments.
+                double averagedRadialForce=0.0, weightTotal=0.0;
+                {
+                    const double eSquared=1.0
+                        +2.0*elements.specificEnergy
+                            *elements.specificAngularMomentum
+                            *elements.specificAngularMomentum
+                        /(attractionParameter*attractionParameter);
+                    const double e=std::sqrt(std::max(0.0,eSquared));
+                    const Vec3 toPeriapsis=periapsisDirection.norm()>0.0
+                        ?periapsisDirection/periapsisDirection.norm()
+                        :orbitPlaneDirection(angularMomentumDirection,
+                                             Vec3{1.0,0.0,0.0});
+                    const Vec3 inPlaneQuadrature=
+                        cross(angularMomentumDirection,toPeriapsis);
+                    const double semiLatus=semiMajorAxis*(1.0-e*e);
+                    const int nodes=720;
+                    for(int node=0;node<nodes;++node) {
+                        const double trueAnomaly=2.0*pi*(node+0.5)/nodes;
+                        const double radius=semiLatus
+                            /(1.0+e*std::cos(trueAnomaly));
+                        if(!(radius>0.0)||!std::isfinite(radius)) continue;
+                        const Vec3 direction=
+                            toPeriapsis*std::cos(trueAnomaly)
+                           +inPlaneQuadrature*std::sin(trueAnomaly);
+                        const double weight=radius*radius;   // dt ~ r^2 dnu
+                        averagedRadialForce+=weight*dot(
+                            regularizedDipoleForce(direction*radius,
+                                                   firstDipole,secondDipole),
+                            direction);
+                        weightTotal+=weight;
+                    }
+                }
+                const double radialForce=weightTotal>0.0
+                    ?averagedRadialForce/weightTotal:0.0;
                 if(firstNorm>0.0&&secondNorm>0.0&&beforeNorm>0.0)
-                    std::printf("CREM_TILT %.9e %.9e %.9f %.9f %.9f\n",
+                    std::printf("CREM_TILT %.9e %.9e %.9f %.9f %.9f %.9e"
+                                " %.12f %.12f\n",
                                 simulatedTimeTotal,semiMajorAxis,
                                 dot(firstDipole,angularMomentumDirection)
                                     /firstNorm,
                                 dot(secondDipole,angularMomentumDirection)
                                     /secondNorm,
                                 dot(tiltProbeDipoleBefore,tiltProbeAxisBefore)
-                                    /beforeNorm);
+                                    /beforeNorm,
+                                radialForce,
+                                // How far each of the two vectors that define
+                                // the tilt actually turned in space over this
+                                // half-step.  If the tilt moves, one of these
+                                // says which one moved.
+                                dot(tiltProbeDipoleBefore,firstDipole)
+                                    /(beforeNorm*firstNorm),
+                                dot(tiltProbeAxisBefore,
+                                    angularMomentumDirection));
             }
             return true;
         };
