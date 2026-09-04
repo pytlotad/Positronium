@@ -3674,6 +3674,79 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         +(inPlaneFirst*std::cos(photonAzimuth)
                           +inPlaneSecond*std::sin(photonAzimuth))
                             *sinThetaFromAxis;
+                    // PHOTON ENERGY CHOSEN AGAINST THE SPIN IT CARRIES.
+                    //
+                    // Only under CREM_SPIN_MAGNITUDE, where |L| comes from the
+                    // spin subtraction and the pair (E,L) is therefore no
+                    // longer consistent by construction.  A bound Kepler orbit
+                    // needs e^2 = 1 + 2 E L^2/A^2 >= 0, which for the L this
+                    // photon will leave behind puts a CEILING on how much
+                    // energy it may take:
+                    //
+                    //   E_spec_after >= -A^2/(2 L_spec_after^2)          (*)
+                    //
+                    // and with W_after^2 = W^2 - 2 W E_gamma that inverts in
+                    // closed form to
+                    //
+                    //   E_gamma_max = [W^2 - (M c^2 + mu E_min)^2] / (2 W).
+                    //
+                    // Below that ceiling the emission lands on a real orbit;
+                    // above it there is no orbit to land on.  A ceiling that
+                    // comes out non-positive means this direction and helicity
+                    // admit no photon at all -- the spin subtraction would
+                    // RAISE |L| past what the remaining energy can hold -- and
+                    // the draw is rejected the same way a kinematically
+                    // forbidden energy already is.
+                    //
+                    // The helicity has to be known here rather than at its
+                    // original site further down, since the ceiling depends on
+                    // it.  Drawn early only under the switch, and reused there
+                    // instead of redrawn, so the default path's stream order
+                    // is untouched.
+                    const bool selectEnergyAgainstSpin=
+                        std::getenv("CREM_SPIN_MAGNITUDE")!=nullptr;
+                    double preselectedHelicity=0.0;
+                    bool helicityPreselected=false;
+                    if(selectEnergyAgainstSpin) {
+                        const double plusProbability=std::clamp(
+                            (1.0+cosThetaFromAxis)*(1.0+cosThetaFromAxis)
+                            /(2.0*(1.0+cosThetaFromAxis*cosThetaFromAxis)),
+                            0.0,1.0);
+                        preselectedHelicity=
+                            drawUniformUnit(stochasticSkipStream)
+                                <plusProbability?1.0:-1.0;
+                        helicityPreselected=true;
+                        const Vec3 orbitalBeforeVector=angularMomentumDirection
+                            *(elements.specificAngularMomentum*reducedMass);
+                        const double angularAfter=
+                            (orbitalBeforeVector
+                             -photonDirection*(preselectedHelicity*hbar)).norm()
+                            /reducedMass;
+                        const double invariantBefore=totalMass*c*c
+                            +reducedMass*elements.specificEnergy;
+                        double ceiling=-1.0;
+                        if(angularAfter>0.0&&invariantBefore>0.0) {
+                            const double minimumSpecificEnergy=
+                                -attractionParameter*attractionParameter
+                                /(2.0*angularAfter*angularAfter);
+                            const double invariantFloor=totalMass*c*c
+                                +reducedMass*minimumSpecificEnergy;
+                            ceiling=(invariantBefore*invariantBefore
+                                     -invariantFloor*invariantFloor)
+                                    /(2.0*invariantBefore);
+                        }
+                        if(!(ceiling>0.0)) {
+                            stochasticSkipThreshold=
+                                drawEmissionThreshold(stochasticSkipStream);
+                            continue;
+                        }
+                        if(std::getenv("CREM_SPIN_TRIM"))
+                            std::printf("CREM_TRIM %.9e %.9e %.9e\n",
+                                        photonEnergy,ceiling,
+                                        ceiling<photonEnergy
+                                            ?ceiling/photonEnergy:1.0);
+                        photonEnergy=std::min(photonEnergy,ceiling);
+                    }
                     if(std::getenv("CREM_DEBUG_PRECISE")) {
                         std::cerr<<std::setprecision(17)
                                  <<"    PRECISE draws: harmonicNumber="
@@ -4180,9 +4253,10 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         (1.0+cosThetaFromAxis)*(1.0+cosThetaFromAxis)
                         /(2.0*(1.0+cosThetaFromAxis*cosThetaFromAxis)),
                         0.0,1.0);
-                    const double helicity=
-                        drawUniformUnit(stochasticSkipStream)
-                            <helicityPlusProbability?1.0:-1.0;
+                    const double helicity=helicityPreselected
+                        ?preselectedHelicity
+                        :(drawUniformUnit(stochasticSkipStream)
+                            <helicityPlusProbability?1.0:-1.0);
                     const Vec3 photonSpinAngularMomentum=
                         photonDirection*(helicity*hbar);
                     const Vec3 orbitalAngularMomentumBefore=
