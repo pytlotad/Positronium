@@ -4997,13 +4997,29 @@ namespace { struct PhotonBalanceReport { ~PhotonBalanceReport() {
         "[photon] deepest residual binding         %.3e of the rest energy\n"
         "[photon] composite: scalar W^2-2WE vs vector P-k, worst %.3e\n"
         "[photon] two-body: |dE_lab - E_draw|/E_draw, worst %.3e"
-        " (different frames; not required to vanish)\n",
+        " (different frames; not required to vanish)\n"
+        "[photon] ANGULAR balance about the emission point, %llu samples:\n"
+        "[photon]   |J_after - J_before + s_photon|, mean %.4f hbar,"
+        " worst %.4f hbar\n"
+        "[photon]   orbital |dL| alone, mean %.4f hbar, worst %.4f hbar\n"
+        "[photon]   composite only: k(e) magnitude override, mean %.4f hbar,"
+        " worst %.4f hbar\n",
         b.emissions.load(),b.negativeEnergy.load(),
         b.offShellPhoton.load(),b.worstNullResidual.load(),
         b.belowThreshold.load(),b.worstThresholdDeficit.load(),
         b.worstBinding.load(),
         b.worstScalarVectorMismatch.load(),
-        b.worstFrameEnergyDifference.load()); } } gPhotonBalanceReport; }
+        b.worstFrameEnergyDifference.load(),
+        b.angularSamples.load(),
+        b.angularSamples.load()
+            ?b.sumAngularResidualHbar.load()/b.angularSamples.load():0.0,
+        b.worstAngularResidualHbar.load(),
+        b.angularSamples.load()
+            ?b.sumOrbitalChangeHbar.load()/b.angularSamples.load():0.0,
+        b.worstOrbitalChangeHbar.load(),
+        b.angularSamples.load()
+            ?b.sumMagnitudeOverrideHbar.load()/b.angularSamples.load():0.0,
+        b.worstMagnitudeOverrideHbar.load()); } } gPhotonBalanceReport; }
 
 int main(int argc, char** argv) {
     gCausalityAudit.enabled=std::getenv("CREM_CAUSALITY")!=nullptr;

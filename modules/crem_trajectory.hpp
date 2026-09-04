@@ -385,9 +385,50 @@ struct PhotonBalanceAudit {
     std::atomic<double> worstScalarVectorMismatch{0.0};   // composite path
     std::atomic<double> worstThresholdDeficit{0.0};
     std::atomic<double> worstBinding{0.0};
+    // ANGULAR momentum, beside the linear balance above.  Measured about the
+    // pair's centre of mass AT the emission instant, which is where the photon
+    // leaves, so the photon's own orbital angular momentum about that point
+    // vanishes and only its spin can appear.  Conservation then reads
+    //
+    //     J_after - J_before + s_photon = 0,
+    //
+    // with J = sum (r_i - R_0) x p_i + S_1 + S_2 and S_i = mu_i/gamma_i.
+    // Reported in units of hbar, which is the scale the question is asked at.
+    std::atomic<unsigned long long> angularSamples{0};
+    std::atomic<double> worstAngularResidualHbar{0.0};
+    std::atomic<double> sumAngularResidualHbar{0.0};
+    std::atomic<double> worstOrbitalChangeHbar{0.0};
+    std::atomic<double> sumOrbitalChangeHbar{0.0};
+    // Composite path only: the vector subtraction L - hbar*h*n sets the plane,
+    // but the MAGNITUDE is then overwritten from the classical k(e) relation.
+    // This is the size of that override, which is where the angular residual
+    // comes from if the two disagree.
+    std::atomic<double> sumMagnitudeOverrideHbar{0.0};
+    std::atomic<double> worstMagnitudeOverrideHbar{0.0};
     bool enabled=false;
 };
 inline PhotonBalanceAudit gPhotonBalanceAudit;
+
+inline void addPhotonSum(std::atomic<double>& total,double value) {
+    double seen=total.load(std::memory_order_relaxed);
+    while(!total.compare_exchange_weak(seen,seen+value,
+                                       std::memory_order_relaxed)) {}
+}
+
+// Internal angular momentum of the pair about a fixed point, spins included.
+inline Vec3 pairAngularMomentumAbout(const State& s,const Vec3& origin) {
+    const auto first=two_body::fourMomentumFromVelocity(s.firstVelocity,firstMass);
+    const auto second=two_body::fourMomentumFromVelocity(s.secondVelocity,secondMass);
+    if(!first.valid()||!second.valid()) return {};
+    Vec3 total=cross(s.firstPosition-origin,first.momentum)
+              +cross(s.secondPosition-origin,second.momentum);
+    // Intrinsic spin carried as a magnetic moment: S = mu/gamma.
+    const double firstGyro=firstGyromagneticRatioOf();
+    const double secondGyro=secondGyromagneticRatioOf();
+    if(firstGyro!=0.0) total=total+s.firstDipole*(1.0/firstGyro);
+    if(secondGyro!=0.0) total=total+s.secondDipole*(1.0/secondGyro);
+    return total;
+}
 
 inline void recordPhotonWorst(std::atomic<double>& worst,double candidate) {
     double seen=worst.load(std::memory_order_relaxed);
@@ -418,7 +459,11 @@ inline StochasticPhotonRecoil applyStochasticDipolePhoton(
     StochasticPhotonRecoil result;
     // Four-momentum of the pair as it stands before anything is removed.
     double auditEnergyBefore=0.0; Vec3 auditMomentumBefore;
+    Vec3 auditAngularBefore, auditOrigin;
     if(gPhotonBalanceAudit.enabled) {
+        auditOrigin=(s.firstPosition*firstMass+s.secondPosition*secondMass)
+                    *(1.0/(firstMass+secondMass));
+        auditAngularBefore=pairAngularMomentumAbout(s,auditOrigin);
         const auto a=two_body::fourMomentumFromVelocity(s.firstVelocity,firstMass);
         const auto b=two_body::fourMomentumFromVelocity(s.secondVelocity,secondMass);
         if(a.valid()&&b.valid()) {
@@ -540,6 +585,19 @@ inline StochasticPhotonRecoil applyStochasticDipolePhoton(
                 recordPhotonWorst(
                     gPhotonBalanceAudit.worstFrameEnergyDifference,
                     std::abs(removedEnergy-photonEnergy)/photonEnergy);
+            // Angular momentum about the emission point.  This path models a
+            // classical E1 photon with linear momentum and NO spin, so the
+            // conserving value of the residual is zero; whatever it reads is
+            // the size of the gap a spin term would have to fill.
+            const Vec3 angularAfter=pairAngularMomentumAbout(s,auditOrigin);
+            const Vec3 angularChange=angularAfter-auditAngularBefore;
+            const double residualHbar=angularChange.norm()/hbar;
+            gPhotonBalanceAudit.angularSamples.fetch_add(
+                1,std::memory_order_relaxed);
+            recordPhotonWorst(gPhotonBalanceAudit.worstAngularResidualHbar,
+                              residualHbar);
+            addPhotonSum(gPhotonBalanceAudit.sumAngularResidualHbar,
+                         residualHbar);
             // Residual pair on shell.
             const double residualInvariant=
                 (a.energy+b.energy)*(a.energy+b.energy)

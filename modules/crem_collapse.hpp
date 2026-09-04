@@ -3770,6 +3770,8 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // -p_gamma/M velocity increment plus kinetic correction.
                     // CREM_EMISSION_REACH: what one emission actually moves.
                     const Vec3 emissionAxisBefore=angularMomentumDirection;
+                    const Vec3 emissionDipoleFirstBefore=firstDipole;
+                    const Vec3 emissionDipoleSecondBefore=secondDipole;
                     const Vec3 emissionComBefore=centreOfMassVelocity;
                     const double emissionEnergyBefore=elements.specificEnergy;
                     const double emissionLBefore=
@@ -4205,6 +4207,61 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     elements.specificAngularMomentum=
                         clampAboveGroundStateAngularMomentum(
                             classicalAngularMomentumMagnitude);
+                    if(gPhotonBalanceAudit.enabled) {
+                        // Same balance as the two-body path, on the variables
+                        // this one keeps: J = L_vector + S_1 + S_2, and the
+                        // photon here DOES carry hbar*helicity along its own
+                        // direction, so the conserving residual is
+                        // J_after - J_before + s_photon = 0.
+                        const double gyroFirst=firstGyromagneticRatioOf();
+                        const double gyroSecond=secondGyromagneticRatioOf();
+                        auto spinOf=[&](const Vec3& d,double gyro){
+                            return gyro!=0.0?d*(1.0/gyro):Vec3{}; };
+                        const Vec3 spinBefore=spinOf(emissionDipoleFirstBefore,
+                                                     gyroFirst)
+                                             +spinOf(emissionDipoleSecondBefore,
+                                                     gyroSecond);
+                        const Vec3 spinAfter=spinOf(firstDipole,gyroFirst)
+                                            +spinOf(secondDipole,gyroSecond);
+                        const Vec3 orbitalBefore=emissionAxisBefore
+                            *(emissionLBefore*reducedMass);
+                        const Vec3 orbitalAfter=angularMomentumDirection
+                            *(elements.specificAngularMomentum*reducedMass);
+                        const Vec3 change=(orbitalAfter+spinAfter)
+                                         -(orbitalBefore+spinBefore);
+                        const Vec3 photonSpin=
+                            photonDirection*(helicity*hbar);
+                        gPhotonBalanceAudit.angularSamples.fetch_add(
+                            1,std::memory_order_relaxed);
+                        const double residualHbar=
+                            (change+photonSpin).norm()/hbar;
+                        recordPhotonWorst(
+                            gPhotonBalanceAudit.worstAngularResidualHbar,
+                            residualHbar);
+                        addPhotonSum(
+                            gPhotonBalanceAudit.sumAngularResidualHbar,
+                            residualHbar);
+                        // What the vector subtraction alone would have given,
+                        // against what the k(e) rule actually assigned.
+                        const double subtractionMagnitude=
+                            (orbitalBefore-photonSpin).norm();
+                        recordPhotonWorst(
+                            gPhotonBalanceAudit.worstMagnitudeOverrideHbar,
+                            std::abs(orbitalAfter.norm()-subtractionMagnitude)
+                                /hbar);
+                        addPhotonSum(
+                            gPhotonBalanceAudit.sumMagnitudeOverrideHbar,
+                            std::abs(orbitalAfter.norm()-subtractionMagnitude)
+                                /hbar);
+                        const double orbitalChangeHbar=
+                            (orbitalAfter-orbitalBefore).norm()/hbar;
+                        recordPhotonWorst(
+                            gPhotonBalanceAudit.worstOrbitalChangeHbar,
+                            orbitalChangeHbar);
+                        addPhotonSum(
+                            gPhotonBalanceAudit.sumOrbitalChangeHbar,
+                            orbitalChangeHbar);
+                    }
                     if(std::getenv("CREM_EMISSION_REACH")) {
                         const double axisTurn=std::acos(std::clamp(
                             dot(emissionAxisBefore,angularMomentumDirection),
