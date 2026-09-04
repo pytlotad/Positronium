@@ -194,7 +194,104 @@ inline const std::vector<ScientificSource>& scientificSources() {
          "Electrodynamics-2: Inclusion of Relativistic Corrections",
          "Foundations of Physics 45, 1190-1202", 2015,
          "10.1007/s10701-015-9919-0",
-         "https://doi.org/10.1007/s10701-015-9919-0", "2026-08-28"}
+         "https://doi.org/10.1007/s10701-015-9919-0", "2026-08-28"},
+
+        // The engine's own physics and numerics.  Until now the catalogue
+        // covered only the reference curves the plots are compared against
+        // (annihilation spectra, Rutherford, the SED literature); the models
+        // the program actually integrates carried their attribution in source
+        // comments alone, where nothing checks them.  These are the sources
+        // for what runMechanicalTrajectory and its callees implement.
+        {"jackson_classical_electrodynamics",
+         "John David Jackson", "Classical Electrodynamics",
+         "3rd edition, Wiley; chapters 6, 11, 12, 14, 16", 1998, "",
+         "https://www.wiley.com/en-us/Classical+Electrodynamics%2C+3rd+Edition-p-9780471309321",
+         "2026-09-04"},
+        {"landau_lifshitz_classical_fields",
+         "Lev D. Landau; Evgeny M. Lifshitz", "The Classical Theory of Fields",
+         "Course of Theoretical Physics volume 2, 4th revised English edition, "
+         "Butterworth-Heinemann; section 75 and section 76 problem 1", 1975,
+         "", "https://archive.org/details/ClassicalTheoryOfFields",
+         "2026-09-04"},
+        {"dirac_1938",
+         "Paul A. M. Dirac", "Classical theory of radiating electrons",
+         "Proceedings of the Royal Society A 167, 148-169", 1938,
+         "10.1098/rspa.1938.0124",
+         "https://doi.org/10.1098/rspa.1938.0124", "2026-09-04"},
+        {"bargmann_michel_telegdi_1959",
+         "Valentine Bargmann; Louis Michel; Valentine L. Telegdi",
+         "Precession of the Polarization of Particles Moving in a "
+         "Homogeneous Electromagnetic Field",
+         "Physical Review Letters 2, 435-436", 1959,
+         "10.1103/PhysRevLett.2.435",
+         "https://doi.org/10.1103/PhysRevLett.2.435", "2026-09-04"},
+        {"peters_1964",
+         "Peter C. Peters",
+         "Gravitational Radiation and the Motion of Two Point Masses",
+         "Physical Review 136, B1224-B1232", 1964,
+         "10.1103/PhysRev.136.B1224",
+         "https://doi.org/10.1103/PhysRev.136.B1224", "2026-09-04"},
+        {"plummer_1911",
+         "Henry C. Plummer",
+         "On the Problem of Distribution in Globular Star Clusters: "
+         "(Plate 8.)",
+         "Monthly Notices of the Royal Astronomical Society 71, 460-470", 1911,
+         "10.1093/mnras/71.5.460",
+         "https://doi.org/10.1093/mnras/71.5.460", "2026-09-04"},
+        {"yee_1966",
+         "Kane S. Yee",
+         "Numerical solution of initial boundary value problems involving "
+         "Maxwell's equations in isotropic media",
+         "IEEE Transactions on Antennas and Propagation 14, 302-307", 1966,
+         "10.1109/TAP.1966.1138693",
+         "https://doi.org/10.1109/TAP.1966.1138693", "2026-09-04"},
+        {"roden_gedney_2000",
+         "J. Alan Roden; Stephen D. Gedney",
+         "Convolution PML (CPML): An efficient FDTD implementation of the "
+         "CFS-PML for arbitrary media",
+         "Microwave and Optical Technology Letters 27, 334-339", 2000,
+         "10.1002/1098-2760(20001205)27:5<334::AID-MOP14>3.0.CO;2-A",
+         "https://doi.org/10.1002/1098-2760(20001205)27:5<334::AID-MOP14>"
+         "3.0.CO;2-A",
+         "2026-09-04"},
+        {"boris_1970",
+         "Jay P. Boris",
+         "Relativistic plasma simulation - optimization of a hybrid code",
+         "Proceedings of the Fourth Conference on Numerical Simulation of "
+         "Plasmas, Naval Research Laboratory, 3-67", 1970, "",
+         "https://apps.dtic.mil/sti/citations/ADA023511", "2026-09-04"},
+        {"qin_2013_boris",
+         "Hong Qin; Shuangxi Zhang; Jianyuan Xiao; Jian Liu; Yajuan Sun; "
+         "William M. Tang",
+         "Why is Boris algorithm so good?",
+         "Physics of Plasmas 20, 084503", 2013,
+         "10.1063/1.4818428",
+         "https://doi.org/10.1063/1.4818428", "2026-09-04"},
+        {"kaplan_meier_1958",
+         "Edward L. Kaplan; Paul Meier",
+         "Nonparametric Estimation from Incomplete Observations",
+         "Journal of the American Statistical Association 53, 457-481", 1958,
+         "10.1080/01621459.1958.10501452",
+         "https://doi.org/10.1080/01621459.1958.10501452", "2026-09-04"},
+        {"matsumoto_nishimura_1998",
+         "Makoto Matsumoto; Takuji Nishimura",
+         "Mersenne twister",
+         "ACM Transactions on Modeling and Computer Simulation 8, 3-30", 1998,
+         "10.1145/272991.272995",
+         "https://doi.org/10.1145/272991.272995", "2026-09-04"},
+        {"steele_lea_flood_2014",
+         "Guy L. Steele Jr.; Doug Lea; Christine H. Flood",
+         "Fast splittable pseudorandom number generators",
+         "ACM SIGPLAN Notices 49, 453-472 (OOPSLA 2014)", 2014,
+         "10.1145/2714064.2660195",
+         "https://doi.org/10.1145/2714064.2660195", "2026-09-04"},
+        {"tiesinga_codata_2018",
+         "Eite Tiesinga; Peter J. Mohr; David B. Newell; Barry N. Taylor",
+         "CODATA recommended values of the fundamental physical constants: "
+         "2018",
+         "Reviews of Modern Physics 93, 025010", 2021,
+         "10.1103/RevModPhys.93.025010",
+         "https://doi.org/10.1103/RevModPhys.93.025010", "2026-09-04"}
     };
     return sources;
 }
@@ -293,7 +390,211 @@ inline const std::vector<ScientificModel>& scientificModels() {
          "analytic_benchmark",
          "dSigma/dOmega=l_C^2/(4*sin(theta/2)^4); sigma(theta>=theta0)=pi*l_C^2*cot(theta0/2)^2",
          "0<theta<=pi", "Classical Coulomb scattering.",
-         "The trajectory result fits a single normalization C_R to this fixed shape."}
+         "The trajectory result fits a single normalization C_R to this fixed shape."},
+
+        // The engine's own models.  Every entry below names the routine that
+        // implements it, so the catalogue can be read as a map from the
+        // literature into the source rather than as a bibliography.  The
+        // phenomenon mask is 0x0f wherever the mechanical engine runs, which
+        // is all four.
+        {"lienard_wiechert_retarded_field", "jackson_classical_electrodynamics",
+         0x0fU, "crem_collapse_time,differential_cross_section",
+         "engine_model",
+         "E=q/(4 pi eps0)[(n-beta)(1-beta^2)/(kappa^3 R^2) "
+         "+ n x ((n-beta) x a)/(c^2 kappa^3 R)]; B=n x E/c; kappa=1-n.beta",
+         "point charges outside the declared regularization core; "
+         "retarded time from the light-cone equation",
+         "Finite retained history; the light-cone solve is a damped Newton "
+         "iteration, not exact.",
+         "lienardWiechertField in modules/retarded_charge_kinematics.hpp; the "
+         "Newton loop and its coincidence guard are in the same function."},
+        {"landau_lifshitz_radiation_reaction",
+         "landau_lifshitz_classical_fields", 0x0fU, "crem_collapse_time",
+         "engine_model",
+         "f = (2 q^3 gamma/(3 c^3))[dE/dt + ...] with the ADD acceleration "
+         "replaced by its zeroth-order equation-of-motion value",
+         "order-reduced; valid while the reaction is a small correction to "
+         "the Lorentz force",
+         "Order reduction removes the runaway solutions of Abraham-Lorentz-"
+         "Dirac at the cost of being perturbative in the reaction.",
+         "reducedOrderSelfForce and individualLandauLifshitzSelfForces in "
+         "modules/electrodynamics.hpp; selected by --radiation-reaction."},
+        {"abraham_lorentz_dirac_origin", "dirac_1938", 0x0fU,
+         "crem_collapse_time", "theory_context",
+         "m dv/dt = F_ext + (2 q^2/3 c^3)(d2v/dt2 + ...)",
+         "the equation the order reduction above starts from",
+         "Runaway and pre-accelerating solutions are why the reduced form is "
+         "used instead.",
+         "Not integrated directly; recorded because the reduction is only "
+         "meaningful against it."},
+        {"thomas_bmt_spin_transport", "bargmann_michel_telegdi_1959", 0x0fU,
+         "crem_collapse_time", "engine_model",
+         "d s/dt = (q/m) s x [(g/2-1+1/gamma) B "
+         "- (g/2-1) gamma/(gamma+1) (beta.B) beta "
+         "- (g/2 - gamma/(gamma+1)) beta x E/c]",
+         "classical spin of a particle with an anomalous moment in an "
+         "external field",
+         "g is a per-particle argument, not a constant: 2.0023 for a lepton, "
+         "5.5857 for a proton.",
+         "thomasBmtEffectiveField in modules/electrodynamics.hpp and the "
+         "orbit-averaged form in modules/secular_spin_orbit.hpp."},
+        {"darwin_two_body_lagrangian", "jackson_classical_electrodynamics",
+         0x0fU, "crem_collapse_time", "engine_model",
+         "L_D = C[v1.v2 + (v1.n)(v2.n)], C = q1 q2/(2 c^2 r)",
+         "two charges to order (v/c)^2",
+         "Accelerations inside d/dt(dL/dv) are reduced to their leading "
+         "Coulomb values, consistently through order v^2/c^2.",
+         "darwinForceOnFirst and darwinForces in modules/electrodynamics.hpp."},
+        {"moving_point_dipole_transformation",
+         "jackson_classical_electrodynamics", 0x0fU, "crem_collapse_time",
+         "engine_model",
+         "P_source = p_lab/gamma; M_source = mu_lab/gamma, differentiated "
+         "AFTER the conversion",
+         "a moving, accelerating point dipole",
+         "Dividing p_dot or mu_dot by gamma instead would omit the "
+         "derivatives of gamma.",
+         "historicalIntegratedDipoleKinematics in modules/electrodynamics.hpp; "
+         "the closed form is quoted in the source comments as Sautbekov's."},
+        {"orbit_averaged_dipole_inspiral", "peters_1964", 0x03U,
+         "crem_collapse_time", "engine_model",
+         "<dE/dt> = -gamma k^2 (1+e^2/2)/(a^4 (1-e^2)^(5/2)); "
+         "<dL/dt> = -gamma k L/(a^3 (1-e^2)^(3/2))",
+         "orbit-averaged over an unperturbed Kepler ellipse",
+         "Same averaging method as Peters, applied to the DIPOLE's P ~ r^-4 "
+         "rather than the quadrupole's r^-6; the eccentricity factors differ "
+         "and the Peters factor must not be substituted.",
+         "The k(e) used by estimateCremCollapse in modules/crem_collapse.hpp."},
+        {"plummer_short_range_softening", "plummer_1911", 0x0fU,
+         "crem_collapse_time", "numerical_method",
+         "r_eff = sqrt(r^2 + floor^2), direction preserved",
+         "close encounters inside the declared regularization radius",
+         "Every derivative stays continuous, unlike a hard clamp to the "
+         "floor, which puts a measurable kink in the force at r = floor.",
+         "clampedSeparationVector in modules/pair_geometry.hpp; the floor is "
+         "the Compton barrier for e+e-, not an arbitrary softening length."},
+        {"yee_staggered_fdtd", "yee_1966", 0x0fU, "field_validation",
+         "numerical_method",
+         "curl updates on a staggered E/B grid, second order in space and "
+         "time",
+         "the optional Maxwell backend of the validation build only",
+         "Not a production path: positronium.cpp includes the backend only "
+         "under POSITRONIUM_ENABLE_FIELD_VALIDATION.",
+         "modules/maxwell_validation_backend.hpp."},
+        {"convolutional_pml_boundary", "roden_gedney_2000", 0x0fU,
+         "field_validation", "numerical_method",
+         "CFS-PML stretched coordinates with a recursive convolution update",
+         "outer boundary of the Yee grid above",
+         "Absorbs outgoing radiation so a finite grid does not reflect it "
+         "back onto the pair.",
+         "The CPML sections of modules/maxwell_validation_backend.hpp."},
+        {"boris_particle_push", "boris_1970", 0x0fU, "field_validation",
+         "numerical_method",
+         "electric half-kick, magnetic rotation at the intermediate gamma, "
+         "electric half-kick, written in momentum variables",
+         "grid-coupled particle advance in the validation build",
+         "Time reversible and cannot produce |v| >= c.",
+         "relativisticBorisPush in modules/maxwell_validation.hpp."},
+        {"boris_phase_space_volume", "qin_2013_boris", 0x0fU,
+         "field_validation", "theory_context",
+         "the Boris map is volume preserving in phase space",
+         "why the pusher above is used rather than a higher-order "
+         "non-symplectic one",
+         "Volume preservation, not order of accuracy, is what bounds the "
+         "long-run energy error.",
+         "Recorded as the justification for relativisticBorisPush."},
+        {"kaplan_meier_survival", "kaplan_meier_1958", 0x03U,
+         "crem_collapse_time", "statistical_method",
+         "S(t) = prod_{t_i <= t} (1 - d_i/n_i)",
+         "right-censored collapse times",
+         "A trajectory stopped by the wall-clock budget is censored, not "
+         "missing: it carries the information that collapse had not happened "
+         "by the time it reached.",
+         "kaplanMeier in modules/kaplan_meier.hpp; the budget preferentially "
+         "stops the widest orbits, which are the slowest to collapse, so "
+         "averaging only the completed runs would bias the result."},
+        {"mersenne_twister_stream", "matsumoto_nishimura_1998", 0x0fU,
+         "crem_collapse_time,differential_cross_section",
+         "numerical_method",
+         "MT19937-64",
+         "every stochastic draw in the program",
+         "Reproducibility of a run depends on the draw ORDER as well as the "
+         "seed.",
+         "std::mt19937_64 throughout; seeded per trajectory."},
+        {"splitmix64_seed_mixing", "steele_lea_flood_2014", 0x0fU,
+         "crem_collapse_time,differential_cross_section",
+         "numerical_method",
+         "z += 0x9e3779b97f4a7c15; z ^= z>>30; z *= 0xbf58476d1ce4e5b9; "
+         "z ^= z>>27; z *= 0x94d049bb133111eb; z ^= z>>31",
+         "deriving independent per-trajectory seeds from one run seed",
+         "Avoids the correlated low bits a plain counter would hand the "
+         "generator.",
+         "splitMix64 in modules/sampling_utilities.hpp and its local twin "
+         "stochasticPhotonHash64 in modules/crem_trajectory.hpp."},
+        {"codata_2018_constants", "tiesinga_codata_2018", 0x0fU,
+         "crem_collapse_time,annihilation_time,differential_cross_section",
+         "constants_source",
+         "",
+         "every physical constant the program uses",
+         "The 2019 SI redefinition makes c, e and h exact; the electron mass "
+         "and the g-factor remain measured.",
+         "modules/physical_constants.hpp, with the exact and measured values "
+         "kept distinguishable there."},
+        {"larmor_dipole_power", "jackson_classical_electrodynamics", 0x0fU,
+         "crem_collapse_time", "engine_model",
+         "P = q_eff^2 |d2d/dt2|^2/(6 pi eps0 c^3); orbit-averaged for a "
+         "Kepler ellipse this gives <P> proportional to a^-4",
+         "electric-dipole (E1) radiation of the pair's relative motion",
+         "The a^-4 scaling, not the instantaneous formula, is what the "
+         "secular estimator integrates.",
+         "larmorOrbitAveragedPower in modules/crem_collapse.hpp; it also sets "
+         "the photon hazard rate lambda = P/(hbar omega)."},
+        {"schott_bound_field_energy", "jackson_classical_electrodynamics",
+         0x0fU, "crem_collapse_time", "engine_model",
+         "E_Schott = -q^2 (v.a)/(6 pi eps0 c^3), the total-derivative term of "
+         "the radiation-reaction power",
+         "an accelerating charge with a bound near field",
+         "It is a reservoir, not a loss: it returns to the orbit and must not "
+         "be counted as radiated energy.",
+         "Tracked as schottEnergy through Frame and reported separately from "
+         "radiatedEnergy in positronium.cpp."},
+        {"poisson_photon_hazard", "internal_ideal_model", 0x03U,
+         "crem_collapse_time", "engine_model",
+         "P(no photon in dt) = exp(-lambda dt), lambda = P_Larmor/(hbar omega)",
+         "the stochastic branch of the radiation-reaction switch",
+         "The same E1 power that the deterministic drag would remove "
+         "continuously is instead banked as hazard and paid out in discrete, "
+         "momentum-conserving kicks, so a photon has an energy and a "
+         "direction to report.",
+         "stochasticElectricDipole in modules/electrodynamics.hpp; "
+         "--emission deterministic bypasses the Poisson draw."},
+        {"adaptive_step_doubling", "jackson_classical_electrodynamics", 0x0fU,
+         "crem_collapse_time", "numerical_method",
+         "one full step against two half steps; accept on the Richardson "
+         "error estimate, otherwise subdivide",
+         "the mechanical integrator of every trajectory",
+         "Measured convergence is second order, 4.00x per halving held for "
+         "about ten halvings, with the retarded sector in or out and the "
+         "reaction on or off.",
+         "ClassicalTrajectoryEngine in modules/crem_engine.hpp; the "
+         "measurement is CREM_DEBUG_ORDER."},
+        {"rayleigh_impact_parameter", "internal_ideal_model", 0x08U,
+         "differential_cross_section", "statistical_method",
+         "a circular isotropic 2D Gaussian beam has Rayleigh-distributed "
+         "radial impact parameter, p(b) proportional to b exp(-b^2/2 sigma^2)",
+         "beam and interaction experiments",
+         "The area Jacobian contributes the factor b; sampling |N(0,sigma)| "
+         "instead would be half-normal and wrong.",
+         "sampleIsotropicGaussianImpact in modules/sampling_utilities.hpp."},
+        {"stochastic_electrodynamics_field", "boyer_1975", 0x0fU,
+         "crem_collapse_time", "optional_model",
+         "rho(omega) = hbar omega^3/(2 pi^2 c^3)",
+         "off by default; enabled by --zpf",
+         "The fluctuating half of a Langevin pair whose dissipative half is "
+         "the radiation reaction already in the model.  The omega^3 spectrum "
+         "is the unique Lorentz-invariant one, which is why it cannot act as "
+         "a drag.",
+         "modules/zero_point_field.hpp; NOT part of the model any committed "
+         "result was produced with."}
     };
     return models;
 }

@@ -129,6 +129,132 @@ doi=10.1007/s10701-015-9919-0
 url=https://doi.org/10.1007/s10701-015-9919-0
 accessed=2026-08-28
 
+[source:jackson_classical_electrodynamics]
+authors=John David Jackson
+title=Classical Electrodynamics
+publication=3rd edition, Wiley; chapters 6, 11, 12, 14, 16
+year=1998
+doi=
+url=https://www.wiley.com/en-us/Classical+Electrodynamics%2C+3rd+Edition-p-9780471309321
+accessed=2026-09-04
+
+[source:landau_lifshitz_classical_fields]
+authors=Lev D. Landau; Evgeny M. Lifshitz
+title=The Classical Theory of Fields
+publication=Course of Theoretical Physics volume 2, 4th revised English edition, Butterworth-Heinemann; section 75 and section 76 problem 1
+year=1975
+doi=
+url=https://archive.org/details/ClassicalTheoryOfFields
+accessed=2026-09-04
+
+[source:dirac_1938]
+authors=Paul A. M. Dirac
+title=Classical theory of radiating electrons
+publication=Proceedings of the Royal Society A 167, 148-169
+year=1938
+doi=10.1098/rspa.1938.0124
+url=https://doi.org/10.1098/rspa.1938.0124
+accessed=2026-09-04
+
+[source:bargmann_michel_telegdi_1959]
+authors=Valentine Bargmann; Louis Michel; Valentine L. Telegdi
+title=Precession of the Polarization of Particles Moving in a Homogeneous Electromagnetic Field
+publication=Physical Review Letters 2, 435-436
+year=1959
+doi=10.1103/PhysRevLett.2.435
+url=https://doi.org/10.1103/PhysRevLett.2.435
+accessed=2026-09-04
+
+[source:peters_1964]
+authors=Peter C. Peters
+title=Gravitational Radiation and the Motion of Two Point Masses
+publication=Physical Review 136, B1224-B1232
+year=1964
+doi=10.1103/PhysRev.136.B1224
+url=https://doi.org/10.1103/PhysRev.136.B1224
+accessed=2026-09-04
+
+[source:plummer_1911]
+authors=Henry C. Plummer
+title=On the Problem of Distribution in Globular Star Clusters: (Plate 8.)
+publication=Monthly Notices of the Royal Astronomical Society 71, 460-470
+year=1911
+doi=10.1093/mnras/71.5.460
+url=https://doi.org/10.1093/mnras/71.5.460
+accessed=2026-09-04
+
+[source:yee_1966]
+authors=Kane S. Yee
+title=Numerical solution of initial boundary value problems involving Maxwell's equations in isotropic media
+publication=IEEE Transactions on Antennas and Propagation 14, 302-307
+year=1966
+doi=10.1109/TAP.1966.1138693
+url=https://doi.org/10.1109/TAP.1966.1138693
+accessed=2026-09-04
+
+[source:roden_gedney_2000]
+authors=J. Alan Roden; Stephen D. Gedney
+title=Convolution PML (CPML): An efficient FDTD implementation of the CFS-PML for arbitrary media
+publication=Microwave and Optical Technology Letters 27, 334-339
+year=2000
+doi=10.1002/1098-2760(20001205)27:5<334::AID-MOP14>3.0.CO;2-A
+url=https://doi.org/10.1002/1098-2760(20001205)27:5<334::AID-MOP14>3.0.CO;2-A
+accessed=2026-09-04
+
+[source:boris_1970]
+authors=Jay P. Boris
+title=Relativistic plasma simulation - optimization of a hybrid code
+publication=Proceedings of the Fourth Conference on Numerical Simulation of Plasmas, Naval Research Laboratory, 3-67
+year=1970
+doi=
+url=https://apps.dtic.mil/sti/citations/ADA023511
+accessed=2026-09-04
+
+[source:qin_2013_boris]
+authors=Hong Qin; Shuangxi Zhang; Jianyuan Xiao; Jian Liu; Yajuan Sun; William M. Tang
+title=Why is Boris algorithm so good?
+publication=Physics of Plasmas 20, 084503
+year=2013
+doi=10.1063/1.4818428
+url=https://doi.org/10.1063/1.4818428
+accessed=2026-09-04
+
+[source:kaplan_meier_1958]
+authors=Edward L. Kaplan; Paul Meier
+title=Nonparametric Estimation from Incomplete Observations
+publication=Journal of the American Statistical Association 53, 457-481
+year=1958
+doi=10.1080/01621459.1958.10501452
+url=https://doi.org/10.1080/01621459.1958.10501452
+accessed=2026-09-04
+
+[source:matsumoto_nishimura_1998]
+authors=Makoto Matsumoto; Takuji Nishimura
+title=Mersenne twister
+publication=ACM Transactions on Modeling and Computer Simulation 8, 3-30
+year=1998
+doi=10.1145/272991.272995
+url=https://doi.org/10.1145/272991.272995
+accessed=2026-09-04
+
+[source:steele_lea_flood_2014]
+authors=Guy L. Steele Jr.; Doug Lea; Christine H. Flood
+title=Fast splittable pseudorandom number generators
+publication=ACM SIGPLAN Notices 49, 453-472 (OOPSLA 2014)
+year=2014
+doi=10.1145/2714064.2660195
+url=https://doi.org/10.1145/2714064.2660195
+accessed=2026-09-04
+
+[source:tiesinga_codata_2018]
+authors=Eite Tiesinga; Peter J. Mohr; David B. Newell; Barry N. Taylor
+title=CODATA recommended values of the fundamental physical constants: 2018
+publication=Reviews of Modern Physics 93, 025010
+year=2021
+doi=10.1103/RevModPhys.93.025010
+url=https://doi.org/10.1103/RevModPhys.93.025010
+accessed=2026-09-04
+
 [value:para_decay_rate_measurement]
 source=al_ramadhan_gidley_1994
 phenomenon_mask=1
@@ -327,4 +453,246 @@ formula=dSigma/dOmega=l_C^2/(4*sin(theta/2)^4); sigma(theta>=theta0)=pi*l_C^2*co
 domain=0<theta<=pi
 assumptions=Classical Coulomb scattering.
 implementation=The trajectory result fits a single normalization C_R to this fixed shape.
+
+[model:lienard_wiechert_retarded_field]
+source=jackson_classical_electrodynamics
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time,differential_cross_section
+role=engine_model
+formula=E=q/(4 pi eps0)[(n-beta)(1-beta^2)/(kappa^3 R^2) + n x ((n-beta) x a)/(c^2 kappa^3 R)]; B=n x E/c; kappa=1-n.beta
+domain=point charges outside the declared regularization core; retarded time from the light-cone equation
+assumptions=Finite retained history; the light-cone solve is a damped Newton iteration, not exact.
+implementation=lienardWiechertField in modules/retarded_charge_kinematics.hpp; the Newton loop and its coincidence guard are in the same function.
+
+[model:landau_lifshitz_radiation_reaction]
+source=landau_lifshitz_classical_fields
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=engine_model
+formula=f = (2 q^3 gamma/(3 c^3))[dE/dt + ...] with the ADD acceleration replaced by its zeroth-order equation-of-motion value
+domain=order-reduced; valid while the reaction is a small correction to the Lorentz force
+assumptions=Order reduction removes the runaway solutions of Abraham-Lorentz-Dirac at the cost of being perturbative in the reaction.
+implementation=reducedOrderSelfForce and individualLandauLifshitzSelfForces in modules/electrodynamics.hpp; selected by --radiation-reaction.
+
+[model:abraham_lorentz_dirac_origin]
+source=dirac_1938
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=theory_context
+formula=m dv/dt = F_ext + (2 q^2/3 c^3)(d2v/dt2 + ...)
+domain=the equation the order reduction above starts from
+assumptions=Runaway and pre-accelerating solutions are why the reduced form is used instead.
+implementation=Not integrated directly; recorded because the reduction is only meaningful against it.
+
+[model:thomas_bmt_spin_transport]
+source=bargmann_michel_telegdi_1959
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=engine_model
+formula=d s/dt = (q/m) s x [(g/2-1+1/gamma) B - (g/2-1) gamma/(gamma+1) (beta.B) beta - (g/2 - gamma/(gamma+1)) beta x E/c]
+domain=classical spin of a particle with an anomalous moment in an external field
+assumptions=g is a per-particle argument, not a constant: 2.0023 for a lepton, 5.5857 for a proton.
+implementation=thomasBmtEffectiveField in modules/electrodynamics.hpp and the orbit-averaged form in modules/secular_spin_orbit.hpp.
+
+[model:darwin_two_body_lagrangian]
+source=jackson_classical_electrodynamics
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=engine_model
+formula=L_D = C[v1.v2 + (v1.n)(v2.n)], C = q1 q2/(2 c^2 r)
+domain=two charges to order (v/c)^2
+assumptions=Accelerations inside d/dt(dL/dv) are reduced to their leading Coulomb values, consistently through order v^2/c^2.
+implementation=darwinForceOnFirst and darwinForces in modules/electrodynamics.hpp.
+
+[model:moving_point_dipole_transformation]
+source=jackson_classical_electrodynamics
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=engine_model
+formula=P_source = p_lab/gamma; M_source = mu_lab/gamma, differentiated AFTER the conversion
+domain=a moving, accelerating point dipole
+assumptions=Dividing p_dot or mu_dot by gamma instead would omit the derivatives of gamma.
+implementation=historicalIntegratedDipoleKinematics in modules/electrodynamics.hpp; the closed form is quoted in the source comments as Sautbekov's.
+
+[model:orbit_averaged_dipole_inspiral]
+source=peters_1964
+phenomenon_mask=3
+phenomena=1,2
+observable=crem_collapse_time
+role=engine_model
+formula=<dE/dt> = -gamma k^2 (1+e^2/2)/(a^4 (1-e^2)^(5/2)); <dL/dt> = -gamma k L/(a^3 (1-e^2)^(3/2))
+domain=orbit-averaged over an unperturbed Kepler ellipse
+assumptions=Same averaging method as Peters, applied to the DIPOLE's P ~ r^-4 rather than the quadrupole's r^-6; the eccentricity factors differ and the Peters factor must not be substituted.
+implementation=The k(e) used by estimateCremCollapse in modules/crem_collapse.hpp.
+
+[model:plummer_short_range_softening]
+source=plummer_1911
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=numerical_method
+formula=r_eff = sqrt(r^2 + floor^2), direction preserved
+domain=close encounters inside the declared regularization radius
+assumptions=Every derivative stays continuous, unlike a hard clamp to the floor, which puts a measurable kink in the force at r = floor.
+implementation=clampedSeparationVector in modules/pair_geometry.hpp; the floor is the Compton barrier for e+e-, not an arbitrary softening length.
+
+[model:yee_staggered_fdtd]
+source=yee_1966
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=field_validation
+role=numerical_method
+formula=curl updates on a staggered E/B grid, second order in space and time
+domain=the optional Maxwell backend of the validation build only
+assumptions=Not a production path: positronium.cpp includes the backend only under POSITRONIUM_ENABLE_FIELD_VALIDATION.
+implementation=modules/maxwell_validation_backend.hpp.
+
+[model:convolutional_pml_boundary]
+source=roden_gedney_2000
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=field_validation
+role=numerical_method
+formula=CFS-PML stretched coordinates with a recursive convolution update
+domain=outer boundary of the Yee grid above
+assumptions=Absorbs outgoing radiation so a finite grid does not reflect it back onto the pair.
+implementation=The CPML sections of modules/maxwell_validation_backend.hpp.
+
+[model:boris_particle_push]
+source=boris_1970
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=field_validation
+role=numerical_method
+formula=electric half-kick, magnetic rotation at the intermediate gamma, electric half-kick, written in momentum variables
+domain=grid-coupled particle advance in the validation build
+assumptions=Time reversible and cannot produce |v| >= c.
+implementation=relativisticBorisPush in modules/maxwell_validation.hpp.
+
+[model:boris_phase_space_volume]
+source=qin_2013_boris
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=field_validation
+role=theory_context
+formula=the Boris map is volume preserving in phase space
+domain=why the pusher above is used rather than a higher-order non-symplectic one
+assumptions=Volume preservation, not order of accuracy, is what bounds the long-run energy error.
+implementation=Recorded as the justification for relativisticBorisPush.
+
+[model:kaplan_meier_survival]
+source=kaplan_meier_1958
+phenomenon_mask=3
+phenomena=1,2
+observable=crem_collapse_time
+role=statistical_method
+formula=S(t) = prod_{t_i <= t} (1 - d_i/n_i)
+domain=right-censored collapse times
+assumptions=A trajectory stopped by the wall-clock budget is censored, not missing: it carries the information that collapse had not happened by the time it reached.
+implementation=kaplanMeier in modules/kaplan_meier.hpp; the budget preferentially stops the widest orbits, which are the slowest to collapse, so averaging only the completed runs would bias the result.
+
+[model:mersenne_twister_stream]
+source=matsumoto_nishimura_1998
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time,differential_cross_section
+role=numerical_method
+formula=MT19937-64
+domain=every stochastic draw in the program
+assumptions=Reproducibility of a run depends on the draw ORDER as well as the seed.
+implementation=std::mt19937_64 throughout; seeded per trajectory.
+
+[model:splitmix64_seed_mixing]
+source=steele_lea_flood_2014
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time,differential_cross_section
+role=numerical_method
+formula=z += 0x9e3779b97f4a7c15; z ^= z>>30; z *= 0xbf58476d1ce4e5b9; z ^= z>>27; z *= 0x94d049bb133111eb; z ^= z>>31
+domain=deriving independent per-trajectory seeds from one run seed
+assumptions=Avoids the correlated low bits a plain counter would hand the generator.
+implementation=splitMix64 in modules/sampling_utilities.hpp and its local twin stochasticPhotonHash64 in modules/crem_trajectory.hpp.
+
+[model:codata_2018_constants]
+source=tiesinga_codata_2018
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time,annihilation_time,differential_cross_section
+role=constants_source
+formula=
+domain=every physical constant the program uses
+assumptions=The 2019 SI redefinition makes c, e and h exact; the electron mass and the g-factor remain measured.
+implementation=modules/physical_constants.hpp, with the exact and measured values kept distinguishable there.
+
+[model:larmor_dipole_power]
+source=jackson_classical_electrodynamics
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=engine_model
+formula=P = q_eff^2 |d2d/dt2|^2/(6 pi eps0 c^3); orbit-averaged for a Kepler ellipse this gives <P> proportional to a^-4
+domain=electric-dipole (E1) radiation of the pair's relative motion
+assumptions=The a^-4 scaling, not the instantaneous formula, is what the secular estimator integrates.
+implementation=larmorOrbitAveragedPower in modules/crem_collapse.hpp; it also sets the photon hazard rate lambda = P/(hbar omega).
+
+[model:schott_bound_field_energy]
+source=jackson_classical_electrodynamics
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=engine_model
+formula=E_Schott = -q^2 (v.a)/(6 pi eps0 c^3), the total-derivative term of the radiation-reaction power
+domain=an accelerating charge with a bound near field
+assumptions=It is a reservoir, not a loss: it returns to the orbit and must not be counted as radiated energy.
+implementation=Tracked as schottEnergy through Frame and reported separately from radiatedEnergy in positronium.cpp.
+
+[model:poisson_photon_hazard]
+source=internal_ideal_model
+phenomenon_mask=3
+phenomena=1,2
+observable=crem_collapse_time
+role=engine_model
+formula=P(no photon in dt) = exp(-lambda dt), lambda = P_Larmor/(hbar omega)
+domain=the stochastic branch of the radiation-reaction switch
+assumptions=The same E1 power that the deterministic drag would remove continuously is instead banked as hazard and paid out in discrete, momentum-conserving kicks, so a photon has an energy and a direction to report.
+implementation=stochasticElectricDipole in modules/electrodynamics.hpp; --emission deterministic bypasses the Poisson draw.
+
+[model:adaptive_step_doubling]
+source=jackson_classical_electrodynamics
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=numerical_method
+formula=one full step against two half steps; accept on the Richardson error estimate, otherwise subdivide
+domain=the mechanical integrator of every trajectory
+assumptions=Measured convergence is second order, 4.00x per halving held for about ten halvings, with the retarded sector in or out and the reaction on or off.
+implementation=ClassicalTrajectoryEngine in modules/crem_engine.hpp; the measurement is CREM_DEBUG_ORDER.
+
+[model:rayleigh_impact_parameter]
+source=internal_ideal_model
+phenomenon_mask=8
+phenomena=4
+observable=differential_cross_section
+role=statistical_method
+formula=a circular isotropic 2D Gaussian beam has Rayleigh-distributed radial impact parameter, p(b) proportional to b exp(-b^2/2 sigma^2)
+domain=beam and interaction experiments
+assumptions=The area Jacobian contributes the factor b; sampling |N(0,sigma)| instead would be half-normal and wrong.
+implementation=sampleIsotropicGaussianImpact in modules/sampling_utilities.hpp.
+
+[model:stochastic_electrodynamics_field]
+source=boyer_1975
+phenomenon_mask=15
+phenomena=1,2,3,4
+observable=crem_collapse_time
+role=optional_model
+formula=rho(omega) = hbar omega^3/(2 pi^2 c^3)
+domain=off by default; enabled by --zpf
+assumptions=The fluctuating half of a Langevin pair whose dissipative half is the radiation reaction already in the model.  The omega^3 spectrum is the unique Lorentz-invariant one, which is why it cannot act as a drag.
+implementation=modules/zero_point_field.hpp; NOT part of the model any committed result was produced with.
 
