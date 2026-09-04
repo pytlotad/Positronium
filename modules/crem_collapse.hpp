@@ -3090,14 +3090,17 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // reaches this branch and is bit-identical to before.
             // ONE prescription, used everywhere a photon energy is needed.
             // It used to be inlined here while the cascade refresh below
-            // rebuilt hbar*omega_orb directly, which silently decoupled the
-            // HAZARD (computed from this) from the ENERGY each photon
-            // actually carried.  With the level-difference branch in place
-            // that decoupling removed 45% too much energy: many photons fired
-            // at the small delta-E rate while each carried the large
-            // hbar*omega_orb.  Measured before the repair: collapse time fell
-            // from 119.2 to 62.9 ps for a change touching 6.6% of
-            // checkpoints, which is what exposed it.
+            // rebuilt hbar*omega_orb directly, and deduplicating the two is
+            // worth doing on its own account.
+            //
+            // It is NOT the cause of the 119.2 -> 62.9 ps shift, and this
+            // comment used to say it was.  That hypothesis was raised and
+            // refuted in the same commit that recorded the shift: unifying
+            // both paths through quantumFor produced results identical to
+            // every digit, so the decoupled path never ran.  The actual
+            // mechanism is at quantumFor's own comment just below -- the
+            // energy removed IS invariant, and the shift is in the waiting
+            // time, which nothing required to be.
             const auto quantumFor=[&](double periodHere,double orbitalEnergy){
                 // CREM_QUANTUM_CENSUS: which branch each call takes, so the
                 // "6.6% of checkpoints" the ladder was withdrawn over can be
@@ -3107,28 +3110,60 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 const double bindingScale=pairBindingEnergy(activePair);
                 if(!(orbitalEnergy>0.0)||!(bindingScale>0.0)) return classical;
                 const double level=std::sqrt(bindingScale/orbitalEnergy);
-                // WITHDRAWN, pending understanding.  Extending the ladder
-                // below n=2 with E(n)-E(1) = R(1 - 1/n^2) is the physically
-                // right quantum there -- hbar*omega_orb asks for 13.606 eV at
-                // n=1 against a binding of 6.803, twice what the pair has,
-                // and positronium's largest transition out of the ground
-                // state is 5.102 eV.  But switching it moved production by
-                // 45% (collapse median 119.2 -> 62.9 ps, terminal binding
-                // 2.667 -> 3.883 keV) for a change touching 6.6% of
-                // checkpoints, and that is not explicable by the bookkeeping:
-                // the photon count scales as 1/quantum while each photon
-                // carries the quantum, so the energy removed should be
-                // INVARIANT under this substitution.  A first diagnosis --
-                // that the cascade refresh below rebuilt hbar*omega and
-                // decoupled hazard from energy -- was tested by unifying the
-                // two through quantumFor above and proved wrong: the results
-                // were identical to every digit, so that path never runs.
+                // Extending the ladder below n=2 with E(n)-E(1) =
+                // R(1 - 1/n^2) is the physically right quantum there --
+                // hbar*omega_orb asks for 13.606 eV at n=1 against a binding
+                // of 6.803, twice what the pair has, and positronium's
+                // largest transition out of the ground state is 5.102 eV.
+                // Switching it moved production by 45% (collapse median
+                // 119.2 -> 62.9 ps, terminal binding 2.667 -> 3.883 keV) for
+                // a change touching 6.6% of checkpoints, and that WAS
+                // withdrawn as inexplicable.  It is no longer: the mechanism
+                // is below, measured in both directions.  The cut stays at
+                // n >= 2 for a different and smaller reason, also below.
                 //
-                // The cut stays at n >= 2 until the 45% is accounted for.
-                // Shipping an unexplained factor of two in the headline
-                // observable is worse than shipping a quantum that is known
-                // to be too large in a window covering 6.6% of checkpoints
-                // and documented as such.
+                // WHY 6.6% OF CHECKPOINTS MOVES THE ANSWER BY 45%.
+                // Worked out in the README, under the collapse section: the
+                // whole collapse is 2 or 3 photons, the two populations are
+                // cleanly separated (terminal binding 0.23-0.35 keV against
+                // 1.24-3.40, T/t_light 122-150 against 38-70), and which one
+                // a trajectory lands in is a knife edge on whether
+                // T/t_light falls above or below 150 after the SECOND photon.
+                // Move the quantum and you move the state after that photon
+                // and tip part of the sample across the edge.  That is the
+                // 45%, and it is also why the terminal binding goes DEEPER
+                // with a smaller quantum.  Granularity of the stopping rule,
+                // not an energy leak: the balance closes.
+                //
+                // The framing that made it look impossible is worth keeping
+                // in one line.  The invariance argument is correct and does
+                // not apply: it constrains the ENERGY -- count scales as
+                // 1/quantum, each photon carries the quantum, product
+                // invariant, measured to six significant figures -- and says
+                // nothing about the TIME, which is the sum of Q/P over the
+                // steps with P running away as a^-4.  Two quantities, one
+                // conserved and one not; the withdrawal tested the conserved
+                // one.  tools/quantum_step_cost.py shows the step-size effect
+                // alone produces both signs, and reproduces the coarse
+                // direction measured on this code, 2.549 against 2.65.
+                //
+                // WHY THE CUT STILL STAYS AT n >= 2, which is now a much
+                // smaller claim than "unexplained".  A ladder needs a lowest
+                // rung.  Extended below n=2 without --ground-state-floor the
+                // orbit passes n=1, where there is no rung, the quantum
+                // reverts to hbar*omega, and hbar*omega/|E| = 2/n diverges:
+                // measured photon energies reach 14.5 keV, each multiplying
+                // the binding by 20, and 4 of 4 trajectories end in numerical
+                // failure.  With the floor added it runs clean, 4 of 4
+                // collapses.  So the extension exists -- CREM_LADDER_BELOW_2
+                // -- and is not a drop-in: it turns a gradual inspiral into
+                // whole transitions and needs the floor to be coherent.
+                //
+                // The deeper limitation is unchanged and is the real subject:
+                // 93.4% of the collapse runs below n=1, where the ladder has
+                // no states at all.  The artificial quantum there is a
+                // symptom of the model being outside the ladder's domain, not
+                // a defect inside it.
                 // gBohrLevelPhotonEnergy off (the default): never import the
                 // level-difference rule, always report what the orbit's own
                 // frequency produces.  See its own comment in positronium.cpp.
@@ -4383,10 +4418,17 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // and angular-momentum losses are not free of each other:
                     // e^2 = 1 + 2 E L^2/k^2 must stay non-negative, which caps
                     // |L| at its circular value for the energy that remains.
-                    // The photon's hbar is far too little angular momentum for
-                    // the energy it carries -- k(e) removes about 45% of L per
-                    // photon where hbar is about 11% -- so the orbit keeps too
-                    // much L and e^2 goes negative on the FIRST emission.
+                    // The photon's hbar does not reduce |L| by hbar: it is
+                    // subtracted as a VECTOR in a near-random direction, so it
+                    // removes only hbar*cos(angle) at best and INCREASES |L|
+                    // whenever that angle is obtuse.  The energy removed
+                    // meanwhile demands a definite reduction, so the orbit
+                    // keeps too much L and e^2 goes negative on the FIRST
+                    // emission.  (An earlier version of this comment put the
+                    // mismatch at "45% against 11%".  That compared
+                    // percentages of |L| across two runs whose |L| differed,
+                    // one of them inflated by the very runaway being
+                    // diagnosed, and it is withdrawn.)
                     // Measured on seed 42, e^2 after each of the first
                     // emissions: -1.37, -0.487, +0.0152, +0.363, -8.83,
                     // against machine zero throughout with k(e).
