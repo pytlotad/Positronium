@@ -5484,10 +5484,32 @@ int main(int argc, char** argv) {
                             "spacing dE(n->n-1) while n >= 2 and reverts to "
                             "hbar*omega below, where the ladder has no lower "
                             "rung (--bohr-photon-energy).\n"
+                          : ""
+                          )
+                      << (gBohrLevelPhotonEnergy
+                          ? ""
                           : "  Photon energy is hbar*omega_orb throughout -- "
                             "whatever the orbit's own frequency produces, no "
                             "imported level spacing (--bohr-photon-energy "
                             "restores it).\n")
+                      // A ladder needs a bottom.  With --bohr-photon-energy
+                      // and no floor the orbit passes n = 1, where there is no
+                      // lower rung, the quantum reverts to hbar*omega, and
+                      // that grows without bound as the orbit plunges:
+                      // measured, photon energies reach 14.5 keV each
+                      // multiplying the binding by a factor of 20, and the
+                      // integrator does not survive it.  Four of four
+                      // trajectories came back as numerical failures on seed
+                      // 42 with a 500 s budget, against four of four clean
+                      // collapses with the floor added.
+                      << ((gBohrLevelPhotonEnergy&&!gGroundStateEmissionFloor)
+                          ? "  WARNING: --bohr-photon-energy without "
+                            "--ground-state-floor. The ladder has no lowest "
+                            "rung, so below n = 1 the quantum reverts to "
+                            "hbar*omega and diverges as the orbit plunges. "
+                            "Measured on seed 42: 4 of 4 trajectories end in "
+                            "numerical failure. Add --ground-state-floor.\n"
+                          : "")
                       << "  Cost: ";
             // How much longer this run takes, which is NOT one power law for
             // both reaction families and was briefly documented as if it were.
