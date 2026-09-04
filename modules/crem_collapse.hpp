@@ -4204,9 +4204,45 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // prior value in that branch); here the magnitude line
                     // below still runs regardless, so only direction is
                     // affected by this edge case.
+                    // MAGNITUDE stays with the classical k(e) relation, and
+                    // the reason is measured rather than assumed.
+                    //
+                    // Taking it instead from the same vector subtraction that
+                    // sets the direction closes the angular-momentum balance
+                    // EXACTLY -- |J_after - J_before + s_photon| falls from
+                    // 0.5718 hbar mean, 1.0905 worst, to 0.0000 -- because the
+                    // spins do not change here, so L_after = L_before -
+                    // hbar*h*n is conservation by construction.  It also
+                    // destroys the orbit.
+                    //
+                    // A bound Kepler orbit has two parameters, and the energy
+                    // and angular-momentum losses are not free of each other:
+                    // e^2 = 1 + 2 E L^2/k^2 must stay non-negative, which caps
+                    // |L| at its circular value for the energy that remains.
+                    // The photon's hbar is far too little angular momentum for
+                    // the energy it carries -- k(e) removes about 45% of L per
+                    // photon where hbar is about 11% -- so the orbit keeps too
+                    // much L and e^2 goes negative on the FIRST emission.
+                    // Measured on seed 42, e^2 after each of the first
+                    // emissions: -1.37, -0.487, +0.0152, +0.363, -8.83,
+                    // against machine zero throughout with k(e).
+                    //
+                    // So the two conservation laws over-determine this
+                    // parametrization, and closing the angular one by itself
+                    // is not available: it would need the photon's energy and
+                    // its hbar to be drawn consistently with each other, which
+                    // is a change to the emission, not to this line.
+                    //
+                    // CREM_SPIN_MAGNITUDE=1 selects the subtraction magnitude
+                    // for anyone continuing that work.  It closes J and
+                    // produces unphysical orbital elements; both are expected.
+                    const bool useSpinMagnitude=
+                        std::getenv("CREM_SPIN_MAGNITUDE")!=nullptr;
                     elements.specificAngularMomentum=
                         clampAboveGroundStateAngularMomentum(
-                            classicalAngularMomentumMagnitude);
+                            (useSpinMagnitude&&directionTrialNorm>1.0e-300)
+                                ?directionTrialNorm/reducedMass
+                                :classicalAngularMomentumMagnitude);
                     if(gPhotonBalanceAudit.enabled) {
                         // Same balance as the two-body path, on the variables
                         // this one keeps: J = L_vector + S_1 + S_2, and the
@@ -4266,7 +4302,17 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         const double axisTurn=std::acos(std::clamp(
                             dot(emissionAxisBefore,angularMomentumDirection),
                             -1.0,1.0))*180.0/pi;
-                        std::printf("CREM_REACH %.9e %.9e %.9e %.9e %.9e\n",
+                        // e^2 = 1 + 2 E L^2 / k^2 -- it can only fall as the
+                        // orbit radiates, and going negative is unphysical.
+                        // This is the failure mode k(e) was introduced to
+                        // avoid, so it is what the switch has to be judged on.
+                        const double eccentricitySquaredAfter=1.0
+                            +2.0*elements.specificEnergy
+                            *elements.specificAngularMomentum
+                            *elements.specificAngularMomentum
+                            /(attractionParameter*attractionParameter);
+                        std::printf("CREM_REACH %.9e %.9e %.9e %.9e %.9e"
+                                    " %.9e %.9e\n",
                             emissionEnergyBefore>0.0||emissionEnergyBefore<0.0
                                 ?elements.specificEnergy/emissionEnergyBefore
                                 :0.0,
@@ -4275,7 +4321,8 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                 :0.0,
                             axisTurn,
                             (centreOfMassVelocity-emissionComBefore).norm(),
-                            photonEnergy);
+                            photonEnergy,
+                            eccentricitySquaredHere,eccentricitySquaredAfter);
                     }
                     radiatedEnergyTotal+=photonEnergy;
                     result.quantizedEmittedEnergyJoules+=photonEnergy;
