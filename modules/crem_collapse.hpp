@@ -3806,7 +3806,26 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             std::numeric_limits<double>::min());
                         recordPhotonWorst(gPhotonBalanceAudit.worstNullResidual,
                                           photonNull/photonScale);
-                        if(photonNull/photonScale>1.0e-9)
+                        // FIXED tolerance here, deliberately, where the
+                        // two-body path in crem_trajectory.hpp needs one that
+                        // follows the cancellation.  The difference is real
+                        // and was measured before being relied on: this path
+                        // BUILDS the photon four-vector and boosts it, never
+                        // differencing two large four-momenta, so no digits
+                        // are lost and the residual does not depend on how
+                        // small the photon is.  Over 200000 draws spanning
+                        // eleven decades of E_pair/E_photon the median
+                        // residual is flat at 1.85e-16 and the worst is
+                        // 4.1e-15.  The two-body path differences MeV-scale
+                        // energies to recover an eV-scale photon and cannot
+                        // do better than 1e-16 * E_pair/E_photon, which is why
+                        // its tolerance is written against that floor.
+                        //
+                        // 1e-12 leaves about 250x over the measured worst,
+                        // rather than the 1e-9 this started at, which sat
+                        // seven orders above the noise and would have missed
+                        // a real error of any ordinary size.
+                        if(photonNull/photonScale>1.0e-12)
                             gPhotonBalanceAudit.offShellPhoton.fetch_add(
                                 1,std::memory_order_relaxed);
                         if(!(photonLabFour.energy>0.0))
