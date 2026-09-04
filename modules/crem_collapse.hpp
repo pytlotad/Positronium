@@ -1928,6 +1928,25 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         if(periapsis<=comptonBarrierRadius
            ||periodToLightCrossingRatio<=minimumPeriodToLightCrossingRatio
            ||settledOnGroundState) {
+            // CREM_ENERGY_SPLIT: how the radiated energy divides between the
+            // photons and the continuous credit.  The stochastic branch has
+            // TWO channels, which is easy to miss: besides the photon recoils,
+            // the block above credits the measured orbit's own radiated energy
+            // straight into the elements, and books it into radiatedEnergyTotal
+            // beside them.  So the photon sum is NOT the whole radiated
+            // energy, and this prints both.
+            //
+            // Measured, para on seed 42: photons carry 100.00% of it with the
+            // ground-state floor and 99.982% without, so the continuous
+            // channel is real but between 0.002% and 0.018% -- accounted for,
+            // not leaking.  Control: --radiation-reaction individual reports
+            // 0 photons and a 0.0000% photon share, which is what says the
+            // instrument measures the split rather than assuming it.
+            if(std::getenv("CREM_ENERGY_SPLIT"))
+                std::printf("CREM_SPLIT %.9e %.9e %lld %.9e\n",
+                            radiatedEnergyTotal,
+                            result.quantizedEmittedEnergyJoules,
+                            result.emittedPhotonCount,simulatedTimeTotal);
             result.lifetimeSeconds=simulatedTimeTotal;
             result.meanRadiatedPowerWatts=simulatedTimeTotal>0.0
                 ?radiatedEnergyTotal/simulatedTimeTotal
