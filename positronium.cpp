@@ -4985,8 +4985,29 @@ namespace { struct CausalityReport { ~CausalityReport() {
         a.historyCalls.load(),a.futureSamples.load(),
         a.worstFutureSeconds.load()); } } gCausalityReport; }
 
+namespace { struct PhotonBalanceReport { ~PhotonBalanceReport() {
+    const PhotonBalanceAudit& b=gPhotonBalanceAudit;
+    if(!b.enabled) return;
+    std::fprintf(stderr,
+        "\n[photon] emissions                       %llu\n"
+        "[photon] energy removed NOT positive      %llu\n"
+        "[photon] removed four-momentum NOT null   %llu"
+        " (worst |dE^2-|dp|^2c^2|/dE^2 = %.3e)\n"
+        "[photon] residual pair invariant NOT real %llu (worst %.3e)\n"
+        "[photon] deepest residual binding         %.3e of the rest energy\n"
+        "[photon] composite: scalar W^2-2WE vs vector P-k, worst %.3e\n"
+        "[photon] two-body: |dE_lab - E_draw|/E_draw, worst %.3e"
+        " (different frames; not required to vanish)\n",
+        b.emissions.load(),b.negativeEnergy.load(),
+        b.offShellPhoton.load(),b.worstNullResidual.load(),
+        b.belowThreshold.load(),b.worstThresholdDeficit.load(),
+        b.worstBinding.load(),
+        b.worstScalarVectorMismatch.load(),
+        b.worstFrameEnergyDifference.load()); } } gPhotonBalanceReport; }
+
 int main(int argc, char** argv) {
     gCausalityAudit.enabled=std::getenv("CREM_CAUSALITY")!=nullptr;
+    gPhotonBalanceAudit.enabled=std::getenv("CREM_PHOTON_BALANCE")!=nullptr;
     std::cout
         << "CREM attribution: publications based on this program or modified "
            "versions should cite https://github.com/pytlotad/Positronium and "

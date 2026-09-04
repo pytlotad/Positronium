@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -358,6 +359,43 @@ inline Vec3 sampleRotatingDipolePhotonDirection(const Vec3& orbitalNormal,
         +(first*std::cos(azimuth)+second*std::sin(azimuth))*sine;
 }
 
+// CREM_PHOTON_BALANCE audit.  What a photon emission must satisfy is not a
+// frame-dependent bookkeeping identity but an invariant one: the four-momentum
+// REMOVED from the pair has to be null and forward in time.  Writing
+// dE = E_pair(before) - E_pair(after) and dp likewise, the emitted quantum is a
+// photon exactly when
+//
+//     dE > 0     and     dE^2 - |dp|^2 c^2 = 0,
+//
+// which needs no boost back to the frame the draw was made in and so cannot be
+// satisfied by a compensating error in that boost.  The residual pair must
+// also stay on shell, W' >= (m1+m2)c^2.  Counters are atomic and every test is
+// computed from local values, for the reason recorded in CausalityAudit.
+struct PhotonBalanceAudit {
+    std::atomic<unsigned long long> emissions{0};
+    std::atomic<unsigned long long> negativeEnergy{0};
+    std::atomic<unsigned long long> offShellPhoton{0};
+    std::atomic<unsigned long long> belowThreshold{0};
+    std::atomic<double> worstNullResidual{0.0};   // |dE^2-|dp|^2c^2| / dE^2
+    // Two DIFFERENT quantities, kept in separate fields because the first
+    // version of this audit wrote both to one and printed the two-body path's
+    // frame difference under the composite path's label, which read as a 1.7%
+    // conservation error and is not one.
+    std::atomic<double> worstFrameEnergyDifference{0.0};  // two-body path
+    std::atomic<double> worstScalarVectorMismatch{0.0};   // composite path
+    std::atomic<double> worstThresholdDeficit{0.0};
+    std::atomic<double> worstBinding{0.0};
+    bool enabled=false;
+};
+inline PhotonBalanceAudit gPhotonBalanceAudit;
+
+inline void recordPhotonWorst(std::atomic<double>& worst,double candidate) {
+    double seen=worst.load(std::memory_order_relaxed);
+    while(candidate>seen
+          &&!worst.compare_exchange_weak(seen,candidate,
+                                         std::memory_order_relaxed)) {}
+}
+
 struct StochasticPhotonRecoil {
     bool emitted=false;
     double energy=0.0;       // photon energy in the pre-emission pair COM
@@ -378,6 +416,16 @@ struct StochasticPhotonRecoil {
 inline StochasticPhotonRecoil applyStochasticDipolePhoton(
     State& s,double photonEnergy,const Vec3& photonDirection) {
     StochasticPhotonRecoil result;
+    // Four-momentum of the pair as it stands before anything is removed.
+    double auditEnergyBefore=0.0; Vec3 auditMomentumBefore;
+    if(gPhotonBalanceAudit.enabled) {
+        const auto a=two_body::fourMomentumFromVelocity(s.firstVelocity,firstMass);
+        const auto b=two_body::fourMomentumFromVelocity(s.secondVelocity,secondMass);
+        if(a.valid()&&b.valid()) {
+            auditEnergyBefore=a.energy+b.energy;
+            auditMomentumBefore=a.momentum+b.momentum;
+        }
+    }
     if(!(photonEnergy>0.0)||!std::isfinite(photonEnergy)) return result;
     const double directionNorm=photonDirection.norm();
     if(!(directionNorm>0.0)||!std::isfinite(directionNorm)) return result;
@@ -446,6 +494,66 @@ inline StochasticPhotonRecoil applyStochasticDipolePhoton(
     result.emitted=true;
     result.energy=photonEnergy;
     result.direction=direction;
+    if(gPhotonBalanceAudit.enabled&&auditEnergyBefore>0.0) {
+        const auto a=two_body::fourMomentumFromVelocity(s.firstVelocity,firstMass);
+        const auto b=two_body::fourMomentumFromVelocity(s.secondVelocity,secondMass);
+        if(a.valid()&&b.valid()) {
+            gPhotonBalanceAudit.emissions.fetch_add(1,std::memory_order_relaxed);
+            const double removedEnergy=auditEnergyBefore-(a.energy+b.energy);
+            const Vec3 removedMomentum=
+                auditMomentumBefore-(a.momentum+b.momentum);
+            if(!(removedEnergy>0.0))
+                gPhotonBalanceAudit.negativeEnergy.fetch_add(
+                    1,std::memory_order_relaxed);
+            // Null condition, normalised by dE^2 so it reads as a relative
+            // error rather than in joules squared.
+            const double nullResidual=std::abs(
+                removedEnergy*removedEnergy
+                -removedMomentum.squaredNorm()*c*c);
+            const double scale=std::max(removedEnergy*removedEnergy,
+                                        std::numeric_limits<double>::min());
+            recordPhotonWorst(gPhotonBalanceAudit.worstNullResidual,
+                              nullResidual/scale);
+            // The tolerance has to follow the cancellation, not sit at a fixed
+            // number.  Recovering a photon of energy dE by subtracting two
+            // pair energies of size E_pair throws away log10(E_pair/dE)
+            // digits, so the achievable floor is about
+            // 1e-16 * E_pair/dE -- measured, the median residual tracks that
+            // ratio linearly across four decades, which is what says the
+            // residual belongs to this subtraction and not to the emission.
+            // Flagging is therefore three orders above that floor: at two
+            // orders the ordinary tail of the cancellation still trips it
+            // (measured: 9 of 56047 randomized draws), while a genuine error
+            // would not scale with the ratio at all and so would show at any
+            // of these settings.
+            const double cancellationFloor=
+                1.0e-16*auditEnergyBefore/std::max(removedEnergy,
+                    std::numeric_limits<double>::min());
+            if(nullResidual/scale>1000.0*std::max(cancellationFloor,1.0e-15))
+                gPhotonBalanceAudit.offShellPhoton.fetch_add(
+                    1,std::memory_order_relaxed);
+            // The energy actually removed, against the energy the draw asked
+            // for.  These are quoted in different frames, so they agree only
+            // up to the Doppler factor of the pair's own motion; the null
+            // condition above is the frame-free statement.
+            if(photonEnergy>0.0)
+                recordPhotonWorst(
+                    gPhotonBalanceAudit.worstFrameEnergyDifference,
+                    std::abs(removedEnergy-photonEnergy)/photonEnergy);
+            // Residual pair on shell.
+            const double residualInvariant=
+                (a.energy+b.energy)*(a.energy+b.energy)
+                -(a.momentum+b.momentum).squaredNorm()*c*c;
+            const double threshold=(firstMass+secondMass)*c*c
+                                  *(firstMass+secondMass)*c*c;
+            if(residualInvariant<threshold) {
+                gPhotonBalanceAudit.belowThreshold.fetch_add(
+                    1,std::memory_order_relaxed);
+                recordPhotonWorst(gPhotonBalanceAudit.worstThresholdDeficit,
+                    (threshold-residualInvariant)/threshold);
+            }
+        }
+    }
     return result;
 }
 

@@ -3793,6 +3793,70 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     const two_body::ParticleFourMomentum pairLabAfter{
                         pairLabBefore.energy-photonLabFour.energy,
                         pairLabBefore.momentum-photonLabFour.momentum};
+                    if(gPhotonBalanceAudit.enabled) {
+                        gPhotonBalanceAudit.emissions.fetch_add(
+                            1,std::memory_order_relaxed);
+                        // The emitted quantum must be null in the LAB, which
+                        // tests the boost as well as the draw.
+                        const double photonNull=std::abs(
+                            photonLabFour.energy*photonLabFour.energy
+                            -photonLabFour.momentum.squaredNorm()*c*c);
+                        const double photonScale=std::max(
+                            photonLabFour.energy*photonLabFour.energy,
+                            std::numeric_limits<double>::min());
+                        recordPhotonWorst(gPhotonBalanceAudit.worstNullResidual,
+                                          photonNull/photonScale);
+                        if(photonNull/photonScale>1.0e-9)
+                            gPhotonBalanceAudit.offShellPhoton.fetch_add(
+                                1,std::memory_order_relaxed);
+                        if(!(photonLabFour.energy>0.0))
+                            gPhotonBalanceAudit.negativeEnergy.fetch_add(
+                                1,std::memory_order_relaxed);
+                        // The two routes to the residual pair must agree: the
+                        // SCALAR one, W_f^2 = W^2 - 2 W E_gamma, which sets the
+                        // orbital energy, against the VECTOR one, P_f = P - k,
+                        // which sets the velocity.  A disagreement here would
+                        // leave the pair's energy and its momentum describing
+                        // different states.
+                        const double vectorInvariantSquared=
+                            pairLabAfter.energy*pairLabAfter.energy
+                            -pairLabAfter.momentum.squaredNorm()*c*c;
+                        const double scalarInvariantSquared=
+                            static_cast<double>(invariantSquaredAfter);
+                        const double denominator=std::max(
+                            std::abs(scalarInvariantSquared),
+                            std::numeric_limits<double>::min());
+                        recordPhotonWorst(
+                            gPhotonBalanceAudit.worstScalarVectorMismatch,
+                            std::abs(vectorInvariantSquared
+                                     -scalarInvariantSquared)/denominator);
+                        // NOT tested against (m1+m2)c^2 here.  This pair is
+                        // BOUND, so W < (m1+m2)c^2 by exactly its binding
+                        // energy -- at the terminal radius that is a few
+                        // hundred eV against a 1.022 MeV rest mass, and a
+                        // floor at the rest-mass sum would flag every
+                        // emission.  What the composite must satisfy is only
+                        // that its invariant stays real and positive; the
+                        // free-particle threshold belongs to the two-body
+                        // path in crem_trajectory.hpp, where the residual is
+                        // two separate particles, and is checked there.
+                        if(!(vectorInvariantSquared>0.0)) {
+                            gPhotonBalanceAudit.belowThreshold.fetch_add(
+                                1,std::memory_order_relaxed);
+                            recordPhotonWorst(
+                                gPhotonBalanceAudit.worstThresholdDeficit,
+                                -vectorInvariantSquared
+                                /std::max(totalMass*c*c*totalMass*c*c,
+                                          std::numeric_limits<double>::min()));
+                        }
+                        // Recorded for scale rather than as a failure: how
+                        // deeply bound the residual pair is, in units of its
+                        // own rest energy.
+                        recordPhotonWorst(gPhotonBalanceAudit.worstBinding,
+                            (totalMass*c*c
+                             -std::sqrt(std::max(0.0,vectorInvariantSquared)))
+                            /(totalMass*c*c));
+                    }
                     const Vec3 recoiledVelocity=
                         two_body::velocityFromFourMomentum(pairLabAfter);
                     if(!isFinite(recoiledVelocity)) {
