@@ -4443,7 +4443,8 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                      -elements.specificAngularMomentum)
                             *reducedMass/hbar;
                         std::printf("CREM_REACH %.9e %.9e %.9e %.9e %.9e"
-                                    " %.9e %.9e %.9e %.9e %.9e %d\n",
+                                    " %.9e %.9e %.9e %.9e %.9e %d %.9e"
+                                    " %.9e\n",
                             emissionEnergyBefore>0.0||emissionEnergyBefore<0.0
                                 ?elements.specificEnergy/emissionEnergyBefore
                                 :0.0,
@@ -4455,7 +4456,15 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             photonEnergy,
                             eccentricitySquaredHere,eccentricitySquaredAfter,
                             demandedHbar,removedHbar,
-                            omegaHere/staleOmega,harmonicNumber);
+                            omegaHere/staleOmega,harmonicNumber,
+                            // Effective principal level, the quantity the
+                            // Bohr ladder is gated on (it reaches only n>=2).
+                            std::sqrt(pairBindingEnergy(activePair)
+                                /std::max(reducedMass
+                                    *std::abs(emissionEnergyBefore),
+                                    std::numeric_limits<double>::min())),
+                            // and the orbital angular momentum in hbar
+                            emissionLBefore*reducedMass/hbar);
                     }
                     radiatedEnergyTotal+=photonEnergy;
                     result.quantizedEmittedEnergyJoules+=photonEnergy;
