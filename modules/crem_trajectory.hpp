@@ -437,6 +437,18 @@ inline void recordPhotonWorst(std::atomic<double>& worst,double candidate) {
                                          std::memory_order_relaxed)) {}
 }
 
+// CREM_QUANTUM_CENSUS counters: how many quantumFor calls land in each
+// branch.  Plain (not atomic) and only read at exit; the collapse experiment
+// threads them, so treat the totals as indicative rather than exact.
+//
+// They live here rather than beside quantumFor in crem_collapse.hpp because
+// that header is compiled out of the validation executable, and the reporter
+// in positronium.cpp is not.
+inline unsigned long long gQuantumCensusTotal=0;
+inline unsigned long long gQuantumCensusLadderAbove2=0;
+inline unsigned long long gQuantumCensusBelow2=0;
+inline unsigned long long gQuantumCensusBelow1=0;
+
 struct StochasticPhotonRecoil {
     bool emitted=false;
     double energy=0.0;       // photon energy in the pre-emission pair COM

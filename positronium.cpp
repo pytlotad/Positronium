@@ -4985,6 +4985,20 @@ namespace { struct CausalityReport { ~CausalityReport() {
         a.historyCalls.load(),a.futureSamples.load(),
         a.worstFutureSeconds.load()); } } gCausalityReport; }
 
+namespace { struct QuantumCensusReport { ~QuantumCensusReport() {
+    if(!std::getenv("CREM_QUANTUM_CENSUS")||gQuantumCensusTotal==0) return;
+    const double total=static_cast<double>(gQuantumCensusTotal);
+    std::fprintf(stderr,
+        "\n[quantum] quantumFor calls %llu\n"
+        "[quantum]   ladder, n >= 2      %llu (%.2f%%)\n"
+        "[quantum]   ladder, 1 < n < 2   %llu (%.2f%%)\n"
+        "[quantum]   no ladder, n <= 1   %llu (%.2f%%)\n",
+        gQuantumCensusTotal,
+        gQuantumCensusLadderAbove2,100.0*gQuantumCensusLadderAbove2/total,
+        gQuantumCensusBelow2,100.0*gQuantumCensusBelow2/total,
+        gQuantumCensusBelow1,100.0*gQuantumCensusBelow1/total); } }
+    gQuantumCensusReport; }
+
 namespace { struct PhotonBalanceReport { ~PhotonBalanceReport() {
     const PhotonBalanceAudit& b=gPhotonBalanceAudit;
     if(!b.enabled) return;

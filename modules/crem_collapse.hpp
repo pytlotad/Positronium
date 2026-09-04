@@ -3099,6 +3099,10 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // from 119.2 to 62.9 ps for a change touching 6.6% of
             // checkpoints, which is what exposed it.
             const auto quantumFor=[&](double periodHere,double orbitalEnergy){
+                // CREM_QUANTUM_CENSUS: which branch each call takes, so the
+                // "6.6% of checkpoints" the ladder was withdrawn over can be
+                // measured rather than assumed.
+                ++gQuantumCensusTotal;
                 const double classical=hbar*(2.0*pi/periodHere);
                 const double bindingScale=pairBindingEnergy(activePair);
                 if(!(orbitalEnergy>0.0)||!(bindingScale>0.0)) return classical;
@@ -3129,6 +3133,9 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 // level-difference rule, always report what the orbit's own
                 // frequency produces.  See its own comment in positronium.cpp.
                 if(!gBohrLevelPhotonEnergy) return classical;
+                if(level>=2.0) ++gQuantumCensusLadderAbove2;
+                else if(level>1.0) ++gQuantumCensusBelow2;
+                else ++gQuantumCensusBelow1;
                 // LADDER BELOW n=2 (CREM_LADDER_BELOW_2).
                 //
                 // The n>=2 gate is unreachable in practice: the orbit starts
