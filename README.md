@@ -5563,6 +5563,128 @@ wygenerowane przed tą poprawką, pozostają aktualne — ponowny bieg
 produkcyjny nie zmieniłby żadnej cyfry w granicach precyzji, w jakiej są
 raportowane. `positronium_validation`: \(33/33\) bez regresji.
 
+**O. Audyt przyczynowości i bilansów przy emisji, oraz co przy okazji okazało
+się nieprawdą.** Sesja zaczęła się od porządkowania nagłówków, a skończyła na
+kilku pomiarach fizyki i na sześciu wycofanych twierdzeniach — moich własnych.
+Ta sekcja zapisuje jedno i drugie, bo drugie kosztowało więcej czasu niż
+pierwsze.
+
+*Prawdziwa wada, znaleziona przy okazji: dipole NaN w polu strefy dalekiej.*
+`historicalState` interpolowała między dwoma wpisami historii przez
+\((t-t_{\rm starszy})/\max(\Delta t,10^{-300})\). Ta podłoga nie zabezpiecza
+przypadku zdegenerowanego, tylko go maskuje: dwa wpisy o **identycznym**
+znaczniku czasu — zmierzone \(120\) na \(6\,575\,645\) wywołań, najmniejsza
+rozpiętość dokładnie zero — zamieniają się we współczynnik interpolacji
+sięgający nieskończoności. `interpolateVector` skalowała wtedy dipole o czynnik
+rzędu \(10^{244}\), suma kwadratów się przepełniała, `interpolateDipole` dzieliła
+nieskończoność przez nieskończoność, a `farZoneMagneticDipoleField` dostawał
+moment \(\{{\rm NaN},{\rm NaN},{\rm NaN}\}\). Naprawione przez zwrócenie punktu
+końcowego, bo to właśnie znaczy zerowa rozpiętość. **To zmieniło wyniki**, i to
+w dobrą stronę: wypromieniowany pęd netto \(|P_{\rm rad}|\), który znika z
+symetrii i jest czystą miarą jakości, zmalał albo został bez zmian we wszystkich
+dwunastu konfiguracjach (para \(1{,}49\cdot10^{-40}\to1{,}23\cdot10^{-42}\)).
+Przy okazji `Vec3::norm()` przestała się przepełniać i niedomiarać: kwadrat
+kosztuje połowę zakresu wykładnika, więc `sqrt(x²+y²+z²)` nie widziała wektora
+poniżej \(\sim10^{-154}\) i zwracała nieskończoność powyżej \(\sim10^{+154}\).
+
+*Przyczynowość, zmierzona a nie wyargumentowana.* Pole opóźnione jest
+przyczynowe wtedy, gdy iteracja Newtona ląduje na pierwiastku **opóźnionym**, a
+nie na zaawansowanym, który to samo równanie kwadratowe też dopuszcza; gdy
+zbieżny odczyt nie sięga źródła późniejszego niż ostatni zapisany stan; i gdy
+stożek świetlny się domyka. Na czterech zjawiskach i sześciu kombinacjach opcji,
+jedno- i wielowątkowo:
+
+| warunek | wynik |
+|---|---|
+| rozwiązania zaawansowane | \(0\) na \(5{,}3\cdot10^6\) ewaluacji |
+| zbieżny odczyt z przyszłości | \(0\) |
+| domknięcie stożka, najgorsze | \(1{,}4\cdot10^{-11}\) względnie |
+
+Nieodwracalność też się trzyma: na \(86\,388\) klatkach wypromieniowana energia
+ani razu nie zmalała, a czas nie cofnął się. Przejściowe iteracje Newtona
+przestrzeliwują poza teraźniejszość, do \(2{,}0\cdot10^{-21}\) s, ale żadna nie
+dożywa do odczytu zbieżnego.
+
+*Bilans czwórpędu przy emisji.* Test niezmienniczy: czwórpęd **zabrany** parze
+musi być zerowy i skierowany w przyszłość, \(dE>0\) oraz
+\(dE^2-|d\mathbf p|^2c^2=0\). Nie wymaga to boostu do układu losowania, więc
+błąd w tym booscie nie może się skompensować. Ścieżka złożona, \(24\) emisje:
+foton zerowy do \(4{,}9\cdot10^{-16}\), a skalarna droga \(W^2-2WE_\gamma\)
+zgadza się z wektorowym \(P-k\) do \(4{,}3\cdot10^{-16}\) — rozjazd oznaczałby,
+że energia i pęd pary opisują różne stany. Ścieżka dwuciałowa, \(56\,047\)
+emisji wymuszonych wprost: energia zawsze dodatnia, para nigdy poniżej progu
+swobodnych cząstek, \(71{,}8\%\) losowań odrzuconych jako zabronione.
+
+*Oba audyty są teraz bramkami walidacji, nie sondami.* Projekt ma \(31\)
+sond bramkowanych zmiennymi środowiskowymi, czyli wzorzec, w którym pomiar
+zamienia się w kod, którego nikt nie odpala. `retarded-field-causality` i
+`photon-four-momentum-balance` weszły do pakietu, \(51\to53\) bramki. Obie
+sprawdzone **wstrzyknięciem usterki**, bo test, który nie pada, jest
+bezwartościowy: przesunięcie czasu opóźnionego o \(10^{-3}\) opóźnienia wywala
+przyczynowość, a policzenie energii resztkowej z \(1{,}001\,E_\gamma\) wywala
+bilans fotonu — i **jest jedynym testem, który to łapie**. Czyli \(0{,}1\%\)
+niezgodności bilansu przy emisji przechodziło dotąd cicho.
+
+*Moment pędu: nie domyka się, ale odniesienie było złe dwa razy.* Zmierzone
+\(|J_{\rm po}-J_{\rm przed}+s_{\rm foton}|\) wyszło \(0{,}57\,\hbar\) na foton w
+ścieżce złożonej i \(0{,}08\,\hbar\) w dwuciałowej. Obie liczby są **wycofane**,
+bo mierzyły wobec złych obiektów. Po pierwsze \(\hbar h\hat n\), spin wzdłuż
+kierunku lotu, niesie tylko połowę: uśrednione po własnym rozkładzie modelu
+\((1+\cos^2\theta)\) i jego własnym podziale skrętności
+\(\langle h\cos\theta\rangle=1/2\) **dokładnie**, wobec \(1/\omega\), które
+klasyczny wirujący dipol niesie naprawdę (policzone: \(1{,}000000/\omega\)).
+Brakująca połowa to **orbitalny** moment pędu pola, faza \(e^{i\varphi}\), której
+żaden wektor spinu wzdłuż \(\hat n\) nie odwzoruje. Po drugie \(E_\gamma/\omega\)
+to relacja **różniczkowa**, a te skoki nie są różniczkowe: pojedynczy foton
+podnosi \(|E|\) o czynnik \(2{,}1\) do \(4{,}7\). Ścisła wersja dla skończonego
+skoku, \(\Delta L/L=1-1/\sqrt{E'/E}\), jest tym, co \(k(e)\) egzekwuje — i
+egzekwuje dokładnie: \(L_{\rm po}/L_{\rm przed}\) zgadza się z \(1/\sqrt{E'/E}\)
+do \(3\cdot10^{-7}\), a \(e^2\) zostaje na zerze maszynowym. **\(k(e)\) nie było
+wadą, którą pokazywał audyt.**
+
+*Dwie wady drabiny Bohra, jedna wcześniej nieznana.* Energia fotonu była
+przenoszona wzdłuż skoku przez \(({\rm energyRatio})^{1{,}5}\). Ten wykładnik
+należy do \(\hbar\omega\) i do niczego innego, bo \(\omega\propto|E|^{3/2}\);
+różnica poziomów ma własny, zmierzone \(1{,}76\) przy \(n=4\), \(2{,}33\) przy
+\(n=2\), \(3{,}25\) przy \(n=1{,}5\), i rozbiega przy \(n\to1\), czyli dokładnie
+tam, gdzie drabina ma służyć. Naprawione **usunięciem wykładnika**: `quantumFor`
+jest wołane z okresem i energią w chwili emisji, co jest poprawne dla dowolnej
+recepty. Dla \(\hbar\omega\) obie formy są algebraicznie tym samym, więc
+domyślna ścieżka jest bitowo identyczna; dla drabiny stary kod mylił się o
+czynniki od \(0{,}69\) do \(14{,}1\). Druga wada: **drabina potrzebuje dna**. Bez
+`--ground-state-floor` orbita mija \(n=1\), kwant wraca do \(\hbar\omega\),
+a \(\hbar\omega/|E|=2/n\) rozbiega — zmierzone fotony po \(14{,}5\) keV, każdy
+mnożący wiązanie przez \(20\), i \(4\) z \(4\) awarii numerycznych. Z podłogą:
+\(4\) z \(4\) czystych kolapsów.
+
+*Te \(45\%\) przestały być zagadką, i README miał odpowiedź wcześniej niż ja.*
+Komentarz w kodzie mówił „WITHDRAWN, pending understanding" i „not explicable by
+the bookkeeping". Argument o niezmienniczości jest **prawdziwy** — energia
+usuwana jest niezmiennicza, zmierzone do sześciu cyfr znaczących
+(\(3{,}269778\cdot10^{-18}\) wobec \(3{,}269771\cdot10^{-18}\) J), przy zupełnie
+różnych fotonach. Nie wynika z niego natomiast, że przesunięcie jest
+niewytłumaczalne, bo nic nie wymagało niezmienniczości **czasu**. Właściwe
+wyjaśnienie jest w tym dokumencie wyżej, przy analizie reguły stopu: cały kolaps
+to \(2\) albo \(3\) fotony, populacje są rozdzielone bez zakładek, a o
+przynależności decyduje ostrze noża na \(T/t_{\rm light}=150\) po **drugim**
+fotonie. Do tego dochodzi liczba, której brakowało: w oknie \(1\le n<2\), którego
+zmiana dotyczy, \(\hbar\omega/\Delta E\) ma **medianę \(34\)**, do \(129\) —
+to okno jest ściśnięte przy stanie podstawowym, gdzie \(\hbar\omega\) jest
+dziesiątki razy za duże. Podstawienie czyni tam kwant \(34\times\)
+**drobniejszym**, hazard wyższym, a kolaps szybszym.
+
+*Sześć wycofanych twierdzeń, dla porządku.* \((1)\) że \(0{,}55\,\hbar\) to wada
+`k(e)` — złe odniesienie; \((2)\) „czynnik cztery" — porównywał **procenty**
+\(|L|\) między przebiegami o różnym \(|L|\), z których jeden był rozdmuchany
+przez diagnozowaną rozbieżność; \((3)\) że porównanie fotonów degeneruje — mój
+skrypt podsumowujący był błędny, a wynik był poprawny i był odpowiedzią;
+\((4)\) że drabina czyni spiralę nieosiągalną — artefakt budżetu zegarowego;
+\((5)\) hipoteza koszt-zysk o zmianie znaku — obalona własnym modelem
+zabawkowym; \((6)\) moje wyjaśnienie \(45\%\) jako **odpowiedź** — README miał
+lepsze. Wniosek proceduralny, wart więcej niż którykolwiek z tych pomiarów:
+**przeszukać README przed rozpoczęciem badania**, bo ma \(587\) kB i zawiera
+odpowiedzi na większość pytań, które da się tu zadać.
+
 ## Warunki początkowe i klasyfikacja zjawiska
 
 Program losuje kierunki dipoli oraz radialną i styczną składową względnej
@@ -6286,11 +6408,23 @@ cytowania, DOI i adresy źródeł. Kolejne uruchomienie nadpisuje go atomowo.
 
 ## Struktura źródeł
 
-Nagłówki w `modules/` są **modułami tekstowymi**, nie osobnymi jednostkami
-kompilacji: każdy jest włączany dokładnie raz, wewnątrz anonimowej przestrzeni
-nazw `positronium.cpp`, i korzysta z tego, co zdefiniowano przed nim. Dzięki
-temu cały program pozostaje jedną jednostką kompilacji, a podział służy
-czytelności i rozdzieleniu odpowiedzialności.
+Nagłówki w `modules/` są **samodzielne i niezależne od kolejności włączania**:
+każdy z 36 kompiluje się w izolacji, każdy sam włącza swoje zależności, a każda
+definicja na poziomie przestrzeni nazw jest `inline`, więc dołączenie nagłówka z
+drugiej jednostki kompilacji nie łamie reguły jednej definicji. Wszystkie są
+włączane na **poziomie globalnym** `positronium.cpp`, przed otwarciem jego
+anonimowej przestrzeni nazw. Cały program nadal jest jedną jednostką
+kompilacji, ale nie z konieczności.
+
+Wcześniej było inaczej i warto wiedzieć, dlaczego to się zmieniło: nagłówki były
+modułami **tekstowymi**, włączanymi wewnątrz anonimowej przestrzeni nazw i
+korzystającymi z tego, co zdefiniowano przed nimi. Taki nagłówek nie jest
+nagłówkiem, tylko fragmentem jednego pliku, i nie da się go ani przetestować, ani
+przenieść osobno. `make header-isolation-check` kompiluje teraz każdy z osobna i
+pilnuje, żeby ta własność nie zniknęła; osobne zadanie CI robi to samo, bo jest to
+regresja, której żaden istniejący test by nie zauważył — `positronium.cpp` włącza
+wszystkie nagłówki, więc budowa pozostaje zielona nawet wtedy, gdy pojedynczy
+nagłówek przestanie być samodzielny.
 
 | Moduł | Zawartość |
 | --- | --- |
@@ -6308,7 +6442,7 @@ czytelności i rozdzieleniu odpowiedzialności.
 | `maxwell_validation*.hpp` | zestaw testów budowany do `positronium_validation` |
 
 Trzy moduły `crem_*` nie zawierają **żadnego kodu ROOT** — cała prezentacja
-pozostaje w `positronium.cpp`. Bieżąca walidacja ma 44 nazwane bramki; trzy
+pozostaje w `positronium.cpp`. Bieżąca walidacja ma 53 nazwane bramki; trzy
 pierwsze sprawdzają kinematykę dwuciałową, w tym zamianę ról nierównych mas,
 boost i boost odwrotny oraz warunek \(|v|<c\). Osobna bramka kontrolera
 adaptacyjnego wymusza odrzucenie kroku, który na `maximumDepth` nadal
