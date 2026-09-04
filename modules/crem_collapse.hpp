@@ -4413,11 +4413,29 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             *elements.specificAngularMomentum
                             *elements.specificAngularMomentum
                             /(attractionParameter*attractionParameter);
-                        // The classical relation a circular orbit obeys is
-                        // dE/dL = omega, so the angular momentum that SHOULD
-                        // accompany this photon is E_gamma/omega.  Printed
-                        // beside what k(e) actually removed, both in hbar.
-                        const double omegaHere=2.0*pi/period;
+                        // omega AT THE EMISSION, not at the checkpoint start.
+                        // The orbit sinks within a skip, and the code already
+                        // carries that: energyRatio = (1-s)^(-2/3) is |E|
+                        // growing along the skip, and a Kepler orbit has
+                        // omega ~ |E|^(3/2), so omega scales by
+                        // energyRatio^1.5 -- the very factor photonEnergy is
+                        // multiplied by.  When the cascade has already moved
+                        // the state, effectivePhotonEnergyReference is instead
+                        // rebuilt from the current elements and the ratio is 1.
+                        // Either way hbar*omega at the emission is
+                        //
+                        //   effectivePhotonEnergyReference
+                        //       * (useExactEnergyRatio ? 1 : energyRatio^1.5)
+                        //
+                        // which makes E_gamma/(hbar*omega) equal the harmonic
+                        // number identically, before any trim.  That identity
+                        // is checked in the print below and is what says the
+                        // frequency is the right one.
+                        const double hbarOmegaAtEmission=
+                            effectivePhotonEnergyReference
+                            *std::pow(useExactEnergyRatio?1.0:energyRatio,1.5);
+                        const double omegaHere=hbarOmegaAtEmission/hbar;
+                        const double staleOmega=2.0*pi/period;
                         const double demandedHbar=
                             photonEnergy/(omegaHere*hbar);
                         const double removedHbar=
@@ -4425,7 +4443,7 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                      -elements.specificAngularMomentum)
                             *reducedMass/hbar;
                         std::printf("CREM_REACH %.9e %.9e %.9e %.9e %.9e"
-                                    " %.9e %.9e %.9e %.9e\n",
+                                    " %.9e %.9e %.9e %.9e %.9e %d\n",
                             emissionEnergyBefore>0.0||emissionEnergyBefore<0.0
                                 ?elements.specificEnergy/emissionEnergyBefore
                                 :0.0,
@@ -4436,7 +4454,8 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             (centreOfMassVelocity-emissionComBefore).norm(),
                             photonEnergy,
                             eccentricitySquaredHere,eccentricitySquaredAfter,
-                            demandedHbar,removedHbar);
+                            demandedHbar,removedHbar,
+                            omegaHere/staleOmega,harmonicNumber);
                     }
                     radiatedEnergyTotal+=photonEnergy;
                     result.quantizedEmittedEnergyJoules+=photonEnergy;
