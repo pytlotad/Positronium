@@ -3128,9 +3128,26 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 // gBohrLevelPhotonEnergy off (the default): never import the
                 // level-difference rule, always report what the orbit's own
                 // frequency produces.  See its own comment in positronium.cpp.
-                if(!gBohrLevelPhotonEnergy||!(level>=2.0)) return classical;
-                const double lower=level-1.0;
-                return bindingScale*(1.0/(lower*lower)-1.0/(level*level));
+                if(!gBohrLevelPhotonEnergy) return classical;
+                // LADDER BELOW n=2 (CREM_LADDER_BELOW_2).
+                //
+                // The n>=2 gate is unreachable in practice: the orbit starts
+                // at exactly n=2 and radiates a little before the first
+                // photon, so the level is 1.9999951 by then and only falls.
+                // Measured, 0 of 20 emissions engage the ladder without this.
+                //
+                // Below n=2 the only transition left is to the ground state,
+                // E(n) - E(1) = R(1 - 1/n^2), which the source above already
+                // calls the physically right quantum there.  Below n=1 there
+                // is no state to land on and the classical value returns,
+                // which is what --ground-state-floor exists to avoid reaching.
+                if(level>=2.0) {
+                    const double lower=level-1.0;
+                    return bindingScale*(1.0/(lower*lower)-1.0/(level*level));
+                }
+                if(std::getenv("CREM_LADDER_BELOW_2")&&level>1.0)
+                    return bindingScale*(1.0-1.0/(level*level));
+                return classical;
             };
             // Single call, not a second copy of the rule: keeping the
             // prescription in one place is the whole point of quantumFor.
