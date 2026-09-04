@@ -3411,6 +3411,14 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // given photon's OWN energy/harmonic draw uses.
                     double effectivePhotonEnergyReference=photonEnergyReference;
                     double effectiveEccentricityHere=eccentricityHere;
+                    // The period and orbital energy the reference above was
+                    // built from.  Kept so the quantum can be re-evaluated AT
+                    // the emission instead of scaled to it -- see the
+                    // photonEnergy line below for why that distinction
+                    // matters.
+                    double referencePeriod=period;
+                    double referenceOrbitalEnergy=
+                        reducedMass*std::abs(elements.specificEnergy);
                     bool useExactEnergyRatio=false;
                     if(cascadeStateAlreadyMoved) {
                         const OsculatingElements currentElements{
@@ -3424,6 +3432,9 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         effectivePhotonEnergyReference=quantumFor(
                             refreshedPeriod,
                             reducedMass*std::abs(elements.specificEnergy));
+                        referencePeriod=refreshedPeriod;
+                        referenceOrbitalEnergy=
+                            reducedMass*std::abs(elements.specificEnergy);
                         const double refreshedEccentricitySquared=
                             std::max(0.0,1.0
                                 +2.0*elements.specificEnergy
@@ -3554,8 +3565,34 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                 effectiveEccentricityHere,
                                 drawUniformUnit(stochasticSkipStream)))))
                         :1;
-                    double photonEnergy=effectivePhotonEnergyReference
-                        *std::pow(useExactEnergyRatio?1.0:energyRatio,1.5)
+                    // The quantum is EVALUATED at the emission, not scaled
+                    // to it from the checkpoint.
+                    //
+                    // The old form multiplied the checkpoint's quantum by
+                    // energyRatio^1.5.  That exponent belongs to hbar*omega
+                    // and to nothing else: omega ~ |E|^(3/2), so for the
+                    // classical quantum it is exact at every n.  The Bohr
+                    // level difference has its own exponent, measured
+                    // d ln Q/d ln|E| = 1.76 at n=4, 2.33 at n=2, 3.25 at
+                    // n=1.5, diverging as n -> 1 -- which is exactly the
+                    // region a ladder exists to serve.  Scaling any quantum
+                    // but hbar*omega through that line is wrong, and worse
+                    // the lower the orbit goes.
+                    //
+                    // Evaluating quantumFor at the emission's own period and
+                    // energy is right for every prescription and needs no
+                    // per-quantum exponent.  The orbit obeys |E| ~ ratio and
+                    // T ~ |E|^(-3/2), so those are the arguments below.  For
+                    // hbar*omega it reproduces the old expression exactly:
+                    // hbar*2*pi/(T/ratio^1.5) = (hbar*2*pi/T)*ratio^1.5, so
+                    // the default path is unchanged bit for bit, which is
+                    // checked.
+                    const double emissionRatio=
+                        useExactEnergyRatio?1.0:energyRatio;
+                    const double emissionScale=std::pow(emissionRatio,1.5);
+                    double photonEnergy=quantumFor(
+                            referencePeriod/emissionScale,
+                            referenceOrbitalEnergy*emissionRatio)
                         *static_cast<double>(harmonicNumber);
                     // LAST TRANSITION under --ground-state-floor.  Refusing
                     // an oversized photon outright (which is what the first
