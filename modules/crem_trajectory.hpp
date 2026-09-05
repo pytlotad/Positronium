@@ -81,23 +81,47 @@ using namespace positronium::parameters;
 // n is still an integer and a_n still scales as n^2 purely so --level stays
 // a convenient, backward-comparable way to pick a starting separation.
 //
-// Kept at 2, not 1, for a reason that survives both defaults above: on the
-// Bohr ladder the instantaneous-kick emission ceiling is exactly
+// SET TO 1, having been 2.  The old comment justified 2 by the
+// instantaneous-kick emission ceiling on the Bohr ladder,
 //
 //     hbar*omega / E_kinetic = 2/n
 //
-// (virial: a circular orbit's kinetic energy equals its binding energy), so
-// a photon of hbar*omega cannot be paid for at n=1 or n=2 and fits from n=3
-// up -- a constraint on the mechanical trajectory's stochastic photon-kick
-// reaction model, independent of the secular ladder machinery
-// the other two defaults switch off.  Measured across all four phenomena,
-// the model never leaves n <= 1.09, so this ceiling covers its whole
-// operating range regardless of where the ladder concept itself is used.
+// (virial: a circular orbit's kinetic energy equals its binding energy),
+// which a photon of hbar*omega cannot satisfy at n=1 and fits from n=3 up.
+// That argument does not distinguish 1 from 2: the ratio is exactly 1 at
+// n=2, so the ceiling excludes n=2 as well.  It never favoured the value it
+// was given as the reason for, and 2 was therefore paying a large price for
+// nothing.  (The ceiling itself stands, and is documented where it belongs:
+// the model never leaves n <= 1.09, so it binds over the whole operating
+// range wherever the ladder concept is used at all.)
+//
+// The price, measured.  The starting radius is what sets the collapse time --
+// the floor barely touches it, because t ~ a^3 makes everything below the
+// floor cheap (measured: the ground-state floor moves the median by +0.6%,
+// and a floor anywhere below a_pair/4 is worth under 2% of the full
+// inspiral).  At n=2 the reported median is 6246 ps; at n=1 it is 148 ps,
+// a factor 42 (the hazard's own n^5 predicts ~32; the excess is the part of
+// the cascade that runs below n=1, where that scaling no longer holds).
+//
+// Why 1 is the better default under the "classical reproduction attempt"
+// scope.  The measured para-Ps lifetime is 124.49 ps.  At n=1 this model
+// reports 148 ps -- 19% high, and the closest it gets to any measured
+// lifetime.  At n=2 it reports 6246 ps, which is 50x the measurement and is
+// a statement about the chosen initial condition rather than about the pair.
+// n=1 is also the more robust configuration, not merely the faster one:
+// measured on seed 42 with no floor, 8 of 8 trajectories complete cleanly at
+// n=1 against 7 of 8 at n=2.
+//
+// What n=1 does NOT mean.  It is still a starting SEPARATION, a_pair, taken
+// from the pair's measured magnetic moment, not a claimed eigenstate -- and
+// --ground-state-floor must stay OFF at this level, since the sharp
+// preparation sits exactly ON the floor and the floor then declares every
+// trajectory settled before it moves (measured: 8 of 8 at t = 0).
 //
 // a_n = n^2 a_pair and the tangential band is quoted in units of the circular
 // speed AT that separation, so the sampled spread in L/(n hbar) is unchanged
 // and only the level moves.
-inline int gInitialPrincipalLevel = 2;
+inline int gInitialPrincipalLevel = 1;
 
 // Whether the quantized emission draws its next threshold from Exp(1) (a
 // genuine Poisson process, available via --emission poisson) or fires

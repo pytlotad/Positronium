@@ -5527,7 +5527,17 @@ int main(int argc, char** argv) {
                   << pairReducedMass/electronMass << " m_e, Bohr radius "
                   << pairBohrRadius(activePair)/bohrRadius << " a0, binding "
                   << pairBindingEnergy(activePair)/eCharge << " eV).\n";
-        if (gInitialPrincipalLevel != 1) {
+        // Printed at EVERY level, including the default n = 1.  These lines
+        // are about the photon-energy rule and the starting length scale,
+        // neither of which stops mattering when n = 1 -- and the
+        // --bohr-photon-energy warnings below are MOST relevant there, since
+        // the ladder's branch cuts at n >= 2 and cannot fire at all.  Gating
+        // the whole block on "n != 1" would have re-created exactly the
+        // silent no-op that those warnings exist to prevent, the moment n = 1
+        // became the default.  Only the COST line, which compares against
+        // --level 1, is still gated: at n = 1 it would read "1x longer than
+        // itself".
+        {
             const double levelSquared =
                 static_cast<double>(gInitialPrincipalLevel)
                 * static_cast<double>(gInitialPrincipalLevel);
@@ -5570,12 +5580,15 @@ int main(int argc, char** argv) {
                            &&!std::getenv("CREM_LADDER_BELOW_2"))
                           ? "  WARNING: --bohr-photon-energy will not fire "
                             "from --level 2 or below. Its branch cuts at "
-                            "n >= 2 and the level is already 1.9999951 at the "
-                            "first emission, so this run is identical to "
-                            "hbar*omega. Use --level 3 or higher, or "
-                            "CREM_LADDER_BELOW_2=1 with --ground-state-floor. "
-                            "The census printed at exit says what actually "
-                            "happened.\n"
+                            "n >= 2 and the level only falls from where the "
+                            "run is prepared, so this run is identical to "
+                            "hbar*omega. (Prepared AT n = 2 the level is "
+                            "already 1.9999951 by the first emission; "
+                            "prepared at n = 1, the default, the branch is "
+                            "out of reach from the start.) Use --level 3 or "
+                            "higher, or CREM_LADDER_BELOW_2=1 with "
+                            "--ground-state-floor. The census printed at exit "
+                            "says what actually happened.\n"
                           : "")
                       << ((gBohrLevelPhotonEnergy&&!gGroundStateEmissionFloor)
                           ? "  WARNING: --bohr-photon-energy without "
@@ -5584,8 +5597,9 @@ int main(int argc, char** argv) {
                             "hbar*omega and diverges as the orbit plunges. "
                             "Measured on seed 42: 4 of 4 trajectories end in "
                             "numerical failure. Add --ground-state-floor.\n"
-                          : "")
-                      << "  Cost: ";
+                          : "");
+            if (gInitialPrincipalLevel != 1) {
+            std::cout << "  Cost: ";
             // How much longer this run takes, which is NOT one power law for
             // both reaction families and was briefly documented as if it were.
             //
@@ -5626,6 +5640,7 @@ int main(int argc, char** argv) {
                           << "x longer than --level 1 (n^6).\n";
             }
             std::cout << "  Raise --crem-wallclock-budget-s accordingly.\n";
+            }
         }
     }
     if (selectedMode == 0) {

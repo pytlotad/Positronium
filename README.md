@@ -88,9 +88,11 @@ usunięciu — na wzór \(\hbar\omega\), które swoje „myli się trzykrotnie" 
 od dawna.
 
 **Protokół.** Wszystkie liczby w kolumnie „cena" pochodzą z jednego,
-dopasowanego przebiegu: para, `--seed 42`, `--runs 3`,
+dopasowanego przebiegu: para, `--seed 42`, `--runs 3`, **`--level 2`**,
 `--crem-wallclock-budget-s 1200`, podłoga włączona wszędzie poza wierszem, w
-którym badana jest sama podłoga. Obserwablą jest mediana Kaplana-Meiera czasu
+którym badana jest sama podłoga. (`--level 2` trzeba dziś podać jawnie: było
+domyślne, gdy te liczby mierzono, a dziś domyślne jest `--level 1` — patrz
+„Gdzie powinna być podłoga" niżej.) Obserwablą jest mediana Kaplana-Meiera czasu
 kolapsu, liczba trajektorii, które dotarły do granicy, i miejsce, w którym się
 zatrzymały. **Baza ze wszystkimi sześcioma importami: 6206,43 ps, 3/3,
 periapsis 547,516 \(r^*\).** Każdy wariant różni się od bazy dokładnie
@@ -272,9 +274,14 @@ kwantu emisji ani drabiny.** Potrzebują skali długości.
 
 #### Pomiar produkcyjny: co przeżywa, a co nie
 
-Protokół: para/orto po \(24\) przebiegi przy `--level 2 --ground-state-floor`,
+Protokół: para/orto po \(24\) przebiegi przy `--level 2 --ground-state-floor`
+(dziś trzeba podać `--level 2` jawnie — patrz sekcja o podłodze niżej),
 zjawiska niezwiązane po \(200\), ziarno \(42\), wszystko różniące się
-**wyłącznie** flagą `--radiation-reaction`. Poziom 2 z podłogą jest jedyną
+**wyłącznie** flagą `--radiation-reaction`. Zjawiska niezwiązane są na poziom
+startowy **nieczułe** — sprawdzone, \(C_R\) i rozkład wyników wychodzą
+identycznie przy \(n=1\) i \(n=2\), czego się zresztą oczekuje po
+bezskalowym dopasowaniu kształtu kulombowskiego — więc ich wiersze nie
+zmieniają się wraz z domyślnym poziomem. Poziom 2 z podłogą jest jedyną
 konfiguracją, w której **obie** ścieżki są dobrze określone: przy `--level 1`
 ostre przygotowanie siada dokładnie na podłodze, a bez podłogi kwant
 stochastyczny rozbiega się poniżej \(n=1\) (udokumentowane: 4 awarie na 4).
@@ -362,6 +369,133 @@ osiemnastu sond. Znaczy natomiast dokładnie tyle, ile pyta nowy zakres:
 **pozytywne wyniki tego projektu są klasyczne**, a kwant emisji wchodzi tam,
 gdzie model i tak działa poza swoją dziedziną — poniżej \(n=1\), gdzie
 \(93{,}4\%\) przebiegu się odbywa i gdzie żadnej drabiny nie ma.
+
+### Gdzie powinna być podłoga — i dlaczego domyślny poziom to teraz \(n=1\)
+
+Pytanie „gdzie ustawić podłogę stanu podstawowego, a tym samym czas kolapsu"
+ma odpowiedź, która rozchodzi się z samym pytaniem: **podłoga czasu kolapsu
+nie ustawia.** Ustawia go promień startowy. Ta sekcja to mierzy i wyciąga z
+tego konsekwencję dla domyślnej konfiguracji.
+
+#### Podłoga jest prawie bez wpływu na czas, bo \(t\propto a^3\)
+
+Całe zanurzenie poniżej podłogi zajmuje znikomy ułamek czasu życia.
+Analitycznie, dla spirali startującej z \(a_{\rm pary}\) (pełna spirala do
+\(a\to0\) to \(31{,}124\) ps):
+
+| podłoga przy | \(a_{\rm podł}/a_{\rm pary}\) | czas | % pełnej spirali |
+|---|---|---|---|
+| \(\tfrac12 a_{\rm pary}\) | \(0{,}5\) | \(27{,}23\) ps | \(87{,}50\%\) |
+| \(\tfrac14 a_{\rm pary}\) | \(0{,}25\) | \(30{,}64\) ps | \(98{,}44\%\) |
+| \(\tfrac1{10} a_{\rm pary}\) | \(0{,}1\) | \(31{,}09\) ps | \(99{,}90\%\) |
+| limit retardacji (\(\sim31\,r^*\)) | \(0{,}057\) | \(31{,}12\) ps | \(99{,}98\%\) |
+| bariera Comptona (\(1\,r^*\)) | \(0{,}0018\) | \(31{,}124\) ps | \(\mathbf{100{,}00\%}\) |
+
+Zgodne z pomiarem: przy `--level 2` włączenie podłogi przesuwa medianę o
+\(+0{,}6\%\) (\(6206\to6246\) ps). **Poniżej \(\sim\tfrac14a_{\rm pary}\)
+położenie podłogi jest nieodróżnialne od jej braku**, więc pytanie „gdzie ją
+postawić" nie jest pytaniem o liczbę, tylko o to, co ta liczba znaczy.
+
+#### Podłoga nie chroni kwantu \(\hbar\omega\) — chroni drabinę
+
+To był argument, dla którego podłoga w ogóle powstała, i okazuje się wąższy,
+niż brzmiał. Udokumentowane „4 awarie numeryczne na 4 bez podłogi" zmierzono
+pod `--bohr-photon-energy`, czyli dla **drabiny** (import nr 5), która poniżej
+\(n=1\) nie ma szczebla i rozbiega się. Sam kwant \(\hbar\omega\) tego nie
+robi. Zmierzone teraz, `--level 1 --no-ground-state-floor`, ziarno 42:
+**8 z 8 trajektorii kończy czysto, zero awarii numerycznych**, 100% zatrzymań
+na marginesie retardacji.
+
+#### Podłoga przy \(n=1\) likwiduje obserwablę przy \(n=1\)
+
+Ostre przygotowanie siada **dokładnie na** podłodze, więc podłoga uznaje parę
+za osiadłą, zanim ta ruszy. Zmierzone: `--level 1 --ground-state-floor` daje
+\(8\) z \(8\) trajektorii „prepared AT OR BELOW the ground state",
+\(S(t)=1\) przy \(0\) ps, brak mediany. To nie jest kolaps zerowej długości,
+tylko brak kaskady do zmierzenia.
+
+#### Czas kolapsu ustawia promień startowy
+
+| konfiguracja | mediana | wobec \(\tau_{\rm para}=124{,}49\) ps |
+|---|---|---|
+| ciągła, \(n=1\), bez podłogi | \(30{,}66\) ps | \(\times0{,}246\) |
+| **kwant, \(n=1\), bez podłogi** | **\(147{,}825\) ps** | **\(\times1{,}187\)** |
+| analityczne \(P/\hbar\omega\) przy \(a_{\rm pary}\) | \(186{,}74\) ps | \(\times1{,}50\) |
+| kwant, \(n=2\), bez podłogi (poprzednia domyślna) | \(6245{,}98\) ps | \(\times50{,}2\) |
+
+Zmierzona wartość jest **zaklinowana** między ścieżką ciągłą a analitycznym
+hazardem, a najbliżej niej leży przebieg przy \(n=1\). Liczba \(147{,}825\) ps jest
+ensemblem produkcyjnym, \(N=100\), ziarno \(42\): \(88\) kolapsów
+zaobserwowanych, \(12\) uciętych budżetem \(120\) s (wszystkie w ogonie,
+więc mediana jest identyfikowana), **zero awarii numerycznych**,
+\(\sigma/\mu=2{,}6\cdot10^{-5}\). Ta sama wartość co do trzech miejsc po
+przecinku wychodzi przy \(N=8\).
+
+Orto przy tej samej konfiguracji daje medianę \(147{,}827\) ps
+(\(74\) kolapsy, \(26\) uciętych) — czyli znów **dłużej niż para**, o
+\(1{,}4\cdot10^{-5}\) względnie, zgodnie ze znakiem zmierzonym przy
+\(n=2\). Porównywalność jest tu jednak słabsza niż w sekcji wyżej, bo
+odsetki cenzury się różnią (\(12\%\) wobec \(26\%\)) i „średnia z
+ukończonych" jest przez to obciążona w dół; czystym porównaniem para/orto
+pozostaje ten przy \(n=2\), gdzie obie próby były nieucięte
+(\(24/24\)).
+
+#### Decyzja: domyślne `--level` zmienione z \(2\) na \(1\)
+
+Stary komentarz w kodzie uzasadniał \(2\) sufitem emisji na drabinie Bohra,
+
+\[
+\frac{\hbar\omega}{E_{\rm kin}}=\frac{2}{n},
+\]
+
+którego foton \(\hbar\omega\) nie spełnia przy \(n=1\) i spełnia od \(n=3\).
+**Ten argument nie odróżnia \(1\) od \(2\)**: przy \(n=2\) stosunek wynosi
+dokładnie \(1\), więc sufit wyklucza \(n=2\) tak samo. Uzasadnienie nigdy nie
+przemawiało za wartością, której miało bronić, a wartość ta kosztowała
+czynnik \(\sim42\) na obserwabli.
+
+Za \(n=1\) przemawiają cztery zmierzone rzeczy: liczba jest **najbliższa
+mierzonemu czasowi życia**, jaką ten model produkuje; konfiguracja jest
+**odporniejsza numerycznie** (8 z 8 czystych przebiegów wobec 7 z 8 przy
+\(n=2\)); \(a_{\rm pary}\) jest **jedyną skalą długości, jaką model ma**, więc
+mnożnik \(n^2\) jest dodatkowym wyborem, nie mniejszym; a przy \(n=2\)
+raportowana liczba jest bardziej stwierdzeniem o wybranym warunku
+początkowym niż o parze.
+
+Sufit \(2/n\) zostaje w mocy jako ograniczenie i jest opisany tam, gdzie jego
+miejsce — model nigdy nie opuszcza \(n\le1{,}09\), więc obowiązuje w całym
+zakresie pracy.
+
+**Co się zmienia w komunikacie startowym.** Blok opisujący separację
+startową, regułę energii fotonu i ostrzeżenia `--bohr-photon-energy` był
+bramkowany warunkiem `n != 1` — przy nowej domyślnej milczałby, czyli
+odtworzyłby dokładnie ten cichy no-op, któremu te ostrzeżenia miały
+zapobiegać. Bramkowana jest teraz **wyłącznie linia kosztu**, która przy
+\(n=1\) mówiłaby „1× dłużej niż `--level 1`". Ostrzeżenie o drabinie
+przestało też twierdzić, że „poziom wynosi już 1,9999951 przy pierwszej
+emisji" niezależnie od poziomu — to była liczba z \(n=2\) drukowana także
+przy \(n=1\).
+
+#### Dwa zastrzeżenia
+
+*Zatrzymuje margines numeryczny, nie fizyka.* Przebiegi kończą w 100% na
+**limicie retardacji** (\(\sim31\,r^*\)), nie na barierze Comptona
+(\(1\,r^*\)). To margines bezpieczeństwa całkowania (stosunek
+okres/czas-przelotu-światła \(=150\)), a nie granica fizyczna. Na czas nie
+wpływa (różnica \(\sim2\cdot10^{-4}\) z tabeli wyżej), ale uczciwa etykieta
+raportowanej liczby brzmi „czas spirali do marginesu retardacji", nie „do
+bariery Comptona" i **nie** „czas kaskady do stanu podstawowego" — ten
+ostatni odczyt wymaga jawnego `--ground-state-floor` przy \(n\ge2\).
+
+*Jedyna droga, która by podłogę wyprowadziła, jest otwarta, nie zamknięta.*
+Klasycznie stan podstawowy dałaby równowaga fluktuacyjno-dyssypacyjna SED
+(wątek `--zpf`). Pomiar w sekcji o `--zpf` ustalił, że absorpcja
+systematyczna i strata promienista są w rezonansie **tego samego rzędu** —
+reżim „delikatnego skasowania" — ale znaku ani wartości nie rozstrzygnął
+(obie niezależne oceny \(\approx1{,}9\sigma\) od zera, rozkład
+ciężkoogonowy). To nie jest wykazanie, że równowagi nie ma; to stwierdzenie,
+że przy tym nakładzie nie da się jej zmierzyć. Dopóki tak jest, podłoga
+pozostaje importem nr 4 i jest domyślnie **wyłączona**.
 
 ### Promień regularyzacji dipola magnetycznego
 
@@ -6886,7 +7020,7 @@ Pięć opcji sterują samą fizyką i kosztem eksperymentów związanych:
 | `--bohr-photon-energy` | **wyłączone** | Energia skwantowanego fotonu w estymatorze sekularnym (`quantumFor`, `crem_collapse.hpp`). Domyślnie zawsze \(\hbar\omega_{\rm orb}\) — to, co orbita sama produkuje. Włączone przywraca importowany odstęp poziomów Bohra \(\Delta E(n\to n{-}1)\) dla \(n\ge2\), z powrotem do \(\hbar\omega\) poniżej. |
 | `--zpf`, `--zpf-band` | `0` (wyłączone) | **Eksperyment, nie część modelu.** Klasyczne pole punktu zerowego elektrodynamiki stochastycznej: losowe fale płaskie o widmie \(\rho(\omega)=\hbar\omega^3/2\pi^2c^3\), 64 mody o równej energii, orientacje i fazy z ziarna `--seed`. `--zpf` skaluje **amplitudę** (1 = poziom fizyczny, moc pochłaniana rośnie jak kwadrat), `--zpf-band lo,hi` ustala pasmo w jednostkach częstości orbitalnej pary (domyślnie `0.3,3`). To jest fluktuacyjna połowa pary fluktuacja–dyssypacja; dyssypacyjną, czyli reakcję promieniowania, model ma od zawsze. Wchodzi w te same trzy miejsca co pole jednorodne, ale próbkowane osobno dla każdej cząstki, bo zależy od położenia i czasu. **Nie odtwarza stanu podstawowego SED — patrz niżej.** |
 | `--external-field` | brak (pytanie na starcie) | Jednorodne zewnętrzne pole magnetyczne w mikroteslach; `0` wyłącza. Orientacja jest losowana izotropowo z ziarna `--seed`, więc odtwarza się razem z resztą przebiegu, i jest wypisywana na starcie. Gdy opcji nie podano, a przebieg jest interaktywny, program pyta o to **przed wszystkimi pozostałymi pytaniami** i oferuje 50 µT (skala pola ziemskiego). Przebieg wsadowy z podanym `--mode` i `--phenomenon` nigdy nie pyta i domyślnie nie ma pola. Pole wchodzi w sumę sił chwilowych, w sumę sił retardowanych oraz w pole lokalne widziane przez obie cząstki, przez co obejmuje precesję Thomasa-BMT. Przy 50 µT tempo cyklotronowe \(eB/m\) wynosi 8,8·10⁶ rad/s wobec tempa orbitalnego rzędu 3·10¹⁵ rad/s, więc orbita pozostaje nietknięta, a widocznym kanałem jest precesja dipoli — około 3·10⁻⁴ rad w ciągu 35 ps kolapsu. |
-| `--level` | `2` (nie `1` — patrz notatka pod tabelą) | Separacja startowa, na której przygotowywana jest para związana: \(a_n=n^2a_{\rm pary}\), pasmo prędkości stycznej niezmienione względem prędkości kołowej przy tej separacji. **Warunek początkowy, nie deklarowany stan energetyczny** — patrz komentarz `gInitialPrincipalLevel` w kodzie. Energia fotonu podąża za odstępem poziomów \(\Delta E(n\to n-1)\) tylko pod `--bohr-photon-energy`; domyślnie zawsze \(\hbar\omega_{\rm orb}\). Czas kolapsu rośnie jak \(n^6\) (albo \(n^5\) domyślnie, bez mnożnika odstępu poziomów), więc dla \(n\ge3\) trzeba podnieść `--crem-wallclock-budget-s`. |
+| `--level` | `1` (zmienione z `2` — patrz notatka pod tabelą) | Separacja startowa, na której przygotowywana jest para związana: \(a_n=n^2a_{\rm pary}\), pasmo prędkości stycznej niezmienione względem prędkości kołowej przy tej separacji. **Warunek początkowy, nie deklarowany stan energetyczny** — patrz komentarz `gInitialPrincipalLevel` w kodzie. Energia fotonu podąża za odstępem poziomów \(\Delta E(n\to n-1)\) tylko pod `--bohr-photon-energy`; domyślnie zawsze \(\hbar\omega_{\rm orb}\). Czas kolapsu rośnie jak \(n^6\) (albo \(n^5\) domyślnie, bez mnożnika odstępu poziomów), więc dla \(n\ge3\) trzeba podnieść `--crem-wallclock-budget-s`. |
 | `--pair` | `electron,positron` | Para cząstek, którą całkuje przebieg, podana jako `pierwsza,druga`. Dostępne gatunki: `electron`, `positron`, `muon`, `antimuon`, `proton`, `antiproton`. Para musi być przyciągająca i nieść przeciwne ładunki elementarne, inaczej opcja jest odrzucana. Wybrana para jest wypisywana na starcie wraz z masą zredukowaną, promieniem Bohra pary i energią wiązania. Honoruje ją także `./positronium_validation`. |
 | `--radiation-reaction` | `stochastic` | Model reakcji promieniowania ładunku: `disabled`, `coherent` (Abraham-Lorentz na dipolu elektrycznym pary), `individual` (Landau-Lifszyc zredukowanego rzędu, osobno dla każdej cząstki), `automatic` (mieszanka obu) albo `stochastic` (domyślny od tego miejsca w historii projektu — kwantowane, Poissonowskie kopnięcia fotonowe zamiast ciągłego hamowania, patrz niżej). **Każda liczba czasu kolapsu cytowana wcześniej w tym README (rzędu 36-40 ps dla e⁺e⁻) została zmierzona pod `individual`, nie pod obecnym domyślnym `stochastic`** — żeby je odtworzyć, trzeba dziś podać `--radiation-reaction individual` jawnie. Przy `disabled` żaden kanał nie odbiera energii orbitalnej, więc klasyczna inspirala nie zachodzi i eksperymenty 1/2 zgłaszają brak zaniku. Wybrany model jest wypisywany na starcie. |
 | `--beam-energy-sigma-ev` | `0` (wyłączone) | **Tylko eksperymenty 3, 4.** Odchylenie standardowe rozkładu Gaussa, z którego próbkowana jest energia środka masy \(K_{CM}\) każdego zdarzenia wiązki, wokół `--beam-energy-ev`; `0` zachowuje dotychczasową, monochromatyczną wiązkę bit w bit. Próbkowanie odrzuca wyniki \(\le 0\) (do 1000 prób, jak `sampleKinetic` eksperymentu 5), a widmo strat energii liczy się względem faktycznie wylosowanej energii zdarzenia, nie ustalonej średniej. Modeluje skończoną rozdzielczość energetyczną realnej wiązki kosztem rozmycia porównania z formułą Rutherforda, która jest zdefiniowana przy jednym \(K_{CM}\). |
@@ -6915,12 +7049,13 @@ konfiguracji i jako materiał historyczny/porównawczy — nie zostały cofnięt
 — ale żeby je dziś odtworzyć, trzeba jawnie podać
 `--ground-state-floor --bohr-photon-energy --emission poisson` (ostatnie, bo
 domyślna emisja też się zmieniła — patrz `--emission` wyżej). `gInitialPrincipalLevel`
-(`--level`) sam w sobie zostaje bez zmian (`2`, nie `1` — ta tabela już
-wcześniej była nieaktualna w tym punkcie, niezależnie od dzisiejszej zmiany):
-to jedyny z czterech mechanizmów, którego nie da się po prostu wyłączyć, bo
-symulacja potrzebuje jakiejś separacji startowej, a \(a_{\rm pary}\) (z
-mierzonego momentu magnetycznego pary) jest jedyną fizycznie umotywowaną
-skalą długości, jaką model w ogóle ma.
+(`--level`) to jedyny z czterech mechanizmów, którego nie da się po prostu
+wyłączyć, bo symulacja potrzebuje jakiejś separacji startowej, a
+\(a_{\rm pary}\) (z mierzonego momentu magnetycznego pary) jest jedyną
+fizycznie umotywowaną skalą długości, jaką model w ogóle ma. **Został jednak
+przestawiony z \(2\) na \(1\)** — czyli na tę właśnie skalę, bez mnożnika
+\(n^2\) — z powodów zmierzonych w sekcji „Gdzie powinna być podłoga"
+niżej.
 
 Zasięg `--pair` nie jest jednakowy dla wszystkich eksperymentów.
 Eksperymenty 1 i 2 mierzą klasyczną inspiralę CREM — ta część jest ogólna dla
