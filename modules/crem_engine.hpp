@@ -99,6 +99,14 @@ inline StateHistory causalInitialHistory(const State& initial,double spanFactor=
     return history;
 }
 
+// CREM_STEP_CENSUS accumulators -- see the acceptance site inside
+// advanceAdaptive for what these are for and why they are unsynchronised.
+inline bool gStepCensusEnabled=std::getenv("CREM_STEP_CENSUS")!=nullptr;
+inline unsigned long long gStepCensusCount=0;
+inline double gStepCensusTotalTime=0.0;
+inline double gStepCensusSmallest=std::numeric_limits<double>::infinity();
+inline double gStepCensusLargest=0.0;
+
 class ClassicalTrajectoryEngine {
 public:
     struct Accuracy {
@@ -367,6 +375,27 @@ private:
             return subdivide();
         }
         if(error<=accuracy_.relativeTolerance) {
+            // CREM_STEP_CENSUS: accepted-step statistics, so a run can be
+            // asked whether its step actually RESOLVES the forces acting on
+            // it.  Written for the --zpf question, where the field band's
+            // upper edge is a frequency the trajectory error probe does not
+            // necessarily see: a mode far off resonance perturbs the ORBIT
+            // very little (so the error stays inside tolerance and the step
+            // is never halved) while its own phase advances a great deal per
+            // step.  The work integral of such a mode should average to
+            // nothing over a cycle and instead gets sampled a few times per
+            // cycle, which is the textbook setup for aliasing.  Counting the
+            // steps is how that stops being a hypothesis.
+            //
+            // Deliberately global and unsynchronised: this is a diagnostic
+            // for single-trajectory --diagnose runs, not for the threaded
+            // statistical mode, and it is off unless the variable is set.
+            if(gStepCensusEnabled) {
+                ++gStepCensusCount;
+                gStepCensusTotalTime+=dt;
+                if(dt<gStepCensusSmallest) gStepCensusSmallest=dt;
+                if(dt>gStepCensusLargest) gStepCensusLargest=dt;
+            }
             appendStateHistory(fineHistory,fine);
             accepted=fine;
             acceptedHistory=std::move(fineHistory);

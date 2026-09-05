@@ -487,15 +487,22 @@ raportowanej liczby brzmi „czas spirali do marginesu retardacji", nie „do
 bariery Comptona" i **nie** „czas kaskady do stanu podstawowego" — ten
 ostatni odczyt wymaga jawnego `--ground-state-floor` przy \(n\ge2\).
 
-*Jedyna droga, która by podłogę wyprowadziła, jest otwarta, nie zamknięta.*
-Klasycznie stan podstawowy dałaby równowaga fluktuacyjno-dyssypacyjna SED
-(wątek `--zpf`). Pomiar w sekcji o `--zpf` ustalił, że absorpcja
-systematyczna i strata promienista są w rezonansie **tego samego rzędu** —
-reżim „delikatnego skasowania" — ale znaku ani wartości nie rozstrzygnął
-(obie niezależne oceny \(\approx1{,}9\sigma\) od zera, rozkład
-ciężkoogonowy). To nie jest wykazanie, że równowagi nie ma; to stwierdzenie,
-że przy tym nakładzie nie da się jej zmierzyć. Dopóki tak jest, podłoga
-pozostaje importem nr 4 i jest domyślnie **wyłączona**.
+*Jedyna droga, która by podłogę wyprowadziła, jest w tym modelu zmierzona
+NEGATYWNIE.* Klasycznie stan podstawowy dałaby równowaga
+fluktuacyjno-dyssypacyjna SED (wątek `--zpf`). Ta implementacja przy
+szerokich pasmach — a widmo fizyczne odpowiada granicy pasm coraz szerszych —
+nie daje stanu związanego, tylko orbitę pompowaną ku jonizacji
+(\(232{,}7\) pm wobec startowych \(105{,}8\), czyli czynnik \(2{,}2\)).
+Nierozstrzygnięty pozostaje **sam warunek równowagi**
+\(\langle P_{\rm pochł}\rangle=\langle P_{\rm wypr}\rangle\): absorpcja
+systematyczna i strata promienista wychodzą w rezonansie tego samego rzędu,
+ale znaku ani wartości nie ustalono (\(\approx1{,}9\sigma\) od zera,
+rozkład ciężkoogonowy). Nierozstrzygnięte jest też, czy efekt przeżywa
+zagęszczenie reprezentacji pola — patrz „Sprawdzenie werdyktu SED" w sekcji
+o `--zpf`, gdzie ten test wychodzi zerowo. A w literaturze pytanie jest
+**sporne**, nie zaniedbane. Dopóki tak jest, podłoga pozostaje importem
+nr 4 i jest domyślnie **wyłączona** — nie dlatego, że SED jej nie dostarcza
+„jeszcze", tylko dlatego, że tutaj jej nie dostarcza wcale.
 
 ### Promień regularyzacji dipola magnetycznego
 
@@ -7553,6 +7560,105 @@ niedopróbkowania wysokich częstości przy 64 modach, zwiększenie rozdzielczo�
 problem nie jest w rozdzielczości próbkowania, tylko w samej strukturze
 (skończona suma modów, obcięta arbitralnie w paśmie), dokładnie jak
 zdiagnozowano wyżej.
+
+#### Sprawdzenie werdyktu SED, i sprostowanie mojego własnego zdania o nim
+
+W sekcji o podłodze napisałem, że droga SED „jest otwarta, nie zamknięta", i
+zacytowałem wyłącznie ten pomiar sekcji `--zpf`, który jest
+nierozstrzygnięty (współczynnik \(b\), \(\approx1{,}9\sigma\) od zera).
+Sekcja `--zpf` ma jednak **własny werdykt i jest on negatywny**: przy
+szerokich pasmach orbita się rozszerza, a w granicy pasm coraz szerszych —
+czyli tam, gdzie leży widmo fizyczne — implementacja daje odpowiedź „brak
+stanu związanego". Moje zdanie wzięło jedno zdanie tamtej sekcji i pominęło
+jej wniosek. **Jest poniżej poprawione.**
+
+Sprawdzenie werdyktu przyniosło jednak trzy rzeczy, których wcześniej nie
+mierzono — jedna go wzmacnia, jedna osłabia jeden z jego argumentów, a
+trzecia jest wynikiem zerowym, w tym wobec **mojej własnej** hipotezy.
+
+**1. Hipoteza aliasingu — sprawdzona i ODRZUCONA (wzmacnia werdykt).**
+Naturalne podejrzenie wobec „rozszerzenia napędzanego modami daleko od
+rezonansu" jest takie, że krok całkowania ich nie rozwiązuje: taki mod
+perturbuje orbitę słabo, więc sonda błędu trajektorii nie każe krokowi
+maleć, a faza modu przebiega w jednym kroku wiele radianów. Praca takiego
+modu powinna uśrednić się do zera przez cykl, a przy kilku próbkach na cykl
+nie uśredni się wcale. To jest podręcznikowy aliasing i wyjaśniałby efekt
+bez żadnej fizyki.
+
+Zmierzone nową sondą `CREM_STEP_CENSUS`, ziarno 42:
+
+| pasmo | przyjęte kroki | średnie \(dt\) | najszybszy mod | kroków na cykl |
+|---|---|---|---|---|
+| \([0{,}3;3]\) | \(627\) | \(2{,}39\cdot10^{-18}\) s | \(3{,}0\,\omega_{\rm orb}\) | \(\mathbf{42{,}4}\) |
+| \([0{,}3;30]\) | \(10\,047\) | \(1{,}49\cdot10^{-19}\) s | \(30{,}0\,\omega_{\rm orb}\) | \(\mathbf{67{,}9}\) |
+
+**Krok podąża za polem, nie tylko za orbitą**: przy dziesięciokrotnie
+szerszym paśmie liczba kroków rośnie szesnastokrotnie, a rozdzielczość
+najszybszego modu nie spada, tylko rośnie. Kilkadziesiąt próbek na cykl to
+całkowanie, nie aliasing. Hipoteza upada, a werdykt sekcji zyskuje podporę,
+której wcześniej nie miał.
+
+**2. `trajectory: FAIL` nie odróżnia ucieczki od fluktuacji (osłabia jeden
+argument).** Dla stanu związanego kryterium `expectedMotion`
+(`positronium.cpp`) wymaga, by promień **nigdy** nie przekroczył
+\(1{,}01\times\) apoapsis orbity **startowej**. To właściwy test dla
+gładkiego inspiralu, ale nie dla pola fluktuacyjnego: równowaga SED z
+definicji fluktuuje wokół średniej, więc przekracza apoapsis startową i
+oblewa ten test tak samo jak ucieczka. Pod ostrym przygotowaniem
+(\(e=0\) dokładnie) apoapsis równa się promieniowi startowemu, więc wystarczy
+\(1\%\) wychyłu.
+
+Zmierzone: przy paśmie \([0{,}3;3]\), gdzie orbita netto się **kurczy**
+(\(105{,}836\to105{,}588\) pm), szczyt sięga \(107{,}139\) pm wobec progu
+\(106{,}894\) pm — nadmiar \(1{,}2\%\) — i przebieg raportuje `FAIL`. Co
+więcej, na siatce dziewięciu przebiegów przy \([0{,}3;30]\) **trzy zdają**
+ten test. Zdanie „pięć prób na pięć kończy się `FAIL`" pozostaje prawdziwe
+jako opis tamtych pięciu przebiegów, ale **nie jest niezależnym dowodem
+ucieczki**: ta flaga zapala się pod `--zpf` również wtedy, gdy orbita się
+zacieśnia.
+
+Nie dotyczy to obserwacji przy \([0{,}3;300]\), gdzie promień końcowy
+\(232{,}7\) pm wobec startowych \(\sim105{,}8\) to **czynnik 2,2**, a nie
+jednoprocentowy wychył. Tam ucieczka jest realna i pozostaje najmocniejszym
+argumentem sekcji.
+
+**3. Zbieżność po liczbie modów przy USTALONYM paśmie — wynik zerowy, także
+dla mojej hipotezy.** Sekcja testowała liczbę modów, ale każda liczba losuje
+nową realizację pola, więc jej rozrzut był szumem realizacji, nie
+zbieżnością — co sama odnotowuje. Powtórzone przy ustalonym paśmie
+\([0{,}3;30]\), po trzy ziarna (42, 7, 1) na każdą liczbę modów, mierząc
+**szczytowy** promień (nadmiar ponad start \(105{,}835\) pm):
+
+| mody | średni nadmiar szczytu | sd | pojedyncze ziarna |
+|---|---|---|---|
+| \(64\) | \(+2{,}85\%\) | \(3{,}03\) | \(+6{,}14 / +0{,}18 / +2{,}22\) |
+| \(256\) | \(+0{,}63\%\) | \(0{,}73\) | \(+1{,}46 / +0{,}09 / +0{,}35\) |
+| \(1024\) | \(+2{,}21\%\) | \(1{,}79\) | \(+3{,}49 / +2{,}97 / +0{,}16\) |
+
+Różnica \(64\to256\) to \(1{,}2\sigma\), \(256\to1024\) to \(1{,}4\sigma\).
+**Żadnego istotnego trendu w którąkolwiek stronę.** Rozrzut między
+realizacjami dominuje nad wszystkim, co liczba modów robi, a trzy ziarna go
+nie przebijają.
+
+Warto zapisać, że w trakcie tego pomiaru sam przedwcześnie ogłosiłem trend:
+po zestawie \(64\to256\), gdzie szczyt spadł u wszystkich trzech ziaren,
+napisałem, że to „sygnatura artefaktu reprezentacji". Zestaw \(1024\) tego
+nie potwierdził — u dwóch ziaren szczyt wrócił w górę. Wniosek z dwóch
+punktów nie był wnioskiem. **Hipoteza, że ucieczka przy szerokich pasmach
+jest artefaktem zbyt rzadkiej reprezentacji kontinuum, pozostaje
+niepotwierdzona i nieobalona.**
+
+**Stan po tym sprawdzeniu.** Implementacja `--zpf` daje odpowiedź negatywną
+przy szerokich pasmach i ta odpowiedź jest teraz lepiej podparta, bo
+odpadła najpoważniejsza alternatywna diagnoza (aliasing). Jednocześnie jeden
+z jej argumentów — liczenie werdyktów `FAIL` — okazał się nieinformatywny,
+a pytanie, czy efekt przeżywa zagęszczenie reprezentacji pola, pozostaje
+nierozstrzygnięte przy tym nakładzie, dokładnie jak sam warunek równowagi
+\(\langle P_{\rm pochł}\rangle=\langle P_{\rm wypr}\rangle\). Do tego
+literatura jest **sporna** (Cole i Zou wobec dwóch opublikowanych
+komentarzy). Właściwe podsumowanie nie brzmi więc ani „SED jest otwarte",
+jak napisałem, ani „SED jest zamknięte": **ta implementacja mierzy wynik
+negatywny, a fizyczne pytanie pozostaje sporne i nierozstrzygnięte tutaj.**
 
 ### Alternatywa dla `--zpf`: podłoga emisyjna w stanie podstawowym
 

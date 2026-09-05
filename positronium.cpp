@@ -5017,6 +5017,43 @@ namespace { struct CausalityReport { ~CausalityReport() {
         a.historyCalls.load(),a.futureSamples.load(),
         a.worstFutureSeconds.load()); } } gCausalityReport; }
 
+namespace { struct StepCensusReport { ~StepCensusReport() {
+    // CREM_STEP_CENSUS: is the accepted step small enough to resolve the
+    // FIELD, as opposed to the orbit?  The orbit sets the step (the error
+    // probe watches the trajectory), so a zero-point band whose upper edge
+    // sits far above the orbital frequency can be sampled only a few times
+    // per cycle while the step still satisfies the trajectory tolerance.
+    // That is aliasing, and it would fake exactly the effect --zpf reports at
+    // wide bands: net work from modes that should average to nothing.
+    if(!gStepCensusEnabled||gStepCensusCount==0) return;
+    const double mean=gStepCensusTotalTime
+        /static_cast<double>(gStepCensusCount);
+    std::fprintf(stderr,
+        "\n[step] accepted steps %llu, mean dt %.4e s, smallest %.4e s,"
+        " largest %.4e s\n",
+        gStepCensusCount,mean,gStepCensusSmallest,gStepCensusLargest);
+    if(gZeroPointField.active()&&!gZeroPointField.frequencyFactor.empty()) {
+        // The band rides the OSCULATING orbital frequency, so the fastest
+        // mode's period is quoted against the frequency at preparation --
+        // the orbit only tightens from there, which makes this the most
+        // generous reading of the sampling, not the least.
+        const double highestFactor=*std::max_element(
+            gZeroPointField.frequencyFactor.begin(),
+            gZeroPointField.frequencyFactor.end());
+        const double orbital=std::sqrt(pairCoulombStrength
+            /(pairReducedMass*std::pow(pairBohrRadius(activePair)
+                *static_cast<double>(gInitialPrincipalLevel)
+                *static_cast<double>(gInitialPrincipalLevel),3.0)));
+        const double fastestPeriod=2.0*pi/(highestFactor*orbital);
+        std::fprintf(stderr,
+            "[step] fastest ZPF mode %.4g x omega_orb, period %.4e s"
+            " -> %.2f steps per cycle at the mean step\n"
+            "[step] (a few steps per cycle is aliasing, not integration;"
+            " tens or more is resolved)\n",
+            highestFactor,fastestPeriod,fastestPeriod/mean);
+    }
+} } gStepCensusReport; }
+
 namespace { struct QuantumCensusReport { ~QuantumCensusReport() {
     // Reported whenever the ladder is ASKED for, not only under the probe
     // variable.  --bohr-photon-energy used to be able to do nothing at all and
