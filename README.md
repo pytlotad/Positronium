@@ -66,6 +66,134 @@ Tryb statystyczny stanów związanych korzysta z osobnego, jawnie oznaczonego
 generatora zaniku w idealnej próżni; nie udaje, że anihilacja wynika z dojścia
 klasycznej trajektorii do małej odległości.
 
+### Sześć importów kwantowych i ich cena
+
+Skoro model jest **próbą klasycznego odwzorowania** wyników kwantowych, to
+lista miejsc, w których kwant wchodzi jako **założenie**, a nie jako wynik,
+przestaje być przypisem i staje się głównym narzędziem uczciwości: bez niej
+nie da się powiedzieć, ile z odtworzonej liczby pochodzi z elektrodynamiki, a
+ile z odpowiedzi wpisanej ręcznie. Importów jest sześć. Każdy dostaje tu
+**cenę zmierzoną**, nie oszacowaną — konkretną zmianę obserwabli po jego
+usunięciu — na wzór \(\hbar\omega\), które swoje „myli się trzykrotnie" ma już
+od dawna.
+
+**Protokół.** Wszystkie liczby w kolumnie „cena" pochodzą z jednego,
+dopasowanego przebiegu: para, `--seed 42`, `--runs 3`,
+`--crem-wallclock-budget-s 1200`, podłoga włączona wszędzie poza wierszem, w
+którym badana jest sama podłoga. Obserwablą jest mediana Kaplana-Meiera czasu
+kolapsu, liczba trajektorii, które dotarły do granicy, i miejsce, w którym się
+zatrzymały. **Baza ze wszystkimi sześcioma importami: 6206,43 ps, 3/3,
+periapsis 547,516 \(r^*\).** Każdy wariant różni się od bazy dokładnie
+jednym importem.
+
+Budżet zegara jest tu osobno kontrolowany, bo raz już w tym projekcie
+przebranie artefaktu zegara za wynik fizyczny skończyło się wycofanym
+twierdzeniem (punkt **O**, wycofane twierdzenie \((4)\): „drabina czyni spiralę nieosiągalną" było artefaktem budżetu
+zegarowego). Baza wychodzi **identycznie** przy 120 s i
+przy 1200 s, więc budżet nie jest zmienną; przy 120 s natomiast cztery warianty
+(pasmo startowe, podłoga, drabina, spin fotonu) były ucinane w całości albo
+w części, a wiersz podłogi i drabiny **nie znaczyłby przy tym budżecie nic
+ponad to, że są wolniejsze**. Wszystkie wiersze niżej są zmierzone przy
+1200 s i **żaden nie jest cenzurowany**.
+
+| # | import | co dokładnie jest wpisane | usuwa go | zmierzona cena |
+|---|---|---|---|---|
+| 1 | \(L=n\hbar\) na promieniu Bohra | start dokładnie kołowy przy \(a_n=n^2a_{\rm pary}\), więc \(n_E=L/\hbar=n\) z konstrukcji | `CREM_INITIAL_BAND=1` (usuwa tylko ostrość, nie promień) | mediana 6206,43 → **7346,35 ps** (+18,4%), 3/3, punkt zatrzymania bez zmian, ale rozrzut \(\sigma/\mu\) rośnie z \(2{,}7\cdot10^{-6}\) do **0,384** — pięć rzędów wielkości |
+| 2 | \(\hbar\omega\) jako kwant emisji | energia zabierana przez jeden foton | `--radiation-reaction individual` (ciągły Landau-Lifshitz) | mediana 6206,43 → **1974,56 ps** (**3,14× szybciej**), a punkt zatrzymania rozmywa się z 547,514–547,557 \(r^*\) na **318–777 \(r^*\)** |
+| 3 | kwantyzacja spinu | momenty dokładnie zgodne (para) albo dokładnie przeciwne (orto), nigdy w paśmie | `--no-spin-quantization` | **na czas kolapsu zero**: 6206,43 → 6206,43 ps, różnica \(2\cdot10^{-6}\) względnie przy własnym rozrzucie zespołu \(\sigma/\mu=2{,}7\cdot10^{-6}\) |
+| 4 | podłoga stanu podstawowego | nie istnieje stan niżej niż \(n=1\), więc emisja tam gaśnie | `--no-ground-state-floor` | na czas kolapsu prawie nic: 6206,43 → **6245,93 ps** (+0,6%); za to punkt zatrzymania spada z 547,5 na **31,10 \(r^*\)** (czynnik 17,6), 100% przebiegów kończy na **limicie retardacji**, a nie na \(n=1\), i 1 z 3 to awaria numeryczna |
+| 5 | drabina Bohra | energia fotonu to odstęp poziomów \(E(n)-E(n-1)\), a nie \(\hbar\omega_{\rm orb}\) | włącza go `--bohr-photon-energy` + `CREM_LADDER_BELOW_2=1` (domyślnie **wyłączony**) | mediana 6206,43 → **16456,6 ps** (**2,651\(\times\)**), 3/3, punkt zatrzymania bez zmian; ale ze 123 wywołań kwantu **0 trafia w gałąź podręcznikową \(n\ge2\)**, 92,68% w rozszerzenie poniżej \(n=2\), 7,32% spada poniżej \(n=1\) |
+| 6 | \(\hbar\) spinu fotonu w ścieżce sekularnej | foton zabiera dokładnie \(\hbar\) momentu pędu wzdłuż własnego kierunku | włącza go `CREM_SPIN_MAGNITUDE=1` (domyślnie **wyłączony**) | mediana 6206,43 → **7657,39 ps** (+23,4%), 3/3, punkt zatrzymania przy podłodze; prawdziwa cena jest poza zegarem — patrz niżej |
+
+Pięć z sześciu wierszy wymaga komentarza, bo ich cena nie mieści się w
+jednej liczbie.
+
+**Import 1 jest podwójny, a droższa połowa nie ma przełącznika.** Ostrość
+przygotowania — \(f=1\), \(f_r=0\), więc obie definicje poziomu zgadzają się
+z konstrukcji zamiast w jednym punkcie pasma — daje się zdjąć, i jej cena
+mierzona medianą (+18,4%) jest najmniej ciekawą jej częścią. Ciekawsza jest
+**wariancja**: przy ostrym starcie \(\sigma/\mu\) czasu kolapsu wynosi
+\(2{,}7\cdot10^{-6}\), czyli czysty szum zmiennoprzecinkowy, a przy paśmie
+\(0{,}384\). Cały obserwowalny rozrzut czasu życia w tym trybie pochodzi
+więc z tego jednego importu — **model przy ostrym przygotowaniu nie ma
+własnego rozrzutu**, ma jedną liczbę. (Zgodne z osobnym pomiarem: pasmo
+dostarcza około 32% wariancji, przesuwa średnią o czynnik 3,4 między brzegami,
+a przejście na ostry start ruszyło produkcyjną średnią o −12%.)
+
+Ale **promień** \(a_n=n^2a_{\rm pary}\) przełącznika nie ma, bo to nie jest
+opcja, tylko sam import: klasyczna elektrodynamika nie wskazuje żadnej
+wyróżnionej separacji startowej, a odpowiedź silnie od niej zależy. Program
+sam podaje tę zależność przy starcie — **około \(32\times\) na poziom**
+(\(n^5\) z hazardu fotonowego) — więc wybór promienia Bohra wybiera skalę
+wyniku. To jest cena, której nie da się zapłacić inaczej niż jej nazwaniem.
+
+**Import 3 jest darmowy tam, gdzie się mierzy, i drogi tam, gdzie model i tak
+zawodzi.** Na czasie kolapsu nie widać go w ogóle. Cała jego cena siedzi w
+sektorze M1 i w klasyfikacji para/orto: przy paśmie zamiast dokładnego
+ustawienia \(|\mu_1+\mu_2|\) wychodzi 1,775–1,942 \(\mu\) dla para wobec
+1,271–1,716 \(\mu\) dla orto — czyli orto niesie **63–86% momentu para
+zamiast zera** — udziały M1 stają się porównywalne (największy orto,
+\(9{,}0\cdot10^{-13}\) energii E1, przewyższa para \(2{,}5\cdot10^{-13}\)), a
+dolna krawędź pasma para leży dokładnie **na** progu klasyfikacji, więc
+**6 z 12** trajektorii para przeszło przez ten próg podczas spirali. Innymi
+słowy: ten import jest tym, co w ogóle czyni asymetrię para/orto asymetrią, a
+nie etykietą — i dotyczy dokładnie tej obserwabli, której model **nie**
+odtwarza (stosunek czasów życia \(\sim1000\)). Kupuje się za niego rozróżnienie
+kanałów, nie wynik.
+
+**Import 6 zamyka jedno prawo zachowania kosztem drugiego.**
+`CREM_SPIN_MAGNITUDE=1` domyka bilans momentu pędu **dokładnie**, ale
+wyprowadza orbitę poza fizyczną dziedzinę: zmierzone \(e^2\) po kolejnych
+pierwszych emisjach na ziarnie 42 wynosi \(-1{,}37\), \(-0{,}487\),
+\(+0{,}0152\), \(+0{,}363\), \(-8{,}83\) — a \(e^2<0\) nie odpowiada żadnej
+orbicie. Z dołożonym sufitem kinematycznym (\(E_\gamma\) dobierane tak, by
+\(e^2\ge0\) przeżyło) \(e^2\) zostaje rzeczywiste, ale **70,6% fotonów jest
+przycinanych**, do mediany \(0{,}2305\,\hbar\omega\). To jest cena
+mierzalna i jednoznaczna: przy tej parametryzacji energii i momentu pędu
+fotonu **nie da się zachować obu naraz** — dwa prawa nadokreślają jeden
+stopień swobody, i dlatego ten import jest domyślnie wyłączony.
+
+**Importy 4 i 5 nie kupują czasu, tylko znaczenie czasu.** Podłoga jest tu
+najciekawszym przypadkiem, bo jej cena wygląda inaczej, niż można się
+spodziewać. Na zegarze nie kosztuje prawie nic: 6206,43 wobec 6245,93 ps,
+czyli +0,6% — bo klasyczne \(t\sim a^3\) sprawia, że całe zanurzenie poniżej
+\(n=1\) zajmuje znikomy ułamek czasu życia. Kosztuje natomiast **wszystko na
+tym, co ten czas oznacza**: bez podłogi punkt zatrzymania spada z 547,5 na
+31,10 \(r^*\), żaden przebieg nie kończy na \(n=1\), **100% kończy na
+limicie retardacji** — czyli tam, gdzie zatrzymuje je margines
+bezpieczeństwa całkowania, a nie fizyka — i jeden z trzech kończy awarią
+numeryczną. Raportowana liczba przestaje wtedy być „czasem kaskady do stanu
+podstawowego", a staje się „czasem spirali do miejsca, w którym opis się
+kończy". To rozróżnienie jest ważniejsze niż te 0,6%.
+
+Drabina z kolei kosztuje **2,651\(\times\)** na zegarze i nic na punkcie
+zatrzymania (trzyma go podłoga), ale jej spis wywołań ujawnia rzecz, której
+sama mediana nie pokazuje: podręcznikowa gałąź \(n\ge2\) **nie odpala ani
+razu**. Wszystko, co tu działa, to rozszerzenie poniżej \(n=2\), czyli
+przejście „na stan podstawowy" \(E(n)-E(1)\), plus 7,32% wywołań już poniżej
+\(n=1\), gdzie żadnego stanu do lądowania nie ma. Import nazywa się „drabina
+Bohra", a mierzone jest jej przedłużenie w obszar, w którym drabiny nie ma.
+
+**Co ta lista mówi razem.** Żadna z liczb podawanych przez model nie jest
+wolna od importów, a rozkład ciężaru jest bardzo nierówny — i nie pokrywa się
+z intuicją. Jeden import (kwantyzacja spinu) nie kosztuje na czasie kolapsu
+**nic**, a jego cena spada w całości na tę jedną obserwablę, której model i
+tak nie odtwarza. Jeden (\(\hbar\omega\)) ustala ten czas z dokładnością do
+czynnika **3,14** i decyduje, czy koniec spirali jest ostry, czy rozmyty.
+Jeden (promień startowy) ustala samą **skalę** odpowiedzi, \(\sim32\times\)
+na poziom, i nie ma dla niego alternatywy wewnątrz klasycznej fizyki ani
+przełącznika, który by go zdjął. Dwa (podłoga i drabina) prawie nie ruszają
+zegara, za to decydują, **czym zmierzony czas w ogóle jest**. Jeden (spin
+fotonu) jest wyłączony właśnie dlatego, że jego cenę zmierzono — orbity o
+\(e^2<0\) albo 70,6% przyciętych fotonów — i okazała się nie do przyjęcia.
+
+Stąd wniosek, który należy czytać razem z deklaracją zakresu na początku tej
+sekcji: **im bliżej stanu podstawowego, tym więcej odpowiedzi pochodzi z
+importu, a nie z elektrodynamiki** — a przy \(n=1\) sama definicja tego, co
+się mierzy, jest już importem. Osobnym, nierozstrzygniętym pytaniem
+pozostaje, które z wyników przeżywają całkowite usunięcie \(\hbar\omega\),
+czyli co zostaje z modelu na czystej ścieżce ciągłej.
+
 ### Promień regularyzacji dipola magnetycznego
 
 Pole dipola magnetycznego jest wygładzane wagą \(w(r)=1/(1+(a/r)^p)\) z
