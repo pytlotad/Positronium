@@ -7905,6 +7905,76 @@ niósł systematyczne \(-59\) eV pochodzące z doboru \(r_{\rm reg}\), na tle
 \(3316\) eV rozrzutu; każde porównanie kanałów oparte na tej wielkości mierzyło
 regularyzację, nie oddziaływanie dipol-dipol.
 
+#### Ostrze noża zmierzone: mechanizm 2γ/3γ po kwantyzacji spinu
+
+Powyższy komentarz stawiał przewidywanie: przy losowaniu kąta z przedziału
+jedyny dokładny mechanizm modelu jest „wymywany przez próbkowanie", a
+kwantyzacja spinu ma go przywrócić. Kwantyzacja jest dziś domyślna, a
+przewidywania nigdy nie zmierzono. Sonda `CREM_M1_SHARE` drukuje przy każdym
+checkpoincie obie moce osobno oraz \(|\mathbf m|/\mu\), gdzie
+\(\mathbf m=\boldsymbol\mu_1+\boldsymbol\mu_2\). Ziarno 42, konfiguracja
+domyślna (\(n=1\), bez podłogi), pełny przebieg do zatrzymania:
+
+| kanał | checkpointy | \(|\mathbf m|/\mu\) start | koniec | min | średnia | udział M1 |
+|---|---|---|---|---|---|---|
+| **para** | \(27\) | \(2{,}000000\) | \(1{,}955920\) | \(1{,}634523\) | \(1{,}877\) | \(3{,}4\cdot10^{-25}\to1{,}3\cdot10^{-13}\) |
+| **orto** | \(64\) | \(0{,}000000\) | \(0{,}000000\) | \(0{,}000000\) | \(0{,}000000\) | \(3{,}2\cdot10^{-49}\to1{,}3\cdot10^{-41}\) |
+
+**Przewidywanie się potwierdza, i to mocniej, niż brzmiało.** Kasowanie w
+orto jest zerem maszynowym w **64 z 64** checkpointów, przez całą spiralę od
+\(105{,}8\) do \(4{,}3\) pm — nie „małe", tylko `0.000000e+00` za każdym
+razem. Stosunek mocy M1 między kanałami wynosi \(\sim10^{29}\). Poprzednia
+liczba (\(1{,}875\cdot10^{-3}\) wobec \(1{,}903\cdot10^{-3}\), „zgodne z
+zerem") była artefaktem przedziału i nie opisuje już domyślnej konfiguracji.
+
+**Ale ostrze jest jednostronne, i to jest nowa obserwacja.** Kanał
+**zamknięty** jest chroniony dokładnie: orto trzyma zero bitowo przez cały
+kolaps. Kanał **otwarty** nie jest: para startuje od dokładnie
+\(2{,}000000\), ale schodzi do \(1{,}635\) i błądzi wokół średniej
+\(1{,}877\) — czyli traci do \(18\%\) momentu koherentnego w trakcie spirali.
+Struktura jest więc taka sama jak w QED, gdzie kanał wzbroniony jest
+wzbroniony **ściśle**, a kanał dozwolony ma po prostu jakieś tempo. Model
+odtwarza tę asymetrię, nie zakładając jej.
+
+**I tu kończy się dobra wiadomość.** Udział M1 w całkowitej mocy
+wypromieniowanej **nigdy nie przekracza \(10^{-12}\)** — rośnie od
+\(3\cdot10^{-25}\) przy \(a_{\rm pary}\) do \(\sim10^{-12}\) przy
+zatrzymaniu, bo M1 rośnie względem E1 dopiero głęboko w spirali, gdzie para
+prawie nie przebywa. Ponieważ efekt na czasie życia jest średnią ważoną
+czasem przebywania, jest on **ograniczony z góry** przez maksymalny udział:
+
+\[
+\frac{\tau_{\rm orto}}{\tau_{\rm para}}\Big|_{\rm M1}\le1+10^{-12},
+\qquad\text{wobec zmierzonych }\frac{142\ \mathrm{ns}}{125\ \mathrm{ps}}
+=1136 .
+\]
+
+**Kształt jest dokładnie właściwy, magnituda jest o dwanaście rzędów za
+mała.** To jest ilościowe zamknięcie pytania o ostrze noża: model ma regułę
+wyboru o poprawnej strukturze — koherentne kasowanie, ścisłe po stronie
+wzbronionej, jednostronne — ale ta reguła działa na kanale, który niesie
+\(10^{-12}\) energii, podczas gdy rzeczywista reguła \(2\gamma/3\gamma\)
+działa na **całej** anihilacji.
+
+**Konsekwencja, która porządkuje wcześniejsze pomiary.** Zmierzona w tej
+dokumentacji separacja para/orto na czasie kolapsu wynosi
+\(+2{,}7\cdot10^{-5}\) (orto dłużej, \(10{,}8\sigma\)). M1 **nie może** być
+jej źródłem: jest ograniczone przez \(10^{-12}\), czyli siedem rzędów niżej.
+Model ma więc **dwa** mechanizmy różnicujące kanały i to nie ten o właściwym
+kształcie porusza obserwablę:
+
+| mechanizm | kształt | wielkość na czasie życia |
+|---|---|---|
+| koherentne M1 (\(\boldsymbol\mu_1+\boldsymbol\mu_2\)) | **reguła wyboru** — ścisłe zero po stronie wzbronionej | \(\le10^{-12}\) |
+| zachowawczy człon dipol-dipol | **siła**, nie reguła wyboru; wartość oczekiwana znika przy \(a_{\rm pary}\) (\(0{,}09\sigma\)) | \(\sim10^{-5}\) |
+
+Ten o właściwej strukturze jest siedem rzędów słabszy od tego, który
+faktycznie przesuwa medianę. Nie zmienia to wniosku negatywnego z deklaracji
+zakresu — zmienia jego **diagnozę**: nie jest tak, że modelowi brakuje
+reguły wyboru. Regułę ma, ścisłą i poprawnie zorientowaną. Brakuje mu
+kanału, na którym ta reguła miałaby coś ważyć, bo anihilacji w nim nie ma
+wcale.
+
 #### Czego warstwa sekularna nie widzi: człon dipolowy w punkcie zwrotnym
 
 Rozrzut \(3332\) eV przy barierze, wobec \(7449\) eV kulombowskich, każe

@@ -2807,6 +2807,29 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                      firstDipole,secondDipole,reducedMass,zeroPointPhase,
                      periapsisDirection)
                 :CoherentMagneticDipoleEmission{};
+        // CREM_M1_SHARE: the two radiated channels side by side, per
+        // checkpoint.  This is the knife edge the 2gamma/3gamma selection
+        // rule has in QED, expressed in the one place this model reproduces
+        // its SHAPE: M1 radiates from the coherent sum mu1 + mu2, so with the
+        // spins quantized (cos = +-1 exactly, the default) one channel gets
+        // |m| = 2mu and the other gets |m| = 0 IDENTICALLY -- not "small".
+        // The share was last measured over a SAMPLED mutual angle, where the
+        // cancellation is exact only at the band edge and the two channels
+        // came out 1.875e-3 against 1.903e-3, i.e. indistinguishable.  Under
+        // the quantization that number cannot be the answer any more, and
+        // this prints what replaces it.
+        if(std::getenv("CREM_M1_SHARE")) {
+            const double total=electricPowerForLoss
+                +magneticEmissionForLoss.power;
+            std::fprintf(stderr,
+                "CREM_M1_SHARE a=%.6e E1=%.6e M1=%.6e share=%.6e "
+                "|m|/mu=%.6e\n",
+                semiMajorAxisForLoss,electricPowerForLoss,
+                magneticEmissionForLoss.power,
+                total>0.0?magneticEmissionForLoss.power/total:0.0,
+                (firstDipole+secondDipole).norm()
+                    /std::max(firstMagneticMoment,1.0e-300));
+        }
         const double expectedLossPerOrbit=isStochastic
             ?(electricPowerForLoss+magneticEmissionForLoss.power)
                  *period/reducedMass
