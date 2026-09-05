@@ -41,13 +41,23 @@ wobec zmierzonych \(124{,}49\) ps. Po stronie klasycznej ta potęga ma
 strukturalne wyprowadzenie, po stronie QED bierze się z zupełnie innego
 rachunku. Zgodność współczynnika \(O(1)\) pozostaje w tym modelu
 niewyjaśniona i **nie jest wyprowadzeniem anihilacji**. Rozpraszanie odtwarza
-przekrój Rutherforda z jedną normalizacją.
+przekrój Rutherforda z jedną normalizacją. **Oba te wyniki są klasyczne w
+mocnym sensie: przeżywają całkowite usunięcie kwantu \(\hbar\omega\)** —
+\(\alpha^5\) wychodzi z podzielenia klasycznej mocy Larmora przez energię
+wiązania równie dobrze jak przez kwant (iloraz wobec \(\tau_{\rm para}\)
+staje się wtedy dokładnie \(1/4\)), a normalizacja Rutherforda wychodzi
+**co do cyfry ta sama** na ścieżce ciągłej. Zmierzone niżej, w sekcji
+„Co przeżywa bez \(\hbar\omega\)".
 
 *Czego odtworzyć się NIE udało, i to jest wynik negatywny, nie luka.* Stosunek
 czasów życia para do orto, wynoszący w rzeczywistości około \(1000\), **nie
-wychodzi**: oba kanały dają statystycznie ten sam rozkład czasu kolapsu, bo
-różnią się wyłącznie sprzężeniem dipol-dipol na poziomie \(10^{-6}\) energii
-Coulomba. Prawdziwa różnica pochodzi z reguły wyboru \(2\gamma/3\gamma\), czyli
+wychodzi**, bo oba kanały różnią się wyłącznie sprzężeniem dipol-dipol na
+poziomie \(10^{-6}\) energii Coulomba. Po ostrym przygotowaniu rozrzut
+zespołu spadł na tyle, że różnica **daje się już rozdzielić** — orto żyje
+dłużej od para o \(2{,}7\cdot10^{-5}\) (\(10{,}8\sigma\)), a więc ze
+**znakiem zgodnym z rzeczywistością** — co czyni ten wynik negatywny
+ostrzejszym, nie słabszym: mechanizm klasyczny jest o siedem rzędów za
+słaby, zamiast być nierozróżnialny. Prawdziwa różnica pochodzi z reguły wyboru \(2\gamma/3\gamma\), czyli
 z zachowania parzystości ładunkowej w procesie, którego ten model w ogóle nie
 zawiera — nie ma tu kanału kontaktowego ani tempa anihilacji. Osiemnaście sond
 w sekcji L bada tę granicę wprost.
@@ -99,7 +109,7 @@ ponad to, że są wolniejsze**. Wszystkie wiersze niżej są zmierzone przy
 | # | import | co dokładnie jest wpisane | usuwa go | zmierzona cena |
 |---|---|---|---|---|
 | 1 | \(L=n\hbar\) na promieniu Bohra | start dokładnie kołowy przy \(a_n=n^2a_{\rm pary}\), więc \(n_E=L/\hbar=n\) z konstrukcji | `CREM_INITIAL_BAND=1` (usuwa tylko ostrość, nie promień) | mediana 6206,43 → **7346,35 ps** (+18,4%), 3/3, punkt zatrzymania bez zmian, ale rozrzut \(\sigma/\mu\) rośnie z \(2{,}7\cdot10^{-6}\) do **0,384** — pięć rzędów wielkości |
-| 2 | \(\hbar\omega\) jako kwant emisji | energia zabierana przez jeden foton | `--radiation-reaction individual` (ciągły Landau-Lifshitz) | mediana 6206,43 → **1974,56 ps** (**3,14× szybciej**), a punkt zatrzymania rozmywa się z 547,514–547,557 \(r^*\) na **318–777 \(r^*\)** |
+| 2 | \(\hbar\omega\) jako kwant emisji | energia zabierana przez jeden foton | `--radiation-reaction individual` (ciągły Landau-Lifshitz) | mediana 6206,43 → **1974,56 ps** (**3,14× szybciej**); warunek zatrzymania i energia końcowa **bez zmian** — 100% przebiegów kończy na podłodze i wiązanie terminalne wynosi 6,80285 eV w obu ścieżkach |
 | 3 | kwantyzacja spinu | momenty dokładnie zgodne (para) albo dokładnie przeciwne (orto), nigdy w paśmie | `--no-spin-quantization` | **na czas kolapsu zero**: 6206,43 → 6206,43 ps, różnica \(2\cdot10^{-6}\) względnie przy własnym rozrzucie zespołu \(\sigma/\mu=2{,}7\cdot10^{-6}\) |
 | 4 | podłoga stanu podstawowego | nie istnieje stan niżej niż \(n=1\), więc emisja tam gaśnie | `--no-ground-state-floor` | na czas kolapsu prawie nic: 6206,43 → **6245,93 ps** (+0,6%); za to punkt zatrzymania spada z 547,5 na **31,10 \(r^*\)** (czynnik 17,6), 100% przebiegów kończy na **limicie retardacji**, a nie na \(n=1\), i 1 z 3 to awaria numeryczna |
 | 5 | drabina Bohra | energia fotonu to odstęp poziomów \(E(n)-E(n-1)\), a nie \(\hbar\omega_{\rm orb}\) | włącza go `--bohr-photon-energy` + `CREM_LADDER_BELOW_2=1` (domyślnie **wyłączony**) | mediana 6206,43 → **16456,6 ps** (**2,651\(\times\)**), 3/3, punkt zatrzymania bez zmian; ale ze 123 wywołań kwantu **0 trafia w gałąź podręcznikową \(n\ge2\)**, 92,68% w rozszerzenie poniżej \(n=2\), 7,32% spada poniżej \(n=1\) |
@@ -179,7 +189,7 @@ wolna od importów, a rozkład ciężaru jest bardzo nierówny — i nie pokrywa
 z intuicją. Jeden import (kwantyzacja spinu) nie kosztuje na czasie kolapsu
 **nic**, a jego cena spada w całości na tę jedną obserwablę, której model i
 tak nie odtwarza. Jeden (\(\hbar\omega\)) ustala ten czas z dokładnością do
-czynnika **3,14** i decyduje, czy koniec spirali jest ostry, czy rozmyty.
+czynnika **3,14**, ale **nie rusza ani warunku zatrzymania, ani energii końcowej**.
 Jeden (promień startowy) ustala samą **skalę** odpowiedzi, \(\sim32\times\)
 na poziom, i nie ma dla niego alternatywy wewnątrz klasycznej fizyki ani
 przełącznika, który by go zdjął. Dwa (podłoga i drabina) prawie nie ruszają
@@ -193,6 +203,165 @@ importu, a nie z elektrodynamiki** — a przy \(n=1\) sama definicja tego, co
 się mierzy, jest już importem. Osobnym, nierozstrzygniętym pytaniem
 pozostaje, które z wyników przeżywają całkowite usunięcie \(\hbar\omega\),
 czyli co zostaje z modelu na czystej ścieżce ciągłej.
+
+### Co przeżywa bez \(\hbar\omega\): pomiar ścieżki ciągłej
+
+Naturalne pytanie po wycenie importów: skoro kwant \(\hbar\omega\) kosztuje
+czynnik \(3{,}14\) na czasie kolapsu, to **które wyniki zostają, gdy go
+całkiem usunąć**. Model ma na to gotowe narzędzie — `--radiation-reaction
+individual`, ciągłą reakcję Landaua-Lifshitza zredukowanego rzędu, w której
+nie ma żadnego kwantu ani żadnego fotonu. Ta sekcja mierzy tę ścieżkę
+produkcyjnie i dzieli wyniki na te, które ją przeżywają, i te, które nie.
+
+#### Najlepszy wynik projektu przeżywa, i to z lepszą liczbą
+
+Zgodność potęgi \(\alpha^5\) pochodzi z `larmorOrbitAveragedPower`, czyli z
+**klasycznej mocy Larmora**, w której \(\hbar\) nie występuje wcale:
+
+\[
+P=\frac{|\ddot d|^2}{6\pi\varepsilon_0c^3},\qquad
+|\ddot d|=\frac{|q_{\rm eff}|\,k|q_1q_2|}{\mu a^2},\qquad
+P\big|_{a_{\rm pary}}=1{,}167322081\cdot10^{-8}\ \mathrm{W}.
+\]
+
+Żeby z mocy zrobić **tempo**, trzeba ją podzielić przez jakąś energię — i
+tutaj jest sedno. Na promieniu \(a_{\rm pary}\) dostępne są dwie, a obie mają
+**tę samą potęgę \(\alpha\)**:
+
+\[
+\hbar\omega=\tfrac12\alpha^2m_ec^2\ \ (\text{kwant, import nr 2}),\qquad
+E_{\rm wiąz}=\tfrac14\alpha^2m_ec^2\ \ (\text{wiązanie, klasyczne}).
+\]
+
+Dlatego \(\alpha^5\) **nie pochodzi z kwantu**: pochodzi z podzielenia
+klasycznej mocy przez cokolwiek o skali \(\alpha^2m_ec^2\), a wiązanie jest
+dostępne klasycznie. Kwant zmienia wyłącznie wymierny współczynnik:
+
+| tempo | wartość | \(\tau\) | wobec \(\tau_{\rm para}=124{,}49\) ps |
+|---|---|---|---|
+| \(P/\hbar\omega\) — **z kwantem** | \(\tfrac13\,\alpha^5m_ec^2/\hbar\) | \(186{,}741\) ps | \(\times\tfrac32\) |
+| \(P/E_{\rm wiąz}\) — bez kwantu | \(\tfrac23\,\alpha^5m_ec^2/\hbar\) | \(93{,}371\) ps | \(\times\tfrac34\) |
+| pełna spirala \(a\to0\), \(t=a^3/3A\) | \(\mathbf{2}\,\alpha^5m_ec^2/\hbar\) | \(31{,}124\) ps | \(\times\tfrac14\) |
+
+Wszystkie trzy są **dokładnymi** wymiernymi wielokrotnościami
+\(\alpha^5m_ec^2/\hbar\) (zmierzone w kodzie: \(0{,}33333333\),
+\(0{,}66666667\), \(2{,}00000000\)). Twierdzenie z deklaracji zakresu —
+„ta sama potęga \(\alpha\), różnica to liczba wymierna rzędu jedności" —
+zachodzi więc **dosłownie i bez kwantu**, a w ostatnim wierszu iloraz jest
+nawet prostszy niż w pierwszym: dokładnie \(4\), bo
+\(\Gamma_{\rm para}^{\rm LO}=\tfrac12\alpha^5m_ec^2/\hbar\), a spirala
+klasyczna \(2\alpha^5m_ec^2/\hbar\).
+
+Sprawdzone też **przebiegiem**, nie tylko rachunkiem. `--level 1
+--no-ground-state-floor --radiation-reaction individual`, ziarno 42:
+mediana **30,6645 ps** wobec analitycznych \(31{,}124\) ps, czyli \(1{,}5\%\)
+— reszta to relatywistyka i ekscentryczność narastające na końcu spirali,
+bo samo urwanie przebiegu nic nie tłumaczy: zatrzymanie następuje przy
+\(15{,}8\,r^*=0{,}029\,a_{\rm pary}\), a pozostała spirala to
+\(t\propto a^3\), czyli \(7{,}5\cdot10^{-4}\) ps. Trzy z trzech dobiegły do
+granicy, zero awarii.
+
+**Jedno zastrzeżenie, żeby to nie brzmiało mocniej, niż jest.** Nic z
+powyższego nie jest wolne od \(\hbar\) w sensie absolutnym: skala długości
+\(a_{\rm pary}\) jest importem nr 1 i \(\hbar\) siedzi w niej przez moment
+magnetyczny (`pairBohrRadius` wyprowadza ją z **mierzonych** momentów, więc
+eliminuje \(\hbar\) między dwiema wielkościami, które obie je zawierają —
+patrz komentarz tej funkcji). Twierdzenie jest węższe i dokładnie takie:
+**wykładnik \(\alpha^5\) i wymierny iloraz rzędu jedności nie potrzebują
+kwantu emisji ani drabiny.** Potrzebują skali długości.
+
+#### Pomiar produkcyjny: co przeżywa, a co nie
+
+Protokół: para/orto po \(24\) przebiegi przy `--level 2 --ground-state-floor`,
+zjawiska niezwiązane po \(200\), ziarno \(42\), wszystko różniące się
+**wyłącznie** flagą `--radiation-reaction`. Poziom 2 z podłogą jest jedyną
+konfiguracją, w której **obie** ścieżki są dobrze określone: przy `--level 1`
+ostre przygotowanie siada dokładnie na podłodze, a bez podłogi kwant
+stochastyczny rozbiega się poniżej \(n=1\) (udokumentowane: 4 awarie na 4).
+Porównanie tam byłoby nieuczciwe wobec ścieżki kwantowej, nie informatywne o
+kwancie.
+
+| wielkość | z kwantem \(\hbar\omega\) | ścieżka ciągła | przeżywa? |
+|---|---|---|---|
+| mediana kolapsu, para | \(6206{,}47\pm0{,}006\) ps | \(1974{,}58\pm0{,}008\) ps | **nie** — czynnik \(3{,}14\) |
+| warunek zatrzymania | 24/24 podłoga | 24/24 podłoga | **tak**, identycznie |
+| wiązanie terminalne | \(6{,}80285\) eV | \(6{,}80285\) eV | **tak**, co do cyfry |
+| separacja para/orto | \(+2{,}7\cdot10^{-5}\), \(10{,}8\sigma\) | \(+6{,}1\cdot10^{-5}\), \(6{,}3\sigma\) | **tak**, ten sam znak i rząd |
+| rozrzut zespołu \(\sigma/\mu\) | \(4{,}4\cdot10^{-6}\) | \(1{,}9\cdot10^{-5}\) | jakościowo tak, oba znikome |
+| awarie numeryczne | 0/24 | 0/24 | **tak** |
+
+**Separacja para/orto przeżywa, i to jest wynik mocniejszy niż stary.**
+Dotychczas README mówił, że oba kanały dają „statystycznie ten sam rozkład
+czasu kolapsu". Po ostrym przygotowaniu rozrzut zespołu spadł do
+\(\sim10^{-5}\), więc różnica **daje się rozdzielić**: orto żyje dłużej niż
+para o \(2{,}7\cdot10^{-5}\) na ścieżce kwantowej (\(10{,}8\sigma\)) i o
+\(6{,}1\cdot10^{-5}\) na ciągłej (\(6{,}3\sigma\)). Znak jest **zgodny z
+rzeczywistością** — orto naprawdę żyje dłużej — a rząd wielkości chybia o
+siedem do ośmiu rzędów, bo rzeczywisty iloraz to \(\sim10^3\), a nie
+\(1{,}00003\). Wniosek negatywny z deklaracji zakresu zostaje więc w mocy,
+ale jest teraz **liczbą, nie zdaniem**: model rozdziela para i orto,
+mierzy sprzężenie dipol-dipol poprawnym znakiem i pokazuje wprost, że ten
+mechanizm jest o siedem rzędów za słaby na regułę wyboru \(2\gamma/3\gamma\).
+Co ważne dla tej sekcji: **kwant nie ma z tym nic wspólnego** — separacja jest
+w obu ścieżkach tego samego rzędu.
+
+**Zjawiska niezwiązane: kwant nie ma tam na czym działać, i widać to w
+liczbach.** Rozpraszanie i zderzenie czołowe nie tworzą stanu związanego w
+ogóle (zmierzone osobno: zero próbek z \(n\ge2\) w którymkolwiek z czterech
+zjawisk), więc `quantumFor` nie ma tam czego kwantować. Sprawdzone, a nie
+założone:
+
+| \(200\) przebiegów | z kwantem | ścieżka ciągła |
+|---|---|---|
+| rozpraszanie, \(C_R\) | \(0{,}90625\pm0{,}0545\) | \(0{,}90625\pm0{,}0545\) — **identycznie co do cyfry** |
+| rozpraszanie, wyniki | escaped 200 | \(0{,}90625\pm0{,}0545\) — **identycznie co do cyfry**OUT |
+| zderzenie, \(C_R\) | \(0{,}605\pm0{,}0346\) | \(0{,}565\pm0{,}0351\) — zgodne w \(0{,}8\sigma\) |
+| zderzenie, wyniki | escaped 151, collision 28, captured 3, **failed 18** | \(0{,}565\pm0{,}0351\) — zgodne w \(0{,}8\sigma\)OUT |
+
+Kanał zderzenia czołowego jest jedynym miejscem, w którym ścieżka ciągła
+wypada **gorzej**, i to warto zapisać, żeby ta sekcja nie czytała się jak
+reklama kontinuum: normalizacja \(C_R\) zgadza się w granicach błędu
+(\(0{,}8\sigma\)), ale awarie numeryczne rosną z \(18\) na \(37\) na
+\(200\) przebiegów, a rozkład wyników przesuwa się (wychwyty \(3\to11\),
+zderzenia \(28\to13\)). Powód jest mechaniczny, nie kwantowy: ciągła siła
+Landaua-Lifshitza jest sztywna przy bliskim podejściu, a ścieżka
+stochastyczna ma między fotonami reakcję **zerową**, więc nic jej tam nie
+usztywnia. Kwant kupuje w tym kanale odporność numeryczną — i tylko ją.
+
+Rozpraszanie wychodzi **identycznie co do cyfry** na obu ścieżkach — ta sama
+normalizacja \(C_R\), ten sam błąd, ten sam rozkład wyników. To jest
+najczystszy możliwy dowód, że wynik rutherfordowski, jeden z dwóch
+pozytywnych wyników projektu, nie zawdzięcza kwantowi **niczego**.
+
+#### Bilans: co zostaje z modelu bez \(\hbar\omega\)
+
+*Zostaje.* Wykładnik \(\alpha^5\) i wymierny iloraz rzędu jedności wobec
+tempa anihilacji — z lepszą liczbą (\(\times\tfrac14\) dokładnie zamiast
+\(\times\tfrac32\)). Normalizacja Rutherforda, co do cyfry. Progi
+energetyczne wynikające z momentu magnetycznego: wiązanie \(6{,}802847\) eV,
+rozszczep nadsubtelny \(7{,}57\) GHz — obie są własnościami przygotowanej
+pary, a nie emisji. Rozdzielenie para/orto z poprawnym znakiem. Warunek
+zatrzymania i energia terminalna. **Wszystkie \(53\) bramki walidacyjne — i to
+strukturalnie, nie przez pomiar:** `crem_collapse.hpp`, gdzie mieszka
+`quantumFor`, jest wyłączony z binarki walidacyjnej dyrektywą
+`#ifndef POSITRONIUM_VALIDATION_EXECUTABLE`, więc żadna bramka nigdy kwantu
+nie widziała.
+
+*Nie zostaje.* Sama skala czasu kolapsu (czynnik \(3{,}14\)). Widmo emisji
+orbitalnej, bo nie ma fotonów do policzenia. Statystyka szumu śrutowego
+emisji spontanicznej (tryb `--emission poisson`), która bez kwantów nie ma
+sensu. I — co warto zapisać jako **zysk**, nie stratę — znika wiersz
+oznaczony w tabeli progów jako „**niezgodność**": kwant korespondencyjny
+\(13{,}6057\) eV, dla którego pozytonium nie ma żadnego przejścia. Na ścieżce
+ciągłej nie ma czego z obserwacją zestawiać, bo model nie twierdzi już, że
+emituje kwanty o tej energii.
+
+*Czego to NIE znaczy.* Ścieżka ciągła nie jest „lepszym modelem": traci
+wszystko, co dotyczy dyskretności emisji, a ta jest przedmiotem osobnych
+osiemnastu sond. Znaczy natomiast dokładnie tyle, ile pyta nowy zakres:
+**pozytywne wyniki tego projektu są klasyczne**, a kwant emisji wchodzi tam,
+gdzie model i tak działa poza swoją dziedziną — poniżej \(n=1\), gdzie
+\(93{,}4\%\) przebiegu się odbywa i gdzie żadnej drabiny nie ma.
 
 ### Promień regularyzacji dipola magnetycznego
 
