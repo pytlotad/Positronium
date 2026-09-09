@@ -2936,11 +2936,11 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             std::fprintf(stderr,
                 "CREM_SKIP t=%.12e requested=%.17e skip=%d frac=%.6e "
                 "ecc=%.17e loss=%.17e period=%.17e measured=%.17e "
-                "S=%.17e Smag=%.17e Lx=%.17e Ly=%.17e Lz=%.17e Lorb=%.17e mm=%.17e\n",
+                "S=%.17e Emag=%.17e Lx=%.17e Ly=%.17e Lz=%.17e Lorb=%.17e mm=%.17e\n",
                 simulatedTimeTotal,requested,orbitsToSkip,
                 requested>0.0?requested-std::floor(requested):-1.0,
                 eccNow,lossPerOrbit,period,measuredElapsed,
-                spinAlongOrbit,spinMagnitude,
+                spinAlongOrbit,std::abs(elements.specificEnergy),
                 angularMomentumDirection.x,angularMomentumDirection.y,
                 angularMomentumDirection.z,
                 elements.specificAngularMomentum*reducedMass/hbar,
@@ -4794,6 +4794,40 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                          <<" a="<<(-attractionParameter
                              /(2.0*elements.specificEnergy))<<std::endl;
             return result;
+        }
+        // CREM_PAIR_L_WITH_E: an EXPERIMENT, off by default.
+        //
+        // Measured between photons in the production path: |E| and L move
+        // TOGETHER, dE/E = +4.069e-07 against dL/L = +4.079e-07 per
+        // checkpoint.  For a Kepler orbit at e = 0 the relation is
+        // L = A/sqrt(2|E|), i.e. dL/L = -1/2 dE/E, so L should fall at half
+        // the rate rather than rise at the same one -- the pair drifts off
+        // its own (E,L) relation until the next photon recomputes L from E
+        // and snaps it back.  This re-imposes that relation at the END of
+        // every checkpoint, using exactly the formula the emission already
+        // uses, so no new physics enters: it only asks what the observable
+        // does when the drift is removed.
+        //
+        // Deliberately NOT the default.  The drift is bounded and reset at
+        // each emission, the transport that produces it conserves J to
+        // machine precision, and the spin-orbit torque it represents is a
+        // real effect rather than an obvious fault -- so the honest move is
+        // to measure the consequence behind a flag, not to legislate the
+        // answer into the production path.
+        if(std::getenv("CREM_PAIR_L_WITH_E")
+           &&elements.specificEnergy<0.0) {
+            const double eccentricitySquaredNow=std::max(0.0,1.0
+                +2.0*elements.specificEnergy
+                    *elements.specificAngularMomentum
+                    *elements.specificAngularMomentum
+                    /(attractionParameter*attractionParameter));
+            const double keplerConsistent=std::sqrt(std::max(0.0,
+                attractionParameter*attractionParameter
+                *(1.0-eccentricitySquaredNow)
+                /(2.0*std::abs(elements.specificEnergy))));
+            if(std::isfinite(keplerConsistent)&&keplerConsistent>0.0)
+                elements.specificAngularMomentum=
+                    clampAboveGroundStateAngularMomentum(keplerConsistent);
         }
         if(!(elements.specificEnergy<0.0)||!std::isfinite(elements.specificEnergy)
            ||!std::isfinite(elements.specificAngularMomentum)) {

@@ -8271,13 +8271,55 @@ to zakłada — komentarz ścieżki fotonowej mówi wprost, że „\((E,L)\) po 
 fotonie są ze sobą spójne z konstrukcji", i dlatego ta ścieżka nie niesie
 prawa masowego. Luka jest **między** fotonami, nie w nich.
 
-*Status.* Zlokalizowane i zmierzone: rachunek emisji poprawny, dwa fotony na
-przebieg, prawo \(L\) dla przeskoku obecne ale w martwej gałęzi, transport
-zachowujący \(J\) maszynowo, energia przesuwana o \(200\,000\) orbit
-przeciw jednej dla \(L\), dryf ograniczony i resetowany. **Niesprawdzone:**
-czy sparowanie przeskoku \(L\) z przeskokiem energii w ścieżce
-produkcyjnej usuwa separację para/orto — to jedna zmiana i jeden przebieg
-porównawczy, i nie jest zrobione.
+*Sprostowanie po drodze.* Zdanie „energia przeskakuje \(200\,000\) orbit,
+moment pędu jedną" opisuje gałąź **deterministyczną**, nie produkcyjną. W
+ścieżce stochastycznej energia przeskoku nie jest doliczana ciągle — niosą ją
+fotony, a `updatedEnergyMagnitude` służy tam wyłącznie księgowaniu
+tożsamości. Zmierzone bezpośrednio, per checkpoint między fotonami, jest
+jednak coś ostrzejszego:
+
+\[
+\frac{\Delta E}{E}=+4{,}069\cdot10^{-7},\qquad
+\frac{\Delta L}{L}=+4{,}079\cdot10^{-7}.
+\]
+
+\(E\) i \(L\) rosną **razem**, z wykładnikiem \(+1\), podczas gdy przy
+\(e=0\) relacja \(L=A/\sqrt{2|E|}\) wymaga \(\Delta L/L=-\tfrac12\,
+\Delta E/E\). Para dryfuje więc ze swojej własnej relacji \((E,L)\), aż
+foton przelicza \(L\) z energii i przyciąga ją z powrotem (widać to przy
+checkpoincie \(12\): \(\Delta E/E=+1{,}139\) przeciw
+\(\Delta L/L=-0{,}316\)).
+
+#### Test: co robi obserwabla, gdy dryf usunąć
+
+`CREM_PAIR_L_WITH_E` narzuca relację Keplera na końcu każdego checkpointu —
+**tą samą formułą, której używa emisja**, więc nie wchodzi żadna nowa fizyka.
+Para/orto po \(24\) trajektorie, ziarno \(42\), \(n=2\) z podłogą:
+
+| parowanie \(L\) z \(E\) | para | orto | orto \(-\) para | awarie |
+|---|---|---|---|---|
+| wyłączone | \(6206{,}48\) ps | \(6206{,}68\) ps | \(+0{,}200\) ps | \(0/0\) |
+| **włączone** | \(6206{,}40\) ps | \(6206{,}42\) ps | \(\mathbf{+0{,}020}\) **ps** | \(0/0\) |
+
+**Separacja spada dziesięciokrotnie** — \(3{,}22\cdot10^{-5}\to
+3{,}22\cdot10^{-6}\), czyli usunięte \(90\%\) — przy zerze awarii
+numerycznych po obu stronach. To domyka diagnozę: **międzyfotonowy rozjazd
+\((E,L)\) jest dominującą przyczyną separacji para/orto**, a nie moc M1,
+nie siła dipol-dipol i nie próg.
+
+*Co zostaje.* \(10\%\) separacji (\(+0{,}020\) ps) przeżywa i nie jest
+wyjaśnione. Zmienia się też sama liczba para (\(6206{,}48\to6206{,}40\)),
+więc poprawka nie jest neutralna dla wartości bezwzględnej, tylko dla
+różnicy kanałów.
+
+*Dlaczego to zostaje eksperymentem, a nie domyślną poprawką.* Trzy powody, i
+żaden nie jest ostrożnością na wyrost: dryf jest **ograniczony i zerowany**
+przy każdej emisji; transport, który go produkuje, zachowuje \(J\) do
+precyzji maszynowej; a moment obrotowy spin-orbita, który za nim stoi, jest
+efektem **fizycznym** — tylko orto ma spin wypadkowy, więc tylko orto go
+dostaje. Narzucenie relacji Keplera co checkpoint kasuje ten efekt razem z
+dryfem, a to jest decyzja o tym, co model twierdzi, nie usunięcie usterki.
+Flaga mierzy konsekwencję; nie wpisuje odpowiedzi do ścieżki produkcyjnej.
 
 Wniosek dla deklaracji zakresu nie zmienia się, ale jego diagnoza owszem:
 modelowi **nie brakuje reguły wyboru** — ma ją, ścisłą i poprawnie
