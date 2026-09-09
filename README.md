@@ -8173,20 +8173,64 @@ historią, \(J=S+L\) byłoby zachowane. Zmierzone:
 \Delta S+\Delta L=+1{,}680\cdot10^{-7}\,\hbar\ \text{na checkpoint},
 \]
 
-czyli wymiana ze spinem tłumaczy **\(79{,}4\%\)** przyrostu orbitalnego, a
-**\(20{,}6\%\) pochodzi skądinąd**. \(J\) rośnie stałym tempem — co jest
+czyli wymiana ze spinem tłumaczyłaby **\(79{,}4\%\)** przyrostu
+orbitalnego, a \(20{,}6\%\) pochodziłoby skądinąd. **Obie te liczby są
+poniżej wycofane** — to rzut, nie magnituda; patrz następny podrozdział. \(J\) rośnie stałym tempem — co jest
 podwójnie osobliwe, bo orbita w tym czasie **promieniuje**, a foton powinien
 moment pędu **zabierać**, nie dodawać.
 
-*Bilans końcowy tego wątku.* Potwierdzone pomiarem: rezerwuarem jest
-\(\mathbf S_1+\mathbf S_2\) (para \(0\), orto \(-0{,}94\,\hbar\)),
-transfer jest deterministyczny i jednostronny, jego wielkość zgadza się z
-rampą znalezioną niezależnie, a znak tłumaczy „orto żyje dłużej" bez
-dopasowywania. Nowe i **nierozstrzygnięte**: \(20{,}6\%\) przyrostu
-orbitalnego nie ma pokrycia ani w spinie, ani w emisji — to osobna
-niezgodność zachowania \(J\) w kanale orto, ujawniona przy okazji i warta
-własnego zbadania. Nie wpisuję jej do rozwiązania; wpisuję jako to, co ten
-pomiar znalazł po drodze.
+#### Rozstrzygnięcie tych \(20{,}6\%\): pytanie było źle postawione
+
+Napisałem wyżej, że wymiana ze spinem tłumaczy \(79{,}4\%\) przyrostu
+orbitalnego, a \(20{,}6\%\) pochodzi skądinąd. **Obie liczby są błędne**, i
+błąd jest tego samego rodzaju, co przy „ostrzu noża": mierzyłem **rzut**
+\((\mathbf S_1+\mathbf S_2)\cdot\hat{\mathbf L}\) i odczytałem jego
+spadek jako ubytek momentu pędu spinu. Rzut może jednak maleć bez żadnego
+transferu, jeśli obraca się **oś**.
+
+Rozstrzyga to magnituda, bo precesja zachowuje \(|\mathbf S|\):
+
+| wielkość (orto, \(11\) checkpointów) | wartość |
+|---|---|
+| \(|\mathbf S_1+\mathbf S_2|\) | \(1{,}000000000\to1{,}000000000\), zmiana \(\mathbf{+4{,}4\cdot10^{-16}}\) |
+| rzut \(\mathbf S\cdot\hat{\mathbf L}\) | \(-0{,}940391864\to-0{,}940398990\) |
+| \(L_{\rm orb}\) | \(+8{,}974\cdot10^{-6}\,\hbar\) |
+| obrót \(\hat{\mathbf L}\) między checkpointami | \(0{,}12\)–\(0{,}62\) rad |
+
+**Magnituda spinu jest stała do precyzji maszynowej.** Spin nie oddaje
+**niczego**. Zmieniał się wyłącznie rzut, bo oś orbity obraca się o pół
+radiana na checkpoint, a spin jedzie razem z nią — to ten sam duży obrót
+sekularny, który ten plik opisuje przy transporcie spin-orbita. Wobec tego
+przyrost orbitalny nie jest wyjaśniony w \(79{,}4\%\), tylko
+**w \(0\%\)**, a nierozliczone jest nie \(20{,}6\%\), tylko
+**\(100\%\)**.
+
+*Co zostaje z poprzedniego wniosku.* Zostaje jednostronność i jej źródło:
+para ma spin wypadkowy **dokładnie zero**, orto \(-0{,}94\,\hbar\), i to
+jest realna, strukturalna różnica między kanałami, odczytana z
+przygotowanego stanu. Zostaje też korelacja: rampa \(L\) występuje w tym
+kanale, który ma spin, i nie występuje w tym, który go nie ma. **Nie
+zostaje** mechanizm: korelacja nie jest transferem, bo transferu nie ma.
+
+*Anomalia, ostrzej niż przedtem.* Orbitalny moment pędu orto rośnie o
+\(+8{,}158\cdot10^{-7}\,\hbar\) na checkpoint — **stale**, \(10/10\)
+dodatnich — i **identycznie z podłogą i bez niej** (sprawdzone:
+\(+8{,}158\cdot10^{-7}\) w obu konfiguracjach, więc
+`clampAboveGroundStateAngularMomentum` też odpada). Orbita w tym czasie
+**promieniuje**, a orbita promieniująca musi moment pędu **tracić**. Para
+takiej rampy nie ma (średnia \(-6{,}0\cdot10^{-11}\), \(5/11\)
+dodatnich).
+
+*Gdzie szukać dalej, i czego NIE twierdzę.* Po emisji moment pędu nie jest
+zmniejszany, tylko **przeliczany od nowa** z energii i mimośrodu:
+`classicalAngularMomentumMagnitude` \(=\sqrt{A^2(1-e^2)/(2E_{\rm po})}\)
+(`crem_collapse.hpp`). Przy \(e=0\) — a zmierzone \(e\) jest **dokładnie**
+zerowe — daje to \(L=A/\sqrt{2E}\), więc rosnące \(|E|\) powinno
+\(L\) **zmniejszać**. Mierzone rośnie. To jest następne miejsce do
+otwarcia i **nie sprawdziłem go**; w szczególności nie twierdzę, że ta linia
+jest przyczyną — twierdzę tylko, że rampa jest realna, jednostronna, odporna
+na podłogę, niepokryta przez spin, i że idzie w stronę przeciwną do
+promieniowania.
 
 Wniosek dla deklaracji zakresu nie zmienia się, ale jego diagnoza owszem:
 modelowi **nie brakuje reguły wyboru** — ma ją, ścisłą i poprawnie

@@ -2928,14 +2928,21 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                +(gyro2!=0.0?secondDipole*(1.0/gyro2):Vec3{});
             const double spinAlongOrbit=
                 dot(spinSum,angularMomentumDirection)/hbar;
+            // The PROJECTION can move without any transfer, because Lhat
+            // itself rotates.  |S| separates the two: precession preserves
+            // each spin's magnitude, so a falling projection at constant |S|
+            // is the axis turning, not angular momentum changing hands.
+            const double spinMagnitude=spinSum.norm()/hbar;
             std::fprintf(stderr,
                 "CREM_SKIP t=%.12e requested=%.17e skip=%d frac=%.6e "
                 "ecc=%.17e loss=%.17e period=%.17e measured=%.17e "
-                "S=%.17e Lorb=%.17e mm=%.17e\n",
+                "S=%.17e Smag=%.17e Lx=%.17e Ly=%.17e Lz=%.17e Lorb=%.17e mm=%.17e\n",
                 simulatedTimeTotal,requested,orbitsToSkip,
                 requested>0.0?requested-std::floor(requested):-1.0,
                 eccNow,lossPerOrbit,period,measuredElapsed,
-                spinAlongOrbit,
+                spinAlongOrbit,spinMagnitude,
+                angularMomentumDirection.x,angularMomentumDirection.y,
+                angularMomentumDirection.z,
                 elements.specificAngularMomentum*reducedMass/hbar,
                 (firstDipole+secondDipole).norm()
                     /std::max(firstMagneticMoment,1.0e-300));
