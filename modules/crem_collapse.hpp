@@ -2915,10 +2915,14 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 /(attractionParameter*attractionParameter)));
             std::fprintf(stderr,
                 "CREM_SKIP t=%.12e requested=%.17e skip=%d frac=%.6e "
-                "ecc=%.17e loss=%.17e\n",
+                "ecc=%.17e loss=%.17e period=%.17e measured=%.17e "
+                "L=%.17e mm=%.17e\n",
                 simulatedTimeTotal,requested,orbitsToSkip,
                 requested>0.0?requested-std::floor(requested):-1.0,
-                eccNow,lossPerOrbit);
+                eccNow,lossPerOrbit,period,measuredElapsed,
+                elements.specificAngularMomentum,
+                (firstDipole+secondDipole).norm()
+                    /std::max(firstMagneticMoment,1.0e-300));
         }
         orbitsToSkipPrevious=orbitsToSkip;
         const double jumpParameter=std::min(

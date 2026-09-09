@@ -8066,60 +8066,81 @@ znaczących. Gdyby skok wzmacniał szum, pięciokrotna zmiana wejścia wraz z
 odwróceniem znaku musiałaby go ruszyć. Nie rusza. Jest to więc **ustalona,
 powtarzalna różnica kanałowa**, a nie chaos.
 
-*Zawężanie, runda druga: trzech kandydatów wyeliminowanych pomiarem.*
-„Dyskretna wielkość w krokowaniu checkpointu" była na tyle konkretna, że dało
-się ją sprawdzić wprost, sondą `CREM_SKIP_CENSUS`. Wynik jest negatywny dla
-najbardziej oczywistego podejrzanego i przesuwa cel.
+*Zawężanie: trzech kandydatów wyeliminowanych pomiarem.* Sonda
+`CREM_SKIP_CENSUS` sprawdziła je wprost.
 
-**Całkowita liczba przeskakiwanych orbit — NIE.** Naturalny kandydat:
-`orbitsToSkip = static_cast<int>(boundedOrbits)`, gdzie `boundedOrbits`
-zależy od `lossPerOrbit`, a więc od M1 — obcięcie zamieniałoby
-nieskończenie małą różnicę w całą orbitę. Zmierzone: przy checkpointach
-\(0\)–\(11\) `skip` wynosi **\(200\,000\) w obu kanałach**, bo
-`requestedOrbits` \(\approx4{,}91\cdot10^5\) jest ucinane przez **zacisk**
-`maxOrbitsSkippedAtOnce`, nie przez zaokrąglenie. W miejscu skoku obcięcie
-w ogóle nie działa. Kanały rozjeżdżają się na `skip` dopiero od checkpointu
-\(12\), czyli **po** tym, jak różnica już powstała — to skutek, nie
-przyczyna.
+**Całkowita liczba przeskakiwanych orbit — NIE.** `orbitsToSkip =
+static_cast<int>(boundedOrbits)` czyta `lossPerOrbit`, więc obcięcie
+zamieniałoby nieskończenie małą różnicę w całą orbitę. Zmierzone: przy
+checkpointach \(0\)–\(11\) `skip` wynosi **\(200\,000\) w obu
+kanałach**, bo `requestedOrbits`\(\,\approx4{,}91\cdot10^5\) ucina
+**zacisk** `maxOrbitsSkippedAtOnce`, nie zaokrąglenie — w miejscu skoku
+obcięcie w ogóle nie działa. Kanały rozjeżdżają się na `skip` dopiero od
+checkpointu \(12\), czyli **po** powstaniu różnicy. Skutek, nie przyczyna.
 
-**Mimośród — NIE.** \(e=0{,}000000\) **dokładnie**, w obu kanałach, na
-każdym z \(19\) checkpointów: podłoga klamruje \(E\) i \(L\), więc
-`dipoleEccentricityFactor` jest tożsamościowo \(1\) i nie może niczego
-poruszyć.
+**Mimośród — NIE.** \(e=0{,}000000\) **dokładnie**, oba kanały, wszystkie
+\(19\) checkpointów: podłoga klamruje \(E\) i \(L\), więc
+`dipoleEccentricityFactor` jest tożsamościowo \(1\).
 
-**Za to widać, gdzie skok siedzi.** Względna różnica `lossPerOrbit` między
-kanałami:
+**Moc E1 — NIE.** Jej różnica trzyma się \(10^{-10}\) przez cały czas, gdy
+obserwabla idzie do \(10^{-4}\).
 
-| checkpoint | \(0\) | \(1\) | \(2\) | \(6\) | \(12\) | \(18\) |
-|---|---|---|---|---|---|---|
-| \(\Delta\,\text{loss}/\text{loss}\) | \(4{,}0\cdot10^{-11}\) | \(\mathbf{4{,}2\cdot10^{-7}}\) | \(1{,}7\cdot10^{-6}\) | \(1{,}0\cdot10^{-5}\) | \(8{,}1\cdot10^{-5}\) | \(3{,}7\cdot10^{-4}\) |
+*Co zostaje po eliminacji: zmierzony okres.* Rozkład różnicy `lossPerOrbit`
+na czynniki daje wynik jednoznaczny — **\(\Delta\text{loss} =
+\Delta\text{period} = \Delta\text{measured}\) co do cyfry**, a
+\(\Delta E1\) nie wnosi nic. Cała różnica tempa strat **jest** różnicą
+zmierzonego okresu orbity. I jeszcze jedno: przy checkpoincie \(0\) różnica
+okresu wynosi **dokładnie zero**, a pojawia się przy \(1\) — czyli
+**po pierwszej emisji**.
 
-Ślad \(\Delta t/t\) idzie za tym **z opóźnieniem jednego checkpointu**, co
-domyka łańcuch przyczynowy: różnica w tempie strat na checkpoincie \(n\)
-staje się różnicą czasu na \(n+1\).
+#### Skąd jednostronność: orto ma spin wypadkowy, para nie ma
 
-**I tu jest właściwa zagadka, teraz ostro postawiona.** Przy checkpoincie
-\(0\) różnica strat, \(4{,}0\cdot10^{-11}\), jest **w pełni wyjaśniona**
-przez \(\Delta a/a\approx2\cdot10^{-11}\), bo
-\(\text{loss}\propto a^{-5/2}\) przewiduje \(5\cdot10^{-11}\). Przy
-checkpoincie \(1\) to samo skalowanie przewiduje \(5{,}5\cdot10^{-11}\),
-a zmierzone jest \(4{,}2\cdot10^{-7}\) — **cztery rzędy więcej**, przy
-niezmienionym \(a\), zerowym \(e\) i \(M1\) rzędu \(10^{-19}\).
+Hipoteza progowa miała dziurę, którą sam zapisałem: rozstrzygnięcia progowe
+nie mają jednostronności, a znak jest ten sam na \(4\) z \(4\) ziaren.
+Dziura jest zamknięta, i to nie przez próg. Wystarczyło spojrzeć na
+**moment pędu**, nie na okres:
 
-Zostaje **jedno** wejście do `lossPerOrbit`, którego nie da się wyliczyć z
-elementów: **zmierzony okres orbity**, brany z faktycznie scałkowanej orbity
-pomiarowej. A integrator ma w sobie dokładnie tę dyskretność, której szukam —
-`if(error <= relativeTolerance) accept; else subdivide`, czyli gałąź
-zero-jedynkową na wielkości ciągłej. Metryka błędu (`normalizedStepError`)
-czyta wyłącznie pozycje i prędkości, **nie dipole**, ale te pozycje i
-prędkości różnią się między kanałami o \(10^{-11}\)–\(10^{-12}\), więc
-mogą wypaść po dwóch stronach tolerancji i dać inną sekwencję kroków.
+| | średni przyrost \(L\) na checkpoint | sd | dodatnich | sd/\|średnia\| |
+|---|---|---|---|---|
+| **orto** | \(\mathbf{+1{,}8889\cdot10^{-10}}\) | \(9{,}6\cdot10^{-15}\) | \(\mathbf{11/11}\) | \(\mathbf{0{,}0001}\) |
+| para | \(-6{,}0\cdot10^{-11}\) | \(1{,}8\cdot10^{-10}\) | \(5/11\) | \(3{,}0\) |
 
-To jest teraz cel: **czy sekwencja przyjętych kroków w orbicie pomiarowej
-różni się między kanałami**. Nie zmierzone. Zaznaczam też, czego ta hipoteza
-by nie tłumaczyła sama z siebie: dlaczego znak miałby być ten sam na
-\(4\) z \(4\) ziaren, skoro rozstrzygnięcia progowe integratora nie mają
-oczywistej jednostronności.
+**Orbitalny moment pędu orto rośnie deterministycznie**, stałym krokiem co do
+czterech cyfr; para tylko fluktuuje wokół zera dryfu. To nie jest szum
+progowy — to rampa.
+
+Powód jest **strukturalny i jednostronny z konstrukcji**, i jest to ta sama
+inwersja, którą model już dokumentuje: przeciwne ładunki odwracają relację
+spin-moment, więc
+
+* **para** to \(S=0\) — **spin wypadkowy zero**, momenty zgodne
+  (\(|\mathbf m|=2\mu\)),
+* **orto** to \(S=1\) — **spin wypadkowy niezerowy**, momenty kasujące się
+  (\(|\mathbf m|=0\)).
+
+Transport sekularny wymienia moment pędu między spinem a orbitą, a **tylko
+orto ma spin wypadkowy do wymiany**. Stąd rampa u orto i jej brak u para —
+jednostronność nie z monety progowej, tylko z tego, że jeden kanał ma
+rezerwuar, a drugi go nie ma.
+
+Znak też się domyka bez dopasowywania: większe \(L\) przy danym \(E\) to
+większe \(a\), dłuższy okres, wolniejsza strata — czyli **orto żyje
+dłużej**. Dokładnie to, co mierzy tabela czterech ziaren.
+
+To wyjaśnia zarazem, dlaczego ablacja siły dipol-dipol niczego nie ruszała:
+mechanizm siedzi w sektorze **spinowym**, w wymianie momentu pędu, a nie w
+sile. I dlaczego przypisanie do M1 musiało zawieść: \(|\mathbf m|\) jest
+duże dla para, ale istotny okazał się \(|\mathbf S_1+\mathbf S_2|\),
+który jest **odwrotnie**.
+
+*Co tu jest zmierzone, a co wywnioskowane.* Zmierzone: rampa \(L\) u orto i
+jej brak u para, równość \(\Delta\text{loss}=\Delta\text{period}\),
+zerowa różnica przed pierwszym fotonem, oraz eliminacja `skip`, \(e\),
+\(E1\) i siły dipolowej. Wywnioskowane — z udokumentowanej w tym pliku
+kwantyzacji spinu, nie z osobnego pomiaru — że rezerwuarem jest właśnie
+\(\mathbf S_1+\mathbf S_2\). Bezpośredni pomiar tempa wymiany
+spin-orbita przeciw rampie \(1{,}89\cdot10^{-10}\) zamknąłby to do końca i
+**nie jest zrobiony**.
 
 Wniosek dla deklaracji zakresu nie zmienia się, ale jego diagnoza owszem:
 modelowi **nie brakuje reguły wyboru** — ma ją, ścisłą i poprawnie
