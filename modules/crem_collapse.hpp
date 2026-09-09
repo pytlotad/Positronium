@@ -2822,8 +2822,9 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             const double total=electricPowerForLoss
                 +magneticEmissionForLoss.power;
             std::fprintf(stderr,
-                "CREM_M1_SHARE a=%.6e E1=%.6e M1=%.6e share=%.6e "
+                "CREM_M1_SHARE t=%.12e a=%.12e E1=%.6e M1=%.6e share=%.6e "
                 "|m|/mu=%.6e\n",
+                simulatedTimeTotal,
                 semiMajorAxisForLoss,electricPowerForLoss,
                 magneticEmissionForLoss.power,
                 total>0.0?magneticEmissionForLoss.power/total:0.0,

@@ -8012,22 +8012,69 @@ sektorze **promienistym**:
 | \(|\mathbf P_{\rm rad}|\) | \(1{,}13\cdot10^{-40}\) kg m/s | \(4{,}45\cdot10^{-51}\) (szum maszynowy) |
 
 Wypromieniowany **pęd** różni się o jedenaście rzędów i to jest dokładnie
-podpis M1: \(|\mathbf m|=2\mu\) wobec ściśle zera. Różnica energii,
-\(2\cdot10^{-5}\), jest tego samego rzędu co separacja czasu kolapsu. Znak
-też się zgadza bez dopasowywania: para ma kanał M1 **otwarty**, więc traci
-energię odrobinę szybciej i kolapsuje wcześniej — dokładnie to, co mierzy
-tabela ziaren.
+podpis M1: \(|\mathbf m|=2\mu\) wobec ściśle zera. **Uwaga na tor:** te
+liczby pochodzą z `--diagnose`, czyli ze ścieżki mechanicznej z ciągłym
+Landauem-Lifshitzem, a mediana kolapsu powstaje w estymatorze sekularnym z
+fotonami stochastycznymi. Kuszące „para ma M1 otwarte, więc kolapsuje
+wcześniej" **nie przenosi się** na tor produkcyjny — patrz niżej, gdzie ten
+sam udział M1 zmierzony tam wychodzi \(10^{-19}\), a nie
+\(10^{-12}\).
 
-*Czego nadal nie wiem, i mówię to wprost.* Udział M1 w mocy jest ograniczony
-przez \(10^{-12}\) (zmierzone wyżej), a obserwabla przesuwa się o
-\(3\cdot10^{-5}\) — **osiem rzędów więcej**. Kierunek i podpis wskazują
-na M1, ale między nimi brakuje kroku wzmacniającego. Naturalnym kandydatem
-jest **próg emisji**: foton pada, gdy zbankowana energia osiągnie jeden
-kwant, więc systematycznie jednostronne, nieskończenie małe obciążenie jest
-przez ten próg **prostowane** w przesunięcie czasu całego zdarzenia — ten sam
-kształt co udokumentowane wyżej „ostrze noża" na \(T/t_{\rm light}=150\).
-Nie jest to zmierzone i **nie podaję tego jako odpowiedzi**; podaję jako
-jedyną hipotezę zgodną z tym, co zmierzone.
+*Hipoteza progowa — zweryfikowana, i w połowie obalona.* Zapisałem tu
+wcześniej, że brakujący czynnik dostarcza **próg emisji**, „prostując"
+jednostronne obciążenie w przesunięcie czasu. Sprawdzone, obie połowy tego
+zdania:
+
+**Część „wzmacniająca" jest fałszywa, i to z arytmetyki, nie z pomiaru.**
+Foton pada, gdy zbankowana energia osiągnie kwant. Jeśli jeden kanał
+promieniuje o ułamek \(f\) więcej, czas bankowania jednego kwantu skraca się
+o \((1+f)\), a czas \(N\) kwantów **tak samo** — próg akumuluje liniowo i
+**nie wzmacnia niczego**. Żeby dać \(3\cdot10^{-5}\) na czasie, trzeba
+\(3\cdot10^{-5}\) na mocy.
+
+**Przypisanie do M1 też jest fałszywe, i to był mój błąd metodyczny.**
+Sonda `CREM_M1_SHARE` w **ścieżce produkcyjnej** (sekularny estymator,
+fotony stochastyczne) pokazuje udział M1 rzędu
+\(10^{-29}\)–\(10^{-17}\) — nie \(10^{-12}\), który podałem wyżej jako
+ograniczenie. Tamten podpis M1 (\(|\mathbf P_{\rm rad}|\) różniące się o
+jedenaście rzędów) zmierzyłem przez `--diagnose`, czyli w ścieżce
+**mechanicznej z ciągłym Landauem-Lifshitzem** — a nie w tej, która produkuje
+medianę. Zdiagnozowałem inny tor niż obserwabla.
+
+**Ale kształt progowy jest realny i widać go wprost.** Ślad checkpoint po
+checkpoincie, ziarno 42, \(n=2\) z podłogą, oba kanały:
+
+| # | \(t_{\rm para}\) [ps] | \(\Delta t/t\) | \(\Delta a/a\) | udział M1 |
+|---|---|---|---|---|
+| \(0\) | \(0{,}000\) | \(0\) | \(-9{,}9\cdot10^{-12}\) | \(6{,}5\cdot10^{-29}\) |
+| \(1\) | \(456{,}659\) | \(-2{,}0\cdot10^{-12}\) | \(-2{,}2\cdot10^{-11}\) | \(1{,}5\cdot10^{-19}\) |
+| \(\mathbf 2\) | \(913{,}318\) | \(\mathbf{+1{,}978\cdot10^{-7}}\) | \(-3{,}3\cdot10^{-11}\) | \(2{,}1\cdot10^{-19}\) |
+| \(\mathbf{12}\) | \(5479{,}896\) | \(+8{,}1\cdot10^{-6}\) | \(\mathbf{+8{,}1\cdot10^{-6}}\) | \(6{,}4\cdot10^{-18}\) |
+| \(18\) | \(6102{,}640\) | \(+9{,}8\cdot10^{-6}\) | \(+8{,}1\cdot10^{-6}\) | \(1{,}6\cdot10^{-18}\) |
+
+Przy checkpoincie \(2\) \(\Delta t/t\) skacze z \(10^{-12}\) na
+\(2\cdot10^{-7}\) — **pięć rzędów w jednym kroku** — potem narasta
+liniowo, a przy \(12\) drugi taki skok przenosi \(\Delta a/a\) z
+\(-7\cdot10^{-11}\) na \(+8\cdot10^{-6}\).
+
+**I ten skok nie jest wzmocnionym zaokrągleniem.** Powtórzone z ablowaną
+siłą dipolową: różnica startowa zmienia **znak i wielkość**
+(\(-9{,}9\cdot10^{-12}\to+1{,}9\cdot10^{-12}\)), a skok przy
+checkpoincie \(2\) wynosi \(+1{,}978\cdot10^{-7}\) **w obu
+przypadkach**, przy czym cała dalsza sekwencja zgadza się do czterech cyfr
+znaczących. Gdyby skok wzmacniał szum, pięciokrotna zmiana wejścia wraz z
+odwróceniem znaku musiałaby go ruszyć. Nie rusza. Jest to więc **ustalona,
+powtarzalna różnica kanałowa**, a nie chaos.
+
+*Stan otwarty, zawężony.* Wiadomo już, czym on **nie** jest: nie mocą M1
+(\(10^{-19}\) tam, gdzie trzeba \(10^{-7}\)), nie siłą dipol-dipol
+(ablacja wszystkich trzech ścieżek nie rusza ani skoku, ani mediany), nie
+wzmocnionym zaokrągleniem (odporny na zmianę znaku wejścia), i nie
+\(a\), \(e\) ani okresem — wszystkie trzy różnią się tam o
+\(\sim10^{-11}\), cztery rzędy za mało. Zostaje **dyskretna wielkość w
+krokowaniu checkpointu**, która przy tym jednym kroku wypada inaczej dla
+\(|\mathbf m|=2\mu\) niż dla \(|\mathbf m|=0\). To jest następne
+miejsce do zmierzenia i nie jest zmierzone.
 
 Wniosek dla deklaracji zakresu nie zmienia się, ale jego diagnoza owszem:
 modelowi **nie brakuje reguły wyboru** — ma ją, ścisłą i poprawnie
