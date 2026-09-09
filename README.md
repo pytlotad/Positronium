@@ -8066,15 +8066,60 @@ znaczących. Gdyby skok wzmacniał szum, pięciokrotna zmiana wejścia wraz z
 odwróceniem znaku musiałaby go ruszyć. Nie rusza. Jest to więc **ustalona,
 powtarzalna różnica kanałowa**, a nie chaos.
 
-*Stan otwarty, zawężony.* Wiadomo już, czym on **nie** jest: nie mocą M1
-(\(10^{-19}\) tam, gdzie trzeba \(10^{-7}\)), nie siłą dipol-dipol
-(ablacja wszystkich trzech ścieżek nie rusza ani skoku, ani mediany), nie
-wzmocnionym zaokrągleniem (odporny na zmianę znaku wejścia), i nie
-\(a\), \(e\) ani okresem — wszystkie trzy różnią się tam o
-\(\sim10^{-11}\), cztery rzędy za mało. Zostaje **dyskretna wielkość w
-krokowaniu checkpointu**, która przy tym jednym kroku wypada inaczej dla
-\(|\mathbf m|=2\mu\) niż dla \(|\mathbf m|=0\). To jest następne
-miejsce do zmierzenia i nie jest zmierzone.
+*Zawężanie, runda druga: trzech kandydatów wyeliminowanych pomiarem.*
+„Dyskretna wielkość w krokowaniu checkpointu" była na tyle konkretna, że dało
+się ją sprawdzić wprost, sondą `CREM_SKIP_CENSUS`. Wynik jest negatywny dla
+najbardziej oczywistego podejrzanego i przesuwa cel.
+
+**Całkowita liczba przeskakiwanych orbit — NIE.** Naturalny kandydat:
+`orbitsToSkip = static_cast<int>(boundedOrbits)`, gdzie `boundedOrbits`
+zależy od `lossPerOrbit`, a więc od M1 — obcięcie zamieniałoby
+nieskończenie małą różnicę w całą orbitę. Zmierzone: przy checkpointach
+\(0\)–\(11\) `skip` wynosi **\(200\,000\) w obu kanałach**, bo
+`requestedOrbits` \(\approx4{,}91\cdot10^5\) jest ucinane przez **zacisk**
+`maxOrbitsSkippedAtOnce`, nie przez zaokrąglenie. W miejscu skoku obcięcie
+w ogóle nie działa. Kanały rozjeżdżają się na `skip` dopiero od checkpointu
+\(12\), czyli **po** tym, jak różnica już powstała — to skutek, nie
+przyczyna.
+
+**Mimośród — NIE.** \(e=0{,}000000\) **dokładnie**, w obu kanałach, na
+każdym z \(19\) checkpointów: podłoga klamruje \(E\) i \(L\), więc
+`dipoleEccentricityFactor` jest tożsamościowo \(1\) i nie może niczego
+poruszyć.
+
+**Za to widać, gdzie skok siedzi.** Względna różnica `lossPerOrbit` między
+kanałami:
+
+| checkpoint | \(0\) | \(1\) | \(2\) | \(6\) | \(12\) | \(18\) |
+|---|---|---|---|---|---|---|
+| \(\Delta\,\text{loss}/\text{loss}\) | \(4{,}0\cdot10^{-11}\) | \(\mathbf{4{,}2\cdot10^{-7}}\) | \(1{,}7\cdot10^{-6}\) | \(1{,}0\cdot10^{-5}\) | \(8{,}1\cdot10^{-5}\) | \(3{,}7\cdot10^{-4}\) |
+
+Ślad \(\Delta t/t\) idzie za tym **z opóźnieniem jednego checkpointu**, co
+domyka łańcuch przyczynowy: różnica w tempie strat na checkpoincie \(n\)
+staje się różnicą czasu na \(n+1\).
+
+**I tu jest właściwa zagadka, teraz ostro postawiona.** Przy checkpoincie
+\(0\) różnica strat, \(4{,}0\cdot10^{-11}\), jest **w pełni wyjaśniona**
+przez \(\Delta a/a\approx2\cdot10^{-11}\), bo
+\(\text{loss}\propto a^{-5/2}\) przewiduje \(5\cdot10^{-11}\). Przy
+checkpoincie \(1\) to samo skalowanie przewiduje \(5{,}5\cdot10^{-11}\),
+a zmierzone jest \(4{,}2\cdot10^{-7}\) — **cztery rzędy więcej**, przy
+niezmienionym \(a\), zerowym \(e\) i \(M1\) rzędu \(10^{-19}\).
+
+Zostaje **jedno** wejście do `lossPerOrbit`, którego nie da się wyliczyć z
+elementów: **zmierzony okres orbity**, brany z faktycznie scałkowanej orbity
+pomiarowej. A integrator ma w sobie dokładnie tę dyskretność, której szukam —
+`if(error <= relativeTolerance) accept; else subdivide`, czyli gałąź
+zero-jedynkową na wielkości ciągłej. Metryka błędu (`normalizedStepError`)
+czyta wyłącznie pozycje i prędkości, **nie dipole**, ale te pozycje i
+prędkości różnią się między kanałami o \(10^{-11}\)–\(10^{-12}\), więc
+mogą wypaść po dwóch stronach tolerancji i dać inną sekwencję kroków.
+
+To jest teraz cel: **czy sekwencja przyjętych kroków w orbicie pomiarowej
+różni się między kanałami**. Nie zmierzone. Zaznaczam też, czego ta hipoteza
+by nie tłumaczyła sama z siebie: dlaczego znak miałby być ten sam na
+\(4\) z \(4\) ziaren, skoro rozstrzygnięcia progowe integratora nie mają
+oczywistej jednostronności.
 
 Wniosek dla deklaracji zakresu nie zmienia się, ale jego diagnoza owszem:
 modelowi **nie brakuje reguły wyboru** — ma ją, ścisłą i poprawnie

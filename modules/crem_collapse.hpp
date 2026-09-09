@@ -2893,6 +2893,33 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 :static_cast<double>(maxOrbitsSkippedAtOnce);
             orbitsToSkip=static_cast<int>(boundedOrbits);
         }
+        // CREM_SKIP_CENSUS: the integer that the checkpoint stepping turns a
+        // continuous loss rate into.  requestedOrbits carries the M1 share
+        // (through lossPerOrbit), so an M1 difference of 1e-19 shifts it by
+        // 1e-19 -- invisible, UNLESS the value sits near an integer boundary,
+        // where truncation resolves that infinitesimal into a whole orbit.
+        // That is the only discrete quantity left in this path, and printing
+        // the pre-truncation float beside the integer is what decides whether
+        // it is the one that separates the channels.
+        if(std::getenv("CREM_SKIP_CENSUS")) {
+            const double requested=(lossPerOrbit>0.0&&energyMagnitude>0.0)
+                ?maximumJumpParameter*energyMagnitude/(1.5*lossPerOrbit):-1.0;
+            // Eccentricity beside it, because larmorOrbitAveragedPower
+            // carries dipoleEccentricityFactor(e) = (1+e^2/2)/(1-e^2)^(5/2),
+            // which is the one input to lossPerOrbit that can move fast while
+            // a and the period move at 1e-11.
+            const double eccNow=std::sqrt(std::max(0.0,
+                1.0+2.0*elements.specificEnergy
+                *elements.specificAngularMomentum
+                *elements.specificAngularMomentum
+                /(attractionParameter*attractionParameter)));
+            std::fprintf(stderr,
+                "CREM_SKIP t=%.12e requested=%.17e skip=%d frac=%.6e "
+                "ecc=%.17e loss=%.17e\n",
+                simulatedTimeTotal,requested,orbitsToSkip,
+                requested>0.0?requested-std::floor(requested):-1.0,
+                eccNow,lossPerOrbit);
+        }
         orbitsToSkipPrevious=orbitsToSkip;
         const double jumpParameter=std::min(
             1.5*static_cast<double>(orbitsToSkip)*lossPerOrbit/energyMagnitude,
