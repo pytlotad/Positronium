@@ -8221,16 +8221,63 @@ dodatnich — i **identycznie z podłogą i bez niej** (sprawdzone:
 takiej rampy nie ma (średnia \(-6{,}0\cdot10^{-11}\), \(5/11\)
 dodatnich).
 
-*Gdzie szukać dalej, i czego NIE twierdzę.* Po emisji moment pędu nie jest
-zmniejszany, tylko **przeliczany od nowa** z energii i mimośrodu:
-`classicalAngularMomentumMagnitude` \(=\sqrt{A^2(1-e^2)/(2E_{\rm po})}\)
-(`crem_collapse.hpp`). Przy \(e=0\) — a zmierzone \(e\) jest **dokładnie**
-zerowe — daje to \(L=A/\sqrt{2E}\), więc rosnące \(|E|\) powinno
-\(L\) **zmniejszać**. Mierzone rośnie. To jest następne miejsce do
-otwarcia i **nie sprawdziłem go**; w szczególności nie twierdzę, że ta linia
-jest przyczyną — twierdzę tylko, że rampa jest realna, jednostronna, odporna
-na podłogę, niepokryta przez spin, i że idzie w stronę przeciwną do
-promieniowania.
+#### Otwarcie tego miejsca: energia przeskakuje \(200\,000\) orbit, moment pędu jedną
+
+*Emisja jest niewinna.* Sonda `CREM_L_UPDATE` pokazuje przeliczenie wprost:
+\(e^2\) jest **dokładnie zerowe**, więc bisekcja mimośrodu jest pomijana i
+zostaje \(L=A/\sqrt{2E_{\rm po}}\) — a \(L\) przy emisjach **spada
+poprawnie**: \(2{,}000\to1{,}367\to1{,}000\,\hbar\). Rachunek jest
+dobry.
+
+*Za to emisji jest tylko dwie.* W całym przebiegu padają **dwa** fotony,
+a rampa dzieje się przez jedenaście checkpointów, w których **nie pada
+żaden**. Anomalia nie jest więc w emisji, tylko między emisjami.
+
+*Co ją tam robi.* Sekwencja checkpointu to pół transportu spin-orbita,
+aktualizacja radiacyjna, druga połowa transportu. W tej środkowej części
+energia jest przesuwana o **wszystkie przeskoczone analitycznie orbity**
+(`energyGrowth`, w tej konfiguracji \(\approx+0{,}8\%\) na checkpoint przy
+\(200\,000\) orbitach), a moment pędu dostaje wyłącznie stratę strumieniową
+**jednej zmierzonej orbity**. Prawo, które sparowałoby przeskok energii z
+przeskokiem \(L\),
+
+\[
+L\;\mathrel{*}=\;\texttt{energyGrowth}^{\,k(e)},\qquad
+k(e)=-\frac{1-e^2}{2+e^2}=-\tfrac12\ \text{przy}\ e=0,
+\]
+
+**w kodzie jest** — ale siedzi w gałęzi `else` warunku
+`if(hazardReference > 0.0)`, czyli w tej, której ścieżka produkcyjna nigdy nie
+bierze. Gdyby działała, dawałaby \(-0{,}41\%\) na checkpoint; niczego tego
+rzędu nie ma.
+
+*Transport nie leakuje.* Sprzężony solver spin-orbita raportuje własny
+rezydualny bilans \(J\) na poziomie **precyzji maszynowej** (\(\sim2\cdot
+10^{-17}\), oba kanały) i tylko obraca — to nie on gubi moment pędu.
+
+*Wynik netto, i dlaczego jest jednostronny.* Między fotonami \((E,L)\)
+rozjeżdżają się: energia idzie do przodu o \(200\,000\) orbit, moment pędu
+o jedną. Transport, zachowując \(J\), rozdziela tę niespójność między
+\(|L|\) a kąt \(\mathbf L\cdot\mathbf S\) — a rozdziela ją
+**systematycznie tylko tam, gdzie jest spin wypadkowy do sprzężenia**. Stąd
+deterministyczna rampa \(+8{,}158\cdot10^{-7}\,\hbar\) na checkpoint u
+orto i sam szum u para.
+
+*Skala, uczciwie.* To **nie** jest nieograniczone łamanie zachowania.
+Dryf jest **ograniczony i zerowany przy każdej emisji**: \(L\) narasta o
+\(\approx4{,}5\cdot10^{-6}\,\hbar\) przez jedenaście checkpointów, po
+czym foton przelicza je od nowa z energii i spójność wraca. Projekt zresztą
+to zakłada — komentarz ścieżki fotonowej mówi wprost, że „\((E,L)\) po tym
+fotonie są ze sobą spójne z konstrukcji", i dlatego ta ścieżka nie niesie
+prawa masowego. Luka jest **między** fotonami, nie w nich.
+
+*Status.* Zlokalizowane i zmierzone: rachunek emisji poprawny, dwa fotony na
+przebieg, prawo \(L\) dla przeskoku obecne ale w martwej gałęzi, transport
+zachowujący \(J\) maszynowo, energia przesuwana o \(200\,000\) orbit
+przeciw jednej dla \(L\), dryf ograniczony i resetowany. **Niesprawdzone:**
+czy sparowanie przeskoku \(L\) z przeskokiem energii w ścieżce
+produkcyjnej usuwa separację para/orto — to jedna zmiana i jeden przebieg
+porównawczy, i nie jest zrobione.
 
 Wniosek dla deklaracji zakresu nie zmienia się, ale jego diagnoza owszem:
 modelowi **nie brakuje reguły wyboru** — ma ją, ścisłą i poprawnie

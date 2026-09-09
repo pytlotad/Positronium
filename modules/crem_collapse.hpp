@@ -4548,6 +4548,26 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // produces unphysical orbital elements; both are expected.
                     const bool useSpinMagnitude=
                         std::getenv("CREM_SPIN_MAGNITUDE")!=nullptr;
+                    // CREM_L_UPDATE: the emission does not DECREMENT the
+                    // angular momentum, it RECOMPUTES it from the post-kick
+                    // energy, L = sqrt(A^2 (1-e^2)/(2 E_after)).  With e
+                    // identically zero -- which is what the floor's clamp
+                    // produces, and what is measured -- that is L =
+                    // A/sqrt(2 E_after), so L is a pure function of the
+                    // energy and must FALL as the orbit binds.  Printing the
+                    // inputs beside the result is what turns "L rises where
+                    // it should fall" into a located discrepancy.
+                    if(std::getenv("CREM_L_UPDATE"))
+                        std::fprintf(stderr,
+                            "CREM_LUPD e2here=%.17e e2used=%.17e "
+                            "Ebefore=%.17e Eafter=%.17e Lold=%.17e "
+                            "Lnew=%.17e\n",
+                            eccentricitySquaredHere,
+                            classicalEccentricitySquared,
+                            energyBeforeKick,energyAfterKick,
+                            elements.specificAngularMomentum*reducedMass/hbar,
+                            classicalAngularMomentumMagnitude
+                                *reducedMass/hbar);
                     elements.specificAngularMomentum=
                         clampAboveGroundStateAngularMomentum(
                             (useSpinMagnitude&&directionTrialNorm>1.0e-300)
