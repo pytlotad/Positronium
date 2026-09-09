@@ -2913,14 +2913,30 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 *elements.specificAngularMomentum
                 *elements.specificAngularMomentum
                 /(attractionParameter*attractionParameter)));
+            // Total SPIN along the orbital axis, in hbar.  This is the
+            // reservoir the ramp is attributed to: opposite charges invert
+            // the spin-moment relation, so para (S=0) has mu1 = +mu2 and
+            // therefore S1 = -S2 -- net spin ZERO -- while ortho (S=1) has
+            // mu1 = -mu2 and S1 = +S2, a net spin of 2*S1.  Printing it beside
+            // the ORBITAL angular momentum is what turns "the transport
+            // exchanges L with the spin" from an inference into a balance
+            // that either closes or does not.
+            const double gyro1=firstGyromagneticRatioOf();
+            const double gyro2=secondGyromagneticRatioOf();
+            const Vec3 spinSum=
+                (gyro1!=0.0?firstDipole*(1.0/gyro1):Vec3{})
+               +(gyro2!=0.0?secondDipole*(1.0/gyro2):Vec3{});
+            const double spinAlongOrbit=
+                dot(spinSum,angularMomentumDirection)/hbar;
             std::fprintf(stderr,
                 "CREM_SKIP t=%.12e requested=%.17e skip=%d frac=%.6e "
                 "ecc=%.17e loss=%.17e period=%.17e measured=%.17e "
-                "L=%.17e mm=%.17e\n",
+                "S=%.17e Lorb=%.17e mm=%.17e\n",
                 simulatedTimeTotal,requested,orbitsToSkip,
                 requested>0.0?requested-std::floor(requested):-1.0,
                 eccNow,lossPerOrbit,period,measuredElapsed,
-                elements.specificAngularMomentum,
+                spinAlongOrbit,
+                elements.specificAngularMomentum*reducedMass/hbar,
                 (firstDipole+secondDipole).norm()
                     /std::max(firstMagneticMoment,1.0e-300));
         }

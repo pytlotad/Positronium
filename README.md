@@ -8133,14 +8133,60 @@ sile. I dlaczego przypisanie do M1 musiało zawieść: \(|\mathbf m|\) jest
 duże dla para, ale istotny okazał się \(|\mathbf S_1+\mathbf S_2|\),
 który jest **odwrotnie**.
 
-*Co tu jest zmierzone, a co wywnioskowane.* Zmierzone: rampa \(L\) u orto i
-jej brak u para, równość \(\Delta\text{loss}=\Delta\text{period}\),
-zerowa różnica przed pierwszym fotonem, oraz eliminacja `skip`, \(e\),
-\(E1\) i siły dipolowej. Wywnioskowane — z udokumentowanej w tym pliku
-kwantyzacji spinu, nie z osobnego pomiaru — że rezerwuarem jest właśnie
-\(\mathbf S_1+\mathbf S_2\). Bezpośredni pomiar tempa wymiany
-spin-orbita przeciw rampie \(1{,}89\cdot10^{-10}\) zamknąłby to do końca i
-**nie jest zrobiony**.
+*Pomiar bezpośredni: rezerwuar potwierdzony, bilans nie domyka się.*
+Powyższe było wnioskiem z kwantyzacji spinu, a nie pomiarem, więc sonda
+drukuje teraz **rzut spinu wypadkowego na oś orbity**,
+\((\mathbf S_1+\mathbf S_2)\cdot\hat{\mathbf L}/\hbar\), obok
+orbitalnego \(L\) w tych samych jednostkach. Wynik rozstrzyga w obie
+strony.
+
+**Struktura potwierdzona co do cyfry.** Przy przygotowaniu:
+
+| kanał | \((\mathbf S_1+\mathbf S_2)\cdot\hat{\mathbf L}\) | \(L_{\rm orb}\) |
+|---|---|---|
+| **para** | \(\mathbf{0{,}000000000}\) | \(1{,}999999593\,\hbar\) |
+| **orto** | \(\mathbf{-0{,}940391864}\) | \(1{,}999999593\,\hbar\) |
+
+Para ma spin wypadkowy **dokładnie zero**, orto niesie \(-0{,}94\,\hbar\)
+— dokładnie ta jednostronność, której wymagało wyjaśnienie, i to nie
+założona, tylko odczytana z przygotowanego stanu.
+
+**Wymiana jest realna i deterministyczna.** U orto, na każdym z jedenastu
+checkpointów przed przeskokiem reżimu, **oba** przyrosty są stałe do
+czterech cyfr:
+
+\[
+\Delta S=-6{,}478\cdot10^{-7}\,\hbar,\qquad
+\Delta L=+8{,}158\cdot10^{-7}\,\hbar .
+\]
+
+Spin maleje, orbita rośnie — transfer zachodzi. U para oba błądzą ze
+zmiennym znakiem, bez dryfu. (Kontrola spójności: rampa
+\(1{,}89\cdot10^{-10}\) w jednostkach właściwych to
+\(8{,}158\cdot10^{-7}\,\hbar\) — zgadza się z niezależnym pomiarem do
+piątej cyfry.)
+
+**Ale bilans NIE domyka się, i to jest nowe.** Gdyby wymiana była całą
+historią, \(J=S+L\) byłoby zachowane. Zmierzone:
+
+\[
+\Delta S+\Delta L=+1{,}680\cdot10^{-7}\,\hbar\ \text{na checkpoint},
+\]
+
+czyli wymiana ze spinem tłumaczy **\(79{,}4\%\)** przyrostu orbitalnego, a
+**\(20{,}6\%\) pochodzi skądinąd**. \(J\) rośnie stałym tempem — co jest
+podwójnie osobliwe, bo orbita w tym czasie **promieniuje**, a foton powinien
+moment pędu **zabierać**, nie dodawać.
+
+*Bilans końcowy tego wątku.* Potwierdzone pomiarem: rezerwuarem jest
+\(\mathbf S_1+\mathbf S_2\) (para \(0\), orto \(-0{,}94\,\hbar\)),
+transfer jest deterministyczny i jednostronny, jego wielkość zgadza się z
+rampą znalezioną niezależnie, a znak tłumaczy „orto żyje dłużej" bez
+dopasowywania. Nowe i **nierozstrzygnięte**: \(20{,}6\%\) przyrostu
+orbitalnego nie ma pokrycia ani w spinie, ani w emisji — to osobna
+niezgodność zachowania \(J\) w kanale orto, ujawniona przy okazji i warta
+własnego zbadania. Nie wpisuję jej do rozwiązania; wpisuję jako to, co ten
+pomiar znalazł po drodze.
 
 Wniosek dla deklaracji zakresu nie zmienia się, ale jego diagnoza owszem:
 modelowi **nie brakuje reguły wyboru** — ma ją, ścisłą i poprawnie
