@@ -54,7 +54,8 @@ czasów życia para do orto, wynoszący w rzeczywistości około \(1000\), **nie
 wychodzi**, bo oba kanały różnią się wyłącznie sprzężeniem dipol-dipol na
 poziomie \(10^{-6}\) energii Coulomba. Po ostrym przygotowaniu rozrzut
 zespołu spadł na tyle, że różnica **daje się już rozdzielić** — orto żyje
-dłużej od para o \(2{,}7\cdot10^{-5}\) (\(10{,}8\sigma\)), a więc ze
+dłużej od para o \(3{,}1\cdot10^{-5}\), odtworzone na **czterech niezależnych
+zestawach ziaren z tym samym znakiem**, a więc ze
 **znakiem zgodnym z rzeczywistością** — co czyni ten wynik negatywny
 ostrzejszym, nie słabszym: mechanizm klasyczny jest o siedem rzędów za
 słaby, zamiast być nierozróżnialny. Prawdziwa różnica pochodzi z reguły wyboru \(2\gamma/3\gamma\), czyli
@@ -293,7 +294,7 @@ kwancie.
 | mediana kolapsu, para | \(6206{,}47\pm0{,}006\) ps | \(1974{,}58\pm0{,}008\) ps | **nie** — czynnik \(3{,}14\) |
 | warunek zatrzymania | 24/24 podłoga | 24/24 podłoga | **tak**, identycznie |
 | wiązanie terminalne | \(6{,}80285\) eV | \(6{,}80285\) eV | **tak**, co do cyfry |
-| separacja para/orto | \(+2{,}7\cdot10^{-5}\), \(10{,}8\sigma\) | \(+6{,}1\cdot10^{-5}\), \(6{,}3\sigma\) | **tak**, ten sam znak i rząd |
+| separacja para/orto | \(+3{,}1\cdot10^{-5}\), 4/4 ziarna | \(+6{,}1\cdot10^{-5}\) | **tak**, ten sam znak i rząd |
 | rozrzut zespołu \(\sigma/\mu\) | \(4{,}4\cdot10^{-6}\) | \(1{,}9\cdot10^{-5}\) | jakościowo tak, oba znikome |
 | awarie numeryczne | 0/24 | 0/24 | **tak** |
 
@@ -301,7 +302,7 @@ kwancie.
 Dotychczas README mówił, że oba kanały dają „statystycznie ten sam rozkład
 czasu kolapsu". Po ostrym przygotowaniu rozrzut zespołu spadł do
 \(\sim10^{-5}\), więc różnica **daje się rozdzielić**: orto żyje dłużej niż
-para o \(2{,}7\cdot10^{-5}\) na ścieżce kwantowej (\(10{,}8\sigma\)) i o
+para o \(3{,}1\cdot10^{-5}\) na ścieżce kwantowej (4/4 ziarna) i o
 \(6{,}1\cdot10^{-5}\) na ciągłej (\(6{,}3\sigma\)). Znak jest **zgodny z
 rzeczywistością** — orto naprawdę żyje dłużej — a rząd wielkości chybia o
 siedem do ośmiu rzędów, bo rzeczywisty iloraz to \(\sim10^3\), a nie
@@ -7956,24 +7957,83 @@ wzbronionej, jednostronne — ale ta reguła działa na kanale, który niesie
 \(10^{-12}\) energii, podczas gdy rzeczywista reguła \(2\gamma/3\gamma\)
 działa na **całej** anihilacji.
 
-**Konsekwencja, która porządkuje wcześniejsze pomiary.** Zmierzona w tej
-dokumentacji separacja para/orto na czasie kolapsu wynosi
-\(+2{,}7\cdot10^{-5}\) (orto dłużej, \(10{,}8\sigma\)). M1 **nie może** być
-jej źródłem: jest ograniczone przez \(10^{-12}\), czyli siedem rzędów niżej.
-Model ma więc **dwa** mechanizmy różnicujące kanały i to nie ten o właściwym
-kształcie porusza obserwablę:
+**Konsekwencja, która porządkuje wcześniejsze pomiary — i sprostowanie.**
+Zmierzona separacja para/orto na czasie kolapsu wynosi
+\(+3{,}1\cdot10^{-5}\) (orto dłużej). Napisałem tu wcześniej, że skoro M1
+jest ograniczone przez \(10^{-12}\), to źródłem musi być **zachowawczy człon
+dipol-dipol**, i wpisałem to do tabeli jako zmierzone \(\sim10^{-5}\).
+**To było zgadywanie przez eliminację, nie pomiar, i jest obalone.** Poniżej
+to, co wyszło, gdy zamiast zgadywać ablowano.
 
-| mechanizm | kształt | wielkość na czasie życia |
+*Najpierw: separacja jest prawdziwa.* Przy kwantyzacji spinu para i orto na
+tym samym ziarnie różnią się **wyłącznie znakiem \(\boldsymbol\mu_2\)** —
+gałąź kwantyzowana wyprowadza `secondDipole` z `firstDipole` i nie zużywa
+dodatkowych losowań, więc pozycje, prędkości i \(\boldsymbol\mu_1\) są
+identyczne (sprawdzone: wyjścia `--diagnose` zgadzają się co do cyfry poza
+sektorem dipolowym). To czyni oba kanały **doskonale antyskorelowanymi**, a
+liczone wcześniej „\(10{,}8\sigma\)" traktowało je jako niezależne próby,
+co jest niepoprawne. Właściwym testem jest powtórzenie na niezależnych
+zestawach ziaren:
+
+| ziarno | para [ps] | orto [ps] | orto − para |
+|---|---|---|---|
+| \(42\) | \(6206{,}48\) | \(6206{,}68\) | \(+0{,}20\) |
+| \(7\) | \(6206{,}48\) | \(6206{,}67\) | \(+0{,}19\) |
+| \(1\) | \(6206{,}47\) | \(6206{,}64\) | \(+0{,}17\) |
+| \(101\) | \(6206{,}47\) | \(6206{,}66\) | \(+0{,}19\) |
+
+**Cztery na cztery, ten sam znak, zgodna magnituda.** Hipoteza, że to
+średnia próbkowa wielkości o zerowej średniej (człon orientacyjny
+\(X=1-3\cos^2\theta\) ma **dokładnie** zerową średnią, medianę
+\(+0{,}25\) i skośność \(-0{,}64\), a przy \(24\) ziarnach sd średniej
+próbkowej wynosi \(0{,}18\)) przewidywałaby losowe znaki. Odpada. Efekt
+jest systematyczny.
+
+*Potem: to NIE jest człon dipol-dipol.* Moment magnetyczny steruje orbitą
+**trzema** ścieżkami — chwilową w `mutualForces`, **retardowanym polem
+dipolowym**, które integrator faktycznie woła co krok, oraz kowariantną siłą
+gradientową. Pierwsza ablacja objęła tylko pierwszą i nic nie zmieniła, co
+było wynikiem nieinformatywnym, a nie negatywnym. Z zabramkowanymi
+**wszystkimi trzema** (`CREM_NO_DIPOLE_FORCE`):
+
+| | para | orto | separacja |
+|---|---|---|---|
+| baseline | \(6206{,}48\) | \(6206{,}68\) | \(+0{,}20\) |
+| wszystkie trzy ścieżki siły wyłączone | \(6206{,}48\) | \(6206{,}68\) | \(\mathbf{+0{,}20}\) |
+
+Bez zmiany co do cyfry. **Siła dipol-dipol nie jest mechanizmem.**
+
+*Gdzie on jest.* Przy wyłączonej sile kanały wciąż się różnią, i to w
+sektorze **promienistym**:
+
+| wielkość (`--diagnose`, ziarno 42, siła wyłączona) | para | orto |
 |---|---|---|
-| koherentne M1 (\(\boldsymbol\mu_1+\boldsymbol\mu_2\)) | **reguła wyboru** — ścisłe zero po stronie wzbronionej | \(\le10^{-12}\) |
-| zachowawczy człon dipol-dipol | **siła**, nie reguła wyboru; wartość oczekiwana znika przy \(a_{\rm pary}\) (\(0{,}09\sigma\)) | \(\sim10^{-5}\) |
+| wypromieniowana energia | \(1{,}1266088\cdot10^{-4}\) eV | \(1{,}1265864\cdot10^{-4}\) eV |
+| \(|\mathbf P_{\rm rad}|\) | \(1{,}13\cdot10^{-40}\) kg m/s | \(4{,}45\cdot10^{-51}\) (szum maszynowy) |
 
-Ten o właściwej strukturze jest siedem rzędów słabszy od tego, który
-faktycznie przesuwa medianę. Nie zmienia to wniosku negatywnego z deklaracji
-zakresu — zmienia jego **diagnozę**: nie jest tak, że modelowi brakuje
-reguły wyboru. Regułę ma, ścisłą i poprawnie zorientowaną. Brakuje mu
-kanału, na którym ta reguła miałaby coś ważyć, bo anihilacji w nim nie ma
-wcale.
+Wypromieniowany **pęd** różni się o jedenaście rzędów i to jest dokładnie
+podpis M1: \(|\mathbf m|=2\mu\) wobec ściśle zera. Różnica energii,
+\(2\cdot10^{-5}\), jest tego samego rzędu co separacja czasu kolapsu. Znak
+też się zgadza bez dopasowywania: para ma kanał M1 **otwarty**, więc traci
+energię odrobinę szybciej i kolapsuje wcześniej — dokładnie to, co mierzy
+tabela ziaren.
+
+*Czego nadal nie wiem, i mówię to wprost.* Udział M1 w mocy jest ograniczony
+przez \(10^{-12}\) (zmierzone wyżej), a obserwabla przesuwa się o
+\(3\cdot10^{-5}\) — **osiem rzędów więcej**. Kierunek i podpis wskazują
+na M1, ale między nimi brakuje kroku wzmacniającego. Naturalnym kandydatem
+jest **próg emisji**: foton pada, gdy zbankowana energia osiągnie jeden
+kwant, więc systematycznie jednostronne, nieskończenie małe obciążenie jest
+przez ten próg **prostowane** w przesunięcie czasu całego zdarzenia — ten sam
+kształt co udokumentowane wyżej „ostrze noża" na \(T/t_{\rm light}=150\).
+Nie jest to zmierzone i **nie podaję tego jako odpowiedzi**; podaję jako
+jedyną hipotezę zgodną z tym, co zmierzone.
+
+Wniosek dla deklaracji zakresu nie zmienia się, ale jego diagnoza owszem:
+modelowi **nie brakuje reguły wyboru** — ma ją, ścisłą i poprawnie
+zorientowaną, i to ona, a nie siła dipol-dipol, wydaje się poruszać
+obserwablę. Brakuje mu kanału, na którym ta reguła miałaby ważyć cokolwiek
+istotnego, bo anihilacji nie ma w nim wcale.
 
 #### Czego warstwa sekularna nie widzi: człon dipolowy w punkcie zwrotnym
 

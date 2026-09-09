@@ -2233,9 +2233,22 @@ inline MutualForces coulombForces(const State& s) {
     return {first, first * -1.0};
 }
 
+// CREM_NO_DIPOLE_FORCE: ablate the mutual dipole-dipole FORCE while leaving
+// everything else about the moments in place -- they still precess, still
+// radiate M1, still enter the annihilation invariant.  This exists to answer
+// one question: with the spins quantized, para and ortho at the same seed
+// differ ONLY by the sign of mu2 (the quantized branch derives secondDipole
+// from firstDipole and consumes no extra draws), so every channel difference
+// the model produces has to come from something that reads that sign.  The
+// coherent M1 channel is bounded at 1e-12 of the radiated power and cannot
+// move a 1e-5 observable; this force is the next candidate, and turning it
+// off is how the candidacy gets tested rather than asserted.
+inline bool gDipoleForceEnabled=std::getenv("CREM_NO_DIPOLE_FORCE")==nullptr;
+
 inline MutualForces mutualForces(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const MutualForces electrostatic = coulombForces(s);
+    if(!gDipoleForceEnabled) return electrostatic;
     const Vec3 dipoleOnFirst = regularizedDipoleForce(
         geometry.firstMinusSecond, s.firstDipole, s.secondDipole);
     return {electrostatic.first + dipoleOnFirst,
@@ -3167,10 +3180,18 @@ inline MutualForces retardedExternalForces(const State& s,
         s.firstPosition, s.time, history, s, false, secondCharge);
     const ElectromagneticField firstField = lienardWiechertField(
         s.secondPosition, s.time, history, s, true, firstCharge);
-    const ElectromagneticField secondDipoleField=retardedMagneticDipoleField(
-        s.firstPosition,s.time,history,s,false);
-    const ElectromagneticField firstDipoleField=retardedMagneticDipoleField(
-        s.secondPosition,s.time,history,s,true);
+    // CREM_NO_DIPOLE_FORCE also gates the RETARDED dipole field, not just
+    // the instantaneous term in mutualForces.  Ablating only the latter was
+    // an incomplete experiment: this is the path the integrator actually
+    // takes (crem_engine.hpp calls retardedExternalForces every step), so
+    // leaving it in meant the moments still steered the orbit while the
+    // ablation claimed they did not.
+    const ElectromagneticField secondDipoleField=gDipoleForceEnabled
+        ?retardedMagneticDipoleField(s.firstPosition,s.time,history,s,false)
+        :ElectromagneticField{};
+    const ElectromagneticField firstDipoleField=gDipoleForceEnabled
+        ?retardedMagneticDipoleField(s.secondPosition,s.time,history,s,true)
+        :ElectromagneticField{};
     if(std::getenv("POSITRONIUM_DEBUG_FIELDS")) {
         static int debugSamples=0;
         if(debugSamples++<24) {
@@ -3195,9 +3216,12 @@ inline MutualForces retardedExternalForces(const State& s,
             {firstField.electric+firstDipoleField.electric,
              firstField.magnetic+firstDipoleField.magnetic})};
 
-    const MutualForces tensorGradient{
-        covariantDipoleGradientForce(s,history,true),
-        covariantDipoleGradientForce(s,history,false)};
+    // Third and last path by which the moments steer the orbit, gated with
+    // the other two so that CREM_NO_DIPOLE_FORCE means what it says.
+    const MutualForces tensorGradient=gDipoleForceEnabled
+        ?MutualForces{covariantDipoleGradientForce(s,history,true),
+                      covariantDipoleGradientForce(s,history,false)}
+        :MutualForces{};
     // Same uniform external field as in the instantaneous sum.  It is not
     // retarded because it is not sourced by either particle.
     MutualForces externalField{
