@@ -542,3 +542,93 @@ Contact angular momentum for this pair, L_c = sqrt(mu k r_c)/hbar:
      lowering it answers the question.  The obstacle is that L is
      corrupted between emissions, so the quantity the estimator
      reports at the stop is not the pair's orbital angular momentum.
+
+==================================================================
+11. CLOSING THE L<->S EXCHANGE
+==================================================================
+
+11a. Where the damage was.  CREM_LS_BALANCE prints, per half-step,
+     the change in |L| and the energy that change would demand
+     (dE = omega dL on the circular family) beside the dipole coupling
+     energy that would have to pay it.  Over the 122 half-steps of a
+     default trajectory (seed 42, para) the damage is entirely in the
+     half-step that FOLLOWS a photon, and scales with how far that
+     photon moved the orbit:
+
+       orbit change       dL/L      h^2/(Aa) after
+       a x 0.333          0.0003        1.0006
+       a x 0.224          0.0185        1.0373
+       a x 0.130          1.1886        4.7898
+
+     Every other half-step moves L by 1e-5..1e-4 relative.  At the last
+     one the exchange demanded 1673.9 eV against 0.0449 eV of coupling
+     energy, a factor of 37000.
+
+11b. The cause is the operator split, not the coupling.  The symmetric
+     split gives each half 0.5*checkpointProperTime on the assumption
+     that the radiation between them is a perturbation.  One photon
+     here takes the semi-major axis down by a factor of eight and the
+     orbital period with it by twenty, so a second half sized for the
+     OLD orbit runs the new one for twenty times the precession it
+     should see.  The second half now gets the proper time that
+     actually follows the last photon, which the lab-frame block
+     already computes; with no photon it is 0.5*checkpointProperTime
+     and the split is unchanged.
+
+11c. Two closures tried first, both worse, both recorded in the code:
+     limiting each half-step's change in |L| to couplingEnergy/omega
+     (an energy used as a per-step allowance, so its total scales with
+     the checkpoint count: 216.73/210.96/204.93 ps for s_max
+     0.30/0.20/0.10), and clamping |L| to the circular value (one-sided,
+     so it ratchets: 216.69/210.92/204.90 ps, and the first photon's
+     time moves 6.5% where it had been steady to 0.011%).
+
+11d. Result.
+
+       quantity                        before        after
+       max h^2/(A a) on the trajectory  1.0616        0.99990
+       h^2/(A a) at the stop            4.7898        1.0000
+       max |dL/L| per half-step         1.1886        8.34e-04
+       terminal L                       0.2151 hbar   0.09500 hbar
+       terminal L / L_contact           5.03          2.22
+       terminal periapsis / barrier    25.34          3.90
+       collapse time                  199.428 ps    199.442 ps
+
+     Step convergence is preserved: 199.442 / 198.984 / 198.943 ps for
+     s_max 0.30 / 0.20 / 0.10, against 199.428 / 198.970 / 198.944
+     before this change.
+
+11e. The documented one-sidedness survives.  Between photons, ortho's
+     orbital L still ramps deterministically and para's does not:
+
+       ortho  mean dL = +2.196e-04 hbar per checkpoint, positive 33/33
+       para   mean dL = +1.048e-05 hbar per checkpoint, positive 34/60
+
+     So bounding the exchange removed the unphysical part without
+     removing the spin-reservoir asymmetry the channel difference is
+     attributed to.
+
+11f. The closure resolved the level-1 channel comparison.
+     Paired, 24 pairs per set, both samples uncensored:
+
+complete pairs:        24 / 24
+mean t_para:           199.442186 ps
+mean t_ortho:          199.467581 ps
+DIFFERENCE ortho-para: 0.0253952354 +/- 0.00226334397 ps   (11.220228 sigma)
+GEOMETRIC RATIO:       1.00012733,  95% CI [1.00010509, 1.00014957]
+SIGN TEST:             ortho longer in 24 of 24,  exact p = 1.1920929e-07
+PHOTON COUNT DIFFERS:  0 of 24  (0%)
+
+complete pairs:        24 / 24
+mean t_para:           199.441981 ps
+mean t_ortho:          199.467855 ps
+DIFFERENCE ortho-para: 0.0258736887 +/- 0.00329240231 ps   (7.85860483 sigma)
+GEOMETRIC RATIO:       1.00012973,  95% CI [1.00009737, 1.00016208]
+SIGN TEST:             ortho longer in 23 of 24,  exact p = 2.98023224e-06
+PHOTON COUNT DIFFERS:  0 of 24  (0%)
+
+     Before the closure the same measurement gave -2.7e-4 with a null
+     sign test (10 of 20).  So the unphysical part of the exchange was
+     not only corrupting the elements, it was reversing the sign of the
+     observable.  The sign now agrees with reality and with the n=2
+     measurement (+2.50e-5).

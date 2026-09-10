@@ -3032,7 +3032,28 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // spin-orbit step after radiation is only first-order in the coupling
         // between the two sectors and lets the entire checkpoint's photon
         // hazard see a stale orbital plane.
-        const auto advanceSpinOrbitHalf=[&](double semiMajorAxis) {
+        // The transport's duration is a PARAMETER, not half the checkpoint.
+        // The symmetric split gives each half 0.5*checkpointProperTime on the
+        // assumption that the radiation between them is a perturbation.  It
+        // is not: one photon here can take the semi-major axis down by a
+        // factor of eight, and the orbital period with it by a factor of
+        // twenty, so a second half sized for the OLD orbit runs the new one
+        // for twenty times the precession it should see.
+        //
+        // Measured (CREM_LS_BALANCE, seed 42, para), the damage sits entirely
+        // in the half-step that follows a photon and scales with how far that
+        // photon moved the orbit:
+        //
+        //     a x 0.333 (photon 1)   dL/L = 0.0003
+        //     a x 0.224 (photon 2)   dL/L = 0.0185
+        //     a x 0.130 (photon 3)   dL/L = 1.1886   <- L more than doubles
+        //
+        // Every other half-step of the 122 in that trajectory moves L by
+        // 1e-5..1e-4 relative.  So the second half is given the proper time
+        // that actually FOLLOWS the last photon, which is what the lab-frame
+        // block above already computes for its own purposes.
+        const auto advanceSpinOrbitHalf=[&](double semiMajorAxis,
+                                            double elapsedTime) {
             const Vec3 tiltProbeDipoleBefore=firstDipole;
             const Vec3 tiltProbeAxisBefore=angularMomentumDirection;
             const SecularSpinOrbitState input{
@@ -3042,8 +3063,7 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 periapsisDirection};
             const SecularSpinOrbitAdvance advance=
                 advanceCoupledSecularSpinOrbit(
-                    input,semiMajorAxis,reducedMass,
-                    0.5*checkpointProperTime);
+                    input,semiMajorAxis,reducedMass,elapsedTime);
             if(!advance.completed
                ||!(advance.state.orbitalAngularMomentum.norm()>0.0)
                ||advance.relativeAngularMomentumResidual>1.0e-12) {
@@ -3075,7 +3095,56 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 advance.state.orbitalAngularMomentum/orbitalNorm;
             // No ground-state clamp here: it would add angular momentum after
             // the conservative solve and break the identity just enforced.
+            const double angularMomentumBefore=
+                elements.specificAngularMomentum;
             elements.specificAngularMomentum=orbitalNorm/reducedMass;
+            // CREM_LS_BALANCE: what the L<->S exchange would COST.
+            //
+            // The solve above conserves total angular momentum exactly -- it
+            // advances J by the external torque and then DEFINES the orbital
+            // part as J minus the precessed spins.  What it does not do is
+            // ask whether the orbit can hold the result at its own energy.
+            // A bound Kepler orbit satisfies h^2 <= A a, with equality on the
+            // circular orbit, so the circular orbit is the MAXIMUM angular
+            // momentum available at a given energy and any increase beyond it
+            // is not a bound orbit at all.
+            //
+            // The energy such an increase would need is fixed and has no free
+            // parameter: for the circular family dE/dL = omega exactly (from
+            // E=-mu^3 A^2/(2L^2) and L=mu sqrt(A a)).  This prints that
+            // demand beside the dipole coupling energy that would have to pay
+            // it, so "the exchange is too large" is a measurement rather than
+            // an assertion.
+            if(std::getenv("CREM_LS_BALANCE")) {
+                const double circularSpecific=
+                    std::sqrt(std::max(0.0,attractionParameter*semiMajorAxis));
+                const double angularFrequency=semiMajorAxis>0.0
+                    ?std::sqrt(attractionParameter
+                        /(semiMajorAxis*semiMajorAxis*semiMajorAxis))
+                    :0.0;
+                const double demandedEnergy=angularFrequency*reducedMass
+                    *(elements.specificAngularMomentum-angularMomentumBefore);
+                const double couplingEnergy=azimuthAveragedDipoleEnergy(
+                    regularizedPeriapsis(elements,attractionParameter,
+                                         separationFloor()),
+                    firstDipole,secondDipole,angularMomentumDirection);
+                const auto consistency=[&](double specific) {
+                    return semiMajorAxis>0.0
+                        ?specific*specific
+                            /(attractionParameter*semiMajorAxis):0.0;
+                };
+                std::fprintf(stderr,
+                    "CREM_LS t=%.9e a=%.9e L_before=%.9e L_after=%.9e "
+                    "L_circ=%.9e h2Aa_before=%.9e h2Aa_after=%.9e "
+                    "dE_demanded_eV=%.9e U_dipole_eV=%.9e\n",
+                    simulatedTimeTotal,semiMajorAxis,
+                    angularMomentumBefore*reducedMass/hbar,
+                    elements.specificAngularMomentum*reducedMass/hbar,
+                    circularSpecific*reducedMass/hbar,
+                    consistency(angularMomentumBefore),
+                    consistency(elements.specificAngularMomentum),
+                    demandedEnergy/eCharge,couplingEnergy/eCharge);
+            }
             if(std::getenv("CREM_DEBUG"))
                 std::cerr<<"  coupled spin-orbit half substeps="
                          <<advance.substeps<<" maxAngle="
@@ -3155,7 +3224,8 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             return true;
         };
         if(!advanceSpinOrbitHalf(
-               -attractionParameter/(2.0*elements.specificEnergy)))
+               -attractionParameter/(2.0*elements.specificEnergy),
+               0.5*checkpointProperTime))
             return result;
         // k, in CLOSED FORM rather than measured.  The previous approach
         // (k = (dL/L)/(dE/E) from this checkpoint's own measurement) tracked
@@ -4884,8 +4954,23 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // measured orbit.  Starting both halves from the checkpoint's own
         // carried moments, rather than from run.finalState, counts that orbit
         // exactly once over the two half-steps.
+        // Proper time that actually follows the last photon of this
+        // checkpoint.  With no photon this is 0.5*checkpointProperTime and
+        // the split stays symmetric, exactly as before; with one it is the
+        // remainder, which is what stops the new orbit being transported for
+        // the old one's share.  Capped at the symmetric half so a photon
+        // early in the skip cannot lengthen this side beyond it.
+        const double secondHalfElapsed=[&]{
+            if(photonTimingsThisCheckpoint.empty())
+                return 0.5*checkpointProperTime;
+            const double lastPhotonS=photonTimingsThisCheckpoint.back().first;
+            return std::min(0.5*checkpointProperTime,
+                std::max(0.0,checkpointProperTime
+                    -properTimeUpToS(lastPhotonS)));
+        }();
         if(!advanceSpinOrbitHalf(
-               -attractionParameter/(2.0*elements.specificEnergy))) {
+               -attractionParameter/(2.0*elements.specificEnergy),
+               secondHalfElapsed)) {
             // Bare return: calibrationOutcome is whatever it was, and if
             // nothing has set it this is still its NumericalFailure default,
             // so the trajectory is reported as a numerical failure with no

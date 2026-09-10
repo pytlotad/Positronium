@@ -631,11 +631,85 @@ jako `CremCollapseEstimate::terminalKeplerConsistency`.
 
 *Sprostowanie do tego, co sam napisałem wcześniej.* Przeszkodą w odpowiedzi
 na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
-jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą jest to, że
-\(L\) jest psute między emisjami, więc wielkość raportowana na stopie nie
-jest orbitalnym momentem pędu pary. Sama wymiana \(L\leftrightarrow S\)
-jest zamierzona i udokumentowana wyżej; niezamierzone jest to, że wypycha
-elementy poza obszar fizyczny, i to zostaje otwarte.
+jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
+\(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
+
+#### Domknięcie wymiany \(L\leftrightarrow S\)
+
+Sonda `CREM_LS_BALANCE` wypisuje na każdy półkrok zmianę \(|L|\) i energię,
+jakiej ta zmiana by wymagała (\(dE=\omega\,dL\) na rodzinie kołowej), obok
+energii sprzężenia dipolowego, która miałaby ją zapłacić. Na 122 półkrokach
+domyślnej trajektorii **całe uszkodzenie siedzi w półkroku następującym po
+fotonie** i rośnie z tym, jak bardzo foton ruszył orbitę:
+
+| zmiana orbity | \(dL/L\) | \(h^2/(Aa)\) po |
+|---|---|---|
+| \(a\times0{,}333\) | \(0{,}0003\) | \(1{,}0006\) |
+| \(a\times0{,}224\) | \(0{,}0185\) | \(1{,}0373\) |
+| \(a\times0{,}130\) | \(\mathbf{1{,}1886}\) | \(\mathbf{4{,}7898}\) |
+
+Każdy inny półkrok rusza \(L\) o \(10^{-5}\)–\(10^{-4}\) względnie. Przy
+tym ostatnim wymiana żądała \(1673{,}9\) eV wobec \(0{,}0449\) eV energii
+sprzężenia — **czynnik \(37\,000\)**.
+
+**Przyczyną jest podział operatorowy, nie samo sprzężenie.** Symetryczny
+podział daje każdej połowie \(0{,}5\,T_{\rm checkpoint}\) przy założeniu,
+że promieniowanie między nimi jest perturbacją. Nie jest: jeden foton zbija
+tu półoś ośmiokrotnie, a okres orbitalny dwudziestokrotnie, więc druga
+połowa wymierzona dla **starej** orbity przepuszcza nową przez dwadzieścia
+razy większą precesję. Druga połowa dostaje teraz czas własny, który
+faktycznie następuje po ostatnim fotonie — ten sam, który blok zegara
+laboratoryjnego już liczy. Bez fotonu jest to \(0{,}5\,T\) i podział
+pozostaje niezmieniony.
+
+| wielkość | przed | po |
+|---|---|---|
+| \(\max h^2/(Aa)\) na trajektorii | \(1{,}0616\) | \(0{,}99990\) |
+| \(h^2/(Aa)\) na stopie | \(4{,}7898\) | \(1{,}0000\) |
+| \(\max|dL/L|\) na półkrok | \(1{,}1886\) | \(8{,}34\cdot10^{-4}\) |
+| \(L\) terminalne | \(0{,}2151\,\hbar\) | \(0{,}09500\,\hbar\) |
+| \(L/L_c\) terminalne | \(5{,}03\) | \(2{,}22\) |
+| peryapsis/bariera | \(25{,}34\) | \(3{,}90\) |
+| czas kolapsu | \(199{,}428\) ps | \(199{,}442\) ps |
+
+Zbieżność kroku jest **zachowana**: \(199{,}442/198{,}984/198{,}943\) ps dla
+\(s_{\max}=0{,}30/0{,}20/0{,}10\).
+
+*Dwa domknięcia odrzucone po drodze, oba zapisane w kodzie.* Ograniczenie
+zmiany \(|L|\) na półkrok do \(U_{\rm sprz}/\omega\) brzmi jak zdanie
+fizyczne, ale używa **energii jako limitu na krok**, więc jego suma skaluje
+się z liczbą checkpointów — a tę ustala krok sekularny; wróciła zależność od
+kroku (\(216{,}73/210{,}96/204{,}93\) ps). Zaciśnięcie \(|L|\) do wartości
+kołowej jest jednostronne i działa jak zapadka, więc też zależy od kroku
+(\(216{,}69/210{,}92/204{,}90\) ps), a czas pierwszego fotonu rusza się o
+\(6{,}5\%\) tam, gdzie był stały co do \(0{,}011\%\).
+
+**Jednostronność orto przeżywa poprawkę.** Między fotonami orbitalne \(L\)
+orto nadal narasta deterministycznie, a para nie:
+
+| kanał | średnie \(dL\) na checkpoint | dodatnich |
+|---|---|---|
+| orto | \(+2{,}196\cdot10^{-4}\,\hbar\) | \(\mathbf{33/33}\) |
+| para | \(+1{,}048\cdot10^{-5}\,\hbar\) | \(34/60\) |
+
+Czyli ograniczenie wymiany usunęło część niefizyczną, nie usuwając
+asymetrii rezerwuaru spinowego, której przypisywana jest różnica kanałów.
+
+*I to jest właśnie ta poprawka, która rozstrzygnęła porównanie kanałów przy
+\(n=1\).* Sparowany pomiar, \(24\) pary na zestaw, obie próby nieucięte:
+
+| ziarno nadrzędne | para [ps] | orto [ps] | stosunek | znak |
+|---|---|---|---|---|
+| \(42\) | \(199{,}442186\) | \(199{,}467581\) | \(1{,}000127\) | \(24/24\) |
+| \(7\) | \(199{,}441981\) | \(199{,}467855\) | \(1{,}000130\) | \(23/24\) |
+
+Przedziały ufności \(95\%\) to \([1{,}000105;\,1{,}000150]\) i
+\([1{,}000097;\,1{,}000162]\), oba wykluczają jedynkę, a liczba fotonów
+zgadza się we wszystkich \(48\) parach. **Znak jest zgodny z
+rzeczywistością i z pomiarem przy \(n=2\)** (\(+2{,}50\cdot10^{-5}\)).
+Przed tą poprawką ten sam pomiar dawał \(-2{,}7\cdot10^{-4}\) przy zerowym
+teście znakowym — czyli niefizyczna część wymiany nie tylko psuła elementy,
+ale i odwracała znak obserwabli.
 
 #### Decyzja: domyślne `--level` zmienione z \(2\) na \(1\)
 
@@ -11893,9 +11967,11 @@ kolapsu (to samo ziarno w obu kanałach, więc \((E,L)\) i
   foton przesuwa ją czterokrotnie). Po zabramkowaniu wszystkich sześciu na
   `isStochastic`: \(199{,}43/198{,}97/198{,}94/199{,}75\) ps, płasko w
   granicach \(0{,}4\%\). **To odwołuje mój własny wcześniejszy zapis**, że
-  przy \(n=1\) orto żyje krócej: po poprawce test znakowy jest zerowy na
-  obu zestawach ziaren, \(10/20\) i \(11/17\). Wartość produkcyjna przy
-  \(n=1\) przesuwa się przez to z \(147{,}82\) na \(199{,}43\) ps.
+  przy \(n=1\) orto żyje krócej. Wartość produkcyjna przy \(n=1\)
+  przesuwa się przez to z \(147{,}82\) na \(199{,}44\) ps. Po domknięciu
+  jeszcze wymiany \(L\leftrightarrow S\) (osobna sekcja) różnica kanałów
+  wychodzi **\(+1{,}28\cdot10^{-4}\), orto dłużej**, \(24/24\) i
+  \(23/24\) par tego samego znaku na dwóch zestawach ziaren.
   **Nie domknięte:** `--level 2 --ground-state-floor` przechodzi na tę samą
   konwencję (\(6206\to7368\) ps), ale zostaje przy \(-4{,}0\%\) w tym
   samym zakresie kroku; tam trajektoria kończy na podłodze, nie na fotonie,
