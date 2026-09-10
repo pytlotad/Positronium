@@ -51,14 +51,25 @@ staje się wtedy dokładnie \(1/4\)), a normalizacja Rutherforda wychodzi
 
 *Czego odtworzyć się NIE udało, i to jest wynik negatywny, nie luka.* Stosunek
 czasów życia para do orto, wynoszący w rzeczywistości około \(1000\), **nie
-wychodzi**, bo oba kanały różnią się wyłącznie sprzężeniem dipol-dipol na
-poziomie \(10^{-6}\) energii Coulomba. Po ostrym przygotowaniu rozrzut
-zespołu spadł na tyle, że różnica **daje się już rozdzielić** — orto żyje
-dłużej od para o \(3{,}1\cdot10^{-5}\), odtworzone na **czterech niezależnych
-zestawach ziaren z tym samym znakiem**, a więc ze
-**znakiem zgodnym z rzeczywistością** — co czyni ten wynik negatywny
-ostrzejszym, nie słabszym: mechanizm klasyczny jest o siedem rzędów za
-słaby, zamiast być nierozróżnialny. Prawdziwa różnica pochodzi z reguły wyboru \(2\gamma/3\gamma\), czyli
+wychodzi**. Oba kanały różnią się na starcie wyłącznie znakiem
+\(\boldsymbol\mu_2\), a sektor dipolowy niesie przy \(a_{\rm pary}\) rząd
+\(10^{-5}\) siły Coulomba. Po ostrym przygotowaniu rozrzut zespołu spadł na
+tyle, że różnica **daje się rozdzielić** — ale jej znak zależy od
+konfiguracji i trzeba go podawać razem z nią:
+
+* przy `--level 2 --ground-state-floor` (poprzednia domyślna, kaskada do
+  \(n=1\)) orto żyje **dłużej** o \(3{,}1\cdot10^{-5}\), na czterech
+  niezależnych zestawach ziaren z tym samym znakiem — **znak zgodny z
+  rzeczywistością**. Powtórzone sparowanie na 24 ziarnach po poprawce siły
+  dipolowej daje \(+2{,}50\cdot10^{-5}\), \(24/24\) tego samego znaku;
+* przy domyślnym dziś `--level 1` bez podłogi (inspiral do bariery) kanał
+  orto jest **dwumodalny** — albo \(-1{,}8\cdot10^{-3}\), albo
+  \(+4{,}8\cdot10^{-5}\) wobec para — a udział gałęzi zmienia się między
+  zestawami ziaren (\(15/16\) wobec \(6/12\) w gałęzi krótszej). **Znak
+  uśrednionej różnicy nie jest tam ustalony.**
+
+Wniosek negatywny to zaostrza, a nie osłabia: mechanizm klasyczny jest o
+siedem rzędów za słaby, zamiast być nierozróżnialny. Prawdziwa różnica pochodzi z reguły wyboru \(2\gamma/3\gamma\), czyli
 z zachowania parzystości ładunkowej w procesie, którego ten model w ogóle nie
 zawiera — nie ma tu kanału kontaktowego ani tempa anihilacji. Osiemnaście sond
 w sekcji L bada tę granicę wprost.
@@ -433,13 +444,31 @@ więc mediana jest identyfikowana), **zero awarii numerycznych**,
 przecinku wychodzi przy \(N=8\).
 
 Orto przy tej samej konfiguracji daje medianę \(147{,}827\) ps
-(\(74\) kolapsy, \(26\) uciętych) — czyli znów **dłużej niż para**, o
+(\(74\) kolapsy, \(26\) uciętych) — czyli **dłużej niż para**, o
 \(1{,}4\cdot10^{-5}\) względnie, zgodnie ze znakiem zmierzonym przy
 \(n=2\). Porównywalność jest tu jednak słabsza niż w sekcji wyżej, bo
 odsetki cenzury się różnią (\(12\%\) wobec \(26\%\)) i „średnia z
 ukończonych" jest przez to obciążona w dół; czystym porównaniem para/orto
 pozostaje ten przy \(n=2\), gdzie obie próby były nieucięte
 (\(24/24\)).
+
+**Sprostowanie: ta mediana opisuje jedną z dwóch gałęzi.** Sparowany pomiar
+przy tej samej konfiguracji (`tools/para_ortho_lifetimes.cpp`, to samo ziarno
+w obu kanałach, więc \((E,L)\) i \(\boldsymbol\mu_1\) identyczne)
+pokazuje, że **para jest jednomodalna**, \(147{,}8249\) ps z rozrzutem
+\(10^{-6}\), a **orto rozpada się na dwie dyskretne wartości**:
+
+| gałąź orto | wartość | wobec para | udział, ziarno 7 | udział, ziarno 42 |
+|---|---|---|---|---|
+| krótsza | \(147{,}557\) ps | \(-1{,}8\cdot10^{-3}\) | \(15/16\) | \(6/12\) |
+| dłuższa | \(147{,}832\) ps | \(+4{,}8\cdot10^{-5}\) | \(1/16\) | \(6/12\) |
+
+Mediana \(147{,}827\) ps to gałąź **dłuższa**; przy próbie zdominowanej
+przez krótszą ta sama konfiguracja daje \(147{,}573\) ps i przeciwny znak
+separacji. Dlatego **znak przy \(n=1\) nie jest ustalony**: nie jest to
+rozrzut wokół jednej wartości, tylko wybór gałęzi, którego udział zmienia
+się między zestawami ziaren. Przy \(n=2\) z podłogą zjawisko nie
+występuje — tam orto jest jednomodalne i \(24/24\) idzie w jedną stronę.
 
 #### Decyzja: domyślne `--level` zmienione z \(2\) na \(1\)
 
@@ -6321,8 +6350,18 @@ zmiany co do trzeciej cyfry znaczącej, dokładnie zgodnie z argumentem
 Ten sam przebieg dla orto-pozytonium (eksperyment 2, też 18 minut, też
 1000/1000) daje **statystycznie tę samą liczbę**, \(33{,}88\) ps — bezpośrednie
 potwierdzenie zastrzeżenia, że oba kanały różnią się tu jedynie wymuszonym
-wyrównaniem dipoli, którego sprzężenie (\(\approx10^{-5}\) potencjału
-Coulomba) jest za słabe, by rozróżnić klasyczną inspiralę.
+wyrównaniem dipoli, którego sprzężenie jest przy promieniu startowym za słabe,
+by rozróżnić klasyczną inspiralę.
+
+*Doprecyzowanie tego „za słabe", zmierzone później.* Stosunek siły dipolowej
+do kulombowskiej **nie jest stały** \(\approx10^{-5}\) — tyle wynosi przy
+\(a_{\rm pary}\), ale rośnie do \(0{,}33\) przy granicy zderzenia i
+\(0{,}52\) przy barierze Comptona, a separacja kanałów w samej sile sięga
+tam \(|\mathbf F_{\rm para}-\mathbf F_{\rm orto}|/\bar F=2\), czyli
+wartości przeciwnych. Zastrzeżenie broni się nie tym, że sprzężenie jest wszędzie
+małe, tylko tym, że para **prawie nie spędza czasu** tam, gdzie jest duże:
+\(t\sim a^3\). Pomiar i sonda w
+[`audits/`](audits/2026-09-10-para-ortho-after-dipole-fix.txt).
 
 Ten sam bieg daje trzy dalsze porównania z zamkniętą elektrodynamiką i
 pomiarem, każde na całej próbie N=1000: stosunek zmierzonego czasu kolapsu do
@@ -9494,7 +9533,13 @@ TEST ZNAKOWY:           ortho dluzsze w 91 ze 160,  dokladny p = 0,097
 
 **Różnica nie jest ustalona.** Przedział ufności stosunku zawiera \(1\),
 średnia siedzi na \(0{,}46\sigma\), a test znakowy nie schodzi poniżej
-\(0{,}05\). Dwa wskaźniki przechylają się lekko ku dłuższemu ortho
+\(0{,}05\). (Ten pomiar pochodzi z emisji **poissonowskiej**, której rozrzut
+\(\sigma/\mu\approx0{,}9\) sam w sobie zabiera mu moc rozdzielczą.
+Po przejściu na emisję deterministyczną rozrzut par znika i ta sama
+konfiguracja przy \(n=2\) rozdziela kanały na \(24/24\) — patrz
+[`audits/`](audits/2026-09-10-para-ortho-after-dipole-fix.txt). Sparowany
+pomiar jest teraz narzędziem, nie doraźnym skryptem:
+[`tools/para_ortho_lifetimes.cpp`](tools/para_ortho_lifetimes.cpp).) Dwa wskaźniki przechylają się lekko ku dłuższemu ortho
 (\(+2{,}6\%\) geometrycznie, \(91/160=56{,}9\%\) przypadków), ale to jest
 poniżej progu, przy którym warto to nazwać efektem. Żeby rozstrzygnąć
 \(2{,}6\%\) na \(3\sigma\), trzeba by około \(770\) par — wykonalne, ale
@@ -11629,3 +11674,44 @@ defekty są zamknięte, a każdy ma własną bramkę w pakiecie regresyjnym:
 To pomiary izolowanych sektorów, nie pomiary zmiany czasu kolapsu. Raport
 rozdziela te defekty od znanych ograniczeń LL, energii Darwina, skończonej
 historii, sekularnego estymatora i bilansów zamykanych przez `boundField*`.
+
+**Sektor para/orto po poprawce siły dipolowej — zmierzony, nie założony.**
+Poprawka dodała do siły człon \(\gamma\mathbf v\,(D U/Dt)/c^2\), a para i
+orto różnią się na starcie wyłącznie znakiem \(\boldsymbol\mu_2\), więc
+pytanie „czy to ruszyło różnicę kanałów" wymagało pomiaru po obu stronach
+poprawki. Dwie sondy, obie w [`audits/`](audits/2026-09-10-para-ortho-after-dipole-fix.txt):
+[`para_ortho_dipole_force.cpp`](tools/para_ortho_dipole_force.cpp) mierzy samą
+siłę na zadanej orbicie kołowej, a
+[`para_ortho_lifetimes.cpp`](tools/para_ortho_lifetimes.cpp) sparowane czasy
+kolapsu (to samo ziarno w obu kanałach, więc \((E,L)\) i
+\(\boldsymbol\mu_1\) identyczne). Cztery wyniki:
+
+- **Poprawka nie ruszyła niczego w tym sektorze.** Separacja kanałów w sile
+  jest przed i po poprawce identyczna co do wszystkich wypisanych cyfr w
+  sześciu z siedmiu promieni; w siódmym, przy samej barierze, zgadza się do
+  siedmiu cyfr (\(1{,}996986594\) wobec \(1{,}996986166\)). Sparowane
+  czasy kolapsu (24 ziarna, konfiguracja domyślna) są identyczne **co do
+  ostatniej cyfry** — obie strony dają orto − para \(=-0{,}25158\) ps.
+  Dodany człon to najwyżej \(1{,}2\cdot10^{-5}\) siły dipolowej przy
+  barierze Comptona i \(5{,}6\cdot10^{-11}\) przy \(a_{\rm pary}\).
+- **Sama separacja kanałów w sile dipolowej jest duża i rośnie z głębokością**,
+  liczona jako \(|\mathbf F_{\rm para}-\mathbf F_{\rm orto}|\) wobec
+  średniej: \(0{,}75\) przy \(a_{\rm pary}\), a poniżej
+  \(0{,}05\,a_{\rm pary}\) **dokładnie \(2\)** — czyli równe co do
+  modułu i przeciwne co do kierunku. Rośnie też sam sektor: stosunek siły
+  dipolowej do kulombowskiej idzie od \(1{,}7\cdot10^{-5}\) przy
+  \(a_{\rm pary}\) przez \(0{,}33\) przy granicy zderzenia do
+  \(0{,}52\) przy barierze. Zdanie „sprzężenie dipolowe jest rzędu
+  \(10^{-5}\)" jest prawdziwe **przy promieniu startowym** i fałszywe na
+  końcu inspiralu.
+- **A mimo to siła dipolowa nadal nie jest mechanizmem separacji.** Ablacja
+  (`CREM_NO_DIPOLE_FORCE=1`) przy `--level 1` zostawia sparowaną separację bez
+  zmiany: stosunek geometryczny \(0{,}99834\) wobec \(0{,}99830\) z
+  włączoną siłą. To rozszerza na \(n=1\) ten sam wynik, który README notuje
+  przy \(n=2\); mechanizmem pozostaje rezerwuar spinowy, nie siła.
+- **Konfiguracja `--level 2 --ground-state-floor` odtwarza się.** 24/24 par
+  ukończonych, orto dłużej o \(+2{,}50\cdot10^{-5}\), znak dodatni w
+  \(24/24\) — zgodne z zapisanym wcześniej \(+3{,}1\cdot10^{-5}\). Przy
+  domyślnym `--level 1` orto jest natomiast dwumodalne i znak uśrednionej
+  różnicy nie jest ustalony — patrz sprostowanie w sekcji „Czas kolapsu
+  ustawia promień startowy".

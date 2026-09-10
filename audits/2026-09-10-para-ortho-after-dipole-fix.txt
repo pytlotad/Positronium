@@ -1,0 +1,281 @@
+Para/ortho sector re-measured after the relativistic dipole-force fix (0228160).
+Probes: tools/para_ortho_dipole_force.cpp, tools/para_ortho_lifetimes.cpp
+Pre-fix baseline is 7889077, post-fix is the working tree.
+
+==================================================================
+1. MUTUAL DIPOLE GRADIENT FORCE, POST-FIX
+==================================================================
+pair electron+positron  a_pair=1.058354419e-10 m
+F_grad = grad(U)/gamma (the pre-fix force)
+F_mat  = gamma v (DU/Dt)/c^2 (the term the fix added)
+
+  R/a_pair   beta_target    channel      F_grad_x          F_mat_y           |F|
+         10.003648676287        para  -3.429052677e-13   1.912344439e-23   3.429052677e-13
+         10.003648676287       ortho  -7.551673334e-13   8.270227359e-24   7.551673334e-13
+           separation |F_para-F_ortho|/mean = 0.7508830752   material-term share para/ortho = 5.576888484e-11 / 1.09515163e-11
+           |F_dipole|/|F_Coulomb| para/ortho = 1.66484658e-05 / 3.666428809e-05
+
+       0.50.00516000749        para  -2.913462196e-12   9.850785844e-23   2.913462196e-12
+       0.50.00516000749       ortho  -9.509728439e-12   4.578311475e-22   9.509728439e-12
+           separation |F_para-F_ortho|/mean = 1.061927879   material-term share para/ortho = 3.381127051e-11 / 4.814345125e-11
+           |F_dipole|/|F_Coulomb| para/ortho = 3.536302901e-05 / 0.0001154272066
+
+       0.20.008158688205        para  -2.461861395e-11   2.110449919e-20   2.461861395e-11
+       0.20.008158688205       ortho  -2.822938393e-10   1.859450555e-20   2.822938393e-10
+           separation |F_para-F_ortho|/mean = 1.679144802   material-term share para/ortho = 8.572578143e-10 / 6.586932821e-11
+           |F_dipole|/|F_Coulomb| para/ortho = 4.781054022e-05 / 0.0005482283033
+
+      0.050.01631737641        para   1.334748184e-08  -2.583728686e-17   1.334748184e-08
+      0.050.01631737641       ortho  -5.262835515e-08  -3.654146016e-17   5.262835515e-08
+           separation |F_para-F_ortho|/mean = 2   material-term share para/ortho = 1.935742425e-09 / 6.943302722e-10
+           |F_dipole|/|F_Coulomb| para/ortho = 0.001620090997 / 0.006387925858
+
+      0.010.03648676287        para   1.514900898e-05  -4.673209137e-13   1.514900898e-05
+      0.010.03648676287       ortho  -2.612251505e-05  -5.032239873e-13   2.612251505e-05
+           separation |F_para-F_ortho|/mean = 2   material-term share para/ortho = 3.084828283e-08 / 1.926399454e-08
+           |F_dipole|/|F_Coulomb| para/ortho = 0.07355027223 / 0.1268279724
+
+     0.0050.0516000749        para   0.0002685045569  -3.019438252e-11    0.000268504557
+     0.0050.0516000749       ortho  -0.0003925734639  -3.161093426e-11   0.0003925734639
+           separation |F_para-F_ortho|/mean = 2   material-term share para/ortho = 1.124538922e-07 / 8.052234083e-08
+           |F_dipole|/|F_Coulomb| para/ortho = 0.325905531 / 0.476497921
+
+   0.001830.08529229283        para    0.003183665623  -3.889722542e-08    0.003215736021
+   0.001830.08529229283       ortho   -0.003243263587   1.355289438e-08    0.003244876994
+           separation |F_para-F_ortho|/mean = 1.996986166   material-term share para/ortho = 1.209590127e-05 / 4.176705129e-06
+           |F_dipole|/|F_Coulomb| para/ortho = 0.5228566444 / 0.5275947668
+
+==================================================================
+2. THE SAME PROBE ON THE PRE-FIX BUILD (7889077)
+==================================================================
+pair electron+positron  a_pair=1.058354419e-10 m
+F_grad = grad(U)/gamma (the pre-fix force)
+F_mat  = gamma v (DU/Dt)/c^2 (the term the fix added)
+
+  R/a_pair   beta_target    channel      F_grad_x          F_mat_y           |F|
+         10.003648676287        para  -3.429052677e-13   -3.90501788e-25   3.429052677e-13
+         10.003648676287       ortho  -7.551673334e-13  -4.032027114e-25   7.551673334e-13
+           separation |F_para-F_ortho|/mean = 0.7508830752   material-term share para/ortho = 1.138803701e-12 / 5.339249906e-13
+           |F_dipole|/|F_Coulomb| para/ortho = 1.66484658e-05 / 3.666428809e-05
+
+       0.50.00516000749        para  -2.913462196e-12  -3.121426213e-23   2.913462196e-12
+       0.50.00516000749       ortho  -9.509728439e-12  -3.026829898e-23   9.509728439e-12
+           separation |F_para-F_ortho|/mean = 1.061927879   material-term share para/ortho = 1.071380373e-11 / 3.182877322e-12
+           |F_dipole|/|F_Coulomb| para/ortho = 3.536302901e-05 / 0.0001154272066
+
+       0.20.008158688205        para  -2.461861395e-11  -7.342393826e-21   2.461861395e-11
+       0.20.008158688205       ortho  -2.822938393e-10  -7.292420503e-21   2.822938393e-10
+           separation |F_para-F_ortho|/mean = 1.679144802   material-term share para/ortho = 2.982456218e-10 / 2.58327299e-11
+           |F_dipole|/|F_Coulomb| para/ortho = 4.781054022e-05 / 0.0005482283033
+
+      0.050.01631737641        para   1.334748184e-08   -3.03238685e-17   1.334748184e-08
+      0.050.01631737641       ortho  -5.262835515e-08  -3.029672444e-17   5.262835515e-08
+           separation |F_para-F_ortho|/mean = 2   material-term share para/ortho = 2.271879361e-09 / 5.756730256e-10
+           |F_dipole|/|F_Coulomb| para/ortho = 0.001620090997 / 0.006387925858
+
+      0.010.03648676287        para   1.514900898e-05  -4.753679419e-13   1.514900898e-05
+      0.010.03648676287       ortho  -2.612251505e-05  -4.691113155e-13   2.612251505e-05
+           separation |F_para-F_ortho|/mean = 2   material-term share para/ortho = 3.137947456e-08 / 1.795812213e-08
+           |F_dipole|/|F_Coulomb| para/ortho = 0.07355027223 / 0.1268279724
+
+     0.0050.0516000749        para   0.0002685045569  -3.071948479e-11    0.000268504557
+     0.0050.0516000749       ortho  -0.0003925734639  -2.958405041e-11   0.0003925734639
+           separation |F_para-F_ortho|/mean = 2   material-term share para/ortho = 1.144095472e-07 / 7.53592719e-08
+           |F_dipole|/|F_Coulomb| para/ortho = 0.325905531 / 0.476497921
+
+   0.001830.08529229283        para    0.003183665623  -1.243191555e-08    0.003215730542
+   0.001830.08529229283       ortho   -0.003243263587  -1.243189586e-08    0.003244876566
+           separation |F_para-F_ortho|/mean = 1.996986594   material-term share para/ortho = 3.865969299e-06 / 3.831238448e-06
+           |F_dipole|/|F_Coulomb| para/ortho = 0.5228557534 / 0.5275946974
+
+==================================================================
+3. PAIRED COLLAPSE TIMES, POST-FIX, DEFAULT CONFIGURATION
+   (level 1, no ground-state floor, deterministic emission)
+==================================================================
+paired para/ortho: 24 trajectories per channel, master seed 7, budget 90 s
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 90 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 90 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+
+ idx    t_para(ps)     t_ortho(ps)    ratio    photons para/ortho
+   1     147.826145      147.5593420.998195155        2 /     2
+   2     147.825064      147.5549190.998172537        2 /     2
+   3     147.824684      147.827948 1.00002208        2 /     2
+   4     147.824865      147.5598510.998207243        2 /     2
+   5     147.824403      147.550697 0.99814844        2 /     2
+   6     147.824483       147.559040.998204337        2 /     2
+  10     147.824892      147.5502430.998142067        2 /     2
+  11     147.825137      147.5528280.998157897        2 /     2
+  12     147.824646      147.5507930.998147442        2 /     2
+  13     147.825017      147.5597810.998205746        2 /     2
+  14     147.825306      147.5598970.998204577        2 /     2
+  15     147.824045      147.5649540.998247304        2 /     2
+  17     147.824449      147.5488970.998135952        2 /     2
+  18     147.824589      147.557198 0.99819116        2 /     2
+  19     147.824779       147.560050.998209175        2 /     2
+  23      147.82552      147.5563740.998179294        2 /     2
+
+complete pairs:        16 / 24
+mean t_para:           147.824877 ps
+mean t_ortho:          147.573301 ps
+DIFFERENCE ortho-para: -0.25157575 +/- 0.0170271976 ps   (14.7749357 sigma)
+GEOMETRIC RATIO:       0.998298051,  95% CI [0.998072495, 0.998523658]
+SIGN TEST:             ortho longer in 1 of 16,  exact p = 0.000518798828
+PHOTON COUNT DIFFERS:  0 of 24  (0%)
+==================================================================
+4. THE SAME PAIRED RUN ON THE PRE-FIX BUILD (7889077)
+==================================================================
+paired para/ortho: 24 trajectories per channel, master seed 7, budget 90 s
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 90 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 90 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+
+ idx    t_para(ps)     t_ortho(ps)    ratio    photons para/ortho
+   1     147.826145      147.5593420.998195155        2 /     2
+   2     147.825064      147.5549190.998172537        2 /     2
+   3     147.824684      147.827948 1.00002208        2 /     2
+   4     147.824865      147.5598510.998207243        2 /     2
+   5     147.824403      147.550697 0.99814844        2 /     2
+   6     147.824483       147.559040.998204337        2 /     2
+  10     147.824892      147.5502430.998142067        2 /     2
+  11     147.825137      147.5528280.998157897        2 /     2
+  12     147.824646      147.5507930.998147442        2 /     2
+  13     147.825017      147.5597810.998205746        2 /     2
+  14     147.825306      147.5598970.998204577        2 /     2
+  15     147.824045      147.5649540.998247304        2 /     2
+  17     147.824449      147.5488970.998135952        2 /     2
+  18     147.824589      147.557198 0.99819116        2 /     2
+  19     147.824779       147.560050.998209175        2 /     2
+  23      147.82552      147.5563740.998179294        2 /     2
+
+complete pairs:        16 / 24
+mean t_para:           147.824877 ps
+mean t_ortho:          147.573301 ps
+DIFFERENCE ortho-para: -0.25157575 +/- 0.0170271977 ps   (14.7749356 sigma)
+GEOMETRIC RATIO:       0.998298051,  95% CI [0.998072495, 0.998523658]
+SIGN TEST:             ortho longer in 1 of 16,  exact p = 0.000518798828
+PHOTON COUNT DIFFERS:  0 of 24  (0%)
+==================================================================
+5. POST-FIX AT THE OLD DEFAULT (level 2 + ground-state floor),
+   the configuration the README's +3.1e-5 was measured at
+==================================================================
+paired para/ortho: 24 trajectories per channel, master seed 7, budget 120 s, emission deterministic, level 2, floor on
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 120 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 120 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+
+ idx    t_para(ps)     t_ortho(ps)    ratio    photons para/ortho
+   0     6206.46048      6206.54095 1.00001297        2 /     2
+   1     6206.48756        6206.705 1.00003503        2 /     2
+   2     6206.48417      6206.64645 1.00002615        2 /     2
+   3     6206.49501      6206.57601 1.00001305        2 /     2
+   4     6206.47907      6206.69908 1.00003545        2 /     2
+   5     6206.46563      6206.55527 1.00001444        2 /     2
+   6      6206.4996      6206.70341 1.00003284        2 /     2
+   7      6206.4294      6206.70474 1.00004436        2 /     2
+   8     6206.48557      6206.70605 1.00003552        2 /     2
+   9     6206.43932      6206.55618 1.00001883        2 /     2
+  10     6206.46112      6206.53756 1.00001232        2 /     2
+  11     6206.47953      6206.60806 1.00002071        2 /     2
+  12      6206.4643      6206.55419 1.00001448        2 /     2
+  13     6206.46882      6206.67741 1.00003361        2 /     2
+  14     6206.48359      6206.68388 1.00003227        2 /     2
+  15     6206.43913      6206.55943 1.00001938        2 /     2
+  16     6206.49013      6206.70138 1.00003404        2 /     2
+  17     6206.45855      6206.50748 1.00000788        2 /     2
+  18     6206.44714      6206.60661 1.00002569        2 /     2
+  19     6206.49174      6206.68635 1.00003136        2 /     2
+  20     6206.50609      6206.69616 1.00003062        2 /     2
+  21     6206.47884      6206.67454 1.00003153        2 /     2
+  22     6206.44853      6206.49511 1.00000751        2 /     2
+  23      6206.4821      6206.66845 1.00003002        2 /     2
+
+complete pairs:        24 / 24
+mean t_para:           6206.47189 ps
+mean t_ortho:          6206.62707 ps
+DIFFERENCE ortho-para: 0.15517937 +/- 0.0131151734 ps   (11.8320487 sigma)
+GEOMETRIC RATIO:       1.000025,  95% CI [1.00002086, 1.00002914]
+SIGN TEST:             ortho longer in 24 of 24,  exact p = 1.1920929e-07
+PHOTON COUNT DIFFERS:  0 of 24  (0%)
+==================================================================
+6. SECOND SEED SET AT THE DEFAULT CONFIGURATION (master seed 42)
+==================================================================
+paired para/ortho: 24 trajectories per channel, master seed 42, budget 90 s, emission deterministic, level 1, floor off
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 90 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 90 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+
+ idx    t_para(ps)     t_ortho(ps)    ratio    photons para/ortho
+   2      147.82446      147.834632 1.00006882        2 /     2
+   3     147.824776      147.828554 1.00002555        2 /     2
+   4     147.824657      147.5565190.998186111        2 /     2
+   6     147.825259      147.5599580.998205309        2 /     2
+   7     147.825745       147.83643 1.00007228        2 /     2
+   8     147.824816      147.5559960.998181501        2 /     2
+   9     147.824883      147.5598630.998207202        2 /     2
+  12     147.824819       147.55939 0.99820443        2 /     2
+  13     147.825564       147.83617 1.00007175        2 /     2
+  14     147.824793      147.831563  1.0000458        2 /     2
+  20     147.824752      147.831108   1.000043        2 /     2
+  21     147.824806      147.5588790.998201067        2 /     2
+
+complete pairs:        12 / 24
+mean t_para:           147.824944 ps
+mean t_ortho:          147.695755 ps
+DIFFERENCE ortho-para: -0.129188832 +/- 0.0413874295 ps   (3.12145097 sigma)
+GEOMETRIC RATIO:       0.999125637,  95% CI [0.998577035, 0.99967454]
+SIGN TEST:             ortho longer in 6 of 12,  exact p = 1
+PHOTON COUNT DIFFERS:  0 of 24  (0%)
+==================================================================
+7. DEFAULT CONFIGURATION WITH THE DIPOLE FORCE ABLATED
+   (CREM_NO_DIPOLE_FORCE=1, master seed 7)
+==================================================================
+paired para/ortho: 16 trajectories per channel, master seed 7, budget 90 s, emission deterministic, level 1, floor off
+Running 16 CREM collapse calibrations on 4 workers (per-event wall-clock budget 90 s).
+CREM calibrations: 10/16
+CREM calibrations: 16/16
+Running 16 CREM collapse calibrations on 4 workers (per-event wall-clock budget 90 s).
+CREM calibrations: 10/16
+CREM calibrations: 16/16
+
+ idx    t_para(ps)     t_ortho(ps)    ratio    photons para/ortho
+   1     147.826145      147.5593440.998195171        2 /     2
+   2     147.825064      147.5549180.998172529        2 /     2
+   3     147.824684      147.827946 1.00002207        2 /     2
+   4     147.824865      147.5598530.998207257        2 /     2
+   5     147.824404      147.5506960.998148424        2 /     2
+   6     147.824484      147.5590420.998204349        2 /     2
+  10     147.824892      147.5502730.998142273        2 /     2
+  11     147.825138      147.5528270.998157884        2 /     2
+  12     147.824645      147.5507920.998147444        2 /     2
+  13     147.825016      147.5597840.998205772        2 /     2
+  14     147.825306      147.5599010.998204599        2 /     2
+  15     147.824045      147.5649850.998247512        2 /     2
+
+complete pairs:        12 / 16
+mean t_para:           147.824891 ps
+mean t_ortho:          147.579197 ps
+DIFFERENCE ortho-para: -0.245693825 +/- 0.0226731567 ps   (10.8363307 sigma)
+GEOMETRIC RATIO:       0.998337811,  95% CI [0.998037463, 0.998638249]
+SIGN TEST:             ortho longer in 1 of 12,  exact p = 0.00634765625
+PHOTON COUNT DIFFERS:  2 of 16  (12.5%)
