@@ -341,3 +341,150 @@ ortho    6      147.559958349    26       0.276975
     recorded at maximumJumpParameter's definition (+/-0.6% over a 25x
     range, 124-125 ps) reproduces at neither current configuration and
     predates the present defaults.
+
+==================================================================
+9. CLOSING THE STEP CONVERGENCE
+==================================================================
+
+9a. The cause, read off CREM_SKIP_CENSUS.  Under the default
+    stochasticElectricDipole model the orbit does NOT decay between
+    photons -- the semi-major axis is flat to five digits for nine
+    consecutive checkpoints, then one photon moves it by a factor of
+    four (para index 2, master seed 42, s_max=0.30):
+
+      #    t(ps)        a(m)        L(hbar)
+      1     0.0000   1.0584e-10   1.00000
+      5    63.4899   1.0583e-10   1.00000
+      9   126.9774   1.0583e-10   1.00001
+     10   142.8489   2.7439e-11   0.50944   <- photon
+     15   144.2317   2.7435e-11   0.50955
+     27   147.5482   2.7427e-11   0.50950
+
+    Six sites nevertheless applied the sinking-envelope shape
+    u(n)=u0(1-s)^(-2/3) within each skip: the checkpoint's elapsed
+    proper time (1-s/2), the hazard's integralFactor, the identity's
+    meanInSkipGrowth and its envelope reference, the photon's position
+    in the skip and its quantum (energyRatio), and a sixth, duplicated
+    copy of the elapsed-time formula in the lab-frame tail.
+
+9b. Effect on the collapse time, one trajectory (para index 2, seed 42):
+
+      s_max    before      after
+      0.30     147.824     199.428
+      0.20     163.715     198.970
+      0.10     180.782     198.944
+      0.045    191.427     199.747
+
+    Before: monotonic, +29.5% and still climbing at the finest step.
+    After:  flat to 0.4% over a 6.7x range of step size.
+
+9c. The photon events themselves are now step-independent.  Times and
+    semi-major axes at the two emissions, s_max=0.30 against 0.10:
+
+      photon 1   t=186.7296 ps vs 186.7084 ps   a: 1.0583e-10 -> 3.528e-11
+      photon 2   t=199.1727 ps vs 198.6764 ps   a: 3.527e-11  -> 7.91e-12
+
+    0.011% and 0.25% apart, against 22% before.
+
+9d. The convergence table recorded in the code at maximumJumpParameter
+    (124.169 / 124.957 / 125.585 / 124.986 / 124.328 ps for s_max
+    0.012..0.30, claimed flat to +/-0.6%) reproduces at no
+    configuration this file has today.  It predates the present
+    defaults and was carried forward unremeasured, which is how a real
+    step dependence stayed hidden.  Replaced by the table in 9b.
+
+9e. Post-fix paired channel comparison, both seed sets.
+
+paired para/ortho: 24 trajectories per channel, master seed 42, budget 200 s, emission deterministic, level 1, floor off
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 200 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 200 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+
+ idx    t_para(ps)     t_ortho(ps)    ratio    photons para/ortho
+   1     199.419546      199.447951 1.00014244        3 /     4
+   2     199.427897      199.484343 1.00028304        3 /     3
+   3     199.437922      198.7245240.996422959        3 /     2
+   4     199.440185      199.478995  1.0001946        3 /     3
+   5     199.429572      199.468839  1.0001969        3 /     3
+   6      199.42223      198.7976520.996868061        3 /     3
+   7     199.422301      198.7835980.996797234        3 /     2
+   8     199.431533      199.479111 1.00023857        3 /     3
+  10     199.428476       199.48079 1.00026232        3 /     3
+  11      199.42168      198.8087520.996926471        3 /     3
+  12     199.423465      198.8226770.996987376        3 /     3
+  13     199.422591      198.8159730.996958129        3 /     3
+  14     199.437614      199.457651 1.00010047        3 /     3
+  15     199.451853      199.482602 1.00015417        3 /     3
+  17      199.42215      199.477228 1.00027619        3 /     3
+  18     199.435818      198.7736890.996679989        3 /     3
+  19     199.427912      198.7452390.996576842        3 /     2
+  21     199.439724      199.484176 1.00022289        3 /     3
+  22      199.42035      199.3812050.999803707        3 /     2
+  23      199.43612      198.8042630.996831781        3 /     3
+
+complete pairs:        20 / 24
+mean t_para:           199.429947 ps
+mean t_ortho:          199.159963 ps
+DIFFERENCE ortho-para: -0.269983938 +/- 0.0774153767 ps   (3.48747174 sigma)
+GEOMETRIC RATIO:       0.998644773,  95% CI [0.997884085, 0.99940604]
+SIGN TEST:             ortho longer in 10 of 20,  exact p = 1
+PHOTON COUNT DIFFERS:  6 of 24  (25%)
+
+paired para/ortho: 24 trajectories per channel, master seed 7, budget 200 s, emission deterministic, level 1, floor off
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 200 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+Running 24 CREM collapse calibrations on 4 workers (per-event wall-clock budget 200 s).
+CREM calibrations: 10/24
+CREM calibrations: 20/24
+CREM calibrations: 24/24
+
+ idx    t_para(ps)     t_ortho(ps)    ratio    photons para/ortho
+   0     199.420636       199.352210.999656873        3 /     2
+   4     199.429107      198.8037590.996864311        3 /     3
+   5     199.428266      199.466737  1.0001929        3 /     3
+   6     199.438416      199.463918 1.00012787        3 /     2
+   7     199.422586      199.493493 1.00035556        3 /     3
+   9     199.419287      199.479851  1.0003037        3 /     3
+  10     199.421342      198.7902930.996835598        3 /     3
+  11     199.437019      198.7953350.996782523        3 /     3
+  12     199.443769      199.460614 1.00008446        3 /     3
+  14      199.43909      199.493751 1.00027408        3 /     3
+  15     199.435499      198.8038670.996832899        3 /     3
+  16     199.436487      199.484666 1.00024158        3 /     3
+  18     199.436497      199.473504 1.00018555        3 /     3
+  19     199.437281      199.484107 1.00023479        3 /     3
+  21      199.44758      199.481385 1.00016949        3 /     3
+  22     199.443483      199.453978 1.00005262        3 /     3
+  23     199.419929       198.788820.996835275        3 /     3
+
+complete pairs:        17 / 24
+mean t_para:           199.432722 ps
+mean t_ortho:          199.268841 ps
+DIFFERENCE ortho-para: -0.163881603 +/- 0.0759170331 ps   (2.15869346 sigma)
+GEOMETRIC RATIO:       0.999177079,  95% CI [0.998430742, 0.999923974]
+SIGN TEST:             ortho longer in 11 of 17,  exact p = 0.332305908
+PHOTON COUNT DIFFERS:  3 of 24  (12.5%)
+==================================================================
+9f. --level 2 --ground-state-floor after the fix: NOT closed.
+==================================================================
+
+    Its value moves onto the new convention, 6206 -> 7368 ps, which
+    returns it to the 7368.8 ps cascade median recorded elsewhere in
+    the README.  It is still step dependent:
+
+      s_max    t(ps)      (para index 2, master seed 42)
+      0.30     7368.276
+      0.20     7318.474
+      0.10     7071.144
+
+    -4.0% and monotonic.  There the trajectory ends on the
+    ground-state floor rather than on a photon, so the residual has a
+    different source, which was not investigated.  The configuration
+    is experimental and not the default; recorded as open.

@@ -62,15 +62,18 @@ konfiguracji i trzeba go podawać razem z nią:
   niezależnych zestawach ziaren z tym samym znakiem — **znak zgodny z
   rzeczywistością**. Powtórzone sparowanie na 24 ziarnach po poprawce siły
   dipolowej daje \(+2{,}50\cdot10^{-5}\), \(24/24\) tego samego znaku;
-* przy domyślnym dziś `--level 1` bez podłogi (inspiral do bariery) kanał
-  orto jest **dwumodalny**, a gałąź wybiera **checkpoint, w którym pada
-  ostatni foton** — nie fizyka kanału. Odstęp gałęzi to dokładnie jeden
-  checkpoint, a sam czas kolapsu **nie jest tam zbieżny w kroku
-  sekularnym**: \(147{,}8\to191{,}4\) ps przy zmniejszaniu
-  \(s_{\max}\) z \(0{,}30\) do \(0{,}045\). Separacja kanałów jest
-  \(150\) razy mniejsza od tego błędu, więc **przy \(n=1\) nie ma
-  zmierzonej różnicy kanałów** — jest granulacja. Szczegóły w sekcji „Czas
-  kolapsu ustawia promień startowy".
+* przy domyślnym dziś `--level 1` bez podłogi (inspiral do bariery)
+  **różnicy kanałów nie ma**. Wcześniej raportowana jednostronność
+  (\(15\) z \(16\) par w jedną stronę) była zależnością od kroku
+  sekularnego, nie fizyką: czas kolapsu biegł \(147{,}8\to191{,}4\) ps
+  przy zmniejszaniu \(s_{\max}\) z \(0{,}30\) do \(0{,}045\).
+  **Zbieżność jest domknięta** — sześć miejsc narzucało kształt opadającej
+  obwiedni modelowi, którego orbita nie opada między fotonami — i po
+  poprawce ta sama trajektoria daje \(199{,}43/198{,}97/198{,}94/199{,}75\)
+  ps w tym samym zakresie kroku, czyli płasko w granicach \(0{,}4\%\).
+  Test znakowy na obu zestawach ziaren jest teraz zerowy
+  (\(10/20\) i \(11/17\)). Szczegóły w sekcji „Czas kolapsu ustawia
+  promień startowy".
 
 Wniosek negatywny to zaostrza, a nie osłabia: mechanizm klasyczny jest o
 siedem rzędów za słaby, zamiast być nierozróżnialny. Prawdziwa różnica pochodzi z reguły wyboru \(2\gamma/3\gamma\), czyli
@@ -435,17 +438,24 @@ tylko brak kaskady do zmierzenia.
 | konfiguracja | mediana | wobec \(\tau_{\rm para}=124{,}49\) ps |
 |---|---|---|
 | ciągła, \(n=1\), bez podłogi | \(30{,}66\) ps | \(\times0{,}246\) |
-| **kwant, \(n=1\), bez podłogi** | **\(147{,}825\) ps** | **\(\times1{,}187\)** |
+| **kwant, \(n=1\), bez podłogi** | **\(199{,}430\) ps** | **\(\times1{,}602\)** |
 | analityczne \(P/\hbar\omega\) przy \(a_{\rm pary}\) | \(186{,}74\) ps | \(\times1{,}50\) |
 | kwant, \(n=2\), bez podłogi (poprzednia domyślna) | \(6245{,}98\) ps | \(\times50{,}2\) |
 
 Zmierzona wartość jest **zaklinowana** między ścieżką ciągłą a analitycznym
-hazardem, a najbliżej niej leży przebieg przy \(n=1\). Liczba \(147{,}825\) ps jest
-ensemblem produkcyjnym, \(N=100\), ziarno \(42\): \(88\) kolapsów
-zaobserwowanych, \(12\) uciętych budżetem \(120\) s (wszystkie w ogonie,
-więc mediana jest identyfikowana), **zero awarii numerycznych**,
-\(\sigma/\mu=2{,}6\cdot10^{-5}\). Ta sama wartość co do trzech miejsc po
-przecinku wychodzi przy \(N=8\).
+hazardem, a najbliżej niej leży przebieg przy \(n=1\).
+
+**Liczba \(199{,}430\) ps zastąpiła zapisane tu wcześniej \(147{,}825\) ps,
+i nie jest to nowy przebieg tego samego modelu — jest to ta sama
+konfiguracja po domknięciu zbieżności kroku sekularnego.** Stara wartość
+pochodziła z kroku \(s_{\max}=0{,}30\), przy którym wynik nie był zbieżny:
+sześć miejsc w `crem_collapse.hpp` narzucało kształt opadającej obwiedni
+modelowi, którego orbita **nie opada między fotonami**. Szczegóły i tabela
+zbieżności niżej, w „Co wybiera gałąź". Nowa wartość to średnia z \(20\)
+ukończonych trajektorii sparowanych, ziarno nadrzędne \(42\), rozrzut
+\(\sigma/\mu=1{,}6\cdot10^{-4}\); pojedyncza trajektoria daje
+\(199{,}428\) ps przy \(s_{\max}=0{,}30\) i \(199{,}747\) ps przy
+\(0{,}045\), czyli płasko w granicach \(0{,}4\%\).
 
 Orto przy tej samej konfiguracji daje medianę \(147{,}827\) ps
 (\(74\) kolapsy, \(26\) uciętych) — czyli **dłużej niż para**, o
@@ -506,28 +516,70 @@ raportowany czas kolapsu jest **skwantowany** w jednostkach ostatniego
 checkpointu. Para trafia zawsze po tej samej stronie granicy, orto ją
 okrakiem obejmuje — i stąd dwumodalność.
 
-**Konsekwencja poważniejsza od samej gałęzi: przy \(n=1\) czas kolapsu nie
-jest zbieżny w kroku sekularnym.** Ta sama trajektoria z rozmaitym
-`maximumJumpParameter`:
+**To doprowadziło do defektu poważniejszego od samej gałęzi, i defekt jest
+naprawiony.** Skoro czas kolapsu jest kwantowany checkpointem, to musi
+zależeć od jego rozmiaru — i zależał. Ta sama trajektoria z rozmaitym
+`maximumJumpParameter`, przed poprawką i po niej:
 
-| \(s_{\max}\) | \(t\) [ps] | fotony |
-|---|---|---|
-| \(0{,}30\) | \(147{,}824\) | \(2\) |
-| \(0{,}20\) | \(163{,}715\) | \(3\) |
-| \(0{,}15\) | \(172{,}203\) | \(3\) |
-| \(0{,}10\) | \(180{,}782\) | \(3\) |
-| \(0{,}045\) | \(191{,}427\) | \(3\) |
+| \(s_{\max}\) | \(t\) przed [ps] | fotony | \(t\) po [ps] |
+|---|---|---|---|
+| \(0{,}30\) | \(147{,}824\) | \(2\) | \(199{,}428\) |
+| \(0{,}20\) | \(163{,}715\) | \(3\) | \(198{,}970\) |
+| \(0{,}10\) | \(180{,}782\) | \(3\) | \(198{,}944\) |
+| \(0{,}045\) | \(191{,}427\) | \(3\) | \(199{,}747\) |
 
-Monotonicznie, \(+29{,}5\%\) od \(0{,}30\) do \(0{,}045\) i wciąż
-rosnąco. **Separacja \(0{,}17\%\) między kanałami jest więc 150 razy
-mniejsza od błędu kroku i nie jest różnicą fizyczną.** Przy
-`--level 2 --ground-state-floor`, gdzie kaskada staje na \(n=1\) i nigdy nie
-dochodzi tam, gdzie foton przewyższa wiązanie, ta sama zmiana kroku daje
-\(6206{,}463\to6521{,}521\) ps, czyli \(+5{,}1\%\) — lepiej, ale też nie
-płasko. Tabela zbieżności zapisana przy definicji `maximumJumpParameter`
+Przed: monotonicznie, \(+29{,}5\%\) i wciąż rosnąco przy najdrobniejszym
+kroku. Po: **płasko w granicach \(0{,}4\%\)** w zakresie \(6{,}7\times\).
+
+*Przyczyna, odczytana wprost z `CREM_SKIP_CENSUS`.* Pod domyślnym modelem
+`stochasticElectricDipole` orbita **nie opada między fotonami** — półoś
+wielka stoi płasko na pięciu cyfrach przez dziewięć kolejnych checkpointów,
+a potem jeden foton przesuwa ją czterokrotnie. Mimo to **sześć miejsc**
+narzucało wewnątrz skoku kształt opadającej obwiedni
+\(u(n)=u_0(1-s)^{-2/3}\): czas własny checkpointu przez \((1-s/2)\),
+`integralFactor` w hazardzie, `meanInSkipGrowth` i odniesienie obwiedni w
+wymuszanym identycznościowo teście, położenie fotonu w skoku wraz z jego
+kwantem (`energyRatio`), oraz szósta, powielona kopia wzoru na czas własny
+w ogonie zegara laboratoryjnego. Ta ostatnia jest powodem, dla którego zegar
+laboratoryjny rozjechał się z własnym w chwili zmiany pierwszych pięciu.
+
+Każde z nich jest teraz zabramkowane na `isStochastic`. Dla modeli ciągłych
+obwiednia **jest** dynamiką i kształt zostaje bez zmian; dla stochastycznego
+znika. Wymuszany test tożsamości hazard/energia zachowuje moc, bo obie jego
+strony przeszły na tę samą konwencję i pozostają ścisłą tożsamością
+algebraiczną.
+
+*Co z tego wynika dla porównania kanałów.* Po poprawce, ziarno nadrzędne
+\(42\), \(20\) ukończonych par: para \(199{,}430\) ps przy rozrzucie
+\(1{,}6\cdot10^{-4}\), orto \(199{,}160\) ps, różnica
+\(-0{,}270\pm0{,}077\) ps. **Test znakowy jest jednak zerowy: orto dłuższe
+w \(10\) z \(20\), \(p=1\).** Dwumodalność orto nie zniknęła, ale
+gałęzie się wyrównały, a średnia jest nimi napędzana, nie stałym
+przesunięciem. Gałąź idzie teraz za **liczbą fotonów**: para emituje
+\(3\) w każdej parze, orto \(2\), \(3\) albo \(4\), i różni się od
+para w \(25\%\) par. Na drugim zestawie ziaren (\(7\), \(17\) par) jest
+tak samo: para \(199{,}433\) ps, orto \(199{,}269\) ps, orto dłuższe w
+\(11\) z \(17\), \(p=0{,}33\). **Przed poprawką to samo ziarno dawało
+\(15\) z \(16\) w jedną stronę przy \(p=0{,}0005\)** — czyli
+jednostronność, którą raportowałem wcześniej przy \(n=1\), była krokiem, a
+nie kanałem, i już jej nie ma.
+
+**Czego ta poprawka NIE domyka: `--level 2 --ground-state-floor`.** Ta
+konfiguracja też przeszła na nową konwencję i jej wartość przesunęła się z
+\(6206\) na \(7368\) ps, wracając do zapisanej gdzie indziej w tym
+dokumencie mediany kaskady \(7368{,}8\) ps. Ale zbieżna nadal nie jest:
+\(7368{,}28\to7318{,}47\to7071{,}14\) ps dla \(s_{\max}=0{,}30\to
+0{,}20\to0{,}10\), czyli \(-4{,}0\%\) i monotonicznie. Tam trajektoria
+kończy na **podłodze stanu podstawowego**, a nie na fotonie, więc źródło
+reszty jest inne i nie zostało zbadane. Konfiguracja jest eksperymentalna i
+nie jest domyślna; zapisuję to jako otwarte, nie jako zamknięte.
+
+Tabela zbieżności zapisana przy definicji `maximumJumpParameter`
 (\(\pm0{,}6\%\) w zakresie \(25\times\), \(124\)–\(125\) ps) **nie
-odtwarza się w żadnej z dzisiejszych konfiguracji** i pochodzi sprzed
-obecnych wartości domyślnych.
+odtwarzała się w żadnej z dzisiejszych konfiguracji** i pochodziła sprzed
+obecnych wartości domyślnych. Zastąpiona tabelą zmierzoną teraz. To jest
+dokładnie sposób, w jaki nieaktualna deklaracja zbieżności ukrywa realną
+zależność od kroku.
 
 #### Decyzja: domyślne `--level` zmienione z \(2\) na \(1\)
 
@@ -11771,18 +11823,24 @@ kolapsu (to samo ziarno w obu kanałach, więc \((E,L)\) i
 - **Konfiguracja `--level 2 --ground-state-floor` odtwarza się.** 24/24 par
   ukończonych, orto dłużej o \(+2{,}50\cdot10^{-5}\), znak dodatni w
   \(24/24\) — zgodne z zapisanym wcześniej \(+3{,}1\cdot10^{-5}\).
-- **Przy domyślnym `--level 1` różnicy kanałów nie ma — jest granulacja.**
-  Każda trajektoria w obu kanałach kończy na **ostatnim fotonie**, który na
-  tej głębokości niesie pięciokrotność wiązania, jakie parze zostało; bilans
-  domyka się co do \(1\) części na \(10^4\). Emisja rozstrzyga się tylko
-  na granicach checkpointów, więc czas kolapsu jest skwantowany w jednostkach
-  ostatniego checkpointu, a dwie gałęzie orto różnią się **dokładnie o jeden**
-  (\(0{,}2781\) ps wobec \(0{,}2768\) ps). Sam czas kolapsu nie jest tam
-  zbieżny w kroku sekularnym: \(147{,}8\to163{,}7\to172{,}2\to180{,}8\to
-  191{,}4\) ps dla \(s_{\max}=0{,}30\to0{,}045\), monotonicznie i wciąż
-  rosnąco, więc separacja \(0{,}17\%\) jest \(150\) razy mniejsza od
-  błędu kroku. **To odwołuje mój własny wcześniejszy zapis**, że przy
-  \(n=1\) orto żyje krócej: ta liczba mierzy krok, nie kanał. Przy
-  \(n=2\) z podłogą ta sama zmiana kroku daje \(+5{,}1\%\), a tabela
-  zbieżności zapisana przy `maximumJumpParameter` nie odtwarza się w żadnej
-  z dzisiejszych konfiguracji.
+- **Przy domyślnym `--level 1` różnicy kanałów nie ma, a zbieżność kroku
+  jest domknięta.** Każda trajektoria w obu kanałach kończy na **ostatnim
+  fotonie**, który na tej głębokości niesie pięciokrotność wiązania, jakie
+  parze zostało; bilans domyka się co do \(1\) części na \(10^4\). Emisja
+  rozstrzyga się tylko na granicach checkpointów, więc czas kolapsu jest
+  skwantowany w jednostkach ostatniego checkpointu — i musiał zależeć od jego
+  rozmiaru. Zależał: \(147{,}8\to163{,}7\to180{,}8\to191{,}4\) ps dla
+  \(s_{\max}=0{,}30\to0{,}045\), monotonicznie i wciąż rosnąco.
+  **Przyczyna: sześć miejsc narzucało wewnątrz skoku kształt opadającej
+  obwiedni modelowi, którego orbita nie opada między fotonami** (zmierzone:
+  półoś płaska na pięciu cyfrach przez dziewięć checkpointów, potem jeden
+  foton przesuwa ją czterokrotnie). Po zabramkowaniu wszystkich sześciu na
+  `isStochastic`: \(199{,}43/198{,}97/198{,}94/199{,}75\) ps, płasko w
+  granicach \(0{,}4\%\). **To odwołuje mój własny wcześniejszy zapis**, że
+  przy \(n=1\) orto żyje krócej: po poprawce test znakowy jest zerowy na
+  obu zestawach ziaren, \(10/20\) i \(11/17\). Wartość produkcyjna przy
+  \(n=1\) przesuwa się przez to z \(147{,}82\) na \(199{,}43\) ps.
+  **Nie domknięte:** `--level 2 --ground-state-floor` przechodzi na tę samą
+  konwencję (\(6206\to7368\) ps), ale zostaje przy \(-4{,}0\%\) w tym
+  samym zakresie kroku; tam trajektoria kończy na podłodze, nie na fotonie,
+  i źródło reszty nie zostało zbadane.

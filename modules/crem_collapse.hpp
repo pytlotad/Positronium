@@ -1687,16 +1687,31 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     // the resummed solution below.  s must stay strictly under 1, where the
     // closed form reaches complete collapse.
     //
-    // Convergence on one full trajectory (seed 42), collapse time in ps:
+    // Convergence on one full trajectory (seed 42), collapse time in ps.
+    // The table below is CURRENT: it is the default configuration today
+    // (--level 1, no ground-state floor, deterministic stochastic emission),
+    // remeasured after the six envelope-shape sites were gated on
+    // isStochastic (see checkpointProperTime's own comment for why).
     //
-    //     s_max    wall clock   collapse time
-    //     0.012      31.0 s       124.169
-    //     0.045      12.6 s       124.957     <- same step as the old 3% cap
-    //     0.10        8.4 s       125.585
-    //     0.20        5.7 s       124.986
-    //     0.30        4.6 s       124.328
+    //     s_max    collapse time   before that fix
+    //     0.30       199.428          147.824
+    //     0.20       198.970          163.715
+    //     0.10       198.944          180.782
+    //     0.045      199.747          191.427
     //
-    // Flat to +/-0.6% over a 25x range of step size, so 0.30 is taken.  The
+    // Flat to 0.4% over a 6.7x range, so 0.30 is taken.  The right-hand
+    // column is what the same scan gave while those sites applied a sinking
+    // envelope to a model whose orbit does not sink between photons: not
+    // converged at all, monotonic, and still climbing at the finest step.
+    //
+    // The table this replaced read 124.169 / 124.957 / 125.585 / 124.986 /
+    // 124.328 ps for s_max 0.012 through 0.30 and claimed +/-0.6% over a 25x
+    // range.  Those numbers reproduce at no configuration this file has
+    // today -- neither 199 ps at --level 1 nor 6206 ps at --level 2 with the
+    // floor -- so they predate the present defaults and were carried
+    // forward unremeasured.  That is exactly how a stale convergence claim
+    // hides a real step dependence, which is why this one carries its
+    // configuration in the sentence above.  The
     // frozen-rate hold this replaces returned 130.6-131.7 ps, i.e. 5-6% HIGH,
     // and it was never convergence-tested: at the SAME step size (s = 0.045)
     // the two schemes differ by 4.5%, which is interpolation shape, not step
@@ -2953,9 +2968,32 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             maximumJumpParameter);
         const double energyGrowth=std::pow(1.0-jumpParameter,-2.0/3.0);
         const double updatedEnergyMagnitude=energyMagnitude*energyGrowth;
+        // THE ENVELOPE SHAPE APPLIES TO THE CONTINUOUS MODELS ONLY, and
+        // this is the first of six places that has to say so.  The
+        // resummed envelope u(n)=u0(1-s)^(-2/3) describes an orbit that
+        // SINKS while it radiates, so its period shrinks across the skip
+        // and orbitsToSkip orbits take less than orbitsToSkip*period.  The
+        // factor (1-s/2) is that shortening.
+        //
+        // stochasticElectricDipole has no continuous reaction force at all:
+        // between photons the pair moves on the bare mutual Lorentz-force
+        // trajectory, exactly conserving energy (see the enum's own comment
+        // in electrodynamics.hpp).  Measured directly -- CREM_SKIP_CENSUS
+        // over a default trajectory shows the semi-major axis flat to five
+        // digits for nine consecutive checkpoints, then one photon moving it
+        // by a factor of four.  So for this model the orbit does NOT sink
+        // within a skip, the period does NOT shrink, and every envelope
+        // shape below is a step-dependent error rather than a correction.
+        //
+        // What it cost: the collapse time was not converged in s at all,
+        // running 147.8 -> 163.7 -> 180.8 -> 191.4 ps as s_max went
+        // 0.30 -> 0.20 -> 0.10 -> 0.045, monotonically and still climbing,
+        // because a coarser step both shortened every checkpoint and
+        // inflated its hazard.  With all six sites flat it reads
+        // 199.43 / 198.97 / 198.94 ps over the same range.
         const double checkpointProperTime=
             measuredElapsed*static_cast<double>(orbitsToSkip)
-            *(1.0-0.5*jumpParameter);
+            *(isStochastic?1.0:(1.0-0.5*jumpParameter));
         // Symmetric operator split for the slow checkpoint: half of the
         // conservative spin-orbit transport, the complete radiative/photon
         // update below, then the other conservative half.  A whole
@@ -3351,10 +3389,16 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             const double hazardReference=photonEnergyReference
                 /std::max(hazardSuppression,1.0e-12);
             if(hazardReference>0.0) {
-                const double integralFactor=jumpParameter>1.0e-12
+                // Envelope shape, second site: this converts "loss per
+                // orbit times orbits" into the energy a SINKING orbit
+                // radiates over the same span.  A non-sinking one radiates
+                // at a constant rate, so for the stochastic model the
+                // conversion is the identity -- see checkpointProperTime.
+                const double integralFactor=isStochastic?1.0
+                    :(jumpParameter>1.0e-12
                     ?(3.0/jumpParameter)
                         *(1.0-std::pow(1.0-jumpParameter,1.0/3.0))
-                    :1.0;
+                    :1.0);
                 // GROUND-STATE EMISSION FLOOR (--ground-state-floor, an
                 // experiment; see gGroundStateEmissionFloor).  A photon has
                 // to leave the pair in some state, and under the Bohr ladder
@@ -3429,12 +3473,28 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // a checkpoint with no hazard (floored, or a
                     // non-positive reference) must contribute to neither
                     // total or the comparison becomes meaningless.
-                    const double meanInSkipGrowth=jumpParameter>1.0e-12
+                    // Envelope shape, third site: the mean hbar*omega over
+                    // the skip against its value at the start.  omega is
+                    // constant across a skip that does not sink, so this is
+                    // 1 for the stochastic model.
+                    const double meanInSkipGrowth=isStochastic?1.0
+                        :(jumpParameter>1.0e-12
                         ?(std::pow(1.0-jumpParameter,-2.0/3.0)-1.0)
                             /(2.0*(1.0-std::pow(1.0-jumpParameter,1.0/3.0)))
-                        :1.0;
-                    const double envelopeHere=
-                        (updatedEnergyMagnitude-energyMagnitude)*reducedMass;
+                        :1.0);
+                    // Envelope shape, fourth site.  The identity enforced
+                    // below is a WIRING check -- both sides must be built
+                    // from the same convention, or it stops testing
+                    // anything.  For the continuous models that convention
+                    // is the sinking envelope; for the stochastic one it is
+                    // the constant-rate energy the photons are responsible
+                    // for over the same orbits.  Both remain exact algebraic
+                    // identities, so the check keeps its zero-variance
+                    // character either way.
+                    const double envelopeHere=isStochastic
+                        ?lossPerOrbit*reducedMass
+                            *static_cast<double>(orbitsToSkip)
+                        :(updatedEnergyMagnitude-energyMagnitude)*reducedMass;
                     // Each channel reassembled against its OWN quantum, so
                     // this stays the same total energy the single-channel
                     // form gave: hazard_E1*ref_E1 + hazard_M1*ref_M1 =
@@ -3630,14 +3690,24 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         :1.0;
                     const double base=jumpParameter>1.0e-12
                         ?1.0-std::pow(1.0-jumpParameter,1.0/3.0):1.0;
-                    const double x=jumpParameter>1.0e-12
+                    // Envelope shape, fifth site.  Inverting the hazard
+                    // integral gives where in a SINKING skip the threshold
+                    // is reached.  On a flat one the hazard rate is
+                    // constant, so the position is the hazard fraction
+                    // itself and the quantum has not moved: energyRatio=1.
+                    // Left as the envelope form the first photon of every
+                    // stochastic skip came out up to 43% too energetic at
+                    // s_max=0.30, which is most of the residual step
+                    // dependence that survived the first four sites.
+                    const double x=isStochastic?hFraction
+                        :(jumpParameter>1.0e-12
                         ?(1.0-std::pow(1.0-hFraction*base,3.0))
                             /jumpParameter
-                        :hFraction;
+                        :hFraction);
                     const double sAtPhoton=
                         jumpParameter*std::clamp(x,0.0,1.0);
-                    const double energyRatio=
-                        std::pow(1.0-sAtPhoton,-2.0/3.0);
+                    const double energyRatio=isStochastic?1.0
+                        :std::pow(1.0-sAtPhoton,-2.0/3.0);
                     // CREM_HARMONIC: which harmonic of omega_orb this
                     // specific event actually belongs to -- see
                     // eccentricOrbitHazardSuppression's own comment.
@@ -4744,7 +4814,7 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         const auto properTimeUpToS=[&](double s) {
             if(jumpParameter<=1.0e-12) return 0.0;
             return measuredElapsed*static_cast<double>(orbitsToSkip)
-                *(s/jumpParameter)*(1.0-0.5*s);
+                *(s/jumpParameter)*(isStochastic?1.0:(1.0-0.5*s));
         };
         {
             double labIncrement=0.0;
@@ -4762,9 +4832,11 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // the recoil speed left behind by whichever photons already
             // fired -- exactly centreOfMassVelocity's current value, since
             // nothing else moves it.
-            const double totalProperThisCheckpoint=
-                measuredElapsed*static_cast<double>(orbitsToSkip)
-                *(1.0-0.5*jumpParameter);
+            // Was a sixth, independent copy of checkpointProperTime's
+            // formula, which is exactly how the lab clock came to disagree
+            // with the proper clock the moment the shape above changed.
+            // One definition, used twice.
+            const double totalProperThisCheckpoint=checkpointProperTime;
             const double tailBeta=centreOfMassVelocity.norm()/c;
             labIncrement+=gammaFromBeta(tailBeta)
                 *(totalProperThisCheckpoint-properTimeUpToS(previousS));
