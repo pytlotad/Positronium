@@ -1,0 +1,18 @@
+force beta=0 boost=0 Fx=2.06127025186e-13 Fprime/F=1 expected=1
+force beta=0 boost=0.35 Fx=2.06128744364e-13 Fprime/F=1.00000834038 expected=1
+force beta=0 boost=0.6 Fx=2.06128744363e-13 Fprime/F=1.00000834038 expected=1
+force beta=0.2 boost=0 Fx=2.06127025186e-13 Fprime/F=1 expected=1
+force beta=0.2 boost=0.35 Fx=2.21643811144e-13 Fprime/F=1.07527778536 expected=1
+force beta=0.2 boost=0.6 Fx=2.34237209504e-13 Fprime/F=1.13637311407 expected=1
+force beta=0.6 boost=0 Fx=2.06127025186e-13 Fprime/F=1 expected=1
+force beta=0.6 boost=0.35 Fx=2.6092246122e-13 Fprime/F=1.26583334226 expected=1
+force beta=0.6 boost=0.6 Fx=3.22076163069e-13 Fprime/F=1.56251303185 expected=1
+field beta=0 Bz=-0.783204803482 Bz/boosted_static=0.999994996121 expected=1
+field beta=0.3 Bz=-0.821025828265 Bz/boosted_static=1.0000000005 expected=1
+field beta=0.8 Bz=-1.30534787151 Bz/boosted_static=1.00000000044 expected=1
+field beta=0.999 Bz=-17.5174590355 Bz/boosted_static=0.999999981785 expected=1
+field beta=0.9995 Bz=-14.678713789 Bz/boosted_static=0.592592558333 expected=1
+field beta=0.9999 Bz=-3.32769138914 Bz/boosted_static=0.0600854983507 expected=1
+zpf h=1e-18 Faraday_y=667078.156338 expected=0 normalized_to_2chirp_over_c=0.999925000833
+zpf h=1e-19 Faraday_y=667127.690049 expected=0 normalized_to_2chirp_over_c=0.999999249998
+zpf h=1e-20 Faraday_y=667128.185381 expected=0 normalized_to_2chirp_over_c=0.999999992483

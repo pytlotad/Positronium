@@ -11565,3 +11565,25 @@ jedności dla szybkich cząstek nie wymaga osobnego, nieopłacalnego solvera.
 Literatura uzasadnia użyte elementy elektrodynamiki klasycznej i wejścia
 generatora zaniku, ale nie waliduje fenomenologicznego utożsamienia orientacji
 klasycznych dipoli ze stanami para-/ortopozytonium w animacji.
+
+**Audyt relatywistycznej fizyki klasycznej, 2026-09-09.**
+Pełny [raport z odtwarzalnymi sondami](audits/2026-09-09-relativistic-physics.md)
+dotyczy rewizji `7889077` sprzed poniższych poprawek. Dwa wykryte defekty są
+zamknięte:
+
+- `covariantDipoleGradientForce` uwzględnia teraz materialną pochodną
+  sprzężenia przy projekcji czterogradientu. Niezależna sonda współliniowa
+  daje `F'x/Fx=1,00000834` dla `v=0,2c` i boostów `0,35c` oraz `0,6c`,
+  w granicy numerycznej geometrii.
+- Konstrukcja pola dipolowego nie obcina już poprawnej prędkości źródła do
+  `0,999c`; odrzuca wyłącznie faktycznie nadświetlny biegun pomocniczy.
+  Dla `beta=0,9995` i `0,9999` odpowiednio
+  `Bz/Bz_analityczne=0,999999963` i `0,999999813`.
+- Opcjonalne ZPF o częstotliwości i amplitudzie zależnych od orbity nadal nie
+  spełnia prawa Faradaya przy zmiennej częstotliwości. Sonda pojedynczego
+  modu zbiega do niezerowego residuum `A'(t)/c`; poprawne całkowanie fazy
+  czasowej nie wystarcza do zapewnienia zgodności z równaniami Maxwella.
+
+To pomiary izolowanych sektorów, nie pomiary zmiany czasu kolapsu. Raport
+rozdziela te defekty od znanych ograniczeń LL, energii Darwina, skończonej
+historii, sekularnego estymatora i bilansów zamykanych przez `boundField*`.

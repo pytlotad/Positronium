@@ -2921,6 +2921,41 @@ inline int runMaxwellSelfTest(
         dipoleFieldAgreementAtBeta(0.3);
     const DipoleFieldAgreement dipoleFieldAgreementBetaFast=
         dipoleFieldAgreementAtBeta(0.8);
+    // This is deliberately not another two-pole convergence check.  A
+    // uniformly moving magnetic dipole is the Lorentz boost of its static
+    // field, so on the transverse axis B_z=-gamma*mu0*m/(4*pi*R^3).
+    // It catches an artificial cap on the source velocity even when both
+    // sides of a pole-separation comparison share that same cap.
+    const auto boostedStaticMagneticDipoleResidual=[&](double beta) {
+        State movingDipoleState;
+        const double radius=2.0*bohrRadius;
+        movingDipoleState.firstPosition={radius,0,0};
+        movingDipoleState.secondVelocity={0,beta*c,0};
+        movingDipoleState.secondProperDipole={0,0,secondMagneticMoment};
+        synchronizeCovariantDipoles(movingDipoleState);
+        StateHistory movingDipoleHistory;
+        for(int sample=128;sample>=0;--sample) {
+            State past=movingDipoleState;
+            past.time=-static_cast<double>(sample)*1.0e-17;
+            past.secondPosition=past.secondVelocity*past.time;
+            movingDipoleHistory.push_back(past);
+        }
+        const ElectromagneticField field=retardedMagneticDipoleField(
+            movingDipoleState.firstPosition,0.0,movingDipoleHistory,
+            movingDipoleState,false);
+        const double expected=-mu0*secondMagneticMoment
+            /(4.0*pi*radius*radius*radius*std::sqrt(1.0-beta*beta));
+        return std::abs(field.magnetic.z-expected)/std::abs(expected);
+    };
+    const double boostedStaticDipoleFieldResidual9995=
+        boostedStaticMagneticDipoleResidual(0.9995);
+    const double boostedStaticDipoleFieldResidual9999=
+        boostedStaticMagneticDipoleResidual(0.9999);
+    const bool boostedStaticDipoleFieldOk=
+        std::isfinite(boostedStaticDipoleFieldResidual9995)
+        &&std::isfinite(boostedStaticDipoleFieldResidual9999)
+        &&boostedStaticDipoleFieldResidual9995<1.0e-5
+        &&boostedStaticDipoleFieldResidual9999<1.0e-5;
     // retardedMagneticDipoleField declares its dynamic terms as coming from
     // A_reg=w(r)[m(t_r)xn/r^2+mdot(t_r)xn/(cr)], but only multiplied the
     // unregularized induction/radiation formulas by w(r) -- not the full
@@ -5263,6 +5298,9 @@ inline int runMaxwellSelfTest(
                  << dipoleFieldAgreementBetaAlpha.motional << " / "
                  << dipoleFieldAgreementBetaModerate.motional << " / "
                  << dipoleFieldAgreementBetaFast.motional << '\n'
+              << "dipole boosted-static B (beta=0.9995/0.9999): "
+                 << boostedStaticDipoleFieldResidual9995 << " / "
+                 << boostedStaticDipoleFieldResidual9999 << '\n'
               << "pair patch cover:  " << productionInitialCoverage << " / "
               << productionMovedCoverage << '\n'
               << "pair patches moved:" << productionMovedPatches << '\n'
@@ -5610,7 +5648,7 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,53> regressionChecks{{
+    const std::array<ValidationCheck,54> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
@@ -5630,6 +5668,7 @@ inline int runMaxwellSelfTest(
         {ValidationSection::AlgebraicIdentity,"covariance",covarianceOk},
         {ValidationSection::PhysicalDomain,"particle-covariance",particleCovarianceOk},
         {ValidationSection::AlgebraicIdentity,"dipole-tensor-covariance",dipoleTensorCovarianceOk},
+        {ValidationSection::AlgebraicIdentity,"dipole-boosted-static-field",boostedStaticDipoleFieldOk},
         {ValidationSection::AlgebraicIdentity,"regularized-induction-curl",regularizedInductionCurlOk},
         {ValidationSection::AlgebraicIdentity,"electric-magnetic-dipole-interference",electricMagneticDipoleInterferenceOk},
         {ValidationSection::NumericalRegression,"mass-and-self-force",massAndSelfForceOk},

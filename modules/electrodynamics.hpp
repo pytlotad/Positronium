@@ -1755,15 +1755,25 @@ inline ElectromagneticField farZoneTwoChargeLimitDipoleField(
         }
         const Vec3 displacement=observationPosition-position;
         const double distance=displacement.norm();
-        if(!(distance>std::numeric_limits<double>::min()))
+        if(!(distance>std::numeric_limits<double>::min())) {
+            polesValid=false;
             return ElectromagneticField{};
+        }
         const Vec3 direction=displacement/distance;
-        Vec3 beta=velocity/c;
-        const double betaNorm=beta.norm();
-        if(betaNorm>0.999) beta=beta*(0.999/betaNorm);
-        const double kappa=std::max(1.0e-8,1.0-dot(direction,beta));
+        const Vec3 beta=velocity/c;
+        const double betaSquared=beta.squaredNorm();
+        const double kappa=1.0-dot(direction,beta);
+        // The two poles are an auxiliary representation of a physical point
+        // dipole.  A reconstructed pole that is actually superluminal is not
+        // a valid Lienard-Wiechert source, but a valid source at 0.999c or
+        // faster must retain its velocity: clipping it to 0.999c changes the
+        // physical field by orders of magnitude at high gamma.
+        if(!(betaSquared<1.0) || !(kappa>0.0) || !std::isfinite(kappa)) {
+            polesValid=false;
+            return ElectromagneticField{};
+        }
         const Vec3 velocityField=(direction-beta)
-            *((1.0-beta.squaredNorm())
+            *((1.0-betaSquared)
                 /(kappa*kappa*kappa*distance*distance));
         const Vec3 accelerationField=cross(direction,
             cross(direction-beta,acceleration))
@@ -1942,6 +1952,7 @@ inline ElectromagneticField twoChargeLimitDipoleField(
         velocity=charge.velocity+first*inversePole;
         acceleration=charge.acceleration+second*inversePole;
     };
+    bool polesValid=true;
     const auto poleField=[&](double sign) -> ElectromagneticField {
         Vec3 position,velocity,acceleration;
         double retardedTime=centralRetardedTime;
@@ -1949,7 +1960,11 @@ inline ElectromagneticField twoChargeLimitDipoleField(
             poleKinematics(sign,retardedTime,position,velocity,acceleration);
             const Vec3 displacement=observationPosition-position;
             const double distance=displacement.norm();
-            if(!(distance>std::numeric_limits<double>::min())) { trace.earlyReturn=true; return {}; }
+            if(!(distance>std::numeric_limits<double>::min())) {
+                polesValid=false;
+                trace.earlyReturn=true;
+                return {};
+            }
             const Vec3 direction=displacement/distance;
             const double residual=retardedTime+distance/c-observationTime;
             const double derivative=std::max(1.0e-8,
@@ -1964,39 +1979,44 @@ inline ElectromagneticField twoChargeLimitDipoleField(
         poleKinematics(sign,retardedTime,position,velocity,acceleration);
         const Vec3 displacement=observationPosition-position;
         const double distance=displacement.norm();
-        if(!(distance>std::numeric_limits<double>::min())) { trace.earlyReturn=true; return {}; }
+        if(!(distance>std::numeric_limits<double>::min())) {
+            polesValid=false;
+            trace.earlyReturn=true;
+            return {};
+        }
         const Vec3 direction=displacement/distance;
         const double fieldDistance=
             std::max({distance,nuclearCutoff,separationFloor()});
         const Vec3 beta=velocity/c;
-        // The pole's own velocity is the real source's plus a tiny
-        // (order 1/poleCharge) correction from the moment's time
-        // derivative; that derivative comes from a finite-difference
-        // stencil (historicalElectricDipoleKinematics/
-        // historicalDipoleKinematics) which is sampled here at every
-        // Newton-loop candidate retarded time, not just the converged one,
-        // so an ill-conditioned intermediate sample (a short stencil span,
-        // near a history boundary) can transiently push the pole
-        // superluminal even though the real source never is. Clamping
-        // beta's magnitude keeps this pathology from propagating into a
-        // negative (1-beta^2) or a divergent field; it never affects a
-        // physically sane sample, where the correction is negligible.
-        const double betaNorm=beta.norm();
-        const Vec3 clampedBeta=betaNorm>0.999?beta*(0.999/betaNorm):beta;
-        const double betaSquared=clampedBeta.squaredNorm();
-        const double kappa=std::max(1.0e-8,1.0-dot(direction,clampedBeta));
-        const Vec3 velocityField=(direction-clampedBeta)*((1.0-betaSquared)
+        // The pole velocity contains a small derivative correction.  If an
+        // ill-conditioned reconstruction makes that auxiliary pole
+        // superluminal, reject the construction instead of altering a valid
+        // physical source velocity.  In particular, 0.9995c and 0.9999c are
+        // valid inputs and must be evaluated at their actual Lorentz factor.
+        const double betaSquared=beta.squaredNorm();
+        const double kappa=1.0-dot(direction,beta);
+        if(!(betaSquared<1.0) || !(kappa>0.0) || !std::isfinite(kappa)) {
+            polesValid=false;
+            trace.earlyReturn=true;
+            return {};
+        }
+        const Vec3 velocityField=(direction-beta)*((1.0-betaSquared)
             /(kappa*kappa*kappa*fieldDistance*fieldDistance));
         const Vec3 accelerationField=cross(direction,
-            cross(direction-clampedBeta,acceleration))
+            cross(direction-beta,acceleration))
             /(c*c*kappa*kappa*kappa*fieldDistance);
         const Vec3 electric=(velocityField+accelerationField)
             *(coulomb*sign*poleCharge);
-        if(!isFinite(electric)) { trace.earlyReturn=true; return {}; }
+        if(!isFinite(electric)) {
+            polesValid=false;
+            trace.earlyReturn=true;
+            return {};
+        }
         return {electric,cross(direction,electric)/c};
     };
     const ElectromagneticField positivePole=poleField(1.0);
     const ElectromagneticField negativePole=poleField(-1.0);
+    if(!polesValid) return {};
     const ElectromagneticField total{
         positivePole.electric+negativePole.electric,
         positivePole.magnetic+negativePole.magnetic};
@@ -2701,60 +2721,41 @@ inline ElectromagneticField fieldFromOtherParticleAt(
     return field;
 }
 
-// Material derivative DU/Dt of the invariant dipole coupling U=mu_lab.B-p_lab.E
-// along the target's own worldline, with the MOMENTS HELD FIXED: the covariant
-// four-gradient below differentiates the FIELD the particle moves through, and
-// the moments' own evolution is the separate torque/BMT channel
-// (applyDipolePrecession), not part of this force.  So U is resampled with the
-// present mu_lab/p_lab against the field at the retarded-solved position the
-// worldline actually had at each sample time -- both the field's explicit time
-// dependence and the transport term v.grad U at once, which is exactly
-// u^b d_b U / gamma.
-//
-// The route NOT taken, and why: the obvious closed form for the missing piece
-// is Vaidman's (Am. J. Phys. 58, 978) and Hnizdo's (Am. J. Phys. 65, 55)
-// hidden momentum p_hidden=mu_lab x E/c^2, added as -d(p_hidden)/dt.  It was
-// implemented and measured here first, and it is WRONG as a general term: the
-// scale factor needed to null dipoleGradientForceCovarianceResidual came out
-// as exactly 2(1+gamma_boost) -- 4.135042 at the covariance test's 0.35c and
-// 4.5 at 0.6c, both to six digits.  A force law cannot depend on the boost
-// one happens to test it from, so that form is merely PARALLEL to the true
-// term in this geometry, not equal to it.  Vaidman's result is a low-velocity
-// statement about a loop in an external field, not a covariant force law, and
-// promoting it to one is the trap.  The mass-shell projection below has no
-// free coefficient at all, which is why it can be checked rather than fitted.
+// Field derivative DU/Dt = partial_t U + v.grad U for
+// U = mu_lab.B + p_lab.E, with the target tensor held fixed at the event.
+// Sample the instantaneous TANGENT worldline, not the target's historical
+// positions or moments: this is a directional derivative of the field, not
+// the torque/BMT evolution of the particle.  Both samples precede the present,
+// and use the same causal source-history extension as the spatial stencil.
 inline double dipoleCouplingMaterialRate(const State& state,
                                   const StateHistory& history,
                                   bool targetIsFirst) {
-    const Vec3 labMagneticDipole=targetIsFirst?state.firstDipole
-                                                 :state.secondDipole;
-    const Vec3 labElectricDipole=targetIsFirst?state.firstElectricDipole
-                                                  :state.secondElectricDipole;
-    const auto couplingAt=[&](double sampleTime) {
-        const State sampled=historicalState(history,state,sampleTime);
-        const Vec3 position=targetIsFirst?sampled.firstPosition
-                                          :sampled.secondPosition;
-        const ElectromagneticField field=fieldFromOtherParticleAt(
-            position,sampleTime,state,history,targetIsFirst);
-        return dot(labMagneticDipole,field.magnetic)
-              +dot(labElectricDipole,field.electric);
+    const Vec3 position=targetIsFirst?state.firstPosition:state.secondPosition;
+    const Vec3 velocity=targetIsFirst?state.firstVelocity:state.secondVelocity;
+    const Vec3 magnetic=targetIsFirst?state.firstDipole:state.secondDipole;
+    const Vec3 electric=targetIsFirst?state.firstElectricDipole
+                                      :state.secondElectricDipole;
+    const auto couplingAt=[&](double offset) {
+        const Vec3 point=position+velocity*offset;
+        ElectromagneticField field=fieldFromOtherParticleAt(
+            point,state.time+offset,state,history,targetIsFirst);
+        // Match the spatial stencil's pole-cancellation recovery.
+        if(gPoleCancellationRatio>30.0) {
+            const ElectromagneticField retreated=fieldFromOtherParticleAt(
+                point,state.time+offset,state,history,targetIsFirst,1.0e-7);
+            if(gPoleCancellationRatio<=30.0) field=retreated;
+        }
+        return dot(magnetic,field.magnetic)+dot(electric,field.electric);
     };
-    // Backward stencil only: state.time IS present.time here (this is always
-    // evaluated at the target's current instant, never a retarded one), so a
-    // centred difference would need historicalState() to extrapolate past
-    // present.time, which it does by stretching the last interpolation
-    // interval rather than by an independent sample -- exactly the silent
-    // wrong-derivative trap boundedDerivativeStep's own comment warns about.
-    double derivativeStep=1.0e-24;
-    if(history.size()>=2) derivativeStep=std::max(derivativeStep,
-        2.0*(history.back().time-history[history.size()-2].time));
-    derivativeStep=boundedDerivativeStep(history,state.time,derivativeStep,2);
-    if(!(derivativeStep>0.0)) return 0.0;
-    const double now=couplingAt(state.time);
-    const double before=couplingAt(state.time-derivativeStep);
-    const double twiceBefore=couplingAt(state.time-2.0*derivativeStep);
-    const double rate=(now*3.0-before*4.0+twiceBefore)/(2.0*derivativeStep);
-    return std::isfinite(rate)?rate:0.0;
+    // Resolve the same spacetime scale as the spatial gradient.  Using two
+    // history-node spacings here gives a finite travel interval, potentially
+    // comparable to r/c, instead of a local derivative for a fast target.
+    const double derivativeStep=std::max(
+        1.0e-4*separation(state),1.0e-3*nuclearCutoff)/c;
+    const double now=couplingAt(0.0);
+    const double before=couplingAt(-derivativeStep);
+    const double twiceBefore=couplingAt(-2.0*derivativeStep);
+    return (3.0*(now-before)-(before-twiceBefore))/(2.0*derivativeStep);
 }
 
 inline Vec3 covariantDipoleGradientForce(const State& state,
@@ -2764,15 +2765,9 @@ inline Vec3 covariantDipoleGradientForce(const State& state,
                                                :state.secondPosition;
     const Vec3 targetVelocity=targetIsFirst?state.firstVelocity
                                                :state.secondVelocity;
-    // Laboratory tensor, not the proper (rest-frame) moment: the point-dipole
-    // four-force below is the four-gradient of the Lorentz-invariant coupling
-    // m^{ab}F_{ab}/2, which -- carried through in lab components -- reduces to
-    // exactly mu_lab.B(x)-p_lab.E(x) (see the relative sign below).  Using lab
-    // components keeps the formula correct even if a future model gives a
-    // particle a nonzero rest-frame electric dipole; today p_rest=0
-    // (synchronizeCovariantDipoles), so this agrees with the old rest-frame
-    // mu_proper.B_rest(x) pointwise, and only changes what is computed FROM
-    // that coupling below.
+    // U = mu_lab.B + p_lab.E is the scalar coupling in this tensor
+    // convention.  Differentiate the field with the target tensor fixed;
+    // project its four-gradient onto the target's rest space below.
     const Vec3 labMagneticDipole=targetIsFirst?state.firstDipole
                                                  :state.secondDipole;
     const Vec3 labElectricDipole=targetIsFirst?state.firstElectricDipole
@@ -3131,47 +3126,21 @@ inline Vec3 covariantDipoleGradientForce(const State& state,
         }
         std::cerr<<std::setprecision(6)<<'\n';
     }
-    // Spatial component of the covariant gradient divided by gamma gives
-    // the laboratory three-force.  At rest this reduces to
-    // grad(mu.B)-grad(p.E) (today just grad(mu.B): p_rest=0, see above),
-    // and THAT limit is independently anchored: tensorGradientStaticResidual
-    // checks it against regularizedDipoleForce's closed form to 7.4e-6.
-    //
-    // Spatial component of the covariant gradient divided by gamma gives the
-    // laboratory three-force.  At rest it reduces to grad(mu.B), anchored by
-    // tensorGradientStaticResidual against regularizedDipoleForce's closed
-    // form at 7.4e-6.
-    //
-    // This function was for a long time recorded here as "not yet a full
-    // four-vector, missing a field-time-dependence/hidden-momentum term",
-    // because dipoleGradientForceCovarianceResidual -- which boosts this force
-    // alone, isolated from the charge-charge Lorentz force that swamps it in
-    // covarianceForceResidual -- read 265.671.  That diagnosis was wrong, and
-    // so were both terms proposed for it.  The defect was the relative SIGN
-    // between the two channels of the coupling above; correcting it takes the
-    // residual to 4.51e-6, the field machinery's own floor, with the static
-    // limit unchanged.
-    //
-    // Worth keeping the two dead ends on record, because both looked right:
-    //
-    //  - Vaidman/Hnizdo hidden momentum, -d/dt(mu_lab x E/c^2), DOES null the
-    //    residual, but only with a scale factor of exactly 2(1+gamma_boost):
-    //    4.135042 at 0.35c and 4.5 at 0.6c, six digits each.  A force law
-    //    cannot know the boost it is tested from.  It was tracking the sign
-    //    error, whose size grows with the boost.
-    //
-    //  - The mass-shell projection of the coupling's four-gradient,
-    //    F^a = d^a U - u^a(u.dU)/c^2, contributes a real lab term
-    //    -gamma v (DU/Dt)/c^2 with no free coefficient -- but it measures
-    //    2.6e-20 N against a 8.2e-16 N discrepancy, four orders too small.
-    //    dipoleCouplingMaterialRate is kept for that measurement.
-    //
-    // What finally localized it was noticing that the coupling is a near
-    // cancellation whose quality collapses under boost: mu.B and p.E, each
-    // about 8e-26, cancel to 7e-4 of themselves at rest and to only 0.33 at
-    // 0.35c.  A term that is supposed to cancel and instead adds is a sign,
-    // not a missing force.
-    return gradient/gamma(targetVelocity);
+    // Fixed-mass completion of the model's rest-frame force grad(U).
+    // With metric (+---), partial^a U = (partial_t U/c, -grad U):
+    //   f^a = -(eta^{ab} - u^a u^b/c^2) partial_b U.
+    // Thus u.f = 0, f_rest = (0, grad_rest U), and the lab three-force is
+    //   F = grad U/gamma + gamma v (partial_t U + v.grad U)/c^2.
+    // The PLUS sign follows from the metric and the positive rest gradient.
+    // grad U/gamma alone fails for a target moving along the gradient; the
+    // earlier transverse-orbit boost probe had almost zero DU/Dt and could
+    // not detect that missing component (see the 2026-09-09 audit).
+    const double targetGamma=gamma(targetVelocity);
+    if(targetVelocity.squaredNorm()==0.0) return gradient;
+    const double materialRate=dipoleCouplingMaterialRate(
+        state,history,targetIsFirst);
+    return gradient/targetGamma
+        +targetVelocity*(targetGamma*materialRate/(c*c));
 }
 
 inline MutualForces retardedExternalForces(const State& s,
