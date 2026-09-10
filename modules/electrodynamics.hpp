@@ -2342,6 +2342,18 @@ inline double osculatingOrbitalFrequency(const State& s) {
         /(pairReducedMass*radius*radius*radius));
 }
 
+// Time derivative of the same radius-defined frequency.  This is needed by
+// the optional chirped ZPF modes, whose fields are derived from a vector
+// potential and therefore require both omega and d omega/dt.
+inline double osculatingOrbitalFrequencyDerivative(const State& s) {
+    const Vec3 separationVector=s.firstPosition-s.secondPosition;
+    const double radius=separationVector.norm();
+    if(!(radius>0.0)) return 0.0;
+    const double radialVelocity=dot(separationVector,
+        s.firstVelocity-s.secondVelocity)/radius;
+    return -1.5*osculatingOrbitalFrequency(s)*radialVelocity/radius;
+}
+
 inline LocalElectromagneticFields localRelativisticFields(
     const State& s, const StateHistory& history) {
     ElectromagneticField atFirst = lienardWiechertField(
@@ -2371,9 +2383,13 @@ inline LocalElectromagneticFields localRelativisticFields(
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
         const double orbitalFrequency=osculatingOrbitalFrequency(s);
+        const double orbitalFrequencyDerivative=
+            osculatingOrbitalFrequencyDerivative(s);
         gZeroPointField.sample(s.firstPosition,orbitalFrequency,
+                               orbitalFrequencyDerivative,
                                s.zeroPointPhase,firstElectric,firstMagnetic);
         gZeroPointField.sample(s.secondPosition,orbitalFrequency,
+                               orbitalFrequencyDerivative,
                                s.zeroPointPhase,secondElectric,secondMagnetic);
         atFirst.electric+=firstElectric;
         atFirst.magnetic+=firstMagnetic;
@@ -2685,9 +2701,13 @@ inline MutualForces allExternalForces(const State& s) {
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
         const double orbitalFrequency=osculatingOrbitalFrequency(s);
+        const double orbitalFrequencyDerivative=
+            osculatingOrbitalFrequencyDerivative(s);
         gZeroPointField.sample(s.firstPosition,orbitalFrequency,
+                               orbitalFrequencyDerivative,
                                s.zeroPointPhase,firstElectric,firstMagnetic);
         gZeroPointField.sample(s.secondPosition,orbitalFrequency,
+                               orbitalFrequencyDerivative,
                                s.zeroPointPhase,secondElectric,secondMagnetic);
         externalField.first=externalField.first+lorentzForce(firstCharge,
             s.firstVelocity,{firstElectric,firstMagnetic})
@@ -3199,9 +3219,13 @@ inline MutualForces retardedExternalForces(const State& s,
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
         const double orbitalFrequency=osculatingOrbitalFrequency(s);
+        const double orbitalFrequencyDerivative=
+            osculatingOrbitalFrequencyDerivative(s);
         gZeroPointField.sample(s.firstPosition,orbitalFrequency,
+                               orbitalFrequencyDerivative,
                                s.zeroPointPhase,firstElectric,firstMagnetic);
         gZeroPointField.sample(s.secondPosition,orbitalFrequency,
+                               orbitalFrequencyDerivative,
                                s.zeroPointPhase,secondElectric,secondMagnetic);
         externalField.first=externalField.first+lorentzForce(firstCharge,
             s.firstVelocity,{firstElectric,firstMagnetic})

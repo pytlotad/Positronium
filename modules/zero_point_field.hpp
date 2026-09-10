@@ -67,33 +67,52 @@ struct ZeroPointField {
     bool active() const {
         return amplitudeCoefficient>0.0&&!direction.empty();
     }
+    // The chirped modes are constructed from A=a(t) epsilon sin(theta),
+    // where theta=k(t) n.r-f Phi(t)+phi and Phi'=omega_orb.  Defining
+    // E=-partial_t A and B=curl A, rather than imposing B=n x E/c, keeps
+    // Faraday's law exact when both the amplitude and wave number evolve.
     void sample(const Vec3& position,double orbitalFrequency,
-                double accumulatedPhase,Vec3& electric,Vec3& magnetic) const {
+                double orbitalFrequencyDerivative,double accumulatedPhase,
+                Vec3& electric,Vec3& magnetic) const {
         electric=Vec3{};
         magnetic=Vec3{};
         if(!(orbitalFrequency>0.0)) return;
         const double amplitude=amplitudeCoefficient
             *orbitalFrequency*orbitalFrequency;
+        const double amplitudeDerivative=2.0*amplitudeCoefficient
+            *orbitalFrequency*orbitalFrequencyDerivative;
         for(std::size_t n=0;n<direction.size();++n) {
-            const double waveNumber=frequencyFactor[n]*orbitalFrequency/c;
-            // The temporal phase is f_n times the INTEGRATED orbital phase,
-            // so its time derivative is exactly the mode's instantaneous
-            // frequency and nothing jumps when the band moves.  The spatial
-            // term is kept for completeness but is tiny: k*r is about 3e-3 rad
-            // across the pair, which is the long-wavelength limit.
-            const double wave=std::cos(
-                dot(direction[n],position)*waveNumber
-                -frequencyFactor[n]*accumulatedPhase+phase[n]);
-            electric+=polarization[n]*(amplitude*wave);
-            magnetic+=magneticDirection[n]*(amplitude*wave/c);
+            const double factor=frequencyFactor[n];
+            const double modeFrequency=factor*orbitalFrequency;
+            if(!(modeFrequency>0.0)) continue;
+            const double waveNumber=modeFrequency/c;
+            const double modeFrequencyDerivative=
+                factor*orbitalFrequencyDerivative;
+            const double waveNumberDerivative=modeFrequencyDerivative/c;
+            const double longitudinalPosition=dot(direction[n],position);
+            const double phaseValue=longitudinalPosition*waveNumber
+                -factor*accumulatedPhase+phase[n];
+            const double potentialAmplitude=amplitude/modeFrequency;
+            const double potentialAmplitudeDerivative=
+                (amplitudeDerivative*modeFrequency
+                 -amplitude*modeFrequencyDerivative)
+                /(modeFrequency*modeFrequency);
+            const double phaseRate=longitudinalPosition*waveNumberDerivative
+                -modeFrequency;
+            electric+=polarization[n]*(-potentialAmplitudeDerivative
+                    *std::sin(phaseValue)-potentialAmplitude*phaseRate
+                    *std::cos(phaseValue));
+            magnetic+=magneticDirection[n]*(potentialAmplitude*waveNumber
+                *std::cos(phaseValue));
         }
     }
     // Translational force on a magnetic dipole from the SPATIAL variation
     // of this field, F=grad(moment.B(r)).  Unlike the mutual dipole-dipole
     // force (whose source moves, so its gradient needs a numerical
     // difference), every mode here is a genuine plane wave with a known
-    // closed-form spatial gradient: for B_n=magneticDirection[n]*(amplitude
-    // /c)*cos(k_n.r+psi_n), grad(moment.B_n) = -moment.magneticDirection[n]
+    // closed-form spatial gradient: the vector-potential construction above
+    // retains B_n=magneticDirection[n]*(amplitude/c)*cos(k_n.r+psi_n), so
+    // grad(moment.B_n) = -moment.magneticDirection[n]
     // *(amplitude/c)*waveNumber_n*sin(k_n.r+psi_n)*direction[n], since
     // k_n=waveNumber_n*direction[n] and grad(dot(direction[n],r)) is just
     // direction[n]. Called only where the dipole actually sits (each

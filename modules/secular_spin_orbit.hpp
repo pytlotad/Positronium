@@ -311,9 +311,13 @@ inline OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
         if(gZeroPointField.active()) {
             Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
             const double orbitalFrequency=osculatingOrbitalFrequency(sample);
+            const double orbitalFrequencyDerivative=
+                osculatingOrbitalFrequencyDerivative(sample);
             gZeroPointField.sample(sample.firstPosition,orbitalFrequency,
+                orbitalFrequencyDerivative,
                 accumulatedZeroPointPhase,firstElectric,firstMagnetic);
             gZeroPointField.sample(sample.secondPosition,orbitalFrequency,
+                orbitalFrequencyDerivative,
                 accumulatedZeroPointPhase,secondElectric,secondMagnetic);
             externalAtFirst.electric+=firstElectric;
             externalAtFirst.magnetic+=firstMagnetic;

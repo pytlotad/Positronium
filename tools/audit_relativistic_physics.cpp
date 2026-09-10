@@ -65,15 +65,18 @@ int main() {
     zpf.phase={0};
     zpf.frequencyFactor={1};
     const double omega0=1e16, chirp=1e14;
+    const double omegaDerivative=omega0*chirp;
     zpf.amplitudeCoefficient=1/(omega0*omega0);
     for(double h:{1e-18,1e-19,1e-20}) {
         Vec3 ep,bp,em,bm;
-        zpf.sample({},omega0*(1+chirp*h),omega0*(h+chirp*h*h/2),ep,bp);
-        zpf.sample({},omega0*(1-chirp*h),omega0*(-h+chirp*h*h/2),em,bm);
+        zpf.sample({},omega0*(1+chirp*h),omegaDerivative,
+            omega0*(h+chirp*h*h/2),ep,bp);
+        zpf.sample({},omega0*(1-chirp*h),omegaDerivative,
+            omega0*(-h+chirp*h*h/2),em,bm);
         Vec3 rightE,rightB,leftE,leftB;
         const double dx=c*h;
-        zpf.sample({0,0,dx},omega0,0,rightE,rightB);
-        zpf.sample({0,0,-dx},omega0,0,leftE,leftB);
+        zpf.sample({0,0,dx},omega0,omegaDerivative,0,rightE,rightB);
+        zpf.sample({0,0,-dx},omega0,omegaDerivative,0,leftE,leftB);
         const double dBydt=(bp.y-bm.y)/(2*h);
         const double curlEy=(rightE.x-leftE.x)/(2*dx);
         std::cout<<"zpf h="<<h<<" Faraday_y="<<dBydt+curlEy

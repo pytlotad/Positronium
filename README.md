@@ -11568,8 +11568,8 @@ klasycznych dipoli ze stanami para-/ortopozytonium w animacji.
 
 **Audyt relatywistycznej fizyki klasycznej, 2026-09-09.**
 Pełny [raport z odtwarzalnymi sondami](audits/2026-09-09-relativistic-physics.md)
-dotyczy rewizji `7889077` sprzed poniższych poprawek. Dwa wykryte defekty są
-zamknięte:
+dotyczy rewizji `7889077` sprzed poniższych poprawek. Wszystkie trzy wykryte
+defekty są zamknięte, a każdy ma własną bramkę w pakiecie regresyjnym:
 
 - `covariantDipoleGradientForce` uwzględnia teraz materialną pochodną
   sprzężenia przy projekcji czterogradientu. Niezależna sonda współliniowa
@@ -11579,10 +11579,11 @@ zamknięte:
   `0,999c`; odrzuca wyłącznie faktycznie nadświetlny biegun pomocniczy.
   Dla `beta=0,9995` i `0,9999` odpowiednio
   `Bz/Bz_analityczne=0,999999963` i `0,999999813`.
-- Opcjonalne ZPF o częstotliwości i amplitudzie zależnych od orbity nadal nie
-  spełnia prawa Faradaya przy zmiennej częstotliwości. Sonda pojedynczego
-  modu zbiega do niezerowego residuum `A'(t)/c`; poprawne całkowanie fazy
-  czasowej nie wystarcza do zapewnienia zgodności z równaniami Maxwella.
+- Opcjonalne ZPF o częstotliwości i amplitudzie zależnych od orbity jest
+  teraz wyprowadzane z poprzecznego potencjału wektorowego. Niezależna sonda
+  prawa Faradaya ma znormalizowane residuum `4,2e-5 → 4,2e-7 → 4,1e-9` po
+  zmniejszaniu kroku `10^-18 → 10^-19 → 10^-20 s`, czyli zbiega do zera
+  w drugim rzędzie kroku, jak sama różnica centralna.
 
 To pomiary izolowanych sektorów, nie pomiary zmiany czasu kolapsu. Raport
 rozdziela te defekty od znanych ograniczeń LL, energii Darwina, skończonej

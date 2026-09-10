@@ -2102,6 +2102,68 @@ inline int runMaxwellSelfTest(
         // check would pass equally on the bug it exists to catch.
         &&secularPhaseRateRatio>1.2
         &&circularPhaseRateResidual<1.0e-12;
+    // A chirped ZPF mode must retain the homogeneous Maxwell equation,
+    // dB/dt+curl(E)=0.  This reference has a linearly changing orbital
+    // frequency and the same omega^2 amplitude law as production, so merely
+    // integrating the phase correctly cannot make the test pass: it also
+    // requires E and B to come from one vector potential.
+    constexpr double zeroPointOmega0=1.0e16;
+    constexpr double zeroPointChirp=1.0e14;
+    const auto zeroPointChirpedMode=[] {
+        ZeroPointField field;
+        field.direction={{0,0,1}};
+        field.polarization={{1,0,0}};
+        field.magneticDirection={{0,1,0}};
+        field.phase={0};
+        field.frequencyFactor={1};
+        // Unit amplitude at omega0, so the reference field below is 1 V/m
+        // and the residual normalization needs no separate scale.
+        field.amplitudeCoefficient=1.0/(zeroPointOmega0*zeroPointOmega0);
+        return field;
+    };
+    const auto zeroPointFaradayResidual=[&](double step) {
+        const ZeroPointField field=zeroPointChirpedMode();
+        constexpr double omega0=zeroPointOmega0;
+        constexpr double chirp=zeroPointChirp;
+        const double omegaDerivative=omega0*chirp;
+        Vec3 electricPlus,magneticPlus,electricMinus,magneticMinus;
+        field.sample({},omega0*(1.0+chirp*step),omegaDerivative,
+            omega0*(step+0.5*chirp*step*step),electricPlus,magneticPlus);
+        field.sample({},omega0*(1.0-chirp*step),omegaDerivative,
+            omega0*(-step+0.5*chirp*step*step),electricMinus,magneticMinus);
+        Vec3 rightElectric,rightMagnetic,leftElectric,leftMagnetic;
+        const double spatialStep=c*step;
+        field.sample({0,0,spatialStep},omega0,omegaDerivative,0.0,
+            rightElectric,rightMagnetic);
+        field.sample({0,0,-spatialStep},omega0,omegaDerivative,0.0,
+            leftElectric,leftMagnetic);
+        const double faraday=(magneticPlus.y-magneticMinus.y)/(2.0*step)
+            +(rightElectric.x-leftElectric.x)/(2.0*spatialStep);
+        return std::abs(faraday)/(2.0*chirp/c);
+    };
+    const double zeroPointFaradayCoarse=zeroPointFaradayResidual(1.0e-18);
+    const double zeroPointFaradayFine=zeroPointFaradayResidual(1.0e-20);
+    // Non-degeneracy.  A sample() that returned nothing, or that quietly
+    // lost the omega^2 amplitude law, would satisfy Faraday's law trivially.
+    // At the origin with zero accumulated phase the mode sits at a cosine
+    // maximum, so E must be exactly the unit amplitude along x and B must be
+    // E/c along y -- the plane-wave relation the potential form has to keep
+    // even though it no longer imposes it.
+    Vec3 zeroPointReferenceElectric,zeroPointReferenceMagnetic;
+    zeroPointChirpedMode().sample({},zeroPointOmega0,
+        zeroPointOmega0*zeroPointChirp,0.0,
+        zeroPointReferenceElectric,zeroPointReferenceMagnetic);
+    const double zeroPointAmplitudeResidual=
+        std::abs(zeroPointReferenceElectric.x-1.0);
+    const double zeroPointImpedanceResidual=
+        std::abs(zeroPointReferenceElectric.x
+                 -c*zeroPointReferenceMagnetic.y);
+    const bool zeroPointFaradayOk=std::isfinite(zeroPointFaradayCoarse)
+        &&std::isfinite(zeroPointFaradayFine)
+        &&zeroPointFaradayFine<zeroPointFaradayCoarse
+        &&zeroPointFaradayFine<1.0e-6
+        &&zeroPointAmplitudeResidual<1.0e-12
+        &&zeroPointImpedanceResidual<1.0e-12;
     const double secularM1Coarse=secularM1AverageAtNodes(512);
     const double secularM1Medium=secularM1AverageAtNodes(1024);
     const double secularM1Fine=secularM1AverageAtNodes(2048);
@@ -5391,6 +5453,10 @@ inline int runMaxwellSelfTest(
                  << " (expected " << secularPhaseRateExpected
                  << ", circular residual " << circularPhaseRateResidual
                  << ")\n"
+              << "ZPF Faraday coarse/fine: " << zeroPointFaradayCoarse
+                 << " / " << zeroPointFaradayFine
+                 << "  (amplitude " << zeroPointAmplitudeResidual
+                 << ", E-cB " << zeroPointImpedanceResidual << ")\n"
               << "M1 orbit avg 512/1k/2k: " << secularM1Coarse << " / "
                  << secularM1Medium << " / " << secularM1Fine
                  << "  (order " << (secularM1CoarseChange
@@ -5648,7 +5714,7 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,54> regressionChecks{{
+    const std::array<ValidationCheck,55> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
@@ -5691,6 +5757,7 @@ inline int runMaxwellSelfTest(
         {ValidationSection::Convergence,"secular-eccentric-orbit",secularEccentricOrbitOk},
         {ValidationSection::Convergence,"m1-secular-orbit-average",secularM1OrbitAverageOk},
         {ValidationSection::AlgebraicIdentity,"secular-zpf-phase-rate",secularZeroPointPhaseRateOk},
+        {ValidationSection::AlgebraicIdentity,"zpf-faraday",zeroPointFaradayOk},
         {ValidationSection::AlgebraicIdentity,"dipole-gradient-force-covariance",dipoleGradientForceCovarianceOk},
         {ValidationSection::AlgebraicIdentity,"quantized-radiation-gating",quantizedRadiationOk},
         {ValidationSection::Convergence,"trajectory-convergence",trajectoryConvergenceOk},
