@@ -1,5 +1,5 @@
 #!/bin/bash
-# Compile one modules/*.hpp in isolation; with no argument, sweeps all 36.
+# Compile one modules/*.hpp in isolation; with no argument, sweeps all 37.
 #
 # Three headers exist only in the validation configuration: positronium.cpp
 # includes them inside #ifdef POSITRONIUM_ENABLE_FIELD_VALIDATION, and their
@@ -32,5 +32,5 @@ else
             fail=$((fail+1)); echo "FAIL $h ($(grep -c 'error:' "$SP/probe_err.txt") errors)"
         fi
     done
-    echo "--- self-contained: $pass/36, failing: $fail ---"
+    echo "--- self-contained: $pass/37, failing: $fail ---"
 fi

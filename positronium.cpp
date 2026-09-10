@@ -208,14 +208,15 @@
 
 #include "modules/electrodynamics.hpp"
 
-// The six run-time switches that used to stand here -- the radiation
-// reaction model, the initial principal level, deterministic emission,
-// the ground-state emission floor, spin quantization and the Bohr photon
-// energy -- moved to modules/crem_trajectory.hpp.  That header and
-// crem_collapse.hpp, which includes it, are the only readers, and leaving
-// the flags here is what kept crem_trajectory.hpp from compiling alone.
-// Argument parsing further down still assigns to them: this file includes
-// crem_trajectory.hpp long before that point.
+// THE CONTROL PANEL.  Every switch a run can be steered by, with the reason
+// for each default: the six engine flags at global scope (radiation reaction
+// model, initial principal level, deterministic emission, ground-state
+// emission floor, spin quantization, Bohr photon energy) and everything else
+// under namespace configuration.  Argument parsing further down reads its
+// defaults from here and overrides them; the startup menu asks only for what
+// neither has answered.  Read that file before this one to know what a run
+// can be asked to do.
+#include "modules/configuration_panel.hpp"
 
 #include "modules/crem_engine.hpp"
 
@@ -5162,69 +5163,38 @@ int main(int argc, char** argv) {
               << '\n';
     return runMaxwellSelfTest(statisticalProfile);
 #else
+    // EVERY DEFAULT BELOW COMES FROM modules/configuration_panel.hpp, which
+    // carries the reason for each one.  They are copied into locals here so
+    // the command line can override them for a single run without mutating
+    // the panel, and so the startup menu can tell "still unanswered" from
+    // "answered by the panel".  Add a knob there, not here.
     std::random_device seedSource;
-    std::uint64_t seed = (static_cast<std::uint64_t>(seedSource()) << 32) ^ seedSource();
-    bool diagnose = false;
-    int selectedMode = 0;
-    VisualStyle visualStyle = VisualStyle::Unselected;
-    int selectedPhenomenon = 0;
-    // One sample size for every statistical experiment.  The per-experiment
-    // preview overrides that used to sit below made the default depend on which
-    // channel was selected, which is a poor property for a number that appears
-    // on every plot as "N =".
-    int statisticalRuns = 1000;
-    // Experiments 3 and 4 only.  Unrelated to interactionEnergyEv below: the
-    // beam channel is a scattering measurement whose reported cross sections
-    // scale as 1/K_CM^2, so this value fixes the axis range of every committed
-    // beam plot and must not be retuned along with the experiment-5 energy.
-    double beamEnergyEv = 20.0;
-    // Zero by default: unlike experiment 5, experiments 3/4 exist to compare
-    // a measured cross section against the theoretical Rutherford formula at
-    // a FIXED energy, and sigma(theta) is itself defined at one K_CM -- a
-    // zero-width beam is the right default for that comparison, not a gap.
-    // Nonzero opts into modelling a real beam's finite energy resolution
-    // instead, at the cost of smearing the theory-vs-model comparison the
-    // same way real energy spread would smear a real measurement.
-    double beamEnergySigmaEv = 0.0;
-    double thetaMinimumDegrees = 5.0;
-    int angleBins = 10;
-    double impactParameterMaximumPm = 0.0;
-    double matchingRadiusPm = 0.0;
-    // Experiment 5.  A mean of 0.6 eV sits well below the 6.8 eV Ps binding
-    // energy, so the pair has to shed correspondingly less energy to bind and
-    // the captured fraction rises.  The impact-parameter width follows the
-    // Coulomb length automatically, which scales as 1/K_CM.
-    double interactionEnergyEv = 0.6;
-    double interactionEnergySigmaEv = 0.4;
-    // Fixed in absolute terms, NOT tied to the Coulomb length: l_C scales as
-    // 1/K_CM, so an auto width would widen faster than the capture threshold
-    // and lowering the energy would produce fewer bound states, not more.
-    // Zero still selects the l_C rule for anyone who wants that scaling.
-    double interactionImpactSigmaPm = 60.0;
-    // Experiments 1/2 now integrate the full mechanical trajectory to the
-    // collision boundary instead of extrapolating; a bound orbit near a0
-    // needs a huge number of cheap orbits before the radiative loss becomes
-    // visible, so each event is censored once it spends this long on the
-    // wall clock rather than left to run indefinitely.
-    // Raised from 20 s with the n=2 cascade default: the cascade takes about
-    // 7 ns of simulated time against the barrier-limited inspiral's ~150 ps,
-    // and 45 s per trajectory measured 14 completions out of 16.  90 s leaves
-    // margin without making a standard batch open-ended.
-    double cremWallClockBudgetSeconds = 90.0;
-    // Negative means "not stated on the command line", which is what lets the
-    // startup question below stay silent for a fully specified batch run
-    // instead of blocking it on stdin.
-    double externalFieldMicroTesla = -1.0;
-    // Amplitude of the stochastic-electrodynamics zero-point field, in units
-    // of the physical level.  Off by default: it is an experiment, not part of
-    // the model every committed result was produced with.
-    double zeroPointScale = 0.0;
-    // Band edges in units of the pair's orbital angular frequency.
-    double zeroPointBandLow = 0.3;
-    double zeroPointBandHigh = 3.0;
-    // Mode count is a convergence knob, not physics: the real spectrum is a
-    // continuum and 64 discrete waves are a sampling of it.
-    int zeroPointModes = 64;
+    std::uint64_t seed = configuration::useFixedSeed
+        ? configuration::fixedSeed
+        : ((static_cast<std::uint64_t>(seedSource()) << 32) ^ seedSource());
+    bool diagnose = configuration::diagnose;
+    int selectedMode = configuration::mode;
+    VisualStyle visualStyle = configuration::visualStyle==1 ? VisualStyle::Line
+        : configuration::visualStyle==2 ? VisualStyle::Dot
+        : VisualStyle::Unselected;
+    int selectedPhenomenon = configuration::phenomenon;
+    int statisticalRuns = configuration::statisticalRuns;
+    double beamEnergyEv = configuration::beamEnergyEv;
+    double beamEnergySigmaEv = configuration::beamEnergySigmaEv;
+    double thetaMinimumDegrees = configuration::thetaMinimumDegrees;
+    int angleBins = configuration::angleBins;
+    double impactParameterMaximumPm = configuration::impactParameterMaximumPm;
+    double matchingRadiusPm = configuration::matchingRadiusPm;
+    double interactionEnergyEv = configuration::interactionEnergyEv;
+    double interactionEnergySigmaEv = configuration::interactionEnergySigmaEv;
+    double interactionImpactSigmaPm = configuration::interactionImpactSigmaPm;
+    double cremWallClockBudgetSeconds =
+        configuration::cremWallClockBudgetSeconds;
+    double externalFieldMicroTesla = configuration::externalFieldMicroTesla;
+    double zeroPointScale = configuration::zeroPointScale;
+    double zeroPointBandLow = configuration::zeroPointBandLow;
+    double zeroPointBandHigh = configuration::zeroPointBandHigh;
+    int zeroPointModes = configuration::zeroPointModes;
     try {
         for (int i = 1; i < argc; ++i) {
             const std::string argument = argv[i];
@@ -5335,7 +5305,11 @@ int main(int argc, char** argv) {
                 }
                 gInitialPrincipalLevel = level;
             } else if (argument == "--pair") {
-                applyPairFromOption(requireValue(argument));
+                // Recorded rather than applied, so the panel's g-factor
+                // overrides are folded in with it by applySelections() below
+                // and every pair-derived scale is built once, from the final
+                // selection, instead of being derived here and patched after.
+                configuration::pair = requireValue(argument);
             } else if (argument == "--seed") {
                 seed = parseUnsignedLong(argument, requireValue(argument));
             } else if (argument == "--phenomenon") {
@@ -5460,6 +5434,15 @@ int main(int argc, char** argv) {
         }
     } catch (const std::exception& error) {
         std::cerr << "Invalid command-line option: " << error.what() << '\n';
+        return 1;
+    }
+    // Resolve the pair and its moments once, here, after the command line has
+    // had its say and before anything reads a pair-derived scale -- the
+    // zero-point block below is the first that does.
+    try {
+        configuration::applySelections();
+    } catch (const std::exception& error) {
+        std::cerr << "Invalid pair selection: " << error.what() << '\n';
         return 1;
     }
     // Settle the mode first: --diagnose implies the visual engine and so is a

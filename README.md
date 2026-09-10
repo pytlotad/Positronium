@@ -6884,7 +6884,7 @@ cytowania, DOI i adresy źródeł. Kolejne uruchomienie nadpisuje go atomowo.
 ## Struktura źródeł
 
 Nagłówki w `modules/` są **samodzielne i niezależne od kolejności włączania**:
-każdy z 36 kompiluje się w izolacji, każdy sam włącza swoje zależności, a każda
+każdy z 37 kompiluje się w izolacji, każdy sam włącza swoje zależności, a każda
 definicja na poziomie przestrzeni nazw jest `inline`, więc dołączenie nagłówka z
 drugiej jednostki kompilacji nie łamie reguły jednej definicji. Wszystkie są
 włączane na **poziomie globalnym** `positronium.cpp`, przed otwarciem jego
@@ -6905,6 +6905,7 @@ nagłówek przestanie być samodzielny.
 | --- | --- |
 | `vector3.hpp`, `state.hpp`, `dipole_tensor.hpp` | typy podstawowe |
 | `physical_constants.hpp` | stałe fizyczne wraz z wyprowadzeniami |
+| `configuration_panel.hpp` | **panel sterowania**: każdy przełącznik, jaki przebieg da się zmienić, wraz z uzasadnieniem wartości domyślnej — sześć przełączników silnika w zasięgu globalnym oraz reszta w przestrzeni nazw `configuration`, plus katalog przełączników środowiskowych i opcji usuniętych |
 | `particle_species.hpp` | tablica gatunków (masa, ładunek, `g`), para integrowana przez przebieg i skale, które z niej wynikają: masa zredukowana, promień Bohra pary, energia wiązania, promień regularyzacji dipola, granica zderzenia oraz wyszukiwanie gatunku dla `--pair` |
 | `two_body_kinematics.hpp` | stabilna relatywistyczna kinematyka dwuciałowa: czteropędy, energia niezmiennicza, boost Lorentza i stan wejściowy na sferze dopasowania |
 | `electrodynamics.hpp` | **prawa sił**: pola opóźnione, Darwin, sprzężenie dipolowe, reakcja promieniowania, strumień dalekiego pola |
@@ -6970,6 +6971,46 @@ make build
 ```
 
 Samo `make` kompiluje program i od razu go uruchamia.
+
+### Panel sterowania — `modules/configuration_panel.hpp`
+
+Wszystkie przełączniki, jakimi da się sterować przebiegiem, są zebrane w jednym
+pliku: `modules/configuration_panel.hpp`. Przy każdym stoi uzasadnienie wartości
+domyślnej. Są **trzy** sposoby zmiany przebiegu i składają się w tej kolejności,
+każdy nadpisując poprzedni:
+
+1. **Ten plik.** Zmiana wartości domyślnej i przebudowa. Tu należy zapisać
+   konfigurację, która ma zostać: jest pod kontrolą wersji, widać ją bez
+   uruchamiania czegokolwiek i obowiązuje w każdym przebiegu danej budowy.
+2. **Wiersz poleceń.** Każdy przełącznik podaje swoją flagę. Flaga nadpisuje
+   plik na jeden przebieg i nie zmienia niczego na stałe.
+3. **Menu w programie.** Cztery pytania — pole zewnętrzne, tryb, styl wizualny,
+   eksperyment — a każde zadawane jest **tylko wtedy**, gdy nie odpowiedział na
+   nie ani plik, ani wiersz poleceń. Dlatego w pełni określony przebieg wsadowy
+   nigdy nie zatrzymuje się na stdin.
+
+**Ścieżka główna** to konfiguracja, w której powstał każdy złożony wynik, i jest
+to dokładnie zestaw wartości domyślnych z tego pliku: elektron + pozyton,
+czynniki `g` z CODATA, start przy \(a_1 = 1\,a_{\rm pary}\), stochastyczna
+reakcja promieniowania E1 z emisją deterministyczną, skwantowany spin, **bez**
+podłogi stanu podstawowego, **bez** energii fotonu z drabiny Bohra, **bez** pola
+zewnętrznego i **bez** pola punktu zerowego. Wszystko inne jest poza ścieżką
+główną — nie jest zakazane, ale liczby podane w tym pliku README i w raportach
+audytowych tego nie obejmują, więc wynik uzyskany poza nią trzeba tak opisać.
+
+Plik obejmuje: wybór pary cząstek i nadpisanie czynnika `g`, separację startową,
+ziarno, tryb i eksperyment, liczbę zdarzeń, energię i rozmycie wiązki oraz okno
+parametru zderzenia `b` dla eksperymentów 3/4, widmo losowanej energii
+mechanicznej i szerokość `b` dla eksperymentu 5, budżet zegarowy trajektorii,
+pole zewnętrzne i opcjonalne pole punktu zerowego. Na końcu pliku stoją dwa
+katalogi, żeby nieobecność czegoś nie była brana za kompletność: przełączniki
+**środowiskowe** z rozdzieleniem tych, które zmieniają **wynik**, od tych, które
+tylko drukują diagnostykę, oraz opcje **usunięte** wraz z powodem.
+
+Jeden wyjątek jest celowy: `positronium_validation` **nie czyta** wyborów z tego
+pliku i pozostaje przy wbudowanej parze domyślnej, o ile jego własne `--pair` nie
+powie inaczej. Bramki regresyjne niosą progi liczbowe zmierzone dla tej pary, a
+zmiana panelu nie może po cichu przesunąć progu.
 
 Pierwsze menu wybiera sposób uruchomienia:
 
