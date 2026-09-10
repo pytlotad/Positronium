@@ -63,10 +63,14 @@ konfiguracji i trzeba go podawać razem z nią:
   rzeczywistością**. Powtórzone sparowanie na 24 ziarnach po poprawce siły
   dipolowej daje \(+2{,}50\cdot10^{-5}\), \(24/24\) tego samego znaku;
 * przy domyślnym dziś `--level 1` bez podłogi (inspiral do bariery) kanał
-  orto jest **dwumodalny** — albo \(-1{,}8\cdot10^{-3}\), albo
-  \(+4{,}8\cdot10^{-5}\) wobec para — a udział gałęzi zmienia się między
-  zestawami ziaren (\(15/16\) wobec \(6/12\) w gałęzi krótszej). **Znak
-  uśrednionej różnicy nie jest tam ustalony.**
+  orto jest **dwumodalny**, a gałąź wybiera **checkpoint, w którym pada
+  ostatni foton** — nie fizyka kanału. Odstęp gałęzi to dokładnie jeden
+  checkpoint, a sam czas kolapsu **nie jest tam zbieżny w kroku
+  sekularnym**: \(147{,}8\to191{,}4\) ps przy zmniejszaniu
+  \(s_{\max}\) z \(0{,}30\) do \(0{,}045\). Separacja kanałów jest
+  \(150\) razy mniejsza od tego błędu, więc **przy \(n=1\) nie ma
+  zmierzonej różnicy kanałów** — jest granulacja. Szczegóły w sekcji „Czas
+  kolapsu ustawia promień startowy".
 
 Wniosek negatywny to zaostrza, a nie osłabia: mechanizm klasyczny jest o
 siedem rzędów za słaby, zamiast być nierozróżnialny. Prawdziwa różnica pochodzi z reguły wyboru \(2\gamma/3\gamma\), czyli
@@ -465,10 +469,65 @@ pokazuje, że **para jest jednomodalna**, \(147{,}8249\) ps z rozrzutem
 
 Mediana \(147{,}827\) ps to gałąź **dłuższa**; przy próbie zdominowanej
 przez krótszą ta sama konfiguracja daje \(147{,}573\) ps i przeciwny znak
-separacji. Dlatego **znak przy \(n=1\) nie jest ustalony**: nie jest to
-rozrzut wokół jednej wartości, tylko wybór gałęzi, którego udział zmienia
-się między zestawami ziaren. Przy \(n=2\) z podłogą zjawisko nie
-występuje — tam orto jest jednomodalne i \(24/24\) idzie w jedną stronę.
+separacji.
+
+**Co wybiera gałąź — zmierzone.** Nie warunek zatrzymania i nie liczba
+fotonów: wszystkie trajektorie w obu kanałach kończą na progu retardacyjnym
+i wszystkie emitują dokładnie \(2\) fotony. Gałąź wybiera **checkpoint, w
+którym pada ostatni foton**. Sześć prześledzonych trajektorii
+(`tools/para_ortho_branch_trace.cpp`, ziarno nadrzędne \(42\), licznik
+checkpointów z `CREM_SKIP_CENSUS`):
+
+| kanał | indeks | \(t\) [ps] | checkpointy | ostatni krok [ps] |
+|---|---|---|---|---|
+| para | 2 | \(147{,}82446\) | \(27\) | \(0{,}27627\) |
+| para | 4 | \(147{,}82466\) | \(27\) | \(0{,}27627\) |
+| orto | 2 | \(147{,}83463\) | \(27\) | \(0{,}27682\) |
+| orto | 3 | \(147{,}82855\) | \(27\) | \(0{,}27647\) |
+| orto | 4 | \(147{,}55652\) | \(\mathbf{26}\) | \(0{,}27676\) |
+| orto | 6 | \(147{,}55996\) | \(\mathbf{26}\) | \(0{,}27698\) |
+
+Odstęp gałęzi wynosi \(147{,}834632-147{,}556519=0{,}278113\) ps wobec
+ostatniego checkpointu \(0{,}2768\) ps. **Gałęzie różnią się dokładnie o
+jeden checkpoint.**
+
+*Dlaczego jeden foton kończy trajektorię.* Na tej głębokości
+\(\hbar\omega\) jest **pięć razy większe** od wiązania, które parze
+zostało, więc ostatnia emisja przenosi orbitę za próg w jednym kroku.
+Bilans domyka się co do \(1\) części na \(10^4\) w obu gałęziach:
+
+| gałąź | wiązanie przed | wiązanie na stopie | skok | \(\hbar\omega\) w emisji |
+|---|---|---|---|---|
+| dłuższa | \(26{,}23\) eV | \(170{,}09\) eV | \(143{,}86\) eV | \(143{,}85\) eV |
+| krótsza | \(26{,}23\) eV | \(167{,}92\) eV | \(141{,}69\) eV | \(141{,}68\) eV |
+
+Emisja jest rozstrzygana wyłącznie na granicach checkpointów, więc
+raportowany czas kolapsu jest **skwantowany** w jednostkach ostatniego
+checkpointu. Para trafia zawsze po tej samej stronie granicy, orto ją
+okrakiem obejmuje — i stąd dwumodalność.
+
+**Konsekwencja poważniejsza od samej gałęzi: przy \(n=1\) czas kolapsu nie
+jest zbieżny w kroku sekularnym.** Ta sama trajektoria z rozmaitym
+`maximumJumpParameter`:
+
+| \(s_{\max}\) | \(t\) [ps] | fotony |
+|---|---|---|
+| \(0{,}30\) | \(147{,}824\) | \(2\) |
+| \(0{,}20\) | \(163{,}715\) | \(3\) |
+| \(0{,}15\) | \(172{,}203\) | \(3\) |
+| \(0{,}10\) | \(180{,}782\) | \(3\) |
+| \(0{,}045\) | \(191{,}427\) | \(3\) |
+
+Monotonicznie, \(+29{,}5\%\) od \(0{,}30\) do \(0{,}045\) i wciąż
+rosnąco. **Separacja \(0{,}17\%\) między kanałami jest więc 150 razy
+mniejsza od błędu kroku i nie jest różnicą fizyczną.** Przy
+`--level 2 --ground-state-floor`, gdzie kaskada staje na \(n=1\) i nigdy nie
+dochodzi tam, gdzie foton przewyższa wiązanie, ta sama zmiana kroku daje
+\(6206{,}463\to6521{,}521\) ps, czyli \(+5{,}1\%\) — lepiej, ale też nie
+płasko. Tabela zbieżności zapisana przy definicji `maximumJumpParameter`
+(\(\pm0{,}6\%\) w zakresie \(25\times\), \(124\)–\(125\) ps) **nie
+odtwarza się w żadnej z dzisiejszych konfiguracji** i pochodzi sprzed
+obecnych wartości domyślnych.
 
 #### Decyzja: domyślne `--level` zmienione z \(2\) na \(1\)
 
@@ -11711,7 +11770,19 @@ kolapsu (to samo ziarno w obu kanałach, więc \((E,L)\) i
   przy \(n=2\); mechanizmem pozostaje rezerwuar spinowy, nie siła.
 - **Konfiguracja `--level 2 --ground-state-floor` odtwarza się.** 24/24 par
   ukończonych, orto dłużej o \(+2{,}50\cdot10^{-5}\), znak dodatni w
-  \(24/24\) — zgodne z zapisanym wcześniej \(+3{,}1\cdot10^{-5}\). Przy
-  domyślnym `--level 1` orto jest natomiast dwumodalne i znak uśrednionej
-  różnicy nie jest ustalony — patrz sprostowanie w sekcji „Czas kolapsu
-  ustawia promień startowy".
+  \(24/24\) — zgodne z zapisanym wcześniej \(+3{,}1\cdot10^{-5}\).
+- **Przy domyślnym `--level 1` różnicy kanałów nie ma — jest granulacja.**
+  Każda trajektoria w obu kanałach kończy na **ostatnim fotonie**, który na
+  tej głębokości niesie pięciokrotność wiązania, jakie parze zostało; bilans
+  domyka się co do \(1\) części na \(10^4\). Emisja rozstrzyga się tylko
+  na granicach checkpointów, więc czas kolapsu jest skwantowany w jednostkach
+  ostatniego checkpointu, a dwie gałęzie orto różnią się **dokładnie o jeden**
+  (\(0{,}2781\) ps wobec \(0{,}2768\) ps). Sam czas kolapsu nie jest tam
+  zbieżny w kroku sekularnym: \(147{,}8\to163{,}7\to172{,}2\to180{,}8\to
+  191{,}4\) ps dla \(s_{\max}=0{,}30\to0{,}045\), monotonicznie i wciąż
+  rosnąco, więc separacja \(0{,}17\%\) jest \(150\) razy mniejsza od
+  błędu kroku. **To odwołuje mój własny wcześniejszy zapis**, że przy
+  \(n=1\) orto żyje krócej: ta liczba mierzy krok, nie kanał. Przy
+  \(n=2\) z podłogą ta sama zmiana kroku daje \(+5{,}1\%\), a tabela
+  zbieżności zapisana przy `maximumJumpParameter` nie odtwarza się w żadnej
+  z dzisiejszych konfiguracji.

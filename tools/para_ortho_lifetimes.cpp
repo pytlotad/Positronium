@@ -25,6 +25,14 @@
 #include <vector>
 
 namespace {
+const char* stopCauseName(CollapseStopCause cause) {
+    switch(cause) {
+        case CollapseStopCause::ComptonBarrier:   return "barrier";
+        case CollapseStopCause::RetardationLimit: return "retard";
+        case CollapseStopCause::GroundStateFloor: return "floor";
+        default:                                  return "none";
+    }
+}
 // Two-sided exact binomial probability at p=1/2, summing every outcome no
 // more likely than the observed one.  With p=1/2 the distribution is
 // symmetric, so that is twice the lower tail.
@@ -61,6 +69,11 @@ int main(int argc,char** argv) {
     // they are different physical questions with different answers.
     if(argc>5) gInitialPrincipalLevel=std::atoi(argv[5]);
     if(argc>6&&std::string(argv[6])=="floor") gGroundStateEmissionFloor=true;
+    // Branch diagnosis.  At level 1 the ortho channel takes one of two
+    // discrete collapse times rather than scattering about one, so the
+    // question "what picks the branch" needs the terminal state of each
+    // trajectory, not just its duration.
+    const bool diagnoseBranch=argc>7&&std::string(argv[7])=="branch";
     std::cout<<"paired para/ortho: "<<runCount<<" trajectories per channel, "
              <<"master seed "<<masterSeed<<", budget "<<budget<<" s, emission "
              <<(gDeterministicEmission?"deterministic":"poisson")
@@ -98,6 +111,30 @@ int main(int argc,char** argv) {
                  <<std::setw(11)<<orthoPs/paraPs
                  <<std::setw(9)<<p.emittedPhotonCount<<" /"
                  <<std::setw(6)<<o.emittedPhotonCount<<"\n";
+    }
+    if(diagnoseBranch) {
+        std::cout<<"\n branch diagnosis (both channels, every trajectory)\n"
+                 <<" idx ch  t(ps)         stop      peri/barrier"
+                 <<"  period/lightcross  a_term(m)      bind(eV)"
+                 <<"   revolutions   photons  E_emitted(J)\n";
+        for(int index=0;index<runCount;++index) {
+            for(int channel=0;channel<2;++channel) {
+                const auto& e=(channel==0?para:ortho)[
+                    static_cast<size_t>(index)];
+                std::cout<<std::setw(4)<<index
+                         <<(channel==0?"  p":"  o")
+                         <<std::setw(14)<<e.calibrationSecondsLab*1.0e12
+                         <<std::setw(10)<<stopCauseName(e.stopCause)
+                         <<std::setw(14)<<e.terminalPeriapsisOverBarrier
+                         <<std::setw(19)<<e.terminalPeriodToLightCrossing
+                         <<std::setw(15)<<e.terminalSemiMajorAxis
+                         <<std::setw(12)<<e.terminalBindingEnergy/eCharge
+                         <<std::setw(14)<<e.revolutions
+                         <<std::setw(9)<<e.emittedPhotonCount
+                         <<std::setw(15)<<e.quantizedEmittedEnergyJoules
+                         <<"\n";
+            }
+        }
     }
     if(bothComplete<2) {
         std::cout<<"\nonly "<<bothComplete

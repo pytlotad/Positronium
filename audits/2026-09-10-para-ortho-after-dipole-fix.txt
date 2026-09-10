@@ -279,3 +279,65 @@ DIFFERENCE ortho-para: -0.245693825 +/- 0.0226731567 ps   (10.8363307 sigma)
 GEOMETRIC RATIO:       0.998337811,  95% CI [0.998037463, 0.998638249]
 SIGN TEST:             ortho longer in 1 of 12,  exact p = 0.00634765625
 PHOTON COUNT DIFFERS:  2 of 16  (12.5%)
+
+==================================================================
+8. WHAT SELECTS THE BRANCH AT --level 1
+==================================================================
+
+8a. Terminal state of six traced trajectories (master seed 42).
+    Checkpoint count from CREM_SKIP_CENSUS; the last gap is the
+    duration of the final checkpoint.
+
+channel  index  t(ps)            checkpts last_gap(ps)  
+para     2      147.82445956     27       0.276266      
+para     4      147.824656898    27       0.276265      
+ortho    2      147.834632144    27       0.276821      
+ortho    3      147.828554091    27       0.276469      
+ortho    4      147.556519343    26       0.276758      
+ortho    6      147.559958349    26       0.276975      
+
+    Branch gap 147.834632 - 147.556519 = 0.278113 ps against a final
+    checkpoint of 0.2768 ps: the two branches differ by exactly one.
+    All six stop on the retardation limit and all fire 2 photons, so
+    neither the stop cause nor the photon count is the discriminator.
+
+8b. Every trajectory ends ON its final photon.  Binding before the last
+    checkpoint, binding at the stop, and hbar*omega at the emission
+    point (the census value carried down the skip by (1-s)^(-2/3) and
+    omega ~ |E|^(3/2)):
+
+    ortho idx2 (long)   26.23 eV -> 170.09 eV   jump 143.86 eV   hbar*omega 143.85 eV   ratio 1.0001
+    ortho idx4 (short)  26.23 eV -> 167.92 eV   jump 141.69 eV   hbar*omega 141.68 eV   ratio 1.0001
+
+    One photon carries five times the binding the pair had left, so it
+    takes the orbit past the stop in a single step.  Emission is
+    resolved only at checkpoint boundaries, so the reported collapse
+    time is quantised in units of one final checkpoint.
+
+8c. Consequence: the level-1 collapse time is NOT converged in the
+    secular step.  Trace of para index 2, master seed 42, with
+    maximumJumpParameter (s_max) varied:
+
+    s_max    t(ps)       photons
+    0.30     147.824     2
+    0.20     163.715     3
+    0.15     172.203     3
+    0.10     180.782     3
+    0.045    191.427     3
+
+    Monotonic, +29.5% from s=0.30 to s=0.045 and still climbing.  The
+    0.17% para/ortho separation measured at s=0.30 is 150x smaller
+    than the step error, so it is not a physical channel difference.
+
+8d. The same scan with --level 2 --ground-state-floor, where the
+    cascade stops at n=1 and never reaches the depth where one photon
+    outweighs the binding:
+
+    s_max    t(ps)       photons
+    0.30     6206.463    2
+    0.10     6521.521    2
+
+    +5.1%, better behaved but also not flat.  The convergence table
+    recorded at maximumJumpParameter's definition (+/-0.6% over a 25x
+    range, 124-125 ps) reproduces at neither current configuration and
+    predates the present defaults.
