@@ -488,3 +488,57 @@ PHOTON COUNT DIFFERS:  3 of 24  (12.5%)
     ground-state floor rather than on a photon, so the residual has a
     different source, which was not investigated.  The configuration
     is experimental and not the default; recorded as open.
+
+==================================================================
+10. DOES L REACH THE CONTACT VALUE?
+==================================================================
+
+Contact angular momentum for this pair, L_c = sqrt(mu k r_c)/hbar:
+  0.04274 hbar at the Compton barrier (193.30 fm)
+  0.00516 hbar at the classical electron radius (2.818 fm)
+
+10a. YES, and it takes exactly one photon more than the stop allows.
+     L read immediately AFTER each emission (CREM_EMISSION_REACH),
+     in units of L_c at the barrier, with the retardation threshold
+     lowered from 150 to 5 so the fourth photon can fire:
+
+       trajectory    photons   L/L_c after each photon
+       para  idx 2      4      13.51  6.40  2.30  0.50
+       para  idx 3      4      13.51  6.40  2.21  0.47
+       para  idx 4      4      13.51  6.40  2.28  0.49
+       ortho idx 2      4      13.51  6.40  2.22  0.47
+       ortho idx 4      4      13.51  6.43  2.23  0.47
+
+     Uniform across trajectories and across both channels.  L crosses
+     the contact value between photon 3 and photon 4.
+
+10b. Where the default stop sits.  At threshold 150 (and at 50 and 20,
+     which trip the same checkpoint) the trajectory stops with
+     P/LC=17.67 at a=1.022e-12 m = 5.29 barrier radii.  At threshold 5
+     photon 4 fires and the orbit lands at a=4.783e-14 m = 0.246
+     barrier radii, i.e. INSIDE the barrier, where classical
+     point-particle electrodynamics does not apply.  That last row is
+     a probe of the model's own bookkeeping, not a physical claim.
+
+10c. THE TERMINAL L THE ESTIMATOR REPORTS CANNOT BE USED FOR THIS.
+     Between emissions the spin-orbit transport changes L at fixed
+     energy, and the result is not a bound Kepler orbit:
+
+       state                          L (hbar)   h^2/(A a)
+       right after photon 3            0.0983      1.0002
+       reported at the default stop    0.2151      4.7898
+       right after photon 4            0.0212      0.9936
+       reported at the deep stop       0.4475    445.9
+
+     h^2/(A a) is 1-e^2 for a bound orbit and cannot exceed 1.  The
+     post-emission values satisfy that; the reported ones exceed it by
+     factors of 4.8 and 446.  osculatingEccentricity clamps e^2 to
+     zero, so nothing in the ordinary output shows it.  Recorded now
+     as CremCollapseEstimate::terminalKeplerConsistency.
+
+10d. Correction to what this file said in section 3.  The obstacle to
+     answering "does L reach contact" was NOT that the retardation
+     stop cuts the trajectory short -- it is one photon short, and
+     lowering it answers the question.  The obstacle is that L is
+     corrupted between emissions, so the quantity the estimator
+     reports at the stop is not the pair's orbital angular momentum.

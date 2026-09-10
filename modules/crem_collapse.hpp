@@ -261,6 +261,26 @@ struct CremCollapseEstimate {
         std::numeric_limits<double>::quiet_NaN();
     double terminalSemiMajorAxis=std::numeric_limits<double>::quiet_NaN();
     double terminalBindingEnergy=std::numeric_limits<double>::quiet_NaN();
+    // ORBITAL ANGULAR MOMENTUM at the same terminal state, in units of hbar.
+    // Recorded beside the other two elements because it is the quantity that
+    // decides whether a classical contact channel exists at all: a Kepler
+    // orbit reaches separation r_c only if L <= sqrt(mu k r_c (1+e)), which
+    // for this pair is 0.043 hbar at the Compton barrier and 0.0052 hbar at
+    // the classical electron radius.  Without it, "how close did the cascade
+    // come to contact" has to be re-derived from a and the periapsis, and
+    // the periapsis this struct carries is dipole-aware rather than
+    // Keplerian, so that derivation does not close.
+    double terminalAngularMomentum=std::numeric_limits<double>::quiet_NaN();
+    // h^2/(A a) at the same state, which for a bound Kepler orbit IS 1-e^2
+    // and therefore cannot exceed 1.  Recorded because it does: measured on
+    // the default trajectory it reads 1.0000 immediately after each photon
+    // and 4.79 at the stop, because the spin-orbit transport between
+    // emissions changes L at FIXED energy and carries the pair out of the
+    // physical region.  osculatingEccentricity clamps e^2 to zero, so
+    // nothing else in the output shows it -- which is exactly why the ratio
+    // is stored raw rather than as an eccentricity.
+    double terminalKeplerConsistency=
+        std::numeric_limits<double>::quiet_NaN();
     // Dipole-dipole interaction energy at the terminal configuration, the
     // one term that distinguishes para from ortho in the final-state
     // invariant.  Signed: negative for the orientation that binds.
@@ -1991,6 +2011,18 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // by the binding this orbit accumulated on its way down.
             result.terminalSemiMajorAxis=
                 -attractionParameter/(2.0*elements.specificEnergy);
+            result.terminalAngularMomentum=
+                elements.specificAngularMomentum*reducedMass/hbar;
+            {
+                const double terminalA=
+                    -attractionParameter/(2.0*elements.specificEnergy);
+                result.terminalKeplerConsistency=
+                    (terminalA>0.0&&attractionParameter>0.0)
+                    ?elements.specificAngularMomentum
+                        *elements.specificAngularMomentum
+                        /(attractionParameter*terminalA)
+                    :std::numeric_limits<double>::quiet_NaN();
+            }
             result.terminalBindingEnergy=
                 reducedMass*std::abs(elements.specificEnergy);
             // DIPOLE-DIPOLE, which the Kepler element does not carry.

@@ -62,5 +62,19 @@ int main(int argc,char** argv) {
              <<"  P/LC="<<estimate.terminalPeriodToLightCrossing
              <<"  revolutions="<<estimate.revolutions
              <<"  photons="<<estimate.emittedPhotonCount<<"\n";
+    // Terminal orbital elements.  L is recorded by the estimator itself;
+    // L_contact is what it would have to reach for a Kepler orbit to touch
+    // the Compton barrier, sqrt(mu k r_c)/hbar on a circular orbit.
+    const double terminalA=estimate.terminalSemiMajorAxis;
+    const double contactAngularMomentum=
+        std::sqrt(pairCoulombStrength*reducedMassOf(activePair)
+                  *comptonBarrierRadius)/hbar;
+    std::cout<<"  terminal: a="<<terminalA<<" m"
+             <<"  a/barrier="<<terminalA/comptonBarrierRadius
+             <<"  binding="<<estimate.terminalBindingEnergy/eCharge<<" eV"
+             <<"  L="<<estimate.terminalAngularMomentum<<" hbar"
+             <<"  L/L_contact="
+             <<estimate.terminalAngularMomentum/contactAngularMomentum
+             <<"  h^2/(Aa)="<<estimate.terminalKeplerConsistency<<"\n";
     return 0;
 }

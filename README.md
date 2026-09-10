@@ -581,6 +581,62 @@ obecnych wartości domyślnych. Zastąpiona tabelą zmierzoną teraz. To jest
 dokładnie sposób, w jaki nieaktualna deklaracja zbieżności ukrywa realną
 zależność od kroku.
 
+#### Czy \(L\) schodzi do wartości kontaktowej
+
+Pytanie ma znaczenie dla każdego pomysłu na kanał anihilacji: klasyczna
+orbita Keplera dosięga separacji \(r_c\) tylko wtedy, gdy
+\(L\le\sqrt{\mu k r_c(1+e)}\), co dla tej pary daje \(0{,}0427\,\hbar\)
+przy barierze Comptona i \(0{,}0052\,\hbar\) przy klasycznym promieniu
+elektronu.
+
+**Tak, schodzi — i brakuje do tego dokładnie jednego fotonu.** \(L\)
+odczytane **tuż po każdej emisji** (`CREM_EMISSION_REACH`), w jednostkach
+wartości kontaktowej przy barierze, z progiem retardacyjnym obniżonym ze
+\(150\) na \(5\), żeby czwarty foton mógł paść:
+
+| trajektoria | fotony | \(L/L_c\) po kolejnych fotonach |
+|---|---|---|
+| para, indeks 2 | 4 | \(13{,}51\)  \(6{,}40\)  \(2{,}30\)  \(\mathbf{0{,}50}\) |
+| para, indeks 3 | 4 | \(13{,}51\)  \(6{,}40\)  \(2{,}21\)  \(\mathbf{0{,}47}\) |
+| para, indeks 4 | 4 | \(13{,}51\)  \(6{,}40\)  \(2{,}28\)  \(\mathbf{0{,}49}\) |
+| orto, indeks 2 | 4 | \(13{,}51\)  \(6{,}40\)  \(2{,}22\)  \(\mathbf{0{,}47}\) |
+| orto, indeks 4 | 4 | \(13{,}51\)  \(6{,}43\)  \(2{,}23\)  \(\mathbf{0{,}47}\) |
+
+Jednorodnie na wszystkich trajektoriach i w obu kanałach. \(L\) przekracza
+próg kontaktu **między trzecim a czwartym fotonem**. Przy domyślnym progu
+\(150\) (i przy \(50\), i przy \(20\) — wszystkie trzy wyzwalają ten sam
+checkpoint) trajektoria staje przy \(a=1{,}02\cdot10^{-12}\) m, czyli
+\(5{,}29\) promienia bariery. Przy progu \(5\) czwarty foton pada i orbita
+ląduje przy \(4{,}78\cdot10^{-14}\) m, czyli \(0{,}246\) bariery —
+**wewnątrz** obszaru, w którym klasyczna elektrodynamika punktowa nie
+obowiązuje. Ten ostatni wiersz jest sondą własnej księgowości modelu, nie
+twierdzeniem fizycznym.
+
+**Ale raportowane \(L\) na stopie nie nadaje się do tego odczytu.** Między
+emisjami transport spin-orbita zmienia \(L\) **przy ustalonej energii**, a
+wynik przestaje być związaną orbitą Keplera:
+
+| stan | \(L\) [\(\hbar\)] | \(h^2/(Aa)\) |
+|---|---|---|
+| tuż po fotonie 3 | \(0{,}0983\) | \(1{,}0002\) |
+| raportowany na domyślnym stopie | \(0{,}2151\) | \(\mathbf{4{,}79}\) |
+| tuż po fotonie 4 | \(0{,}0212\) | \(0{,}9936\) |
+| raportowany na głębokim stopie | \(0{,}4475\) | \(\mathbf{446}\) |
+
+\(h^2/(Aa)\) to \(1-e^2\) dla orbity związanej i **nie może przekroczyć
+\(1\)**. Wartości poemisyjne to spełniają; raportowane przekraczają je
+\(4{,}8\) i \(446\) razy. `osculatingEccentricity` zaciska \(e^2\) do
+zera, więc w zwykłym wyjściu tego nie widać. Zapisywane jest teraz jawnie
+jako `CremCollapseEstimate::terminalKeplerConsistency`.
+
+*Sprostowanie do tego, co sam napisałem wcześniej.* Przeszkodą w odpowiedzi
+na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
+jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą jest to, że
+\(L\) jest psute między emisjami, więc wielkość raportowana na stopie nie
+jest orbitalnym momentem pędu pary. Sama wymiana \(L\leftrightarrow S\)
+jest zamierzona i udokumentowana wyżej; niezamierzone jest to, że wypycha
+elementy poza obszar fizyczny, i to zostaje otwarte.
+
 #### Decyzja: domyślne `--level` zmienione z \(2\) na \(1\)
 
 Stary komentarz w kodzie uzasadniał \(2\) sufitem emisji na drabinie Bohra,
