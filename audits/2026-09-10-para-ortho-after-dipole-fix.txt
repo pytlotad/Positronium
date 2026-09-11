@@ -1811,3 +1811,58 @@ measurement of whether that survives a cascade.
      the Bohr 2->1 step, and the sequence of landings is
      2 -> 1.414 -> 0.910 -> 0.509 -> 0.228, which is a geometric-looking
      cascade through the Bohr ladder rather than down it.
+
+30. WHAT THE MOMENT CONFIGURATION SUPPLIES AS A SCALE
+
+    Asked while planning how to free the model from its imposed n=1: can
+    the magnetic-moment configuration set the energy levels itself?
+
+30a. THE MOMENTS DO CARRY A LENGTH, AND IT IS THE COMPTON BARRIER.
+
+       mu/(e c)              = 1.933035388e-13 m
+       comptonBarrierRadius  = 1.933035388e-13 m   ratio 1.000000000000000
+       mu/(ec) / a_pair      = 1.826453741e-03 = alpha*(g/2)/4
+
+     The barrier is entered in physical_constants.hpp as g*hbar/(4 m c)
+     with a localization argument.  It is algebraically the same number as
+     the moment's own length mu/(ec), which is an independent reading of
+     it: the pair's magnetic moment, divided by charge times c, IS the
+     radius where the model stops.  Nothing was fitted.
+
+30b. BUT THERE IS NO RESONANCE, SO NOTHING CAN BE QUANTIZED BY LOCKING.
+     Scanned the ratio of spin-precession rate to orbital rate (para,
+     moments along the orbit normal, circular orbit at each radius):
+
+       a/a_pair    beta      w_spin/w_orb   r/lambda_C
+       1.0e-01    0.0231       4.11e-04       27.41
+       1.0e-02    0.0730       8.68e-03        2.74
+       3.16e-03   0.1298       4.16e-02        0.867
+       1.0e-03    0.2308       2.93e-02        0.274
+       1.0e-04    0.7297       1.79e-03        0.027
+
+     The ratio has a MAXIMUM of 0.0440 at r = 2.802e-13 m = 0.726
+     lambda_C and turns over.  It is 22.7x short of 1 at its best, so the
+     two frequencies never lock anywhere.
+
+30c. WHY NO LEVELS EMERGE TODAY.  The emission rule is E = hbar*omega_orb
+     and contains no moment at all, so the moments never enter the energy
+     bookkeeping and have no way to select anything.  Section 29b's
+     measured landing sequence, 2 -> 1.414 -> 0.910 -> 0.509 -> 0.228,
+     shows no preference for integers.
+
+30d. THE GAP IS ONE POWER OF ALPHA, AGAIN.  A length built from mu, e, m
+     and c lands on the Compton scale; the Bohr scale is that times 1/alpha.
+     Section 24 reached the same missing alpha from the annihilation-rate
+     side.  Two independent routes to the same gap is the strongest
+     evidence available here that it is real.
+
+30e. THE ONE CANDIDATE FOR A SECOND SCALE is the zero-point field, which
+     is the only ingredient carrying a scale independent of mu, e, m, c.
+     Preliminary, from numbers the model already prints and NOT a
+     measurement of the balance: the ZPF E_rms grows as omega^2 ~ r^-3
+     against the binding field's r^-2, and the ratio is 9.93e-4 at
+     a_pair, so the FIELDS equalize at 1.05e-13 m = 0.272 lambda_C --
+     the Compton scale once more.  The SED balance is between POWERS, not
+     fields, and has different exponents; measuring it is the single most
+     important outstanding item.  Plan recorded in
+     audits/2026-09-11-plan-uwolnienia-modelu.md.
