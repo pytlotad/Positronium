@@ -12173,8 +12173,8 @@ kolapsu (to samo ziarno w obu kanałach, więc \((E,L)\) i
 - **Konfiguracja `--level 2 --ground-state-floor` odtwarza się.** 24/24 par
   ukończonych, orto dłużej o \(+2{,}50\cdot10^{-5}\), znak dodatni w
   \(24/24\) — zgodne z zapisanym wcześniej \(+3{,}1\cdot10^{-5}\).
-- **Przy domyślnym `--level 1` różnicy kanałów nie ma, a zbieżność kroku
-  jest domknięta.** Każda trajektoria w obu kanałach kończy na **ostatnim
+- **Przy domyślnym `--level 1` zbieżność kroku jest domknięta, a różnica
+  kanałów dała się wtedy zmierzyć.** Każda trajektoria w obu kanałach kończy na **ostatnim
   fotonie**, który na tej głębokości niesie pięciokrotność wiązania, jakie
   parze zostało; bilans domyka się co do \(1\) części na \(10^4\). Emisja
   rozstrzyga się tylko na granicach checkpointów, więc czas kolapsu jest
@@ -12196,3 +12196,28 @@ kolapsu (to samo ziarno w obu kanałach, więc \((E,L)\) i
   konwencję (\(6206\to7368\) ps), ale zostaje przy \(-4{,}0\%\) w tym
   samym zakresie kroku; tam trajektoria kończy na podłodze, nie na fotonie,
   i źródło reszty nie zostało zbadane.
+
+**Czego ten łańcuch nauczył o samym modelu.** Cztery wady wyszły jedna z
+drugiej i żadna nie była widoczna z zewnątrz, bo każda była maskowana przez
+następną:
+
+1. Sześć miejsc narzucało kształt opadającej obwiedni modelowi, którego
+   orbita nie opada między fotonami. Maskowało to zależność czasu kolapsu od
+   kroku sekularnego, \(+29{,}5\%\).
+2. Podział operatorowy dawał półkrokowi po fotonie czas policzony dla orbity
+   sprzed niego, przez co wymiana \(L\leftrightarrow S\) wypychała
+   elementy poza obszar fizyczny (\(h^2/(Aa)=4{,}79\)). Zaciskanie
+   \(e^2\) do zera ukrywało to w wyjściu.
+3. Zepsute \(L\) **odwracało znak** różnicy kanałów przy \(n=1\): przed
+   poprawką \(-2{,}7\cdot10^{-4}\) przy zerowym teście znakowym, po niej
+   \(+1{,}28\cdot10^{-4}\) przy \(24/24\).
+4. Krotność fotonów brała się z flagi, więc niszczenie singletu para przez
+   model w \(42\%\) trajektorii nie docierało do obserwabli w ogóle.
+
+Wspólny wzorzec: **każda z nich zamieniała wadę w cichą zgodność** — płaski
+wynik, zerowy test, zaciśnięte zero, stałą etykietę. Dopiero pomiar w miejscu,
+gdzie wielkość jest jeszcze surowa, je pokazywał. Dlatego trzy nowe pola w
+`CremCollapseEstimate` (`terminalKeplerConsistency`,
+`annihilationTotalAngularMomentum` i czasy pierwszego przejścia) są zapisywane
+**surowo**, a nie jako mimośród czy etykieta kanału: wyrażenie ich w
+„ładniejszej" postaci jest dokładnie tym, co poprzednio je ukryło.
