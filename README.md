@@ -667,15 +667,50 @@ mieć \(S=0\), a reguła wyboru słusznie odmawia jej dwóch fotonów.
 Przedtem model emitował \(2\gamma\) niezależnie od wszystkiego i ta wada w
 wyjściu w ogóle się nie pojawiała.
 
-**Co nadal jest importem, i trzeba to powiedzieć wprost.** \(|J|\) wychodzi
-\(0{,}208\), \(0{,}738\), \(0{,}917\), \(1{,}092\) — wartości
-klasyczne i ciągłe, nie całkowite. **Zaokrąglanie ich to założenie, że
-\(J\) jest skwantowane**, czyli import tego samego rodzaju co trzy już
-wyliczone w tym pliku. Zachowanie daje za darmo wyłącznie implikację
-„\(J=1\) nie może pójść w dwa fotony"; uznanie, że stan o \(|J|=0{,}74\)
-**jest** stanem \(J=1\), to już kwantowanie, nie zachowanie. Ta zmiana
-zastępuje więc import silny (kanał brany z wiersza poleceń) słabszym, a nie
-usuwa import.
+**Kwantowanie nie jest już importowane — wychodzi z konfiguracji momentów.**
+Pierwsza wersja tej bramki **zaokrąglała** \(|J|\) do liczby całkowitej, a
+\(|J|\) wychodzi \(0{,}208\), \(0{,}738\), \(0{,}917\),
+\(1{,}092\) — wartości klasyczne i ciągłe. Uznanie stanu o
+\(|J|=0{,}74\) za stan \(J=1\) było kwantowaniem, nie zachowaniem.
+
+Okazuje się, że to samo da się powiedzieć bez zaokrąglania, bo obie istotne
+wielkości są **ścisłymi dopełnieniami**. Przeciwne ładunki odwracają relację
+spin-moment, więc \(\cos(S_1,S_2)=-\cos(\mu_1,\mu_2)\), a przy
+\(|S_1|=|S_2|\) i \(|\mu_1|=|\mu_2|\) utrzymywanych przez transport BMT:
+
+\[\left(\frac{|\boldsymbol\mu_1+\boldsymbol\mu_2|}{2\mu}\right)^{\!2}
++\left(\frac{|\mathbf S_1+\mathbf S_2|}{\hbar}\right)^{\!2}=1
+\quad\text{dokładnie.}\]
+
+Koherentny moment całkowity **jest** więc wagą \(2\gamma\), a spin
+wypadkowy wagą \(3\gamma\), w sposób ciągły, a granice kwantowe
+**wypadają**, zamiast być narzucone: momenty równoległe dają wagę \(1\) i
+zerowy spin, antyrównoległe wagę \(0\) i pełne \(\hbar\). Nic nie jest
+zaokrąglane.
+
+To nie jest nowa wielkość. Koherentny kanał M1 w tym pliku liczy się już z
+\(\mathbf m=\boldsymbol\mu_1+\boldsymbol\mu_2\) i kasuje **ściśle** przy
+\(\cos=-1\) — to jedyny istniejący w modelu mechanizm o kształcie reguły
+wyboru QED. Waga poniżej to ten sam mechanizm odczytany jako stosunek
+rozgałęzień, a ponieważ waga jest stosunkiem rozgałęzień, kanał jest
+**losowany**, nie progowany.
+
+| przygotowane jako | zakres \(w_{2\gamma}\) | średnia | wyemitowano \(2\gamma\) | oczekiwane |
+|---|---|---|---|---|
+| para | \([0{,}427;\,0{,}938]\) | \(0{,}758\) | \(8/12=67\%\) | \(76\%\) |
+| orto | \([0{,}0000;\,0{,}0000]\) | \(\mathbf{0}\) | \(\mathbf{0/12=0\%}\) | \(0\%\) |
+
+Orto daje wagę **dokładnie zero** na każdej trajektorii, więc \(3\gamma\)
+jest pewne bez jakiegokolwiek założenia o kwantowaniu. Para daje rozkład wag
+odzwierciedlający to, jak daleko singlet został zniszczony; \(67\%\) wobec
+oczekiwanych \(76\%\) to \(0{,}7\sigma\) szumu dwumianowego.
+
+*Co zostaje założeniem.* Same **końce** są wymuszone przez algebrę wyżej;
+założeniem jest **interpolacja** między nimi, czyli to, że amplituda
+\(2\gamma\) idzie jak koherentny moment całkowity. Jest to jednak
+dokładnie to, co kanał M1 modelu już robi, i jedyna interpolacja liniowa w
+amplitudzie, która trafia w oba końce. To słabsze założenie niż kwantowanie
+\(|J|\), i nie wprowadza nowej stałej.
 
 *Zmiana w wyjściu, o której warto wiedzieć.* Panel wiodącego fotonu miesza
 teraz obie krotności w obrębie jednego przebiegu `--phenomenon`, bo krotność

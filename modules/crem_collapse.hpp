@@ -308,12 +308,15 @@ struct CremCollapseEstimate {
     // pair's own centre-of-momentum frame and summing to
     // annihilationInvariantEnergy exactly.
     std::vector<double> annihilationPhotonEnergies;
-    // |J| = |L_orb + S1 + S2| at the terminal state, in units of hbar, and
-    // the integer it rounds to.  This is what now DECIDES the multiplicity
-    // above, so it is reported beside it rather than left to be re-derived.
+    // |J| = |L_orb + S1 + S2| at the terminal state, in units of hbar.
+    // Reported, but NOT what decides the multiplicity -- see
+    // annihilationTwoPhotonWeight for what does and why.
     double annihilationTotalAngularMomentum=
         std::numeric_limits<double>::quiet_NaN();
-    int annihilationTotalAngularMomentumQuantum=-1;
+    // The two-photon weight, |mu1+mu2|^2/(|mu1|+|mu2|)^2, taken from the
+    // terminal moment configuration.  This DECIDES the multiplicity.
+    double annihilationTwoPhotonWeight=
+        std::numeric_limits<double>::quiet_NaN();
 };
 
 // Final-state photon energies for a pair annihilating with invariant energy
@@ -2386,21 +2389,39 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.annihilationInvariantEnergy=
                 (firstMass+secondMass)*c*c-result.terminalBindingEnergy
                 +result.terminalDipoleEnergy;
-            // THE MULTIPLICITY IS DECIDED BY THE DYNAMICS, not by
-            // --phenomenon.  Two conservation laws fix it between them, with
-            // no matrix element and no free parameter:
+            // THE MULTIPLICITY IS DECIDED BY THE MOMENT CONFIGURATION, and
+            // without quantizing anything.
             //
-            //   - momentum conservation makes a two-photon final state
-            //     exactly back to back in the pair's rest frame, which
-            //     defines a single axis;
-            //   - each photon has helicity +-1 along that same axis, so the
-            //     total angular momentum projection the pair of them can
-            //     carry is 0 or +-2, never +-1.
+            // The selection rule itself is Landau-Yang: momentum
+            // conservation makes a two-photon final state exactly back to
+            // back, defining one axis, and each photon carries helicity +-1
+            // along that same axis, so the pair can supply projection 0 or
+            // +-2 but never +-1.  A J=1 state cannot go to two photons.
             //
-            // A state with J=1 therefore cannot be matched to two photons at
-            // all (Landau-Yang), and the minimum multiplicity is three.  So
-            // the rule is: round |J| to the nearest integer and refuse two
-            // photons exactly when that integer is one.
+            // Applying that by ROUNDING |J| to an integer was the previous
+            // version and it smuggled in quantization: |J| comes out at 0.21,
+            // 0.74, 0.92, 1.09 -- continuous classical values -- and deciding
+            // that 0.74 IS a J=1 state is not conservation.
+            //
+            // What the model can say without that assumption is exactly the
+            // same physics, because the two relevant magnitudes are strict
+            // complements.  Opposite charges invert the spin-moment
+            // relation, so cos(S1,S2) = -cos(mu1,mu2), and with |S1|=|S2| and
+            // |mu1|=|mu2| fixed by BMT transport,
+            //
+            //     (|mu1+mu2|/2mu)^2 + (|S1+S2|/hbar)^2 = 1   exactly.
+            //
+            // So the coherent total moment IS the two-photon weight and the
+            // net spin IS the three-photon weight, continuously, with the
+            // quantum endpoints falling out rather than being imposed:
+            // aligned moments give weight 1 and zero net spin, anti-aligned
+            // give weight 0 and a full hbar.  Nothing is rounded.
+            //
+            // This is also not a new quantity.  The coherent M1 channel in
+            // this file is already computed from m = mu1+mu2 and cancels
+            // EXACTLY at cos = -1 -- the model's one existing mechanism with
+            // the shape of the QED selection rule.  The weight below is that
+            // same mechanism, read as a branching ratio.
             //
             // What this replaces: annihilationPhotonEnergiesFor used to be
             // called with (selectedPhenomenon==1), i.e. the multiplicity came
@@ -2420,18 +2441,29 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 const Vec3 spinSum=
                     (firstRatio!=0.0?firstDipole*(1.0/firstRatio):Vec3{})
                    +(secondRatio!=0.0?secondDipole*(1.0/secondRatio):Vec3{});
-                const Vec3 totalAngularMomentum=
-                    angularMomentumDirection
+                result.annihilationTotalAngularMomentum=
+                    (angularMomentumDirection
                         *(elements.specificAngularMomentum*reducedMass)
-                    +spinSum;
-                const double quantumNumber=totalAngularMomentum.norm()/hbar;
-                result.annihilationTotalAngularMomentum=quantumNumber;
-                const int rounded=
-                    static_cast<int>(std::lround(quantumNumber));
-                result.annihilationTotalAngularMomentumQuantum=rounded;
+                     +spinSum).norm()/hbar;
+                // The weight, straight off the moments.  Normalized by the
+                // largest total the two moments could form, so it is 1 for
+                // perfect alignment and 0 for perfect anti-alignment without
+                // assuming either is reached.
+                const double momentScale=firstDipole.norm()+secondDipole.norm();
+                const double weight=momentScale>0.0
+                    ?(firstDipole+secondDipole).squaredNorm()
+                        /(momentScale*momentScale)
+                    :0.0;
+                result.annihilationTwoPhotonWeight=weight;
+                // A weight is a branching ratio, so it is drawn, not
+                // thresholded: a configuration two thirds of the way to
+                // aligned emits two photons two thirds of the time.  At the
+                // quantum endpoints the draw is degenerate and the channel is
+                // certain, which is the limit that has to come out right.
                 const bool twoPhotonAllowed=
                     std::getenv("CREM_CHANNEL_FROM_FLAG")
-                    ?selectedPhenomenon==1:rounded!=1;
+                    ?selectedPhenomenon==1
+                    :drawUniformUnit(stochasticSkipStream)<weight;
                 result.annihilationPhotonEnergies=
                     annihilationPhotonEnergiesFor(
                         result.annihilationInvariantEnergy,

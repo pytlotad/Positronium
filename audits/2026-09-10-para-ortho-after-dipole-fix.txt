@@ -894,3 +894,56 @@ ortho: 13 of 16 reached a stopping condition
 
      CREM_CHANNEL_FROM_FLAG restores the old behaviour for comparison.
      make validation 55/55 with the gate active.
+
+==================================================================
+16. REMOVING THE QUANTIZATION IMPORT FROM THE CHANNEL RULE
+==================================================================
+
+16a. The problem with the first version.  It rounded |J| to an integer,
+     and |J| comes out at 0.208, 0.738, 0.917, 1.092 -- continuous
+     classical values.  Calling a state with |J|=0.74 a J=1 state is
+     quantization, not conservation.
+
+16b. The identity that removes it.  Opposite charges invert the
+     spin-moment relation, so cos(S1,S2) = -cos(mu1,mu2), and with the
+     magnitudes held by BMT transport:
+
+       (|mu1+mu2| / 2mu)^2  +  (|S1+S2| / hbar)^2  =  1   exactly.
+
+     So the coherent total moment IS the two-photon weight and the net
+     spin IS the three-photon weight, continuously, with the quantum
+     endpoints falling out instead of being imposed:
+
+       cos_mu   |S|/hbar   |m|/2mu    w_2g    w_3g
+        1.000     0.0000    1.0000  1.0000  0.0000
+        0.876     0.2490    0.9685  0.9380  0.0620
+        0.355     0.5679    0.8231  0.6775  0.3225
+        0.037     0.6939    0.7201  0.5185  0.4815
+       -0.145     0.7566    0.6538  0.4275  0.5725
+       -1.000     1.0000    0.0000  0.0000  1.0000
+
+     Nothing is rounded.  And it is not a new quantity: the coherent M1
+     channel already computes from m = mu1+mu2 and cancels exactly at
+     cos = -1.  The weight is that same mechanism read as a branching
+     ratio, so the channel is DRAWN rather than thresholded.
+
+16c. Result, 12 trajectories per channel, master seed 42:
+
+       prepared   w_2g range          mean     emitted 2g   expected
+       para       [0.4273, 0.9379]   0.7575    8/12 = 67%      76%
+       ortho      [0.0000, 0.0000]   0.0000    0/12 =  0%       0%
+
+     Ortho gives weight exactly zero on every trajectory, so 3 gamma is
+     certain with no quantization assumption anywhere.  Para gives a
+     spread of weights reflecting how far the singlet has been
+     destroyed; 67% against 76% is 0.7 sigma of binomial noise.
+
+16d. What remains an assumption.  The ENDPOINTS are forced by the
+     algebra above.  What is assumed is the INTERPOLATION between them,
+     i.e. that the two-photon amplitude goes as the coherent total
+     moment.  That is what the model's M1 channel already does, and it
+     is the only interpolation linear in the amplitude that hits both
+     endpoints.  Weaker than quantizing |J|, and it introduces no new
+     constant.
+
+     make validation 55/55.  Header isolation 37/37.

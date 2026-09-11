@@ -77,9 +77,8 @@ int main(int argc,char** argv) {
              <<estimate.terminalAngularMomentum/contactAngularMomentum
              <<"  h^2/(Aa)="<<estimate.terminalKeplerConsistency<<"\n";
     // What the dynamics chose, and the |J| it chose it from.
-    std::cout<<"  channel:  |J|="
-             <<estimate.annihilationTotalAngularMomentum<<" hbar"
-             <<"  ->  J="<<estimate.annihilationTotalAngularMomentumQuantum
+    std::cout<<"  channel:  w_2g="<<estimate.annihilationTwoPhotonWeight
+             <<"  |J|="<<estimate.annihilationTotalAngularMomentum<<" hbar"
              <<"  ->  "<<estimate.annihilationPhotonEnergies.size()
              <<" photons  (prepared as "<<channel<<")\n";
     return 0;
