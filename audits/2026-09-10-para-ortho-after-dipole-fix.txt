@@ -1641,3 +1641,36 @@ measurement of whether that survives a cascade.
      that the 0.43-0.94 spread measures how far the singlet has been
      destroyed.  It measures where in a converged, bounded oscillation the
      clock happened to stop.
+
+26g. THE DEEP RUNS FINISHED THEIR BUDGET -- OUT-OF-SAMPLE TEST OF 26c/26d.
+     Both were censored by the 5400 s budget as 26f predicted, neither
+     reaching its own stop.  But they ran 2.5x further than the data 26c
+     was fitted on, which makes the extra checkpoints a genuine
+     out-of-sample test of the exponent.
+
+       seed  ckpts (was)   t (ps)   a (m)      e       L (hbar)  peri/r_e
+         2   1243 (468)     200.1   1.044e-11  0.7509   0.2072      923
+         3   1711 (701)     985.5   1.151e-11  0.6432   0.2524     1457
+
+     The exponent does NOT hold out of sample:
+
+       seed   p in-sample   p out-of-sample   drift    p on all data
+         2      0.266           0.359         +34.9%       0.351
+         3      0.660           0.562         -14.8%       0.584
+
+     The conclusion does, and for a reason worth stating: refitting on all
+     the data moves the predicted angular momentum at the Compton barrier
+     from 0.0427 to 0.0427 hbar (seed 2) and from 0.0574 to 0.0562 hbar
+     (seed 3), i.e. by 0% and -2%.  Seed 2's is pinned exactly, because
+     once the orbit circularizes L = sqrt(mu k a) identically and the
+     barrier value is geometry, not fit.  Seed 3's moves by 2% because
+     its eccentricity at the barrier is what the fit sets, and L there is
+     L_contact*sqrt(1+e), which is weak in e.
+
+     So 26d's answer -- L reaches 0.04 hbar, the stop is the Compton
+     barrier, contact at r_e is not reached -- survives an exponent error
+     of a third.  What does not survive is quoting the exponents
+     themselves as measured constants; they drift.
+
+     Both runs remain censored: seed 2 covered a factor 10.1 in a and
+     seed 3 a factor 9.2, against the ~140 needed to reach the barrier.

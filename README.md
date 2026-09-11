@@ -764,12 +764,29 @@ dopasowanie odtwarza \(p=0{,}500\) z konstrukcji. Test potwierdza łańcuch
 księgowy (okres \(\to a\to L\)), a nie ekstrapolację toru mimośrodowego
 przez dwa rzędy wielkości w \(a\).
 
-**Czego nie zrobiono.** Żaden z głębokich biegów nie doszedł do własnego
-zatrzymania. Przy budżecie \(5400\) s pokryły czynnik \(4{,}1\) (ziarno
-\(2\)) i \(6{,}6\) (ziarno \(3\)) w \(a\), wobec czynnika
-\(\approx140\) potrzebnego do bariery; każdy potrzebuje jeszcze około
-\(6000\)–\(10000\) s. Liczby wyżej są więc **dopasowaniami do toru
-uciętego**, nie pomiarami terminalnymi.
+**Czego nie zrobiono, i test poza próbą.** Żaden z głębokich biegów nie
+doszedł do własnego zatrzymania; obydwa wyczerpały budżet \(5400\) s,
+pokrywając czynnik \(10{,}1\) i \(9{,}2\) w \(a\) wobec
+\(\approx140\) potrzebnych do bariery. Ale przebiegły \(2{,}5\times\)
+dalej niż dane, na których dopasowano wykładnik, więc nadmiarowe
+checkpointy są **testem poza próbą**:
+
+| ziarno | checkpointy | \(p\) w próbie | \(p\) poza próbą | dryf | \(L\) na barierze: było \(\to\) jest |
+|---|---|---|---|---|---|
+| 2 | \(1243\) (było \(468\)) | \(0{,}266\) | \(0{,}359\) | \(+34{,}9\%\) | \(0{,}0427\to0{,}0427\) |
+| 3 | \(1711\) (było \(701\)) | \(0{,}660\) | \(0{,}562\) | \(-14{,}8\%\) | \(0{,}0574\to0{,}0562\) |
+
+**Wykładnik nie utrzymuje się poza próbą, a wniosek tak.** Przeliczenie na
+pełnych danych rusza przewidywane \(L\) na barierze o \(0\%\) i
+\(-2\%\). Dla ziarna \(2\) jest ono przybite dokładnie, bo po
+skołowaceniu \(L=\sqrt{\mu k a}\) tożsamościowo i wartość na barierze
+jest geometrią, nie dopasowaniem. Dla ziarna \(3\) rusza się o \(2\%\),
+bo \(L=L_{\rm kontakt}\sqrt{1+e}\) słabo zależy od \(e\).
+
+Odpowiedź z poprzedniej tabeli przeżywa więc błąd wykładnika o jedną
+trzecią. Czego nie przeżywa, to cytowanie samych wykładników jako
+zmierzonych stałych — one dryfują. Liczby wyżej pozostają **dopasowaniami
+do toru uciętego**, nie pomiarami terminalnymi.
 
 **Status.** Przeszkoda strukturalna jest usunięta: promieniowanie nie czyni
 już orbity kołową, więc zdanie „gęstość w początku jest tożsamościowo
