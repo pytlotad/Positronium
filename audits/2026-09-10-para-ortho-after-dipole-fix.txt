@@ -2500,3 +2500,67 @@ measurement of whether that survives a cascade.
      after pairing, so roughly 232 pairs per point rather than the 10 to 12
      used above.  Every exponent, trend and ratio quoted from 10-pair runs
      in sections 38 and 39 is below that bar.
+
+41. CORRECTION TO SECTION 38: THE SIGN WAS NOT ESTABLISHED EITHER
+
+    Section 38c said the antithetic estimator settled the sign -- the field
+    pumps energy in, at about 2 sigma on twelve pairs.  Four more pairs
+    remove that.
+
+41a. SIXTEEN PAIRS, r = a_pair, 20 orbits, same seeds extended:
+
+       sample                       mean (eV)     significance
+       first 12 pairs (section 38)  +3.3262e-03      +2.27
+       all 16 pairs                 -6.2400e-04      -0.18
+       16 pairs, largest removed    +2.8372e-03
+       16 pairs, trimmed one each   +2.0172e-03
+       median of 16                 +1.0678e-03       (11 of 16 positive)
+
+     Pair 14 alone, at -5.2542e-02, is -3.7 sigma and flips the mean.  The
+     sign depends on which pairs are in the sample, so it is not measured.
+
+41b. A BETTER ESTIMATOR WAS TRIED AND DOES NOT HELP.  The endpoint
+     difference uses two of 400 frames; least-squares fitting the drift of
+     the conserved sum against time uses all of them.  Run on the SAME
+     trajectories:
+
+       estimator     mean (eV)     sigma (eV)    significance
+       endpoint     -6.2393e-04    1.4211e-02       -0.18
+       slope fit    -8.7635e-04    1.4167e-02       -0.25
+
+     sigma ratio 1.00 -- no gain at all.  The reason is that the noise is
+     not a random walk being sampled once at the end; it is a handful of
+     trajectories that are strongly perturbed for their whole length, and
+     fitting the whole length does not average those away.
+
+41c. WHAT THE TAIL ACTUALLY IS.  Antithetic cancellation works only while
+     the field is a linear perturbation.  E_zpf/E_bind is 1.08e-3 at
+     a_pair, but the band rides with the orbit, so the perturbation
+     accumulates over the 20 orbits and on some seeds stops being linear.
+     Those are the outliers, and on them the odd-in-F part no longer
+     cancels, which is why they dominate.
+
+     That is a real statement about the measurement, not the earlier
+     inference about t^2 dressed up again: it is read off the outliers'
+     existence, not off an exponent.
+
+41d. STATE OF STEP 4, WITH BOTH CORRECTIONS APPLIED.
+
+       stands   the method (34a): field-off residual is the noise floor,
+                radiated energy matches analytic Larmor to 4 digits
+       stands   antithetic pairing reduces sigma against the single-field
+                estimator -- 1.42e-02 here against 7.87e-02 in 34c, a
+                factor 5.5 measured on comparable samples
+       FALLS    the t^2 exponent (corrected in section 40)
+       FALLS    the sign of the ZPF work (this section)
+       FALLS    "the orbit-tied band is the blocker" as an inference;
+                it survives only as the explanation of the OUTLIERS above
+
+     Nothing about the physics of the balance is established.  What is
+     established is the cost: at sigma 1.42e-02 against a mean of order
+     3e-03, and a tail that puts 3.7 sigma single pairs in a sample of 16,
+     the honest requirement is several hundred pairs per point AND a
+     shorter run or a smaller field scale so the perturbation stays linear.
+
+     Two announcements in a row were made from 10-16 pairs and both fell.
+     No further claim from this measurement should be made below that bar.
