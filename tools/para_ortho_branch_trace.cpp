@@ -44,6 +44,13 @@ int main(int argc,char** argv) {
     // the case where the prepared configuration is NEITHER of the two exact
     // ones and the channel weight is genuinely intermediate.
     if(argc>7&&std::string(argv[7])=="noquant") gSpinQuantization=false;
+    // CREM_START_RADIUS: continuous starting separation in metres, the probe
+    // face of --start-radius.  Set it to a radius that is NOT n^2 a_pair to
+    // ask whether the cascade is drawn back onto the Bohr ladder or ignores
+    // it -- the question --level could never pose, because it can only start
+    // on a rung.
+    if(const char* startRadius=std::getenv("CREM_START_RADIUS"))
+        gInitialSeparationOverride=std::atof(startRadius);
     const int phenomenon=channel=="para"?1:2;
     // Set before the call: the census is read through getenv at the
     // checkpoint site, so this reaches it without a wrapper script.

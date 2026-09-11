@@ -80,9 +80,29 @@ inline constexpr double nuclearCutoff = 1.0e-14;
 inline constexpr double magneticRegularizationExponent = 12.0;
 inline constexpr double hbar = 1.054571817e-34;
 // Compton barrier of the e+e- pair: r* = (g/2)*(reduced Compton wavelength)/2
-//   = g*hbar/(4*m_e*c) = 193.30 fm,
-// the separation at which localizing the electron requires momenta of order
-// m_e*c, i.e. where classical point-particle electrodynamics stops applying.
+//   = g*hbar/(4*m_e*c) = 193.30 fm.
+//
+// NOT AN INDEPENDENT IMPORT.  The same number is the electron's magnetic
+// moment divided by charge times c:
+//
+//     mu/(e c) = [(g/2)(e hbar/2m)]/(e c) = g hbar/(4 m c) = r*,
+//
+// to within 2.6e-16 of magneticMoment(electron), which particle_species.hpp
+// pins with a static_assert (it can include this header; this one cannot
+// include it back).  The residue is one or two ULPs from the order of the
+// multiplications, not a discrepancy: both sides are g*hbar/(4*m*c)
+// algebraically.  The expression is left in the form below so the constant
+// stays bit-identical to every result already measured with it.
+//
+// So r* is the LENGTH THE MOMENT CONFIGURATION ITSELF CARRIES -- the only
+// length that can be built from mu, e and c -- and not a separately chosen
+// stopping radius.
+//
+// The localization reading is the second, independent one: the separation at
+// which localizing the electron requires momenta of order m_e*c, i.e. where
+// classical point-particle electrodynamics stops applying.  Two unrelated
+// arguments landing on one number is why this is quoted as derived rather
+// than as a model parameter.
 // r*/r_e = (g/2)/(2*alpha) = 68.60: this is not a regularization choice or
 // anything tunable, it follows from the fine structure constant.  Annihilation
 // happens 68.6x deeper, at r_e (was misstated as "137x" here -- that number

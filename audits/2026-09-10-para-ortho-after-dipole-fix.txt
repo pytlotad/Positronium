@@ -2113,3 +2113,77 @@ measurement of whether that survives a cascade.
      Step 4 is therefore OPEN, with a correct method and a known price.
      It is the only route in the plan that can produce a Bohr scale, and
      it now needs a seed budget rather than a redesign.
+
+35. PLAN STEPS 1 AND 2
+
+35a. STEP 1 -- THE COMPTON BARRIER IS NO LONGER AN IMPORT.  It was entered
+     as g*hbar/(4 m c) with a localization argument.  The same number is
+     the electron's magnetic moment divided by charge times c:
+
+       mu/(e c) = [(g/2)(e hbar/2m)]/(e c) = g hbar/(4 m c) = r*
+
+     so r* is the only length that can be built from mu, e and c -- the
+     length the moment configuration itself carries.  The localization
+     reading is a second, independent argument landing on the same number,
+     which is why it is now quoted as derived rather than chosen.
+
+     Pinned in particle_species.hpp by
+
+       static_assert(agreesTo(comptonBarrierRadius,
+           magneticMoment(electron)/(elementaryCharge*speedOfLight),1e-15));
+
+     BANDED, NOT EXACT, and the first attempt got this wrong: an exact
+     static_assert failed.  The two sides associate the same
+     multiplications differently and land 2.6e-16 apart, one or two ULPs.
+     The band is still four orders tighter than the 1e-8 assert beside it.
+
+     The expression itself is unchanged, so the constant stays bit-identical
+     to every result measured with it.  Verified: the branch trace's
+     default run reproduces t = 199.442442952 ps, a = 9.5507233815e-13 m,
+     L = 0.0949953986509 hbar exactly.
+
+35b. STEP 2 -- A CONTINUOUS STARTING RADIUS, AND WHAT IT SHOWS.
+     --start-radius (metres, bounded by the Compton barrier below and 1e-6
+     above) overrides a_n = n^2 a_pair; gInitialSeparationOverride carries
+     it, CREM_START_RADIUS is the probe face.  Unset, the path is
+     bit-identical.  Until now every trajectory this project ever ran
+     started ON a Bohr radius, so "the model prefers the ladder" was
+     untestable.
+
+     Seven starts, para, seed 42, with the photon landing points:
+
+       start (a_pair)   n at start   landings (n_E)
+       1.0              1.0000       1.000 0.577 0.272
+       1.5              1.2247       1.225 0.755 0.395
+       2.0              1.4142       1.414 0.910 0.509 0.228
+       2.5              1.5811       1.581 1.051 0.616 0.299
+       3.0              1.7321       1.732 1.180 0.719 0.369
+       3.5              1.8708       1.871 1.301 0.816 0.439
+       4.0              2.0000       2.000 1.414 0.910 0.509 0.228
+
+35c. THE CASCADE IS A CLOSED-FORM MAP WITH NO FIXED POINT.  Emitting
+     hbar*omega = 2R/n^3 from a binding R/n^2 leaves R(n+2)/n^3, so
+
+       n -> sqrt(n^3/(n+2)).
+
+     Checked against all 20 measured transitions above: agreement 6e-7 to
+     1.5e-4 on the early steps, degrading to 6e-3 on the last, where the
+     continuous credit between photons is largest.
+
+     n_new/n = sqrt(n/(n+2)) < 1 for every n > 0, so the map is strictly
+     decreasing, and n = sqrt(n^3/(n+2)) requires n+2 = n.  THERE IS NO
+     FIXED POINT AND NO ATTRACTOR.  Nothing in the model singles out an
+     integer n, and this is now a closed-form statement rather than the
+     inference from one start in section 29b.
+
+35d. THE CASCADE IS MEMORYLESS.  Starting at 2.0 a_pair (n = 1.4142)
+     reproduces the TAIL of the 4.0 a_pair cascade:
+
+       from 2.0    1.414207  0.910161  0.508923  0.228108
+       from 4.0    1.414210  0.910168  0.508943  0.227763
+       difference  2.1e-06   7.7e-06   3.9e-05   1.5e-03
+
+     Where the pair came from leaves no trace; only where it is now
+     matters.  Step 2's prediction is therefore confirmed, and confirmed
+     more strongly than expected -- not "no preference was observed" but
+     "the map that generates the cascade provably has none".

@@ -5304,6 +5304,20 @@ int main(int argc, char** argv) {
                         "--level must be a principal quantum number in [1,1000]");
                 }
                 gInitialPrincipalLevel = level;
+            } else if (argument == "--start-radius") {
+                // Continuous starting separation in metres, overriding the
+                // ladder.  Bounded below by the Compton barrier, because a
+                // preparation inside it starts where the model already
+                // declares itself invalid, and above by 1e-6 m, which is four
+                // orders past any pair scale here.
+                const std::string value = requireValue(argument);
+                const double radius = parseDouble(argument, value);
+                if (!(radius >= comptonBarrierRadius) || !(radius <= 1.0e-6)) {
+                    throw std::invalid_argument(
+                        "--start-radius must be in metres, between the Compton "
+                        "barrier (1.933e-13) and 1e-6");
+                }
+                gInitialSeparationOverride = radius;
             } else if (argument == "--pair") {
                 // Recorded rather than applied, so the panel's g-factor
                 // overrides are folded in with it by applySelections() below
@@ -5561,9 +5575,21 @@ int main(int argc, char** argv) {
             const double levelSquared =
                 static_cast<double>(gInitialPrincipalLevel)
                 * static_cast<double>(gInitialPrincipalLevel);
-            std::cout << "Starting separation: a_n = " << levelSquared
-                      << " a_pair (n = " << gInitialPrincipalLevel
-                      << ") = " << levelSquared*pairBohrRadius(activePair)*1.0e12
+            const bool freeRadius = gInitialSeparationOverride > 0.0;
+            const double startSeparation = freeRadius
+                ? gInitialSeparationOverride
+                : levelSquared*pairBohrRadius(activePair);
+            // Off the ladder the equivalent level is reported as the
+            // non-integer it is, so the line never implies a rung that was
+            // not asked for.
+            const double equivalentLevel =
+                std::sqrt(startSeparation/pairBohrRadius(activePair));
+            std::cout << "Starting separation: "
+                      << (freeRadius ? "--start-radius = " : "a_n = ")
+                      << startSeparation/pairBohrRadius(activePair)
+                      << " a_pair (n = " << equivalentLevel
+                      << (freeRadius ? ", OFF the Bohr ladder" : "")
+                      << ") = " << startSeparation*1.0e12
                       << " pm -- an initial condition for the classical "
                          "inspiral, not a claimed energy eigenstate.\n"
                       << (gBohrLevelPhotonEnergy

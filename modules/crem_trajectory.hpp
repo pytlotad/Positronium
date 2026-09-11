@@ -1136,9 +1136,13 @@ inline SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // the binding energy matches the measured one.
     // a_n = n^2 a_pair.  gInitialPrincipalLevel is 1 unless --level says
     // otherwise, and at 1 this is bit-identical to the historical expression.
-    const double initialSeparation = pairBohrRadius(activePair)
-        * static_cast<double>(gInitialPrincipalLevel)
-        * static_cast<double>(gInitialPrincipalLevel);
+    // --start-radius overrides the ladder entirely; with it unset this is
+    // bit-identical to the historical expression.
+    const double initialSeparation = gInitialSeparationOverride > 0.0
+        ? gInitialSeparationOverride
+        : pairBohrRadius(activePair)
+            * static_cast<double>(gInitialPrincipalLevel)
+            * static_cast<double>(gInitialPrincipalLevel);
     const double circularSpeed =
         std::sqrt(pairCoulombStrength / (reducedMass * initialSeparation));
     const double escapeSpeed = std::sqrt(2.0) * circularSpeed;

@@ -143,6 +143,24 @@
 // and only the level moves.
 inline int gInitialPrincipalLevel = 1;
 
+// CONTINUOUS starting separation in metres, overriding a_n = n^2 a_pair when
+// positive.  --start-radius sets it; 0 leaves --level in charge, which is the
+// default and is bit-identical to the behaviour before this existed.
+//
+// Why it exists.  --level can only reach n^2 a_pair, so every trajectory this
+// project has ever run started ON a Bohr radius, and "the model prefers the
+// Bohr ladder" was therefore untestable: nothing had ever started anywhere
+// else.  With a free radius the question becomes a measurement -- start off
+// the ladder and see whether the cascade is drawn back onto it or ignores it.
+//
+// The preparation stays sharp at whatever radius is given: the circular speed
+// is computed AT that separation, so L = sqrt(mu k r) there, which equals
+// n hbar only when r happens to be n^2 a_pair.  Off the ladder the prepared
+// state therefore carries a non-integer L, which is the point -- it is an
+// initial condition, not a claimed eigenstate, and that was already true at
+// n = 1.
+inline double gInitialSeparationOverride = 0.0;
+
 // Whether the quantized emission draws its next threshold from Exp(1) (a
 // genuine Poisson process, available via --emission poisson) or fires
 // deterministically as soon as one quantum's worth of energy has

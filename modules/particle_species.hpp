@@ -307,6 +307,16 @@ static_assert(positron.mass==positronMass);
 static_assert(electron.gFactor==electronGFactor);
 static_assert(magnitude(electron.charge)==elementaryCharge);
 static_assert(agreesTo(magneticMoment(electron),electronMagneticMoment,1.0e-8));
+// The Compton barrier is the moment's own length: mu/(e c) = g hbar/(4 m c).
+// Banded at 1e-15 rather than exact because the two sides associate the same
+// multiplications differently and land 2.6e-16 apart -- one or two ULPs, not
+// a discrepancy.  That band is still four orders tighter than the 1e-8 above
+// and twelve tighter than a wrong g, mass or charge would miss by, so it
+// holds the identity without pretending to a bit-equality that float
+// arithmetic does not give.  See comptonBarrierRadius' own comment: this is
+// what takes the barrier off the list of imports.
+static_assert(agreesTo(comptonBarrierRadius,
+    magneticMoment(electron)/(elementaryCharge*speedOfLight),1.0e-15));
 // Pinned to e+e- explicitly, not to defaultPair: positroniumBohrRadius is
 // positronium's scale and stays the right comparison however the default pair
 // is set.  Written against defaultPair this assertion stopped being a
