@@ -281,6 +281,24 @@ struct CremCollapseEstimate {
     // is stored raw rather than as an eccentricity.
     double terminalKeplerConsistency=
         std::numeric_limits<double>::quiet_NaN();
+    // FIRST PASSAGE OF L THROUGH CONTACT, lab frame, NaN if never reached.
+    //
+    // A classical Kepler orbit reaches separation r_c only if
+    // L <= sqrt(mu k r_c (1+e)); on the circular orbits this model produces
+    // that is sqrt(mu k r_c), which for e+e- is 0.0427 hbar at the Compton
+    // barrier and 0.00516 hbar at the classical electron radius.  The photon
+    // cascade drives L down, so "when does the pair first become able to
+    // touch" is a first-passage time -- a rate scale that comes out of the
+    // model's own dynamics rather than being imported from QED.
+    //
+    // It is NOT an annihilation lifetime.  Reaching contact is a necessary
+    // condition, not a rate: the probability of annihilating once there is a
+    // cross-section this model does not carry.  Read it as "how long until
+    // the classical orbit stops being the obstacle".
+    double contactPassageAtBarrierSeconds=
+        std::numeric_limits<double>::quiet_NaN();
+    double contactPassageAtElectronRadiusSeconds=
+        std::numeric_limits<double>::quiet_NaN();
     // Dipole-dipole interaction energy at the terminal configuration, the
     // one term that distinguishes para from ortho in the final-state
     // invariant.  Signed: negative for the orientation that binds.
@@ -1928,7 +1946,18 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         const double lightCrossingTime=periapsisSeparation/c;
         const double periodToLightCrossingRatio=(lightCrossingTime>0.0)
             ?period/lightCrossingTime:std::numeric_limits<double>::infinity();
-        constexpr double minimumPeriodToLightCrossingRatio=150.0;
+        // CREM_RETARDATION_LIMIT: lower this numerical safety margin so the
+        // cascade can be followed past where it normally stops.  It exists
+        // for one measurement -- the first passage of L through contact,
+        // which happens ONE photon after the default stop -- and anything
+        // run below 150 is outside the declared domain: the retarded-field
+        // reconstruction is not validated there, and the pair ends up inside
+        // the Compton barrier, where classical point-particle
+        // electrodynamics does not apply at all.  Results from it are probes
+        // of the model's own bookkeeping, never physical claims.
+        const double minimumPeriodToLightCrossingRatio=
+            std::getenv("CREM_RETARDATION_LIMIT")
+            ?std::atof(std::getenv("CREM_RETARDATION_LIMIT")):150.0;
         // THIRD stopping condition, only under --ground-state-floor: the
         // pair has settled on n=1 and, with emission gated there, nothing
         // further can happen to it dynamically.  Annihilation is retied from
@@ -1959,6 +1988,26 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.calibrationSecondsLab=0.0;
             result.preparedBelowGroundState=true;
             return result;
+        }
+        // First passage of L through each contact threshold, recorded before
+        // the stopping rule so a trajectory that trips both in the same
+        // checkpoint still reports the crossing.  Granularity is one
+        // checkpoint, which near the end is ~0.008 ps against a ~200 ps
+        // trajectory.
+        {
+            const double angularMomentumNow=
+                elements.specificAngularMomentum*reducedMass;
+            const auto recordPassage=[&](double contactRadius,double& field) {
+                if(std::isfinite(field)) return;
+                const double contactAngularMomentum=std::sqrt(std::max(0.0,
+                    reducedMass*pairCoulombStrength*contactRadius));
+                if(angularMomentumNow<=contactAngularMomentum)
+                    field=labFrameTimeTotal;
+            };
+            recordPassage(comptonBarrierRadius,
+                          result.contactPassageAtBarrierSeconds);
+            recordPassage(classicalElectronRadius,
+                          result.contactPassageAtElectronRadiusSeconds);
         }
         if(periapsis<=comptonBarrierRadius
            ||periodToLightCrossingRatio<=minimumPeriodToLightCrossingRatio

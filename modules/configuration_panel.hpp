@@ -630,6 +630,18 @@ inline int zeroPointModes = 64;
 //                          gBohrLevelPhotonEnergy, whose branch otherwise
 //                          cuts at n >= 2.
 //   CREM_MAX_DEPTH=<n>     Adaptive-step recursion ceiling (default 12).
+//   CREM_RETARDATION_LIMIT=<x>
+//                          Lower the period/light-crossing safety margin from
+//                          its default of 150 so the cascade can be followed
+//                          past where it normally stops.  Added for one
+//                          measurement, the first passage of L through the
+//                          contact value, which happens one photon after the
+//                          default stop.  Below 150 the pair ends up inside
+//                          the Compton barrier, where classical
+//                          point-particle electrodynamics does not apply, and
+//                          the retarded-field reconstruction is not validated
+//                          either: a probe of the model's own bookkeeping,
+//                          never a physical claim.
 //   CREM_HARMONIC          Opt out of the harmonic correction in the secular
 //                          estimator.
 //   CREM_FORCE_M1=<x>      Force the magnetic-dipole share of radiated power

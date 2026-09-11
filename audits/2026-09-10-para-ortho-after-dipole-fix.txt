@@ -632,3 +632,102 @@ PHOTON COUNT DIFFERS:  0 of 24  (0%)
      not only corrupting the elements, it was reversing the sign of the
      observable.  The sign now agrees with reality and with the n=2
      measurement (+2.50e-5).
+
+==================================================================
+12. FIRST-PASSAGE TIME OF L THROUGH CONTACT
+==================================================================
+
+Contact angular momentum, sqrt(mu k r_c)/hbar on a circular orbit:
+  0.042737 hbar at the Compton barrier (193.30 fm)
+  0.005160 hbar at the classical electron radius (2.818 fm)
+
+Measured with CREM_RETARDATION_LIMIT lowered from 150 to 5, because the
+crossing happens one photon after the default stop.  Below 150 the pair
+ends inside the Compton barrier, where classical point-particle
+electrodynamics does not apply: a probe of the model's own bookkeeping.
+
+12a. Deterministic emission (the default), 16 trajectories per channel,
+     master seed 42, 600 s budget:
+
+Running 16 CREM collapse calibrations on 4 workers (per-event wall-clock budget 600 s).
+para: 8 of 16 reached a stopping condition
+  through Compton barrier   reached by 7 of 16   median 199.444 ps   mean 199.444 +/- 0.00133749 ps   sigma/mean 1.77426e-05
+  through electron radius   reached by 0 of 16
+  terminal L mean            0.0253941 hbar = 0.594194 x contact
+
+Running 16 CREM collapse calibrations on 4 workers (per-event wall-clock budget 600 s).
+ortho: 15 of 16 reached a stopping condition
+  through Compton barrier   reached by 13 of 16   median 199.467 ps   mean 199.468 +/- 0.00312928 ps   sigma/mean 5.65644e-05
+  through electron radius   reached by 0 of 16
+  terminal L mean            0.0231633 hbar = 0.541995 x contact
+
+
+12b. The Compton barrier, not the retardation margin, is what now stops
+     the trajectory.  At retardation limits of 5 and of 1 the result is
+     identical: stop cause = ComptonBarrier, a = 2.718e-14 m = 0.1406
+     barrier radii, L = 0.016026 hbar = 0.375 x the barrier contact
+     value.  Lowering the margin further changes nothing because the
+     barrier catches the trajectory first.
+
+     So the model follows L down to about 0.4-0.6 of the BARRIER
+     contact value and no further.  The classical electron radius,
+     which is where annihilation actually happens, needs another factor
+     of 3-5 in L and 68.6 in radius, and is never reached.
+
+12c. Scale, against measurement:
+
+       model first passage to barrier contact   199.44 ps
+       measured para-Ps lifetime                124.49 ps   ratio 1.602
+       measured ortho-Ps lifetime               142000 ps   model 712x short
+
+12d. THE DISTRIBUTION HAS THE WRONG SHAPE, and that is the sharper
+     result than the scale.  Under deterministic emission sigma/mean is
+     1.8e-5 (para) and 5.7e-5 (ortho): the first passage is a near-delta,
+     so the model produces a characteristic TIME, not a rate, and cannot
+     give an exponential decay law at all.
+
+12e. Under POISSON emission the distribution has roughly the right shape.
+     Same 16 trajectories per channel, seed 42, emission poisson:
+
+  through Compton barrier   reached by 13 of 16   median 245.574 ps   mean 310.203 +/- 65.897 ps   sigma/mean 0.765934
+  through electron radius   reached by 0 of 16
+  terminal L mean            0.0165713 hbar = 0.387749 x contact
+
+Running 16 CREM collapse calibrations on 4 workers (per-event wall-clock budget 600 s).
+ortho: 13 of 16 reached a stopping condition
+  through Compton barrier   reached by 13 of 16   median 229.067 ps   mean 269.376 +/- 65.5063 ps   sigma/mean 0.876791
+  through electron radius   reached by 0 of 16
+  terminal L mean            0.0170976 hbar = 0.400066 x contact
+
+
+     para   median/mean = 0.792   sigma/mean = 0.766
+     ortho  median/mean = 0.850   sigma/mean = 0.877
+     exponential          0.693                1.000
+
+     So the first passage is dominated by ONE waiting time, the first
+     photon's, which takes about 186 of the 199 ps; a sum of four
+     equal-rate exponentials would give sigma/mean = 0.5, and a single
+     one gives 1.  The measured 0.77-0.88 sits near the single-waiting
+     limit, i.e. near an exponential -- which is the shape a decay law
+     has to have.  Whether the mechanism produces that shape is
+     therefore decided by the emission model, not by the mechanism.
+
+12f. Scale under Poisson emission, against measurement:
+
+       para mean first passage     310.20 +/- 65.90 ps    2.49x the
+                                                          measured 124.49 ps
+       ortho mean first passage    269.38 +/- 65.51 ps    527x short of
+                                                          the measured 142 ns
+
+12g. Summary of what this buys and what it does not.
+     BUYS: a rate scale from the model's own dynamics, with no
+     annihilation width imported -- 199 ps deterministic, 310/269 ps
+     mean under Poisson, against a measured 124.49 ps for para.  Within
+     a factor 1.6 to 2.5, and with an approximately exponential shape
+     when the emission is Poissonian.
+     DOES NOT BUY: ortho, which is missed by 500-700x because the
+     2gamma/3gamma selection rule is not in the model; and contact at
+     the scale where annihilation actually happens, since the Compton
+     barrier stops the trajectory 3-5x short in L and 68.6x short in
+     radius, and that barrier is the declared validity limit rather
+     than a tunable.

@@ -98,6 +98,15 @@ inline constexpr double hbar = 1.054571817e-34;
 // a reason to stop three orders of magnitude short of it.
 inline constexpr double comptonBarrierRadius =
     electronGFactor*hbar/(4.0*electronMass*speedOfLight);
+// e^2/(4 pi eps0 m c^2), the length at which the electron's electrostatic
+// self-energy equals its rest energy.  Not a model parameter: it is quoted
+// here only as the second contact scale the first-passage measurement in
+// crem_collapse.hpp compares L against, sitting 1/(2 alpha) = 68.5 below
+// comptonBarrierRadius above -- see the README's "annihilation happens 137
+// times deeper" note, which is the same statement.
+inline constexpr double classicalElectronRadius =
+    coulombConstant*elementaryCharge*elementaryCharge
+    /(electronMass*speedOfLight*speedOfLight);
 inline constexpr double chargeCloudRestRadius = 0.01*bohrRadius;
 // The separation at which a trajectory counts as collided is NOT here: it
 // scales with the pair, so it is derived in particle_species.hpp as

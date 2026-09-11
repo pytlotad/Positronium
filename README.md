@@ -634,6 +634,77 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Rozkład czasu pierwszego przejścia \(L\) przez kontakt
+
+Domknięta wymiana \(L\leftrightarrow S\) czyni terminalne \(L\) wielkością,
+na której da się oprzeć pomiar. Sonda
+[`contact_first_passage.cpp`](tools/contact_first_passage.cpp) mierza, **kiedy
+\(L\) pierwszy raz spada poniżej wartości kontaktowej** — to jest skala
+tempa wyprowadzona z własnej dynamiki modelu, bez importowania szerokości
+anihilacyjnej z QED.
+
+Mierzone z `CREM_RETARDATION_LIMIT` obniżonym ze \(150\) na \(5\), bo
+przejście następuje **jeden foton po** domyślnym stopie. Poniżej \(150\)
+para kończy wewnątrz bariery Comptona, gdzie klasyczna elektrodynamika
+punktowa nie obowiązuje — to sonda księgowości modelu, nie twierdzenie
+fizyczne.
+
+*Co zatrzymuje trajektorię po rozluźnieniu progu.* Już nie margines
+numeryczny, a **bariera Comptona**: przy progu \(5\) i przy \(1\) wynik
+jest identyczny, \(a=2{,}718\cdot10^{-14}\) m \(=0{,}1406\) promienia
+bariery, \(L=0{,}016026\,\hbar=0{,}375\) wartości kontaktowej. Dalsze
+obniżanie progu nic nie zmienia.
+
+**Emisja deterministyczna (domyślna): rozkład jest niemal deltą.**
+\(16\) trajektorii na kanał, ziarno \(42\):
+
+| kanał | osiągnęło kontakt | mediana | średnia | \(\sigma/\mu\) |
+|---|---|---|---|---|
+| para | \(7/16\) | \(199{,}444\) ps | \(199{,}444\pm0{,}0013\) | \(1{,}8\cdot10^{-5}\) |
+| orto | \(13/16\) | \(199{,}467\) ps | \(199{,}468\pm0{,}0031\) | \(5{,}7\cdot10^{-5}\) |
+
+Czyli model daje **czas charakterystyczny, nie tempo**, i w tej konfiguracji
+nie może wytworzyć wykładniczego prawa zaniku.
+
+**Emisja poissonowska: kształt jest w przybliżeniu właściwy.**
+
+| kanał | mediana | średnia | \(\sigma/\mu\) | mediana/średnia |
+|---|---|---|---|---|
+| para | \(245{,}57\) ps | \(310{,}20\pm65{,}90\) | \(0{,}766\) | \(0{,}792\) |
+| orto | \(229{,}07\) ps | \(269{,}38\pm65{,}51\) | \(0{,}877\) | \(0{,}850\) |
+| **wykładniczy** | | | \(\mathbf{1{,}000}\) | \(\mathbf{0{,}693}\) |
+
+Pierwsze przejście jest zdominowane przez **jeden** czas oczekiwania — na
+pierwszy foton, który zabiera około \(186\) z \(199\) ps. Suma czterech
+wykładniczych o równych tempach dałaby \(\sigma/\mu=0{,}5\), jedna dałaby
+\(1\); zmierzone \(0{,}77\)–\(0{,}88\) leży blisko granicy
+jednowykładniczej. **O tym, czy mechanizm ma kształt prawa zaniku, decyduje
+więc model emisji, nie sam mechanizm.**
+
+*Skala, wobec pomiaru.* Zmierzony czas życia p-Ps to \(124{,}49\) ps:
+
+| wielkość | wartość | wobec pomiaru |
+|---|---|---|
+| pierwsze przejście, deterministyczne | \(199{,}44\) ps | \(\times1{,}60\) |
+| pierwsze przejście, poissonowskie (para) | \(310{,}20\) ps | \(\times2{,}49\) |
+| pierwsze przejście, poissonowskie (orto) | \(269{,}38\) ps | \(527\times\) za krótko wobec \(142\) ns |
+
+**Co to daje, a czego nie.** Daje skalę tempa z własnej dynamiki modelu,
+mieszczącą się w czynniku \(1{,}6\)–\(2{,}5\) od zmierzonego czasu życia
+para, z w przybliżeniu wykładniczym kształtem przy emisji poissonowskiej. Nie
+daje orto — chybia o \(500\)–\(700\) razy, bo reguły wyboru
+\(2\gamma/3\gamma\) w modelu nie ma — i nie daje kontaktu na skali, na
+której anihilacja rzeczywiście zachodzi: **klasyczny promień elektronu nie
+jest osiągany w żadnej trajektorii**, bo bariera Comptona zatrzymuje parę
+\(3\)–\(5\) razy za wysoko w \(L\) i \(68{,}6\) razy za wysoko w
+promieniu, a ta bariera jest deklarowaną granicą stosowalności, nie
+parametrem.
+
+*Czego wciąż brakuje do tempa anihilacji.* Dojście do kontaktu jest warunkiem
+**koniecznym**, nie tempem. Prawdopodobieństwo anihilacji po dojściu to
+przekrój czynny, którego ten model nie niesie. Liczby wyżej należy czytać
+jako „jak długo klasyczna orbita pozostaje przeszkodą", nie jako czas życia.
+
 #### Domknięcie wymiany \(L\leftrightarrow S\)
 
 Sonda `CREM_LS_BALANCE` wypisuje na każdy półkrok zmianę \(|L|\) i energię,
