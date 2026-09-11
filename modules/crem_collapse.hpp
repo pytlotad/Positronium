@@ -403,8 +403,17 @@ struct OsculatingElements { double specificEnergy=0.0; double specificAngularMom
 // on, the collapse will terminate at exactly this energy, and that is the
 // value the floor was GIVEN, not a value the model found.  a_Ps is an input
 // to this model (it is the initial separation); without the floor the pair
-// flies straight past it and ends 375 times deeper.  Nothing here shows CREM
-// reproducing the ground state as a state.
+// flies straight past it.  Measured on six seeds under the CURRENT default
+// (level 1, sharp preparation, retardation stop), the terminal binding is
+// 708.7 to 753.9 eV against this function's 6.802847 eV, i.e. 104 to 111
+// times deeper, every one of them stopping on the retardation limit; from
+// level 2 it is 173 to 177 times a_Ps.  The 375 that stood here was
+// inherited from a configuration that no longer exists and matched neither
+// level when checked.  Nothing here shows CREM reproducing the ground state
+// as a state: the preparation IS the Bohr state by construction -- a
+// circular orbit at n^2 a_Ps has L = n hbar and E = -R/n^2 identically, and
+// the sharp preparation puts it exactly there -- and the model then leaves
+// it by two orders of magnitude.
 inline double groundStateSpecificEnergy() {
     return -pairCoulombStrength
         /(2.0*pairBohrRadius(activePair)*reducedMassOf(activePair));

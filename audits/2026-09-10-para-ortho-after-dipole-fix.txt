@@ -1674,3 +1674,65 @@ measurement of whether that survives a cascade.
 
      Both runs remain censored: seed 2 covered a factor 10.1 in a and
      seed 3 a factor 9.2, against the ~140 needed to reach the barrier.
+
+28. DOES THIS MODEL'S n=1 MATCH BOHR'S n=1 FOR POSITRONIUM?
+
+    Two separate questions: does the number agree, and does the model sit
+    on it.  The first is yes and is a tautology; the second is no.
+
+28a. THE CONSTANTS AGREE TO MACHINE EPSILON, BY CONSTRUCTION.
+
+       quantity                       value                 relative diff
+       a_pair (model)                 1.058354419074555e-10 m   --
+       hbar^2/(mu k)                  1.058354419074555e-10 m   1.22e-16
+       2 a0 (CODATA 2018)             1.058354421806000e-10 m  -2.58e-09
+
+       -k/(2 a_pair)                 -6.802846579039651 eV      --
+       -mu k^2/(2 hbar^2)            -6.802846579039652 eV     -1.77e-16
+       -13.605693122994/2            -6.802846561497000 eV     -2.58e-09
+
+       sqrt(mu k a_pair)/hbar         1.000000000000000         exact
+
+     The 1e-16 agreements are the same formula evaluated twice: a_pair is
+     DEFINED as hbar^2/(mu k), so -k/(2 a_pair) is algebraically
+     -mu k^2/(2 hbar^2).  This checks that the constants are entered
+     correctly and shows nothing else.
+
+     The 2.58e-9 against the tabulated values is real but is internal
+     consistency of the entered hbar, e, epsilon0 and m_e against CODATA's
+     own a0 and Rydberg, not a statement about positronium.
+
+28b. THE PREPARED STATE IS EXACTLY THERE.  The default preparation is
+     sharp (f = 1, f_r = 0), so e_0 = 0, L = hbar and E = -R/1 exactly;
+     --level n lands on n^2 a_Ps with L = n hbar by construction.  The
+     sampled initial-velocity band that used to blur this is now behind
+     CREM_INITIAL_BAND=1.  Measured at the first checkpoint (after some
+     transport has already run): a/a_pair = 1.000004448, e = 0.000000000,
+     L_orb = 0.999998373 hbar, binding 6.802869 eV.
+
+28c. THE MODEL DOES NOT STAY THERE, AND THAT IS THE ANSWER.  n=1 is an
+     initial condition the model is handed, not a state it finds.  Six
+     seeds, default configuration, para:
+
+       seed   terminal a (m)   a_pair/a   binding (eV)   /E_1    stop
+         2     9.5507e-13       110.8        753.85      110.8   retard
+         3     9.8865e-13       107.1        728.25      107.1   retard
+         4     9.7598e-13       108.4        737.70      108.4   retard
+         5     9.8497e-13       107.5        730.97      107.5   retard
+         6     9.7501e-13       108.5        738.44      108.5   retard
+         7     1.0160e-12       104.2        708.66      104.2   retard
+
+     Mean 107.7x, range 104.2-110.8.  From level 2 it is 173.2-177.0 times
+     a_Ps.  Every one stops on the retardation limit, not on any energy.
+
+     So: at t = 0 the model's n=1 IS Bohr's n=1, in radius, energy and
+     angular momentum, to machine epsilon -- because it was given it.  Two
+     orders of magnitude later the pair binds 754 eV instead of 6.80 eV.
+     The model reproduces the Bohr ground state as a starting point and
+     not as a state.
+
+28d. A STALE NUMBER CORRECTED.  The comment on groundStateSpecificEnergy
+     said the pair "ends 375 times deeper".  Measured, it is 108x from
+     level 1 and 173x from level 2; 375 matches neither and came from a
+     configuration that no longer exists.  Replaced with the measured
+     figures and the configuration they were taken under.
