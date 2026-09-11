@@ -2443,3 +2443,60 @@ measurement of whether that survives a cascade.
      before: the estimator is correct (section 34a), its variance is
      tractable (38b), and the obstacle is a named modelling choice rather
      than statistics.
+
+40. CORRECTION TO SECTION 39: THE t^2 EXPONENT WAS NOT MEASURED
+
+    Section 39 concluded that the ZPF work grows as t^2, that the ratio to
+    the radiated energy is therefore run-length dependent, and that the
+    orbit-tied band is the blocker.  A fourth time point contradicts it.
+
+40a. THE DATA, NOW WITH 40 ORBITS.  r = a_pair, 10 antithetic pairs each:
+
+       orbits    work (eV)              significance   work/orbit
+         5      -3.3098e-04 +- 2.50e-04    -1.32       -6.6196e-05
+        10      +8.9244e-04 +- 5.63e-04    +1.59       +8.9244e-05
+        20      +3.7703e-03 +- 1.72e-03    +2.19       +1.8851e-04
+        40      +4.1928e-03 +- 2.91e-03    +1.44       +1.0482e-04
+
+     Pairwise exponents:  10->20 gives 2.08, 20->40 gives 0.15, 10->40
+     gives 1.12.  The 1-sigma band on the 10->40 ratio runs 0.88 to 21.56,
+     so p lies anywhere from -0.09 to 2.22.  Both p = 1 and p = 2 fit.
+     THE EXPONENT IS NOT MEASURED.
+
+40b. THE SECOND ERROR, WHICH MATTERED MORE.  Section 39a called the work
+     column and the |W|/radiated column "two independent readings" that
+     agreed on p = 2.08.  They are not independent: the radiated energy is
+     linear in t by construction, so dividing by it is an algebraic
+     rearrangement of the same two numbers.  Two views of one measurement
+     were presented as corroboration.
+
+40c. A THIRD CONTRADICTION, from the mode scan started to test 39c: 8
+     modes, band [0.5,2], 6 antithetic pairs, work(10) = 9.4437e-04 and
+     work(20) = 3.1186e-04 -- work FALLING with run length, p = -1.60,
+     against the 10-pair run's +3.77e-03 at the same 20 orbits.  Six pairs
+     and ten pairs disagree by a factor of twelve at one configuration.
+
+40d. WHAT STANDS, AND WHAT DOES NOT.
+
+       stands   the antithetic estimator and its 4.0x variance reduction
+                (38b) -- that was measured against a matched control
+       stands   the sign, weakly: the field pumps energy IN, at about
+                2 sigma on twelve pairs
+       stands   the method's correctness (34a): the field-off residual is
+                the noise floor and the radiated energy matches Larmor
+       FALLS    "the work grows as t^2"
+       FALLS    "|W|/radiated is run-length dependent, so the radius scan
+                cannot be read" -- the premise is unmeasured, so the
+                conclusion is unsupported rather than wrong
+       FALLS    "the orbit-tied band is the blocker" -- that was inferred
+                from the t^2, and there is no t^2 to infer it from
+
+     The radius scan's monotone trend (4.79, 7.63, 11.10, 14.83, 15.62 at
+     3, 1, 0.3, 0.1, 0.03 a_pair) is at about 2 sigma per row and neither
+     confirmed nor refuted here.
+
+40e. WHAT STEP 4 ACTUALLY NEEDS, restated without the false blocker.  More
+     statistics, at the price section 38d already gave: sigma/|mean| = 1.52
+     after pairing, so roughly 232 pairs per point rather than the 10 to 12
+     used above.  Every exponent, trend and ratio quoted from 10-pair runs
+     in sections 38 and 39 is below that bar.
