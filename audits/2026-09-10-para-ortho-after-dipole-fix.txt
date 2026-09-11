@@ -2051,3 +2051,65 @@ measurement of whether that survives a cascade.
      transverse field stronger than the one binding it.  So the model's
      ZPF has a floor below which it cannot be run at physical scale, and
      that floor is again the Compton scale.
+
+34. STEP 4 REBUILT: THE METHOD IS NOW RIGHT, THE STATISTICS ARE NOT
+
+    Section 33 named the flaw -- differencing instantaneous energies of two
+    diverged trajectories -- and the fix: measure along ONE trajectory.
+
+34a. THE REBUILT MEASUREMENT.  Without the field, mechanical + radiated +
+     Schott energy is conserved, and the engine records all three at every
+     frame.  With the field on, the DRIFT of that same sum is the work the
+     field did.  One run, nothing to diverge from, and the field-off
+     residual is the method's own noise floor, printed beside every number
+     it validates.
+
+     r = 1 a_pair, 20 orbits, 400 frames: noise floor 4.77e-4 eV against a
+     first four-seed mean of 1.30e-2 eV, a factor 27 above it.  The sign
+     is now POSITIVE, i.e. the field pumps in, which is what the module
+     says it does and the opposite of what section 33a reported.  The
+     systematic artefact is gone.
+
+34b. TIME SCALING SAYS THE MEAN IS NOT CONVERGED.  Four seeds, r = a_pair:
+
+       orbits   ZPF work (eV)   work/orbit    work/orbit^2
+         5        -9.765e-03    -1.953e-03     -3.906e-04
+        10        +1.661e-02    +1.661e-03     +1.661e-04
+        20        +1.299e-02    +6.495e-04     +3.247e-05
+        40        +3.116e-02    +7.789e-04     +1.947e-05
+
+     The sign flips between 5 and 10 orbits, and neither work/orbit
+     (secular pumping) nor work/orbit^2 (resonant growth) is constant.
+     Four seeds cannot tell them apart.
+
+34c. THE SPREAD, MEASURED.  24 field seeds, r = a_pair, 20 orbits:
+
+       n = 24          11 positive, 13 negative
+       mean            +1.4810e-02 eV
+       median          -7.3694e-04 eV      OPPOSITE SIGN
+       sigma            7.8719e-02 eV
+       standard error   1.6069e-02 eV      mean/error = 0.92
+       largest value   +3.7625e-01 eV      4.6 sigma
+       mean without that one seed  -9.0510e-04 eV   SIGN FLIPS
+
+     The mean is within one standard error of zero, the median has the
+     opposite sign to the mean, and deleting the single 4.6-sigma seed
+     flips the mean.  At the Bohr radius, with 24 seeds, the model cannot
+     even establish the SIGN of the ZPF work.
+
+34d. THE COST, QUANTIFIED.  sigma/|mean| = 5.32, so 10% precision on the
+     mean needs about 2825 seeds at ONE radius.  Each is a 20-orbit
+     full-engine run (~13 s), so ~10 hours per radius and ~2 days for a
+     five-point scan.  And the distribution is heavy-tailed -- one seed at
+     4.6 sigma out of 24 -- so sigma/sqrt(N) UNDERSTATES what is needed.
+
+34e. WHAT STANDS.  The radiated energy over the same 20 orbits is
+     4.4017e-04 eV, matching the analytic Larmor value, so the loss side
+     is right.  The crude four-seed means put |work|/radiation near 30 at
+     a_pair and between 12 and 30 across the scanned radii -- but 34c says
+     those means are not significant, so no balance radius is claimed and
+     none should be quoted from this.
+
+     Step 4 is therefore OPEN, with a correct method and a known price.
+     It is the only route in the plan that can produce a Bohr scale, and
+     it now needs a seed budget rather than a redesign.
