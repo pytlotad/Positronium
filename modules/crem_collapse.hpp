@@ -4354,6 +4354,29 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                         // the pair had BEFORE this photon's momentum kick.
                         photonTimingsThisCheckpoint.emplace_back(
                             sAtPhoton,sourceBeta);
+                        // CREM_PHOTON_LADDER: this photon's energy against
+                        // the orbit it left, so "does a photon fall on the
+                        // n -> n-1 step" is a measurement.  n_E is the Bohr
+                        // level the CURRENT energy corresponds to, whether or
+                        // not it is an integer; the model has no rungs, so it
+                        // generally is not.
+                        if(std::getenv("CREM_PHOTON_LADDER")) {
+                            const double bindingNow=
+                                -elements.specificEnergy*reducedMass;
+                            const double groundBinding=
+                                -groundStateSpecificEnergy()*reducedMass;
+                            std::fprintf(stderr,
+                                "PHOTON_LADDER E=%.9e J  E_eV=%.9f"
+                                "  a=%.9e  a/a_pair=%.6f  n_E=%.6f"
+                                "  hbar_w_orb_eV=%.9f\n",
+                                photonEnergy,photonEnergy/1.602176634e-19,
+                                pairBohrRadius(activePair)
+                                    *groundBinding/std::max(bindingNow,1e-300),
+                                groundBinding/std::max(bindingNow,1e-300),
+                                std::sqrt(std::max(0.0,
+                                    groundBinding/std::max(bindingNow,1e-300))),
+                                photonEnergyReference/1.602176634e-19);
+                        }
                         LabFramePhoton labPhoton;
                         labPhoton.sourceBeta=sourceBeta;
                         labPhoton.energyJoules=photonEnergy;

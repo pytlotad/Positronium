@@ -702,7 +702,17 @@ inline int zeroPointModes = 64;
 //   CREM_DEBUG_ORDER_LIVE, CREM_DEBUG_ORDER_TERMS, CREM_DEBUG_AZIMUTH,
 //   CREM_DEBUG_CHANNEL, CREM_DEBUG_M1, CREM_DEBUG_GRAD, CREM_DEBUG_PROBES,
 //   CREM_DEBUG_RETREAT, CREM_DEBUG_EPS_SCAN, CREM_DEBUG_FIELDSYM,
-//   CREM_DEBUG_ALIGN, POSITRONIUM_DEBUG_DIPOLE, POSITRONIUM_DEBUG_FIELDS.
+//   CREM_DEBUG_ALIGN, CREM_PHOTON_LADDER, POSITRONIUM_DEBUG_DIPOLE,
+//   POSITRONIUM_DEBUG_FIELDS.
+//
+//   CREM_PHOTON_LADDER prints each photon against the orbit it left --
+//   energy, a/a_pair, and the Bohr level n_E the current energy would
+//   correspond to -- so "does a photon fall on the n -> n-1 step" is a
+//   measurement.  It does not: from n=2 the first photon fires at
+//   n_E = 1.999995 carrying a THIRD of the Bohr 2->1 step, and lands the
+//   pair at sqrt(2); the second steps over n=1 entirely, from 1.414 to
+//   0.910.  The model has no rungs and the cascade goes through the
+//   ladder rather than down it.
 //
 //   CREM_DEBUG_ALIGN takes a VALUE: the number of spin-transport substeps
 //   to print.  Six is enough to watch the mutual angle start to move; six

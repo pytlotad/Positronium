@@ -415,6 +415,87 @@ Zgodne z pomiarem: przy `--level 2` włączenie podłogi przesuwa medianę o
 położenie podłogi jest nieodróżnialne od jej braku**, więc pytanie „gdzie ją
 postawić" nie jest pytaniem o liczbę, tylko o to, co ta liczba znaczy.
 
+#### Czy foton pada na przeskok \(3\to2\) i \(2\to1\) — zmierzone
+
+Nie. Model nie ma szczebli, więc nie ma na co padać: promieniuje wzdłuż
+ciągłej spirali klasycznej, a energia fotonu to \(\hbar\omega_{\rm orb}\),
+własna częstość orbity, nigdy importowany odstęp poziomów. Poniżej pomiar,
+gdzie fotony faktycznie lądują.
+
+*Reguła modelu i dwa kroki Bohra, z którymi ją porównujemy.* Dla orbity
+kołowej przy \(n^2a_{\rm Ps}\) wiązanie wynosi \(R/n^2\), a kwant
+korespondencyjny \(\hbar\omega_{\rm orb}=2R/n^3\):
+
+| z \(n\) | \(|E|\) [eV] | foton \(2R/n^3\) [eV] | krok Bohra [eV] | stosunek |
+|---|---|---|---|---|
+| \(3\) | \(0{,}755872\) | \(0{,}503915\) | \(0{,}944840\) | \(1{,}8750\) |
+| \(2\) | \(1{,}700712\) | \(1{,}700712\) | \(5{,}102135\) | \(3{,}0000\) |
+
+Oba stosunki są dokładnymi ułamkami: \(135/72\) i \(3\). Przy \(n=2\)
+zachodzi przy tym \(2R/n^3=R/n^2\) tożsamościowo, więc foton
+korespondencyjny **równa się tam energii wiązania**.
+
+*Zmierzone ze startu \(n=2\).* Nowa sonda `CREM_PHOTON_LADDER` wypisuje każdy
+foton naprzeciw orbity, którą opuścił. Ziarno \(42\), para, \(400\) s:
+pięć fotonów, trajektoria kończy na progu retardacyjnym.
+
+| \(\#\) | \(E\) [eV] | \(a/a_{\rm pair}\) | \(n_E\) | \(\hbar\omega_{\rm orb}\) [eV] |
+|---|---|---|---|---|
+| \(1\) | \(1{,}700691\) | \(3{,}999979\) | \(1{,}999995\) | \(1{,}700691\) |
+| \(2\) | \(4{,}810136\) | \(1{,}999990\) | \(1{,}414210\) | \(4{,}810136\) |
+| \(3\) | \(18{,}038936\) | \(0{,}828405\) | \(0{,}910168\) | \(18{,}038936\) |
+| \(4\) | \(102{,}950357\) | \(0{,}259023\) | \(0{,}508943\) | \(102{,}950357\) |
+| \(5\) | \(1046{,}804660\) | \(0{,}052059\) | \(0{,}228165\) | \(1046{,}804660\) |
+
+Każdy foton równa się \(\hbar\omega_{\rm orb}\) na własnej orbicie co do
+wszystkich drukowanych cyfr — reguła jest dokładnie tym, co model robi.
+
+**Foton \(1\) faktycznie pada przy \(n=2\)**, z dokładnością
+\(2{,}5\cdot10^{-6}\). Ale niesie \(1{,}7007\) eV, czyli **jedną
+trzecią** z \(5{,}1021\) eV potrzebnych na krok Bohra, i zostawia parę przy
+\(n=\sqrt2=1{,}414210\), a nie przy \(n=1\). Połowi wielką półoś, bo
+przy \(n=2\) kwant korespondencyjny równa się wiązaniu.
+
+**Foton \(2\) przekracza \(n=1\) w całości**: pada przy
+\(n=1{,}41421\) z energią \(4{,}8101\) eV i sadza parę przy
+\(n=0{,}910168\), poniżej stanu podstawowego. Para mija więc \(n=1\) w
+locie, między odejściem a przybyciem fotonu \(2\), i nic tam nie jest
+emitowane.
+
+*Zmierzone ze startu \(n=3\).* Bieg \(400\)-sekundowy nie zobaczył nic
+(czas spirali skaluje się jak \(a^3\), więc pierwsza emisja siedzi koło
+\(85\) ns wobec \(\sim148\) ps kolapsu z \(n=1\)). Przy \(2400\) s
+padł:
+
+| \(E\) [eV] | \(a/a_{\rm pair}\) | \(n_E\) | \(\hbar\omega_{\rm orb}\) [eV] |
+|---|---|---|---|
+| \(0{,}503916009\) | \(8{,}999970\) | \(2{,}999995\) | \(0{,}503916009\) |
+
+Przewidziane \(2R/27=0{,}503914561\) eV, zmierzone \(0{,}503916009\) —
+zgodność do \(3\cdot10^{-6}\), czyli dokładnie tyle, ile dzieli
+\(n_E=2{,}999995\) od \(3\).
+
+**Foton faktycznie pada przy \(n=3\)**, z dokładnością
+\(1{,}7\cdot10^{-6}\). Niesie \(0{,}5039\) eV wobec \(0{,}9448\) eV
+potrzebnych na krok Bohra \(3\to2\) — dokładny ułamek \(135/72\) — a
+zachowanie energii sadza go przy \(n=2{,}323962\). **Nie dolatuje** do
+\(n=2\). Ta arytmetyka lądowania jest tą samą, którą wyżej zweryfikowano
+wprost przy \(n=2\): przewidziane lądowanie fotonu \(1\) przy
+\(1{,}414214\) jest zmierzonym \(n_E\) fotonu \(2\), czyli
+\(1{,}414210\).
+
+*Importowana drabina niczego nie zmienia.* Ten sam bieg pod
+`--bohr-photon-energy` daje pięć fotonów **identycznych co do bitu**. Gałąź
+drabiny bramkuje się na \(n\ge2\), a orbita zdąży wypromieniować do
+\(n_E=1{,}999995\), zanim padnie pierwszy foton, więc bramka nigdy się nie
+otwiera.
+
+**Odpowiedź w jednym zdaniu.** Foton pada bardzo blisko \(n=2\), nigdy nie
+pada blisko \(n=1\), a jako punkty **lądowania** ani \(n=2\), ani
+\(n=1\) nie występują: ciąg lądowań to
+\(2\to1{,}414\to0{,}910\to0{,}509\to0{,}228\), czyli kaskada
+**przez** drabinę Bohra, a nie po niej.
+
 #### Podłoga nie chroni kwantu \(\hbar\omega\) — chroni drabinę
 
 To był argument, dla którego podłoga w ogóle powstała, i okazuje się wąższy,

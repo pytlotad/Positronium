@@ -1736,3 +1736,78 @@ measurement of whether that survives a cascade.
      level 1 and 173x from level 2; 375 matches neither and came from a
      configuration that no longer exists.  Replaced with the measured
      figures and the configuration they were taken under.
+
+29. DOES A PHOTON FALL ON n=3 -> n=2 OR n=2 -> n=1?
+
+    No.  The model has no rungs, so there is no jump to fall on; it
+    radiates along a continuous classical inspiral and the photon energy
+    is hbar*omega_orb, the orbit's own frequency, never an imported level
+    spacing.  What follows measures where the photons actually land.
+
+29a. THE MODEL'S OWN RULE, AND THE TWO BOHR STEPS IT IS COMPARED WITH.
+     For a circular Kepler orbit at n^2 a_Ps the binding is R/n^2 and the
+     correspondence quantum is hbar*omega_orb = 2R/n^3, so:
+
+       from n   |E| (eV)   photon 2R/n^3 (eV)   Bohr step (eV)   ratio
+         3      0.755872      0.503915            0.944840       1.8750
+         2      1.700712      1.700712            5.102135       3.0000
+
+     Both ratios are exact rationals: 135/72 and 3.  Note the coincidence
+     at n=2, where 2R/n^3 = R/n^2 identically, so the correspondence
+     photon exactly equals the binding energy there.
+
+29b. MEASURED FROM n=2.  New probe CREM_PHOTON_LADDER prints each photon
+     against the orbit it left.  Seed 42, index 2, para, 400 s: five
+     photons, the trajectory completing on the retardation limit.
+
+       #   E (eV)        a/a_pair    n_E        hbar*omega_orb (eV)
+       1      1.700691    3.999979   1.999995      1.700691
+       2      4.810136    1.999990   1.414210      4.810136
+       3     18.038936    0.828405   0.910168     18.038936
+       4    102.950357    0.259023   0.508943    102.950357
+       5   1046.804660    0.052059   0.228165   1046.804660
+
+     Every photon equals hbar*omega_orb at its own orbit, to all printed
+     digits -- the rule is exactly what the model does.
+
+     Photon 1 DOES fall at n=2, to 2.5e-6.  But it carries 1.7007 eV, one
+     THIRD of the 5.1021 eV the Bohr step needs, and it leaves the pair at
+     n = 1.414210 = sqrt(2), not at n = 1.  It halves the semi-major axis,
+     because at n=2 the correspondence quantum equals the binding.
+
+     Photon 2 then steps OVER n=1 entirely: it fires at n = 1.41421 with
+     4.8101 eV and lands the pair at n = 0.910168, below the ground state.
+     So the pair crosses n=1 in mid-flight between photon 2's departure
+     and arrival, and nothing is emitted there.
+
+29c. MEASURED FROM n=3.  A 400 s run saw nothing (the inspiral time scales
+     as a^3, so the first emission sits near 85 ns against the n=1
+     collapse's ~148 ps).  At 2400 s it fired:
+
+       PHOTON_LADDER  E = 0.503916009 eV  a/a_pair = 8.999970
+                      n_E = 2.999995      hbar*omega_orb = 0.503916009
+
+     Predicted 2R/27 = 0.503914561 eV; measured 0.503916009, agreeing to
+     3e-6, which is the gap between n_E = 2.999995 and 3.
+
+     So a photon DOES fall at n=3, to 1.7e-6.  It carries 0.5039 eV
+     against the 0.9448 eV the Bohr 3->2 step needs -- the exact ratio
+     135/72 -- and energy conservation puts the landing at
+     n = sqrt(R/(R/n^2 + E)) = 2.323962.  It does not reach n=2.  That
+     landing arithmetic is the one verified directly at n=2 in 29b, where
+     photon 1's predicted landing of 1.414214 is photon 2's own measured
+     n_E of 1.414210.
+
+29d. THE IMPORTED LADDER CHANGES NOTHING.  Rerun with
+     gBohrLevelPhotonEnergy on (--bohr-photon-energy): the five photons
+     are IDENTICAL bit for bit.  The ladder branch gates on n >= 2, and
+     the orbit has already radiated to n_E = 1.999995 by the time the
+     first photon fires, so the gate never opens.  This confirms the
+     standing claim at quantumFor's comment ("0 of 20 emissions engage the
+     ladder") at a different level and with the energies printed.
+
+29e. THE HONEST ONE-LINE ANSWER.  A photon is emitted very near n=2, and
+     never near n=1 or n=2 as a LANDING point.  Its energy is a third of
+     the Bohr 2->1 step, and the sequence of landings is
+     2 -> 1.414 -> 0.910 -> 0.509 -> 0.228, which is a geometric-looking
+     cascade through the Bohr ladder rather than down it.
