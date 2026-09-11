@@ -990,3 +990,64 @@ ortho: 13 of 16 reached a stopping condition
      already records for the band.
 
      make validation 55/55.  Header isolation 37/37.
+
+==================================================================
+18. IS THE LOSS OF THE SINGLET A MODEL DEFECT OR PHYSICS?
+==================================================================
+
+The claim under test was: the drift of the mutual angle is a defect of
+this model rather than physics, because real positronium conserves S
+and a classical pair cannot represent an entangled singlet.  The
+CONCLUSION survives; the MECHANISM I gave for it was wrong.
+
+18a. The quantum side holds, and more strongly than I stated it.
+     H_dd ~ [S1.S2 - 3(S1.n)(S2.n)]/r^3 has a scalar part (k=0) and a
+     tensor part (k=2).  Wigner-Eckart kills both for S=0 -> S=1:
+
+       transition          k   permitted S'   result
+       singlet->triplet    0        0         VANISHES
+       singlet->triplet    2        2         VANISHES
+       triplet->triplet  0,2      1..3        allowed
+
+     Two spin-1/2 have no S'=2, so the dipole-dipole interaction CANNOT
+     mix singlet and triplet.  Not 'S is conserved in general' but: the
+     very interaction that moves the angle classically is forbidden
+     from moving it quantum mechanically.
+
+     Caveat worth stating: the Zeeman term is rank 1 and DOES mix S=0
+     with S=1,m=0 -- that is the measured magnetic quenching of
+     ortho-Ps, and this model has --external-field.  A consistency
+     note: for positronium mu1+mu2 ~ S1-S2, so the channel weight is
+     exactly the operator that performs that mixing.
+
+18b. The classical mechanism is derivable and explains the asymmetry.
+     gamma_2 = -gamma_1, and the partner's dipole field satisfies
+     B1 = -B2 for anti-aligned moments, B1 = +B2 for aligned.  So
+       ortho: omega_1 = gamma_1 B_1 = -gamma_1 B_2 = omega_2
+              -> both spins precess about the SAME vector, angle
+                 preserved identically;
+       para:  omega_1 = -omega_2
+              -> the spins counter-rotate, angle changes.
+
+18c. CORRECTION: it is a LIBRATION, not a drift.  Measured over 63
+     checkpoints, seed 42:
+
+       channel  start    min      max      end      span
+       para     +1.000   +0.322   +1.000   +0.800   0.678
+       ortho    -1.000   -1.000   -1.000   -1.000   0.000
+
+     Para's cosine RETURNS TO 1 repeatedly -- it oscillates within a
+     bounded range rather than running away.  And started from a
+     sampled angle instead of the extremum the change goes BOTH WAYS in
+     both channels: para 3 up / 5 down, ortho 4 up / 4 down.  So
+     'always downward, the aligned configuration is unstable' was an
+     artefact of starting exactly at the MAXIMUM of the oscillation,
+     from which the first excursion can only go down.
+
+18d. What survives.  The conclusion for the channel rule stands and is
+     better founded: the terminal angle is a PHASE of that libration at
+     the moment the trajectory stops, aliased by the checkpoint spacing
+     (the precession period deep in the orbit is ~5e-6 ps against a
+     0.023 ps checkpoint), so it measures nothing.  Reading the weight
+     at preparation is right -- because the terminal value is a random
+     phase, not because the singlet was destroyed along the way.

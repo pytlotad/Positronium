@@ -634,6 +634,71 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Czy utrata singletu jest wadą modelu, czy fizyką — zbadane
+
+Napisałem wyżej, że dryf kąta wzajemnego jest wadą modelu, a nie fizyką, i że
+para traci singlet, bo konfiguracja równoległa jest niestabilnym punktem
+stałym. **Wniosek się broni, mechanizm był opisany źle**, i różnica ma
+znaczenie.
+
+*Strona kwantowa broni się mocniej, niż to ująłem.* Człon spin-spin ma postać
+\(H_{dd}\sim[\mathbf S_1\!\cdot\!\mathbf S_2-3(\mathbf S_1\!\cdot\!
+\hat n)(\mathbf S_2\!\cdot\!\hat n)]/r^3\): część skalarna ma rangę
+\(k=0\), tensorowa \(k=2\). Z twierdzenia Wignera-Eckarta element
+\(\langle S'\|T^{(k)}\|S\rangle\) znika, gdy nie zachodzi
+\(|S-k|\le S'\le S+k\):
+
+| przejście | \(k\) | dopuszczalne \(S'\) | wynik |
+|---|---|---|---|
+| singlet\(\to\)tryplet | \(0\) | \(0\) | **znika** |
+| singlet\(\to\)tryplet | \(2\) | \(2\) | **znika** |
+| tryplet\(\to\)tryplet | \(0,2\) | \(1\)…\(3\) | przechodzi |
+
+Dwa spiny \(1/2\) nie mają \(S'=2\), więc **oddziaływanie dipol-dipol nie
+miesza singletu z trypletem** — nie „S jest zachowane ogólnie", tylko: to
+konkretne oddziaływanie, które w modelu klasycznym rusza kąt, kwantowo ruszyć
+go nie może. Zastrzeżenie: człon Zeemana ma rangę \(1\) i **miesza**
+\(S=0\) z \(S=1,m=0\) — to zmierzone magnetyczne wygaszanie o-Ps. Model ma
+`--external-field`, więc tam mieszanie jest prawdziwe. I drobiazg spójności:
+dla pozytonium \(\boldsymbol\mu_1+\boldsymbol\mu_2\propto\mathbf
+S_1-\mathbf S_2\), czyli **waga kanału jest dokładnie operatorem, który to
+mieszanie wykonuje**.
+
+*Mechanizm klasyczny da się wyprowadzić, i wyjaśnia asymetrię.* Dla
+pozytonium \(\gamma_2=-\gamma_1\), a pole dipolowe partnera spełnia
+\(\mathbf B_1=-\mathbf B_2\) przy momentach antyrównoległych i
+\(\mathbf B_1=+\mathbf B_2\) przy równoległych. Stąd
+
+- **orto** (\(\boldsymbol\mu_2=-\boldsymbol\mu_1\)):
+  \(\omega_1=\gamma_1\mathbf B_1=-\gamma_1\mathbf B_2=\omega_2\) —
+  oba spiny precesują wokół **tego samego** wektora, więc kąt wzajemny jest
+  zachowany tożsamościowo;
+- **para** (\(\boldsymbol\mu_2=+\boldsymbol\mu_1\)):
+  \(\omega_1=-\omega_2\) — spiny **kontrrotują**, więc kąt się zmienia.
+
+*Sprostowanie: to jest LIBRACJA, nie dryf.* Zmierzone na \(63\)
+checkpointach:
+
+| kanał | start | min | max | koniec | rozpiętość |
+|---|---|---|---|---|---|
+| para | \(+1{,}000\) | \(+0{,}322\) | \(+1{,}000\) | \(+0{,}800\) | \(0{,}678\) |
+| orto | \(-1{,}000\) | \(-1{,}000\) | \(-1{,}000\) | \(-1{,}000\) | \(\mathbf{0}\) |
+
+Kosinus para **wraca do \(1\) wielokrotnie** — oscyluje w ograniczonym
+przedziale, a nie ucieka. A startując z pasma zamiast z ekstremum, zmiana
+idzie **w obie strony w obu kanałach**: para \(3\) w górę / \(5\) w dół,
+orto \(4\) / \(4\). Moje „zawsze w dół, konfiguracja niestabilna" było
+więc artefaktem startu dokładnie w **maksimum** oscylacji, skąd pierwsze
+wychylenie może iść tylko w dół.
+
+*Co z tego zostaje.* Wniosek dla reguły kanału **stoi i jest teraz lepiej
+uzasadniony**: wartość końcowa kąta to **faza libracji** w chwili
+zatrzymania, aliasowana rozstawem checkpointów (okres precesji głęboko w
+orbicie to \(\sim5\cdot10^{-6}\) ps wobec checkpointu \(0{,}023\) ps),
+więc nie mierzy niczego. Czytanie wagi przy przygotowaniu jest słuszne — ale
+dlatego, że koniec jest losową fazą, a nie dlatego, że singlet został po
+drodze zniszczony.
+
 #### Kanał wybiera teraz dynamika
 
 `annihilationPhotonEnergiesFor` nie widzi już `selectedPhenomenon`.
@@ -660,10 +725,9 @@ cyfr, a przy \(L_{\rm orb}=0{,}095\,\hbar\) suma zaokrągla się do
 \(1\) za każdym razem.
 
 **Para wychodzi poprawnie w \(58\%\)**, a pozostałe \(42\%\) to nie
-usterka bramki — to znane niszczenie singletu przez model, **teraz widoczne w
-obserwabli**, a nie schowane w stanie wewnętrznym. Konfiguracja równoległa
-jest niestabilnym punktem stałym, więc do chwili anihilacji para przestaje
-mieć \(S=0\), a reguła wyboru słusznie odmawia jej dwóch fotonów.
+usterka bramki — to **faza libracji kąta wzajemnego** w chwili zatrzymania
+(mechanizm zbadany niżej: kąt oscyluje, nie dryfuje), a nie postępujące
+niszczenie singletu, jak pierwotnie tu napisałem.
 Przedtem model emitował \(2\gamma\) niezależnie od wszystkiego i ta wada w
 wyjściu w ogóle się nie pojawiała.
 
@@ -702,7 +766,7 @@ rozgałęzień, a ponieważ waga jest stosunkiem rozgałęzień, kanał jest
 
 Orto daje wagę **dokładnie zero** na każdej trajektorii, więc \(3\gamma\)
 jest pewne bez jakiegokolwiek założenia o kwantowaniu. Para daje rozkład wag
-odzwierciedlający to, jak daleko singlet został zniszczony; \(67\%\) wobec
+odzwierciedlający **fazę libracji** w chwili stopu; \(67\%\) wobec
 oczekiwanych \(76\%\) to \(0{,}7\sigma\) szumu dwumianowego.
 
 *Co zostaje założeniem.* Same **końce** są wymuszone przez algebrę wyżej;
@@ -728,7 +792,7 @@ jako przewidywania.
 defekt jest widoczny: waga para rozmywa się wtedy na \([0{,}43;\,0{,}94]\)
 zamiast siedzieć na \(1\), a kanał trzeba losować, bo konfiguracja nie jest
 żadną z dwóch ścisłych. Służy do **mierzenia**, jak daleko singlet został
-zniszczony, nie jako przewidywanie stosunku rozgałęzień.
+odchylony w chwili stopu, nie jako przewidywanie stosunku rozgałęzień.
 
 *Reguła degraduje się łagodnie.* Przy `--no-spin-quantization` konfiguracja
 przygotowana sama jest pośrednia i losowanie staje się naprawdę potrzebne.
@@ -765,7 +829,7 @@ orbitalnym \(L=0{,}095\,\hbar\) daje to \(|J|\in[0{,}90;\,1{,}10]\),
 czyli \(J=1\) — bramka Landaua-Yanga zamyka \(2\gamma\) i wskazuje
 \(3\gamma\), **zgodnie z flagą na każdej trajektorii**.
 
-**Para traci swoją konfigurację w \(42\%\) przypadków.** Dwanaście
+**Para w \(42\%\) przypadków kończy po drugiej stronie progu.** Dwanaście
 trajektorii, ziarno \(42\), stan końcowy:
 
 | `endCos` | \(|S|\) | \(L_{\rm orb}\) | \(|J|\) | bramka | klasa |
@@ -12279,8 +12343,8 @@ następną:
 3. Zepsute \(L\) **odwracało znak** różnicy kanałów przy \(n=1\): przed
    poprawką \(-2{,}7\cdot10^{-4}\) przy zerowym teście znakowym, po niej
    \(+1{,}28\cdot10^{-4}\) przy \(24/24\).
-4. Krotność fotonów brała się z flagi, więc niszczenie singletu para przez
-   model w \(42\%\) trajektorii nie docierało do obserwabli w ogóle.
+4. Krotność fotonów brała się z flagi, więc odchylenie kąta wzajemnego para
+   w \(42\%\) trajektorii nie docierało do obserwabli w ogóle.
 
 Wspólny wzorzec: **każda z nich zamieniała wadę w cichą zgodność** — płaski
 wynik, zerowy test, zaciśnięte zero, stałą etykietę. Dopiero pomiar w miejscu,
