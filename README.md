@@ -671,13 +671,113 @@ checkpointów i \(7{,}5\) miliona obiegów, żeby dojść do \(754\) ps, wobec
 przetrwało do głębokości, którą osiąga wariant domyślny, peryapsis wyniósłby
 \(4{,}47\cdot10^{-15}\) m \(=1{,}59\,r_e\), czyli **kontakt**, wobec
 domyślnych \(9{,}6\,r_e\). Jest to ekstrapolacja przez trzy rzędy
-wielkości w \(a\) i nie mam na nią dowodu.
+wielkości w \(a\) i nie mam na nią dowodu. **Ta liczba została następnie
+obalona** — patrz sekcja niżej: \(e\) nie jest stałe i założenie było
+błędne w obie strony.
 
-**Status: przeszkoda strukturalna została usunięta, pytanie ilościowe zostaje
-otwarte.** Promieniowanie nie czyni już orbity kołową, więc zdanie „gęstość w
-początku jest tożsamościowo zerowa" przestaje obowiązywać. Czy promień
-kontaktu jest faktycznie osiągany — nie wiadomo, a odpowiedź wymaga
-trajektorii około trzydziestokrotnie droższych od domyślnych.
+#### Ta jedna długa trajektoria: gdzie peryapsis naprawdę siada
+
+Poprzednia sekcja trzymała \(e\) na stałej i przyznawała, że nie ma na to
+dowodu. Tutaj zastępuję założenie **zmierzonym prawem skalowania**, a potem
+testuję samą metodę ekstrapolacji na przebiegach, które się kończą.
+
+**Co robi wariant domyślny.** Ta sama sonda, te same ziarna, domyślne
+przełączniki, budżet \(300\) s — obydwa kończą znacznie poniżej niego:
+
+| ziarno | zatrzymanie | peri/bariera | \(P/t_{\text{light}}\) | \(L\) [\(\hbar\)] | \(L/L_{\text{kontakt}}\) |
+|---|---|---|---|---|---|
+| 2 | próg retardacyjny | \(3{,}897\) | \(84{,}90\) | \(0{,}09500\) | \(2{,}223\) |
+| 3 | próg retardacyjny | \(5{,}114\) | \(86{,}18\) | \(0{,}09665\) | \(2{,}262\) |
+
+Obydwa zatrzymują się na **progu retardacyjnym, nie na barierze Comptona** —
+dokładnie to, co było przedmiotem wątpliwości: trajektoria domyślna nie
+zatrzymuje się na fizyce, tylko na numerycznym marginesie bezpieczeństwa,
+przy peryapsis cztero- do pięciokrotnie większym od bariery i momencie pędu
+dwukrotnie większym od kontaktowego. Obydwa kończą dokładnie kołowe:
+\(h^2/(Aa)=1\).
+
+**Warianty różnią się mimośrodem, nie osiągniętą głębokością.** W biegu
+domyślnym mimośród nigdy nie odchodzi od zera (maksimum \(0{,}0166\),
+mediana \(0{,}0000\)); przy `CREM_SPIN_MAGNITUDE=1` stoi na \(0{,}83\).
+Porównane przy **tej samej** wielkiej półosi:
+
+| \(a\) [m] | \(e\) domyślne | peri domyślne | \(e\) spin=1 | peri spin=1 | stosunek |
+|---|---|---|---|---|---|
+| \(5{,}0\cdot10^{-11}\) | \(0{,}0000\) | \(12528\,r_e\) | \(0{,}8440\) | \(1953\,r_e\) | \(6{,}4\times\) |
+| \(3{,}0\cdot10^{-11}\) | \(0{,}0000\) | \(12520\,r_e\) | \(0{,}8300\) | \(1810\,r_e\) | \(6{,}9\times\) |
+| \(2{,}7\cdot10^{-11}\) | \(0{,}0000\) | \(12520\,r_e\) | \(0{,}8202\) | \(1723\,r_e\) | \(7{,}3\times\) |
+
+Aktualizacja spinowa kupuje więc czynnik \(6\)–\(7\) w peryapsis przy
+ustalonym \(a\). Nie kupuje głębokości: w \(\approx195\) ps wariant
+domyślny ściska \(a\) \(13{,}3\)-krotnie w \(63\) checkpointach, wariant
+spin=1 \(4{,}0\)-krotnie w \(456\).
+
+**Prawo skalowania, zmierzone zamiast założonego.** Stały nie jest mimośród,
+tylko wykładnik w \(L\sim a^{p}\), dopasowany na ostatnich \(80\%\)
+każdego głębokiego biegu i sprawdzony w czterech kolejnych oknach:
+
+| ziarno | checkpointy | \(t\) [ps] | \(p\) | okna | trend |
+|---|---|---|---|---|---|
+| 2 | \(468\) | \(194{,}9\) | \(0{,}266\) | \(0{,}255\) \(0{,}269\) \(0{,}281\) \(0{,}234\) | stabilny |
+| 3 | \(701\) | \(975{,}4\) | \(0{,}660\) | \(0{,}719\) \(0{,}654\) \(0{,}664\) \(0{,}679\) | stabilny |
+
+\(p=0{,}5\) to relacja kołowa \(L=\sqrt{\mu k a}\), czyli \(e\)
+stałe. \(p<0{,}5\) znaczy, że \(L\) spada wolniej niż \(a^{1/2}\), więc
+orbita **kołowacieje**; \(p>0{,}5\) znaczy, że mimośród **rośnie**. Dwa
+ziarna leżą po przeciwnych stronach i obydwa daleko od \(0{,}5\), więc
+poprzednie „\(e\) zostaje na \(0{,}835\)" jest błędne w obie strony.
+
+**Gdzie każde z nich ląduje.** Prowadząc \(a\) w dół po własnym \(p\), z
+\(L\) ograniczonym sufitem kołowym i \(e\) odzyskiwanym z
+\(L^2=\mu k a(1-e^2)\):
+
+| ziarno | droga | zatrzymuje na | \(a\) [m] | \(e\) | \(L\) [\(\hbar\)] |
+|---|---|---|---|---|---|
+| 2 | kołowacieje przy \(a\approx2\cdot10^{-12}\), potem spirala kołowa | bariera | \(1{,}93\cdot10^{-13}\) | \(0{,}0000\) | \(0{,}0427\) |
+| 3 | mimośród rośnie do \(0{,}85\) | bariera | \(1{,}28\cdot10^{-12}\) | \(0{,}8530\) | \(0{,}0574\) |
+
+\(L_{\text{kontakt}}\) przy barierze wynosi \(0{,}042737\,\hbar\).
+Obie drogi trafiają w nią z dokładnością \(0\) i \(+34\%\). Próg
+retardacyjny, obniżony do \(5\), nie jest tym, co je zatrzymuje: dopuściłby
+\(a\) aż do \(\approx3{,}6\cdot10^{-15}\) m.
+
+Odpowiedź na „czy \(L\) faktycznie schodzi do \(0{,}04\,\hbar\)" brzmi
+więc **tak**, a zatrzymanie jest wtedy na barierze Comptona — granicy
+stosowalności modelu — a nie na marginesie numerycznym. Odpowiedź na „czy
+dochodzi do kontaktu przy \(r_e\)" brzmi **nie**: to wymaga
+\(L=0{,}005160\,\hbar\), dalszego czynnika \(8\), a bariera leży przy
+\(68{,}6\,r_e\) z konstrukcji.
+
+**Test metody i granica tego testu.** Dopasowanie \(L\sim a^p\) na
+checkpointach \(20\)–\(60\%\) każdego biegu **domyślnego** i
+ekstrapolacja do jego własnego zmierzonego \(a\) terminalnego:
+
+| ziarno | dopasowane \(p\) | \(L\) przewidziane | \(L\) zmierzone | błąd |
+|---|---|---|---|---|
+| 2 | \(0{,}500\) | \(0{,}09489\) | \(0{,}09500\) | \(-0{,}1\%\) |
+| 3 | \(0{,}500\) | \(0{,}09654\) | \(0{,}09665\) | \(-0{,}1\%\) |
+
+\(0{,}1\%\) — ale jest to test **zdegenerowany** i nie wolno go cytować
+jako walidacji głębokich ekstrapolacji. Trajektoria domyślna jest kołowa na
+całej długości, więc \(L=\sqrt{\mu k a}\) tożsamościowo i każde
+dopasowanie odtwarza \(p=0{,}500\) z konstrukcji. Test potwierdza łańcuch
+księgowy (okres \(\to a\to L\)), a nie ekstrapolację toru mimośrodowego
+przez dwa rzędy wielkości w \(a\).
+
+**Czego nie zrobiono.** Żaden z głębokich biegów nie doszedł do własnego
+zatrzymania. Przy budżecie \(5400\) s pokryły czynnik \(4{,}1\) (ziarno
+\(2\)) i \(6{,}6\) (ziarno \(3\)) w \(a\), wobec czynnika
+\(\approx140\) potrzebnego do bariery; każdy potrzebuje jeszcze około
+\(6000\)–\(10000\) s. Liczby wyżej są więc **dopasowaniami do toru
+uciętego**, nie pomiarami terminalnymi.
+
+**Status.** Przeszkoda strukturalna jest usunięta: promieniowanie nie czyni
+już orbity kołową, więc zdanie „gęstość w początku jest tożsamościowo
+zerowa" przestaje obowiązywać. Ilościowo trajektoria dochodzi do **bariery
+Comptona przy \(L\approx0{,}04\,\hbar\)**, czyli do granicy
+stosowalności modelu, a nie do kontaktu przy \(r_e\). Kontakt pozostaje
+poza zasięgiem nie dlatego, że orbita się zatrzymuje, tylko dlatego, że
+klasyczna elektrodynamika punktowa przestaje tam obowiązywać z konstrukcji.
 
 #### Poszukiwanie brakującego wierzchołka
 
