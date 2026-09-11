@@ -2330,3 +2330,50 @@ measurement of whether that survives a cascade.
 
      Its price is known from section 34d: about 2825 field seeds per
      radius, and a heavy tail that makes that an underestimate.
+
+38. STEP 4 AGAIN: ANTITHETIC PAIRING BUYS THE MEASUREMENT
+
+    Section 34 left the method correct and the statistics hopeless -- 24
+    seeds gave mean/error = 0.92 and a price of ~2825 seeds per radius.
+    Paying that was the wrong move; the noise had structure to exploit.
+
+38a. THE TRICK, AND WHY IT APPLIES EXACTLY HERE.  The field enters
+     ZeroPointField::sample only through sin and cos of a phase carrying
+     +phase[n], so adding pi to every phase gives exactly -E and -B.  The
+     work then splits:
+
+       W = W1 + W2 + O(F^4),
+       W1 = integral of q E.v along the UNPERTURBED orbit  -- ODD in F,
+       W2 = the absorption, where v itself responds to E   -- EVEN in F.
+
+     W1 is the large random part that averages to zero only statistically;
+     W2 is the physics.  Averaging a field with its own negation cancels W1
+     PER PAIR rather than over an ensemble.
+
+38b. MEASURED, r = a_pair, 20 orbits, 12 antithetic pairs (24 runs, the
+     same cost as section 34c):
+
+       estimator      mean (eV)     sigma (eV)    error       mean/error
+       single field   2.7775e-04    2.0128e-02    5.8104e-03      0.05
+       antithetic     3.3262e-03    5.0670e-03    1.4627e-03      2.27
+
+     sigma falls 4.0x, so 16x fewer runs for the same precision, and the
+     significance goes from nothing to 2.3 sigma on twelve pairs.  Eleven
+     of the twelve pair values are positive.
+
+38c. WHAT THAT SETTLES.  The SIGN is now established: the zero-point field
+     PUMPS ENERGY IN, which is what the module always claimed and what
+     section 33a's broken estimator had reported backwards.  And the size
+     is large -- |work|/radiated = 7.63 at the Bohr radius over the same 20
+     orbits, with the radiated 4.3620e-04 eV matching analytic Larmor.
+
+     If that ratio stays above 1 at every radius, the field always wins and
+     this model's SED has no bound state at all -- which is the known
+     self-ionization problem of SED hydrogen, not a bug here.  The balance
+     radius, if it exists, is where the ratio crosses 1.  That scan is
+     running.
+
+38d. THE REMAINING PRICE.  sigma/|mean| = 1.52 after pairing, so 10%
+     precision needs about 232 pairs (464 runs) per radius rather than
+     2825 seeds.  Two of twelve pairs still sit at four times the others,
+     so the tail is thinner but not gone.
