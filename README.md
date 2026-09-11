@@ -634,6 +634,63 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Kiedy który kanał może wyemitować foton, wprost z konfiguracji momentów
+
+Model ma dwa kanały promieniste w czasie inspiralu i jeden na końcu, a
+konfiguracja momentów wchodzi dokładnie do dwóch z trzech.
+
+**E1, dipol elektryczny: nie zależy od momentów w ogóle.** Bierze się z
+rozseparowania ładunków, \(\mathbf d=q_{\rm eff}\mathbf r\). Zmierzone na
+\(63\) checkpointach, ziarno \(42\):
+
+| kanał | \(E1\) min [W] | \(E1\) max [W] |
+|---|---|---|
+| para | \(1{,}1673\cdot10^{-8}\) | \(3{,}8455\cdot10^{-4}\) |
+| orto | \(1{,}1673\cdot10^{-8}\) | \(3{,}7804\cdot10^{-4}\) |
+
+Identyczne na starcie, \(1{,}7\%\) różnicy na końcu — to trajektorie już
+się rozeszły, nie różnica kanałów. **To ten kanał wystrzeliwuje każdy foton
+inspiralu**, i dlatego oba czasy kolapsu różnią się zaledwie o
+\(1{,}3\cdot10^{-4}\).
+
+**M1, dipol magnetyczny: nie zależy od niczego innego.** Promieniuje z
+koherentnej sumy \(\mathbf m=\boldsymbol\mu_1+\boldsymbol\mu_2\), więc
+\(P_{M1}\sim|\mathbf m|^2\):
+
+| kanał | \(|\mathbf m|/\mu\) | udział \(M1\) min | udział \(M1\) max |
+|---|---|---|---|
+| para | \(1{,}626\)…\(2{,}000\) | \(2{,}74\cdot10^{-24}\) | \(2{,}24\cdot10^{-10}\) |
+| orto | \(0{,}000\)…\(0{,}000\) | \(1{,}15\cdot10^{-48}\) | \(7{,}58\cdot10^{-43}\) |
+
+**Para może emitować M1, orto nie może.** Maksima różnią się o
+\(\mathbf{32}\) **rzędy wielkości**, a resztka orto to zaokrąglenie:
+\(|\mathbf m|\) wypisuje się jako dokładnie \(0{,}000000\) na każdym
+checkpoincie, a ponieważ oba spiny precesują wokół tego samego wektora
+(\(\omega_1=\omega_2\), sekcja wyżej), pochodna
+\(d(\boldsymbol\mu_1+\boldsymbol\mu_2)/dt\) też znika tożsamościowo.
+
+Niemożność promieniowania M1 przez orto jest więc **dynamicznie chroniona**, a
+nie przypadkiem przygotowania. Zdolność para zmienia się przez librację:
+\(|\mathbf m|/\mu\) biegnie od \(2{,}000\) w dół do \(1{,}626\), czyli
+czynnik \(1{,}51\) w mocy — ale nigdy nie znika.
+
+*Ale żaden z nich nigdy nie wystrzeliwuje fotonu M1.* Udział M1 dla para
+sięga \(2{,}2\cdot10^{-10}\) mocy promieniowanej. Hazard emisji jest przez
+cały czas hazardem E1, więc konfiguracja momentów decyduje o tym, czy M1 jest
+**dozwolone**, a nie o tym, czy foton pada.
+
+**Anihilacja: ta sama wielkość decyduje o krotności.**
+\(w_{2\gamma}=|\boldsymbol\mu_1+\boldsymbol\mu_2|^2/(|\boldsymbol\mu_1|
++|\boldsymbol\mu_2|)^2\), więc momenty równoległe dają \(1\) i dwa
+fotony, antyrównoległe \(0\) i trzy.
+
+To jest punkt strukturalny wart zapamiętania: **jedna wielkość,
+\(|\boldsymbol\mu_1+\boldsymbol\mu_2|\), bramkuje i kanał M1 w czasie
+inspiralu, i kanał dwufotonowy na końcu.** To jedyny mechanizm w modelu o
+kształcie reguły wyboru parzystości ładunkowej, i działa w obu miejscach z
+tego samego powodu — koherentnego kasowania się dwóch momentów przy
+antyrównoległości.
+
 #### Czy utrata singletu jest wadą modelu, czy fizyką — zbadane
 
 Napisałem wyżej, że dryf kąta wzajemnego jest wadą modelu, a nie fizyką, i że

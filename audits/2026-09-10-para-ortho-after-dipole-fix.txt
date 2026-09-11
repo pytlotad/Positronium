@@ -1051,3 +1051,57 @@ CONCLUSION survives; the MECHANISM I gave for it was wrong.
      0.023 ps checkpoint), so it measures nothing.  Reading the weight
      at preparation is right -- because the terminal value is a random
      phase, not because the singlet was destroyed along the way.
+
+==================================================================
+19. WHEN CAN EACH CHANNEL EMIT, FROM THE MOMENT CONFIGURATION
+==================================================================
+
+The model has two radiative channels during the inspiral and one at the
+end, and the moment configuration enters exactly two of the three.
+
+19a. E1, the electric dipole: DOES NOT depend on the moments at all.
+     It comes from the charge separation d = q_eff r.  Measured over 63
+     checkpoints, seed 42:
+
+       channel   E1 min [W]     E1 max [W]
+       para      1.1673e-08     3.8455e-04
+       ortho     1.1673e-08     3.7804e-04
+
+     Identical at the start and 1.7% apart at the end, which is the
+     trajectories having diverged, not a channel difference.  This is
+     the channel that actually fires every inspiral photon, and it is
+     why the two collapse times differ by only 1.3e-4.
+
+19b. M1, the magnetic dipole: depends on NOTHING ELSE.  It radiates
+     from the coherent sum m = mu1 + mu2, so P_M1 ~ |m|^2:
+
+       channel   |m|/mu           M1 share min    M1 share max
+       para      1.626 .. 2.000   2.7392e-24      2.2375e-10
+       ortho     0.000 .. 0.000   1.1532e-48      7.5789e-43
+
+     PARA CAN EMIT M1, ORTHO CANNOT.  The two maxima differ by 32
+     orders of magnitude, and ortho's residue is roundoff: |m| prints
+     as exactly 0.000000e+00 at every checkpoint, and since both spins
+     precess about the same vector (omega_1 = omega_2, section 18) the
+     time derivative d(mu1+mu2)/dt vanishes identically too.
+
+     So ortho's inability to radiate M1 is DYNAMICALLY PROTECTED, not a
+     coincidence of preparation.  Para's ability varies over the
+     libration -- |m|/mu runs 2.000 down to 1.626, a factor 1.51 in
+     power -- but never vanishes.
+
+19c. BUT NEITHER EVER ACTUALLY FIRES AN M1 PHOTON.  Para's M1 share
+     peaks at 2.2e-10 of the radiated power.  The emission hazard is
+     E1's throughout, so the moment configuration decides whether M1 is
+     ALLOWED, not whether a photon is emitted.
+
+19d. Annihilation: the same quantity decides the multiplicity.
+     w_2g = |mu1+mu2|^2/(|mu1|+|mu2|)^2, so aligned moments give 1 and
+     two photons, anti-aligned give 0 and three.
+
+     That is the structural point worth carrying: ONE quantity,
+     |mu1 + mu2|, gates both the M1 channel during the inspiral and the
+     two-photon channel at the end.  It is the model's single mechanism
+     with the shape of the C-parity selection rule, and it acts in both
+     places for the same reason -- coherent cancellation of the two
+     moments when they are anti-aligned.
