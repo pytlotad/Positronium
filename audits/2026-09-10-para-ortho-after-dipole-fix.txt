@@ -1230,3 +1230,66 @@ Delta L = +-1.  Checked here, it lands harder than stated.
      size: it is not merely that the ladder is absent, it is that the
      emission removes a fraction of hbar per photon, by a classical law,
      while charging a full quantum of energy for it.
+
+==================================================================
+22. FIXING THE FRACTIONAL-HBAR EMISSION
+==================================================================
+
+22a. The fix already exists, as CREM_SPIN_MAGNITUDE.  It takes the
+     angular momentum a photon removes from the PHOTON'S OWN SPIN --
+     the hbar-along-its-direction vector subtraction -- instead of from
+     the classical secular law k(e) = -(1-e^2)/(2+e^2).  Three earlier
+     routes to the same end are recorded at the switch and were each
+     implemented, measured and rejected: a literal r x p (too small by
+     v/c ~ 1e-3), a uniformly doubled spin vector (geometrically unable
+     to DECREASE |L| once the kick is twice the model's own hbar scale),
+     and solving for the magnitude along the sampled direction
+     (unreachable on 10 of 10 seeds).
+
+22b. THE RECORDED REASON FOR NOT USING IT IS STALE.  The comment said it
+     'produces unphysical orbital elements', on a measurement of e^2
+     after the first emissions reading -1.37, -0.487, +0.0152, +0.363,
+     -8.83.  Remeasured now -- after this session's operator-split fix
+     to the L<->S transport and envelope-shape fix to the secular step,
+     both of which change what L is when a photon arrives -- it does not
+     reproduce.  Ten emissions on four seeds:
+
+       seed   emissions   e^2 after each
+         2        1       0.7124
+         3        3       0.0000, 0.0000, 0.3615
+         4        1       0.4017
+         5        5       0.0000 x5
+
+     Never negative beyond machine zero.
+
+22c. AND IT DOES WHAT IT WAS MEANT TO DO.  Angular momentum surrendered
+     by the orbit against what the photon demands:
+
+       magnitude source        n    mean     range
+       classical k(e)          4    0.266    0.158 .. 0.423
+       photon spin             10   0.879    0.451 .. 2.305
+
+     So per-photon angular-momentum conservation goes from 27% to 88%.
+
+22d. THE COST IS REAL AND IS WHY IT IS STILL NOT THE DEFAULT.  The
+     resulting orbit is ECCENTRIC: e = 0.844 after the first photon on
+     seed 42, against exactly 0 with k(e).  The eccentricity factor
+     (1+e^2/2)/(1-e^2)^(5/2) is then 30.6, so the loss rate is thirty
+     times higher, the checkpoints shrink accordingly, and trajectories
+     censor on the default wall-clock budget -- the first run tried here
+     reached 191.45 ps of a ~199 ps trajectory in 900 s and stopped
+     unfinished.
+
+22e. A CONSEQUENCE WORTH NOTING FOR THE ANNIHILATION QUESTION.  Section
+     13 established that the classical model has no contact channel
+     because radiation CIRCULARIZES the orbit and a circular orbit has
+     zero density at the origin.  This switch does the opposite: it
+     drives the eccentricity UP.  Whether it drives it far enough, over
+     a full cascade, to open the contact channel was not measured here
+     -- the trajectories are too expensive to run to the end at this
+     budget -- and it is the obvious next question.
+
+     Not made the default.  That is a production decision and it wants
+     an ensemble, not the four seeds measured here.  The stale comment
+     at the switch and the wrong one-line description in the
+     configuration panel are corrected.

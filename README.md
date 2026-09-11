@@ -634,6 +634,60 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Naprawa ułamkowego \(\hbar\): przełącznik istnieje, a jego blokada była nieaktualna
+
+Poprawka na niedobór z sekcji niżej **już jest w modelu**, jako
+`CREM_SPIN_MAGNITUDE`. Bierze moment pędu odbierany przez foton z **własnego
+spinu fotonu** — odejmowania wektora \(\hbar\) wzdłuż jego kierunku —
+zamiast z klasycznego prawa sekularnego \(k(e)\). Trzy wcześniejsze drogi do
+tego samego celu są zapisane przy przełączniku i każda została wdrożona,
+zmierzona i odrzucona.
+
+**Zapisany powód nieużywania jej jest nieaktualny.** Komentarz mówił, że
+„produkuje niefizyczne elementy orbity", na pomiarze \(e^2\) po pierwszych
+emisjach: \(-1{,}37\), \(-0{,}487\), \(+0{,}0152\), \(+0{,}363\),
+\(-8{,}83\). Zmierzone ponownie — po tegosesyjnej poprawce podziału
+operatorowego w transporcie \(L\leftrightarrow S\) i poprawce kształtu
+obwiedni w kroku sekularnym, a obie zmieniają to, czym jest \(L\) w chwili
+przyjścia fotonu — **nie odtwarza się**:
+
+| ziarno | emisje | \(e^2\) po każdej |
+|---|---|---|
+| 2 | 1 | \(0{,}7124\) |
+| 3 | 3 | \(0{,}0000\); \(0{,}0000\); \(0{,}3615\) |
+| 4 | 1 | \(0{,}4017\) |
+| 5 | 5 | \(0{,}0000\) \(\times5\) |
+
+Nigdy ujemne poza zerem maszynowym.
+
+**I robi to, po co powstała.** Moment pędu oddawany przez orbitę wobec tego,
+czego foton żąda:
+
+| źródło magnitudy | \(n\) | średnio | zakres |
+|---|---|---|---|
+| klasyczne \(k(e)\) | \(4\) | \(0{,}266\) | \(0{,}158\)–\(0{,}423\) |
+| spin fotonu | \(10\) | \(\mathbf{0{,}879}\) | \(0{,}451\)–\(2{,}305\) |
+
+Zachowanie momentu pędu na foton idzie więc z \(27\%\) na \(88\%\).
+
+**Koszt jest realny i to on, a nie wada, trzyma to poza domyślnością.**
+Powstająca orbita jest **mimośrodowa**: \(e=0{,}844\) po pierwszym fotonie
+na ziarnie \(42\), wobec dokładnie \(0\) przy \(k(e)\). Czynnik
+mimośrodu \((1+e^2/2)/(1-e^2)^{5/2}\) wynosi wtedy \(30{,}6\), więc tempo
+strat jest trzydziestokrotnie wyższe, checkpointy kurczą się odpowiednio, a
+trajektorie są cenzurowane domyślnym budżetem zegarowym.
+
+*Konsekwencja dla pytania o anihilację.* Sekcja o tempie ustaliła, że model
+nie ma kanału kontaktu, bo promieniowanie **czyni orbitę kołową**, a orbita
+kołowa ma zerową gęstość w początku. Ten przełącznik robi coś odwrotnego:
+**pcha mimośród w górę**. Czy dostatecznie daleko, przez całą kaskadę, żeby
+otworzyć kontakt — nie zostało zmierzone, bo trajektorie są przy tym budżecie
+za drogie, i to jest oczywiste następne pytanie.
+
+Nie uczyniłem tego domyślnym. To decyzja produkcyjna i wymaga zespołu, a nie
+czterech ziaren. Nieaktualny komentarz przy przełączniku i błędny opis w
+panelu konfiguracji są poprawione.
+
 #### Zarzut o E1 ze stanu 1S, sprawdzony na tym modelu
 
 Zarzut brzmi: pozytonium w \(1S\) (\(L=0\)) nie może promieniować E1, bo

@@ -647,7 +647,16 @@ inline int zeroPointModes = 64;
 //   CREM_FORCE_M1=<x>      Force the magnetic-dipole share of radiated power
 //                          to a stated value instead of the computed one.
 //   CREM_AXIAL_SPIN        Constrain the spin to the orbital axis.
-//   CREM_SPIN_MAGNITUDE    Hold the spin magnitude fixed under transport.
+//   CREM_SPIN_MAGNITUDE    Take the orbital angular momentum a photon
+//                          removes from the PHOTON'S OWN SPIN -- the
+//                          hbar-along-its-direction subtraction -- instead of
+//                          from the classical secular law k(e).  Conserves
+//                          angular momentum per photon far better (the orbit
+//                          surrenders 0.88 of what the photon demands against
+//                          0.27 with k(e)) at the cost of an eccentric orbit
+//                          and a ~30x wall-clock penalty.  The note that it
+//                          produces unphysical elements is stale; see
+//                          crem_collapse.hpp at the switch.
 //   CREM_SPIN_TRIM         Renormalize the spin after each transport step.
 //   CREM_PAIR_L_WITH_E     Recompute angular momentum on the same schedule as
 //                          energy across a skipped span; this is the change

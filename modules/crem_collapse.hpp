@@ -4900,8 +4900,35 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     // is a change to the emission, not to this line.
                     //
                     // CREM_SPIN_MAGNITUDE=1 selects the subtraction magnitude
-                    // for anyone continuing that work.  It closes J and
-                    // produces unphysical orbital elements; both are expected.
+                    // for anyone continuing that work.  It closes J.
+                    //
+                    // THE SECOND HALF OF THAT SENTENCE IS NOW STALE and is
+                    // corrected here rather than left to mislead.  It used to
+                    // read "and produces unphysical orbital elements; both
+                    // are expected", on a measurement of e^2 after the first
+                    // emissions reading -1.37, -0.487, +0.0152, +0.363,
+                    // -8.83.  Remeasured after the operator-split fix to the
+                    // L<->S transport and the envelope-shape fix to the
+                    // secular step -- both of which changed what L is when a
+                    // photon arrives -- it does NOT reproduce: over ten
+                    // emissions on four seeds e^2 comes out 0.7124, 0.3615,
+                    // 0.4017 and machine zero elsewhere, never negative.
+                    //
+                    // And it does what it was meant to do.  The angular
+                    // momentum the orbit surrenders, against what the photon
+                    // demands, goes from 0.266 of it on average with the
+                    // classical k(e) magnitude (range 0.158..0.423) to 0.879
+                    // with this one (range 0.451..2.305).
+                    //
+                    // It is still not the default, for a reason that is a
+                    // cost rather than a defect: the resulting orbit is
+                    // ECCENTRIC (e = 0.844 after the first photon on seed 42
+                    // against exactly 0 with k(e)), the eccentricity factor
+                    // (1+e^2/2)/(1-e^2)^(5/2) is then 30.6, and trajectories
+                    // censor on the default wall-clock budget.  Whether that
+                    // trade is worth making is a production decision, not a
+                    // code one, and it wants an ensemble rather than the
+                    // four seeds measured here.
                     const bool useSpinMagnitude=
                         std::getenv("CREM_SPIN_MAGNITUDE")!=nullptr;
                     // CREM_L_UPDATE: the emission does not DECREMENT the
