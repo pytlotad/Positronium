@@ -634,6 +634,67 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Czy układ zachowuje parzystość C
+
+W tym pytaniu kryją się trzy różne i mają trzy różne odpowiedzi.
+
+**1. Czy dynamika jest C-niezmiennicza? Tak, z konstrukcji.** \(C\) zamienia
+\(e^-\) z \(e^+\), czyli na wielkościach modelu: \(q_1\!\leftrightarrow\!q_2\),
+\(\mathbf r\to-\mathbf r\), \(\boldsymbol\mu\to-\boldsymbol\mu\)
+(bo \(\boldsymbol\mu=\gamma\mathbf S\) i \(\gamma\sim q\), a spin
+zostaje przy cząstce). Człon po członie:
+
+| wielkość | \(C\) | dlaczego |
+|---|---|---|
+| \(q_1q_2/r\) (Coulomb) | \(+\) | \(q_1q_2\) niezmienne |
+| \(\mathbf d=q_1\mathbf r_1+q_2\mathbf r_2\) (źródło E1) | \(-\) | \(\mathbf d\to-\mathbf d\) |
+| \(|\ddot{\mathbf d}|^2\) (moc E1) | \(+\) | kwadrat |
+| \(\boldsymbol\mu_1\!\cdot\!\boldsymbol\mu_2\), \((\boldsymbol\mu_1\!\cdot\!\hat n)(\boldsymbol\mu_2\!\cdot\!\hat n)\) | \(+\) | dwa czynniki nieparzyste |
+| \(\mathbf m=\boldsymbol\mu_1+\boldsymbol\mu_2\) (źródło M1) | \(-\) | \(\mathbf m\to-\mathbf m\) |
+| \(q(\boldsymbol\mu_2-\boldsymbol\mu_1)\!\cdot\!(\mathbf v\times\hat n)\) (spin-orbita) | \(+\) | ładunek nieparzysty **razy** moment nieparzysty |
+| \(\boldsymbol\omega=\gamma\mathbf B\) (tempo BMT) | \(+\) | nieparzyste razy nieparzyste |
+| \(w_{2\gamma}=|\mathbf m|^2/(2\mu)^2\) | \(+\) | kwadrat |
+
+Każda **obserwabla** wychodzi C-parzysta, a każda wielkość C-nieparzysta
+dociera do obserwabli wyłącznie w kwadracie albo w parze z ładunkiem.
+
+**2. Czy stany są stanami własnymi \(C\)? Nie, i to jest właściwa
+odpowiedź.** W QED \(\pm1\) bierze się z **symetrii wymiany funkcji
+falowej** — spinowa funkcja singletu jest antysymetryczna, trypletu
+symetryczna — a klasyczna konfiguracja dwóch wektorów żadnej symetrii wymiany
+nie ma. Nie ma czego zachowywać.
+
+Sygnatura jest mierzalna. Stan własny \(C\) musi mieć zerową wartość
+oczekiwaną **każdej** obserwabli C-nieparzystej, a \(\mathbf m\) jest
+C-nieparzysty. Konfiguracja para modelu ma \(|\mathbf m|=2\mu\), czyli
+wartość **największą z możliwych**. **Klasyczny stan para nie spełnia więc
+warunku koniecznego na bycie stanem własnym \(C\).** Orto go spełnia
+(\(\mathbf m=0\)), ale z niewłaściwego powodu: znika sam wektor, a nie
+wartość oczekiwana po stanie symetrycznym.
+
+**3. Co zatem niesie regułę wyboru?** Nie etykieta parzystości, tylko
+**znikanie amplitudy C-nieparzystej**. \(\mathbf m\) jest dokładnie
+operatorem łączącym \(C=+1\) z \(C=-1\) (dla pozytonium
+\(\mathbf m\sim\mathbf S_1-\mathbf S_2\), który przeprowadza singlet w
+tryplet \(m=0\)), a model zeruje go tożsamościowo dla orto. To jest
+właściwy kształt, osiągnięty bez żadnej liczby kwantowej parzystości.
+
+**4. Gdzie analogia pęka, ilościowo — i to trzeba zapisać przeciw modelowi:**
+
+| stan | kwantowo \(\langle m\rangle\) | kwantowo \(\langle m^2\rangle/(\gamma\hbar)^2\) | klasycznie \(|m|^2\) |
+|---|---|---|---|
+| singlet / para | \(0\) | \(3\) | \(1\) |
+| tryplet / orto | \(0\) | \(1\) | \(\mathbf 0\) |
+
+Kwantowo \(\langle m\rangle\) znika w **obu** stanach, a
+\(\langle m^2\rangle\) różni się tylko czynnikiem \(3\). Klasycznie
+\(|m|^2\) wynosi \(1\) dla para i **dokładnie \(0\)** dla orto, czyli
+stosunek nieskończony. **Dokładne kasowanie modelu nie ma więc kwantowego
+odpowiednika**: fluktuacja momentu magnetycznego trypletu nie znika, jest
+tylko trzy razy mniejsza od singletowej. Model odtwarza *kształt* reguły
+\(C\) przez wielkość, która kwantowo **nie** znika tam, gdzie model każe jej
+zniknąć.
+
 #### Kiedy który kanał może wyemitować foton, wprost z konfiguracji momentów
 
 Model ma dwa kanały promieniste w czasie inspiralu i jeden na końcu, a

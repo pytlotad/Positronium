@@ -1105,3 +1105,67 @@ end, and the moment configuration enters exactly two of the three.
      with the shape of the C-parity selection rule, and it acts in both
      places for the same reason -- coherent cancellation of the two
      moments when they are anti-aligned.
+
+==================================================================
+20. DOES THE MODEL CONSERVE C-PARITY?
+==================================================================
+
+Three separate questions hide in that one, and they have three
+different answers.
+
+20a. IS THE DYNAMICS C-INVARIANT?  Yes, by construction.  C exchanges
+     e- and e+, which on the model's quantities is q1 <-> q2, r -> -r,
+     and mu -> -mu (since mu = gamma S and gamma ~ q, while the spin
+     stays with the particle).  Term by term:
+
+       quantity                             C   why
+       q1 q2 / r          (Coulomb)         +   q1q2 unchanged
+       d = q1 r1 + q2 r2  (E1 source)       -   d -> -d
+       |d''|^2            (E1 power)        +   square of a C-odd
+       mu1.mu2, (mu1.n)(mu2.n)              +   two C-odd factors
+       m = mu1 + mu2      (M1 source)       -   m -> -m
+       |m''|^2            (M1 power)        +   square
+       q (mu2-mu1).(v x n)  (spin-orbit)    +   C-odd charge TIMES C-odd moment
+       omega = gamma B    (BMT rate)        +   C-odd times C-odd
+       dmu/dt = omega x mu                  -   consistent with mu being C-odd
+       w_2g = |m|^2/(2mu)^2 (channel)       +   square
+
+     Every observable comes out C-even, and every C-odd quantity
+     reaches an observable only squared or paired with a charge.
+
+20b. ARE THE STATES C EIGENSTATES?  No, and this is the real answer.
+     In QED the +-1 comes from the EXCHANGE SYMMETRY of the
+     wavefunction -- the singlet spin function is antisymmetric, the
+     triplet symmetric -- and a classical configuration of two vectors
+     has no exchange symmetry to be +-1.  There is nothing to conserve.
+
+     The signature is measurable.  A C eigenstate must have zero
+     expectation for every C-odd observable, and m = mu1 + mu2 is
+     C-odd.  The model's para configuration has |m| = 2 mu, the largest
+     value it can take.  So the classical para state FAILS the
+     necessary condition for being a C eigenstate.  Ortho passes it
+     (m = 0) but for the wrong reason: the vector itself vanishes
+     rather than an expectation over a symmetric state.
+
+20c. SO WHAT CARRIES THE SELECTION RULE?  Not a parity label -- the
+     vanishing of a C-odd amplitude.  m is exactly the operator that
+     connects C=+1 to C=-1 (for positronium m ~ S1-S2, which maps the
+     singlet onto the m=0 triplet), and the model makes it vanish
+     identically for ortho.  That is the right shape, reached without
+     any parity quantum number.
+
+20d. WHERE THE ANALOGY BREAKS, QUANTITATIVELY.  This is the part worth
+     recording against the model:
+
+       state      QM <m>   QM <m^2>/(g hbar)^2   classical |m|^2
+       singlet      0              3                   1
+       triplet      0              1                   0
+
+     Quantum mechanically <m> vanishes in BOTH states, and <m^2>
+     differs only by a factor of 3.  Classically |m|^2 is 1 for para
+     and EXACTLY 0 for ortho, a ratio of infinity.  The model's exact
+     cancellation therefore has no quantum counterpart: the triplet's
+     magnetic-moment fluctuation does not vanish, it is merely three
+     times smaller than the singlet's.  The model reproduces the SHAPE
+     of the C selection rule through a quantity that, quantum
+     mechanically, does not vanish where the model makes it vanish.
