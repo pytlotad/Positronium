@@ -1929,3 +1929,57 @@ measurement of whether that survives a cascade.
      route (after 30a's mu/(ec) and 30b's frequency peak) on which the
      moment configuration points at the Compton scale and not the Bohr
      scale.
+
+32. STEP 0 OF THE FREEING PLAN: DOES THE ORBIT-TIED ZPF BAND ADMIT A
+    DISTINGUISHED RADIUS?
+
+    The concern raised when the plan was proposed: the zero-point field's
+    band is tied to the orbital frequency ([0.5, 2] x omega_orb, 8 modes)
+    and rides up with the orbit.  A field that looks the same at every
+    radius cannot select one, and step 4 would be dead before starting.
+
+32a. THE AMPLITUDE LAW IS THE CORRECT BROADBAND ONE, AND THAT DISPOSES OF
+     HALF THE CONCERN.  makeZeroPointField sets amplitude = C*omega_orb^2
+     with
+
+       C = scale*sqrt(2 hbar (f_hi^4 - f_lo^4)/(8 pi^2 c^3 N eps0)),
+
+     i.e. u = eps0<E^2> = hbar(f_hi^4-f_lo^4) omega_orb^4/(8 pi^2 c^3).
+     That is exactly the integral of rho(omega) = hbar omega^3/(2 pi^2 c^3)
+     over [f_lo, f_hi]*omega_orb.  Because the RELATIVE bandwidth is
+     constant, a real broadband omega^3 field sampled at the orbital
+     frequency gives the same omega^4 energy scaling.  The band-riding is
+     a restriction to the part of the spectrum that acts, not a distortion
+     of how it scales.
+
+     What band-riding does still give up is the off-resonant spectrum and
+     the phase history a fixed field would carry.  Those matter for the
+     dynamics, not for whether a scale exists.
+
+32b. THE FIELD'S GRIP ON THE ORBIT IS NOT SCALE-FREE.  Sampled directly
+     (4096 phase points per radius, rms):
+
+       a/a_pair   E_zpf (V/m)   E_bind (V/m)   ratio       r/lambda_C
+       100        1.3899e+02    1.2856e+07     1.0811e-05  27407.2
+       10         1.3903e+05    1.2856e+09     1.0814e-04   2740.7
+       1          1.3915e+08    1.2856e+11     1.0824e-03    274.1
+       0.1        1.3953e+11    1.2856e+13     1.0854e-02     27.4
+       0.01       1.4071e+14    1.2856e+15     1.0946e-01      2.74
+       0.001      1.4411e+17    1.2856e+17     1.1210e+00      0.274
+       0.0001     1.5096e+20    1.2856e+19     1.1743e+01      0.027
+
+     The ratio rises exactly as r^-1 (one decade per decade) and crosses 1
+     near a/a_pair = 8.9e-4, i.e. r = 0.244 lambda_C.
+
+32c. VERDICT ON STEP 0: THE BAND DOES ADMIT A DISTINGUISHED RADIUS, so
+     step 4 is alive and the power balance is worth measuring.
+
+     But the radius the FIELD ratio picks out is 0.244 lambda_C -- the
+     Compton scale, for the fourth time, after mu/(ec) (30a), the
+     frequency-ratio peak at 0.726 lambda_C (30b) and the stationary
+     harmonic at 0.726 lambda_C (31c).
+
+     This is a field-strength crossing, NOT the power balance.  Absorption
+     is second order in a weak field while radiation is set by the orbit,
+     so the two conditions sit at different radii and only the second one
+     is the SED scale.  Measuring it is in progress.
