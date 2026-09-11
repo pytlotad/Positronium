@@ -2398,9 +2398,25 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     /(firstMagneticMoment*secondMagneticMoment);
                 const bool seedPara=seedCos>=0.5;
                 const bool endPara=endCos>=0.5;
+                // The TOTAL angular momentum the final state would have to
+                // carry, which is what a selection rule acts on.  Opposite
+                // charges invert the spin-moment relation, so the spins'
+                // mutual cosine is minus the moments': |S1+S2| = hbar
+                // sqrt((1-endCos)/2), exactly 0 for a preserved para state
+                // and exactly hbar for a preserved ortho one.  Printed beside
+                // the orbital L so "does the terminal configuration still
+                // support the multiplicity that was emitted" can be read off
+                // rather than assumed.
+                const double netSpin=
+                    std::sqrt(std::max(0.0,0.5*(1.0-endCos)));
+                const double orbitalL=
+                    elements.specificAngularMomentum*reducedMass/hbar;
                 std::cerr<<"CHANNEL seedCos="<<seedCos<<" endCos="<<endCos
                     <<" drift="<<(endCos-seedCos)
                     <<" marginToEdge="<<std::abs(endCos-0.5)
+                    <<" |S|="<<netSpin<<" L_orb="<<orbitalL
+                    <<" |J|in["<<std::abs(netSpin-orbitalL)<<","
+                    <<(netSpin+orbitalL)<<"]"
                     <<" emitted="<<(selectedPhenomenon==1?"2gamma":"3gamma")
                     <<" seedClass="<<(seedPara?"para":"ortho")
                     <<" endClass="<<(endPara?"para":"ortho")

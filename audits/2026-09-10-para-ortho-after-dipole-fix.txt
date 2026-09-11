@@ -786,3 +786,58 @@ ortho: 13 of 16 reached a stopping condition
      finite amplitude at zero separation while a classical orbit, being
      a curve, has none.  Supply that one number and the rest of the
      rate is classical and comes out at 124.4942 ps.
+
+==================================================================
+14. AUDIT OF THE 2gamma/3gamma SELECTION
+==================================================================
+
+14a. The channel is chosen by the FLAG, not by the dynamics.
+     annihilationPhotonEnergiesFor(W, para, stream) is called with
+     para = (selectedPhenomenon==1), fixed before the inspiral starts.
+     The moments are prepared to match that choice; they do not make it.
+
+14b. Ortho's configuration is exactly preserved.  Over every trajectory
+     measured, endCos = -1 to 14 digits (drift 3e-15 .. 2e-14), so
+     |S1+S2| = 1 hbar exactly and, with the orbital L now at 0.095 hbar,
+     |J| lies in [0.90, 1.10] -- which a Landau-Yang gate reads as J=1
+     and therefore 3 gamma, agreeing with the flag on every trajectory.
+
+14c. Para's configuration is DESTROYED in 42% of trajectories.  Twelve
+     para trajectories, master seed 42, terminal state:
+
+       endCos     |S|     L_orb      |J| range        gate    class
+        0.6239   0.4337   0.0959   [0.338, 0.530]     2g     para
+        0.7151   0.3774   0.0967   [0.281, 0.474]     2g     para
+        0.8682   0.2567   0.0950   [0.162, 0.352]     2g     para
+        0.0370   0.6939   0.0967   [0.597, 0.791]     3g    ortho
+        0.8249   0.2959   0.0960   [0.200, 0.392]     2g     para
+       -0.1454   0.7568   0.0965   [0.660, 0.853]     3g    ortho
+        0.8369   0.2855   0.0960   [0.190, 0.382]     2g     para
+        0.2455   0.6142   0.0980   [0.516, 0.712]     3g    ortho
+        0.3554   0.5677   0.0961   [0.472, 0.664]     3g    ortho
+        0.8757   0.2493   0.0954   [0.154, 0.345]     2g     para
+        0.1870   0.6376   0.0968   [0.541, 0.734]     3g    ortho
+        0.7566   0.3488   0.0970   [0.252, 0.446]     2g     para
+
+     crossed the model's own cos>=0.5 threshold : 5/12 = 42%
+     a J selection rule would say 3g, not 2g    : 5/12 = 42%
+
+     The same five trajectories in both columns.  So the model emits
+     2 gamma from a terminal configuration that its own classifier,
+     and a selection rule on the total angular momentum, both call
+     ortho.
+
+14d. The drift is always downward and is PRE-EXISTING, not caused by
+     the L<->S closure.  Measured on c70ab4b (before it): endCos 0.478,
+     0.079, 0.850, 0.219 on indices 2,3,5,7 against 0.868, 0.037,
+     -0.145, 0.246 after -- comparable magnitudes, comparable crossing
+     rate.  Para's aligned configuration is the UNSTABLE fixed point of
+     the dipole-dipole dynamics, which is why only it drifts.
+
+14e. One thing the L<->S closure did buy here.  A selection rule on J
+     needs J to be spin-dominated, i.e. L_orb << |S|.  Before the
+     closure L_orb was 0.215 hbar and the gate got 3 of 4 ortho
+     trajectories WRONG (section 2 of this file).  With L_orb now
+     0.095 hbar against |S| = 1 it is right on every one.  The gate
+     became usable for ortho; para is what it cannot follow, because
+     there the model's own |S| is no longer 0.

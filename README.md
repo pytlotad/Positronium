@@ -634,6 +634,54 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Audyt wyboru \(2\gamma/3\gamma\)
+
+*Kanał wybiera flaga, nie dynamika.* `annihilationPhotonEnergiesFor(W, para,
+stream)` jest wołane z `para = (selectedPhenomenon==1)`, ustalonym **przed**
+startem inspiralu. Momenty są przygotowywane pod ten wybór; nie dokonują go.
+To było już zapisane niżej — nowe jest to, co z tym robi przebieg.
+
+**Orto zachowuje swoją konfigurację dokładnie.** Na każdej zmierzonej
+trajektorii `endCos = -1` co do \(14\) cyfr (dryf \(3\cdot10^{-15}\) do
+\(2\cdot10^{-14}\)), więc \(|S_1+S_2|=1\,\hbar\) ściśle. Przy
+orbitalnym \(L=0{,}095\,\hbar\) daje to \(|J|\in[0{,}90;\,1{,}10]\),
+czyli \(J=1\) — bramka Landaua-Yanga zamyka \(2\gamma\) i wskazuje
+\(3\gamma\), **zgodnie z flagą na każdej trajektorii**.
+
+**Para traci swoją konfigurację w \(42\%\) przypadków.** Dwanaście
+trajektorii, ziarno \(42\), stan końcowy:
+
+| `endCos` | \(|S|\) | \(L_{\rm orb}\) | \(|J|\) | bramka | klasa |
+|---|---|---|---|---|---|
+| \(0{,}8757\) | \(0{,}249\) | \(0{,}095\) | \([0{,}154;\,0{,}345]\) | \(2\gamma\) | para |
+| \(0{,}8682\) | \(0{,}257\) | \(0{,}095\) | \([0{,}162;\,0{,}352]\) | \(2\gamma\) | para |
+| \(0{,}6239\) | \(0{,}434\) | \(0{,}096\) | \([0{,}338;\,0{,}530]\) | \(2\gamma\) | para |
+| \(0{,}3554\) | \(0{,}568\) | \(0{,}096\) | \([0{,}472;\,0{,}664]\) | \(\mathbf{3\gamma}\) | **orto** |
+| \(0{,}2455\) | \(0{,}614\) | \(0{,}098\) | \([0{,}516;\,0{,}712]\) | \(\mathbf{3\gamma}\) | **orto** |
+| \(0{,}1870\) | \(0{,}638\) | \(0{,}097\) | \([0{,}541;\,0{,}734]\) | \(\mathbf{3\gamma}\) | **orto** |
+| \(0{,}0370\) | \(0{,}694\) | \(0{,}097\) | \([0{,}597;\,0{,}791]\) | \(\mathbf{3\gamma}\) | **orto** |
+| \(-0{,}1454\) | \(0{,}757\) | \(0{,}096\) | \([0{,}660;\,0{,}853]\) | \(\mathbf{3\gamma}\) | **orto** |
+
+(pozostałe cztery, \(0{,}715\)–\(0{,}837\), zachowują się jak trzy
+pierwsze). **Pięć z dwunastu przekracza własny próg klasyfikacyjny modelu
+\(\cos\ge0{,}5\), i te same pięć dostałoby \(3\gamma\) z reguły wyboru
+na całkowitym momencie pędu — a model emituje dla nich \(2\gamma\).**
+
+*Dryf jest zawsze w dół i jest zastany.* Zmierzone na `c70ab4b`, przed
+domknięciem \(L\leftrightarrow S\): `endCos` \(0{,}478\), \(0{,}079\),
+\(0{,}850\), \(0{,}219\) na indeksach \(2,3,5,7\) wobec \(0{,}868\),
+\(0{,}037\), \(-0{,}145\), \(0{,}246\) po nim — porównywalne co do
+wielkości i odsetka przejść. Konfiguracja równoległa para jest **niestabilnym
+punktem stałym** dynamiki dipol-dipol, i dlatego dryfuje tylko ona.
+
+*Co jednak domknięcie \(L\leftrightarrow S\) tu dało.* Reguła wyboru na
+\(J\) wymaga, żeby \(J\) było zdominowane przez spin, czyli
+\(L_{\rm orb}\ll|S|\). Przed domknięciem \(L_{\rm orb}=0{,}215\,\hbar\)
+i bramka myliła się na **3 z 4** trajektorii orto. Przy dzisiejszym
+\(L_{\rm orb}=0{,}095\,\hbar\) wobec \(|S|=1\) trafia na każdej.
+**Bramka stała się użyteczna dla orto**; para jest tym, czego nie potrafi
+śledzić, bo tam własne \(|S|\) modelu nie jest już zerem.
+
 #### Co zamieniłoby kontakt w tempo
 
 Dojście do kontaktu jest warunkiem koniecznym, nie tempem. Tempo faktoryzuje
