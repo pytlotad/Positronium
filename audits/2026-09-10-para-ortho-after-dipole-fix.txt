@@ -1866,3 +1866,66 @@ measurement of whether that survives a cascade.
      fields, and has different exponents; measuring it is the single most
      important outstanding item.  Plan recorded in
      audits/2026-09-11-plan-uwolnienia-modelu.md.
+
+31. CAN A HARMONIC LOCK MARK THE LEVELS?
+
+    Section 30 only checked the 1:1 resonance and found it unreachable.
+    That was the wrong test: locking can happen at any rational ratio, so
+    the question is where the harmonic number N = w_orb/w_spin is, and how
+    DENSE its integers are.
+
+31a. THE HARMONIC NUMBER AT THE BOHR RADIUS IS 2/alpha^2.  Assuming the
+     motional field dominates (it does at a_pair: the analytic motional
+     rate 5.503e11 against a measured 5.513e11),
+
+       w_spin = k_e v /(m c^2 r^2),  w_orb = v/r,  so
+       N = w_orb/w_spin = m c^2 r / k_e = r / r_e = (2/alpha^2) n^2.
+
+     Measured against it:
+
+       n    a/a_pair   N measured    (2/alpha^2)n^2   ratio
+       1        1         37492.4        37557.7      0.9983
+       2        4        171408.4       150230.9      1.1410
+       3        9        404965.9       338019.6      1.1981
+       4       16        738412.6       600923.7      1.2288
+       9       81       3905223.0      3042176.1      1.2837
+
+     Exact to 0.17% at n=1 and drifting ~28% per decade away from it, so
+     N = r/r_e is a LOCAL relation at the Bohr scale, not a law.  At n=1
+     the pair makes 2/alpha^2 = 37558 revolutions per spin precession.
+
+31b. THE HARMONICS ARE FAR TOO DENSE TO MARK ANYTHING.
+
+       between   N runs from   to        integers crossed
+       n=1,2       37492      171408        133916
+       n=2,3      171408      404966        233557
+       n=3,4      404966      738413        333447
+       n=4,5      738413     1171810        433398
+
+     Every radius between two Bohr levels is a resonance of some order,
+     a hundred thousand of them per gap.  A condition met everywhere
+     selects nothing.
+
+31c. THE ONE STATIONARY HARMONIC IS AT THE COMPTON SCALE.  N is monotone
+     through the whole Bohr region, so no harmonic is held there.  It has
+     a single minimum:
+
+       N_min = 22.71  at  a/a_pair = 2.6470e-3 = 0.7255 lambda_C
+       band where N < N_min + 1:  a/a_pair 2.1931e-3 to 3.0874e-3,
+                                  33.8% wide in radius
+
+     dN/dr = 0 there, so the lowest harmonic is held across a third of a
+     decade of radius.  That is the actual condition for resonant capture,
+     and it is met at exactly one place in the model.
+
+     It is not a Bohr level: n_E = 0.0514, binding 2570 eV against the
+     6.803 eV of n=1 and the 1.022 MeV pair rest energy.  It corresponds
+     to no recognizable threshold.
+
+31d. ANSWER.  Yes, the orientation and precession do synchronize with
+     orbital harmonics -- everywhere, which is why it cannot mark levels.
+     The one harmonic that is stationary, and therefore the only one that
+     could capture, sits at 0.726 lambda_C.  This is the third independent
+     route (after 30a's mu/(ec) and 30b's frequency peak) on which the
+     moment configuration points at the Compton scale and not the Bohr
+     scale.
