@@ -1536,3 +1536,108 @@ measurement of whether that survives a cascade.
      6000-10000 s more.  The results in 26c and 26d are therefore fits
      to a censored track, not terminal measurements, and are reported as
      such.
+
+27. THE SINGLET CLAIM, TAKEN APART
+
+    The sentence under test: "the classical pair loses the singlet because
+    two classical vectors cannot represent an entangled state; that is why
+    the weight is read at preparation, and CREM_CHANNEL_AT_ANNIHILATION
+    shows the scale of the defect, 0.43 to 0.94."  Four assertions.  Three
+    are wrong.  The fourth is right for a different reason.
+
+27a. THE MECHANISM IS FIELD PARITY, NOT ENTANGLEMENT.  The mutual magnetic
+     field has two parts with different parity under the exchange
+     r -> -r, 1 <-> 2.  Measured separately at 0.2 a_pair by switching one
+     off (tools probe, scratch):
+
+       part                          |B1|      |B2|     B1.B2/|B||B|  parity
+       motional (charge only), para  87.47     87.47      -1          odd
+       motional (charge only), ortho 87.47     87.47      -1          odd
+       dipole (moment only), para    97.89     97.89      +1          EVEN
+       dipole (moment only), ortho   97.89     97.89      -1          odd
+       both, para                    10.44    185.37      +1          --
+       both, ortho                  185.37    185.37      -1          --
+
+     The motional part is odd always; the dipole part is odd only for
+     anti-aligned moments.  With -q1/m1 = -(-q2/m2):
+
+       ortho: both parts odd -> B2 = -B1 exactly -> omega1 = omega2
+              exactly.  Measured |omega1-omega2| = 0 at all 6551 substeps.
+              Two identical rotation vectors acting on two anti-parallel
+              moments preserve anti-parallelism exactly and forever.  This
+              is an exact symmetry of the configuration, NOT stability.
+       para:  the parts have opposite parity -> the two fields are neither
+              equal nor opposite (10.44 against 185.37, a factor 17.8) ->
+              omega1 != +-omega2.  Measured in production:
+              |omega1-omega2|/|omega1| = 0.335.
+
+     README previously derived omega1 = -omega2 for para from the dipole
+     part alone.  That is wrong: it predicts a relative rate difference of
+     2, and the measurement is 0.335.
+
+     Consequence for how the 12/12 ortho result is quoted: it is not a test
+     the model could have failed.  Ortho is preserved by construction.
+
+27b. THE SINGLET IS RECOVERED, REPEATEDLY.  CREM_DEBUG_ALIGN now takes a
+     sample count, so the angle can be followed at every spin-transport
+     substep instead of at 63 checkpoints.  Para, full trajectory, 6193
+     substeps: 3072 increments up, 3119 down, 121 sign changes.  Ortho:
+     6551 substeps, zero increments either way.
+
+     The pair's total spin obeys |S|/hbar = sqrt(2(1-cos))/2 identically
+     (checked to 1.5e-8 against the new Smag field in the skip census):
+
+       channel   |S| min      |S| max     |S| final
+       para      0.000000     0.582287    0.295978
+       ortho     1.000000     1.000000    1.000000
+
+     Para's total spin oscillates between the singlet value 0 and 0.58 hbar
+     and returns to exactly zero.  Over six seeds, cos exceeds 0.999
+     between 52 and 192 times per run, the last time at 81-98% of the way
+     through.  A state that returns to the singlet two hundred times, and
+     is still doing it at the end, is not a destroyed state.
+
+27c. THE AMPLITUDE IS RESET AT PHOTONS, NOT DAMPED.  In 5%-of-run windows
+     the angle's standard deviation does not fall smoothly; it steps,
+     exactly twice in a two-photon run:
+
+       substep bound 0.05  : sigma 0.26 -> 0.16 -> 0.03
+       substep bound 0.0125: sigma 0.27 -> 0.015 -> 0.18   (up again)
+
+     An earlier six-segment reading of the same data looked like monotone
+     damping.  It was an artefact of the segment boundaries; the finer step
+     shows the amplitude rising again after the second photon.
+
+27d. THE BAND CONVERGES, THE PHASE DOES NOT.  CREM_SPIN_SUBSTEP overrides
+     the per-substep rotation bound.  Same seed, same channel, two
+     halvings:
+
+       bound     substeps   cos min   cos mean   cos max   cos FINAL
+       0.05       5561       0.2269    0.8024     1.0000    0.8801
+       0.025     10457       0.2270    0.8065     1.0000    0.8234
+       0.0125    20734       0.2270    0.8054     1.0000    0.4880
+
+     The band is converged to four digits.  The pointwise difference on a
+     common grid is 0.70-0.75, and the terminal value walks from 0.88 to
+     0.49.  The band is established before the first photon; what the
+     photons reset is not step-converged.
+
+     Per-seed bands, six seeds, early phase (before the photons widen them):
+
+       seed   cos min   w min     cos max   w max
+         2     0.2269   0.6134    1.0000    1.0000
+         3     0.4331   0.7166    1.0000    1.0000
+         4     0.2381   0.6191    1.0000    1.0000
+         5     0.1193   0.5596    1.0000    1.0000
+         6     0.4197   0.7099    1.0000    1.0000
+         7     0.3312   0.6656    1.0000    1.0000
+
+27e. WHAT THE DEFAULT RESTS ON NOW.  Reading the weight at preparation is
+     still right, and the justification is stronger than the one it
+     replaces: the terminal weight is a libration phase that does not
+     converge under step refinement.  Feeding a non-convergent quantity
+     into an observable is an objection on its own, independent of whether
+     the libration is the model's physics.  What must stop being said is
+     that the 0.43-0.94 spread measures how far the singlet has been
+     destroyed.  It measures where in a converged, bounded oscillation the
+     clock happened to stop.

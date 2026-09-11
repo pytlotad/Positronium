@@ -683,6 +683,15 @@ inline int zeroPointModes = 64;
 //                          terminal configuration no longer supports two
 //                          photons.
 //
+// C1b. CREM_SPIN_SUBSTEP -- the per-substep rotation bound of the secular
+//      spin transport, default 0.05 radian.  This one DOES change the
+//      trajectory; it exists so the mutual-angle libration can be tested
+//      for step convergence, and the test is the reason the annihilation
+//      channel is read at preparation: halving it twice leaves the
+//      libration BAND unchanged to four digits (cos min 0.2269, 0.2270,
+//      0.2270) while the TERMINAL value walks from 0.8801 to 0.4880.  The
+//      band is the model's; the endpoint is not.
+//
 // C2.  THESE ONLY PRINT.  Diagnostics and censuses; they do not alter the
 //      trajectory, and are safe to leave on while measuring.
 //
@@ -694,6 +703,13 @@ inline int zeroPointModes = 64;
 //   CREM_DEBUG_CHANNEL, CREM_DEBUG_M1, CREM_DEBUG_GRAD, CREM_DEBUG_PROBES,
 //   CREM_DEBUG_RETREAT, CREM_DEBUG_EPS_SCAN, CREM_DEBUG_FIELDSYM,
 //   CREM_DEBUG_ALIGN, POSITRONIUM_DEBUG_DIPOLE, POSITRONIUM_DEBUG_FIELDS.
+//
+//   CREM_DEBUG_ALIGN takes a VALUE: the number of spin-transport substeps
+//   to print.  Six is enough to watch the mutual angle start to move; six
+//   thousand is what it takes to tell a bounded libration from a one-way
+//   drift, which is the whole question about the para channel.  The skip
+//   census prints |S1+S2| beside the mutual angle, so the same trace shows
+//   the total spin returning to exactly zero.
 //
 // ===================================================================
 // GROUP D -- OPTIONS THAT NO LONGER EXIST

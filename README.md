@@ -1145,17 +1145,44 @@ dla pozytonium \(\boldsymbol\mu_1+\boldsymbol\mu_2\propto\mathbf
 S_1-\mathbf S_2\), czyli **waga kanału jest dokładnie operatorem, który to
 mieszanie wykonuje**.
 
-*Mechanizm klasyczny da się wyprowadzić, i wyjaśnia asymetrię.* Dla
-pozytonium \(\gamma_2=-\gamma_1\), a pole dipolowe partnera spełnia
-\(\mathbf B_1=-\mathbf B_2\) przy momentach antyrównoległych i
-\(\mathbf B_1=+\mathbf B_2\) przy równoległych. Stąd
+*Mechanizm klasyczny da się wyprowadzić, i wyjaśnia asymetrię.* Wzajemne
+pole magnetyczne ma **dwie** części o różnej parzystości względem zamiany
+\(\mathbf r\to-\mathbf r\), \(1\leftrightarrow2\), i to ich
+interferencja robi całą robotę. Zmierzone osobno przy \(0{,}2\,a_{\rm
+pair}\), przez wyłączanie jednej z nich:
 
-- **orto** (\(\boldsymbol\mu_2=-\boldsymbol\mu_1\)):
-  \(\omega_1=\gamma_1\mathbf B_1=-\gamma_1\mathbf B_2=\omega_2\) —
-  oba spiny precesują wokół **tego samego** wektora, więc kąt wzajemny jest
-  zachowany tożsamościowo;
-- **para** (\(\boldsymbol\mu_2=+\boldsymbol\mu_1\)):
-  \(\omega_1=-\omega_2\) — spiny **kontrrotują**, więc kąt się zmienia.
+| część pola | \(|B_1|\) | \(|B_2|\) | \(\mathbf B_1\!\cdot\!\mathbf B_2/|B||B|\) | parzystość |
+|---|---|---|---|---|
+| motionalna (sam ładunek), para | \(87{,}47\) | \(87{,}47\) | \(-1\) | nieparzysta |
+| motionalna (sam ładunek), orto | \(87{,}47\) | \(87{,}47\) | \(-1\) | nieparzysta |
+| dipolowa (sam moment), para | \(97{,}89\) | \(97{,}89\) | \(+1\) | **parzysta** |
+| dipolowa (sam moment), orto | \(97{,}89\) | \(97{,}89\) | \(-1\) | nieparzysta |
+| obie, para | \(10{,}44\) | \(185{,}37\) | \(+1\) | — |
+| obie, orto | \(185{,}37\) | \(185{,}37\) | \(-1\) | — |
+
+Człon motionalny jest nieparzysty zawsze, dipolowy tylko w orto. Stąd, przy
+\(-q_1/m_1=-(-q_2/m_2)\):
+
+- **orto** (\(\boldsymbol\mu_2=-\boldsymbol\mu_1\)): obie części
+  nieparzyste, więc \(\mathbf B_2=-\mathbf B_1\) **ściśle**, a razem z
+  przeciwnymi przedrostkami \(-q/m\) daje to \(\omega_1=\omega_2\)
+  **ściśle**. Zmierzone: \(|\omega_1-\omega_2|=0\) na wszystkich
+  \(6551\) podkrokach. Dwa identyczne wektory obrotu działające na dwa
+  antyrównoległe momenty zachowują antyrównoległość dokładnie i na zawsze.
+  To nie jest stabilność, tylko **ścisła symetria konfiguracji** — więc
+  „orto zachowane co do \(14\) cyfr" nie jest sukcesem modelu, tylko jego
+  konstrukcją;
+- **para** (\(\boldsymbol\mu_2=+\boldsymbol\mu_1\)): części mają
+  **przeciwne parzystości**, więc pola nie są ani równe, ani przeciwne
+  (\(10{,}44\) wobec \(185{,}37\), czyli czynnik \(17{,}8\)), i
+  \(\omega_1\ne\pm\omega_2\). Zmierzone w biegu produkcyjnym:
+  \(|\omega_1-\omega_2|/|\omega_1|=0{,}335\). Dwa **równoległe**
+  momenty obracane z różnymi prędkościami po prostu się rozjeżdżają.
+
+Wcześniej stało tu, że dla para \(\omega_1=-\omega_2\), czyli spiny
+kontrrotują. To było wyprowadzone z samej części dipolowej i jest **błędne**:
+dałoby \(|\omega_1-\omega_2|/|\omega_1|=2\), a mierzy się
+\(0{,}335\).
 
 *Sprostowanie: to jest LIBRACJA, nie dryf.* Zmierzone na \(63\)
 checkpointach:
@@ -1172,13 +1199,44 @@ orto \(4\) / \(4\). Moje „zawsze w dół, konfiguracja niestabilna" było
 więc artefaktem startu dokładnie w **maksimum** oscylacji, skąd pierwsze
 wychylenie może iść tylko w dół.
 
+*Libracja mierzona na podkrokach, nie na checkpointach.* Sonda
+`CREM_DEBUG_ALIGN` przyjmuje teraz liczbę próbek, więc kąt da się śledzić na
+każdym podkroku transportu spinu, a nie tylko na \(63\) checkpointach.
+Na pełnej trajektorii para, \(6193\) podkroków: **\(3072\) przyrosty w
+górę, \(3119\) w dół, \(121\) zmian znaku**. Orto: \(6551\)
+podkroków, zero przyrostów w którąkolwiek stronę, \(\cos=-1\) co do
+precyzji maszynowej.
+
+*Singlet jest odzyskiwany, nie tracony.* Spin całkowity pary spełnia
+tożsamościowo \(|S|/\hbar=\tfrac12\sqrt{2(1-\cos)}\), sprawdzone do
+\(1{,}5\cdot10^{-8}\). Zmierzony przebieg:
+
+| kanał | \(|S|\) min | \(|S|\) max | \(|S|\) końcowe |
+|---|---|---|---|
+| para | \(\mathbf{0{,}000000}\) | \(0{,}582287\) | \(0{,}295978\) |
+| orto | \(1{,}000000\) | \(1{,}000000\) | \(1{,}000000\) |
+
+Spin całkowity pary **oscyluje między wartością singletową \(0\) a
+\(0{,}58\,\hbar\) i wraca do zera dokładnie**. Na sześciu ziarnach
+\(\cos\) przekracza \(0{,}999\) od \(52\) do \(192\) razy na bieg,
+ostatni raz przy \(81\)–\(98\%\) przebiegu. Stan, który wraca do
+singletu dwieście razy i robi to jeszcze na końcu, nie jest stanem
+zniszczonym.
+
+*Amplituda nie tłumi się — jest resetowana przy fotonach.* W oknach po
+\(5\%\) biegu odchylenie kąta nie opada gładko, tylko zmienia się skokowo
+**dokładnie dwa razy w biegu o dwóch fotonach**: przy kroku \(0{,}05\)
+\(\sigma=0{,}26\to0{,}16\to0{,}03\), przy kroku \(0{,}0125\)
+\(\sigma=0{,}27\to0{,}015\to0{,}18\) — a więc również w górę. Kolejność
+tych amplitud nie jest zbieżna względem kroku; pasmo ustalone przed pierwszym
+fotonem jest.
+
 *Co z tego zostaje.* Wniosek dla reguły kanału **stoi i jest teraz lepiej
 uzasadniony**: wartość końcowa kąta to **faza libracji** w chwili
-zatrzymania, aliasowana rozstawem checkpointów (okres precesji głęboko w
-orbicie to \(\sim5\cdot10^{-6}\) ps wobec checkpointu \(0{,}023\) ps),
-więc nie mierzy niczego. Czytanie wagi przy przygotowaniu jest słuszne — ale
-dlatego, że koniec jest losową fazą, a nie dlatego, że singlet został po
-drodze zniszczony.
+zatrzymania, i ta faza nie jest zbieżna względem kroku całkowania (tabela w
+sekcji o wyborze kanału), więc nie mierzy niczego. Czytanie wagi przy
+przygotowaniu jest słuszne — ale dlatego, że koniec jest niezbieżną fazą, a
+nie dlatego, że singlet został po drodze zniszczony.
 
 #### Kanał wybiera teraz dynamika
 
@@ -1200,10 +1258,13 @@ wychodzi \(1\).
 | orto | \(0\) | \(\mathbf{12}\) | \([0{,}917;\,1{,}092]\) | \(\mathbf{12/12=100\%}\) |
 
 *Jak to czytać.* **Orto jest teraz wynikiem, nie etykietą**, i wychodzi
-poprawnie na każdej trajektorii: konfiguracja antyrównoległa jest stabilnym
-punktem stałym, \(|S_1+S_2|\) trzyma się \(1\,\hbar\) co do \(14\)
-cyfr, a przy \(L_{\rm orb}=0{,}095\,\hbar\) suma zaokrągla się do
-\(1\) za każdym razem.
+poprawnie na każdej trajektorii — ale nie dlatego, że model to trafia.
+Konfiguracja antyrównoległa nie jest „stabilnym punktem stałym", tylko
+**ścisłą symetrią**: obie części wzajemnego pola są tam nieparzyste, więc
+\(\omega_1=\omega_2\) tożsamościowo i \(|S_1+S_2|\) stoi na
+\(1{,}000000\,\hbar\) z konstrukcji, a nie z dynamiki. Przy
+\(L_{\rm orb}=0{,}095\,\hbar\) suma zaokrągla się do \(1\) za każdym
+razem. \(12/12\) dla orto nie jest więc testem, który model mógł oblać.
 
 **Para wychodzi poprawnie w \(58\%\)**, a pozostałe \(42\%\) to nie
 usterka bramki — to **faza libracji kąta wzajemnego** w chwili zatrzymania
@@ -1260,20 +1321,32 @@ amplitudzie, która trafia w oba końce. To słabsze założenie niż kwantowani
 *Kanał jest przy tym **deterministyczny**, i to bez progowania.* Waga jest
 czytana z momentów **przygotowanych**, gdzie kwantowanie spinu ustawia
 \(\cos=\pm1\) ściśle, więc wychodzi dokładnie \(1\) albo dokładnie
-\(0\) i losowanie jest zdegenerowane. Powód jest jeden: **dryf od tych
-dwóch wartości jest znaną wadą modelu, nie fizyką.** Rzeczywiste pozytonium
-zachowuje \(S\), więc stan anihilujący **jest** stanem przygotowanym; para
-klasyczna traci singlet, bo dwa wektory klasyczne nie reprezentują stanu
-splątanego, a konfiguracja antyrównoległa jest stabilnym punktem stałym,
-podczas gdy równoległa nie. Przepuszczenie tego artefaktu do krotności
-fotonów wstawiłoby awarię modelu w obserwablę i zapraszało do czytania jej
-jako przewidywania.
+\(0\) i losowanie jest zdegenerowane. Powód jest jeden, i **nie** jest nim
+zniszczenie singletu: wartość końcowa **nie jest zbieżna względem kroku**.
+Dwukrotne połowienie ograniczenia obrotu na podkrok (`CREM_SPIN_SUBSTEP`),
+to samo ziarno i ten sam kanał:
 
-`CREM_CHANNEL_AT_ANNIHILATION` czyta wagę z momentów **końcowych** — tam
-defekt jest widoczny: waga para rozmywa się wtedy na \([0{,}43;\,0{,}94]\)
-zamiast siedzieć na \(1\), a kanał trzeba losować, bo konfiguracja nie jest
-żadną z dwóch ścisłych. Służy do **mierzenia**, jak daleko singlet został
-odchylony w chwili stopu, nie jako przewidywanie stosunku rozgałęzień.
+| krok | podkroki | \(\cos\) min | \(\cos\) średni | \(\cos\) max | \(\cos\) **końcowy** |
+|---|---|---|---|---|---|
+| \(0{,}05\) | \(5561\) | \(0{,}2269\) | \(0{,}8024\) | \(1{,}0000\) | \(0{,}8801\) |
+| \(0{,}025\) | \(10457\) | \(0{,}2270\) | \(0{,}8065\) | \(1{,}0000\) | \(0{,}8234\) |
+| \(0{,}0125\) | \(20734\) | \(0{,}2270\) | \(0{,}8054\) | \(1{,}0000\) | \(0{,}4880\) |
+
+**Pasmo jest zbieżne do czterech cyfr, faza nie jest zbieżna wcale** —
+punktowa różnica na wspólnej siatce sięga \(0{,}75\), a wartość końcowa
+chodzi od \(0{,}88\) do \(0{,}49\). Przepuszczenie wielkości
+niezbieżnej do obserwabli jest zarzutem samym w sobie, niezależnie od tego,
+czy libracja jest fizyką modelu, czy nie.
+
+`CREM_CHANNEL_AT_ANNIHILATION` czyta wagę z momentów **końcowych** — waga
+para rozmywa się wtedy na \([0{,}43;\,0{,}94]\) zamiast siedzieć na
+\(1\). Ten rozrzut to **faza libracji w chwili stopu**, a nie miara
+zniszczenia singletu: zmierzone na sześciu ziarnach, \(\cos\) wraca do
+\(1{,}000000\) od \(52\) do \(192\) razy w każdym biegu, ostatni raz
+przy \(81\)–\(98\%\) przebiegu, a spin całkowity wraca wtedy do
+\(|S|=0{,}000000\,\hbar\) dokładnie. Przełącznik służy do oglądania
+libracji, nie do przewidywania stosunku rozgałęzień i nie do mierzenia
+uszkodzenia, którego nie ma.
 
 *Reguła degraduje się łagodnie.* Przy `--no-spin-quantization` konfiguracja
 przygotowana sama jest pośrednia i losowanie staje się naprawdę potrzebne.

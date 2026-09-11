@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 
 namespace two_body = positronium::kinematics;
@@ -450,7 +451,11 @@ inline OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
 inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         const SecularSpinOrbitState& initial,double semiMajorAxis,
         double reducedMass,double elapsedTime,
-        double maximumRotationPerSubstep=0.05,
+        // CREM_SPIN_SUBSTEP overrides the per-substep rotation bound, so
+        // the mutual-angle libration can be tested for step convergence.
+        double maximumRotationPerSubstep=
+            std::getenv("CREM_SPIN_SUBSTEP")
+            ?std::atof(std::getenv("CREM_SPIN_SUBSTEP")):0.05,
         int maximumSubsteps=65536) {
     SecularSpinOrbitAdvance result;
     result.state=initial;
@@ -609,8 +614,13 @@ inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         // is the rate DIFFERENCE.  Printed against the rates themselves so a
         // difference that is merely small can be told from one that vanishes.
         if(std::getenv("CREM_DEBUG_ALIGN")) {
+            // The value is the sample COUNT: six is enough to see the
+            // departure start, but telling a bounded libration from a
+            // one-way drift needs the whole trajectory.
+            static const int alignLimit=
+                std::max(1,std::atoi(std::getenv("CREM_DEBUG_ALIGN")));
             static int alignSamples=0;
-            if(alignSamples++<6) {
+            if(alignSamples++<alignLimit) {
                 const Vec3 rateDifference=
                     midpointRates.first-midpointRates.second;
                 const Vec3 momentCross=cross(firstBefore,secondBefore);
