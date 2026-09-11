@@ -634,6 +634,65 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Zarzut o E1 ze stanu 1S, sprawdzony na tym modelu
+
+Zarzut brzmi: pozytonium w \(1S\) (\(L=0\)) nie może promieniować E1, bo
+\(1S\to1S\) z emisją fotonu jest wzbronione przez zachowanie momentu pędu,
+\(\Delta L=\pm1\). Sprawdzony tutaj, trafia mocniej, niż go postawiono.
+
+**Model nigdy nie jest w \(1S\)**, więc zakaz nie dotyczy stanu, który on
+faktycznie ma. Zmierzone: \(L\) przed pierwszą emisją wynosi
+\(1{,}0000\,\hbar\), nie zero. Konfiguracja podstawowa to orbita kołowa
+Bohra-Sommerfelda \(n=1,k=1\), niosąca \(L=\hbar\). Kwantowo taki moment
+pędu należy do stanu \(P\), a stan \(P\) promieniujący E1 do \(S\) jest
+dozwolony. Model uchyla się więc od zarzutu, nie zajmując \(1S\).
+
+**Ale to uchylenie kosztuje więcej, niż oszczędza.** Własna sonda modelu
+podaje dla każdego fotonu, ile momentu pędu foton **żąda** i ile orbita
+faktycznie **oddaje**:
+
+| foton | \(n_{\rm eff}\) | \(L\) przed | żąda \(\hbar\) | oddaje \(\hbar\) | brakuje | harm. |
+|---|---|---|---|---|---|---|
+| 1 | \(1{,}0000\) | \(1{,}0000\) | \(1{,}0000\) | \(0{,}4227\) | \(0{,}5773\) | 1 |
+| 2 | \(0{,}5773\) | \(0{,}5775\) | \(1{,}0000\) | \(0{,}3042\) | \(0{,}6958\) | 1 |
+| 3 | \(0{,}2724\) | \(0{,}2737\) | \(1{,}0000\) | \(0{,}1787\) | \(0{,}8213\) | 1 |
+| 4 | \(0{,}0815\) | \(0{,}1738\) | \(1{,}0000\) | \(0{,}1578\) | \(0{,}8422\) | 1 |
+
+Każdy foton jest harmoniczną \(1\), czyli E1, i żąda dokładnie jednego
+\(\hbar\). Orbita oddaje od \(0{,}42\) do \(0{,}16\) tej wartości.
+Niedobór biegnie \(0{,}58\)–\(0{,}84\,\hbar\) na foton i **rośnie** w
+dół kaskady.
+
+**Dlaczego: model kwantuje energię, a momentu pędu nie.** Energia odchodzi w
+porcjach \(\hbar\omega\), ale moment pędu jest odbierany prawem
+**klasycznym**, `angularExponent` \(=-(1-e^2)/(2+e^2)\), czyli \(-1/2\)
+przy \(e=0\), to jest \(L\sim|E|^{-1/2}\) dla orbity kołowej.
+Sprawdzone wobec zmierzonych stosunków:
+
+| foton | stosunek \(E\) | zmierzony stosunek \(L\) | \(E^{-1/2}\) | zgodność |
+|---|---|---|---|---|
+| 1 | \(2{,}9999\) | \(0{,}577348\) | \(0{,}577361\) | \(1{,}0000\) |
+| 2 | \(4{,}4576\) | \(0{,}473278\) | \(0{,}473639\) | \(0{,}9992\) |
+| 3 | \(7{,}6954\) | \(0{,}349864\) | \(0{,}360482\) | \(0{,}9705\) |
+
+Trzy pierwsze trafiają w prawo klasyczne co do czwartej cyfry. **Obie
+księgowości są więc wzajemnie niespójne**: kwant energii \(\hbar\omega\)
+musi nieść kwant momentu pędu, a tutaj nie niesie.
+
+**Najostrzejsza postać zarzutu.** \(L\) przed pierwszą emisją to
+\(1{,}0000\,\hbar\). Gdyby foton zabrał swoje \(\hbar\), orbita
+wylądowałaby przy \(L=0\) — **dokładnie w stanie \(1S\)** — i dalsza
+emisja E1 byłaby wzbroniona, czyli zarzut w oryginalnej postaci. Model zabiera
+\(0{,}4227\,\hbar\) i emituje jeszcze trzy fotony. **Cała kaskada poza
+pierwszym fotonem istnieje wyłącznie dlatego, że moment pędu nie jest
+zachowywany foton po fotonie.**
+
+*Status.* To, że \(93{,}4\%\) kolapsu biegnie poniżej \(n=1\), gdzie
+drabina nie istnieje, jest w tym dokumencie zadeklarowane od dawna. Nowe jest
+**mechanizm i jego rozmiar**: nie chodzi tylko o brak drabiny, tylko o to, że
+emisja odbiera **ułamek** \(\hbar\) na foton, prawem klasycznym, każąc
+sobie przy tym płacić pełnym kwantem energii.
+
 #### Czy układ zachowuje parzystość C
 
 W tym pytaniu kryją się trzy różne i mają trzy różne odpowiedzi.

@@ -1169,3 +1169,64 @@ different answers.
      times smaller than the singlet's.  The model reproduces the SHAPE
      of the C selection rule through a quantity that, quantum
      mechanically, does not vanish where the model makes it vanish.
+
+==================================================================
+21. THE 1S E1 OBJECTION, CHECKED AGAINST THIS MODEL
+==================================================================
+
+The objection: positronium in 1S (L=0) cannot radiate E1, because
+1S -> 1S with a photon is forbidden by angular momentum conservation,
+Delta L = +-1.  Checked here, it lands harder than stated.
+
+21a. THE MODEL NEVER OCCUPIES 1S, so the prohibition does not apply to
+     the state it actually has.  Measured, L before the first emission
+     is 1.0000 hbar, not 0: the ground configuration is the
+     Bohr-Sommerfeld circular orbit n=1, k=1, which carries L = hbar.
+     In quantum terms that angular momentum belongs to a P state, and a
+     P state radiating E1 to an S state is allowed.  The model evades
+     the objection by not being in 1S.
+
+21b. BUT THE EVASION COSTS MORE THAN IT SAVES.  The model's own probe
+     reports, for every photon, the angular momentum the photon demands
+     and the amount the orbit actually surrenders:
+
+       photon   n_eff    L before   demands hbar   surrenders   short   harmonic
+         1     1.0000    1.0000        1.0000        0.4227    0.5773      1
+         2     0.5773    0.5775        1.0000        0.3042    0.6958      1
+         3     0.2724    0.2737        1.0000        0.1787    0.8213      1
+         4     0.0815    0.1738        1.0000        0.1578    0.8422      1
+
+     Every photon is harmonic 1, i.e. E1, and demands exactly one hbar.
+     The orbit gives up between 0.42 and 0.16 of it.  The shortfall runs
+     0.58 to 0.84 hbar per photon and GROWS down the cascade.
+
+21c. WHY: THE MODEL QUANTIZES THE ENERGY AND NOT THE ANGULAR MOMENTUM.
+     Energy leaves in discrete photons of hbar*omega, but the angular
+     momentum is removed by the CLASSICAL law, angularExponent =
+     -(1-e^2)/(2+e^2), which at e=0 is -1/2, i.e. L ~ |E|^(-1/2) for a
+     circular orbit.  Verified against the measured ratios:
+
+       photon   E ratio   L ratio measured   E^(-1/2)   agreement
+         1      2.9999       0.577348        0.577361     1.0000
+         2      4.4576       0.473278        0.473639     0.9992
+         3      7.6954       0.349864        0.360482     0.9705
+
+     The first three hit the classical law to four figures.  So the two
+     bookkeepings are inconsistent with each other: a quantum of energy
+     hbar*omega must carry a quantum of angular momentum, and here it
+     does not.
+
+21d. THE SHARPEST FORM OF THE OBJECTION.  L before the first emission is
+     1.0000 hbar.  If the photon took its hbar, the orbit would land at
+     L = 0 -- exactly the 1S state -- and further E1 would be forbidden,
+     which is the objection in its original form.  The model removes
+     0.4227 hbar instead and emits three more photons.  The entire
+     cascade beyond the first photon exists only because angular
+     momentum is not conserved photon by photon.
+
+21e. Status.  The README already declares that 93.4% of the collapse
+     runs below n=1 where no ladder exists, so the REGIME is a known
+     declared limitation.  What is added here is the mechanism and its
+     size: it is not merely that the ladder is absent, it is that the
+     emission removes a fraction of hbar per photon, by a classical law,
+     while charging a full quantum of energy for it.
