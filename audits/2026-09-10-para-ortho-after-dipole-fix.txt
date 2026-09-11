@@ -731,3 +731,58 @@ ortho: 13 of 16 reached a stopping condition
      barrier stops the trajectory 3-5x short in L and 68.6x short in
      radius, and that barrier is the declared validity limit rather
      than a tunable.
+
+==================================================================
+13. WHAT WOULD TURN CONTACT INTO A RATE
+==================================================================
+
+13a. The rate factorizes, and the factorization is exact.  For the
+     singlet channel
+
+       Gamma = 4 * (pi r_e^2 c) * <n(0)>
+
+     with sigma*v = pi r_e^2 c = 7.478839e-21 m^3/s and
+     <n(0)> = |psi(0)|^2 = 1/(pi a_Ps^3) = 2.685077e+29 1/m^3 this gives
+     Gamma = 8.032503e+09 1/s, i.e. tau = 124.4942 ps against the
+     measured 124.49 ps.  So there are exactly three factors and no
+     free parameter.
+
+13b. Which of the three the model can own.
+       sigma*v = pi r_e^2 c   CLASSICAL IN FORM: the geometric disc of
+                              the classical electron radius times c.
+                              The model carries r_e and c already.
+       the factor 4           spin statistics, the singlet channel.
+                              An import, but a counting one.
+       <n(0)>                 THE DENSITY OF THE RELATIVE COORDINATE AT
+                              CONTACT.  This is what the model cannot
+                              supply, and the reason is structural.
+
+13c. Why it is structural, measured rather than argued.  A finite n(0)
+     needs the orbit to pass through the origin, i.e. L -> 0 and e -> 1.
+     Classical radiation reaction does the OPPOSITE: it circularizes.
+     Started from the sampled band (CREM_INITIAL_BAND=1, seed 42, para)
+     the eccentricity falls monotonically through the cascade:
+
+       t(ps)      a(m)         e         L(hbar)
+         0.000  1.1159e-10   0.078766   1.02365
+       214.845  3.7855e-11   0.035280   0.59769
+       229.336  8.7045e-12   0.029940   0.28666
+       229.388  8.6984e-12   0.003764   0.28668
+       229.440  8.6924e-12   0.000000   0.28687   <- and zero thereafter
+
+     Fitted over the first two photons, e ~ a^0.74.  So the model's own
+     dynamics drives the orbit AWAY from the only configuration that
+     would have contact.  The channel is not small here; it is exactly
+     closed, and radiation closes it.
+
+13d. And the orbit stops short of the contact radius anyway: the
+     smallest separation reached is a = 2.718e-14 m = 9.6 r_e, so the
+     volume r < r_e is never entered and the density there is zero, not
+     merely small.
+
+13e. So the answer to "how to get a rate" is one import, and a precise
+     one: <n(0)>.  Not a mechanism, not a coupling, not a
+     cross-section -- the single quantum fact that a bound state has
+     finite amplitude at zero separation while a classical orbit, being
+     a curve, has none.  Supply that one number and the rest of the
+     rate is classical and comes out at 124.4942 ps.

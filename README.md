@@ -634,6 +634,58 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Co zamieniłoby kontakt w tempo
+
+Dojście do kontaktu jest warunkiem koniecznym, nie tempem. Tempo faktoryzuje
+się dokładnie, na trzy czynniki i bez parametru swobodnego:
+
+\[\Gamma=4\cdot(\pi r_e^2c)\cdot\langle n(0)\rangle .\]
+
+Z \(\sigma v=\pi r_e^2c=7{,}4788\cdot10^{-21}\,\mathrm{m^3/s}\) i
+\(\langle n(0)\rangle=|\psi(0)|^2=1/(\pi a_{Ps}^3)
+=2{,}6851\cdot10^{29}\,\mathrm{m^{-3}}\) wychodzi
+\(\Gamma=8{,}0325\cdot10^{9}\,\mathrm{s^{-1}}\), czyli
+\(\tau=124{,}4942\) ps wobec zmierzonych \(124{,}49\) ps.
+
+*Który z trzech czynników model może mieć na własność.*
+
+| czynnik | status |
+|---|---|
+| \(\sigma v=\pi r_e^2c\) | **klasyczny co do formy** — geometryczny krążek o klasycznym promieniu elektronu razy \(c\); model niesie \(r_e\) i \(c\) |
+| czynnik \(4\) | statystyka spinowa, kanał singletowy; import, ale wyłącznie zliczający |
+| \(\langle n(0)\rangle\) | **gęstość współrzędnej względnej w kontakcie — tego model dać nie może** |
+
+*Dlaczego nie może, i to jest wynik strukturalny, nie ilościowy.* Skończone
+\(n(0)\) wymaga, by orbita **przechodziła przez początek**, czyli
+\(L\to0\) i \(e\to1\). Klasyczna reakcja promieniowania robi coś
+**przeciwnego**: czyni orbitę kołową. Zmierzone, ze startem z pasma
+(`CREM_INITIAL_BAND=1`, ziarno 42, para):
+
+| \(t\) [ps] | \(a\) [m] | \(e\) | \(L\) [\(\hbar\)] |
+|---|---|---|---|
+| \(0{,}000\) | \(1{,}1159\cdot10^{-10}\) | \(0{,}078766\) | \(1{,}02365\) |
+| \(214{,}845\) | \(3{,}7855\cdot10^{-11}\) | \(0{,}035280\) | \(0{,}59769\) |
+| \(229{,}336\) | \(8{,}7045\cdot10^{-12}\) | \(0{,}029940\) | \(0{,}28666\) |
+| \(229{,}440\) | \(8{,}6924\cdot10^{-12}\) | \(\mathbf{0{,}000000}\) | \(0{,}28687\) |
+
+Na pierwszych dwóch fotonach \(e\sim a^{0{,}74}\), potem mimośród siada na
+zerze i tam zostaje. **Model własną dynamiką odsuwa się od jedynej
+konfiguracji, która miałaby kontakt.** Kanał nie jest tu mały — jest
+dokładnie zamknięty, a zamyka go promieniowanie.
+
+Do tego orbita i tak staje za wysoko: najmniejsza osiągana separacja to
+\(a=2{,}718\cdot10^{-14}\) m \(=9{,}6\,r_e\), więc objętość
+\(r<r_e\) nie jest w ogóle odwiedzana, a gęstość w niej wynosi zero, nie
+„mało".
+
+**Odpowiedź jest więc jednym importem, i to precyzyjnym: \(\langle
+n(0)\rangle\).** Nie mechanizm, nie sprzężenie, nie przekrój czynny —
+pojedynczy fakt kwantowy, że stan związany ma skończoną amplitudę przy
+zerowej separacji, a klasyczna orbita, będąc krzywą, nie ma żadnej. Podaj tę
+jedną liczbę, a reszta tempa jest klasyczna i wychodzi \(124{,}4942\) ps.
+Byłby to **czwarty** importowany fakt kwantowy w tym pliku, obok trzech już
+wyliczonych, i najbardziej brzemienny w skutki.
+
 #### Rozkład czasu pierwszego przejścia \(L\) przez kontakt
 
 Domknięta wymiana \(L\leftrightarrow S\) czyni terminalne \(L\) wielkością,
