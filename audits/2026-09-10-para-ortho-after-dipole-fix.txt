@@ -2377,3 +2377,69 @@ measurement of whether that survives a cascade.
      precision needs about 232 pairs (464 runs) per radius rather than
      2825 seeds.  Two of twelve pairs still sit at four times the others,
      so the tail is thinner but not gone.
+
+39. STEP 4 IS BLOCKED, AND THE BLOCKER IS THE ZPF'S ORBIT-TIED BAND
+
+    Antithetic pairing (section 38) made the work measurable.  The first
+    thing it made measurable is that the quantity being measured is not the
+    one the balance needs.
+
+39a. THE WORK GROWS AS t^2, NOT t.  r = a_pair, 10 antithetic pairs per
+     point:
+
+       orbits   work (eV)      error      mean/err   work/orbit   |W|/rad
+         5      -3.3098e-04   2.50e-04     -1.32    -6.6195e-05    3.015
+        10      +8.9244e-04   5.63e-04     +1.59    +8.9244e-05    4.069
+        20      +3.7703e-03   1.72e-03     +2.19    +1.8851e-04    8.593
+
+     work/orbit is not constant; it rises.  Two independent readings of the
+     exponent agree:
+
+       from the work,   10 -> 20 orbits:  4.22x  ->  p = 2.08
+       from |W|/rad,    10 -> 20 orbits:  2.11x  ->  p = 2.08
+
+     (The radiated energy is exactly linear in t, so |W|/rad scales as
+     t^(p-1) and gives the exponent independently.)
+
+     p = 1 is secular pumping, which is what an SED balance is made of.
+     p = 2 is RESONANT absorption: a driven oscillator on exact resonance
+     gains amplitude proportional to t and energy to t^2.
+
+39b. WHAT THAT DOES TO THE RADIUS SCAN.  |W|/radiated is therefore not a
+     physical quantity -- it depends on how long the run was.  At a_pair it
+     is 3.0 after 5 orbits, 4.1 after 10 and 8.6 after 20, and would keep
+     climbing.  The scan below is all at 20 orbits, so its rows are
+     comparable with each other and none of them is a balance:
+
+       a/a_pair   r/lambda_C   work (eV)     mean/err   |W|/rad at 20 orbits
+       3           822.22      1.3540e-04      2.09        4.790
+       1           274.07      3.3262e-03      2.27        7.626
+       0.3          82.22      9.4805e-02      1.90       11.104
+       0.1          27.41      1.7899e+00      2.02       14.832
+
+     The trend is real and monotone -- the field wins harder the deeper the
+     orbit -- but "|W|/rad = 1 is the balance radius" cannot be applied to
+     it, and the crossing an extrapolation would put near 200 a_pair is not
+     a result.  No balance radius is claimed.
+
+39c. THE CAUSE IS STRUCTURAL AND WAS HALF-ANTICIPATED.  Section 32a
+     checked that the orbit-tied band preserves the correct broadband
+     AMPLITUDE law and concluded step 4 was alive.  That was right about
+     the amplitude and wrong about the dynamics: because the band rides
+     with the orbit, a mode at omega_orb stays at omega_orb forever, so the
+     drive never decoheres.  A real broadband zero-point field has a finite
+     correlation time -- the orbit drifts through the spectrum -- and gives
+     absorption linear in t.  This one gives t^2 because it is permanently
+     on resonance by construction.
+
+39d. WHAT WOULD UNBLOCK IT.  A fixed broadband field instead of one tied
+     to the orbital frequency.  The module's own comment says why the band
+     was tied: its upper edge sets the integrator step, so a wide fixed
+     band is expensive.  That is a real cost, not an oversight, and it is
+     the next thing step 4 needs -- not more seeds.
+
+     So step 4 closes here with the blocker identified and measured rather
+     than with a balance radius.  Three things now stand that did not
+     before: the estimator is correct (section 34a), its variance is
+     tractable (38b), and the obstacle is a named modelling choice rather
+     than statistics.
