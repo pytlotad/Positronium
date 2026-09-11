@@ -2260,3 +2260,73 @@ measurement of whether that survives a cascade.
      37/37, and the exchange-parity signature is unchanged (ortho
      |omega1-omega2| = 0 exactly, para 0.335074, both identical to
      section 27a).
+
+37. PLAN STEP 5: THE ALPHA GAP, AND THE PLAN'S OWN FRAMING OF IT WAS WRONG
+
+    The plan said: no rule built from mu, e, m and c can give the Bohr
+    scale, because that needs alpha, and alpha in QED comes from the
+    vertex.  Then two options -- declare alpha as the single import, or
+    record a negative result.  Measured, the first half of that is false
+    and the second half asks the wrong question.
+
+37a. ALPHA IS NOT MISSING.  It is in the model already, as the coupling
+     itself, and now named:
+
+       alpha = k e^2/(hbar c) = 7.297352573749e-03,  1/alpha = 137.035999000
+       k = alpha hbar c            agreement 3.9e-16 (ULP)
+
+     And every length is the reduced Compton wavelength times a power of
+     it, with nothing left over:
+
+       a_pair / lambda_C = 274.0720     = 2/alpha        (ULP: 3.7e-16)
+       r*     / lambda_C =   0.5006     = (g/2)/2        EXACT
+       r_e    / lambda_C = 7.297353e-03 = alpha          EXACT
+       R      = alpha^2 m c^2 / 4 = 6.802847 eV
+
+     fineStructureConstant and reducedComptonWavelength are now derived
+     constants in physical_constants.hpp, and particle_species.hpp pins all
+     four relations with static_asserts.  qed_reference.hpp had been
+     defining its own copy of the same alpha expression; that duplicate is
+     gone, so there is one constant with four uses instead of two
+     definitions.
+
+     So the model has ONE dimensionful input, lambda_C -- which the moment
+     configuration carries, since r* = mu/(e c) from section 35a -- and ONE
+     dimensionless input, alpha.  Both are ordinary measured constants, and
+     alpha is an input in QED too.  Nothing is missing on that side.
+
+37b. WHAT IS ACTUALLY MISSING IS A REASON TO SIT AT a_pair.  The model
+     computes the Bohr scale correctly and then has no mechanism that
+     selects it.  Classically, at FIXED angular momentum,
+
+       E(r) = L^2/(2 mu r^2) - k/r,  minimised at r = L^2/(mu k),
+
+     and with L = hbar that is a_pair to 1.1e-13.  So the classical scale
+     comes entirely from the assertion L = hbar -- import 1 in the README's
+     table -- and not from alpha at all.
+
+     That assertion is a Bohr-model argument, and quantum mechanics
+     superseded it: the real 1S ground state has L = 0, so the scale cannot
+     come from quantizing angular momentum.  In QM the same minimum comes
+     from hbar^2/(2 mu r^2), the LOCALIZATION energy, which has the same
+     algebra and a different origin.
+
+37c. THE HONEST RESTATEMENT.  The model's scale content is not six imports
+     and not one alpha.  It is exactly one assertion, L = hbar, standing in
+     for a localization energy the model does not have.  The other five
+     imports are rules about discreteness -- the emission quantum, the spin
+     orientation, the photon's hbar -- and rules do not set a scale.  That
+     is why steps 1 to 3 could remove the barrier from the import list,
+     free the starting radius and put the moments into the emission rule
+     without any level appearing anywhere: none of them touched the one
+     assertion that carries the scale.
+
+37d. AND IT IS WHY STEP 4 IS THE ONLY ROUTE LEFT.  A zero-point field
+     supplies exactly what L = hbar is standing in for: a fluctuation that
+     resists collapse without fixing the angular momentum.  That is the
+     mechanism, not the scale -- the scale is already right.  Step 4's
+     power balance is therefore not one option among several; after 37b it
+     is the only thing in the model that could replace the assertion.
+
+     Its price is known from section 34d: about 2825 field seeds per
+     radius, and a heavy tail that makes that an underestimate.

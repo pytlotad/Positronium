@@ -65,11 +65,10 @@
 namespace positronium::parameters {
 
 // e^2 = 4 pi alpha in the Heaviside-Lorentz natural-unit convention the
-// amplitudes below are written in; alpha itself is derived, not quoted, from
-// constants already in physical_constants.hpp.
-inline constexpr double fineStructureConstant =
-    elementaryCharge*elementaryCharge
-    / (4.0*pi*epsilon0*hbar*speedOfLight);
+// amplitudes below are written in.  alpha itself now lives in
+// physical_constants.hpp, where it was named as the model's one dimensionless
+// scale input; this file used to define its own copy of the same expression,
+// which was a second definition of one constant rather than two uses of it.
 
 // CM-frame Mandelstam variables for 2 -> 2 elastic scattering (same species
 // in and out, mass1/mass2 unchanged), given the CM kinetic energy above rest

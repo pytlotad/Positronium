@@ -131,19 +131,49 @@ jak \(\omega^2\sim r^{-3}\), pole wiązania jak \(r^{-2}\), stosunek
 wykładniki. Trzeba go zmierzyć osobno — i to jest najważniejszy pojedynczy
 pomiar w tym planie, bo tylko on może dać skalę Bohra.
 
-### Krok 5 — uczciwe postawienie luki \(\alpha\)
+### Krok 5 — WYKONANY, i obalił własne sformułowanie
 
-Jeśli krok 4 też wyjdzie na skalę Comptona, wniosek jest twardy: żadna reguła
-zbudowana wyłącznie z \(\mu,e,m,c\) nie da skali Bohra, bo ta wymaga
-\(\alpha\), a \(\alpha\) w QED pochodzi z wierzchołka. Wtedy zostają dwie
-uczciwe opcje:
+Plan mówił: skali Bohra brakuje \(\alpha\), a \(\alpha\) w QED pochodzi
+z wierzchołka. **Pierwsza połowa jest fałszywa, druga pyta o złą rzecz.**
 
-1. przyjąć \(\alpha\) jako **jeden** zadeklarowany import i wyprowadzić z
-   niego resztę — co zredukowałoby sześć importów do jednego;
-2. uznać, że model klasyczny nie może mieć poziomów, i zapisać to jako wynik
-   negatywny o tej samej randze co wynik o tempie anihilacji.
+*\(\alpha\) nie brakuje.* Jest w modelu jako samo sprzężenie,
+\(k=\alpha\hbar c\) z dokładnością ULP, i każda długość to
+\(\lambda_C\) razy jej potęga:
 
-Opcja 1 jest znacznie mocniejsza niż stan obecny i jest osiągalna.
+| długość | w jednostkach \(\lambda_C\) | zgodność |
+|---|---|---|
+| \(a_{\rm pair}\) | \(2/\alpha=274{,}0720\) | 3,7e−16 |
+| \(r^*\) | \((g/2)/2=0{,}5006\) | dokładna |
+| \(r_e\) | \(\alpha=7{,}297\cdot10^{-3}\) | dokładna |
+
+`fineStructureConstant` i `reducedComptonWavelength` są teraz stałymi
+pochodnymi, a `particle_species.hpp` przypina wszystkie cztery relacje
+asercjami. Model ma **jedno** wejście wymiarowe, \(\lambda_C\), które
+konfiguracja momentów już niesie, i **jedno** bezwymiarowe, \(\alpha\).
+Obie są zwykłymi stałymi mierzonymi, a \(\alpha\) jest wejściem także
+w QED.
+
+*Brakuje powodu, żeby para SIEDZIAŁA przy \(a_{\rm pair}\).* Klasycznie,
+przy ustalonym \(L\), \(E(r)=L^2/(2\mu r^2)-k/r\) ma minimum przy
+\(L^2/(\mu k)\), a dla \(L=\hbar\) to jest \(a_{\rm pair}\) co do
+\(1{,}1\cdot10^{-13}\). Skala bierze się więc **wyłącznie z założenia
+\(L=\hbar\)**, a nie z \(\alpha\). To argument z modelu Bohra, który
+mechanika kwantowa uchyliła: stan 1S ma \(L=0\), więc skala nie może
+pochodzić z kwantowania momentu pędu. Kwantowo to samo minimum daje
+\(\hbar^2/(2\mu r^2)\), czyli energia **lokalizacji**.
+
+*Uczciwe przeformułowanie.* Treść skalowa modelu to nie sześć importów i nie
+jedna \(\alpha\), tylko **jedno założenie \(L=\hbar\)**, zastępujące
+energię lokalizacji, której model nie ma. Pozostałe pięć importów to reguły
+o dyskretności, a reguły nie ustalają skali. Dlatego kroki 1–3 mogły zdjąć
+barierę z listy importów, uwolnić promień startowy i wstawić momenty do
+reguły emisji, nie powodując pojawienia się żadnego poziomu: żaden z nich nie
+dotknął tego jednego założenia.
+
+*I dlatego krok 4 jest jedyną pozostałą drogą.* Pole zerowe dostarcza
+dokładnie tego, co zastępuje \(L=\hbar\): fluktuacji opierającej się
+zapadnięciu, bez ustalania momentu pędu. To jest mechanizm, nie skala —
+skala jest już dobra.
 
 ---
 

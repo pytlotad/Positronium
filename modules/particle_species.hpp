@@ -317,6 +317,32 @@ static_assert(agreesTo(magneticMoment(electron),electronMagneticMoment,1.0e-8));
 // what takes the barrier off the list of imports.
 static_assert(agreesTo(comptonBarrierRadius,
     magneticMoment(electron)/(elementaryCharge*speedOfLight),1.0e-15));
+// THE MODEL'S SCALE STRUCTURE, pinned so it cannot drift.  Every length here
+// is the reduced Compton wavelength times a power of the fine-structure
+// constant, and nothing else:
+//
+//     a_pair = 2 lambda_C / alpha        the Bohr scale
+//     r*     = (g/2) lambda_C / 2        where the model stops
+//     r_e    = alpha lambda_C            the contact scale
+//     k      = alpha hbar c              the coupling itself
+//
+// So the model has ONE dimensionful input, lambda_C -- which the moment
+// configuration already carries, since r* = mu/(e c) -- and ONE dimensionless
+// one, alpha.  The two exact asserts are exact because both sides multiply
+// the same way; the two banded ones land 3.7e-16 and 3.9e-16 out on
+// association order, the same ULP-level residue as the assert above.
+//
+// What this does NOT buy is a reason for the pair to SIT at a_pair rather
+// than anywhere else; see the README's alpha-gap section.
+// Pinned to e+e- explicitly for the same reason as the assert below: it is
+// positronium's scale, not the default pair's, and must stay the right
+// comparison however --pair is set.
+static_assert(agreesTo(pairBohrRadius(ParticlePair{electron,positron}),
+    2.0*reducedComptonWavelength/fineStructureConstant,1.0e-15));
+static_assert(classicalElectronRadius
+    ==fineStructureConstant*reducedComptonWavelength);
+static_assert(comptonBarrierRadius
+    ==0.5*electronGFactor*reducedComptonWavelength/2.0);
 // Pinned to e+e- explicitly, not to defaultPair: positroniumBohrRadius is
 // positronium's scale and stays the right comparison however the default pair
 // is set.  Written against defaultPair this assertion stopped being a

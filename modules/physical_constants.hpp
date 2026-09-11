@@ -118,6 +118,23 @@ inline constexpr double hbar = 1.054571817e-34;
 // a reason to stop three orders of magnitude short of it.
 inline constexpr double comptonBarrierRadius =
     electronGFactor*hbar/(4.0*electronMass*speedOfLight);
+
+// The fine-structure constant, DERIVED from the constants already entered
+// rather than tabulated, so it cannot drift away from the coupling the
+// trajectories actually integrate: alpha = k e^2/(hbar c) = 1/137.035999000.
+//
+// It is named here because it is the model's ONE dimensionless scale input,
+// and naming it makes that checkable.  Every length in the model is the
+// reduced Compton wavelength times a power of it -- a_pair = 2 lambda_C/alpha,
+// r_e = alpha lambda_C, r* = (g/2) lambda_C/2 -- and particle_species.hpp
+// pins each of those with a static_assert.  See the README section on the
+// alpha gap for what that does and does not buy.
+inline constexpr double fineStructureConstant =
+    coulombConstant*elementaryCharge*elementaryCharge/(hbar*speedOfLight);
+// hbar/(m_e c), the reduced Compton wavelength.  The one dimensionful scale
+// the moment configuration itself carries (see comptonBarrierRadius).
+inline constexpr double reducedComptonWavelength =
+    hbar/(electronMass*speedOfLight);
 // e^2/(4 pi eps0 m c^2), the length at which the electron's electrostatic
 // self-energy equals its rest energy.  Not a model parameter: it is quoted
 // here only as the second contact scale the first-passage measurement in
