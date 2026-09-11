@@ -634,6 +634,63 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Poszukiwanie brakującego wierzchołka
+
+**Model odtwarza już potęgę \(\alpha^5\)**, czyli potęgę tempa
+\(2\gamma\). I czas życia anihilacyjny, i czas kolapsu tego modelu skalują
+się jak \(\alpha^{-5}\bar\lambda_C/c\):
+
+| wielkość | wartość |
+|---|---|
+| \(\bar\lambda_C/c\) | \(1{,}288089\cdot10^{-21}\) s |
+| zmierzone \(\tau_{2\gamma}\) | \(2{,}0000\times\alpha^{-5}\bar\lambda_C/c\) |
+| czas kolapsu modelu | \(3{,}2040\times\alpha^{-5}\bar\lambda_C/c\) |
+| iloraz | \(1{,}6021\) |
+
+Klasyczny inspiral nie chybia więc o **potęgi** \(\alpha\) wobec tempa
+anihilacji — chybia o \(1{,}6\).
+
+**A samo \(\alpha\) siedzi w modelu jako jego własna prędkość orbitalna:**
+
+\[\left(\frac{v}{c}\right)_{a_{\rm pary}}=0{,}003648676,
+\qquad \frac{\alpha}{2}=0{,}003648676,\qquad\text{iloraz }1{,}000000.\]
+
+To nie przypadek, tylko relacja Bohra \(v/c=\alpha/n\) na orbicie, którą
+model faktycznie przygotowuje.
+
+**Oba czynniki \(1/1114\) są więc obecne jako wielkości zmierzone:**
+
+| składnik | wartość |
+|---|---|
+| przestrzeń fazowa z własnego widma modelu | \(0{,}123023857\) |
+| \(2(v/c)\) przy \(a_{\rm pary}\), czyli \(\alpha\) | \(0{,}007297353\) |
+| **iloczyn** | \(8{,}977485\cdot10^{-4}=1/1113{,}9\) |
+| fizyczne \(4(\pi^2-9)\alpha/(9\pi)\) | \(8{,}977485\cdot10^{-4}=1/1113{,}9\) |
+
+**To nie jest wyprowadzenie, i słabe miejsce trzeba nazwać wprost.**
+\(v/c\) nie jest w tym modelu stałą — rośnie w dół orbity:
+
+| promień | \(v/c\) | \(2(v/c)/\alpha\) | iloczyn z fazą |
+|---|---|---|---|
+| \(a_{\rm pary}\) (start) | \(0{,}003649\) | \(1{,}00\) | \(1/1113{,}9\) |
+| \(0{,}05\,a_{\rm pary}\) | \(0{,}016317\) | \(4{,}47\) | \(1/249{,}1\) |
+| granica zderzenia | \(0{,}051600\) | \(14{,}14\) | \(1/78{,}8\) |
+| bariera Comptona | \(0{,}085292\) | \(23{,}38\) | \(1/47{,}7\) |
+
+Tylko przy promieniu **startowym** \(2(v/c)\) równa się \(\alpha\), bo
+\(v/c=\alpha/n\) obowiązuje na orbicie Bohra. Wybór „które \(v/c\)" jest
+więc wyborem odpowiedzi. A samo **wiedzenie, że te dwa czynniki należy przez
+siebie pomnożyć**, jest dokładnie treścią QED.
+
+**Wniosek: wierzchołek nie jest brakującą LICZBĄ — obie liczby już tu są —
+tylko brakującą REGUŁĄ.** Regułą, że jeden foton więcej kosztuje jedną potęgę
+sprzężenia więcej. Klasyczna teoria promieniowania takiej reguły nie ma:
+klasyczne źródło emituje dowolnie wiele fotonów bez tłumienia na foton, i to
+jest właśnie to, co koduje czynnik wierzchołkowy, i czego ten model dostarczyć
+nie może. Dlatego dwie niezależne drogi — pytanie, co zamieniłoby kontakt w
+tempo, oraz rozkład tłumienia Ore-Powella — trafiają w to samo pojedyncze
+brakujące \(\alpha\).
+
 #### Zarzut Ore-Powella: cały czynnik \(1000\) to tłumienie \(3\gamma\), a połowę tego mamy
 
 Zarzut brzmi: o-Ps nie ma E1 w stanie podstawowym, a jego anihilacja

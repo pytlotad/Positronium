@@ -1342,3 +1342,59 @@ it must go to 3 gamma, suppressed by 4(pi^2-9)alpha/(9 pi) ~ 1/1115.
      for a width.  What it lacks is exactly one power of alpha, which
      is an annihilation amplitude -- the same thing section 13 found
      missing when it asked what would turn contact into a rate.
+
+==================================================================
+24. LOOKING FOR THE MISSING VERTEX
+==================================================================
+
+24a. The model already reproduces alpha^5, the power of the 2-gamma
+     rate.  Both the annihilation lifetime and this model's collapse
+     time scale as alpha^-5 * lambdabar_C/c:
+
+       lambdabar_C / c                = 1.288089e-21 s
+       measured tau_2gamma            = 2.0000 x alpha^-5 lambdabar_C/c
+       this model's collapse time     = 3.2040 x alpha^-5 lambdabar_C/c
+       ratio                          = 1.6021
+
+     So the classical inspiral is not off by powers of alpha from the
+     annihilation rate -- it is off by 1.6.
+
+24b. And alpha itself is IN the model, as its own orbital velocity:
+
+       measured v/c at a_pair = 0.003648676
+       alpha/2                = 0.003648676   ratio 1.000000
+
+     That is not a coincidence, it is the Bohr relation v/c = alpha/n
+     evaluated on the orbit the model actually prepares.
+
+24c. So BOTH factors of the 1/1114 are present as measured quantities:
+
+       Ore-Powell phase space, from the model's own spectrum  0.123023857
+       2 x (v/c at a_pair), i.e. alpha                        0.007297353
+       product                                          8.977485e-04 = 1/1113.9
+       physical 4(pi^2-9)alpha/(9 pi)                   8.977485e-04 = 1/1113.9
+
+24d. THIS IS NOT A DERIVATION, and the weak point is worth stating
+     plainly.  v/c is not a constant in this model -- it grows down the
+     orbit:
+
+       radius                v/c        2(v/c)/alpha   phase x 2(v/c)
+       a_pair (start)        0.003649       1.00        1/1113.9
+       0.05 a_pair           0.016317       4.47        1/249.1
+       collision boundary    0.051600      14.14        1/78.8
+       Compton barrier       0.085292      23.38        1/47.7
+
+     Only at the STARTING radius does 2(v/c) equal alpha, because
+     v/c = alpha/n is the Bohr relation and holds on the Bohr orbit.
+     Choosing which v/c is therefore choosing the answer.  And knowing
+     to multiply the two factors at all is precisely the QED content.
+
+24e. CONCLUSION: the vertex is not a missing NUMBER -- both numbers are
+     already here -- it is a missing RULE.  The rule is that one more
+     photon costs one more power of the coupling.  Classical radiation
+     theory has no such rule: a classical source emits any number of
+     photons with no per-photon suppression, which is exactly what a
+     vertex factor encodes and exactly what this model cannot supply.
+     That is why two independent routes -- asking what turns contact
+     into a rate, and decomposing the Ore-Powell suppression -- both
+     land on the same single missing alpha.
