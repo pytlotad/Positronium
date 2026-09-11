@@ -2445,21 +2445,54 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     (angularMomentumDirection
                         *(elements.specificAngularMomentum*reducedMass)
                      +spinSum).norm()/hbar;
-                // The weight, straight off the moments.  Normalized by the
-                // largest total the two moments could form, so it is 1 for
-                // perfect alignment and 0 for perfect anti-alignment without
-                // assuming either is reached.
-                const double momentScale=firstDipole.norm()+secondDipole.norm();
+                // WHICH MOMENTS THE WEIGHT IS READ FROM, and this is the
+                // whole question of whether the channel is deterministic.
+                //
+                // The weight is |mu1+mu2|^2/(|mu1|+|mu2|)^2, normalized by
+                // the largest total the two moments could form, so it is 1
+                // for perfect alignment and 0 for perfect anti-alignment
+                // without assuming either is reached.
+                //
+                // Read from the PREPARED moments it is exactly 1 or exactly
+                // 0 -- spin quantization fixes cos = +-1 at preparation --
+                // so the channel is DETERMINISTIC and no draw is needed.
+                // That is the default, for one reason: the drift away from
+                // those two values is a known defect of this model, not
+                // physics.  Real positronium conserves S, so the state that
+                // annihilates IS the state that was prepared; the classical
+                // pair loses the singlet because two classical vectors
+                // cannot represent an entangled one, and the anti-aligned
+                // configuration is the stable fixed point while the aligned
+                // one is unstable.  Propagating that artefact into the
+                // photon multiplicity would put a model failure into an
+                // observable and invite it to be read as a prediction.
+                //
+                // CREM_CHANNEL_AT_ANNIHILATION reads the TERMINAL moments
+                // instead, which is where the defect is visible: para's
+                // weight is then spread over 0.43..0.94 rather than sitting
+                // at 1, and the channel has to be drawn because the
+                // configuration is neither of the exact ones.  Use it to
+                // measure how far the singlet has been destroyed; do not use
+                // it as a prediction of the branching ratio.
+                const bool atAnnihilation=
+                    std::getenv("CREM_CHANNEL_AT_ANNIHILATION")!=nullptr;
+                const Vec3 weightFirst=atAnnihilation
+                    ?firstDipole:seedRun.frames.front().firstDipole;
+                const Vec3 weightSecond=atAnnihilation
+                    ?secondDipole:seedRun.frames.front().secondDipole;
+                const double momentScale=
+                    weightFirst.norm()+weightSecond.norm();
                 const double weight=momentScale>0.0
-                    ?(firstDipole+secondDipole).squaredNorm()
+                    ?(weightFirst+weightSecond).squaredNorm()
                         /(momentScale*momentScale)
                     :0.0;
                 result.annihilationTwoPhotonWeight=weight;
-                // A weight is a branching ratio, so it is drawn, not
-                // thresholded: a configuration two thirds of the way to
-                // aligned emits two photons two thirds of the time.  At the
-                // quantum endpoints the draw is degenerate and the channel is
-                // certain, which is the limit that has to come out right.
+                // A weight is a branching ratio, so where it is not already
+                // 0 or 1 it is drawn rather than thresholded: a configuration
+                // two thirds of the way to aligned emits two photons two
+                // thirds of the time.  At the prepared configuration the draw
+                // is degenerate and the channel is certain, which is what
+                // makes the default deterministic.
                 const bool twoPhotonAllowed=
                     std::getenv("CREM_CHANNEL_FROM_FLAG")
                     ?selectedPhenomenon==1

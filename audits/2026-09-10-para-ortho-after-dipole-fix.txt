@@ -947,3 +947,46 @@ ortho: 13 of 16 reached a stopping condition
      constant.
 
      make validation 55/55.  Header isolation 37/37.
+
+==================================================================
+17. MAKING THE CHANNEL DETERMINISTIC
+==================================================================
+
+17a. What does NOT work: a geometric criterion on the orientation.
+     A two-photon state carries projection 0 or +-2 hbar on its own
+     axis, and projection 0 is achievable for ANY J by taking the axis
+     perpendicular to J.  So 'does a permitted axis exist' forbids
+     nothing and cannot discriminate.  Landau-Yang is not a condition
+     on one projection; it is the vanishing of the whole amplitude for
+     J=1 on EVERY axis, which is why it has to enter through the
+     magnitude rather than the geometry.
+
+17b. What does work: read the weight where the orientation is still
+     exact.  At PREPARATION spin quantization fixes cos = +-1, so
+     w_2g is exactly 1 or exactly 0 and the draw is degenerate --
+     the channel is deterministic with no threshold and no rounding:
+
+       para  idx 2,3,5   w_2g = 1   ->  2 photons
+       ortho idx 2,3,5   w_2g = 0   ->  3 photons
+
+     That is now the default.  The reason is not convenience: the drift
+     away from cos = +-1 is a known defect of this model rather than
+     physics.  Real positronium conserves S, so the annihilating state
+     IS the prepared one; the classical pair loses the singlet because
+     two classical vectors cannot represent an entangled one.  Putting
+     that artefact into the photon multiplicity would place a model
+     failure into an observable.
+
+17c. The terminal reading is kept as a probe, CREM_CHANNEL_AT_ANNIHILATION.
+     There para's weight spreads over [0.43, 0.94] instead of sitting at
+     1 and the channel has to be drawn.  It measures how far the singlet
+     has been destroyed; it is not a branching-ratio prediction.
+
+17d. The rule degrades gracefully.  With --no-spin-quantization the
+     PREPARED configuration is itself intermediate and the draw is
+     genuinely needed.  Measured weights: para 0.763, 0.903, 0.910;
+     ortho 0.067, 0.121, 0.706 -- i.e. the sampled band does not
+     produce clean ortho, which is the same conclusion this project
+     already records for the band.
+
+     make validation 55/55.  Header isolation 37/37.

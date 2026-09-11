@@ -712,6 +712,39 @@ dokładnie to, co kanał M1 modelu już robi, i jedyna interpolacja liniowa w
 amplitudzie, która trafia w oba końce. To słabsze założenie niż kwantowanie
 \(|J|\), i nie wprowadza nowej stałej.
 
+*Kanał jest przy tym **deterministyczny**, i to bez progowania.* Waga jest
+czytana z momentów **przygotowanych**, gdzie kwantowanie spinu ustawia
+\(\cos=\pm1\) ściśle, więc wychodzi dokładnie \(1\) albo dokładnie
+\(0\) i losowanie jest zdegenerowane. Powód jest jeden: **dryf od tych
+dwóch wartości jest znaną wadą modelu, nie fizyką.** Rzeczywiste pozytonium
+zachowuje \(S\), więc stan anihilujący **jest** stanem przygotowanym; para
+klasyczna traci singlet, bo dwa wektory klasyczne nie reprezentują stanu
+splątanego, a konfiguracja antyrównoległa jest stabilnym punktem stałym,
+podczas gdy równoległa nie. Przepuszczenie tego artefaktu do krotności
+fotonów wstawiłoby awarię modelu w obserwablę i zapraszało do czytania jej
+jako przewidywania.
+
+`CREM_CHANNEL_AT_ANNIHILATION` czyta wagę z momentów **końcowych** — tam
+defekt jest widoczny: waga para rozmywa się wtedy na \([0{,}43;\,0{,}94]\)
+zamiast siedzieć na \(1\), a kanał trzeba losować, bo konfiguracja nie jest
+żadną z dwóch ścisłych. Służy do **mierzenia**, jak daleko singlet został
+zniszczony, nie jako przewidywanie stosunku rozgałęzień.
+
+*Reguła degraduje się łagodnie.* Przy `--no-spin-quantization` konfiguracja
+przygotowana sama jest pośrednia i losowanie staje się naprawdę potrzebne.
+Zmierzone wagi: \(0{,}763\), \(0{,}903\), \(0{,}910\) dla para oraz
+\(0{,}067\), \(0{,}121\), \(0{,}706\) dla orto — czyli pasmo nie
+produkuje czystego orto, dokładnie jak zapisano niżej w sekcji o kwantowaniu
+spinu.
+
+*Czego zrobić się nie da, i warto to zapisać.* Kryterium **geometryczne** na
+orientacji — „czy istnieje oś, na której rzut \(J\) jest dozwolony" — nie
+działa. Stan \(2\gamma\) niesie rzut \(0\) albo \(\pm2\hbar\), a rzut
+\(0\) jest osiągalny **zawsze**, bo wystarczy wybrać oś prostopadłą do
+\(\mathbf J\). Takie kryterium nie zabrania niczego. Landau-Yang nie jest
+warunkiem na jeden rzut, tylko znikaniem całej amplitudy dla \(J=1\) przy
+**każdej** osi, i dlatego musi wejść przez moduł, a nie przez geometrię.
+
 *Zmiana w wyjściu, o której warto wiedzieć.* Panel wiodącego fotonu miesza
 teraz obie krotności w obrębie jednego przebiegu `--phenomenon`, bo krotność
 zmienia się trajektoria po trajektorii. To mieszanka staje się widoczna, a

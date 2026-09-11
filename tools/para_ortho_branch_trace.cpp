@@ -40,6 +40,10 @@ int main(int argc,char** argv) {
     // into exactly that region.
     if(argc>5) gInitialPrincipalLevel=std::atoi(argv[5]);
     if(argc>6&&std::string(argv[6])=="floor") gGroundStateEmissionFloor=true;
+    // Spin quantization off restores the sampled mutual-angle band, which is
+    // the case where the prepared configuration is NEITHER of the two exact
+    // ones and the channel weight is genuinely intermediate.
+    if(argc>7&&std::string(argv[7])=="noquant") gSpinQuantization=false;
     const int phenomenon=channel=="para"?1:2;
     // Set before the call: the census is read through getenv at the
     // checkpoint site, so this reaches it without a wrapper script.

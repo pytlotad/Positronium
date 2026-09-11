@@ -654,6 +654,17 @@ inline int zeroPointModes = 64;
 //                          measured to remove 90% of the L/E separation.
 //   CREM_DARWIN_FORCES     Validation build: use Darwin forces where the
 //                          retarded ones are the default.
+//   CREM_CHANNEL_AT_ANNIHILATION
+//                          Read the 2gamma/3gamma weight from the TERMINAL
+//                          moment configuration instead of the prepared one.
+//                          The default reads it at preparation, where spin
+//                          quantization makes it exactly 1 or 0 and the
+//                          channel is deterministic; the terminal
+//                          configuration has drifted, because a classical
+//                          pair cannot hold a singlet, so reading it there
+//                          puts a known model defect into an observable.
+//                          Use it to MEASURE how far the singlet has been
+//                          destroyed, not as a branching-ratio prediction.
 //   CREM_CHANNEL_FROM_FLAG Take the annihilation photon multiplicity from
 //                          --phenomenon, as the model did before the
 //                          selection rule was applied to the terminal total
