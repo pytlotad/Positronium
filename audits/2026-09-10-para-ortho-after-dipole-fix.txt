@@ -1293,3 +1293,52 @@ Delta L = +-1.  Checked here, it lands harder than stated.
      an ensemble, not the four seeds measured here.  The stale comment
      at the switch and the wrong one-line description in the
      configuration panel are corrected.
+
+==================================================================
+23. THE ORE-POWELL OBJECTION: THE 1000x IS ENTIRELY THE 3-GAMMA
+    SUPPRESSION, AND WE HAVE ONE HALF OF IT
+==================================================================
+
+The objection: o-Ps has no E1 in the ground state and its 2-gamma
+annihilation is C-forbidden, so it lives ~1000x longer purely because
+it must go to 3 gamma, suppressed by 4(pi^2-9)alpha/(9 pi) ~ 1/1115.
+
+23a. The formula checks out.
+       4(pi^2-9)/(9 pi) * alpha = 8.977485e-04 = 1/1113.9
+       measured 142 ns / 124.49 ps           = 1140.7
+     Agreement 2.3%.
+
+23b. Our channel separation is +1.28e-4 (ortho longer) against a
+     physical 1140.7, i.e. too weak by a factor 8.91e6, about 6.9
+     orders.  That is the 'seven orders' this project already declares,
+     now stated against the correct target rather than a hand-wave.
+
+23c. AND OUR E1 IS WORSE THAN THE OBJECTION SAYS.  In QM NEITHER
+     channel radiates E1 from the ground state -- there is no lower
+     state for either.  This model gives BOTH channels the same E1, and
+     measured they are identical to the digit at the start and 1.7%
+     apart at the end only because the trajectories have diverged.  So
+     the objection about o-Ps applies equally to p-Ps here, and it is
+     the same defect as the 1S one in section 21: the model radiates E1
+     from a configuration that in QM cannot.
+
+23d. CONSTRUCTIVE: WE ALREADY CARRY THE PHASE-SPACE HALF.  The
+     Ore-Powell density inside annihilationPhotonEnergiesFor -- used
+     only to sample the three photon energies, never as a rate --
+     integrates over x in [0,1] to
+
+       0.434802201  =  (pi^2 - 9)/2  exactly
+
+     verified numerically against 0.434802201.  Multiplied by the
+     8/(9 pi) prefactor that is 0.123023857, which is 4(pi^2-9)/(9 pi)
+     to nine digits.  So the 1114 splits as
+
+       Ore-Powell phase space :  1/8.13    <- PRESENT in our code
+       one extra vertex, alpha:  1/137.04  <- ABSENT
+       product                :  1/1113.9
+
+     The model therefore holds the geometric half of the suppression
+     already, in a function it uses for the spectrum shape and never
+     for a width.  What it lacks is exactly one power of alpha, which
+     is an annihilation amplitude -- the same thing section 13 found
+     missing when it asked what would turn contact into a rate.

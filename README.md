@@ -634,6 +634,54 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Zarzut Ore-Powella: cały czynnik \(1000\) to tłumienie \(3\gamma\), a połowę tego mamy
+
+Zarzut brzmi: o-Ps nie ma E1 w stanie podstawowym, a jego anihilacja
+\(2\gamma\) jest wzbroniona przez parzystość \(C\), więc żyje około
+\(1000\) razy dłużej **wyłącznie** dlatego, że musi iść w \(3\gamma\),
+stłumione przez \(4(\pi^2-9)\alpha/(9\pi)\approx1/1115\).
+
+**Wzór się zgadza.**
+
+| wielkość | wartość |
+|---|---|
+| \(4(\pi^2-9)\alpha/(9\pi)\) | \(8{,}977485\cdot10^{-4}=1/1113{,}9\) |
+| zmierzone \(142\,\mathrm{ns}/124{,}49\,\mathrm{ps}\) | \(1140{,}7\) |
+
+Zgodność \(2{,}3\%\).
+
+**Nasza separacja kanałów to \(+1{,}28\cdot10^{-4}\)** wobec fizycznych
+\(1140{,}7\), czyli za słabo o czynnik \(8{,}91\cdot10^{6}\), około
+\(6{,}9\) rzędu. To jest owych „siedem rzędów", które ten dokument
+deklaruje — teraz podane wobec właściwego celu, a nie na wyczucie.
+
+**A nasze E1 jest gorsze, niż zarzut mówi.** Kwantowo **żaden** z kanałów nie
+promieniuje E1 ze stanu podstawowego — dla żadnego nie ma stanu niższego. Ten
+model daje **obu** kanałom to samo E1, zmierzone identyczne co do cyfry na
+starcie. Zarzut o o-Ps stosuje się więc tu tak samo do p-Ps, i jest tą samą
+wadą co zarzut o \(1S\) niżej.
+
+**Rzecz konstruktywna: połowę tłumienia już niesiemy.** Gęstość Ore-Powella
+w `annihilationPhotonEnergiesFor` — używana wyłącznie do losowania energii
+trzech fotonów, nigdy jako tempo — całkuje się po \(x\in[0,1]\) do
+
+\[\int_0^1\rho(x)\,dx=0{,}434802201=\frac{\pi^2-9}{2}\quad\text{dokładnie,}\]
+
+sprawdzone numerycznie. Pomnożone przez przedczynnik \(8/(9\pi)\) daje
+\(0{,}123023857\), czyli \(4(\pi^2-9)/(9\pi)\) co do dziewięciu cyfr.
+Owe \(1114\) rozkłada się więc tak:
+
+| składnik | wartość | status u nas |
+|---|---|---|
+| przestrzeń fazowa Ore-Powella | \(1/8{,}13\) | **jest w kodzie** |
+| dodatkowy wierzchołek, \(\alpha\) | \(1/137{,}04\) | **brak** |
+| iloczyn | \(1/1113{,}9\) | |
+
+Model trzyma więc **geometryczną** połowę tłumienia, w funkcji używanej do
+kształtu widma i nigdy do szerokości. Brakuje mu dokładnie jednej potęgi
+\(\alpha\), czyli amplitudy anihilacji — tego samego, czego zabrakło, gdy
+pytaliśmy, co zamieniłoby kontakt w tempo.
+
 #### Naprawa ułamkowego \(\hbar\): przełącznik istnieje, a jego blokada była nieaktualna
 
 Poprawka na niedobór z sekcji niżej **już jest w modelu**, jako
