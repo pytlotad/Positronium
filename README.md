@@ -634,6 +634,51 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
+#### Czy aktualizacja spinowa otwiera z powrotem kanał kontaktu
+
+Sekcja o tempie zamknęła kanał kontaktu **strukturalnie**: klasyczne
+promieniowanie czyni orbitę kołową, a orbita kołowa ma zerową gęstość w
+początku, więc nie ma z czego anihilować. Przełącznik `CREM_SPIN_MAGNITUDE`
+pcha mimośród w drugą stronę. To jest pomiar, czy to przeżywa kaskadę.
+
+**Mimośród jest podtrzymywany, nie przejściowy.** Cztery ziarna, para, próg
+retardacyjny obniżony do \(5\), budżet \(1200\) s na trajektorię:
+
+| ziarno | checkpointy | \(e_{\max}\) | \(e\) końcowe | \(a_{\min}\) [m] | peri/\(a\) | peri/\(r_e\) |
+|---|---|---|---|---|---|---|
+| 2 | \(182\) | \(0{,}8440\) | \(0{,}8354\) | \(3{,}184\cdot10^{-11}\) | \(0{,}1646\) | \(1860\) |
+| 3 | \(301\) | \(0{,}6105\) | \(0{,}6105\) | \(1{,}747\cdot10^{-11}\) | \(0{,}3895\) | \(2415\) |
+| 4 | \(261\) | \(0{,}6338\) | \(0{,}6253\) | \(3{,}466\cdot10^{-11}\) | \(0{,}3747\) | \(4585\) |
+| 5 | \(718\) | \(0{,}0181\) | \(0{,}0000\) | \(2{,}637\cdot10^{-11}\) | \(1{,}0000\) | \(9278\) |
+
+Wobec wariantu domyślnego, w którym \(e\) wynosi \(0{,}000000\)
+**dokładnie** na każdym checkpoincie i peri/\(a=1\) przez cały czas.
+
+Na trzech ziarnach z czterech mimośród końcowy równa się maksymalnemu z
+dokładnością \(1\)–\(2\%\), więc promieniowanie **nie ściąga go z
+powrotem**: kołowanie, które zamykało kanał, jest **złamane**. Na czwartym
+nigdy nie odszedł od zera, więc efekt nie jest powszechny.
+
+**Czego to nie pokazuje.** Każdy przebieg został ucięty budżetem zegarowym,
+dochodząc tylko do \(a\approx1{,}7\)–\(3{,}5\cdot10^{-11}\) m wobec
+domyślnych terminalnych \(2{,}718\cdot10^{-14}\) m — **trzy rzędy za
+płytko**. Peryapsis, przy którym te orbity by skończyły, nie jest więc
+zmierzony. Koszt jest tego powodem: ziarno \(5\) potrzebowało \(718\)
+checkpointów i \(7{,}5\) miliona obiegów, żeby dojść do \(754\) ps, wobec
+\(63\) checkpointów do \(199\) ps w wariancie domyślnym.
+
+*Ekstrapolacja, oznaczona jako niesprawdzona.* Gdyby \(e=0{,}835\)
+przetrwało do głębokości, którą osiąga wariant domyślny, peryapsis wyniósłby
+\(4{,}47\cdot10^{-15}\) m \(=1{,}59\,r_e\), czyli **kontakt**, wobec
+domyślnych \(9{,}6\,r_e\). Jest to ekstrapolacja przez trzy rzędy
+wielkości w \(a\) i nie mam na nią dowodu.
+
+**Status: przeszkoda strukturalna została usunięta, pytanie ilościowe zostaje
+otwarte.** Promieniowanie nie czyni już orbity kołową, więc zdanie „gęstość w
+początku jest tożsamościowo zerowa" przestaje obowiązywać. Czy promień
+kontaktu jest faktycznie osiągany — nie wiadomo, a odpowiedź wymaga
+trajektorii około trzydziestokrotnie droższych od domyślnych.
+
 #### Poszukiwanie brakującego wierzchołka
 
 **Model odtwarza już potęgę \(\alpha^5\)**, czyli potęgę tempa

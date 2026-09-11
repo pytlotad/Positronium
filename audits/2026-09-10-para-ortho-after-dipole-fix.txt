@@ -1398,3 +1398,49 @@ it must go to 3 gamma, suppressed by 4(pi^2-9)alpha/(9 pi) ~ 1/1115.
      That is why two independent routes -- asking what turns contact
      into a rate, and decomposing the Ore-Powell suppression -- both
      land on the same single missing alpha.
+
+==================================================================
+25. DOES THE PHOTON-SPIN UPDATE REOPEN THE CONTACT CHANNEL?
+==================================================================
+
+Section 13 closed the contact channel structurally: classical radiation
+CIRCULARIZES the orbit, and a circular orbit has zero density at the
+origin, so there is nothing to annihilate from.  Section 22 found that
+CREM_SPIN_MAGNITUDE drives the eccentricity the other way.  This is the
+measurement of whether that survives a cascade.
+
+25a. THE ECCENTRICITY IS SUSTAINED, NOT TRANSIENT.  Four seeds, para,
+     retardation limit relaxed to 5, 1200 s budget each:
+
+       seed  ckpts   e max   e final   a min (m)   peri/a   peri/r_e
+         2    182    0.8440   0.8354   3.184e-11   0.1646     1860
+         3    301    0.6105   0.6105   1.747e-11   0.3895     2415
+         4    261    0.6338   0.6253   3.466e-11   0.3747     4585
+         5    718    0.0181   0.0000   2.637e-11   1.0000     9278
+
+     Against the default, where e is 0.000000 EXACTLY at every
+     checkpoint and peri/a is 1 throughout.
+
+     On three seeds of four the final eccentricity equals the maximum to
+     within 1-2%, so radiation is not pulling it back down: the
+     circularization that closed the channel is BROKEN.  On the fourth
+     it never left zero, so the effect is not universal.
+
+25b. WHAT THIS DOES NOT SHOW.  Every run was censored by wall clock,
+     having reached only a ~ 1.7-3.5e-11 m against the default's
+     terminal 2.718e-14 m -- three orders short.  So the periapsis
+     these orbits would END at is not measured.  The cost is why: seed
+     5 needed 718 checkpoints and 7.5 million revolutions to reach
+     754 ps, against 63 checkpoints to 199 ps in the default.
+
+25c. The extrapolation, flagged as unverified.  If e = 0.835 survived to
+     the depth the default reaches, the periapsis would be 4.48e-15 m =
+     1.59 r_e, i.e. contact, against the default's 9.6 r_e.  That is an
+     extrapolation across three orders of magnitude in a and there is no
+     evidence here that the eccentricity survives it.
+
+25d. So the honest status: the STRUCTURAL obstacle of section 13 is
+     removed -- radiation no longer circularizes, so 'the density at the
+     origin is identically zero' is no longer true -- but whether the
+     contact radius is actually reached is open, and answering it needs
+     trajectories roughly thirty times more expensive than the default.
