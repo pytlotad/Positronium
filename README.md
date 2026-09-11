@@ -634,7 +634,56 @@ na to pytanie **nie było** zatrzymanie na progu retardacyjnym — brakuje mu
 jednego fotonu i obniżenie progu odpowiada wprost. Przeszkodą było to, że
 \(L\) było psute między emisjami. **To jest już domknięte**, patrz niżej.
 
-#### Audyt wyboru \(2\gamma/3\gamma\)
+#### Kanał wybiera teraz dynamika
+
+`annihilationPhotonEnergiesFor` nie widzi już `selectedPhenomenon`.
+Krotność fotonów rozstrzyga **reguła wyboru na całkowitym momencie pędu**
+stanu końcowego: zachowanie pędu czyni stan \(2\gamma\) ściśle
+przeciwbieżnym, co wyznacza jedną oś; każdy foton ma wzdłuż niej skrętność
+\(\pm1\), więc para fotonów niesie rzut \(0\) albo \(\pm2\), nigdy
+\(\pm1\). Stan o \(J=1\) nie da się więc dopasować do dwóch fotonów.
+Implementacja: zaokrąglij \(|J|=|\mathbf L_{\rm orb}+\mathbf S_1+\mathbf
+S_2|\) do liczby całkowitej i odmów dwóch fotonów dokładnie wtedy, gdy
+wychodzi \(1\).
+
+**Wynik**, \(12\) trajektorii na kanał, ziarno \(42\):
+
+| przygotowane jako | \(2\gamma\) | \(3\gamma\) | zakres \(|J|\) | zgodność z przygotowaniem |
+|---|---|---|---|---|
+| para | \(7\) | \(5\) | \([0{,}208;\,0{,}738]\) | \(7/12=58\%\) |
+| orto | \(0\) | \(\mathbf{12}\) | \([0{,}917;\,1{,}092]\) | \(\mathbf{12/12=100\%}\) |
+
+*Jak to czytać.* **Orto jest teraz wynikiem, nie etykietą**, i wychodzi
+poprawnie na każdej trajektorii: konfiguracja antyrównoległa jest stabilnym
+punktem stałym, \(|S_1+S_2|\) trzyma się \(1\,\hbar\) co do \(14\)
+cyfr, a przy \(L_{\rm orb}=0{,}095\,\hbar\) suma zaokrągla się do
+\(1\) za każdym razem.
+
+**Para wychodzi poprawnie w \(58\%\)**, a pozostałe \(42\%\) to nie
+usterka bramki — to znane niszczenie singletu przez model, **teraz widoczne w
+obserwabli**, a nie schowane w stanie wewnętrznym. Konfiguracja równoległa
+jest niestabilnym punktem stałym, więc do chwili anihilacji para przestaje
+mieć \(S=0\), a reguła wyboru słusznie odmawia jej dwóch fotonów.
+Przedtem model emitował \(2\gamma\) niezależnie od wszystkiego i ta wada w
+wyjściu w ogóle się nie pojawiała.
+
+**Co nadal jest importem, i trzeba to powiedzieć wprost.** \(|J|\) wychodzi
+\(0{,}208\), \(0{,}738\), \(0{,}917\), \(1{,}092\) — wartości
+klasyczne i ciągłe, nie całkowite. **Zaokrąglanie ich to założenie, że
+\(J\) jest skwantowane**, czyli import tego samego rodzaju co trzy już
+wyliczone w tym pliku. Zachowanie daje za darmo wyłącznie implikację
+„\(J=1\) nie może pójść w dwa fotony"; uznanie, że stan o \(|J|=0{,}74\)
+**jest** stanem \(J=1\), to już kwantowanie, nie zachowanie. Ta zmiana
+zastępuje więc import silny (kanał brany z wiersza poleceń) słabszym, a nie
+usuwa import.
+
+*Zmiana w wyjściu, o której warto wiedzieć.* Panel wiodącego fotonu miesza
+teraz obie krotności w obrębie jednego przebiegu `--phenomenon`, bo krotność
+zmienia się trajektoria po trajektorii. To mieszanka staje się widoczna, a
+nie usterka rysowania. `CREM_CHANNEL_FROM_FLAG` przywraca stare zachowanie
+do porównań.
+
+#### Audyt wyboru \(2\gamma/3\gamma\) przed tą zmianą
 
 *Kanał wybiera flaga, nie dynamika.* `annihilationPhotonEnergiesFor(W, para,
 stream)` jest wołane z `para = (selectedPhenomenon==1)`, ustalonym **przed**

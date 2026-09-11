@@ -654,6 +654,14 @@ inline int zeroPointModes = 64;
 //                          measured to remove 90% of the L/E separation.
 //   CREM_DARWIN_FORCES     Validation build: use Darwin forces where the
 //                          retarded ones are the default.
+//   CREM_CHANNEL_FROM_FLAG Take the annihilation photon multiplicity from
+//                          --phenomenon, as the model did before the
+//                          selection rule was applied to the terminal total
+//                          angular momentum.  For comparison: it makes the
+//                          photon count a label again rather than a result,
+//                          and hides the 42% of para trajectories whose
+//                          terminal configuration no longer supports two
+//                          photons.
 //
 // C2.  THESE ONLY PRINT.  Diagnostics and censuses; they do not alter the
 //      trajectory, and are safe to leave on while measuring.

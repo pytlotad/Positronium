@@ -841,3 +841,56 @@ ortho: 13 of 16 reached a stopping condition
      0.095 hbar against |S| = 1 it is right on every one.  The gate
      became usable for ortho; para is what it cannot follow, because
      there the model's own |S| is no longer 0.
+
+==================================================================
+15. LETTING THE DYNAMICS CHOOSE THE CHANNEL
+==================================================================
+
+15a. The rule.  Momentum conservation makes a two-photon final state
+     back to back, defining one axis; each photon has helicity +-1
+     along that axis, so the pair can carry projection 0 or +-2 but
+     never +-1.  A J=1 state therefore cannot go to two photons
+     (Landau-Yang).  Implemented as: round |J| = |L_orb + S1 + S2| to
+     the nearest integer and refuse two photons exactly when it is 1.
+     annihilationPhotonEnergiesFor no longer sees selectedPhenomenon.
+
+15b. Result, 12 trajectories per channel, master seed 42:
+
+       prepared   2 gamma   3 gamma   |J| range        agrees with
+                                                       its preparation
+       para          7         5      [0.208, 0.738]      7/12 = 58%
+       ortho         0        12      [0.917, 1.092]     12/12 = 100%
+
+15c. How to read that.  ORTHO IS NOW A RESULT, not a label, and it
+     comes out right on every trajectory: the anti-aligned
+     configuration is the stable fixed point, |S1+S2| stays at 1 hbar
+     to 14 digits, and with L_orb at 0.095 hbar the total rounds to 1
+     every time.
+
+     PARA IS RIGHT 58% OF THE TIME, and the other 42% is not a bug in
+     the gate -- it is the model's known destruction of the singlet,
+     now visible in the OBSERVABLE instead of hidden in the internal
+     state.  The aligned configuration is the unstable fixed point, so
+     by the time the pair annihilates it no longer has S=0, and the
+     selection rule correctly refuses two photons for it.  Before this
+     change the model emitted 2 gamma regardless and the defect did
+     not appear in the output at all.
+
+15d. WHAT IS STILL IMPORTED, and it has to be said plainly.  |J| comes
+     out at 0.208, 0.738, 0.917, 1.092 -- classical continuous values,
+     not integers.  Rounding them is the assumption that J is
+     QUANTIZED, and that is an import, the same kind as the three the
+     README already lists.  What conservation supplies for free is only
+     the implication "J=1 cannot go to two photons"; deciding that a
+     state with |J|=0.74 IS a J=1 state is not conservation, it is
+     quantization.  So this replaces a strong import (the channel
+     itself, taken from the command line) with a weaker one, rather
+     than removing an import.
+
+15e. Output change to be aware of: the leading-photon panel now mixes
+     the two multiplicities within one --phenomenon batch, since the
+     multiplicity varies trajectory by trajectory.  That is the
+     mixture becoming visible, not a plotting fault.
+
+     CREM_CHANNEL_FROM_FLAG restores the old behaviour for comparison.
+     make validation 55/55 with the gate active.

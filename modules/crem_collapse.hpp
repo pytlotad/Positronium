@@ -308,6 +308,12 @@ struct CremCollapseEstimate {
     // pair's own centre-of-momentum frame and summing to
     // annihilationInvariantEnergy exactly.
     std::vector<double> annihilationPhotonEnergies;
+    // |J| = |L_orb + S1 + S2| at the terminal state, in units of hbar, and
+    // the integer it rounds to.  This is what now DECIDES the multiplicity
+    // above, so it is reported beside it rather than left to be re-derived.
+    double annihilationTotalAngularMomentum=
+        std::numeric_limits<double>::quiet_NaN();
+    int annihilationTotalAngularMomentumQuantum=-1;
 };
 
 // Final-state photon energies for a pair annihilating with invariant energy
@@ -2380,9 +2386,57 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             result.annihilationInvariantEnergy=
                 (firstMass+secondMass)*c*c-result.terminalBindingEnergy
                 +result.terminalDipoleEnergy;
-            result.annihilationPhotonEnergies=annihilationPhotonEnergiesFor(
-                result.annihilationInvariantEnergy,
-                selectedPhenomenon==1,stochasticSkipStream);
+            // THE MULTIPLICITY IS DECIDED BY THE DYNAMICS, not by
+            // --phenomenon.  Two conservation laws fix it between them, with
+            // no matrix element and no free parameter:
+            //
+            //   - momentum conservation makes a two-photon final state
+            //     exactly back to back in the pair's rest frame, which
+            //     defines a single axis;
+            //   - each photon has helicity +-1 along that same axis, so the
+            //     total angular momentum projection the pair of them can
+            //     carry is 0 or +-2, never +-1.
+            //
+            // A state with J=1 therefore cannot be matched to two photons at
+            // all (Landau-Yang), and the minimum multiplicity is three.  So
+            // the rule is: round |J| to the nearest integer and refuse two
+            // photons exactly when that integer is one.
+            //
+            // What this replaces: annihilationPhotonEnergiesFor used to be
+            // called with (selectedPhenomenon==1), i.e. the multiplicity came
+            // from the command line and the moments were prepared to match
+            // it.  That made the photon count a label rather than a result,
+            // and it disagreed with the model's own terminal configuration on
+            // 42% of para trajectories, which drift off the aligned
+            // configuration because it is the UNSTABLE fixed point of the
+            // dipole-dipole dynamics (ortho's anti-aligned one is stable and
+            // is preserved to 14 digits).
+            //
+            // CREM_CHANNEL_FROM_FLAG restores the old behaviour for
+            // comparison.
+            {
+                const double firstRatio=firstGyromagneticRatioOf();
+                const double secondRatio=secondGyromagneticRatioOf();
+                const Vec3 spinSum=
+                    (firstRatio!=0.0?firstDipole*(1.0/firstRatio):Vec3{})
+                   +(secondRatio!=0.0?secondDipole*(1.0/secondRatio):Vec3{});
+                const Vec3 totalAngularMomentum=
+                    angularMomentumDirection
+                        *(elements.specificAngularMomentum*reducedMass)
+                    +spinSum;
+                const double quantumNumber=totalAngularMomentum.norm()/hbar;
+                result.annihilationTotalAngularMomentum=quantumNumber;
+                const int rounded=
+                    static_cast<int>(std::lround(quantumNumber));
+                result.annihilationTotalAngularMomentumQuantum=rounded;
+                const bool twoPhotonAllowed=
+                    std::getenv("CREM_CHANNEL_FROM_FLAG")
+                    ?selectedPhenomenon==1:rounded!=1;
+                result.annihilationPhotonEnergies=
+                    annihilationPhotonEnergiesFor(
+                        result.annihilationInvariantEnergy,
+                        twoPhotonAllowed,stochasticSkipStream);
+            }
             // CREM_DEBUG_CHANNEL: how close this trajectory ran to the
             // para/ortho classification edge, and whether the moments it
             // ENDS with still sit on the side the photon multiplicity was
