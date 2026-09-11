@@ -3595,6 +3595,60 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 // no states at all.  The artificial quantum there is a
                 // symptom of the model being outside the ladder's domain, not
                 // a defect inside it.
+                // CREM_PHOTON_FROM_SPIN -- step 3 of the freeing plan, and
+                // the first rule in this model whose quantum contains the
+                // magnetic moments at all.
+                //
+                // Why it exists.  hbar*omega_orb has no moment in it, which
+                // is exactly why the cascade obeys n -> sqrt(n^3/(n+2)), a
+                // map with no fixed point and no memory of the Bohr ladder.
+                // If the moment configuration is to set anything, it has to
+                // enter the energy bookkeeping first.
+                //
+                // WHICH RATE.  The mutual libration rate |omega1-omega2| is
+                // exactly zero for ortho by the exchange symmetry, so it
+                // would switch emission off in one channel entirely and is
+                // unusable.  max(|omega1|,|omega2|) -- the rate a moment
+                // turns in the lab -- is defined in both and is what "one
+                // photon per spin precession" means.
+                //
+                // WHAT IT DOES, stated before measuring so the prediction is
+                // falsifiable: omega_spin/omega_orb is 2.7e-5 at a_pair and
+                // peaks at 0.044 near 0.73 lambda_C, so this quantum is
+                // FOUR TO FIVE ORDERS SMALLER than the default and the
+                // photons become far more frequent, not rarer.  The plan's
+                // "one photon per 23 orbits" was a statement about the
+                // frequency ratio, not about the threshold this rule sets;
+                // as an ENERGY rule it goes the other way.
+                //
+                // The orbit is resized to the energy this call was given --
+                // a = k/(2E), with |L| scaled as sqrt(a) so the eccentricity
+                // of the current state is preserved -- so the quantum tracks
+                // the emission's own orbit the way the classical branch
+                // does, rather than being frozen at the checkpoint.
+                if(std::getenv("CREM_PHOTON_FROM_SPIN")) {
+                    const double axisHere=
+                        pairCoulombStrength/(2.0*orbitalEnergy);
+                    const double axisNow=semiMajorAxisForLoss;
+                    if(axisHere>0.0&&axisNow>0.0
+                       &&orbitalAngularMomentumVector.norm()>0.0) {
+                        const Vec3 scaledAngularMomentum=
+                            orbitalAngularMomentumVector
+                            *std::sqrt(axisHere/axisNow);
+                        const OrbitAveragedBmtAngularVelocities spinRates=
+                            orbitAveragedBmtAngularVelocities(axisHere,
+                                scaledAngularMomentum,firstDipole,
+                                secondDipole,reducedMass,zeroPointPhase,
+                                periapsisDirection);
+                        if(spinRates.valid) {
+                            const double spinRate=std::max(
+                                spinRates.first.norm(),spinRates.second.norm());
+                            if(spinRate>0.0&&std::isfinite(spinRate))
+                                return hbar*spinRate;
+                        }
+                    }
+                    return classical;
+                }
                 // gBohrLevelPhotonEnergy off (the default): never import the
                 // level-difference rule, always report what the orbit's own
                 // frequency produces.  See its own comment in positronium.cpp.

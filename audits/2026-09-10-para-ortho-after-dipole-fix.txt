@@ -2187,3 +2187,76 @@ measurement of whether that survives a cascade.
      matters.  Step 2's prediction is therefore confirmed, and confirmed
      more strongly than expected -- not "no preference was observed" but
      "the map that generates the cascade provably has none".
+
+36. PLAN STEP 3: AN EMISSION RULE WITH MOMENTS IN IT -- PREDICTION
+    FALSIFIED
+
+    The default quantum hbar*omega_orb contains no moment, which is why
+    section 35c's cascade map has no fixed point.  Step 3 replaces it with
+    hbar*omega_spin -- one photon per spin precession -- so the moments
+    enter the energy bookkeeping for the first time.  Added as
+    CREM_PHOTON_FROM_SPIN, an option rather than a replacement, so nothing
+    already measured is endangered; with it unset the branch trace is
+    bit-identical (t = 199.442442952 ps, 3 photons).
+
+36a. WHICH RATE, AND WHY NOT THE OBVIOUS ONE.  The mutual libration rate
+     |omega1-omega2| is exactly zero for ortho by the exchange symmetry of
+     section 27a, so it would switch emission off in one channel entirely.
+     max(|omega1|,|omega2|) is defined in both and is what "per spin
+     precession" means.  The orbit is resized to the energy each call is
+     given, a = k/(2E) with |L| scaled as sqrt(a), so the quantum tracks
+     the emission's own orbit as the classical branch does.
+
+36b. THE DIRECTION WAS PREDICTED BEFORE MEASURING, AND HELD.
+     omega_spin/omega_orb is 2.7e-5 at a_pair, so the quantum is four to
+     five orders SMALLER and the photons become far more frequent, not
+     rarer.  The plan's "one photon per 23 orbits" was a statement about
+     the frequency ratio, not about the threshold an energy rule sets.
+     Measured, from n=2:
+
+       rule        collapse    photons    photon energy   stop
+       default      199.4 ps         3    1.70 eV first   4.94 barriers
+       spin        2188.4 ps    122245    8.63e-06 eV     14.55 barriers
+
+36c. THE PREDICTION THAT MATTERED IS FALSE.  The plan said the cascade
+     would acquire a distinguished radius at 0.726 lambda_C, the peak of
+     omega_spin/omega_orb.  Photon density per unit ln(a), retardation
+     limit relaxed to 2 so the run reaches 1.118 lambda_C -- within a
+     factor 1.5 of the predicted peak:
+
+       r/lambda_C    photons        r/lambda_C    photons
+        960.3         40784          67.9            670
+        736.8         25755          39.9            347
+        565.3         17958          23.5            108
+        433.7         12847          13.9             47
+        332.8          9066           8.2             17
+        255.3          4830           4.8              7
+        195.9          3982           2.8              1
+        150.3          2733           1.7              0
+        115.3          1409           1.3              1
+
+     Strictly monotone over three decades.  No peak anywhere, and none at
+     0.726 lambda_C, where the density is one photon per bin and still
+     falling.
+
+36d. WHY THE PREDICTION WAS WRONG, and it was my own error in the plan.
+     A peak in omega_spin/omega_orb is a peak in photons per ORBIT.  What
+     marks a radius is photons per unit ln(a), which is the energy
+     radiated per ln(a) divided by the quantum.  The quantum hbar*omega_s
+     grows far faster than the available energy as the orbit tightens, so
+     the density falls monotonically and the ratio's peak never reaches
+     the observable.  Conflating the two is what made the prediction look
+     falsifiable in the right way; it was falsifiable, and it is false.
+
+36e. WHAT STANDS AFTER STEP 3.  Putting the moments into the emission
+     rule does not give the model a level, a preferred radius, or any
+     structure at all -- it only changes the graininess of a cascade that
+     remains smooth and monotone.  Three routes in section 30-31 said the
+     moments carry the Compton scale and cannot quantize; this is the
+     fourth, and the first one that tested it dynamically rather than
+     kinematically.
+
+     The protected results are intact: validation 55/55, header isolation
+     37/37, and the exchange-parity signature is unchanged (ortho
+     |omega1-omega2| = 0 exactly, para 0.335074, both identical to
+     section 27a).
