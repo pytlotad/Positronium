@@ -2564,3 +2564,72 @@ measurement of whether that survives a cascade.
 
      Two announcements in a row were made from 10-16 pairs and both fell.
      No further claim from this measurement should be made below that bar.
+
+42. STEP 4 MEASURED WHERE IT WORKS: 0.01 a_pair
+
+    Sections 40 and 41 withdrew the exponent and the sign because 10 to 16
+    pairs at the Bohr radius could not determine either.  The reason is now
+    clear and it is not the method: at a_pair the ZPF work is small against
+    its own fluctuation (sigma/|mean| = 1.52), while deep in the orbit it
+    is large (0.33).  So the controls belong at the deep radius.
+
+42a. THE WORK AT 0.01 a_pair IS WELL DETERMINED.  Running mean over
+     antithetic pairs, 20 orbits:
+
+       pairs   mean (eV)     error      significance
+         4     3.7380e+02   7.16e+01       5.22
+         8     4.1882e+02   4.21e+01       9.94
+        12     4.7728e+02   4.29e+01      11.13
+        16     4.6392e+02   3.77e+01      12.31
+        20     4.3153e+02   3.92e+01      11.01
+
+     Stable from four pairs on, 11 to 12 sigma, sigma/|mean| = 0.33.  This
+     is the opposite situation to section 41a, where four extra pairs
+     flipped the sign.
+
+42b. A NOISY DENOMINATOR, FOUND AND REPLACED.  The |W|/radiated column in
+     sections 38 and 39 divided by the radiated energy of ONE perturbed
+     trajectory, which jumped between 1.64 and 14.27 on the same
+     configuration.  The analytic Larmor energy for a circular orbit,
+     20 P T with |d''| = e omega^2 r, is exact and checks out: 4.4293e-04 eV
+     at a_pair over 20 orbits against the probe's measured 4.4111e-04, a
+     0.4% agreement.  Every ratio below uses the analytic value.
+
+42c. THE EXPONENT, MEASURED.  Same radius, 10 pairs per point:
+
+       orbits   work (eV)             significance   work/orbit   |W|/Larmor
+         5     1.4899e+02 +- 3.27e+01     4.56         29.80        13.455
+        10     2.3495e+02 +- 4.71e+01     4.99         23.49        10.609
+        20     4.3153e+02 +- 3.92e+01    11.01         21.58         9.742
+
+       pairwise p:  5->10 gives 0.657,  10->20 gives 0.877,  5->20 gives 0.767
+       weighted fit: p = 0.787 +- 0.160
+
+     p = 1 is 1.3 sigma away; p = 2 is 7.6 sigma away.  SECTION 39'S t^2 IS
+     REFUTED, not merely unsupported, and the growth is if anything
+     slightly SUBLINEAR -- the pumping saturates a little rather than
+     running away.  With it goes the inference that the orbit-tied band is
+     a blocker: a permanently resonant drive would give p = 2, and p is
+     0.79.
+
+42d. AND THERE IS NO BALANCE HERE.  |W|/Larmor is 9.74 at 20 orbits and
+     falling as t^(p-1) = t^(-0.21).  Reaching 1 would need a run 3e7 times
+     longer, which is not an extrapolation worth making -- the statement
+     that survives is that over every accessible run length the field pumps
+     about ten times more than radiation drains at this radius.  The model's
+     zero-point field does not hold the orbit there; it drives it outward.
+
+42e. WHAT IS AND IS NOT SETTLED NOW.
+
+       settled   the work at 0.01 a_pair: 4.3e+02 eV over 20 orbits at 11
+                 sigma, positive, stable from 4 pairs to 20
+       settled   the exponent there: p = 0.787 +- 0.160, so secular rather
+                 than resonant, and section 39 withdrawn on measurement
+                 rather than on lack of it
+       settled   no balance at 0.01 a_pair -- the field wins by ~10x
+       OPEN      the Bohr radius itself, where sigma/|mean| = 1.52 still
+                 needs the several hundred pairs section 41d priced
+       OPEN      whether the ratio crosses 1 anywhere; the scan's trend
+                 with analytic denominators (12.78, 12.18, 9.74 at 0.1,
+                 0.03, 0.01 a_pair) is roughly flat, which suggests not,
+                 but only the last of those rows has the statistics
