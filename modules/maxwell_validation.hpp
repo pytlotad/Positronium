@@ -1944,6 +1944,52 @@ inline int runMaxwellSelfTest(
     const double secularAngularSpeed=secularInitialRates.valid
         ?std::max(secularInitialRates.first.norm(),
                   secularInitialRates.second.norm()):0.0;
+    // EXCHANGE PARITY OF THE MUTUAL FIELD -- locking the structural result
+    // that the para/ortho asymmetry rests on.
+    //
+    // Under the exchange r -> -r, 1 <-> 2 the motional part of the mutual
+    // magnetic field is ODD always, while the dipole part is odd only for
+    // ANTI-aligned moments.  Ortho therefore has both parts odd, so
+    // B2 = -B1 exactly, and because -q/m carries opposite signs for the two
+    // charges the two Thomas-BMT rates coincide EXACTLY.  Two identical
+    // rotation vectors acting on two anti-parallel moments preserve the
+    // anti-parallelism forever, which is why |S1+S2| holds 1 hbar to machine
+    // precision in that channel -- a symmetry, not a stability, and not a
+    // test the model could fail by getting physics wrong.
+    //
+    // Para has the two parts at opposite parity, so the rates differ by an
+    // O(1) fraction and the mutual angle librates.  Both halves are asserted:
+    // the exact one because an edit that broke it would silently turn ortho
+    // into para's behaviour, and the O(1) one because an edit that made the
+    // rates coincide in BOTH channels would silently freeze the libration.
+    //
+    // Circular orbit, moments along the orbit normal, so the geometry is
+    // fixed and the only difference between the two rows is the sign.
+    const double exchangeRadius=0.2*pairBohrRadius(activePair);
+    const Vec3 exchangeAngularMomentum{0.0,0.0,
+        std::sqrt(pairReducedMass*pairCoulombStrength*exchangeRadius)};
+    const auto exchangeRateGap=[&](double secondSign){
+        const OrbitAveragedBmtAngularVelocities rates=
+            orbitAveragedBmtAngularVelocities(exchangeRadius,
+                exchangeAngularMomentum,
+                Vec3{0.0,0.0,firstMagneticMoment},
+                Vec3{0.0,0.0,secondSign*secondMagneticMoment},
+                pairReducedMass,0.0,Vec3{1.0,0.0,0.0});
+        if(!rates.valid) return -1.0;
+        const double scale=std::max(rates.first.norm(),rates.second.norm());
+        if(!(scale>0.0)) return -1.0;
+        return (rates.first-rates.second).norm()/scale;
+    };
+    const double exchangeOrthoRateGap=exchangeRateGap(-1.0);
+    const double exchangeParaRateGap=exchangeRateGap(+1.0);
+    // Ortho's gap is an EXACT zero, so the bound is machine-epsilon rather
+    // than a tolerance; para's is bounded from BELOW, because the failure to
+    // guard against is both channels coinciding, which would freeze the
+    // libration and make the two channels identical.  Measured: 0 and 0.854.
+    const bool exchangeParityOk=
+        exchangeOrthoRateGap>=0.0&&exchangeOrthoRateGap<1.0e-15
+        &&exchangeParaRateGap>0.05
+        &&std::isfinite(exchangeParaRateGap);
     const double secularElapsed=secularAngularSpeed>0.0
         ?0.2/secularAngularSpeed:0.0;
     const SecularSpinOrbitAdvance secularCoarse=
@@ -5449,6 +5495,9 @@ inline int runMaxwellSelfTest(
               << coherentReactionMomentumResidual << '\n'
               << "coherent M1 +/-:     " << alignedMagneticPowerRatio << " / "
               << cancellingMagneticPowerRatio << '\n'
+              << "exchange gap o/p:   " << exchangeOrthoRateGap << " / "
+              << exchangeParaRateGap
+                 << "  (ortho exact by parity, para O(1))\n"
               << "ZPF phase rate/n:   " << secularPhaseRateRatio
                  << " (expected " << secularPhaseRateExpected
                  << ", circular residual " << circularPhaseRateResidual
@@ -5714,12 +5763,14 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,55> regressionChecks{{
+    const std::array<ValidationCheck,56> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
          photonMomentumBalanceOk},
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
+        {ValidationSection::AlgebraicIdentity,"mutual-field-exchange-parity",
+         exchangeParityOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
         {ValidationSection::AlgebraicIdentity,"charge",chargeOk},
