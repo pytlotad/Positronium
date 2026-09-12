@@ -225,6 +225,65 @@ się mierzy, jest już importem. Osobnym, nierozstrzygniętym pytaniem
 pozostaje, które z wyników przeżywają całkowite usunięcie \(\hbar\omega\),
 czyli co zostaje z modelu na czystej ścieżce ciągłej.
 
+### Sześć importów to jedno założenie skalowe i pięć reguł
+
+Powyższa lista wycenia importy pojedynczo. Zmierzone później okazało się, że
+nie są one równorzędne: **tylko jeden z nich niesie skalę, a pozostałe pięć
+to reguły o dyskretności, a reguły skali nie ustalają.**
+
+*Model ma \(\alpha\) i ma \(\lambda_C\).* Stała struktury subtelnej
+siedzi w samym sprzężeniu, \(k=\alpha\hbar c\) z dokładnością ULP, a każda
+długość w modelu to \(\lambda_C\) razy jej potęga:
+\(a_{\rm pair}=2\lambda_C/\alpha\), \(r^*=(g/2)\lambda_C/2\),
+\(r_e=\alpha\lambda_C\). Wszystkie cztery relacje są przypięte asercjami w
+`particle_species.hpp`. Wejście wymiarowe jest jedno, \(\lambda_C\), i
+konfiguracja momentów je już niesie, bo \(r^*=\mu/(ec)\). Wejście
+bezwymiarowe jest jedno, \(\alpha\), i jest nim zwykła stała mierzona —
+w QED również wejściowa.
+
+*Brakuje powodu, żeby para siedziała przy \(a_{\rm pair}\).* Klasycznie, przy
+ustalonym \(L\), energia \(E(r)=L^2/(2\mu r^2)-k/r\) ma minimum przy
+\(L^2/(\mu k)\), a dla \(L=\hbar\) to jest \(a_{\rm pair}\) co do
+\(1{,}1\cdot10^{-13}\). Skala bierze się więc **wyłącznie z założenia
+\(L=\hbar\)** — importu nr 1 — a nie z \(\alpha\). To argument z modelu
+Bohra, który mechanika kwantowa uchyliła: stan 1S ma \(L=0\), więc skala nie
+może pochodzić z kwantowania momentu pędu. Kwantowo to samo minimum daje
+\(\hbar^2/(2\mu r^2)\), czyli energia **lokalizacji**, której model nie ma.
+
+*Dlaczego to tłumaczy, czego nie udało się osiągnąć.* Zdjęcie bariery z listy
+importów, uwolnienie promienia startowego i wstawienie momentów do reguły
+emisji — wszystkie trzy wykonane i zmierzone — nie spowodowały pojawienia się
+żadnego poziomu, bo żadne z nich nie dotknęło tego jednego założenia. Kaskada
+okazała się odwzorowaniem \(n\mapsto\sqrt{n^3/(n+2)}\) bez punktu stałego,
+a reguła emisji z momentami zmieniła tylko ziarnistość.
+
+*Co mogłoby je zastąpić.* Pole zerowe dostarcza dokładnie tego, czego
+\(L=\hbar\) jest namiastką: fluktuacji opierającej się zapadnięciu, bez
+ustalania momentu pędu. Zmierzone: pole pompuje energię na każdym badanym
+promieniu (7,40 sigma testem znaku przy \(a_{\rm pair}\)), dziesięciokrotnie
+przy \(0{,}01\,a_{\rm pair}\), a na zakresie \(1\)–\(3\,a_{\rm pair}\)
+stosunek pompowania do strat jest **zgodny z jednością** i promienie są
+nieodróżnialne (1,66 sigma na 455 sparowanych ziarnach). Szeroki obszar
+bliskiej równowagi wokół promienia Bohra — ale bez wykrywalnego punktu
+stacjonarnego. Szczegóły i wycofane po drodze twierdzenia w audycie
+`2026-09-10-para-ortho-after-dipole-fix.txt`, sekcje 32–50.
+
+*Sześć wyników nietautologicznych jest teraz zamknięte regresją.* Zanim
+cokolwiek z powyższego ruszono, żaden nie był chroniony; wszystkie sześć ma
+dziś własną kontrolę, a suita stoi na \(59/59\):
+
+| wynik | zamek |
+|---|---|
+| \(\mu/(ec)\) = promień bariery | `static_assert` w `particle_species.hpp` |
+| M1 zeruje się przy antyrównoległości | `coherent-M1`, \(10^{-12}\) |
+| parzystość wymienna pola wzajemnego | `mutual-field-exchange-parity` |
+| kąt para libruje i wraca | `mutual-angle-libration` |
+| tożsamość \(t=\tfrac12\alpha^{-5}\lambda_C/c\) | `inspiral-alpha-power` |
+| człon tensorowy zeruje się w stanie S | `dipole-tensor-s-state-average` |
+
+Każdy z nich sprawdzono pod kątem zdolności do **upadnięcia**, bo zamek,
+który nie może zawieść, nie jest zamkiem.
+
 ### Co przeżywa bez \(\hbar\omega\): pomiar ścieżki ciągłej
 
 Naturalne pytanie po wycenie importów: skoro kwant \(\hbar\omega\) kosztuje
