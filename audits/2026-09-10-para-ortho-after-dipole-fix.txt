@@ -2889,3 +2889,58 @@ measurement of whether that survives a cascade.
      be made without a different physical measurement, and the physics it
      can see is that the field pumps everywhere, hard deep in and
      marginally at the Bohr scale.
+
+47. LOCKING N5, AND IT TURNS OUT TO BE AN EXACT IDENTITY
+
+    N5 was recorded as "the collapse time scales as alpha^-5 lambda_C/c,
+    the same power as Gamma_2gamma".  Written down properly it is not a
+    scaling but an equality.
+
+47a. THE ALGEBRA.  The dipole inspiral coefficient is
+
+       C = 2 q^2 k /(6 pi eps0 c^3 mu^2),
+
+     which for e+e- (q = e, mu = m/2, k = alpha hbar c) reduces to
+
+       3 C = 16 alpha^2 lambda_C^2 c,
+
+     so the closed-form time from a_pair = 2 lambda_C/alpha to zero is
+
+       t = a_pair^3/(3C) = lambda_C/(2 alpha^5 c) = (1/2) alpha^-5 lambda_C/c
+
+     against the QED lifetime tau_2gamma = 2 hbar/(alpha^5 m c^2)
+     = 2 alpha^-5 lambda_C/c.  Measured: t/unit = 0.500000000 to nine
+     digits, t = 31.1235 ps, tau_2gamma = 124.4942 ps, ratio exactly 4.
+
+47b. WHAT IS AND IS NOT THE CONTENT.  alpha enters this model in exactly
+     one place, the coupling k = alpha hbar c.  The exponent 5 then comes
+     out of a^3/C with a ~ 1/alpha and C ~ alpha^2 -- three powers from the
+     radius and two from the coefficient.  Nothing put a fifth power
+     anywhere.  That is the non-tautological part.
+
+     The factor 4 between the two times is NOT predicted by anything here
+     and is not claimed to be.  It is the whole gap between a classical
+     inspiral time and an annihilation rate, and sections 24 to 26 are
+     about why.
+
+47c. LOCKED as inspiral-alpha-power, asserting t/(alpha^-5 lambda_C/c) =
+     1/2 to 1e-12 for the positronium pair and finiteness for the others,
+     which carry their own reduced mass and dipole charge.  Verified to
+     fail: moving the target to 0.6 gives FAILED: inspiral-alpha-power at
+     56/57.
+
+     Locked because the emission rule, the starting radius and the
+     preparation have all been changed in this codebase without anyone
+     checking that this identity still held.
+
+47d. STATE OF THE SIX PROTECTED RESULTS.
+
+       N1  mu/(e c) = the Compton barrier      static_assert (section 35a)
+       N2  M1 cancels at anti-alignment        coherent-M1 check, 1e-12
+       N3  exchange parity of the mutual field mutual-field-exchange-parity
+       N5  the alpha^-5 identity               inspiral-alpha-power
+       N4  |S| libration returning to zero     NOT LOCKED -- needs a
+                                               trajectory, not algebra
+       N6  dipole-dipole vs the hyperfine gap  NOT LOCKED
+
+     Four of six, and the suite is at 57/57.

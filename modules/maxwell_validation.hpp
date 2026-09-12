@@ -1982,6 +1982,49 @@ inline int runMaxwellSelfTest(
     };
     const double exchangeOrthoRateGap=exchangeRateGap(-1.0);
     const double exchangeParaRateGap=exchangeRateGap(+1.0);
+    // N5: THE MODEL'S COLLAPSE TIME CARRIES THE SAME POWER OF ALPHA AS THE
+    // QED ANNIHILATION LIFETIME, and the identity is exact rather than
+    // approximate.  The dipole inspiral coefficient
+    //
+    //     C = 2 q^2 k /(6 pi eps0 c^3 mu^2)
+    //
+    // reduces for e+e- (q = e, mu = m/2, k = alpha hbar c) to
+    //
+    //     3 C = 16 alpha^2 lambda_C^2 c,
+    //
+    // so the closed-form time from a_pair = 2 lambda_C/alpha down to zero is
+    //
+    //     t = a_pair^3/(3C) = lambda_C/(2 alpha^5 c) = (1/2) alpha^-5 lambda_C/c
+    //
+    // exactly, against tau_2gamma = 2 hbar/(alpha^5 m c^2), which is
+    // 2 alpha^-5 lambda_C/c.  The two differ by the pure number 4.
+    //
+    // That the POWER matches is the content and was not put in: alpha enters
+    // the model only as the coupling k = alpha hbar c, and the exponent 5
+    // comes out of a^3/C with a ~ 1/alpha and C ~ alpha^2.  The 4 is not
+    // predicted by anything here and is not claimed.
+    //
+    // Locked because the emission rule, the starting radius and the
+    // preparation have all been changed in this codebase without anyone
+    // checking that this still held.
+    const double inspiralCoefficientHere=
+        2.0*pairDipoleCharge*pairDipoleCharge*pairCoulombStrength
+        /(6.0*pi*epsilon0*c*c*c*pairReducedMass*pairReducedMass);
+    const double inspiralAlphaUnits=[&]{
+        const double a=pairBohrRadius(activePair);
+        if(!(inspiralCoefficientHere>0.0)) return -1.0;
+        const double t=a*a*a/(3.0*inspiralCoefficientHere);
+        const double unit=reducedComptonWavelength
+            /(c*std::pow(fineStructureConstant,5.0));
+        return unit>0.0?t/unit:-1.0;
+    }();
+    // Half exactly for e+e-; other pairs carry their own reduced mass and
+    // dipole charge, so the identity is asserted for the positronium pair
+    // and only finiteness is required elsewhere.
+    const bool inspiralAlphaPowerOk=std::isfinite(inspiralAlphaUnits)
+        &&(activePair.first.mass!=electronMass
+           ||activePair.second.mass!=positronMass
+           ||std::abs(inspiralAlphaUnits-0.5)<1.0e-12);
     // Ortho's gap is an EXACT zero, so the bound is machine-epsilon rather
     // than a tolerance; para's is bounded from BELOW, because the failure to
     // guard against is both channels coinciding, which would freeze the
@@ -5498,6 +5541,8 @@ inline int runMaxwellSelfTest(
               << "exchange gap o/p:   " << exchangeOrthoRateGap << " / "
               << exchangeParaRateGap
                  << "  (ortho exact by parity, para O(1))\n"
+              << "inspiral in a^-5 units: " << inspiralAlphaUnits
+                 << "  (1/2 exactly; tau_2gamma is 2)\n"
               << "ZPF phase rate/n:   " << secularPhaseRateRatio
                  << " (expected " << secularPhaseRateExpected
                  << ", circular residual " << circularPhaseRateResidual
@@ -5763,7 +5808,7 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,56> regressionChecks{{
+    const std::array<ValidationCheck,57> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
@@ -5771,6 +5816,8 @@ inline int runMaxwellSelfTest(
         {ValidationSection::AlgebraicIdentity,"two-body-role-invariance",twoBodyRoleOk},
         {ValidationSection::AlgebraicIdentity,"mutual-field-exchange-parity",
          exchangeParityOk},
+        {ValidationSection::AlgebraicIdentity,"inspiral-alpha-power",
+         inspiralAlphaPowerOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
         {ValidationSection::AlgebraicIdentity,"charge",chargeOk},
