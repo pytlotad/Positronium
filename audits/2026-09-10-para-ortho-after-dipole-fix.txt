@@ -2944,3 +2944,47 @@ measurement of whether that survives a cascade.
        N6  dipole-dipole vs the hyperfine gap  NOT LOCKED
 
      Four of six, and the suite is at 57/57.
+
+48. LOCKING N6: THE ONE HYPERFINE TERM THE MODEL HAS CONTRIBUTES NOTHING
+
+    N6 was recorded as "the classical dipole-dipole energy as a fraction of
+    the hyperfine splitting, with the remainder correctly identified".  The
+    lockable part is the boundary, not the fraction.
+
+48a. THE STATEMENT.  The measured o-Ps/p-Ps splitting is
+     (7/12) alpha^4 m c^2 = 204.4 GHz and divides into a Fermi contact term
+     (4/7) and virtual annihilation (3/7).  Neither exists in this model.
+     What does exist is the tensor coupling
+
+       U = (mu0/4 pi r^3) [mu1.mu2 - 3 (mu1.nhat)(mu2.nhat)],
+
+     whose spherical average is EXACTLY zero, since
+     <(mu1.nhat)(mu2.nhat)> = mu1.mu2/3 leaves mu1.mu2 - 3(mu1.mu2/3) = 0.
+
+     So the model contributes nothing at all to an S-state splitting, and
+     the few-percent figure it reports is an ORBIT-PLANE average -- a
+     different quantity, which must not be read as a fraction of 204.4 GHz.
+     That distinction is the substance of N6 and it is what needed locking.
+
+48b. LOCKED as dipole-tensor-s-state-average on the same 50-point Lebedev
+     rule the far-field flux probes use, with a generic pair of
+     non-parallel moments so neither the scalar nor the tensor part is
+     accidentally zero.  Measured 5.81e-16 against a 1e-14 bound.
+
+     Verified to fail: changing the coefficient 3 to 2 reports FAILED:
+     dipole-tensor-s-state-average at 57/58.
+
+48c. THE SIX PROTECTED RESULTS, FIVE NOW LOCKED.
+
+       N1  mu/(e c) = the Compton barrier      static_assert
+       N2  M1 cancels at anti-alignment        coherent-M1, 1e-12
+       N3  exchange parity of the mutual field mutual-field-exchange-parity
+       N5  the alpha^-5 identity               inspiral-alpha-power
+       N6  tensor term vanishes in S           dipole-tensor-s-state-average
+       N4  |S| libration returning to zero     NOT LOCKED
+
+     Suite at 58/58.  N4 is the only one left and the only one that needs a
+     trajectory rather than an identity: for ortho it already follows from
+     N3, since the configuration is rigid, but for para the claim is that a
+     6193-substep libration returns |S| to exactly zero, and there is no
+     cheap algebraic stand-in for that.

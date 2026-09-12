@@ -3524,6 +3524,38 @@ inline int runMaxwellSelfTest(
                 *point.solidAngleWeight;
     }
     const double lebedevWeightResidual=std::abs(lebedevWeight-4.0*pi)/(4.0*pi);
+    // N6: THE ONE HYPERFINE TERM THIS MODEL HAS VANISHES IN AN S STATE.
+    //
+    // The measured o-Ps/p-Ps splitting is (7/12) alpha^4 m c^2 = 204.4 GHz
+    // and divides into a Fermi contact term (4/7) and virtual annihilation
+    // (3/7).  Neither exists here.  What does exist is the tensor
+    // dipole-dipole coupling
+    //
+    //     U = (mu0/4 pi r^3) [mu1.mu2 - 3 (mu1.nhat)(mu2.nhat)],
+    //
+    // and its spherical average is EXACTLY zero, because
+    // <(mu1.nhat)(mu2.nhat)> = mu1.mu2/3 leaves mu1.mu2 - 3(mu1.mu2/3) = 0.
+    // So the model contributes nothing to an S-state splitting, and the
+    // few-percent figure it does report is an ORBIT-PLANE average, a
+    // different quantity that must not be read as a fraction of 204.4 GHz.
+    //
+    // Locked on the same Lebedev rule the flux probes use, with a generic
+    // pair of non-parallel moments so neither the scalar nor the tensor part
+    // is accidentally zero.
+    const double dipoleSphericalAverage=[&]{
+        const Vec3 momentA{0.37,-0.48,0.79}, momentB{-0.61,0.22,0.53};
+        const double scale=std::abs(dot(momentA,momentB));
+        if(!(scale>0.0)||lebedevWeight<=0.0) return -1.0;
+        double sum=0.0;
+        for(const SphereQuadraturePoint& point:lebedevRule)
+            sum+=(dot(momentA,momentB)
+                  -3.0*dot(momentA,point.direction)
+                      *dot(momentB,point.direction))
+                 *point.solidAngleWeight;
+        return std::abs(sum/(lebedevWeight*scale));
+    }();
+    const bool dipoleSphericalAverageOk=dipoleSphericalAverage>=0.0
+        &&dipoleSphericalAverage<1.0e-14;
     double lebedevMomentResidual=lebedevFirstMoment.norm()/(4.0*pi);
     for(int i=0;i<3;++i) for(int j=0;j<3;++j)
         lebedevMomentResidual=std::max(lebedevMomentResidual,std::abs(
@@ -5543,6 +5575,8 @@ inline int runMaxwellSelfTest(
                  << "  (ortho exact by parity, para O(1))\n"
               << "inspiral in a^-5 units: " << inspiralAlphaUnits
                  << "  (1/2 exactly; tau_2gamma is 2)\n"
+              << "dipole tensor <U>_sphere: " << dipoleSphericalAverage
+                 << "  (exact zero: nothing to the S-state splitting)\n"
               << "ZPF phase rate/n:   " << secularPhaseRateRatio
                  << " (expected " << secularPhaseRateExpected
                  << ", circular residual " << circularPhaseRateResidual
@@ -5808,7 +5842,7 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,57> regressionChecks{{
+    const std::array<ValidationCheck,58> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
@@ -5818,6 +5852,8 @@ inline int runMaxwellSelfTest(
          exchangeParityOk},
         {ValidationSection::AlgebraicIdentity,"inspiral-alpha-power",
          inspiralAlphaPowerOk},
+        {ValidationSection::AlgebraicIdentity,"dipole-tensor-s-state-average",
+         dipoleSphericalAverageOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
         {ValidationSection::AlgebraicIdentity,"charge",chargeOk},
