@@ -2829,3 +2829,63 @@ measurement of whether that survives a cascade.
      measurement.  The pattern is worth stating plainly: every claim that
      came from fewer than about a hundred samples failed, and every one
      that came from several hundred held.
+
+46. THE PAIRED RUN AT 303 SEEDS: A 2-SIGMA INDICATION, NOT A RESULT
+
+    Section 45 reported the paired estimator on 104 seeds.  The run
+    continued; at 303 seeds the numbers have settled.
+
+46a. FINAL STATE, 1 against 3 a_pair, 20 orbits, antithetic within each:
+
+       |W|/Larmor at 1 a_pair      +1.156 +- 0.740
+       |W|/Larmor at 3 a_pair      +0.309 +- 0.561
+       correlation                 rho = +0.851
+       difference, unpaired        +0.847 +- 0.928   (0.91 sigma)
+       difference, paired          +0.847 +- 0.394   (2.15 sigma)
+       gain                        2.35x in sigma, 5.5x in seed count
+
+     The variance reduction held and improved as the sample grew -- 1.67x
+     at 44 seeds, 1.91x at 104, 2.35x at 303 -- so the cross-radius pairing
+     is a real and measured gain, better than the factor of three section
+     44d asked for when counted in seeds.
+
+46b. THE DIFFERENCE DID NOT CONVERGE TO SIGNIFICANCE.  Across the run:
+
+       seeds     difference        significance
+        56       +0.718 +- 0.767      0.94
+       104       +0.769 +- 0.603      1.28
+       164       +1.180 +- 0.536      2.20
+       176       +1.281 +- 0.510      2.51
+       252       +1.181 +- 0.407      2.91
+       276       +1.118 +- 0.376      2.98
+       303       +0.847 +- 0.394      2.15
+
+     It climbed to 2.98 sigma at 276 seeds and fell back to 2.15 when a
+     single outlying seed arrived and raised the variance as well as
+     lowering the mean.  A quantity that walks from 2.15 to 2.98 and back
+     on one seed in three hundred is not measured to three sigma, whatever
+     the best intermediate reading said.  The remaining 180 seeds of the
+     run can bring it to about 2.7 sigma at most.
+
+46c. WHAT THIS MEANS FOR THE CROSSING.  The ratio is of order 1 at both
+     radii and the difference between them is about +0.85 +- 0.39 -- a
+     2-sigma indication that it falls outward, consistent with a crossing
+     somewhere beyond a_pair, and not enough to place one.  The honest
+     statement is the one section 44d already reached and this run
+     sharpens rather than overturns: over 1 to 3 a_pair pumping and
+     radiation are comparable to within the measurement, and no radius in
+     that range is singled out.
+
+46d. THE METHODOLOGICAL RESULT IS THE DURABLE ONE.  Two variance
+     reductions were found, measured against matched controls, and both
+     hold: antithetic phase pairing (5.5x in seeds, section 38b) and
+     cross-radius seed pairing (5.5x in seeds, here).  Together they are
+     about 30x in seed count against the naive estimator, which is what
+     made a 2-sigma statement possible at all -- the naive version needed
+     4200 seeds per point for 10% and would have needed something like
+     10^5 for this difference.
+
+     That is where step 4 ends for now: the estimator is as good as it can
+     be made without a different physical measurement, and the physics it
+     can see is that the field pumps everywhere, hard deep in and
+     marginally at the Bohr scale.
