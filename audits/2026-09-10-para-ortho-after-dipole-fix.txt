@@ -3044,3 +3044,62 @@ measurement of whether that survives a cascade.
      The plan's part 3 is complete.  It was supposed to come before steps 2
      and 3 and came after them instead; nothing turned out to have been
      broken in the meantime, which is luck rather than method.
+
+50. THE PAIRED RUN FINISHED, AND TWO NUMBERS MOVE
+
+    Section 46 recorded the paired estimator at 303 seeds and projected
+    "about 2.7 sigma at most" once the run reached 480.  It reached 455 and
+    went the other way.
+
+50a. FINAL PAIRED STATE, 455 seeds, 1 against 3 a_pair, 20 orbits:
+
+       |W|/Larmor at 1 a_pair      +0.784 +- 0.656
+       |W|/Larmor at 3 a_pair      +0.274 +- 0.491
+       correlation                 rho = +0.896
+       difference, unpaired        +0.510 +- 0.820   (0.62 sigma)
+       difference, paired          +0.510 +- 0.307   (1.66 sigma)
+       gain                        2.67x in sigma, 7.1x in seed count
+
+     The variance reduction kept improving with sample size, 1.67x at 44
+     seeds through 2.35x at 303 to 2.67x here, and rho settled at 0.90.
+     That part of section 45 stands and strengthens.
+
+     The DIFFERENCE went the other way: +0.847 +- 0.394 (2.15 sigma) at 303
+     seeds, +0.510 +- 0.307 (1.66 sigma) at 455.  The projection in 46b
+     assumed the central value would hold while the error fell; it did not.
+     Projections of significance are only as good as that assumption, and
+     this is the second time in this measurement it failed.
+
+50b. AND THE a_pair RATIO ITSELF IS NO LONGER ABOVE 1.  The paired run is
+     an INDEPENDENT sample at the same radius -- seeds 50000 up against
+     20000 up -- so the two combine:
+
+       independent run, 400 pairs   1.924 +- 0.655
+       paired run, 455 seeds        0.784 +- 0.656
+       agreement between them       1.140 +- 0.927   (1.23 sigma)
+       COMBINED                     1.355 +- 0.464   (+0.77 sigma from 1)
+
+     Section 43b reported 1.924 +- 0.655, "only 1.41 sigma above the
+     balance value", and read that as the field winning marginally at the
+     Bohr radius.  Combined with the second sample it is 0.77 sigma above
+     1 -- fully consistent with balance, and no longer evidence of anything
+     winning there.
+
+50c. WHAT STEP 4'S PHYSICS COMES TO, FINALLY.
+
+       solid     the field pumps energy IN at every radius measured.  The
+                 sign test at a_pair gave 7.40 sigma on 400 pairs and it is
+                 tail-robust; nothing since has touched it.
+       solid     the ratio is about 10 at 0.01 a_pair, at 11 sigma.  Deep in
+                 the orbit the field wins by an order of magnitude.
+       solid     the growth is secular, p = 0.787 +- 0.160, not resonant.
+       consistent with balance   the ratio at 1 to 3 a_pair: 1.355 +- 0.464
+                 at a_pair and 0.274 +- 0.491 at 3 a_pair, neither
+                 distinguishable from 1 and not from each other (1.66
+                 sigma on 455 paired seeds).
+       not found no crossing radius, no self-selected scale.
+
+     So the picture the measurement supports is a broad region around the
+     Bohr radius where pumping and radiation are comparable, and a strongly
+     pumping interior.  Whether the comparable region contains a genuine
+     stationary point is exactly what 1.66 sigma cannot say.
