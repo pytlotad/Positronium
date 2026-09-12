@@ -2633,3 +2633,71 @@ measurement of whether that survives a cascade.
                  with analytic denominators (12.78, 12.18, 9.74 at 0.1,
                  0.03, 0.01 a_pair) is roughly flat, which suggests not,
                  but only the last of those rows has the statistics
+
+43. THE POWERED MEASUREMENT AT THE BOHR RADIUS: 388 PAIRS
+
+    Section 41 withdrew the sign of the ZPF work because 16 pairs could not
+    determine it.  Section 41d priced the fix at several hundred pairs.
+    Paid: 388 antithetic pairs, 776 trajectory runs, four workers.
+
+43a. THE SIGN IS ESTABLISHED, AND BY STATISTICS THE TAIL CANNOT MOVE.
+
+       statistic                     value                significance
+       mean                     +9.0872e-04 +- 2.98e-04      3.05 sigma
+       median                   +8.6664e-04
+       5%/5% trimmed mean       +1.0019e-03
+       sign test                269/388 positive             7.62 sigma
+       Wilcoxon signed rank                                   6.20 sigma
+
+     The sign test is the one that matters here: it is immune to the
+     outliers that flipped the 16-pair mean, and 269 of 388 is 7.6 sigma
+     from a coin.  THE ZERO-POINT FIELD PUMPS ENERGY INTO THE ORBIT at the
+     Bohr radius.  That is what the module always claimed, what section 33a
+     got backwards, what section 38c announced prematurely, and what is now
+     measured.
+
+     The mean's own convergence is slow and visibly tail-driven: across
+     sample sizes the median sits between 8.7e-04 and 1.15e-03 while the
+     mean wanders from 2.1e-03 down to 9.1e-04 as a -6.5 sigma pair
+     arrives.  sigma/|mean| = 6.5, so 10% on the MEAN would need ~4200
+     pairs.  The median needed about 100.
+
+43b. THE MAGNITUDE, AGAINST THE ANALYTIC LARMOR LOSS.
+
+       radius        |W|/Larmor      sample
+       3    a_pair      4.765        12 pairs, 2.1 sigma  -- not usable
+       1    a_pair      2.052 +- 0.673   388 pairs, 3.0 sigma
+       0.01 a_pair      9.743        20 pairs, 11 sigma
+
+     At the Bohr radius the field pumps about twice what radiation drains,
+     and that is only 1.56 sigma above the balance value of 1 -- so a
+     balance AT a_pair is not excluded.  Deep in, at 0.01 a_pair, the field
+     wins by a factor 10 and a balance is excluded.
+
+43c. NO BALANCE RADIUS IS CLAIMED, AND HERE IS WHY NOT.  Two well-measured
+     points, 2.052 at a_pair and 9.743 at 0.01 a_pair, would give a ratio
+     going as a^-0.338 and crossing 1 near 8.4 a_pair.  The third point
+     contradicts that: 3 a_pair gives 4.765, which is ABOVE the a_pair
+     value, so the trend is not monotone.  That point is 12 pairs at 2.1
+     sigma and cannot settle it either way, which is exactly the situation
+     a two-point extrapolation must not be built on.
+
+     A further caveat that applies to every ratio above: they are all at 20
+     orbits, and section 42c measured p = 0.787 +- 0.160 for the work's
+     growth with run length, so the ratio drifts slowly as t^-0.21.  At
+     a_pair the exponent is not measured at all.
+
+43d. WHAT STEP 4 HAS PRODUCED, AFTER TWO RETRACTIONS.
+
+       settled   the zero-point field adds energy to the orbit at the Bohr
+                 radius, 7.6 sigma by sign test on 388 pairs
+       settled   it adds about 2x the radiated loss there over 20 orbits,
+                 and about 10x at 0.01 a_pair
+       settled   the growth is secular, p = 0.787 +- 0.160, not resonant
+       settled   the estimator, its variance reduction, and its noise floor
+       OPEN      whether a balance radius exists.  At a_pair the ratio is
+                 1.56 sigma from 1, so the answer could be yes just outside
+                 the Bohr radius; the one intermediate point measured so far
+                 is inconsistent with the trend and too weak to arbitrate.
+                 Settling it needs ~400 pairs at 3 and 10 a_pair, which is
+                 the same price again per point.
