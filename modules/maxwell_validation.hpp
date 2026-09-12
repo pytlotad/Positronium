@@ -3556,6 +3556,65 @@ inline int runMaxwellSelfTest(
     }();
     const bool dipoleSphericalAverageOk=dipoleSphericalAverage>=0.0
         &&dipoleSphericalAverage<1.0e-14;
+    // N4: PARA'S MUTUAL ANGLE LIBRATES -- IT DOES NOT DESTROY THE SINGLET.
+    //
+    // This was originally recorded the other way round, as a progressive
+    // drift, and the correction matters: the total spin oscillates between
+    // the singlet value 0 and a few tenths of hbar and comes BACK, so the
+    // annihilation channel must not be read off the terminal angle.
+    //
+    // Locked by traversing the libration rather than by algebra, because
+    // there is no algebraic stand-in for "it returns".  48 advances of the
+    // coupled secular solver out to 24 precession turns, and three bounds,
+    // each guarding a different failure:
+    //
+    //   min cos > 0.5    the angle stays near alignment; a regression that
+    //                    drove it towards -1 would be the destruction this
+    //                    result denies
+    //   max cos > 0.999  it comes back; a one-way excursion would pass the
+    //                    first bound and fail this one
+    //   min cos < 0.95   it actually moves; an edit that froze the transport
+    //                    would pass both bounds above and fail this one
+    //
+    // Measured: 0.799020 to 0.999899, i.e. |S| up to 0.3170 hbar.
+    //
+    // The moments are PARALLEL (para) and tilted off the orbit normal.  The
+    // tilt is essential and is a trap worth recording: with the moments
+    // along the normal the precession axes are along it as well, so rotating
+    // them changes nothing and cos stays exactly 1 through 6001 substeps --
+    // the test would pass its first two bounds while exercising nothing.
+    double libraryCosMin=2.0,libraryCosMax=-2.0;
+    int libraryIncomplete=0;
+    {
+        const double radius=0.2*pairBohrRadius(activePair);
+        const Vec3 orbital{0.0,0.0,
+            std::sqrt(pairReducedMass*pairCoulombStrength*radius)};
+        const Vec3 tilt{0.6,0.0,0.8};
+        const SecularSpinOrbitState paraState{orbital,
+            tilt*(firstMagneticMoment/tilt.norm()),
+            tilt*(secondMagneticMoment/tilt.norm()),0.0,Vec3{1.0,0.0,0.0}};
+        const OrbitAveragedBmtAngularVelocities paraRates=
+            orbitAveragedBmtAngularVelocities(radius,orbital,
+                paraState.firstDipole,paraState.secondDipole,
+                pairReducedMass,0.0,Vec3{1.0,0.0,0.0});
+        const double paraSpeed=paraRates.valid
+            ?std::max(paraRates.first.norm(),paraRates.second.norm()):0.0;
+        if(paraSpeed>0.0) for(int step=1;step<=48;++step) {
+            const SecularSpinOrbitAdvance advance=
+                advanceCoupledSecularSpinOrbit(paraState,radius,
+                    pairReducedMass,0.5*step/paraSpeed,0.05);
+            if(!advance.completed) { ++libraryIncomplete; continue; }
+            const double firstNorm=advance.state.firstDipole.norm();
+            const double secondNorm=advance.state.secondDipole.norm();
+            if(!(firstNorm>0.0&&secondNorm>0.0)) { ++libraryIncomplete; continue; }
+            const double cosine=dot(advance.state.firstDipole,
+                advance.state.secondDipole)/(firstNorm*secondNorm);
+            libraryCosMin=std::min(libraryCosMin,cosine);
+            libraryCosMax=std::max(libraryCosMax,cosine);
+        }
+    }
+    const bool mutualAngleLibrationOk=libraryIncomplete==0
+        &&libraryCosMin>0.5&&libraryCosMin<0.95&&libraryCosMax>0.999;
     double lebedevMomentResidual=lebedevFirstMoment.norm()/(4.0*pi);
     for(int i=0;i<3;++i) for(int j=0;j<3;++j)
         lebedevMomentResidual=std::max(lebedevMomentResidual,std::abs(
@@ -5577,6 +5636,10 @@ inline int runMaxwellSelfTest(
                  << "  (1/2 exactly; tau_2gamma is 2)\n"
               << "dipole tensor <U>_sphere: " << dipoleSphericalAverage
                  << "  (exact zero: nothing to the S-state splitting)\n"
+              << "para libration cos:  " << libraryCosMin << " .. "
+              << libraryCosMax << "  (|S| up to "
+              << 0.5*std::sqrt(std::max(0.0,2.0*(1.0-libraryCosMin)))
+              << " hbar; returns, not destroyed)\n"
               << "ZPF phase rate/n:   " << secularPhaseRateRatio
                  << " (expected " << secularPhaseRateExpected
                  << ", circular residual " << circularPhaseRateResidual
@@ -5842,7 +5905,7 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,58> regressionChecks{{
+    const std::array<ValidationCheck,59> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
@@ -5854,6 +5917,8 @@ inline int runMaxwellSelfTest(
          inspiralAlphaPowerOk},
         {ValidationSection::AlgebraicIdentity,"dipole-tensor-s-state-average",
          dipoleSphericalAverageOk},
+        {ValidationSection::NumericalRegression,"mutual-angle-libration",
+         mutualAngleLibrationOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
         {ValidationSection::PhysicalDomain,"two-body-causality",twoBodyCausalOk},
         {ValidationSection::AlgebraicIdentity,"charge",chargeOk},

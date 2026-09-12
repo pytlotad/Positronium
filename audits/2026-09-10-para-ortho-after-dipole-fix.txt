@@ -2988,3 +2988,59 @@ measurement of whether that survives a cascade.
      N3, since the configuration is rigid, but for para the claim is that a
      6193-substep libration returns |S| to exactly zero, and there is no
      cheap algebraic stand-in for that.
+
+49. LOCKING N4, THE LAST ONE -- AND A TRAP FOUND WHILE DOING IT
+
+    N4 is the result that was originally recorded backwards: para's mutual
+    angle was called a progressive drift destroying the singlet, and section
+    27 corrected it to a bounded libration that returns.  It is the one of
+    the six with no algebraic stand-in, since "it returns" is a statement
+    about a trajectory.
+
+49a. THE TRAP, WHICH WOULD HAVE MADE A HOLLOW TEST.  The first attempt put
+     the two parallel moments along the ORBIT NORMAL, the same geometry the
+     exchange-parity lock uses.  In that configuration cos stays exactly
+     1.000000000 through 6001 substeps and |S| stays exactly 0 -- because
+     the precession axes lie along the normal as well, so rotating the
+     moments about it changes nothing.
+
+     The rate gap is 0.8545 there and the angle still does not move, since
+     d(mu1.mu2)/dt = (omega1-omega2).(mu1 x mu2) and the cross product
+     vanishes.  A libration test in that geometry would have passed its
+     bounds while exercising nothing.  The moments must be TILTED off the
+     normal, which is also what the production sampler does, since it draws
+     the spin direction.
+
+     This also sharpens what section 27a's lock does and does not say: the
+     rate gap is the mechanism, but a gap alone does not move the angle.
+
+49b. LOCKED with the moments tilted, 48 advances of the coupled secular
+     solver out to 24 precession turns, and three bounds each guarding a
+     different failure:
+
+       min cos > 0.5      stays near alignment; a regression driving it
+                          towards -1 is the destruction this result denies
+       max cos > 0.999    it comes back; a one-way excursion passes the
+                          first bound and fails this one
+       min cos < 0.95     it actually moves; a frozen transport passes both
+                          bounds above and fails this one
+
+     Measured: cos from 0.79901963 to 0.99989868, so |S| up to 0.31700187
+     hbar and back to 0.0000 within the sampling.
+
+     Both failure modes verified: putting the moments back along the normal
+     gives cos 1..1 and FAILED: mutual-angle-libration at 58/59, and
+     tightening the return bound to 0.99999 fails it as well.
+
+49c. ALL SIX PROTECTED RESULTS ARE NOW LOCKED, suite at 59/59.
+
+       N1  mu/(e c) = the Compton barrier      static_assert
+       N2  M1 cancels at anti-alignment        coherent-M1, 1e-12
+       N3  exchange parity of the mutual field mutual-field-exchange-parity
+       N4  the angle librates and returns      mutual-angle-libration
+       N5  the alpha^-5 identity               inspiral-alpha-power
+       N6  tensor term vanishes in S           dipole-tensor-s-state-average
+
+     The plan's part 3 is complete.  It was supposed to come before steps 2
+     and 3 and came after them instead; nothing turned out to have been
+     broken in the meantime, which is luck rather than method.
