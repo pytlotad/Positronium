@@ -2764,3 +2764,68 @@ measurement of whether that survives a cascade.
      is genuinely below 1 the ratios all drift with run length and a
      "crossing radius" is not a fixed property at all.  p = 1 is 1.3 sigma
      away and untested at these radii.
+
+45. PAIRING ACROSS RADII: THE VARIANCE CUT SECTION 44d ASKED FOR
+
+    Section 44d said the crossing needs the estimator's variance cut by
+    another factor of three, not more seeds at the present variance.  There
+    was a way to do that, and it comes from the same property that made the
+    orbit-tied band suspect in the first place.
+
+45a. WHY IT WORKS.  The band rides with the orbit, so one field seed gives
+     the same mode directions, polarizations, frequency factors and phases
+     at EVERY radius -- only the frequency scale moves.  A seed that
+     happens to sit hot is therefore hot at both radii.  Running both radii
+     on the SAME seed and taking the per-seed difference of the
+     Larmor-normalized works cancels that shared part, which is most of the
+     variance.
+
+     Measured on 104 seeds, 1 and 3 a_pair, 20 orbits, antithetic within
+     each:
+
+       correlation between radii    rho = +0.765
+       difference, unpaired         +0.769 +- 1.150   (0.67 sigma)
+       difference, paired           +0.769 +- 0.603   (1.28 sigma)
+       gain                         1.91x in sigma, 3.6x in seed count
+
+     A first reading at 16 seeds gave rho = 0.922 and a 2.95x gain; that
+     did not hold, and the estimate settled into 1.67 to 1.91 over 44 to
+     104 seeds.  The 16-seed figure is withdrawn.
+
+45b. THE ABSOLUTE VALUES AGREE WITH THE INDEPENDENT SAMPLES, which is the
+     check that matters for a new estimator:
+
+       radius       paired run (104 seeds)   independent run
+       1 a_pair     1.777 +- 0.934           1.924 +- 0.655  (400 pairs)
+       3 a_pair     1.008 +- 0.671           0.656 +- 0.755  (227 pairs)
+
+45c. AND THE DIFFERENCE IS STILL UNDER 2 SIGMA.  Across the run it has
+     wandered +0.718, +0.878, +0.911, +1.088, +0.769 at 56, 68, 80, 92 and
+     104 seeds, with the error falling from 0.767 to 0.603 -- so the
+     significance has moved 0.94, 1.32, 1.53, 1.78, 1.28 and is not
+     climbing monotonically.
+
+     At the present error, 3 sigma on a difference of 0.77 needs about 570
+     seeds; the run is configured for 480 and will land near 2.7 sigma if
+     the central value holds.  So the pairing turned an unreachable
+     measurement into a marginal one, and did not turn it into a result.
+
+45d. WHERE STEP 4 STANDS, ALL TOLD.
+
+       established   the field pumps energy in at every radius measured
+                     (7.4 sigma at a_pair on 400 pairs)
+       established   the ratio is ~10 deep in at 0.01 a_pair and of order 1
+                     across 1 to 3 a_pair; those two regimes differ
+       established   the work grows as t^0.787 +- 0.160, i.e. secular
+       established   antithetic pairing (5.5x) and cross-radius pairing
+                     (1.9x) as the two variance reductions that work
+       NOT established  any difference between 1 and 3 a_pair, so no
+                     crossing radius, so no self-selected scale
+       withdrawn     the t^2 exponent, the 3 a_pair ratio of 4.765, the
+                     orbit-tied band as a blocker, and the 16-seed
+                     correlation of 0.922
+
+     Three claims withdrawn and four established, all from the same
+     measurement.  The pattern is worth stating plainly: every claim that
+     came from fewer than about a hundred samples failed, and every one
+     that came from several hundred held.
