@@ -4047,3 +4047,53 @@ measurement of whether that survives a cascade.
 63d. OPEN.  The lab-moment velocity dependence of 63a; the +44 k/r0 of 63b;
      the far-zone dipole flux of 63c; the 0.53 of 62c; and the default model
      (retarded dipole sector) remains the user's decision.
+
+64. STEP 1 OF THE PLAN: TILTED MOMENTS AT THE DEFAULT FLOOR
+
+    Default model (retarded dipole sector, no switch), default floor
+    (scale 1, floor = r*), radiation reaction off, start 3 r* with
+    v_t = 0.2 v_circ, three Kepler periods of r0.  Integrator as of 57-61.
+
+64a. OUTCOMES.  No run fails numerically any more (53e: ortho failed at
+     0.218 r*).  No pair is held:
+
+       tilt   channel  r_min (r*)  after the minimum          max|dE_mech| (k/r0)
+       0      para       0.209     ejected to 32.6 r*              3.61
+       0      orto       0.219     ejected to 55.3 r*              3.26
+       30     para       0.790     ejected to 12.2 r*              2.31
+       30     orto       0.406     ejected to 82.8 r*              3.50
+       60     para       0.322     ejected to 94.0 r*              4.15
+       60     orto       0.933     ejected to 9.4 r*               1.30
+       90     para       0.100     contact at t/obs 0.045          4.60
+       90     orto       0.623     ejected to 49.2 r*              2.40
+
+     Seven of eight go below r* once and leave; the pair starts bound at
+     about -0.9 k/r0, so every ejection needs an energy gain.
+
+64b. WHERE THE GAIN COMES FROM.  Work of each retarded force sector against
+     its energy term over one period, bins in floors (= r* here) [k/r0]:
+
+       para 0 deg     W_LW    -dCoul   |  W_grad   -dU_dip   | dChDip
+       1-2 floors    +0.020   +0.002   |  +0.305   -0.0004   | +0.10
+       < 1 floor     +0.512   -0.001   |  +0.095   -0.0017   | -0.17
+
+       para 30 deg    W_grad   -dU_dip
+       1-2 floors    +3.192   +3.113
+       < 1 floor     -2.400   -3.037
+
+     Inside the floor the Lienard-Wiechert force (hard clamp max(r, floor):
+     constant magnitude k/floor^2) does +0.51 k/r0 of work while the Plummer
+     Coulomb energy does not move, and the gradient force adds +0.3 k/r0 in
+     1-2 floors with no dipole-energy change.  This is the non-conservative
+     core of 53f, now measured sector by sector: the three short-range
+     treatments of section 52c (LW hard clamp, Plummer energies, dipole
+     blend) generate no common potential.  Radiation would remove energy;
+     these add it.
+
+64c. READING.  At the default floor the question "does the dipole barrier
+     hold a pair" cannot be answered: the barrier zone r*..2r* is inside the
+     regularization (52-53), and what the trajectories show instead is the
+     ejection produced by that non-conservative core.  The same inconsistency
+     is the likeliest home of the unexplained +44 k/r0 below the floor in
+     63b.  Making the short-range treatments derive from one potential is a
+     precondition for any statement about the core, at any floor.
