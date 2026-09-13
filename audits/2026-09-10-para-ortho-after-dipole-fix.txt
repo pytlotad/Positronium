@@ -4157,3 +4157,74 @@ measurement of whether that survives a cascade.
        90    contact                       HELD: 1.62-3.39 r*, 7 minima
      max|dE_mech| 0.2-2.4 k/r0 (64a: 1.3-4.6).  Ejections are shallower but
      remain; the dipole-sector mismatch of 65d is the next step.
+
+66. UNIFYING THE SHORT-RANGE REGULARIZATION, STEP 2: THE DIPOLE SECTOR
+
+    The user chose the Plummer form for the dipole sector too, giving up the
+    magnetic regularization profile for pairs with a separation floor.
+
+66a. CHANGE.  One potential, rho^2 = r^2 + floor^2 on the TRUE separation:
+       B = mu0/(4 pi) [3 r (r.m)/rho^5 - m/rho^3],  U_dd = -m_t . B,
+       q-mu:  B_charge = mu0 q (v x r)/(4 pi rho^3),
+     implemented as plummerDipoleField, pairDipoleField,
+     pairDipoleInteractionEnergy, pairDipoleForce (analytic -grad U).  Used by
+     conservativeParticleEnergy, makeFrame, mutualForces, the switch of 59,
+     chargeDipoleInteractionEnergy, chargeDipolePairForces/chargeDipoleForces,
+     and the secular collapse model (azimuthAveragedDipoleEnergy, the orbit-
+     averaged dipole force).  In the retarded two-charge construction each
+     pole now carries lienardWiechertField's covariant Plummer factor, so the
+     pole pair IS this dipole in the static limit; with a floor
+     retardedMagneticDipoleField and retardedElectricDipoleField return the
+     exact construction directly (no low-velocity core, no blend), and a
+     static source returns plummerDipoleField.  Pairs without a floor are
+     unchanged (they keep regularizedDipoleField and the blend).
+
+66b. VALIDATION 59/59 after four reference changes, each forced by the model
+     change and each tighter afterwards:
+       static electric dipole E   point -k p/r^3 -> Plummer   5.0e-6 -> 5.4e-10
+       tensor gradient static     regularizedDipoleForce -> pairDipoleForce
+                                                              1.1e-5 -> 3.1e-8
+       retarded static limit      profile at clamped r -> pairDipoleField
+                                                              5.3e-4 -> 0
+       regularization-radius scan with a floor the radius must now leave the
+                                  trajectory EXACTLY unchanged (was: must
+                                  change it); measured 0 / 0 / 0
+     Informational, not gated: "dipole boosted-static B" 3.7e-8 -> 5.0e-6
+     (point-dipole reference at beta 0.9995-0.9999).  Header isolation 37/37.
+
+66c. CONSISTENCY at the default floor, one period, work against energy
+     [k/r0]:
+       para 0 deg      W_grad  -dU_dip        para 30 deg   W_grad  -dU_dip
+       2-4 floors      -0.066  -0.064                       +0.217  +0.294
+       1-2 floors      -0.002  -0.001                       -0.312  -0.392
+       < 1 floor       -0.003  -0.001
+     Net per passage 0.003 k/r0 at 30 deg (65d: +0.33).  The Lienard-
+     Wiechert sector stays consistent (+0.178 vs +0.179).
+
+66d. PRODUCTION.  Branch trace seed 42 / index 2 / para: t 199.442154855 ->
+     199.450091864 ps, binding 755.69 -> 755.78 eV, 3 photons, peri/barrier
+     4.249.  Against the pre-unification trace (60c): t +0.0076 ps (+3.8e-5),
+     binding +1.9 eV.
+
+66e. TRAJECTORIES, default floor, start 3 r*, v_t = 0.2, three periods,
+     radiation reaction off:
+
+       tilt  channel  r_min (r*)  r_max after min  minima  max|dE_mech|
+       0     para       0.951        3.01            5      0.029
+       0     orto       0.182        1.35            9      0.141
+       30    para       1.023        3.04            7      0.047
+       30    orto       0.162        1.44            8      0.188
+       60    para       0.670        3.02            8      0.204
+       60    orto       0.122        1.54            7      0.265
+       90    para       0.352        2.89            9      0.315
+       90    orto       1.035        2.65           14      0.030
+
+     Every pair stays bound for the whole window; no ejection (64a: seven of
+     eight ejected; 65e: seven of eight).  Energy errors fall from 0.2-2.4
+     to 0.03-0.32 k/r0.  And the channels separate as the orbit-averaged
+     dipole factor of section 54 predicts: the barrier holds para above r*
+     at 0 and 30 deg (never below r* at 30 deg) and ortho at 90 deg (never
+     below r*), while ortho at 0-60 deg and para at 60-90 deg fall to
+     0.12-0.67 r* and oscillate there.  This is the first time the default
+     model shows the para/ortho distinction dynamically rather than as a
+     static force balance.

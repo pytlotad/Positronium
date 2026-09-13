@@ -1088,6 +1088,18 @@ inline double azimuthAveragedDipoleEnergy(double separation,
                                    const Vec3& secondDipole,
                                    const Vec3& orbitNormal) {
     if(!(separation>0.0)) return 0.0;
+    if(const double floor=separationFloor(); floor>0.0) {
+        // Plummer dipole (electrodynamics.hpp, pairDipoleField):
+        // U = mu0/(4 pi) [mu1.mu2 - 3 (r^2/rho^2)(mu1.n)(mu2.n)] / rho^3.
+        const double rhoSquared=separation*separation+floor*floor;
+        const double moments=dot(firstDipole,secondDipole);
+        const double alongNormal=dot(firstDipole,orbitNormal)
+            *dot(secondDipole,orbitNormal);
+        const double averagedRadial=0.5*(moments-alongNormal);
+        return (mu0/(4.0*pi))*(moments
+            -3.0*(separation*separation/rhoSquared)*averagedRadial)
+            /std::pow(rhoSquared,1.5);
+    }
     const MagneticRadialProfile profile=magneticRadialProfile(separation);
     const double transverse=2.0*profile.vectorPotentialFactor
         +separation*profile.firstDerivative;
@@ -3387,8 +3399,8 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                            +inPlaneQuadrature*std::sin(trueAnomaly);
                         const double weight=radius*radius;   // dt ~ r^2 dnu
                         averagedRadialForce+=weight*dot(
-                            regularizedDipoleForce(direction*radius,
-                                                   firstDipole,secondDipole),
+                            pairDipoleForce(direction*radius,
+                                            firstDipole,secondDipole),
                             direction);
                         weightTotal+=weight;
                     }

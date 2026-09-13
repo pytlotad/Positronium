@@ -2053,7 +2053,6 @@ inline ElectromagneticField twoChargeLimitDipoleField(
             return {};
         }
         const Vec3 direction=displacement/distance;
-        const double fieldDistance=distance*poleDistanceScale;
         const Vec3 beta=velocity/c;
         // The pole velocity contains a small derivative correction.  If an
         // ill-conditioned reconstruction makes that auxiliary pole
@@ -2067,13 +2066,27 @@ inline ElectromagneticField twoChargeLimitDipoleField(
             trace.earlyReturn=true;
             return {};
         }
+        // With a floor each pole carries lienardWiechertField's covariant
+        // Plummer softening, so the pair of poles is the Plummer dipole of
+        // pairDipoleField in the static limit (section 66).  The per-pole
+        // scaling is smooth, so the straddle of section 56 cannot recur.
+        double fieldDistance=distance*poleDistanceScale;
+        double plummerScale=1.0;
+        if(const double floor=separationFloor(); floor>0.0) {
+            fieldDistance=distance;
+            const double restDistance=distance*kappa
+                /std::sqrt(1.0-betaSquared);
+            const double ratio=restDistance
+                /std::sqrt(restDistance*restDistance+floor*floor);
+            plummerScale=ratio*ratio*ratio;
+        }
         const Vec3 velocityField=(direction-beta)*((1.0-betaSquared)
             /(kappa*kappa*kappa*fieldDistance*fieldDistance));
         const Vec3 accelerationField=cross(direction,
             cross(direction-beta,acceleration))
             /(c*c*kappa*kappa*kappa*fieldDistance);
         const Vec3 electric=(velocityField+accelerationField)
-            *(coulomb*sign*poleCharge);
+            *(coulomb*sign*poleCharge*plummerScale);
         if(!isFinite(electric)) {
             polesValid=false;
             trace.earlyReturn=true;
@@ -2135,14 +2148,38 @@ inline bool historicalDipoleSourceIsStatic(const StateHistory& history,
     });
 }
 
+// Plummer-softened dipole field; see pairDipoleField (section 66).
+inline Vec3 plummerDipoleField(const Vec3& sourceToTarget,
+                               const Vec3& sourceDipole,double softening) {
+    constexpr double magneticConstant=mu0/(4.0*pi);
+    const double rhoSquared=sourceToTarget.squaredNorm()+softening*softening;
+    if(!(rhoSquared>std::numeric_limits<double>::min())) return {};
+    const double inverseRho=1.0/std::sqrt(rhoSquared);
+    const double inverseRhoCubed=inverseRho*inverseRho*inverseRho;
+    const double inverseRhoFifth=inverseRhoCubed*inverseRho*inverseRho;
+    return (sourceToTarget*(3.0*dot(sourceToTarget,sourceDipole)
+                *inverseRhoFifth)
+           -sourceDipole*inverseRhoCubed)*magneticConstant;
+}
+
 inline ElectromagneticField retardedElectricDipoleFieldExact(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double poleSeparationFraction=1.0e-5) {
     if(historicalDipoleSourceIsStatic(
-            history,present,sourceIsFirst,true))
+            history,present,sourceIsFirst,true)) {
+        if(const double floor=separationFloor(); floor>0.0) {
+            const Vec3 position=sourceIsFirst
+                ?present.firstPosition:present.secondPosition;
+            const Vec3 moment=sourceIsFirst
+                ?present.firstElectricDipole:present.secondElectricDipole;
+            // 1/(4 pi epsilon0) = c^2 mu0/(4 pi)
+            return {plummerDipoleField(observationPosition-position,
+                                       moment,floor)*(c*c),{}};
+        }
         return retardedElectricDipoleFieldLowVelocity(observationPosition,
             observationTime,history,present,sourceIsFirst,false);
+    }
     return twoChargeLimitDipoleField(observationPosition,observationTime,
         history,present,sourceIsFirst,poleSeparationFraction,
         [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
@@ -2166,9 +2203,18 @@ inline ElectromagneticField retardedMagneticDipoleFieldExact(
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double poleSeparationFraction=1.0e-5) {
     if(historicalDipoleSourceIsStatic(
-            history,present,sourceIsFirst,false))
+            history,present,sourceIsFirst,false)) {
+        if(const double floor=separationFloor(); floor>0.0) {
+            const Vec3 position=sourceIsFirst
+                ?present.firstPosition:present.secondPosition;
+            const Vec3 moment=sourceIsFirst
+                ?present.firstDipole:present.secondDipole;
+            return {{},plummerDipoleField(observationPosition-position,
+                                           moment,floor)};
+        }
         return retardedMagneticDipoleFieldLowVelocity(observationPosition,
             observationTime,history,present,sourceIsFirst,false);
+    }
     const ElectromagneticField dual=twoChargeLimitDipoleField(
         observationPosition,observationTime,history,present,sourceIsFirst,
         poleSeparationFraction,
@@ -2201,9 +2247,9 @@ inline ElectromagneticField retardedElectricDipoleField(
         history,present,sourceIsFirst,observationTime);
     const double rawDistance=(observationPosition-current.position).norm();
     const double modelFloor=separationFloor();
-    if(modelFloor>0.0&&!(rawDistance>modelFloor))
-        return retardedElectricDipoleFieldLowVelocity(observationPosition,
-            observationTime,history,present,sourceIsFirst,true);
+    if(modelFloor>0.0)
+        return retardedElectricDipoleFieldExact(observationPosition,
+            observationTime,history,present,sourceIsFirst);
     const double transition=modelFloor>0.0?std::clamp(
         (rawDistance-modelFloor)/modelFloor,0.0,1.0):1.0;
     const double domainWeight=transition*transition*(3.0-2.0*transition);
@@ -2231,9 +2277,12 @@ inline ElectromagneticField retardedMagneticDipoleField(
         history,present,sourceIsFirst,observationTime);
     const double rawDistance=(observationPosition-current.position).norm();
     const double modelFloor=separationFloor();
-    if(modelFloor>0.0&&!(rawDistance>modelFloor))
-        return retardedMagneticDipoleFieldLowVelocity(observationPosition,
-            observationTime,history,present,sourceIsFirst,true);
+    // With a floor the exact construction is itself Plummer-softened
+    // (section 66), so no low-velocity core and no blend.
+    if(modelFloor>0.0)
+        return retardedMagneticDipoleFieldExact(observationPosition,
+            observationTime,history,present,sourceIsFirst,
+            poleSeparationFraction);
     const double transition=modelFloor>0.0?std::clamp(
         (rawDistance-modelFloor)/modelFloor,0.0,1.0):1.0;
     const double domainWeight=transition*transition*(3.0-2.0*transition);
@@ -2313,6 +2362,59 @@ inline Vec3 regularizedDipoleForce(const Vec3& sourceToTarget,
             * (radialCoefficient / distance)) * magneticConstant;
 }
 
+// THE PAIR'S DIPOLE SECTOR, ONE POTENTIAL (audit section 66).
+//
+// With a separation floor the dipole field, the dipole-dipole energy and the
+// dipole-dipole force are those of a Plummer-softened dipole, rho^2 = r^2 +
+// floor^2 on the TRUE separation:
+//
+//     B = mu0/(4 pi) [3 r (r.m)/rho^5 - m/rho^3],   U = -m_t . B,
+//
+// which is exactly what two poles carrying the Plummer-softened charge field
+// of lienardWiechertField produce as their separation goes to zero.  The
+// retarded two-charge construction therefore reduces to these in the static
+// limit, and the energies conservativeParticleEnergy counts are the
+// potentials of the forces.  Before, the field was a point dipole at the
+// CLAMPED separation blended with one at the true separation through a
+// position-dependent weight, and unsoftened beyond two floors while the
+// energy was softened: at the default floor its gradient force did about
+// +0.33 k/r0 of work per passage that no energy term accounted for (65d).
+// Pairs without a floor keep the magnetic regularization profile.
+
+inline Vec3 pairDipoleField(const Vec3& sourceToTarget,
+                            const Vec3& sourceDipole) {
+    if(const double floor=separationFloor(); floor>0.0)
+        return plummerDipoleField(sourceToTarget,sourceDipole,floor);
+    return regularizedDipoleField(sourceToTarget,sourceDipole,
+        magneticRegularizationRadius,magneticRegularizationExponent);
+}
+
+inline double pairDipoleInteractionEnergy(const Vec3& sourceToTarget,
+    const Vec3& targetDipole,const Vec3& sourceDipole) {
+    return -dot(targetDipole,pairDipoleField(sourceToTarget,sourceDipole));
+}
+
+// -grad of pairDipoleInteractionEnergy with respect to the target position.
+inline Vec3 pairDipoleForce(const Vec3& sourceToTarget,
+    const Vec3& targetDipole,const Vec3& sourceDipole) {
+    const double floor=separationFloor();
+    if(!(floor>0.0))
+        return regularizedDipoleForce(sourceToTarget,targetDipole,sourceDipole);
+    constexpr double magneticConstant=mu0/(4.0*pi);
+    const double rhoSquared=sourceToTarget.squaredNorm()+floor*floor;
+    const double inverseRho=1.0/std::sqrt(rhoSquared);
+    const double inverseRhoFifth=inverseRho*inverseRho*inverseRho
+        *inverseRho*inverseRho;
+    const double inverseRhoSeventh=inverseRhoFifth*inverseRho*inverseRho;
+    const double targetRadial=dot(targetDipole,sourceToTarget);
+    const double sourceRadial=dot(sourceDipole,sourceToTarget);
+    const double dipoleDot=dot(targetDipole,sourceDipole);
+    return (sourceToTarget*(3.0*dipoleDot*inverseRhoFifth
+                -15.0*targetRadial*sourceRadial*inverseRhoSeventh)
+           +(targetDipole*sourceRadial+sourceDipole*targetRadial)
+                *(3.0*inverseRhoFifth))*magneticConstant;
+}
+
 inline MutualForces coulombForces(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const Vec3 first = clampedSeparationForceToTruePositions(
@@ -2338,10 +2440,8 @@ inline MutualForces mutualForces(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const MutualForces electrostatic = coulombForces(s);
     if(!gDipoleForceEnabled) return electrostatic;
-    const Vec3 dipoleOnFirst = clampedSeparationForceToTruePositions(
-        s.firstPosition - s.secondPosition, separationFloor(),
-        regularizedDipoleForce(
-            geometry.firstMinusSecond, s.firstDipole, s.secondDipole));
+    const Vec3 dipoleOnFirst = pairDipoleForce(
+        s.firstPosition - s.secondPosition, s.firstDipole, s.secondDipole);
     return {electrostatic.first + dipoleOnFirst,
             electrostatic.second - dipoleOnFirst};
 }
@@ -2733,11 +2833,14 @@ inline ChargeDipolePairForces chargeDipolePairForces(
     const Vec3& relativeVelocity, double charge, const Vec3& sourceDipole,
     const Vec3& sourceDipoleDerivative, const Vec3& sourceToCharge) {
     const double distance = sourceToCharge.norm();
-    const MagneticRadialProfile profile = magneticRadialProfile(distance);
+    const double floor = separationFloor();
     constexpr double magneticConstant = mu0 / (4.0 * pi);
-    const Vec3 magneticField = regularizedDipoleField(sourceToCharge, sourceDipole);
+    const Vec3 magneticField = pairDipoleField(sourceToCharge, sourceDipole);
+    const double radialFactor = floor > 0.0
+        ? 1.0/std::pow(distance*distance + floor*floor, 1.5)
+        : magneticRadialProfile(distance).vectorPotentialFactor;
     const Vec3 inducedElectricTerm = cross(sourceDipoleDerivative, sourceToCharge)
-        * (magneticConstant * profile.vectorPotentialFactor);
+        * (magneticConstant * radialFactor);
     const Vec3 onCharge =
         (cross(relativeVelocity, magneticField) - inducedElectricTerm) * charge;
     return {onCharge, onCharge * -1.0};
@@ -2745,8 +2848,7 @@ inline ChargeDipolePairForces chargeDipolePairForces(
 
 inline MutualForces chargeDipoleForces(const State& s, const StateHistory& history) {
     const DipoleDerivatives derivatives = thomasBmtDipoleDerivatives(s, history);
-    const Vec3 firstMinusSecond = clampedSeparationVector(
-        s.firstPosition - s.secondPosition, separationFloor());
+    const Vec3 firstMinusSecond = s.firstPosition - s.secondPosition;
     const Vec3 firstMinusSecondVelocity =
         s.firstVelocity - s.secondVelocity;
 
@@ -3338,11 +3440,8 @@ inline MutualForces retardedExternalForces(const State& s,
             const MutualForces chargeOnly{
                 lorentzForce(firstCharge,s.firstVelocity,secondField),
                 lorentzForce(secondCharge,s.secondVelocity,firstField)};
-            const PairGeometry geometry=clampedPairGeometry(s);
-            const Vec3 dipoleOnFirst=clampedSeparationForceToTruePositions(
-                s.firstPosition-s.secondPosition,separationFloor(),
-                regularizedDipoleForce(geometry.firstMinusSecond,
-                                       s.firstDipole,s.secondDipole));
+            const Vec3 dipoleOnFirst=pairDipoleForce(
+                s.firstPosition-s.secondPosition,s.firstDipole,s.secondDipole);
             // The Thomas-BMT moment derivatives inside chargeDipoleForces
             // read the fields from the REAL retarded history.
             // allExternalForces passes a one-state history instead, which
@@ -3509,16 +3608,19 @@ inline Vec3 noetherAngularMomentum(const State& s) {
 // measured 27x ortho/para asymmetry in the energy-balance residual is what
 // caught that.
 inline double chargeDipoleInteractionEnergy(const State& state) {
-    const Vec3 firstMinusSecond = clampedSeparationVector(
-        state.firstPosition - state.secondPosition, separationFloor());
+    const Vec3 firstMinusSecond = state.firstPosition - state.secondPosition;
     const double distance = firstMinusSecond.norm();
-    if(!(distance > 0.0)) return 0.0;
-    const MagneticRadialProfile profile = magneticRadialProfile(distance);
+    const double floor = separationFloor();
+    if(!(distance > 0.0) && !(floor > 0.0)) return 0.0;
+    // The Plummer charge's field (section 66): v x r / rho^3.
+    const double radialFactor = floor > 0.0
+        ? 1.0/std::pow(distance*distance + floor*floor, 1.5)
+        : magneticRadialProfile(distance).vectorPotentialFactor;
     constexpr double magneticConstant = mu0 / (4.0 * pi);
     const Vec3 fieldAtFirst = cross(state.secondVelocity, firstMinusSecond)
-        * (magneticConstant * secondCharge * profile.vectorPotentialFactor);
+        * (magneticConstant * secondCharge * radialFactor);
     const Vec3 fieldAtSecond = cross(state.firstVelocity, firstMinusSecond)
-        * (-magneticConstant * firstCharge * profile.vectorPotentialFactor);
+        * (-magneticConstant * firstCharge * radialFactor);
     const double energy = -dot(state.firstDipole, fieldAtFirst)
                           -dot(state.secondDipole, fieldAtSecond);
     return std::isfinite(energy) ? energy : 0.0;
@@ -3530,8 +3632,9 @@ inline double conservativeParticleEnergy(const State& state) {
         +kineticEnergy(state.secondVelocity,secondMass);
     const double coulombPotential=-pairCoulombStrength
         *geometry.inverseDistance;
-    const double dipolePotential=regularizedDipoleInteractionEnergy(
-        geometry.firstMinusSecond,state.firstDipole,state.secondDipole);
+    const double dipolePotential=pairDipoleInteractionEnergy(
+        state.firstPosition-state.secondPosition,
+        state.firstDipole,state.secondDipole);
     return kinetic+coulombPotential+dipolePotential
         +chargeDipoleInteractionEnergy(state)
         +darwinInteractionEnergy(state)+state.dipoleConstraintEnergy;

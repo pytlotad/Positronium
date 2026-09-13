@@ -2887,8 +2887,11 @@ inline int runMaxwellSelfTest(
             staticElectricDipoleState.firstPosition,0.0,
             {staticElectricDipolePast,staticElectricDipoleState},
             staticElectricDipoleState,false);
+    // Plummer-softened like every pair field (section 66): an equatorial
+    // point sees -k p / rho^3 with rho^2 = r^2 + floor^2.
     const Vec3 expectedStaticElectricDipole={0,0,
-        -coulomb*eCharge*bohrRadius/std::pow(2.0*bohrRadius,3)};
+        -coulomb*eCharge*bohrRadius/std::pow(4.0*bohrRadius*bohrRadius
+            +separationFloor()*separationFloor(),1.5)};
     const double staticElectricDipoleResidual=
         (staticElectricDipoleField.electric-expectedStaticElectricDipole).norm()
         /expectedStaticElectricDipole.norm();
@@ -2906,7 +2909,7 @@ inline int runMaxwellSelfTest(
         gradientDipolePast,gradientDipoleState};
     const Vec3 tensorGradientForce=covariantDipoleGradientForce(
         gradientDipoleState,gradientDipoleHistory,true);
-    const Vec3 analyticGradientForce=regularizedDipoleForce(
+    const Vec3 analyticGradientForce=pairDipoleForce(
         gradientDipoleState.firstPosition
             -gradientDipoleState.secondPosition,
         gradientDipoleState.firstProperDipole,
@@ -4581,9 +4584,8 @@ inline int runMaxwellSelfTest(
     // floor) -- it matches the equally-softened one, which is what the
     // reference below must compute for this to still test the intended
     // identity.
-    const Vec3 directStaticDipole=regularizedDipoleField(
-        clampedSeparationVector(staticDipoleState.firstPosition
-            -staticDipoleState.secondPosition,separationFloor()),
+    const Vec3 directStaticDipole=pairDipoleField(
+        staticDipoleState.firstPosition-staticDipoleState.secondPosition,
         staticDipoleState.secondDipole);
     const double staticDipoleScale=std::max(directStaticDipole.norm(),1.0e-300);
     const double retardedStaticLimitResidual=
@@ -5358,8 +5360,15 @@ inline int runMaxwellSelfTest(
             [](double value){return std::isfinite(value)&&value<1.0;})
         // Guards against a scan that accidentally stops routing the mutable
         // radius into the force law and returns three bit-identical outcomes.
-        &&regularizationTrajectoryResiduals[0]>1.0e-12
-        &&regularizationTrajectoryResiduals[2]>1.0e-12;
+        // With a separation floor the pair's dipole sector is the Plummer
+        // dipole and the magnetic regularization radius must not reach the
+        // trajectory at all (section 66): exactly zero.  Without a floor
+        // the radius is the regulator and must be felt.
+        &&(separationFloor()>0.0
+            ?(regularizationTrajectoryResiduals[0]==0.0
+              &&regularizationTrajectoryResiduals[2]==0.0)
+            :(regularizationTrajectoryResiduals[0]>1.0e-12
+              &&regularizationTrajectoryResiduals[2]>1.0e-12));
     const bool retardedInterpolationOk=
         std::isfinite(hermiteConvergenceOrder)
         &&interpolationFine[1]<interpolationFine[0]

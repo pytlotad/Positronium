@@ -67,8 +67,8 @@ inline Frame makeFrame(const State& s) {
     const PairGeometry clampedGeometry = clampedPairGeometry(s);
     const double coulombPotential =
         -pairCoulombStrength * clampedGeometry.inverseDistance;
-    const double dipolePotential = regularizedDipoleInteractionEnergy(
-        clampedGeometry.firstMinusSecond,s.firstDipole,s.secondDipole);
+    const double dipolePotential = pairDipoleInteractionEnergy(
+        s.firstPosition-s.secondPosition,s.firstDipole,s.secondDipole);
     const double darwinEnergy = darwinInteractionEnergy(s);
     const MutualForces forces = allExternalForces(s);
     const Vec3 firstAcceleration = relativisticAcceleration(s.firstVelocity, forces.first, firstMass);
