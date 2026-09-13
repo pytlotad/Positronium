@@ -1029,8 +1029,16 @@ inline int runMaxwellSelfTest(
     const Vec3 parallelPrime=boostAxis*(dot(boostProbe,boostAxis)*boostGamma);
     const Vec3 restEventPosition=parallelPrime+(boostProbe
         -boostAxis*dot(boostProbe,boostAxis));
+    // The rest-frame reference carries the same Plummer softening as
+    // lienardWiechertField: (r^2 + floor^2)^(-3/2) instead of r^-3.  The
+    // softening is a function of the rest-frame distance, a Lorentz scalar,
+    // so the boosted field must still match this reference exactly; against
+    // the bare point field it cannot (1.4e-2 at this probe, 3.7
+    // chargeCloudRestRadius from the charge).
+    const double restSofteningSquared=separationFloor()*separationFloor();
     const Vec3 restElectric=restEventPosition
-        *(coulomb*eCharge/std::pow(restEventPosition.norm(),3));
+        *(coulomb*eCharge/std::pow(restEventPosition.squaredNorm()
+            +restSofteningSquared,1.5));
     const Vec3 expectedBoostedElectric=boostAxis*dot(restElectric,boostAxis)
         +(restElectric-boostAxis*dot(restElectric,boostAxis))*boostGamma;
     const Vec3 expectedBoostedMagnetic=cross(
@@ -5289,8 +5297,16 @@ inline int runMaxwellSelfTest(
         // neither expected nor desirable here.
         &&farDirectionResiduals[1]<farDirectionResiduals[0]
         &&farDirectionResiduals[2]<farDirectionResiduals[0]
-        &&farRadiusResiduals[2]<farRadiusResiduals[1]
-        &&farRadiusResiduals[1]<farRadiusResiduals[0]
+        // Monotonic in R only above the quadrature's own noise: at 1e4-1e6 a0
+        // these residuals sit near 1e-8, three hundred times inside the 1e-5
+        // bound, and which of two such readings is larger is decided by the
+        // trajectory state's round-off (it flipped, 3.6e-8 / 5.3e-8, when the
+        // Lienard-Wiechert softening moved the shared visual state).  The
+        // same floor idea as the long-horizon balance check.
+        &&(farRadiusResiduals[1]<1.0e-6
+           ||farRadiusResiduals[2]<farRadiusResiduals[1])
+        &&(farRadiusResiduals[0]<1.0e-6
+           ||farRadiusResiduals[1]<farRadiusResiduals[0])
         &&farNearFieldContamination[2]<farNearFieldContamination[1]
         &&farNearFieldContamination[1]<farNearFieldContamination[0]
         &&farDirectionResiduals.back()<5.0e-2

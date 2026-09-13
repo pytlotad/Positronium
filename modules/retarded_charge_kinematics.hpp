@@ -446,13 +446,37 @@ inline ElectromagneticField lienardWiechertField(const Vec3& observationPosition
     // Trial stages may cross the declared boundary before the enclosing event
     // locator clips the trajectory.  Never evaluate the singular point-charge
     // formula inside a domain whose result is discarded by the model.
-    // nuclearCutoff is the pre-existing numerical safety net (kept for every
-    // pair); separationFloor() is the physically motivated one (e+e- only,
-    // and larger, so it dominates there). Whichever is bigger wins.
-    const double fieldDistance=std::max({distance,nuclearCutoff,separationFloor()});
+    // nuclearCutoff is the pre-existing numerical safety net, kept for every
+    // pair.
+    //
+    // separationFloor() (e+e- only) softens the field the SAME way the
+    // energies and the instantaneous forces are softened: the whole field is
+    // scaled by (R/R_c)^3 with R_c = sqrt(R^2 + floor^2), so a static source
+    // gives exactly -grad of the Plummer potential -k/R_c that
+    // conservativeParticleEnergy and coulombForces use.  It used to be a hard
+    // clamp, max(R, floor): constant magnitude k/floor^2 inside the floor and
+    // unsoftened outside, while the energy was Plummer.  Measured at the
+    // default floor on a para passage (audit section 64b): inside one floor
+    // this force did +0.51 k/r0 of work while the Coulomb energy moved by
+    // -0.001, and that gain, with the dipole sector's, ejected every bound
+    // pair that crossed the core.
+    const double fieldDistance=std::max(distance,nuclearCutoff);
     const Vec3 beta = source.velocity / c;
     const double betaSquared = beta.squaredNorm();
     const double kappa = std::max(1.0e-8, 1.0 - dot(direction, beta));
+    double plummerScale=1.0;
+    if(const double floor=separationFloor(); floor>0.0) {
+        // The distance in the source's instantaneous rest frame,
+        // gamma kappa R = u.(x - x_ret)/c, is a Lorentz scalar, so scaling the
+        // field tensor by a function of it keeps the field covariant; for a
+        // source at rest it is R itself, so the static limit is still the
+        // Plummer gradient.
+        const double restDistance=fieldDistance*kappa
+            /std::sqrt(std::max(1.0-betaSquared,1.0e-300));
+        const double ratio=restDistance
+            /std::sqrt(restDistance*restDistance+floor*floor);
+        plummerScale=ratio*ratio*ratio;
+    }
     const Vec3 velocityField = (direction - beta) * ((1.0 - betaSquared) /
                               (kappa*kappa*kappa * fieldDistance*fieldDistance));
     const Vec3 accelerationField = cross(direction, cross(direction - beta, source.acceleration)) /
@@ -463,6 +487,6 @@ inline ElectromagneticField lienardWiechertField(const Vec3& observationPosition
         formFactor=std::erf(u)-2.0*u*std::exp(-u*u)/std::sqrt(pi);
     }
     const Vec3 electric = (velocityField + accelerationField)
-                        * (coulomb * sourceCharge*formFactor);
+                        * (coulomb * sourceCharge*formFactor*plummerScale);
     return {electric, cross(direction, electric) / c};
 }

@@ -4097,3 +4097,63 @@ measurement of whether that survives a cascade.
      is the likeliest home of the unexplained +44 k/r0 below the floor in
      63b.  Making the short-range treatments derive from one potential is a
      precondition for any statement about the core, at any floor.
+
+65. UNIFYING THE SHORT-RANGE REGULARIZATION, STEP 1: THE CHARGE FIELD
+
+    Following 64c, with the user's agreement to change the default model:
+    every short-range treatment is to derive from one Plummer potential.
+    Step 1 is the charge sector.
+
+65a. CHANGE.  lienardWiechertField scales the whole field by
+     (R_rest/R_c)^3, R_c = sqrt(R_rest^2 + floor^2), where R_rest = gamma
+     kappa R is the distance in the source's rest frame (a Lorentz scalar).
+     For a source at rest it is -grad of -k/sqrt(r^2 + floor^2), the Coulomb
+     energy conservativeParticleEnergy and coulombForces already used.  It
+     replaces the hard clamp max(R, floor).  A first version scaled by the
+     lab distance R; it broke Lorentz covariance (boosted field residual
+     8.4e-3, boosted tensor on trajectory states 2.9e-11 -> 1.2e-7, particle
+     boost F 1.3e-12 -> 2.5e-6); with R_rest all of these return to their old
+     values (1.3e-12, 1.5e-11, 6.8e-13).  Pairs without a floor keep
+     max(R, nuclearCutoff).
+
+65b. VALIDATION.  59/59 after two changes to the checks, both measured:
+     - The boosted-charge field and invariant checks compared against the
+       bare point field; the reference now carries the same softening in the
+       rest frame (residuals 1.2e-16 and 1.4e-16, threshold 1e-10).
+     - far-field-convergence demanded monotonic radius residuals at 1e4-1e6
+       a0 where they are ~4e-8, three hundred times inside the 1e-5 bound;
+       their order flipped (3.6e-8 / 5.3e-8) when the shared visual state
+       moved.  Monotonicity is now required only above 1e-6.
+     Header isolation 37/37.  retarded Gauss on the Maxwell block rose from
+     8.4e-6 to 2.0e-4 (not a gated check): the softened field is not the
+     field of the deposited point-like clouds.
+
+65c. PRODUCTION MOVES.  Branch trace seed 42 / index 2 / para:
+       t 199.442511177 -> 199.442154855 ps, 3 photons unchanged,
+       binding 753.84 -> 755.69 eV, L 0.094996 -> 0.094880 hbar,
+       peri/barrier 3.897 -> 4.929 (now equal to a/barrier).
+     The periapsis comes from dipoleAwarePeriapsis on the secular elements
+     after the last photon and is sensitive to it; the non-covariant first
+     version gave 4.074.  The softening reaches the production pericentre at
+     3.9 r*, where the Coulomb force is 9% weaker than the old hard clamp.
+
+65d. DEFAULT FLOOR, CHARGE SECTOR NOW CONSISTENT.  Para passage, one period,
+     work against energy [k/r0]:
+                     W_LW    -dCoul       (before: < 1 floor +0.512 vs -0.001)
+       2-4 floors   +0.406   +0.393
+       1-2 floors   +0.341   +0.296
+       < 1 floor    +0.008   +0.001
+     The dipole sector still is not: para 30 deg, W_grad against -dU_dip
+     +0.554 vs +0.397 (2-4 floors) and -0.185 vs -0.353 (1-2 floors), about
+     +0.33 k/r0 per passage.  Its field blends a point dipole at the clamped
+     separation with one at the true separation through a position-dependent
+     weight, and is unsoftened above two floors while the energy is softened.
+
+65e. TRAJECTORIES, default floor (64a set):
+       tilt  para                          orto
+       0     r_min 0.64, out to 5.1 r*     r_min 0.21, out to 8.8 r*
+       30    r_min 0.80, out to 8.4 r*     r_min 0.50, out to 56 r*
+       60    r_min 0.38, out to 75 r*      r_min 1.03, out to 9.1 r*
+       90    contact                       HELD: 1.62-3.39 r*, 7 minima
+     max|dE_mech| 0.2-2.4 k/r0 (64a: 1.3-4.6).  Ejections are shallower but
+     remain; the dipole-sector mismatch of 65d is the next step.
