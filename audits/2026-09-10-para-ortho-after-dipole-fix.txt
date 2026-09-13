@@ -3356,3 +3356,107 @@ measurement of whether that survives a cascade.
      If the barrier survives step 3, the model predicts para is held OFF
      contact while ortho reaches it: the reverse of the measured
      lifetimes, where p-Ps annihilates about a thousand times faster.
+
+54. DYNAMIC TEST, STEP 3: PRECESSING MOMENTS -- THE BARRIER IS NOT A
+    PROPERTY OF A TRAJECTORY
+
+    Section 53 showed the para dipole barrier holding for moments pinned
+    perpendicular to the separation.  Section 48's lock says the orientation
+    average of the interaction is exactly zero, so real, precessing moments
+    might lose it.  Floor scale 0.25, radiation reaction off throughout.
+
+54a. THE PREDICTION, STATED BEFORE MEASURING.  The separation sweeps the
+     orbit plane fast and the moments precess slowly, so with the moment
+     tilted theta from the orbit normal, <(mu.n)^2> = sin^2(theta)/2 and the
+     orbit-averaged interaction carries 1 - 1.5 sin^2(theta): a barrier only
+     below the magic angle, 54.74 deg.
+
+54b. THE INSTANTANEOUS FORCE HAS A LARGE OUT-OF-PLANE PART.  Model dipole
+     force over Coulomb, circular orbit, separation along +x:
+
+       tilt   r/r*   para F_rad   para F_z    orto F_rad   orto F_z
+        0     1.2     +1.834      +0.000       -2.352      +0.000
+       30     1.2     +0.299      +1.745       -0.748      -1.875
+       60     1.2     -2.747      +1.697       +2.488      -1.923
+       90     1.2     -4.188      -0.130       +4.188      -0.130
+
+     For tilted moments the out-of-plane force exceeds Coulomb, so short
+     trajectories leave the orbit plane (separation up to 40 deg out of it
+     within 0.15 of an orbit).  This is point-dipole physics, not a defect.
+
+54c. ORBIT-AVERAGED, THE OUT-OF-PLANE PART VANISHES AND THE RADIAL PART
+     CHANGES SIGN NEAR THE MAGIC ANGLE.  72 orbital phases, moments fixed:
+     <F_z> = 0.0000 at every tilt.  Radial average over Coulomb crosses zero
+
+       channel   r = 2 r*     r = 1.6 r*
+       para      50.6 deg     51.1 deg      (repulsive below)
+       orto      58.1 deg     57.8 deg      (repulsive above)
+
+     about 4 deg either side of 54.74.  At the magic angle both channels are
+     attractive by about the same amount (-0.071 and -0.068 at 2 r*): the
+     dipole-dipole part averages away and the motional charge-field
+     channels, attractive in both, are what remains and shift both
+     boundaries.
+
+54d. LONG DYNAMIC RUNS WITH TILTED MOMENTS ARE BLOCKED.  At 30, 50 and 60
+     deg both channels stop as numerical failures after about 0.05 of the
+     observation window, before the first bounce.  Not the pole-cancellation
+     defect of 53g: only 139 and 20 retreats, all accepted.  The GRAD
+     anomaly print is a magnitude threshold, not a rejection.  Raising
+     CREM_MAX_DEPTH from 12 to 20 fails at the same time and only lets the
+     integrator push further into bad states (mechanical-energy error 250-310
+     k/r0).  runMechanicalTrajectory already documents this: at the bottom of
+     the orbit the step-doubling error scales as dt^1 instead of dt^3, so
+     depth is a treadmill; the force evaluation there does not smooth as the
+     step shrinks.
+
+     At 0 deg the control reproduces section 53 (para r_min 1.3244 r*).  At
+     90 deg the roles swap cleanly: ortho is held (r_min 1.396 r*, five
+     bounces), para falls through.
+
+54e. AND THE TILT IS NOT CONSERVED, SO THE CONDITION CANNOT HOLD A PAIR.
+     Coupled secular spin-orbit solver at 2 r*, stepped incrementally, with
+     the total angular momentum tracked:
+
+       |L_circ(2 r*)| = 0.0604 hbar;  ortho |S| = 1 hbar, |S|/|L| = 16.55
+       J direction drift over 200 turns: 0.00 deg; relative J residual
+                                         at most 1.1e-17
+
+       start      after 5 turns    range over 200 turns    orbit normal swing
+       30 para       ~58 deg          57.8 - 67.2 deg            96 deg
+       30 orto       ~66 deg          65.5 - 71.4 deg           119 deg
+       60 para       ~64 deg          63.6 - 77.9 deg           130 deg
+       60 orto       ~73 deg          73.5 - 76.2 deg           153 deg
+
+     J is exactly conserved, so this is genuine exchange: at the Compton
+     scale the orbital angular momentum is an order of magnitude below the
+     spin, and the orbit normal is slaved to the spin precession rather than
+     the other way round.  Para's total spin grows from 0 to about 0.2 hbar
+     in the process.  The tilt crosses the 51/58 deg boundaries within a few
+     turns.
+
+     Caveat on these numbers: the secular sub-operator holds the semi-major
+     axis fixed, and |L| here climbs above the circular value (to 0.21 and
+     0.30 hbar), which a Kepler ellipse at that axis cannot have.  The drift
+     values are therefore qualitative.  That the tilt is not conserved, with
+     J exact and S/L = 16.5, is not.
+
+54f. WITHDRAWN.
+       - "If the barrier survives, para is held off contact and ortho
+         reaches it -- the reverse of the measured lifetimes" (53h and the
+         step-1 report): true only at tilt 0 deg; at 90 deg it is the other
+         way round.
+       - "For isotropic spins para is held in ~37% of orientations and ortho
+         in ~53%, the same direction as the lifetimes": a count of static
+         orientations, which is meaningless for a trajectory whose tilt
+         wanders across both boundaries within a few precession turns.
+
+54g. WHAT STANDS.  The dipole repulsion creates a real classical stationary
+     point at 1.6-1.7 r* (sections 52-53), converged in the floor and
+     dynamically confirmed for pinned moments.  Orbit-averaged, it survives
+     for para below ~51 deg and for ortho above ~58 deg.  But at that scale
+     the spins carry sixteen times the orbital angular momentum and drag the
+     orbit plane with them, so neither channel keeps the condition, and no
+     channel-specific protection from contact follows.  The long dynamic
+     test that would show what a precessing pair actually does is blocked
+     by the documented dt^1 accuracy defect at the bottom of the orbit.
