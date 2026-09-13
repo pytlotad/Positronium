@@ -2315,8 +2315,10 @@ inline Vec3 regularizedDipoleForce(const Vec3& sourceToTarget,
 
 inline MutualForces coulombForces(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
-    const Vec3 first = geometry.firstMinusSecond
-                        * (-pairCoulombStrength * geometry.inverseDistanceCubed);
+    const Vec3 first = clampedSeparationForceToTruePositions(
+        s.firstPosition - s.secondPosition, separationFloor(),
+        geometry.firstMinusSecond
+            * (-pairCoulombStrength * geometry.inverseDistanceCubed));
     return {first, first * -1.0};
 }
 
@@ -2336,8 +2338,10 @@ inline MutualForces mutualForces(const State& s) {
     const PairGeometry geometry = clampedPairGeometry(s);
     const MutualForces electrostatic = coulombForces(s);
     if(!gDipoleForceEnabled) return electrostatic;
-    const Vec3 dipoleOnFirst = regularizedDipoleForce(
-        geometry.firstMinusSecond, s.firstDipole, s.secondDipole);
+    const Vec3 dipoleOnFirst = clampedSeparationForceToTruePositions(
+        s.firstPosition - s.secondPosition, separationFloor(),
+        regularizedDipoleForce(
+            geometry.firstMinusSecond, s.firstDipole, s.secondDipole));
     return {electrostatic.first + dipoleOnFirst,
             electrostatic.second - dipoleOnFirst};
 }
@@ -3290,7 +3294,8 @@ inline MutualForces retardedExternalForces(const State& s,
     // off, the default, which leaves every force above bit-identical).
     // Below N floors the WHOLE dipole sector is the instantaneous one of
     // allExternalForces -- regularizedDipoleForce plus chargeDipoleForces,
-    // the forces whose energies conservativeParticleEnergy counts -- and
+    // the forces whose energies conservativeParticleEnergy counts, both
+    // carried back through the separation clamp -- and
     // between N and 2N floors it blends into the retarded sector with a
     // smoothstep in the present separation.  The charge-charge
     // Lienard-Wiechert force stays retarded throughout.
@@ -3321,10 +3326,22 @@ inline MutualForces retardedExternalForces(const State& s,
                 lorentzForce(firstCharge,s.firstVelocity,secondField),
                 lorentzForce(secondCharge,s.secondVelocity,firstField)};
             const PairGeometry geometry=clampedPairGeometry(s);
-            const Vec3 dipoleOnFirst=regularizedDipoleForce(
-                geometry.firstMinusSecond,s.firstDipole,s.secondDipole);
-            const StateHistory localHistory{State{s}};
-            const MutualForces mixed=chargeDipoleForces(s,localHistory);
+            const Vec3 dipoleOnFirst=clampedSeparationForceToTruePositions(
+                s.firstPosition-s.secondPosition,separationFloor(),
+                regularizedDipoleForce(geometry.firstMinusSecond,
+                                       s.firstDipole,s.secondDipole));
+            // The Thomas-BMT moment derivatives inside chargeDipoleForces
+            // read the fields from the REAL retarded history.
+            // allExternalForces passes a one-state history instead, which
+            // extrapolates the partner back by r/c with the acceleration
+            // stored in the state -- and inside a step that is the previous
+            // step's value.  Measured at a switched tilted para failure at
+            // 0.40 r*: with the one-state history the step-doubling velocity
+            // error halved per halving of dt (a local error of order dt,
+            // 3.1e-9 at the failing step); removing chargeDipoleForces, or
+            // giving it this history, restored 4x per halving (3.7e-11).
+            // Neither the dipole-dipole force nor the precession mattered.
+            const MutualForces mixed=chargeDipoleForces(s,history);
             const MutualForces instantaneous{dipoleOnFirst+mixed.first,
                                              mixed.second-dipoleOnFirst};
             const double w=retardedWeight;

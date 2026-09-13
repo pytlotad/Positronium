@@ -130,6 +130,32 @@ inline PairGeometry pairGeometry(const State& s) {
 // diverge on a close encounter; termination logic and diagnostics keep
 // reading the true pairGeometry() above so they still report what actually
 // happened.
+// A force computed as the gradient with respect to the CLAMPED separation,
+// carried back to the true positions: J^T F with J the Jacobian of
+// clampedSeparationVector, r_c = sqrt(r^2 + floor^2) along n.  Radial
+// components scale by r/r_c, transverse ones by r_c/r.
+//
+// Without it the instantaneous Coulomb and dipole-dipole forces were not the
+// gradients of the energies conservativeParticleEnergy counts: against a
+// finite-difference gradient of those energies over random orientations the
+// Coulomb force was off by 29% and the dipole force by 41% at one floor
+// (2.5x at 0.3 floors, still 0.8% at 8), and with J^T applied both agree to
+// 1e-9 at every distance.  The gap leaked 10-17 k/r0 of mechanical energy
+// per deep passage (audit sections 58d, 59a).
+inline Vec3 clampedSeparationForceToTruePositions(const Vec3& trueSeparation,
+                                                  double floor,
+                                                  const Vec3& clampedForce) {
+    if(!(floor>0.0)) return clampedForce;
+    const double trueDistance=trueSeparation.norm();
+    if(!(trueDistance>std::numeric_limits<double>::min())) return clampedForce;
+    const double effectiveDistance=
+        std::sqrt(trueDistance*trueDistance+floor*floor);
+    const Vec3 n=trueSeparation/trueDistance;
+    const Vec3 radial=n*dot(n,clampedForce);
+    return (clampedForce-radial)*(effectiveDistance/trueDistance)
+          +radial*(trueDistance/effectiveDistance);
+}
+
 inline PairGeometry clampedPairGeometry(const State& s) {
     const Vec3 firstMinusSecond = clampedSeparationVector(
         s.firstPosition - s.secondPosition, separationFloor());

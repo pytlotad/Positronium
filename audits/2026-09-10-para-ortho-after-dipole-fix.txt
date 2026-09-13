@@ -3869,3 +3869,73 @@ measurement of whether that survives a cascade.
      inconsistency of the instantaneous softened dipole model.  (3) The
      default stays retarded; whether the short-range zone should be
      instantaneous is still the user's decision.
+
+60. THE OPEN ITEMS OF 59d: TWO DEFECTS OF THE INSTANTANEOUS DIPOLE MODEL
+
+60a. FORCES WERE NOT THE GRADIENTS OF THE ENERGIES (the 10-17 k/r0 leak).
+     The instantaneous Coulomb and dipole-dipole forces are gradients with
+     respect to the CLAMPED separation r_c = sqrt(r^2 + floor^2) n, while
+     conservativeParticleEnergy is a function of the true positions.  Against
+     a finite-difference gradient of the energies, 200 random orientations
+     per distance, maximum relative residual:
+
+       r/floor   dipole raw   dipole J^T F   Coulomb raw   Coulomb J^T F
+       0.3        2.47          1.0e-9          0.713          8.5e-10
+       1.0        0.414         8.1e-10         0.293          2.5e-10
+       2.0        0.118         4.4e-9          0.106          2.4e-10
+       8.0        7.8e-3        6.8e-10         7.7e-3         2.4e-10
+
+     FIX: clampedSeparationForceToTruePositions() applies J^T (radial part
+     times r/r_c, transverse part times r_c/r) in coulombForces, in
+     mutualForces' dipole force, and in the switch of section 59.
+
+60b. THE SWITCHED STEP WAS FIRST ORDER (the failures of 59b).  On a captured
+     switched failure (tilt 30 para, N = 4, 0.40 r*) no force component
+     jumps (total force second difference 1.1-1.2x its median), and the
+     retarded history no longer matters (1e-7).  But the step-doubling
+     velocity error halved per halving of dt.  Toggling one piece at a time:
+
+       configuration                     per halving   error at dt_fail
+       everything                           2x            3.1e-9
+       without chargeDipoleForces           4x            3.9e-11
+       without dipole-dipole force          2x            9.8e-9
+       without precession                   2x            3.1e-9
+       chargeDipoleForces on real history   4x            3.7e-11
+
+     chargeDipoleForces took its Thomas-BMT moment derivatives from a
+     ONE-STATE history, which extrapolates the partner back by r/c with the
+     acceleration stored in the state -- the previous step's value inside a
+     step.  FIX: the switch passes the real retarded history.
+     allExternalForces still passes the one-state history (the instantaneous
+     model and causalInitialHistory); not changed, not measured.
+
+60c. CHECKS.  Validation 59/59, header isolation 37/37.  The production
+     branch trace moves, because causalInitialHistory builds the initial
+     history from allExternalForces, whose Coulomb force now carries J^T:
+     t = 199.442442952 -> 199.442511177 ps, peri/barrier 3.89708460123 ->
+     3.89733269045, 3 photons unchanged.
+
+60d. TRAJECTORIES, floor 0.25 r*, N = 4, max|dE_mech| in k/r0:
+
+       case          59b (N = 4)                  now
+       radial para   bound, 1.4e-2                bound (1.2393 r*)
+       radial orto   bound, 73 minima, 12.7       bound, 70 minima
+       0 deg para    bound 1.3073 r*, 1.3e-2      bound 1.3026 r*, 1.9e-2
+       0 deg orto    bound, 356 minima, 14.4      bound, 362 minima, 14.4
+       30 deg para   fails at 0.27 r*, 8.7        CONTACT (0.1 r*) after 197
+                                                  minima at t/obs 0.284, 66;
+                                                  moments turned 30 -> 151 deg
+       30 deg orto   fails at 0.57 r*, 0.47       bound, 330 minima, 14.1
+       60 deg para   fails at 0.54 r*, 2.3        CONTACT after 3 minima, 19.8
+       60 deg orto   bound, 525 minima, 13.7      bound, 33 minima, 0.83
+
+     No run fails numerically any more.  Every outcome is bound or contact.
+     Deep-passage split (tilt 30 para, to t = 2.3e-20 s):
+       1-2 floors   dU+W  +6.2 -> -3.7    dU_mom +0.36 -> -3.8
+       2-4 floors   dU+W  +2.7 -> +0.8    dU_mom +0.52 -> +0.65
+
+60e. OPEN.  (1) The mechanical energy still drifts by ~14 k/r0 in every
+     bound ortho run below r* and by 66 k/r0 in the 30 deg para run; the
+     split above puts about half of what remains in the moment dynamics.
+     (2) allExternalForces' one-state history.  (3) The default stays
+     retarded; the switch is off unless set.
