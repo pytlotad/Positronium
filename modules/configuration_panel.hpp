@@ -720,6 +720,17 @@ inline int zeroPointModes = 64;
 //      below 1 run trajectories where the model declares point-particle
 //      electrodynamics invalid: probe results, never production ones.
 //
+// C1d. CREM_DIPOLE_INSTANTANEOUS_BELOW=N -- below N separation floors the
+//      whole dipole sector (dipole-dipole and charge-dipole forces) is the
+//      instantaneous, energy-consistent one instead of the retarded one;
+//      between N and 2N floors the two blend smoothly.  The charge-charge
+//      Lienard-Wiechert force stays retarded.  Changes the trajectory.
+//      Unset or 0: off, every force bit-identical.  Exists because the
+//      retarded dipole forces of a deep passage follow a configuration that
+//      turns by up to 0.56 rad during r/c and exchange hundreds of k/r0 with
+//      the mechanical energy (audit section 58); whether that is physics is
+//      a modelling choice this switch lets be measured.
+//
 // C2.  THESE ONLY PRINT.  Diagnostics and censuses; they do not alter the
 //      trajectory, and are safe to leave on while measuring.
 //

@@ -3812,3 +3812,60 @@ measurement of whether that survives a cascade.
      those radii) is far above any plausible stored field energy.  Removing
      it requires a choice about the physics in the short-range zone, not a
      numerical fix.
+
+59. THE SWITCH: INSTANTANEOUS DIPOLE SECTOR BELOW N FLOORS
+
+    Following section 58 (and the user's choice of a switch plus measurement
+    over a change of default): CREM_DIPOLE_INSTANTANEOUS_BELOW=N replaces the
+    whole dipole sector of retardedExternalForces -- the charge's Lorentz
+    force in the partner's dipole field and covariantDipoleGradientForce --
+    by the instantaneous one of allExternalForces (regularizedDipoleForce
+    plus chargeDipoleForces) below N floors, blending by a smoothstep in the
+    present separation between N and 2N floors.  The charge-charge
+    Lienard-Wiechert force stays retarded.  Unset: validation 59/59 with a
+    validation printout identical line for line, header isolation 37/37,
+    production branch trace identical to 57d (t = 199.442442952 ps,
+    peri/barrier 3.89708460123).
+
+59a. THE RETARDED EXCHANGE IS GONE.  Tilted para 30 deg, same split as 58a
+     [k/r0], summed per r/floor bin up to t = 2.3e-20 s:
+
+                      2-4 floors            1-2 floors
+                   dU+W     dU_mom       dU+W     dU_mom
+       off        -289.1    -11.1       +378.3    -48.7
+       N = 2        +5.7     +0.6        -16.9     +7.9
+       N = 4        +2.7     +0.5         +6.2     +0.4
+     (58d, fully instantaneous forces: +2.6 / +0.5 and -15.2 / +7.1)
+
+     dKE - W stays below 0.3 k/r0 in every case.  What is left is the
+     smaller inconsistency of the instantaneous softened model itself.
+
+59b. TRAJECTORIES (floor 0.25 r*, radiation reaction off).  max|dE_mech| in
+     k/r0; "bound" = full window without leaving:
+
+       case          off                       N = 2                    N = 4
+       radial para   bound, 6.5e-3             bound, 6.5e-3            bound, 1.4e-2
+       radial orto   ionized to 238 r*, 312    leaves to 15.7 r*, 2.5   BOUND, 73 minima
+                                                                        0.46-1.59 r*, 12.7
+       0 deg para    bound 1.3244 r*, 2.3e-2   same                     bound 1.3073 r*, 1.3e-2
+       0 deg orto    ionized to 819 r*, 342    leaves to 43 r*, 2.5     BOUND, 356 minima
+                                                                        0.47-1.20 r*, 14.4
+       30 deg para   fails at 0.24 r*, 128     fails at 0.33 r*, 10.5   fails at 0.27 r*, 8.7
+       30 deg orto   ionized to 759 r*, 221    fails at 0.53 r*, 1.5    fails at 0.57 r*, 0.47
+       60 deg para   fails at 0.23 r*, 45      fails at 0.51 r*, 5.0    fails at 0.54 r*, 2.3
+       60 deg orto   ionized to 138 r*, 13     fails at 0.50 r*, 2.8    BOUND, 525 minima
+                                                                        0.52-0.67 r*, 13.7
+
+59c. READING.  With N = 4 the energy errors drop from 13-342 to 0.5-14
+     k/r0, and no ortho run ionizes any more: three of four ortho cases stay
+     bound below r* for the whole window.  But the switch does not make the
+     tilted runs integrable: five of six tilted runs fail, now at 0.27-0.57 r*
+     and with small energy errors, so these failures are NOT the energy
+     corruption of 55-58 and their cause is not yet measured.  The remaining
+     10-17 k/r0 in the 1-2 floor zone at N = 2 belongs to the instantaneous
+     model (58d), with a moment-dynamics share of about +8 k/r0.
+
+59d. OPEN.  (1) The failures of 59b under the switch.  (2) The ~10-17 k/r0
+     inconsistency of the instantaneous softened dipole model.  (3) The
+     default stays retarded; whether the short-range zone should be
+     instantaneous is still the user's decision.

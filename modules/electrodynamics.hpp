@@ -3272,7 +3272,7 @@ inline MutualForces retardedExternalForces(const State& s,
                 <<secondMagneticLow.electric.norm()<<'\n';
         }
     }
-    const MutualForces chargeCharge{
+    MutualForces chargeCharge{
         lorentzForce(firstCharge,s.firstVelocity,
             {secondField.electric+secondDipoleField.electric,
              secondField.magnetic+secondDipoleField.magnetic}),
@@ -3282,10 +3282,60 @@ inline MutualForces retardedExternalForces(const State& s,
 
     // Third and last path by which the moments steer the orbit, gated with
     // the other two so that CREM_NO_DIPOLE_FORCE means what it says.
-    const MutualForces tensorGradient=gDipoleForceEnabled
+    MutualForces tensorGradient=gDipoleForceEnabled
         ?MutualForces{covariantDipoleGradientForce(s,history,true),
                       covariantDipoleGradientForce(s,history,false)}
         :MutualForces{};
+    // CREM_DIPOLE_INSTANTANEOUS_BELOW=N (in separation floors; unset or 0 =
+    // off, the default, which leaves every force above bit-identical).
+    // Below N floors the WHOLE dipole sector is the instantaneous one of
+    // allExternalForces -- regularizedDipoleForce plus chargeDipoleForces,
+    // the forces whose energies conservativeParticleEnergy counts -- and
+    // between N and 2N floors it blends into the retarded sector with a
+    // smoothstep in the present separation.  The charge-charge
+    // Lienard-Wiechert force stays retarded throughout.
+    //
+    // Why an option exists (audit section 58): in a deep tilted para passage
+    // the retarded gradient force follows the partner's RETARDED position and
+    // moment, whose direction turns by up to 0.56 rad during r/c at
+    // beta 0.5-0.8, while the mechanical energy is instantaneous.  Its work
+    // swung by -263 and +302 k/r0 across 1-4 floors against a dipole-energy
+    // change of +-30 k/r0, and that is where the 40-400 k/r0 energy errors of
+    // every deep run came from; the integrator's own share was below 7 k/r0.
+    // Whether that exchange is physics or an artefact of point dipoles at
+    // these radii is a modelling choice, so it is a switch, not a fix.
+    static const double instantaneousDipoleFloors=[] {
+        const char* text=std::getenv("CREM_DIPOLE_INSTANTANEOUS_BELOW");
+        const double value=text?std::atof(text):0.0;
+        return (std::isfinite(value)&&value>0.0)?value:0.0;
+    }();
+    if(gDipoleForceEnabled&&instantaneousDipoleFloors>0.0
+       &&separationFloor()>0.0) {
+        const double inner=instantaneousDipoleFloors*separationFloor();
+        const double transition=std::clamp(
+            (separation(s)-inner)/inner,0.0,1.0);
+        const double retardedWeight=
+            transition*transition*(3.0-2.0*transition);
+        if(retardedWeight<1.0) {
+            const MutualForces chargeOnly{
+                lorentzForce(firstCharge,s.firstVelocity,secondField),
+                lorentzForce(secondCharge,s.secondVelocity,firstField)};
+            const PairGeometry geometry=clampedPairGeometry(s);
+            const Vec3 dipoleOnFirst=regularizedDipoleForce(
+                geometry.firstMinusSecond,s.firstDipole,s.secondDipole);
+            const StateHistory localHistory{State{s}};
+            const MutualForces mixed=chargeDipoleForces(s,localHistory);
+            const MutualForces instantaneous{dipoleOnFirst+mixed.first,
+                                             mixed.second-dipoleOnFirst};
+            const double w=retardedWeight;
+            chargeCharge={
+                chargeOnly.first+(chargeCharge.first-chargeOnly.first)*w,
+                chargeOnly.second+(chargeCharge.second-chargeOnly.second)*w};
+            tensorGradient={
+                tensorGradient.first*w+instantaneous.first*(1.0-w),
+                tensorGradient.second*w+instantaneous.second*(1.0-w)};
+        }
+    }
     // Same uniform external field as in the instantaneous sum.  It is not
     // retarded because it is not sourced by either particle.
     MutualForces externalField{
