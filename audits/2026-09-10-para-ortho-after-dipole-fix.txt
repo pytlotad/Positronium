@@ -4004,3 +4004,46 @@ measurement of whether that survives a cascade.
      nonrelativistic cross term (0.53) is unexplained, and the 66 k/r0 of
      the long tilt-30 para run (60d), where the moments also turn over, was
      not split.
+
+63. WHAT REMAINS OF THE DRIFT: THREE MEASUREMENTS, NO CODE CHANGE
+
+    Tilted para 30 deg, floor 0.25 r*, N = 4, one Kepler period of r0.
+    E_mech swings from -66 to +34 k/r0 and the pair ends flying apart at
+    beta 0.73.  Same split as section 62.
+
+63a. THE MOMENTS: NOT PRECESSION, THE VELOCITY DEPENDENCE OF THE LAB MOMENT.
+       1-4 floors [k/r0]       precession on    precession off
+       W_inst                     +223.0            +99.4
+       -dU at fixed moments       +223.0           -206.1
+       -dU from moments alone     -234.9           +322.1
+     The instantaneous dipole force matches the energy at fixed lab moments
+     (223 vs 223), but the lab moments firstDipole/secondDipole change by
+     hundreds of k/r0 of interaction energy even with precession switched
+     off.  They follow the velocity through synchronizeCovariantDipoles, so
+     the dipole energy is a velocity-dependent potential that the force does
+     not differentiate, and KE + U is not the energy the dynamics conserves.
+     Fixing that is a reformulation (a Lagrangian energy function, or forces
+     in terms of the proper moments), not a patch.
+
+63b. THE COULOMB SECTOR BELOW THE FLOOR: +44 k/r0, UNEXPLAINED.  Inside one
+     floor the charge-charge mismatch is +44.3 k/r0, against -7.8 of pair
+     radiation cross term and -0.12 from the hard-clamp versus Plummer
+     Coulomb energy (with the clamp potential written correctly as linear
+     inside r_e).  Neither accounts for it.
+
+63c. THE FAR-ZONE FLUX OF THE DIPOLE SECTOR IS WRONG AT SHORT RANGE.  The
+     flux diagnostic (computeOutwardFlux) reported 9.7e4 k/r0 radiated in one
+     deep passage.  Split on captured states:
+       state                   charge sector vs |q1a1+q2a2|^2   dipole sector vs mu0|m''|^2/6pi c^3 + induced p = v x m/c^2
+       3 r*, at rest              5.70 vs 5.71 W                   3.4e-6 vs 1.1e-5 W
+       0.40 r*, beta 0.43         1.30e8 vs 1.64e8 W               6.25e10 vs 6.8e7 W (920x)
+       0.33 r*, beta 0.66         5.8e7 vs 1.24e8 W                2.67e10 vs 5.4e8 W (49x)
+     Independent of the sphere radius (x0.01..x100) and of dropping the
+     velocity fields, so it is radiation, not near field.  Expanding both
+     far-zone poles from one history segment (the near-field fix of 55a)
+     changed it by 0.2% and was reverted.  Cause not found.  The flux does
+     not feed back into the trajectory.
+
+63d. OPEN.  The lab-moment velocity dependence of 63a; the +44 k/r0 of 63b;
+     the far-zone dipole flux of 63c; the 0.53 of 62c; and the default model
+     (retarded dipole sector) remains the user's decision.
