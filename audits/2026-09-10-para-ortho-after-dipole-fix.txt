@@ -3959,3 +3959,48 @@ measurement of whether that survives a cascade.
      itself.  Validation 59/59, header isolation 37/37, production branch
      trace identical to 60c (t = 199.442511177 ps, peri/barrier
      3.89733269045).
+
+62. OPEN ITEM 60e(1): THE ~14 k/r0 DRIFT OF THE BOUND SWITCHED RUNS
+
+    Ortho, tilt 0 deg, floor 0.25 r*, N = 4, radiation reaction disabled,
+    three Kepler periods of r0 = 3 r*.  Per step, the work of each force
+    sector against its energy terms, summed per r/floor bin.
+
+62a. WHEN.  E_mech falls by 14.36 k/r0 within the first 0.7 T, while the
+     pair sinks from 2.1 r* to 0.55 r*, and is then flat to five digits for
+     the remaining 2.3 T at r = 0.5475 r*.  The final relative speed is
+     1.75e-3 c: the pair has come to rest at the dipole-barrier equilibrium.
+     It is not a secular drift.  Precession on or off gives identical
+     numbers to every printed digit.
+
+62b. WHERE [k/r0]:
+       bin          dKE-W     W_lw + dCoul + dDarwin   W_inst + dDip + dChDip (moments included)
+       >8 floors   -3e-5          +0.009                       -0.28
+       4-8         -2e-4          +0.13                        -0.73
+       1-4         -0.023        -14.86                        +0.42
+     The instantaneous dipole sector is consistent to under 1 k/r0.  The
+     whole loss is the RETARDED charge-charge force against the Coulomb plus
+     Darwin energy.
+
+62c. WHY.  Two candidates, same bins:
+       bin      mismatch   hard clamp vs Plummer   -E_cross (pair dipole
+                           Coulomb energy          radiation cross term)
+       4-8       +0.13          +0.078                 -0.077
+       1-4      -14.86          +0.40                 -27.9
+     The regularization mismatch between the Lienard-Wiechert field (hard
+     max(r, floor)) and the energy (Plummer) accounts for +0.4 k/r0 only.
+     The loss has the sign and the order of the cross term of the pair's
+     dipole radiation, P_cross = mu0 q1 q2 a1.a2 / (3 pi c): each particle's
+     retarded field carries the partner's radiation, so the mutual forces
+     radiate even with the self radiation reaction switched off, and the
+     loss stops when the pair stops accelerating.  It is 0.53 of the
+     nonrelativistic cross term; the Schott boundary terms vanish between
+     rest-like end states, so the missing factor (relativistic corrections at
+     beta ~ 0.3 inside 1-4 floors, or the clamps) is not accounted for.
+
+62d. CONCLUSION.  The bound runs' energy drift is radiation carried by the
+     mutual retarded fields, not a numerical or consistency defect; the
+     consistency defects of 58-61 are fixed.  Its size relative to the
+     nonrelativistic cross term (0.53) is unexplained, and the 66 k/r0 of
+     the long tilt-30 para run (60d), where the moments also turn over, was
+     not split.
