@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 
 using positronium::objects::Vec3;
@@ -73,8 +74,31 @@ inline Vec3 clampedSeparationVector(const Vec3& trueSeparation, double floor) {
 // and would not mean the same thing for any other pair. No regularization
 // for other pairs yet -- this is deliberately narrower than "every pair"
 // until an analogous barrier is derived for them.
+//
+// CREM_SEPARATION_FLOOR_SCALE multiplies the floor, for one measurement.
+// Section 52 of the para/ortho audit found that with exact fields the para
+// dipole repulsion, net of the motional attraction, overtakes Coulomb at
+// 1.606 r* -- a classical stationary point with no L = hbar -- and that it
+// lies inside the r*..2r* zone this floor regularizes, so the model as it
+// runs cannot show it.  The floor exists for a NUMERICAL reason (the kink
+// described above), and the Plummer form keeps every derivative continuous
+// at any floor length, so scaling it down moves the regularization out of
+// that zone without reintroducing the kink.
+//
+// Unset, the function returns comptonBarrierRadius itself, bit for bit.
+// Anything else is a probe of the model's short-range dynamics, not a
+// production setting: the model declares classical point-particle
+// electrodynamics invalid below r*, and a smaller floor lets trajectories
+// run there.  The stopping rule reads comptonBarrierRadius directly and is
+// unaffected.  Read once per process.
 inline double separationFloor() {
-    return isPositronium(activePair) ? comptonBarrierRadius : 0.0;
+    if (!isPositronium(activePair)) return 0.0;
+    static const double scale = [] {
+        const char* text = std::getenv("CREM_SEPARATION_FLOOR_SCALE");
+        const double value = text ? std::atof(text) : 1.0;
+        return (std::isfinite(value) && value > 0.0) ? value : 1.0;
+    }();
+    return scale == 1.0 ? comptonBarrierRadius : scale * comptonBarrierRadius;
 }
 
 struct PairGeometry {

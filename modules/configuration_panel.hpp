@@ -710,6 +710,16 @@ inline int zeroPointModes = 64;
 //      0.2270) while the TERMINAL value walks from 0.8801 to 0.4880.  The
 //      band is the model's; the endpoint is not.
 //
+// C1c. CREM_SEPARATION_FLOOR_SCALE -- multiplies separationFloor(), the
+//      Compton-barrier softening length every short-range field and force
+//      is regularized with.  Changes the trajectory.  Unset, the floor is
+//      comptonBarrierRadius bit for bit.  Exists to test the classical
+//      stationary point the para dipole repulsion creates at about 1.6 r*,
+//      which the unscaled floor hides because it regularizes exactly the
+//      r*..2r* zone that point lies in (audit sections 51-52).  Values
+//      below 1 run trajectories where the model declares point-particle
+//      electrodynamics invalid: probe results, never production ones.
+//
 // C2.  THESE ONLY PRINT.  Diagnostics and censuses; they do not alter the
 //      trajectory, and are safe to leave on while measuring.
 //

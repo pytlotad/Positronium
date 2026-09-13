@@ -3267,3 +3267,92 @@ measurement of whether that survives a cascade.
        51e  The verdict on a_pair stands and is sharpened: the stationary
             point exists classically but lies at 1.6-1.7 r*, the Compton
             scale, 341 times inside a_pair.
+
+53. DYNAMIC TEST, STEP 1: THE FLOOR SWITCH, AND THE BARRIER HOLDS PARA
+
+    Section 52 found a classical stationary point for para at 1.6-1.7 r*,
+    hidden because separationFloor() regularizes the r*..2r* zone.  A force
+    balance on a prescribed circular orbit is not a trajectory, so this
+    tests it with real integration.
+
+53a. THE SWITCH.  CREM_SEPARATION_FLOOR_SCALE multiplies separationFloor(),
+     read once per process; unset, the function returns
+     comptonBarrierRadius itself.  Checked: header isolation 37/37,
+     validation 59/59, and the default branch trace bit-identical
+     (t = 199.442442952 ps, L = 0.0949953986509 hbar).  The stopping rule
+     reads comptonBarrierRadius directly and does not move.
+
+53b. THE PROBE.  runMechanicalTrajectory, full engine, radiation reaction
+     DISABLED so the outcome reflects forces and the integrator only.  Para
+     = moments aligned along z, perpendicular to the x separation (the
+     repulsive geometry); ortho = anti-aligned.  Released at r0 with a
+     tangential speed that is a fraction of the circular speed.
+
+53c. AN ENERGY CHECK THAT IS NOT ONE.  Frame boundFieldEnergy is the
+     "exact discrete world-tube balance" reservoir -- bound near field,
+     retardation, interference AND discretization remainder -- assigned as
+     balanceStart - dE_mech - dE_rad.  E_mech + E_rad + boundField is
+     therefore conserved BY CONSTRUCTION and says nothing.  The independent
+     quantity is the mechanical energy, and every energy statement below
+     uses it.
+
+53d. PARA IS HELD, AND THE RESULT DOES NOT DEPEND ON THE FLOOR.
+     Start 3 r*, v_t = 0.2 v_circ:
+
+       floor scale   r_min (r*)   r_max after min (r*)   outcome
+       0.5            1.3243        3.0015                full run
+       0.25           1.3243        3.0017                full run, 11 minima
+       0.1            1.3244        3.0009                full run
+
+     Converged to four digits once the floor is below the zone: the
+     barrier comes from the exact fields, not from the regularization.
+     Mechanical energy at 0.25: largest excursion 2.3e-2 k/r0, returning
+     to within 2.1e-3.  More energy gives a deeper turn, as a repulsive
+     barrier must: start 4 r* reaches 1.2415 r* against 1.3243 from 3 r*.
+
+     Released at the predicted stationary point, 1.65 r* with
+     v_t = 0.02 v_circ: para oscillates between 1.650 and 1.825 r*, i.e.
+     about 1.74 r*, against sqrt(3) r* = 1.732 for static ideal dipoles --
+     at beta = 0.006 the motional channels are negligible, so that is the
+     number to expect.  Mechanical energy constant to 1.6e-3 k/r0.
+
+53e. ORTHO FALLS THROUGH.  From 3 r* at every floor scale, and from
+     1.65 r*, ortho plunges below r* and the integrator fails (scale 1:
+     r_min 0.218 r*; scale 0.25: 0.663 r*; from 1.65 r*: 1.050 r*), with
+     mechanical energy jumping by +1.5 to +3 k/r0 just before.  No barrier,
+     then numerical breakdown in the regime the model declares invalid.
+     This failure also occurs at the default floor, so the switch did not
+     cause it.
+
+53f. AT THE DEFAULT FLOOR THE REGULARIZED CORE DOES WORK.  Scale 1, para:
+     the barrier is suppressed, the pair passes to 0.208 r* and is thrown
+     out to 60.5 r*, its mechanical energy going from -0.8338 to +0.3765
+     k/r0 with radiation off -- a gain of 1.21 k/r0, taken from the
+     reservoir term.  A bound start cannot reach 60 r* conservatively.  So
+     beyond hiding the stationary point, the default floor is not a
+     conservative force field for an orbit that crosses it: three fields
+     carry three different short-range treatments (section 52c), and no
+     single potential generates the resulting force.
+
+53g. A DEGENERACY AT ZERO RELATIVE VELOCITY.  Para released exactly
+     radially (L = 0) fails at t = 0; a near-radial para orbit (v_t = 0.02)
+     fails at its turning point 1.27 r* after four clean bounces, with
+     mechanical energy conserved to 6.5e-3.  Ortho at L = 0 runs normally.
+     Diagnosed with CREM_DEBUG_RETREAT: the moving-dipole field is built as
+     a two-charge limit, and for ALIGNED moments at zero relative velocity
+     the pole-cancellation detector fires on every probe -- 103080 times,
+     cancellation up to 2e5 times its design value, every retreat
+     rejected.  A field-construction defect, not dynamics.  It makes the
+     radial turning points of para orbits unintegrable, so tests must keep
+     some angular momentum until it is fixed.
+
+53h. WHAT STANDS.  With the floor moved out of the zone, para released near
+     the barrier stays bound and off contact, oscillating about ~1.74 r*;
+     ortho falls through.  This is only for moments pinned perpendicular
+     to the separation.  Section 48's lock says the orientation average of
+     the interaction is exactly zero, so precessing moments may lose the
+     barrier -- that is step 3 and it is not yet done.
+
+     If the barrier survives step 3, the model predicts para is held OFF
+     contact while ortho reaches it: the reverse of the measured
+     lifetimes, where p-Ps annihilates about a thousand times faster.
