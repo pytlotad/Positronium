@@ -3568,3 +3568,85 @@ measurement of whether that survives a cascade.
      error is the integrator's or the mismatch between the softened force and
      the unsoftened mechanical energy below the floor was not examined
      either.
+
+56. THE THIRD DISCONTINUITY (55f): A FLOOR CLAMP APPLIED PER POLE
+
+    Section 55f left the tilted para 30 deg run failing at 0.33 r* (floor
+    0.25 r*), with a step-doubling metric that fell irregularly (29x, then
+    11870x) and a guess that the charge-charge Lienard-Wiechert force was
+    the unpinned culprit.  The failing substep was captured from inside the
+    engine (start state, history, dt = 7.95e-27 s; a temporary hook, since
+    removed) and every force component was evaluated on a 400-point grid
+    across it.
+
+56a. THE GUESS WAS WRONG.  Second differences over the grid, normalized by
+     the force, against their own median:
+
+       component                          max / median
+       Lienard-Wiechert, both particles       1.5
+       dipole-field Lorentz force            3.1-3.3
+       gradient force on the positron         4.5
+       gradient force on the electron     2.6e6   at 0.732 dt
+
+     The electron's gradient force is 56x its Coulomb force here.  Its
+     spatial part is smooth; the jump is in the material term, whose rate
+     went -1.1884e8 -> -1.2055e8 (1.4%) between evaluation times 4e-31 s
+     apart.  Of the rate's three time samples only the one a
+     derivativeStep back moved (by 2.85e-20, the other two by ~5e-23), and
+     only in its dipole channel.  Two further guesses were measured and
+     refuted: all three samples sit in the same history segment, 1.7e-23 s
+     from the nearest node, so no node crossing (a segment pin written for
+     it was removed again); and the moment-derivative stencil sits 5.6e-24 s
+     from any node, with the moment and both derivatives smooth to 1e-9.
+
+56b. THE CAUSE.  In twoChargeLimitDipoleField each pole's field used
+     max(distance, nuclearCutoff, separationFloor()) of ITS OWN retarded
+     distance.  At the failing sample the dipole's retarded distance was
+     4.832589933e-14 m, 1.46e-20 m above the floor, and the two pole
+     distances differ by 4.1e-20 m: one pole was clamped, the other was
+     not.  Their difference -- the dipole field -- then carried the
+     unbalanced 1/d^2 of one pole, amplified by 1/poleSeparationFraction:
+
+       pole separation fraction      1e-5          1e-6          1e-7
+       U across 4e-31 s          -1.61649e-14  -1.567469e-14  -1.567468e-14
+                              -> -1.61617e-14  (flat)        (flat, noise)
+
+     A linear ramp of 2e-4 within 4e-31 s, i.e. 5e26 1/s against the
+     ~5e21 1/s the physics allows, and a value 3% off the limit the finer
+     separations agree on.  The estimated slope of one unbalanced pole,
+     |pole| * 2v/d = 9e26 1/s, matches.  The blend in
+     retardedMagneticDipoleField weights the exact field low here, so the
+     force saw 2.85e-20 of it -- enough to fail at maximum depth.
+
+56c. FIX.  Both poles are regularized by one factor set by the dipole's own
+     retarded distance d_c: fieldDistance = distance * max(1,
+     max(nuclearCutoff, floor)/d_c).  Above the floor no pole is clamped;
+     below it both are scaled alike; at the floor the factor is exactly 1,
+     so the field is continuous.  On the captured state the 1e-5 field is
+     now -1.5674687e-14, flat to 3e-7 over the window, and agrees with 1e-6
+     and 1e-7.  The far-zone construction has no per-pole clamp and is
+     unchanged.
+
+56d. CHECKS.  Validation 59/59 (the only changed line is the coherent/LL
+     timing ratio), header isolation 37/37.  Production branch trace
+     (seed 42, index 2, para) bit-identical to section 55d: t =
+     199.442442952 ps, peri/barrier 3.89708426473, 3 photons.
+
+56e. TRAJECTORIES (floor 0.25 r*).  Para 30 deg now passes the old failure:
+     r_min 0.2416 r*, one bounce to 0.3587 r*, failure at 0.527 r*.  Every
+     other case is unchanged from 55e to the printed digit, including
+     r_min and the maximum mechanical-energy error, so their failures lie
+     elsewhere.
+
+56f. WHAT IS STILL OPEN.  The new para 30 deg failure (r = 0.527 r*,
+     dt = 1.45e-26 s, metric 1.9e-5) is NOT a discontinuity: on the same
+     400-point decomposition no component exceeds 4.4x its median second
+     difference.  But the gradient force on the positron there is 126
+     against a Lienard-Wiechert force of 0.042, 3000x, and the gradient
+     force on the electron varies fast (median second difference 1.1e-5 of
+     itself per 1/400 step).  By then the run already carries a mechanical
+     energy error of 81 k/r0, which arose before the failure and is the same
+     number as before this fix.  In every tilted run the energy error of
+     40-400 k/r0 builds up first; where, and whether it is the integrator or
+     the mismatch between softened forces and the unsoftened mechanical
+     energy below the floor, is the next question, not yet measured.

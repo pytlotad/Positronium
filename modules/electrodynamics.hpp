@@ -1926,9 +1926,30 @@ inline ElectromagneticField twoChargeLimitDipoleField(
     if(referenceMoment.squaredNorm()==0.0
        &&referenceFirst.squaredNorm()==0.0
        &&referenceSecond.squaredNorm()==0.0) { trace.earlyReturn=true; return {}; }
-    const double referenceDistance=std::max(
-        (observationPosition-referenceCharge.position).norm(),
+    const double rawReferenceDistance=
+        (observationPosition-referenceCharge.position).norm();
+    const double referenceDistance=std::max(rawReferenceDistance,
         separationFloor());
+    // One short-range regularization for BOTH poles, set by the dipole's
+    // own retarded distance.  Clamping each pole's distance separately
+    // (max(distance, cutoff, floor) per pole) broke the pair whenever the
+    // retarded distance sat within one pole separation of the floor: one
+    // pole was clamped and the other was not, and their difference -- the
+    // dipole field itself -- picked up the unbalanced 1/d^2 of a single
+    // pole, amplified by 1/poleSeparationFraction.  Measured at the tilted
+    // para failure at 0.33 r* (floor 0.25 r*): retarded distance 1.46e-20 m
+    // above the floor, pole distances spread by 4.1e-20 m; the field ramped
+    // by 2e-4 of itself within 4e-31 s (slope 5e26 1/s against ~5e21 1/s
+    // physical) and sat 3% off its converged value, while pole separations
+    // 1e-6 and 1e-7 agreed with each other to 1e-6.  The adaptive integrator
+    // failed on it at maximum depth.  Scaling both pole distances by the
+    // same factor keeps the pair intact on both sides and is continuous at
+    // the floor, where the factor is exactly 1.
+    const double poleDistanceScale=
+        rawReferenceDistance>std::numeric_limits<double>::min()
+            ?std::max(1.0,std::max(nuclearCutoff,separationFloor())
+                           /rawReferenceDistance)
+            :1.0;
     if(!(poleSeparationFraction>0.0)
        ||!std::isfinite(poleSeparationFraction)) { trace.earlyReturn=true; return {}; }
     const double poleSeparation=poleSeparationFraction*referenceDistance;
@@ -2003,8 +2024,7 @@ inline ElectromagneticField twoChargeLimitDipoleField(
             return {};
         }
         const Vec3 direction=displacement/distance;
-        const double fieldDistance=
-            std::max({distance,nuclearCutoff,separationFloor()});
+        const double fieldDistance=distance*poleDistanceScale;
         const Vec3 beta=velocity/c;
         // The pole velocity contains a small derivative correction.  If an
         // ill-conditioned reconstruction makes that auxiliary pole
