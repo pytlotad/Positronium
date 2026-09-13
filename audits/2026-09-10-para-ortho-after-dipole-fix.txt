@@ -4228,3 +4228,44 @@ measurement of whether that survives a cascade.
      0.12-0.67 r* and oscillate there.  This is the first time the default
      model shows the para/ortho distinction dynamically rather than as a
      static force balance.
+
+67. PLAN STEP 2 AFTER THE UNIFICATION: KEEP THE RETARDED DEFAULT?
+
+    The switch CREM_DIPOLE_INSTANTANEOUS_BELOW (59) was introduced because
+    the retarded dipole forces exchanged hundreds of k/r0 with the
+    instantaneous energy.  Sections 65-66 removed the regularization part of
+    that; this checks what remains and whether the switch still changes
+    anything that matters.
+
+67a. PROBE FLOOR 0.25 r*, retarded default, tilt 30 para, same passage as
+     58 (to t = 2.25e-20 s), work against energy [k/r0]:
+                     W_grad   -dU_dip   static-force work
+       2-4 floors    +10.8    +15.9       +16.5          (58: -263 vs +27.8)
+       1-2 floors     -9.3    +29.8       +29.9          (58: +302 vs -30.3)
+     The static force now matches the energy; the retarded force still
+     differs by -5 and -39 k/r0.  That is the retardation of 58c (beta ~0.5,
+     configuration turning during r/c), no longer amplified by an
+     inconsistent regularization, and it lives below r*.
+
+67b. DEFAULT FLOOR, three periods, switch N = 2 against no switch (66e):
+       tilt  channel  no switch                        N = 2
+       0     para     bound, r_min 0.951, dE 2.9e-2     bound, r_min 0.953, dE 1.5e-3
+       0     orto     oscillates 0.18-1.35 r*, 1.4e-1   contact at t/obs 0.058
+       30    para     bound, r_min 1.023, 4.7e-2        bound, r_min 1.026, 1.3e-2
+       30    orto     oscillates 0.16-1.44 r*, 1.9e-1   contact at t/obs 0.58
+       60    para     r_min 0.670, 2.0e-1               r_min 0.668, 1.3e-2
+       60    orto     oscillates 0.12-1.54 r*, 2.7e-1   contact at t/obs 0.91
+       90    para     r_min 0.352, 3.2e-1               r_min 0.348, 9.5e-3
+       90    orto     held above r*, 14 minima, 3.0e-2  held above r*, 25 minima, 2.1e-2
+
+     Which pairs the barrier holds above r* is identical (para 0 and 30 deg,
+     ortho 90 deg), with the same minimum radii to three digits.  The switch
+     lowers the energy errors by up to thirty times and changes only what
+     happens BELOW r*: ortho that fell through reaches contact instead of
+     oscillating in the core.
+
+67c. DECISION STANDS.  The default stays retarded and the switch stays an
+     option: at the default floor it does not change any result the model
+     declares valid, and below r* neither variant is a claim.  It remains
+     useful for probes below the floor, where 67a shows the retarded
+     exchange is still tens of k/r0.
