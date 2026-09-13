@@ -4306,3 +4306,38 @@ measurement of whether that survives a cascade.
      carry the rest), so the effect on lifetimes is below 1e-7.  The defect
      stays recorded for anyone who uses the far-zone flux below ~5 r* or at
      relativistic speeds, where 63c shows it is large.
+
+69. PLAN STEP 4: A LAGRANGIAN TREATMENT OF THE LAB-MOMENT VELOCITY DEPENDENCE?
+
+    63a found that the lab moments (lorentzBoostDipole of the proper moments
+    with the particle velocity: transverse part x gamma, plus p = gamma v x
+    m/c^2) changed the dipole energy by hundreds of k/r0 per deep passage
+    with precession off, which the instantaneous dipole force at fixed lab
+    moments does not account for.  Two reformulations were on the table: a
+    potential built on PROPER moments, or the full Lagrangian with the
+    hidden-momentum force -d/dt(dU/dv) and energy KE + U - v.dU/dv.  Re-
+    measured after the unification of 65-66, instantaneous dipole sector
+    (N = 4), splitting the moment part of dU into the velocity dependence at
+    fixed proper moments and the precession of the proper moments.
+
+69a. PROBE FLOOR 0.25 r*, tilt 30 para, one period, 1-4 floors [k/r0]:
+                         W_dd   -dU_lab  -dU_proper  velocity  precession
+       precession on    +34.9   +34.5     +34.5      -3.9      +8.6
+       precession off   +36.2   +33.3     +33.4      -2.0       0
+     The velocity dependence is now 2-4 k/r0 (63a: +-230-320, before the
+     regularizations were made consistent).  An energy on proper moments is
+     no better conserved than one on lab moments (residuals 0.43 vs 0.36 with
+     precession, 2.8 vs 2.9 without).
+
+69b. DEFAULT FLOOR, three periods, all bins [k/r0]:
+       tilt   velocity part     |W_dd - (-dU_lab)|
+       0      <= 6.4e-5              <= 7e-6
+       30     <= 1.4e-4              <= 1.2e-3
+       90     <= 2.2e-4              <= 1.9e-4
+
+69c. DECISION: NOT IMPLEMENTED.  Where the model is valid the effect is below
+     3e-4 k/r0 over three periods, and the proper-moment variant would not
+     even reduce the residual.  The Lagrangian variant could remove the
+     remaining 2-4 k/r0 per passage below r* at the probe floor, a region
+     the model declares invalid.  The motivating defect of 63a was the
+     inconsistent regularization, not the lab-moment velocity dependence.
