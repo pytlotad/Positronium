@@ -3739,3 +3739,76 @@ measurement of whether that survives a cascade.
      comes out with a mechanical energy of +180 k/r0 or more and leaves --
      the energy error of 55f/56f, now no longer hidden by a numerical
      failure.  (3) The radiation-sector stencils of 57c.
+
+58. WHERE THE MECHANICAL-ENERGY ERROR OF THE DEEP PASSAGE COMES FROM
+
+    Sections 55f-57f left every run that goes below ~0.5 r* with a
+    mechanical-energy error of 40-400 k/r0 and asked whether it is the
+    integrator or a mismatch between softened forces and energy.  Tilted
+    para 30 deg, floor 0.25 r*, radiation reaction off, engine stepped at
+    1/512 of the local Kepler period.  Per accepted step the change of
+    E_mech is split as
+       (dKE - W)   W = trapezoid work of the forces the integrator uses
+       (dU + W)    force vs energy-function consistency
+       dU_mom      change of U from the moments alone (positions fixed)
+
+58a. NOT THE INTEGRATOR.  Summed over the passage, per r/floor bin [k/r0]:
+
+       bin      dE_mech    dKE - W    dU + W    dU_mom
+       >4        +0.69      -0.003     +0.71     -0.02
+       2-4     -306.4       -6.3     -289.1     -11.1
+       1-2     +331.8       +2.2     +378.3     -48.7
+       <1       -19.2       -0.4      -18.8     +0.06
+
+     Nearly all of it is dU + W.  (At 1/512 of the period this run did not
+     fail; it left the pair ionized at +7.3 k/r0.  The failure at 0.53 r* is
+     a consequence of the state this produces.)
+
+58b. THE SECTOR: THE GRADIENT FORCE AGAINST THE DIPOLE ENERGY TERM.
+       bin     W_gradient   -dU_dip   static-force work   W_LW   -dU_Coulomb
+       >4        +5.49       +4.85        +4.84           +1.95   +1.91
+       2-4     -263.4       +27.8        +15.6            +0.85   +0.66
+       1-2     +301.5       -30.3        -84.2            -5.71   +0.01
+     Far out the gradient force matches the energy (ratio 1.22, cos 0.995
+     at 3.5 floors).  In 1-4 floors its work is ten times larger and of the
+     opposite sign.  The Lienard-Wiechert channel stays consistent.
+
+58c. THE MECHANISM: RETARDED CONFIGURATION, ROTATING FAST.  Channel split of
+     the gradient force along the passage, radial components.  The
+     regularized low-velocity dipole channel (the whole field below ~1.5
+     floors, where the blend weight is ~0) equals the STATIC force of the
+     partner placed at its retarded position with its retarded moment:
+
+       r/fl  beta  sep. angle  moment angle  retarded-static  reg. channel  instantaneous static
+       2.47  0.36    0.236        0.035         -0.090          -0.094          -0.158
+       1.22  0.57    0.407        0.064         -0.579          -0.614          +0.912
+       1.03  0.68    0.555        0.090         +1.389          +1.063          +1.734
+       1.51  0.71    0.350        0.230         +1.704          +1.097          -2.740
+       2.62  0.57    0.140        0.076         -1.768          (exact) -1.83   -0.012
+
+     The separation direction turns by up to 0.56 rad during r/c, and the
+     force follows that retarded configuration while E_mech is instantaneous.
+     The exact moving-dipole field above 2 floors does the same: the partner's
+     acceleration there (1e29-1e30 m/s^2) changes its velocity by 0.1-0.7 c
+     within r/c, so no extrapolation to the present position applies.
+
+58d. THE SOFTENING IS CONSISTENT ONLY TO ORDER OF MAGNITUDE.  Same run with
+     the instantaneous force model (useRetardedExternalForces = false):
+       bin      dE_mech   dKE - W   dU + W   dU_mom
+       2-4       +3.12    +0.017    +2.61    +0.50
+       1-2       -8.43    -0.28    -15.24    +7.09
+     and it fails at 0.40 r*.  Twenty times smaller than the retarded
+     mismatch, but not zero: the instantaneous dipole forces and the moment
+     dynamics also leak ~10 k/r0 through the softened zone.
+
+58e. WHAT FOLLOWS.  The energy error is not a numerical defect that a
+     tolerance or a stencil can remove.  It is produced by retarded dipole
+     fields at beta 0.5-0.8 and r ~ 1-4 floors, set against an instantaneous
+     mechanical energy, with a smaller, separate inconsistency in the
+     instantaneous softened model.  Whether the retarded exchange is physical
+     field-energy exchange cannot be told from this model: boundFieldEnergy
+     closes the balance by construction.  Its size (hundreds of k/r0 swinging
+     within one passage, against a dipole interaction energy of ~30 k/r0 at
+     those radii) is far above any plausible stored field energy.  Removing
+     it requires a choice about the physics in the short-range zone, not a
+     numerical fix.
