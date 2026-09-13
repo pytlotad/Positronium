@@ -3103,3 +3103,71 @@ measurement of whether that survives a cascade.
      Bohr radius where pumping and radiation are comparable, and a strongly
      pumping interior.  Whether the comparable region contains a genuine
      stationary point is exactly what 1.66 sigma cannot say.
+
+51. IS MAGNETIC DIPOLE REPULSION THE REASON TO SIT AT a_pair?
+
+    Proposed as the replacement for L = hbar: the pair is held not by a
+    quantized angular momentum but by the repulsion between its magnetic
+    moments.  The shape is right -- a repulsive r^-3 term outgrows the r^-1
+    Coulomb attraction at short range, so the two MUST produce a minimum
+    with L = 0 and no quantization.  The question is where.
+
+51a. WHERE THE MINIMUM IS, EXACTLY.  For point dipoles aligned and
+     perpendicular to the separation, U = +C/r^3 with C = (mu0/4pi) mu^2, and
+     V(r) = -k/r + C/r^3 has dV/dr = 0 at r_min = sqrt(3C/k).  The ratio C/k
+     is an identity:
+
+       C/k = (mu/(e c))^2 = r*^2        measured ratio 1.000000000000
+
+     so the minimum is
+
+       r_min = sqrt(3) r* = 3.348e-13 m = 0.867 lambda_C = a_pair / 316.1
+       depth  V(r_min) = -(2/3) k/r_min = -2.867 keV   (Bohr n=1: -6.80 eV)
+
+     The mechanism is real, exact and needs no L = hbar -- and it puts the
+     pair at the Compton scale, 316 times inside the Bohr radius, bound 420
+     times more deeply.  At a_pair itself the ideal force ratio is 1.0e-5.
+
+51b. WHY IT CANNOT LAND ANYWHERE ELSE.  C/k = r*^2 contains mu, e and c and
+     nothing else, so any balance of dipole repulsion against Coulomb sits
+     at r* times a pure number.  a_pair = 2 lambda_C/alpha is r* times
+     4/(alpha g/2): one power of alpha away, the same gap as sections 30-31.
+     This is the sixth independent route to the Compton scale.
+
+51c. THE MODEL'S OWN FORCE AGREES, AND ADDS TWO OBSTACLES.  Full covariant
+     dipole force against Coulomb, circular orbit, moments along the orbit
+     normal (tools/para_ortho_dipole_force):
+
+       R/a_pair   para F_radial   para |F_d/F_C|   ortho F_radial   ortho |F_d/F_C|
+       1          attractive        1.66e-05        attractive        3.67e-05
+       0.2        attractive        4.78e-05        attractive        5.48e-04
+       0.05       REPULSIVE         1.62e-03        attractive        6.39e-03
+       0.005      REPULSIVE         3.26e-01        attractive        4.76e-01
+       0.00183    REPULSIVE         5.23e-01        attractive        5.28e-01
+
+     (1) At the Bohr radius the para dipole force is not repulsive at all;
+     it turns repulsive only between 0.2 and 0.05 a_pair.
+     (2) Ortho is ATTRACTIVE at every radius.  Anti-aligned moments have no
+     barrier and no minimum, so the mechanism could hold at most one of the
+     two channels and cannot be what sets a common scale.
+
+     Against the ideal-dipole ratio 3 r*^2/r^2 the model tracks well down to
+     0.005 a_pair (0.33 against 0.40) and then falls short at the barrier
+     (0.52 against 2.99), so inside the model the balance point is not
+     reached above r*.  Which correction does that was not isolated; the
+     short-range regulator is not it, since at 193 fm against its 83.6 fm
+     radius and exponent 12 it is within a part in 10^4 of unity.
+
+51d. AND THE ORIENTATION AVERAGE REMOVES IT ENTIRELY.  U is repulsive only
+     for moments perpendicular to the separation; along it, U = -2C/r^3 and
+     attracts.  Its average over directions is exactly zero -- the identity
+     already locked as dipole-tensor-s-state-average (section 48).  So for
+     any state not pinned to one orientation the repulsion supplies no
+     radial barrier at all.
+
+51e. VERDICT.  The dipole repulsion is a genuine stationarity mechanism that
+     replaces L = hbar, and it is worth recording as such.  It does not
+     explain a_pair: it balances Coulomb at sqrt(3) mu/(e c), the Compton
+     scale; at a_pair it is 1e-5 of Coulomb and of the wrong sign; it
+     attracts in the ortho channel; and it averages to zero over
+     orientations.
