@@ -4269,3 +4269,40 @@ measurement of whether that survives a cascade.
      declares valid, and below r* neither variant is a claim.  It remains
      useful for probes below the floor, where 67a shows the retarded
      exchange is still tens of k/r0.
+
+68. PLAN STEP 3: THE FAR-ZONE DIPOLE FLUX ON PRODUCTION ORBITS
+
+    63c found the far-zone flux of the dipole sector 49-920x above
+    mu0|m''|^2/6 pi c^3 plus the induced p = v x m/c^2 on deep states.  The
+    plan was to fix it only if it reaches production observables.
+
+68a. IT DOES REACH THEM, IN PRINCIPLE.  integrateElectrodynamicStep books
+     orbitalRadiatedEnergy = (whole far-zone flux) - (analytic M1 flux), and
+     estimateCremCollapse adds it to radiatedEnergyTotal and to the energy
+     loss per orbit.  The far-zone dipole sector and its interference with
+     the charge sector therefore enter the continuous radiation channel.
+
+68b. SIZE ON PRODUCTION ORBITS.  Unified model, default floor, circular
+     para orbits with moments along the orbit normal, after half a period of
+     history, far-zone sphere 1e6 a0 [W]:
+
+       r/r*    beta    charges   pair Larmor   dipoles    M1 + induced   cross term
+       548     0.0036  1.16e-8    1.16e-8      3.5e-22     1.0e-26      -1.0e-17
+       50.2    0.0120  1.65e-4    1.65e-4      6.9e-14     2.4e-16      -2.0e-10
+       10.9    0.0250  6.90e-2    6.89e-2      1.1e-8      7.7e-10      -7.3e-6
+       6.61    0.0294  0.450      0.446        3.7e-7      5.6e-8       -1.5e-4
+
+     The dipole sector is 3e-14 to 8e-7 of the charge sector (still 7-35000x
+     its expected size).  The cross term is larger, -1e-9 to -3.4e-4 of the
+     charge sector, and does not change with the quadrature (50 and 194
+     directions agree to 0.4%), so it is not integration error; by parity
+     E1-M1 interference should integrate to zero, so it is a construction
+     defect, but a small one.  The charge sector matches the pair's Larmor
+     power to 0.1% at 10.9 r* and 0.8% at 6.6 r*.
+
+68c. DECISION: NOT FIXED.  At the terminal radii the continuous channel is
+     contaminated by at most 3.4e-4 of itself, and estimateCremCollapse
+     measures that channel at 0.002-0.018% of the radiated energy (photons
+     carry the rest), so the effect on lifetimes is below 1e-7.  The defect
+     stays recorded for anyone who uses the far-zone flux below ~5 r* or at
+     relativistic speeds, where 63c shows it is large.
