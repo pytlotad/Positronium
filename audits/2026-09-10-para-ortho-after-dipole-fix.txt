@@ -3650,3 +3650,92 @@ measurement of whether that survives a cascade.
      40-400 k/r0 builds up first; where, and whether it is the integrator or
      the mismatch between softened forces and the unsoftened mechanical
      energy below the floor, is the next question, not yet measured.
+
+57. THE "ZERO-VELOCITY DEGENERACY" OF 53g: MISDIAGNOSED, AND FIXED
+
+    53g recorded that para released radially (L = 0) fails at t = 0 and a
+    near-radial para (v_t = 0.02) fails at its turning point, and blamed the
+    two-charge dipole field: at zero relative velocity the pole-cancellation
+    detector fires on every probe and every retreat is rejected.
+    Reproduced after section 56: failure at t = 3.76e-24 s, dt = 2.35e-25
+    s, metric 1.25e-5; 132672 retreats, all rejected.
+
+57a. THE DETECTOR IS A FALSE ALARM, NOT THE FAILURE.  The ratio is exactly
+     2/fraction (2e5 at 1e-5, 2e7 at 1e-7).  That is what the construction
+     gives at zero source velocity: the detector compares the poles' dual
+     magnetic fields, whose centre-velocity part cancels between opposite
+     poles and whose moment-derivative part adds, so the sum is twice one
+     pole by construction, not a cancellation failure.  Every force
+     component on a 400-point grid across the failing step is smooth (max
+     second difference at most 5.6x its median).
+
+57b. THE CAUSE: THE DERIVATIVE STENCIL FOLLOWED THE INTEGRATION PATH.
+     Step-doubling error on the captured state, per halving of dt:
+       all forces           velocity error falls 4x (local error dt^2)
+       dipole forces off    falls 8x (dt^3, as kick-drift-kick should)
+     Velocity dependence of the forces predicts 1.7e-7 m/s of the measured
+     5.0e-2, and switching the gradient force's material term off changed
+     nothing.  The coarse step and the two half steps differ in one more
+     thing: the half-step path stores a midpoint.  The same end state
+     evaluated with both histories:
+
+       dt/dt_fail     gradient force   dipole field   Lienard-Wiechert
+       4                 2.2e-2           3.93             0
+       1                 1.7e-3           0.38             0
+       1/32              5.7e-5           8.4e-3           0
+
+     Linear in dt, and zero where no stencil is used.  Four retarded
+     kinematics took their derivative step as twice the gap between the
+     last two stored nodes.  appendStateHistory() overwrites the leading
+     node until a full spacing has passed, so that gap is the time since the
+     last genuine node, and it differs between the two paths by the step.
+
+57c. FIX.  historicalDipoleKinematics, historicalElectricDipoleKinematics and
+     historicalIntegratedDipoleKinematics now difference over twice the
+     MEAN GENUINE spacing, (t[n-2] - t[0])/(n-2), which the leading-node
+     overwrite does not touch.  The two histories now give identical forces
+     (difference exactly 0 at every dt), and the step error at dt_fail fell
+     from 1.25e-5 to 2.2e-9.
+     Two variants were measured and rejected:
+       - a stencil from the grid formula 4 r/c / 128: it assumes physical
+         time scales, and on the validation's unit-time history it rounds to
+         nothing (coherent-magnetic-dipole power ratio 4 -> 0, 58/59);
+       - applying it also to electricQuadrupoleThirdDerivative and
+         electricDipoleDerivativeStep (radiation sector): no gain for these
+         runs, so those two keep the former rule; they have the same path
+         dependence, unmeasured.
+
+57d. CHECKS.  Validation 59/59 (boosted-tensor residual on trajectory states
+     7.0e-10 -> 2.9e-11), header isolation 37/37.  Production branch trace:
+     t = 199.442442952 ps and 3 photons unchanged, peri/barrier
+     3.89708426473 -> 3.89708460123.
+
+57e. TRAJECTORIES (floor 0.25 r*):
+
+       release                 channel  before              after
+       radial, L = 0           para     fails at t = 0      full window, 2
+                                                            bounces at 1.2669
+                                                            r*, dE_mech 6.5e-3
+       v_t = 0.02, 5 T         para     fails at 4th turn   full window, 11
+                                                            minima at 1.2675
+                                                            r*, dE_mech 1.0e-2
+       radial                  orto     fails at 0.376 r*   full window, but
+                                                            ionized: dE_mech
+                                                            312 k/r0, r = 238 r*
+       tilt 0/30/60 deg        orto     all fail            all full window,
+                                                            all ionized
+                                                            (dE_mech 13-342)
+       tilt 30/60 deg          para     fail                still fail (0.24,
+                                                            0.23 r* minima)
+
+     The radial para is held off at 1.27 r* by the dipole barrier of 52-53,
+     now with L = 0 -- the restriction "tests must keep some angular
+     momentum" of 53g is lifted.
+
+57f. OPEN.  (1) The detector still fires on every probe at low source
+     velocity (289340 rejected retreats in the radial run), which costs
+     evaluations and no longer misleads, but it should compare a channel
+     that genuinely cancels.  (2) Every ortho run that goes below the floor
+     comes out with a mechanical energy of +180 k/r0 or more and leaves --
+     the energy error of 55f/56f, now no longer hidden by a numerical
+     failure.  (3) The radiation-sector stencils of 57c.

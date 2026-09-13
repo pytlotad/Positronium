@@ -454,6 +454,41 @@ inline State historicalState(const StateHistory& history, const State& present,
 // evaluationTime is the centre of the stencil, which for retarded sources is
 // earlier than present.time; measuring the span from present.time instead
 // would still let a retarded stencil run off the front of the deque.
+// Retarded derivative stencils scale with the history's GENUINE node
+// spacing: the mean gap between its nodes, leaving out the leading one.
+//
+// The former rule, twice the gap between the last two stored nodes, is not
+// a grid property.  appendStateHistory() overwrites the leading node until a
+// full spacing has passed, so that gap is the time since the last genuine
+// node: it grows from 0 to the spacing inside every node interval, and it
+// differs between the adaptive engine's coarse step and its two half steps
+// by exactly the step.  Every retarded dipole field therefore depended on the
+// integration path, linearly in dt.  Measured on para released radially at
+// 3 r* (floor 0.25 r*), same end state evaluated with the coarse and the
+// half-step history: the gradient force differed by 1.75e-3 and the dipole
+// field by 38% at the failing step, both halving with each halving of dt,
+// while the Lienard-Wiechert force (no stencil) differed by exactly 0.  The
+// step-doubling velocity error fell only 4x per halving instead of 8x, and at
+// zero relative velocity, where it is normalized by a speed of 3.8e3 m/s,
+// the run failed at t = 3.8e-24 s at maximum depth.  With the mean genuine
+// spacing both paths see the same stencil (only a node push or pop inside a
+// step changes it, by about one part in the node count), the difference is
+// exactly 0, and that run completes its observation window.
+//
+// A stencil from the grid the history is laid down on (4 r/c / 128) was tried
+// first and rejected: it assumes physical time scales, and on a history whose
+// nodes are a second apart it rounds away to nothing.
+inline double historyDerivativeStep(const StateHistory& history,
+                                    double spacings) {
+    double spacing=0.0;
+    if(history.size()>=3)
+        spacing=(history[history.size()-2].time-history.front().time)
+            /static_cast<double>(history.size()-2);
+    else if(history.size()==2)
+        spacing=history.back().time-history.front().time;
+    return std::max(1.0e-24,spacings*spacing);
+}
+
 inline double boundedDerivativeStep(const StateHistory& history,
                              double evaluationTime,
                              double requestedStep, int stencilReach) {
@@ -520,9 +555,7 @@ inline RetardedSourceSample historicalSource(const StateHistory& history,
 inline RetardedDipoleKinematics historicalDipoleKinematics(
     const StateHistory& history, const State& present, bool sourceIsFirst,
     double time) {
-    double derivativeStep=1.0e-24;
-    if(history.size()>=2) derivativeStep=std::max(derivativeStep,
-        2.0*(history.back().time-history[history.size()-2].time));
+    double derivativeStep=historyDerivativeStep(history,2.0);
     // The widest branch below samples middle .. middle-4h.
     derivativeStep=boundedDerivativeStep(history,time,derivativeStep,4);
     if(!(derivativeStep>0.0)) {
@@ -593,9 +626,7 @@ inline RetardedDipoleKinematics historicalDipoleKinematics(
 inline RetardedElectricDipoleKinematics historicalElectricDipoleKinematics(
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double time) {
-    double derivativeStep=1.0e-24;
-    if(history.size()>=2) derivativeStep=std::max(derivativeStep,
-        2.0*(history.back().time-history[history.size()-2].time));
+    double derivativeStep=historyDerivativeStep(history,2.0);
     // The widest branch below samples middle .. middle-2h.
     derivativeStep=boundedDerivativeStep(history,time,derivativeStep,2);
     const auto sample=[&](double sampleTime) {
@@ -643,9 +674,7 @@ inline RetardedElectricDipoleKinematics historicalElectricDipoleKinematics(
 inline RetardedElectricDipoleKinematics historicalIntegratedDipoleKinematics(
     const StateHistory& history,const State& present,bool sourceIsFirst,
     double time,bool electricMoment) {
-    double derivativeStep=1.0e-24;
-    if(history.size()>=2) derivativeStep=std::max(derivativeStep,
-        2.0*(history.back().time-history[history.size()-2].time));
+    double derivativeStep=historyDerivativeStep(history,2.0);
     derivativeStep=boundedDerivativeStep(history,time,derivativeStep,2);
     const auto sample=[&](double sampleTime) {
         const State state=historicalState(history,present,sampleTime);
