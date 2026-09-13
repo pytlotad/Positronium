@@ -3460,3 +3460,111 @@ measurement of whether that survives a cascade.
      channel-specific protection from contact follows.  The long dynamic
      test that would show what a precessing pair actually does is blocked
      by the documented dt^1 accuracy defect at the bottom of the orbit.
+
+55. THE ACCURACY DEFECT AT THE BOTTOM OF THE ORBIT: TWO NODE CROSSINGS
+
+    Section 54 was blocked by the documented defect: near the barrier the
+    step-doubling error stops shrinking with the step, so CREM_MAX_DEPTH is
+    a treadmill.  Reproduced on the tilted para case (floor 0.25 r*, tilt 30
+    deg, NumericalFailure at 1.1189 r*) by copying the engine one outer step
+    before the failure and sweeping the evaluation time across the failing
+    step.  Both causes below are the same fact about the history:
+    interpolatedCharge() is a cubic Hermite through position and velocity,
+    so it is C1 -- the source acceleration JUMPS at every stored node.  On
+    this orbit the jump is 1-6% of |a| at all 119 nodes, and the stored node
+    accelerations sit halfway between the left and right limits (checked
+    against a second-order finite difference of the stored velocities: the
+    residual matches the truncation estimate at every node).  Any force whose
+    retarded time crosses a node therefore steps, and step doubling sees a
+    step as an error of order dt^0-dt^1.
+
+55a. CAUSE 1: THE TWO POLES OF THE POINT DIPOLE.  The near-field dipole is
+     built as the limit of two charges 1e-5 r apart with charge ~1/separation.
+     Each pole solved its own retarded time, so within separation/c of a node
+     the poles read accelerations from different segments and the jump was
+     multiplied by the pole charge: the retarded time landed 5.9e-30 s from
+     node 106 (jump 0.35%) and the dipole field was wrong by up to a factor 9
+     in a window whose width scaled with the pole separation.  FIX: both poles
+     are expanded from ONE segment -- the one holding the central retarded
+     time -- as (x, v, a, j) Taylor series, which reproduce the cubic exactly
+     inside it and continue it smoothly past its ends
+     (historicalChargeWithJerk).  Bad windows at pole separations 1e-5, 1e-6,
+     1e-7: 0; the dipole-field jump fell 3500x (6.3e-1 -> 1.8e-4).  The
+     far-zone two-charge construction is NOT changed: its poles' emission
+     times differ by ~r/c, so they legitimately sit on different segments.
+     The trajectory still failed at the same place.
+
+55b. CAUSE 2: THE SIX PROBES OF THE GRADIENT FORCE.
+     covariantDipoleGradientForce takes U = mu.B + p.E at target +- 1e-4 r
+     along each axis.  Its spatial part jumped 3.68e-2 -> 2.21e-2 between
+     tau = 6.75e-26 and 6.76e-26 s, while the material term (9.11e-3) and
+     DU/Dt stayed smooth.  Probe by probe, at those two times:
+
+       probe    U change      its retarded time to the nearest node
+       x+       7.0e-19       1.6e-30 s -> 1.2e-28 s (crosses)
+       others   ~2e-22        1.6e-26 .. 1.2e-25 s
+
+     Both channels of x+ step together (Lienard-Wiechert 5.9115 -> 5.9137
+     e-17, dipole 1.349815 -> 1.350488 e-15); no pole-cancellation retreat
+     fired (ratios 1.63-1.65).  FIX: RetardedSegmentPin.  While the six probes
+     are evaluated, every charge read of the source within the segment of the
+     unshifted target's retarded time, widened by 8 gradientStep/c, uses that
+     segment continued past its ends; historicalCharge and
+     historicalChargeWithJerk honour the pin, and nothing else sets it.  The
+     widening is ~1e-3 of the node spacing, and the pin declines when it
+     would exceed a quarter of the segment.
+
+55c. REJECTED: A C2 HISTORY.  Quintic Hermite on position, velocity and the
+     stored acceleration removes every node jump at once, and the probe
+     table became smooth.  Measured and rejected:
+
+                                        cubic + pin      quintic
+       validation                         59/59           57/59
+       trajectory tol 1e-5/6/7        5.55e-6/1.38e-6/  5.55e-6/1.57e-6/
+                                          3.89e-7          3.26e-6
+       long-horizon balance dE/Efar       0.0594           0.1736
+       tilted runs (r_min, 0/30/60 deg)   same within a few % of r*
+
+     Adding the radiation-reaction kick to the stored acceleration (it
+     enters the momentum but not the stored value) changed nothing (0.17363
+     -> 0.17365), so that is not the reason; the cause of the regression was
+     not found.
+
+55d. CHECKS.  Validation 59/59, header isolation 37/37.  Production branch
+     trace (seed 42, index 2, para): t = 199.442442952 ps and 3 photons
+     unchanged; peri/barrier 3.89708318338 -> 3.89708426473, a
+     9.55072339889e-13 -> 9.55072331763e-13 m, L 0.0949953986509 ->
+     0.0949953983332 hbar.
+
+55e. WHAT THE TRAJECTORIES DO NOW (floor 0.25 r*):
+
+       tilt  channel  before (r_min, outcome)      after
+       0     para     1.3244 r*, held (obs. limit)   1.3244 r*, held
+       0     orto     0.6378 r*, failure             0.2986 r*, one bounce to
+                                                     0.85 r*, failure
+       30    para     1.1189 r*, failure             0.2416 r*, failure
+       30    orto     0.7059 r*, failure             0.3182 r*, one bounce to
+                                                     1.08 r*, failure
+       60    para     1.2073 r*, failure             0.2310 r*, one bounce,
+                                                     failure
+       60    orto     0.8938 r*, failure             0.6643 r*, failure
+
+     The failures at 1.1-1.2 r* are gone: every tilted pair now passes
+     through the barrier.  None of them is held.  Para at 30 deg -- the case
+     the stationary point of 54 predicts to be held -- goes straight to the
+     floor.
+
+55f. WHAT IS STILL OPEN.  The integrator still fails, now at or below the
+     floor, and every failing run has a mechanical-energy error of 40-400
+     k/r0 by then.  Live order diagnostic at the new para 30 deg failure
+     (r = 0.353 r*, dt = 7.95e-27 s, metric 1.6e-5 against 1e-5): the error
+     halves per halving for four levels, then falls 29x, 1.5x, 11870x, and
+     only then settles at 4x.  A third discontinuity therefore sits inside
+     the failing step.  Not located.  The candidates follow from 55: every
+     retarded read whose time crosses a node steps, and the charge-charge
+     Lienard-Wiechert force at the particle itself is one such read that no
+     pin covers; its radiation term grows with |a| and so matters most at
+     the floor.  That is a hypothesis, not a measurement.  Whether the energy
+     error is the integrator's or the mismatch between the softened force and
+     the unsoftened mechanical energy below the floor was not examined
+     either.

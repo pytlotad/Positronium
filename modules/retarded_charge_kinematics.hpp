@@ -85,14 +85,18 @@ inline Vec3 lerp(const Vec3& first,const Vec3& second,double fraction) {
 }
 #endif
 
-inline ChargeKinematics interpolatedCharge(const State& older, const State& newer, bool first, double time) {
+// clampToSegment=false continues the segment's cubic past its ends instead of
+// freezing it there; see RetardedSegmentPin below for the one use.
+inline ChargeKinematics interpolatedCharge(const State& older, const State& newer,
+    bool first, double time, bool clampToSegment=true) {
     const double span = newer.time - older.time;
     if(!(span>0.0)) {
         return {first?newer.firstPosition:newer.secondPosition,
                 first?newer.firstVelocity:newer.secondVelocity,
                 first?newer.firstAcceleration:newer.secondAcceleration};
     }
-    const double fraction=std::clamp((time-older.time)/span,0.0,1.0);
+    const double rawFraction=(time-older.time)/span;
+    const double fraction=clampToSegment?std::clamp(rawFraction,0.0,1.0):rawFraction;
     const Vec3 oldPosition = first ? older.firstPosition : older.secondPosition;
     const Vec3 newPosition = first ? newer.firstPosition : newer.secondPosition;
     const Vec3 oldVelocity = first ? older.firstVelocity : older.secondVelocity;
@@ -138,6 +142,60 @@ inline ChargeKinematics linearlyInterpolatedCharge(const State& older,
 }
 #endif
 
+// One history segment, pinned for a group of retarded reads that must see the
+// SAME polynomial.
+//
+// interpolatedCharge() is C1: velocity is continuous at a history node, the
+// cubic's acceleration is not.  On a tilted para orbit at 1.1 r* (floor
+// 0.25 r*) the jump was 1-6% of |a| at every one of 119 nodes, and the
+// stored node accelerations sat halfway between the left and right limits.
+// The Lienard-Wiechert and dipole radiation fields follow that acceleration.
+// covariantDipoleGradientForce differences six probes 1e-4 r apart; when ONE
+// probe's retarded time crossed a node, its coupling stepped by 5e-4 while the
+// other five moved by 1e-7, the central difference jumped by 33%
+// (3.68e-2 -> 2.21e-2) within 1e-28 s, and the adaptive integrator failed on
+// it at every depth.  The gradient of a field is only meaningful on one
+// smooth worldline, so while a pin is set every read of that source's
+// charge inside [lower, upper] comes from the pinned segment, continued past
+// its ends (the window extends by a few probe offsets over light speed,
+// far below the node spacing).
+//
+// Making the whole history C2 instead (quintic Hermite on the stored
+// accelerations) was measured and rejected: it removed the jump but moved
+// trajectory-convergence (tol 1e-7 residual 3.9e-7 -> 3.3e-6) and the
+// long-horizon radiative balance (0.059 -> 0.174) out of their bands, and
+// the tilted trajectories came out no better than with this pin.  Adding
+// the radiation-reaction kick to the stored acceleration changed neither
+// (0.17363 -> 0.17365), so that is not why; the cause was not found.
+struct RetardedSegmentPin {
+    const StateHistory* history=nullptr;
+    bool first=false;
+    std::size_t newerIndex=0;   // == history->size(): the segment ends at present
+    double lower=0.0, upper=0.0;
+};
+inline thread_local RetardedSegmentPin gRetardedSegmentPin;
+
+struct RetardedSegmentPinGuard {
+    RetardedSegmentPin saved;
+    explicit RetardedSegmentPinGuard(const RetardedSegmentPin& pin)
+        : saved(gRetardedSegmentPin) { gRetardedSegmentPin=pin; }
+    ~RetardedSegmentPinGuard() { gRetardedSegmentPin=saved; }
+    RetardedSegmentPinGuard(const RetardedSegmentPinGuard&)=delete;
+    RetardedSegmentPinGuard& operator=(const RetardedSegmentPinGuard&)=delete;
+};
+
+// The pinned segment's end points when `time` falls inside an active pin for
+// this history and source.
+inline bool pinnedSegmentEnds(const StateHistory& history,const State& present,
+    bool first,double time,const State*& older,const State*& newer) {
+    const RetardedSegmentPin& pin=gRetardedSegmentPin;
+    if(pin.history!=&history||pin.first!=first
+       ||!(time>=pin.lower&&time<=pin.upper)) return false;
+    older=&history[pin.newerIndex-1];
+    newer=pin.newerIndex<history.size()?&history[pin.newerIndex]:&present;
+    return true;
+}
+
 inline ChargeKinematics historicalCharge(const StateHistory& history,
                                    const State& present, bool first,
                                    double time) {
@@ -152,6 +210,12 @@ inline ChargeKinematics historicalCharge(const StateHistory& history,
             gCausalityAudit.futureSamples.fetch_add(1,std::memory_order_relaxed);
             recordWorst(gCausalityAudit.worstFutureSeconds,ahead);
         }
+    }
+    {
+        const State* older=nullptr;
+        const State* newer=nullptr;
+        if(pinnedSegmentEnds(history,present,first,time,older,newer))
+            return interpolatedCharge(*older,*newer,first,time,false);
     }
     const State& earliest = history.empty() ? present : history.front();
     if (time <= earliest.time) {
@@ -185,6 +249,115 @@ inline ChargeKinematics historicalCharge(const StateHistory& history,
         return interpolatedCharge(*newer, *newer, first, time);
     }
     return interpolatedCharge(*std::prev(newer), *newer, first, time);
+}
+
+// Charge kinematics PLUS the third derivative, all taken from the one cubic
+// Hermite segment historicalCharge() would use at `time`.
+//
+// Why it exists.  The two-charge limit of a point dipole places two auxiliary
+// poles whose charge grows as 1/separation and which solve their retarded
+// times separately, so whenever the central retarded time sits within
+// separation/c of a node the poles read accelerations from DIFFERENT
+// segments, and the node's jump stops cancelling.  Measured on a tilted para
+// orbit at 1.1 r*: the retarded time landed 5.9e-30 s from node 106, whose
+// acceleration jumps by 0.35%; the dipole field went wrong by a factor up to 9
+// inside a window whose width scaled with the pole separation, and the
+// adaptive integrator failed on it at every depth.
+//
+// A cubic is its own third-order Taylor series, so expanding (x, v, a, j)
+// from this segment reproduces historicalCharge() EXACTLY anywhere inside the
+// segment and continues it smoothly across its ends.
+struct ChargeKinematicsWithJerk { Vec3 position, velocity, acceleration, jerk; };
+
+inline ChargeKinematicsWithJerk interpolatedChargeWithJerk(
+    const State& older,const State& newer,bool first,double time,
+    bool clampToSegment=true) {
+    const ChargeKinematics base=
+        interpolatedCharge(older,newer,first,time,clampToSegment);
+    const double span=newer.time-older.time;
+    if(!(span>0.0)) return {base.position,base.velocity,base.acceleration,{}};
+    const Vec3 oldPosition=first?older.firstPosition:older.secondPosition;
+    const Vec3 newPosition=first?newer.firstPosition:newer.secondPosition;
+    const Vec3 oldVelocity=first?older.firstVelocity:older.secondVelocity;
+    const Vec3 newVelocity=first?newer.firstVelocity:newer.secondVelocity;
+    // Third derivatives of the Hermite basis in the fraction s:
+    // h00'''=12, h10'''=6, h01'''=-12, h11'''=6; d/dt = (1/span) d/ds.
+    const Vec3 jerk=(oldPosition*12.0+oldVelocity*(6.0*span)
+        -newPosition*12.0+newVelocity*(6.0*span))/(span*span*span);
+    return {base.position,base.velocity,base.acceleration,jerk};
+}
+
+// Same segment selection as historicalCharge(), branch for branch, pin
+// included; the extrapolation and zero-span branches have no cubic and
+// report zero jerk.
+inline ChargeKinematicsWithJerk historicalChargeWithJerk(
+    const StateHistory& history,const State& present,bool first,double time) {
+    {
+        const State* older=nullptr;
+        const State* newer=nullptr;
+        if(pinnedSegmentEnds(history,present,first,time,older,newer))
+            return interpolatedChargeWithJerk(*older,*newer,first,time,false);
+    }
+    const State& earliest=history.empty()?present:history.front();
+    if(time<=earliest.time) {
+        const ChargeKinematics base=historicalCharge(history,present,first,time);
+        return {base.position,base.velocity,base.acceleration,{}};
+    }
+    const auto newer=std::lower_bound(history.begin(),history.end(),time,
+        [](const State& sample,double requested) {
+            return sample.time<requested;
+        });
+    if(newer==history.end()) {
+        const State& latest=history.back();
+        if(present.time>latest.time)
+            return interpolatedChargeWithJerk(latest,present,first,time);
+        return interpolatedChargeWithJerk(latest,latest,first,time);
+    }
+    if(newer==history.begin())
+        return interpolatedChargeWithJerk(*newer,*newer,first,time);
+    return interpolatedChargeWithJerk(*std::prev(newer),*newer,first,time);
+}
+
+// Pin for a group of reads centred on the retarded time of `observation`.
+// Returns an inactive pin (history=nullptr) when that retarded time has no
+// two-node segment or the window would reach beyond a quarter of it.
+inline RetardedSegmentPin retardedSegmentPinAt(const StateHistory& history,
+    const State& present,bool sourceIsFirst,const Vec3& observation,
+    double observationTime,double halfWidth) {
+    RetardedSegmentPin pin;
+    if(history.empty()) return pin;
+    double retardedTime=observationTime
+        -(observation-historicalCharge(history,present,sourceIsFirst,
+                                       observationTime).position).norm()/c;
+    for(int iteration=0;iteration<32;++iteration) {
+        const ChargeKinematics source=
+            historicalCharge(history,present,sourceIsFirst,retardedTime);
+        const Vec3 sight=observation-source.position;
+        const double distance=sight.norm();
+        const Vec3 direction=distance>0.0?sight/distance:Vec3{};
+        const double residual=retardedTime+distance/c-observationTime;
+        retardedTime-=residual/std::max(1.0e-8,
+            1.0-dot(direction,source.velocity/c));
+        if(std::abs(residual)<=1.0e-15*std::abs(observationTime)) break;
+    }
+    if(!(retardedTime>history.front().time)) return pin;
+    const auto newer=std::lower_bound(history.begin(),history.end(),
+        retardedTime,[](const State& sample,double requested) {
+            return sample.time<requested;
+        });
+    const std::size_t newerIndex=
+        static_cast<std::size_t>(newer-history.begin());
+    const State& olderState=history[newerIndex-1];
+    const double newerTime=newerIndex<history.size()
+        ?history[newerIndex].time:present.time;
+    if(newerIndex==history.size()&&!(present.time>olderState.time)) return pin;
+    if(!(halfWidth<0.25*(newerTime-olderState.time))) return pin;
+    pin.history=&history;
+    pin.first=sourceIsFirst;
+    pin.newerIndex=newerIndex;
+    pin.lower=olderState.time-halfWidth;
+    pin.upper=newerTime+halfWidth;
+    return pin;
 }
 
 // Mutual, retarded Lienard-Wiechert field of a moving point charge.

@@ -1941,16 +1941,34 @@ inline ElectromagneticField twoChargeLimitDipoleField(
                          trace.momentScale=momentScale; }
     if(!(poleCharge>0.0)||!std::isfinite(poleCharge)) {
         trace.earlyReturn=true; return {}; }
+    // Both poles read the CHARGE from one cubic segment -- the one holding the
+    // central retarded time -- and expand it by their own small time offset
+    // (at most separation/c).  Reading it at each pole's own time instead
+    // let the two poles straddle a history node, where the C1 Hermite history
+    // makes the acceleration jump, and that jump is multiplied by a pole
+    // charge growing as 1/separation: see historicalChargeWithJerk.  Inside
+    // the segment this is identical to the old per-pole read, because the
+    // cubic is its own third-order Taylor series.  The moment derivatives are
+    // still sampled at each pole's own time; they were measured continuous
+    // through the same node.
+    const ChargeKinematicsWithJerk centralCharge=historicalChargeWithJerk(
+        history,present,sourceIsFirst,centralRetardedTime);
     const auto poleKinematics=[&](double sign,double time,
             Vec3& position,Vec3& velocity,Vec3& acceleration) {
-        const ChargeKinematics charge=
-            historicalCharge(history,present,sourceIsFirst,time);
+        const double offset=time-centralRetardedTime;
+        const Vec3 jerkStep=centralCharge.jerk*offset;
+        position=centralCharge.position+centralCharge.velocity*offset
+            +centralCharge.acceleration*(0.5*offset*offset)
+            +jerkStep*(offset*offset/6.0);
+        velocity=centralCharge.velocity+centralCharge.acceleration*offset
+            +jerkStep*(0.5*offset);
+        acceleration=centralCharge.acceleration+jerkStep;
         Vec3 moment,first,second;
         momentAt(time,moment,first,second);
         const double inversePole=sign/(2.0*poleCharge);
-        position=charge.position+moment*inversePole;
-        velocity=charge.velocity+first*inversePole;
-        acceleration=charge.acceleration+second*inversePole;
+        position+=moment*inversePole;
+        velocity+=first*inversePole;
+        acceleration+=second*inversePole;
     };
     bool polesValid=true;
     const auto poleField=[&](double sign) -> ElectromagneticField {
@@ -2940,6 +2958,14 @@ inline Vec3 covariantDipoleGradientForce(const State& state,
         return dot(labMagneticDipole,field.magnetic)
               +dot(labElectricDipole,field.electric);
     };
+    // All six probes read the source on ONE history segment -- the one that
+    // holds the retarded time of the unshifted target -- continued across its
+    // ends; see RetardedSegmentPin.  Probe retarded times lie within
+    // gradientStep/(c(1-beta)) of the central one, so eight step lengths over
+    // c cover them for any speed this integrator reaches.
+    const RetardedSegmentPinGuard probeSegment(retardedSegmentPinAt(
+        history,state,!targetIsFirst,targetPosition,state.time,
+        8.0*gradientStep/c));
     Vec3 gradient;
     double probePlus[3]={},probeMinus[3]={};
     double channelPlusMagnetic[3]={},channelPlusElectric[3]={};
