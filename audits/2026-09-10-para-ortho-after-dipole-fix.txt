@@ -3171,3 +3171,99 @@ measurement of whether that survives a cascade.
      scale; at a_pair it is 1e-5 of Coulomb and of the wrong sign; it
      attracts in the ortho channel; and it averages to zero over
      orientations.
+
+52. THE 0.52-AGAINST-2.99 DISCREPANCY AT THE BARRIER, RESOLVED -- AND IT
+    CORRECTS SECTION 51
+
+    Section 51c left open why the model's dipole force at the barrier is
+    0.52 of Coulomb against 2.99 for ideal dipoles.  The suspicion raised
+    was that not all magnetic fields are included.  They are; the gap is
+    three other things, and one of them hides a real result.
+
+52a. NOTHING IS MISSING.  The force on the target is grad(mu_lab.B +
+     p_lab.E), with the partner's field = Lienard-Wiechert charge field
+     (E and B) + retarded magnetic dipole field (E and B).  Rebuilding it
+     from those exact fields, channel by channel, reproduces the model's
+     own force to four digits wherever no regularization acts:
+
+       r/r*   model F      sum of exact channels
+       3.0    1.841e-04    1.841e-04
+       2.5    3.901e-04    3.900e-04
+       2.2    6.596e-04    6.593e-04
+       2.0    9.751e-04    9.747e-04
+
+52b. CAUSE 1 -- MY "IDEAL" OMITTED TWO REAL CHANNELS.  The partner's CHARGE
+     field acts on the moving target twice: its magnetic field on mu, and
+     its electric field on the induced electric dipole p = gamma v x mu/c^2.
+     Both are attractive and equal to four digits (-2.252e-05 and
+     -2.252e-05 at 3 r*), together -19.7% of the dipole repulsion at 3 r*
+     and -15% at 1.6 r*.  This is genuine physics, of relative size
+     ~ beta r/r*, and it is what turns para's dipole force attractive above
+     ~0.1 a_pair.  The dipole's own electric field on p is +0.2%.
+
+52c. CAUSE 2 -- THE DIPOLE FIELD IS REGULARIZED, DIFFERENTLY BY BRANCH.
+     separationFloor() returns comptonBarrierRadius for e+e-, and
+     clampedSeparationVector replaces r by sqrt(r^2 + r*^2).
+
+       static source   Plummer-softened at EVERY radius, on every path
+                       including the one named "exact":
+                       B/B_ideal = q^3/(q^2+1)^(3/2), matched to 5e-6 at
+                       q = 0.8..8; force = q^5/(q^2+1)^(5/2), matched to
+                       2.5e-4 (0.9212 at 5.5 r*, 0.1776 at r*)
+       moving source   exact point dipole above 2 r* (0.9995 of ideal at
+                       1.75 r*), smoothstep blend towards the softened field
+                       between r* and 2 r*, softened below r*
+       charge field    exact above r* (1.00000), FROZEN at its r* value
+                       below (E at 0.8 r* equals E at r* exactly) -- a hard
+                       clamp, not the Plummer form
+
+     The code states the reason for the floor and it is NUMERICAL: a kink
+     in the force at the old hard clamp stalled the adaptive integrator's
+     step-doubling probe.  The Plummer form removed the kink.  Three fields
+     now carry three different short-range treatments.
+
+52d. CAUSE 3 -- AT AND BELOW r* EVERYTHING IS FLOORED.  The "exact" dipole
+     field itself returns 0.34 of ideal at r = r*, and the charge-field
+     channels collapse there (-1.5e-05 against -7.5e-04 at 1.1 r*).
+
+52e. THE RESULT HIDDEN BY THE REGULARIZATION.  With exact fields on the
+     model's circular orbit, the dipole repulsion net of the motional
+     attraction DOES overtake Coulomb:
+
+       r/r*    exact F / F_Coulomb
+       1.750      0.8358
+       1.700      0.8880
+       1.660      0.9334
+       1.630      0.9696
+       1.610      0.9949
+       1.600      1.0080
+       1.550      1.0771
+       1.500      1.1533
+
+     Crossing at r = 1.606 r* = 310 fm.  So classical electrodynamics with
+     point moments has a stationary point for the para geometry, needing no
+     L = hbar -- and it sits exactly inside the r*..2r* zone the model
+     regularizes, which is why the model's ratio peaks near 0.5 and never
+     reaches 1.  A numerical fix for an integrator kink erases the one
+     classical stationary point the moments produce.
+
+     Caveat on the number: the circular speed assumes Coulomb alone
+     supplies the centripetal force, which stops being true as the ratio
+     approaches 1.  The moving crossing 1.606 r* and the static ideal
+     crossing sqrt(3) r* = 1.732 r* therefore bracket the true stationary
+     radius rather than fix it.
+
+52f. CORRECTIONS TO SECTION 51.
+       51a  "minimum at sqrt(3) r*" holds for static IDEAL dipoles only; the
+            model's static branch is Plummer-softened and never reaches it
+            (peak 3q^3/(q^2+1)^(5/2) = 0.5577 at q = sqrt(3/2)); with motion
+            and exact fields the crossing is at 1.606 r*.
+       51c  "which correction does that was not isolated" -- now isolated:
+            the r*..2r* dipole regularization, plus two motional channels the
+            ideal reference left out.  "The short-range regulator is not it"
+            stands: that was the w(r) weight, 0.99996 at the barrier; the
+            responsible softening is the separation floor, a different
+            mechanism.
+       51e  The verdict on a_pair stands and is sharpened: the stationary
+            point exists classically but lies at 1.6-1.7 r*, the Compton
+            scale, 341 times inside a_pair.
