@@ -2764,7 +2764,20 @@ inline MutualForces chargeDipoleForces(const State& s, const StateHistory& histo
 inline MutualForces allExternalForces(const State& s) {
     const MutualForces positionForces = mutualForces(s);
     const MutualForces velocityForces = darwinForces(s);
-    const StateHistory localHistory{State{s}};
+    // A one-state history for the Thomas-BMT moment derivatives inside
+    // chargeDipoleForces, with the stored accelerations ZEROED.  That history
+    // extrapolates the partner back by r/c, and inside a step the stored
+    // acceleration is the previous step's value, so with it kept the force
+    // depended on the step path and the step-doubling velocity error halved
+    // per halving of dt (a local error of order dt, 3.1e-9 at a captured
+    // tilted para state at 0.40 r*).  Without chargeDipoleForces, or with the
+    // accelerations zeroed, it fell 4x per halving (3.8e-11): the
+    // extrapolation is then uniform motion, fixed by position and velocity.
+    // Neither the dipole-dipole force nor the precession mattered.
+    State localState{s};
+    localState.firstAcceleration={};
+    localState.secondAcceleration={};
+    const StateHistory localHistory{localState};
     const MutualForces mixedMagneticForces = chargeDipoleForces(s, localHistory);
     MutualForces externalField{
         lorentzForce(firstCharge, s.firstVelocity, {{}, gExternalMagneticField}),

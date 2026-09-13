@@ -3939,3 +3939,23 @@ measurement of whether that survives a cascade.
      split above puts about half of what remains in the moment dynamics.
      (2) allExternalForces' one-state history.  (3) The default stays
      retarded; the switch is off unless set.
+
+61. OPEN ITEM 60e(2): THE INSTANTANEOUS MODEL'S ONE-STATE HISTORY
+
+61a. allExternalForces gives chargeDipoleForces a one-state history.  Its
+     Thomas-BMT moment derivatives extrapolate the partner back by r/c with
+     the acceleration stored in the state, which inside a step is the
+     previous step's value.  Step-doubling order of the instantaneous model
+     (useRetardedExternalForces = false) on the captured state of 60b:
+
+       configuration                             per halving   error at dt_fail
+       as it was                                     2x           3.1e-9
+       without chargeDipoleForces                    4x           3.9e-11
+       without precession                            2x           3.1e-9
+       one-state history with zero accelerations     4x           3.8e-11
+
+     FIX: the one-state history keeps position and velocity and zeroes the
+     accelerations, so the extrapolation is uniform motion fixed by the state
+     itself.  Validation 59/59, header isolation 37/37, production branch
+     trace identical to 60c (t = 199.442511177 ps, peri/barrier
+     3.89733269045).
