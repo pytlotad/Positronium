@@ -4531,3 +4531,55 @@ measurement of whether that survives a cascade.
      are the floor -> 0 dynamics of 71a (para at 0 deg held with turning
      point 1.32 r*; para at 30 deg not held; ortho at 90 deg held but not
      converged).
+
+74. STEP 4, MEASUREMENT 1: FREE EVOLUTION UNDER THE ZPF, FIRST ROUND
+
+    Sections 42-50 measured the power ratio at fixed radii and found no
+    crossing.  This asks the direct question instead: started at different
+    radii and left alone under the zero-point field and radiation reaction,
+    do orbits drift toward one radius?
+
+74a. WHY NOT THE COLLAPSE ESTIMATOR.  estimateCremCollapse extrapolates the
+     secular energy loss as deltaEnergyPerOrbit = -orbitalRadiatedEnergy/mu:
+     the radiated flux only.  The ZPF's work never enters the secular
+     evolution, so the estimator cannot show a ZPF balance at all.  The
+     measurement has to integrate the orbit directly.
+
+74b. SETUP.  Circular orbit, moments along the normal, default model (unified
+     Plummer, floor 0.05 r*), --radiation-reaction individual (continuous
+     Landau-Lifshitz, no photons, no ladder), ZPF scale 1, band [0.3, 3] x
+     omega_orb, 64 modes.  Antithetic pairs: the same field realization with
+     every phase shifted by pi, so the pair mean cancels the drift that is
+     linear in the field.  Radius measured by the energy, a = -k/(2 E_mech),
+     because the instantaneous separation of a non-circular orbit is
+     misleading (at 0.01 a_pair with the field off it rose by 14% while the
+     energy fell).  6 seeds x 2 phases per radius.
+
+74c. RESULT.  ln(a/a0) at mid-window and end:
+
+       start       orbits  field  pairs expanding  ln a at 50%      ln a at 100%
+       0.01 a_pair   40     off         -          -0.049           -0.095
+       0.01 a_pair   40     on        5 of 5      +0.67 +- 0.17     +2.3 +- 0.8
+       0.03 a_pair  200     off         -          -0.077           -0.178
+       0.03 a_pair  200     on        5 of 6      +1.81 +- 0.80     +2.6 +- 1.0
+
+     (unbound states counted as ln a = 10; one run at 0.01 a_pair failed
+     numerically after passing through an unbound state, its pair dropped.)
+     Without the field the orbit shrinks, as it must.  With it, deep orbits
+     are driven OUTWARD fast: 7 of 12 runs at 0.01 a_pair and 2 of 12 at
+     0.03 a_pair pass through positive mechanical energy.  At 0.01 a_pair
+     the mid-window expansion is 4 sigma; 0.03 a_pair expands from the
+     start in 10 of 12 runs.
+
+74d. WHAT IT DOES NOT YET SAY.  Several 0.03 a_pair runs slow down in the
+     second half (ln a 1.35 -> 1.56, 1.26 -> 1.34), others keep rising or
+     unbind.  Whether the expansion stops near the Bohr radius -- where the
+     fixed-radius ratio was consistent with 1 (50c) -- or continues to
+     ionization cannot be read from 200 orbits.  That is the question.
+
+74e. COST.  1-8 s per orbit.  The instantaneous force model gives the same
+     drift to 1e-3 in ln a (0.2797 vs 0.2834; 0.80473 vs 0.80474; -0.00230
+     vs -0.00228 at a_pair) but is only 1.5x faster: the cost is the 64-mode
+     field sampling and the step count, not the retardation.  Near a_pair
+     radiation changes the radius by 1% in ~2.5e4 orbits, so a convergence
+     test there needs ~1e4 orbits per run: about 3 hours per run.
