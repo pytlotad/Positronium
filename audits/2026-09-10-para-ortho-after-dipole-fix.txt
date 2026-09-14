@@ -4438,3 +4438,54 @@ measurement of whether that survives a cascade.
      held para's turning point by 28%.  Dynamical statements about the
      barrier need a floor of 0.1 r* or below; the production lifetimes do
      not, because production stops well before the barrier.
+
+72. CAN THE "FREEZE AT THE BARRIER" BE REMOVED NOW?
+
+72a. WHERE IT CAME FROM.  ecf7380 (2026-08-21, "Zamroz prawa sily/energii
+     pod bariera Comptona") introduced separationFloor() =
+     comptonBarrierRadius and clampedSeparationVector (then max(r, floor))
+     for every conservative force, energy and field, so that nothing grew
+     below r*.  The reason was numerical: the CREM floor study's trajectory
+     (seed 42) failed at periapsis ~490 fm, and with the clamp it reached
+     ~28 fm.  f477866 (2026-08-22) replaced the hard clamp by Plummer
+     softening because its kink stalled the integrator, and rebuilt the
+     secular layer (regularizedPotentialEnergy = -(A/floor) atan(floor/r),
+     criticalRadius from A r^3 = L^2 (r^2 + floor^2), regularizedTurningPoints,
+     regularizedPeriod) on the force A/(r^2 + floor^2).  Sections 60 and 65-66
+     changed the dynamic model to the Plummer POTENTIAL -A/sqrt(r^2+floor^2),
+     force A r/(r^2+floor^2)^(3/2); the secular layer still uses the old law.
+
+72b. THE REASONS, RE-CHECKED.
+     - The integrator failures it was built against are gone (70: 0 of 100
+       fail with only the barrier stop).
+     - validation with CREM_SEPARATION_FLOOR_SCALE=0.05: 59/59.
+     - Dynamics above r* need floor <= 0.1 r* to converge (71a).
+
+72c. PRODUCTION at floors 0.05 and 0.01 (same 48 trajectories as 71b), all
+     ending on the retardation stop with 3 photons, no failure:
+       channel  floor 1        0.5            0.05           0.01
+       para     199.442597 ps  199.442422     200.163010     200.163012
+       ortho    199.467878     199.467903     199.468118     199.468183
+     47 of 48 agree with floor 1 to about 1e-3 ps.  One para trajectory
+     (index 1) takes 216.739 ps at 0.05 and 0.01 against 199.441 at 1 and
+     0.5; ortho index 9 moves by 0.0075 ps at 0.5 and below.  The checkpoint
+     trace of para index 1 shows why: at checkpoint 11 (t = 186.7 ps), still
+     at the n = 1 radius ~550 r*, floor 1 fires the first photon and floor
+     0.05 fires it one checkpoint later.  The softening changes the force
+     there by ~1e-6, enough to move a threshold across a checkpoint
+     boundary -- the discrete-branch sensitivity already documented for the
+     collapse time, not physics near the barrier.
+
+72d. READING.  Nothing that motivated the freeze still requires a floor at
+     r*: the integrator no longer fails, validation holds at 0.05 r*,
+     production lifetimes do not move except by branch flips triggered far
+     from the barrier, and the barrier dynamics are only correct at small
+     floors.  What still needs a floor at all is below r*: at small floors
+     the probe runs that fall through end in numerical failures with energy
+     errors of 1-115 k/r0 (71a), a region the stopping rules keep production
+     out of.  Two things would have to go with a change of default: a small
+     softening must stay (floor = 0 sends e+e- down the no-floor paths --
+     the nuclear cutoff and the old magnetic regulator -- which are exactly
+     the inconsistencies 65-66 removed), and the secular layer's atan
+     potential should be replaced by the Plummer one so that the secular
+     turning points and period describe the same force as the dynamics.
