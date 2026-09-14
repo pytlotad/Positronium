@@ -2257,6 +2257,24 @@ ryzyko; nie został niezależnie przemierzony po tej naprawie, więc jego "Zero
 `NumericalFailure`/`Unresolved`" należy traktować jako nieaktualne do czasu
 ponownego pomiaru, nie jako potwierdzenie na pełnej próbie.
 
+**Aktualizacja: domyślna podłoga separacji to dziś \(0{,}05\,r_*\), nie
+\(r_*\) (sekcje 72–73 audytu `audits/2026-09-10-para-ortho-after-dipole-fix.txt`).**
+Opisane niżej „zaciśnięcie prawa siły/energii pod barierą Comptona”
+(`ecf7380`) powstało z powodu numerycznego: integrator padał przy perycentrum
+około \(490\) fm. Te awarie już nie występują (sekcja 70), a wszystkie siły,
+pola i energie pochodzą dziś z jednego potencjału Plummera (sekcje 60, 65,
+66). Podłoga równa \(r_*\) osłabiała przy barierze siłę kulombowską do
+\(0{,}35\) i przesuwała punkt zwrotny pary o \(28\%\); przy \(0{,}05\,r_*\)
+dynamika nad \(r_*\) jest zbieżna względem podłogi (sekcja 71), walidacja
+przechodzi \(59/59\), a warstwa sekularna liczy na tym samym potencjale
+\(-A/\sqrt{r^2+\varepsilon^2}\). Czasy kolapsu w produkcji praktycznie się
+nie zmieniają (48 trajektorii: \(47\) zgodnych do \(10^{-3}\) ps; jedna
+trajektoria para zmienia gałąź przy pierwszym fotonie, jeszcze na orbicie
+\(n=1\)). Zejście do zera nie jest możliwe: e⁺e⁻ bez podłogi wróciłyby na
+niespójne ścieżki obcięcia jądrowego i dawnego regulatora magnetycznego.
+`CREM_SEPARATION_FLOOR_SCALE=1` przywraca dawną wartość domyślną; reguły
+zatrzymania nadal czytają `comptonBarrierRadius`.
+
 Ponownie przeliczone po serii ośmiu poprawek warstwy sekularnej CREM
 (`ecf7380`…`0ebc7d2`: zaciśnięcie prawa siły/energii pod barierą Comptona,
 regularyzowane periapsis/apoapsis/okres, zamknięty wzór na wykładnik momentu
