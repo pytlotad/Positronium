@@ -4387,3 +4387,54 @@ measurement of whether that survives a cascade.
      is far outside it.  Lowering the threshold would therefore change which
      stop ends a trajectory, not its collapse time, and would carry it into a
      regime the secular model does not describe.  Not changed.
+
+71. FLOOR 1 AGAINST SMALLER FLOORS: WHAT IS PHYSICS AND WHAT IS REGULARIZATION
+
+    With the Plummer softening of 65-66 the floor reaches further than the
+    old hard clamp: at 1.3 r* the Coulomb force is 19% weaker with floor
+    0.5 r* and still 1% with 0.1 r*.  So the comparison runs down to 0.05 r*.
+    Unified model, retarded default, no switch, radiation reaction off.
+
+71a. TILTED MOMENTS (start 3 r*, v_t = 0.2 v_circ, three periods).  Minimum
+     separation, and whether the pair stays above r* for the whole window:
+
+       case          floor 1        0.5            0.25           0.1            0.05
+       para 0 deg    0.951 held     1.231 held     1.301 held     1.321 held     1.323 held
+       para 30 deg   1.023 held     0.676 falls    0.320 falls    0.273 falls    -
+       ortho 90 deg  1.035 held     0.104 falls    0.306 falls    1.082 held     1.127 held
+       ortho 0 deg   0.182 falls    0.100 falls    0.323 falls    0.410 falls    0.370 falls
+       ortho 30 deg  0.162 falls    0.100 falls    0.334 falls    0.415 falls    -
+     ("falls" runs end below r* in contact or a numerical failure in the
+     region the model declares invalid; energy errors there reach 1-115
+     k/r0, against at most 0.07 k/r0 for the held runs at small floors.)
+
+     - Para at 0 deg is PHYSICS: held at every floor, with the minimum
+       converging to 1.32 r* (1.321 / 1.323 at 0.1 / 0.05; 53d found 1.3243
+       before the unification).  Floor 1 moves that minimum down by 28%.
+     - Para at 30 deg is REGULARIZATION: held only at floor 1.
+     - Ortho at 90 deg is held at floor 1 and again at 0.1 and 0.05
+       (minimum 1.08, 1.13 r*, not yet converged), but falls at 0.5 and 0.25:
+       a barrier that is marginal at this start, so held at floor 1 for a
+       partly wrong reason.  Unresolved.
+     - Ortho at 0 and 30 deg falls at every floor.
+
+71b. PRODUCTION (estimateCremCollapse, --level 1, no ground-state floor,
+     master seed 42, indices 0-23, 200 s budget, retardation stop at 150).
+     All 96 end on the retardation stop with 3 photons.
+
+       channel  mean t floor 1     mean t floor 0.5    paired diff (sd)          binding eV
+       para     199.442597 ps      199.442422 ps       -1.7e-4 ps (1.6e-3), 13+  729.4 -> 730.5
+       ortho    199.467878 ps      199.467903 ps       +2.5e-5 ps (2.2e-3), 13+  761.2 -> 761.3
+
+     No trajectory changes its photon count.  The paired differences are
+     1e-6 of the collapse time and of random sign; the channel difference
+     ortho - para is 0.02528 ps at floor 1 and 0.02548 ps at floor 0.5.  The
+     production lifetimes and their para/ortho difference do not depend on
+     the floor: they are decided far above r*, before the retardation stop.
+
+71c. READING.  The regularization matters only for what happens within a
+     few r* of the barrier.  There, floor 1 is not a small correction: it
+     turns a physically falling para at 30 deg into a held one and shifts the
+     held para's turning point by 28%.  Dynamical statements about the
+     barrier need a floor of 0.1 r* or below; the production lifetimes do
+     not, because production stops well before the barrier.
