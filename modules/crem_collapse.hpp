@@ -809,56 +809,47 @@ inline double osculatingPeriod(double specificEnergy,double attractionParameter)
         /attractionParameter);
 }
 
-// Radial potential energy (per unit reduced mass) for the Plummer-softened
-// force law: the specific radial force is
-// F_r(r) = -attractionParameter/(r^2+floor^2), matching the true Coulomb
-// force -attractionParameter/r^2 for r >> floor and saturating smoothly
-// (rather than diverging) as r -> 0, with clampedSeparationVector in
-// positronium.cpp (r_eff = sqrt(r^2+floor^2)) as the force-law-level source
-// of this.  Integrating -dU/dr = F_r gives
+// Radial potential energy (per unit reduced mass) of the Plummer-softened
+// Coulomb interaction the dynamics uses (section 73):
 //
-//     U(r) = -(attractionParameter/floor) * atan(floor/r),
+//     U(r) = -attractionParameter / sqrt(r^2 + floor^2),
+//     F_r(r) = -dU/dr = -attractionParameter * r / (r^2 + floor^2)^(3/2),
 //
-// with the integration constant fixed so U -> -attractionParameter/r as
-// r -> infinity (atan(floor/r) ~ floor/r there), matching the unclamped
-// Coulomb potential exactly in that limit.  Valid and smooth for every
-// r > 0: unlike the earlier hard-clamp regularization, there is no separate
-// branch for r above/below floor here at all -- one formula, everywhere,
-// which is what removes the kink in the force that stalled the adaptive
-// integrator at the old floor crossing.
+// the same potential as conservativeParticleEnergy and coulombForces, and
+// the static limit of lienardWiechertField.  It used to be
+// -(attractionParameter/floor) atan(floor/r), the potential of the force
+// -attractionParameter/(r^2+floor^2) that clampedSeparationVector produced
+// before the forces were made gradients of the energies (section 60) and
+// the retarded fields were softened the same way (65-66), so the secular
+// turning points and period described a different force law than the
+// trajectory.  One smooth formula for every r > 0; -> -attractionParameter/r
+// for r >> floor.
 inline double regularizedPotentialEnergy(double r,double attractionParameter,
                                   double floor) {
-    return -(attractionParameter/floor)*std::atan(floor/r);
+    return -attractionParameter/std::sqrt(r*r+floor*floor);
 }
 
-// Radius where the softened force above exactly balances the centrifugal
-// term for angular momentum L -- the circular-orbit radius under this force
-// law.  Setting -dU/dr = L^2/r^3 gives
-// attractionParameter/(r^2+floor^2) = L^2/r^3, i.e.
+// Radius where the softened force balances the centrifugal term for angular
+// momentum L -- the circular-orbit radius under this force law.  Setting
+// -dU/dr = L^2/r^3 gives
 //
-//     attractionParameter*r^3 - L^2*r^2 - L^2*floor^2 = 0,
+//     attractionParameter * r^4 = L^2 * (r^2 + floor^2)^(3/2),
 //
-// a cubic with exactly one positive real root (Descartes: coefficient signs
-// +,-,0,- change sign once), interpolating smoothly between the deep limit
-// (floor dominates, r ~ floor) and the standard Kepler circular-orbit radius
-// L^2/attractionParameter (the floor -> 0 limit -- the identity this reduces
-// to away from the barrier).  No simpler closed form survives adding the
-// floor^2 term, so this is found by bisection.  The bracket is a physically
-// motivated guess (floor plus the naive circular radius), doubled until it
-// brackets a root as cheap insurance against a bad guess rather than a claim
-// of precision: bisection's absolute convergence over even a wildly
-// oversized bracket reaches machine precision at the relevant scale well
-// within the iteration budget below regardless of how tight the guess was.
+// whose left side over the right, r^4/(r^2+floor^2)^(3/2), increases
+// monotonically from 0 to infinity, so there is exactly one positive root.
+// It reduces to the Kepler circular radius L^2/attractionParameter as
+// floor -> 0.  Found by bisection on a bracket doubled until it holds a root.
 inline double criticalRadius(double L,double attractionParameter,double floor) {
-    const auto cubic=[&](double r) {
-        return attractionParameter*r*r*r-L*L*(r*r+floor*floor);
+    const auto balance=[&](double r) {
+        return attractionParameter*r*r*r*r
+            -L*L*std::pow(r*r+floor*floor,1.5);
     };
     double lo=std::numeric_limits<double>::min();
     double hi=2.0*(floor+L*L/attractionParameter);
-    for(int i=0;i<200&&!(cubic(hi)>0.0);++i) hi*=2.0;
+    for(int i=0;i<200&&!(balance(hi)>0.0);++i) hi*=2.0;
     for(int i=0;i<200;++i) {
         const double mid=0.5*(lo+hi);
-        if(cubic(mid)>0.0) hi=mid; else lo=mid;
+        if(balance(mid)>0.0) hi=mid; else lo=mid;
     }
     return 0.5*(lo+hi);
 }
@@ -905,7 +896,7 @@ struct RegularizedTurningPoints {
 // so a small negative h(r_min) means the pair is almost exactly circular AT
 // r_min (h(r_min)=0 is precisely that circular orbit), not that no orbit
 // exists.  Comparing |h(r_min)| against the local force scale there
-// (attractionParameter*r_min/(r_min^2+floor^2), i.e. force(r_min)*r_min, the
+// (attractionParameter*r_min^2/(r_min^2+floor^2)^(3/2), force(r_min)*r_min, the
 // specific potential step across a distance ~r_min) keeps the margin
 // scale-free.  Within that margin both turning points collapse to r_min (a
 // genuinely circular orbit); beyond it the naive values are returned as the
@@ -930,8 +921,8 @@ inline RegularizedTurningPoints regularizedTurningPoints(
     };
     const double hAtMin=h(rMin);
     if(!(hAtMin>0.0)) {
-        const double localScale=
-            attractionParameter*rMin/(rMin*rMin+floor*floor);
+        const double localScale=attractionParameter*rMin*rMin
+            /std::pow(rMin*rMin+floor*floor,1.5);
         constexpr double marginalRelativeTolerance=0.05;
         if(localScale>0.0&&-hAtMin<=marginalRelativeTolerance*localScale)
             return {rMin,rMin,true};

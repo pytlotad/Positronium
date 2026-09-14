@@ -75,7 +75,19 @@ inline Vec3 clampedSeparationVector(const Vec3& trueSeparation, double floor) {
 // for other pairs yet -- this is deliberately narrower than "every pair"
 // until an analogous barrier is derived for them.
 //
-// CREM_SEPARATION_FLOOR_SCALE multiplies the floor, for one measurement.
+// DEFAULT 0.05 r* (audit section 73).  The floor was comptonBarrierRadius
+// itself from ecf7380 on, introduced as a "freeze at the barrier" because
+// the integrator failed at ~490 fm.  Those failures are gone (section 70),
+// and with every force, field and energy now derived from one Plummer
+// potential the floor is a numerical guard, not a physical barrier: at r*
+// it weakened the Coulomb force to 0.35 of its value and moved the held
+// para turning point by 28%, while 0.05 r* gives the floor -> 0 limit above
+// r* (1.323 r* against 1.321 at 0.1) and validates 59/59.  It cannot go to
+// zero: without a floor e+e- would fall back to the nuclear cutoff and the
+// magnetic regularization profile of the no-floor pairs.
+//
+// CREM_SEPARATION_FLOOR_SCALE sets the floor in units of r*, for one
+// measurement.
 // Section 52 of the para/ortho audit found that with exact fields the para
 // dipole repulsion, net of the motional attraction, overtakes Coulomb at
 // 1.606 r* -- a classical stationary point with no L = hbar -- and that it
@@ -85,18 +97,16 @@ inline Vec3 clampedSeparationVector(const Vec3& trueSeparation, double floor) {
 // at any floor length, so scaling it down moves the regularization out of
 // that zone without reintroducing the kink.
 //
-// Unset, the function returns comptonBarrierRadius itself, bit for bit.
-// Anything else is a probe of the model's short-range dynamics, not a
-// production setting: the model declares classical point-particle
-// electrodynamics invalid below r*, and a smaller floor lets trajectories
-// run there.  The stopping rule reads comptonBarrierRadius directly and is
-// unaffected.  Read once per process.
+// Unset, it is 0.05.  The stopping rules read comptonBarrierRadius directly
+// and do not move with the floor; the model still declares classical
+// point-particle electrodynamics invalid below r*.  Read once per process.
 inline double separationFloor() {
     if (!isPositronium(activePair)) return 0.0;
     static const double scale = [] {
         const char* text = std::getenv("CREM_SEPARATION_FLOOR_SCALE");
-        const double value = text ? std::atof(text) : 1.0;
-        return (std::isfinite(value) && value > 0.0) ? value : 1.0;
+        constexpr double defaultScale = 0.05;
+        const double value = text ? std::atof(text) : defaultScale;
+        return (std::isfinite(value) && value > 0.0) ? value : defaultScale;
     }();
     return scale == 1.0 ? comptonBarrierRadius : scale * comptonBarrierRadius;
 }

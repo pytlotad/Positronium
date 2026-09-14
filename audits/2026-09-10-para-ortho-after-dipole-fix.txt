@@ -4489,3 +4489,45 @@ measurement of whether that survives a cascade.
      the inconsistencies 65-66 removed), and the secular layer's atan
      potential should be replaced by the Plummer one so that the secular
      turning points and period describe the same force as the dynamics.
+
+73. THE BARRIER FREEZE REMOVED: DEFAULT FLOOR 0.05 r*, SECULAR LAYER ON PLUMMER
+
+    With the user's agreement after 72.
+
+73a. CHANGES.
+     - separationFloor() defaults to 0.05 r* (CREM_SEPARATION_FLOOR_SCALE,
+       now the floor in units of r*, unset = 0.05; 1 restores the old
+       default).  A floor is kept as a numerical guard: floor = 0 would put
+       e+e- on the no-floor paths (nuclear cutoff, magnetic regularization
+       profile) that 65-66 made consistent only for floored pairs.
+     - The secular layer of estimateCremCollapse now uses the dynamics'
+       potential: regularizedPotentialEnergy = -A/sqrt(r^2 + floor^2) (was
+       -(A/floor) atan(floor/r), the potential of the pre-60 force
+       A/(r^2+floor^2)); criticalRadius solves A r^4 = L^2 (r^2+floor^2)^(3/2)
+       (was A r^3 = L^2 (r^2+floor^2)); the circular-orbit margin scale in
+       regularizedTurningPoints is force(r) r = A r^2/(r^2+floor^2)^(3/2).
+       regularizedPeriapsis and regularizedPeriod follow.
+     The stopping rules still read comptonBarrierRadius.
+
+73b. CHECKS.  Validation 59/59, header isolation 37/37.  Production branch
+     trace seed 42 / index 2 / para: t 199.450091864 -> 199.442203387 ps,
+     binding 755.78 -> 755.26 eV, 3 photons, peri/barrier 4.932.
+
+73c. PRODUCTION SAMPLE, the 48 trajectories of 71b/72c, all ending on the
+     retardation stop with 3 photons, no failure:
+       channel  floor 1 (old)   floor 0.05, old secular   new default
+       para     199.442597 ps   200.163010                200.163020
+       ortho    199.467878      199.468118                199.468089
+     New default against floor 0.05 with the atan secular layer: mean
+     difference 1e-5 ps (para) and -3e-5 ps (ortho), sd 2-3e-4 ps, so the
+     secular-layer change is invisible in the lifetimes.  Against the old
+     default: the one branch flip of 72c (para index 1, 216.739 against
+     199.441 ps, decided at the first photon near n = 1) and nothing else
+     above 0.01 ps; no photon count changes.
+
+73d. WHAT THE DEFAULT NOW MEANS.  The Compton barrier is where the model
+     stops (the stopping rule) and where it declares itself invalid, not a
+     radius below which forces are frozen.  Above r* the default dynamics
+     are the floor -> 0 dynamics of 71a (para at 0 deg held with turning
+     point 1.32 r*; para at 30 deg not held; ortho at 90 deg held but not
+     converged).
