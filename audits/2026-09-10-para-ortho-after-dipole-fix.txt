@@ -4341,3 +4341,49 @@ measurement of whether that survives a cascade.
      remaining 2-4 k/r0 per passage below r* at the probe floor, a region
      the model declares invalid.  The motivating defect of 63a was the
      inconsistent regularization, not the lab-moment velocity dependence.
+
+70. DO THE FAILURES BEHIND THE RETARDATION STOP STILL HAPPEN?
+
+    estimateCremCollapse stops when period/light-crossing <= 150.  Its comment
+    and CollapseStopCause call this a NUMERICAL safety margin: with only the
+    Compton-barrier stop active, 23 of 100 trajectories once failed
+    numerically with that ratio between 37.8 and 71.6, and 150 is a factor ~2
+    above that band.  Re-measured on the current code (sections 55-69),
+    default configuration (--level 1, no ground-state floor), para, master
+    seed 42, indices 0-99, CREM_RETARDATION_LIMIT=0 so only the barrier stops
+    a trajectory.  The last evaluated ratio and periapsis were read through a
+    temporary hook in the estimator, removed afterwards.
+
+70a. 100 TRAJECTORIES, 120 s WALL BUDGET EACH:
+       NumericalFailure                       0   (was 23)
+       ended below ratio 72 / below 37.8      68 / 5
+       lowest ratio reached                   29.8
+       last periapsis                         1.19 - 11.2 r*
+     All 100 ended on the wall budget, none at the barrier, so this alone
+     does not show that they would get there.
+
+70b. THE 8 LOWEST RATIOS, 1200 s WALL BUDGET:
+       index  outcome           last ratio  last periapsis   photons  wall
+       4      barrier           15.8        0.185 r*         4        154 s
+       10     barrier           16.5        0.200 r*         4        142 s
+       23     barrier           15.3        0.173 r*         4        160 s
+       34     barrier            1.77       0.911 r*         3        220 s
+       49     barrier            0.92       0.865 r*         3        258 s
+       51     barrier           17.2        0.218 r*         4        114 s
+       54     observation limit 10.1        1.77 r*          3        205 s
+       87     barrier            0.90       0.944 r*         3        309 s
+     Seven reach the barrier, none fails; the ratio goes down to 0.9.  The
+     trajectories that fire a fourth photon overshoot to 0.17-0.22 r*, the
+     single-photon jump noted in the estimator's own comment.  The lab
+     collapse time is 199.438-199.448 ps in every case, the same as with the
+     150 stop: the last stretch from ratio 150 to the barrier takes well under
+     0.01 ps.
+
+70c. READING.  The numerical failures that justified the margin no longer
+     occur, so the stop is no longer needed for the integrator.  The comment's
+     other justification is physical and remains: condition (b) marks where
+     the Darwin/retardation approximation behind the secular energy signal
+     stops holding, and a period shorter than one light crossing (ratio 0.9)
+     is far outside it.  Lowering the threshold would therefore change which
+     stop ends a trajectory, not its collapse time, and would carry it into a
+     regime the secular model does not describe.  Not changed.
