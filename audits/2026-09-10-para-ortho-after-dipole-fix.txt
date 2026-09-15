@@ -5266,3 +5266,70 @@ measurement of whether that survives a cascade.
      moved in section 66.  Expected effect: nil in production (83f); real
      for deep or radial orbits, floor-scale experiments and the sign of the
      para/ortho contact physics the model claims to represent.
+
+84. THE CURRENT-LOOP PLUMMER DIPOLE: CONTACT TERM RESTORED WITH ITS SIGN
+
+84a. CHANGE.  The magnetic pair field is now the curl of the model's own
+     vector potential (mu0/4 pi) m x r / rho^3,
+
+         B = (mu0/4 pi) [3 r(r.m) - m (r^2 - 2 eps^2)] / rho^5
+           = poles' Plummer field + mu0 m n(r),   n = 3 eps^2/(4 pi rho^5),
+
+     instead of the separated-poles field adopted in 00f0071 (section 83).
+     - plummerMagnetizationField / plummerMagneticDipoleField: the local
+       magnetization term and the loop field; plummerDipoleField stays the
+       field of an electric (pole) dipole.
+     - pairDipoleField (and so pairDipoleInteractionEnergy and the magnetic
+       field in chargeDipolePairForces, now consistent with its vector
+       potential) uses the loop field; pairDipoleForce gains the gradient of
+       the contact energy -(mu0/4 pi) 3 eps^2 (mu_t.mu_s)/rho^5.
+     - retardedMagneticDipoleFieldExact: the static branch uses the loop
+       field; the moving two-pole construction adds movingMagnetizationField,
+       the rest-frame mu0 m n(r') Lorentz-transformed to the lab (local, no
+       retardation).  The far-zone field is unchanged.
+     - azimuthAveragedDipoleEnergy (secular layer) gains the contact energy.
+     - New validation check dipole-contact-term (Lebedev x Gauss radial
+       integral of the pair field must be +2/3 mu0 m within 1e-3; the field
+       must equal the curl of the vector potential within 1e-6).
+
+84b. CHECKS (probes loopcheck.cpp, movingloop.cpp).
+       integral of pairDipoleField over a sphere of 400 eps   +0.6533 mu0
+         (the analytic value for that sphere is 2/3 (1 - 1.5 eps^2/R^2);
+         the residual is the coarse angular grid of the probe; the
+         validation check with Lebedev shells passes at 1e-3)
+       |F + grad U| / |F|, 0.02..5 r*                        2.8e-10
+       secular azimuth average against numeric average       4.5e-14
+       static retarded field against pairDipoleField          0 (exact)
+       moving dipole, uniform history, beta 0/0.05/0.3, at 0.03, 0.1 and
+       1 r*: retarded field against the boosted rest-frame loop field
+         |dB|/|B| <= 5.2e-10, |dE|/|E| <= 5.5e-10
+         (against the boosted poles' field: 2.7 at 0.03 r*, 0.58 at 0.1 r*,
+         5.9e-3 at 1 r*, i.e. exactly the contact term)
+     Validation 61/61, header isolation 37/37.
+
+84c. SIGN, WHERE IT CAN BE SEEN.  Isotropic average of the pair energy for
+     parallel moments (para), units mu0 mu^2/(4 pi r^3): now -4.87e-3 at
+     1 r*, -1.07e-1 at 0.2 r*, -3.54e-1 at 0.05 r* (attraction; was
+     repulsion of +2.58e-3, +5.38e-2, +1.77e-1); ortho the reverse.
+     Engine, deep tilted pairs (deeptilt.cpp, retarded forces, reaction
+     off, 6 Kepler periods): the configurations whose tensor term repels
+     (para 0 deg, ortho 90 deg) stay above 1 r* and change by <=0.01 r*;
+     those it attracts (para 90, ortho 0) fail on the known deep-orbit
+     accuracy limit before reaching the contact scale, but their deepest
+     point moves the predicted way -- para 0.4059 -> 0.3978 r* (from
+     peri 0.1, apo 1) and 0.7572 -> 0.7515 r* (from peri 1, apo 3), ortho
+     0.3908 -> 0.4072 r* and 0.6810 -> 0.6905 r*.  The contact scale itself
+     (~0.05 r*) was reached by none of them.
+
+84d. PRODUCTION.  Trace 42/2: para 199.445464378 -> 199.446240512 ps
+     (+7.8e-4 ps, 870093 against 869969 revolutions), ortho 199.475436586
+     -> 199.475436591 ps.  As estimated in 83f the term is 3e-4 of the dipole
+     coupling at the final ~4.9 r* orbit; para moves more because its
+     terminal checkpoint sits a hair nearer a skip boundary.
+
+84e. LIMITS.  The engine never resolved an orbit inside the contact scale,
+     so the dynamical consequence there is untested; the moving magnetization
+     term uses the source kinematics at the observation time (exact for
+     uniform motion, checked above) and the present proper moment; the
+     classical L = hbar orbits still do not sample r = 0, so the S-state
+     hyperfine attraction of p-Ps remains outside the model (section 48).

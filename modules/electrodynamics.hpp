@@ -2179,6 +2179,72 @@ inline Vec3 plummerDipoleField(const Vec3& sourceToTarget,
            -sourceDipole*inverseRhoCubed)*magneticConstant;
 }
 
+// The field above is the Plummer-softened dipole of two separated POLES --
+// right for an electric dipole, whose field integrates to -p/(3 eps0) over
+// space.  A magnetic moment is a current loop, and a current loop's field
+// integrates to +(2 mu0/3) m: that difference is the Fermi contact term,
+// which attracts parallel moments (para) and repels antiparallel ones
+// (ortho).  With the poles' field used for the magnetic moment (00f0071 to
+// section 84) the contact term had the opposite sign and half the strength
+// (audit section 83).
+//
+// The loop field is the curl of the model's own vector potential
+// A = (mu0/4 pi) m x r / rho^3, and it differs from the poles' field by a
+// purely LOCAL term:
+//
+//     B_loop = B_poles + mu0 m n(r),     n(r) = 3 eps^2 / (4 pi rho^5),
+//
+// n being the normalized Plummer density.  mu0 m n is the field of the
+// moment's magnetization itself (B = mu0 (H + M)); it does not propagate.
+inline Vec3 plummerMagnetizationField(const Vec3& sourceToTarget,
+                                      const Vec3& sourceDipole,
+                                      double softening) {
+    const double rhoSquared=sourceToTarget.squaredNorm()+softening*softening;
+    if(!(rhoSquared>std::numeric_limits<double>::min())) return {};
+    const double density=3.0*softening*softening
+        /(4.0*pi*std::pow(rhoSquared,2.5));
+    return sourceDipole*(mu0*density);
+}
+
+inline Vec3 plummerMagneticDipoleField(const Vec3& sourceToTarget,
+                                       const Vec3& sourceDipole,
+                                       double softening) {
+    return plummerDipoleField(sourceToTarget,sourceDipole,softening)
+        +plummerMagnetizationField(sourceToTarget,sourceDipole,softening);
+}
+
+// The magnetization term of a MOVING moment at an observation event, in
+// the lab.  In the moment's rest frame it is the static field mu0 m n(r')
+// with r' the rest-frame displacement; being local, it carries no
+// retardation.  The lab fields follow from the Lorentz transformation of a
+// pure rest-frame B:
+//
+//     B = gamma B' - gamma^2/(gamma+1) v (v.B')/c^2,     E = -gamma v x B'.
+//
+// r' is taken from the displacement at equal lab time, r'_par = gamma r_par,
+// as for a uniformly moving source (the term reaches only a few floors).
+inline ElectromagneticField movingMagnetizationField(
+    const Vec3& sourceToTarget,const Vec3& sourceVelocity,
+    const Vec3& properDipole,double softening) {
+    const double speedSquared=sourceVelocity.squaredNorm();
+    if(!(speedSquared>0.0)) {
+        return {{},plummerMagnetizationField(sourceToTarget,properDipole,
+                                             softening)};
+    }
+    const double lorentzFactor=1.0/std::sqrt(1.0-speedSquared/(c*c));
+    const Vec3 axis=sourceVelocity/std::sqrt(speedSquared);
+    const double parallel=dot(sourceToTarget,axis);
+    const Vec3 restDisplacement=sourceToTarget
+        +axis*((lorentzFactor-1.0)*parallel);
+    const Vec3 restField=plummerMagnetizationField(restDisplacement,
+        properDipole,softening);
+    const Vec3 magnetic=restField*lorentzFactor
+        -sourceVelocity*(lorentzFactor*lorentzFactor/(lorentzFactor+1.0)
+            *dot(sourceVelocity,restField)/(c*c));
+    const Vec3 electric=cross(sourceVelocity,restField)*(-lorentzFactor);
+    return {electric,magnetic};
+}
+
 inline ElectromagneticField retardedElectricDipoleFieldExact(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
@@ -2226,8 +2292,8 @@ inline ElectromagneticField retardedMagneticDipoleFieldExact(
                 ?present.firstPosition:present.secondPosition;
             const Vec3 moment=sourceIsFirst
                 ?present.firstDipole:present.secondDipole;
-            return {{},plummerDipoleField(observationPosition-position,
-                                           moment,floor)};
+            return {{},plummerMagneticDipoleField(
+                observationPosition-position,moment,floor)};
         }
         return retardedMagneticDipoleFieldLowVelocity(observationPosition,
             observationTime,history,present,sourceIsFirst,false);
@@ -2243,7 +2309,26 @@ inline ElectromagneticField retardedMagneticDipoleFieldExact(
             first=dipole.firstDerivative/(c*c);
             second=dipole.secondDerivative/(c*c);
         });
-    return {dual.magnetic*(-c*c),dual.electric};
+    ElectromagneticField field{dual.magnetic*(-c*c),dual.electric};
+    // The poles give the moving dipole's field of separated charges; a
+    // magnetic moment is a loop, so its local magnetization term is added
+    // (see plummerMagnetizationField).  Source kinematics at the
+    // observation time, proper moment from the present state.
+    if(const double floor=separationFloor(); floor>0.0) {
+        const ChargeKinematics source=historicalCharge(
+            history,present,sourceIsFirst,observationTime);
+        Vec3 properMoment=sourceIsFirst
+            ?present.firstProperDipole:present.secondProperDipole;
+        if(properMoment.squaredNorm()==0.0)
+            properMoment=sourceIsFirst?present.firstDipole
+                                      :present.secondDipole;
+        const ElectromagneticField magnetization=movingMagnetizationField(
+            observationPosition-source.position,source.velocity,
+            properMoment,floor);
+        field.electric+=magnetization.electric;
+        field.magnetic+=magnetization.magnetic;
+    }
+    return field;
 }
 
 // Production fields: the full moving-point-dipole result everywhere the
@@ -2401,7 +2486,7 @@ inline Vec3 regularizedDipoleForce(const Vec3& sourceToTarget,
 inline Vec3 pairDipoleField(const Vec3& sourceToTarget,
                             const Vec3& sourceDipole) {
     if(const double floor=separationFloor(); floor>0.0)
-        return plummerDipoleField(sourceToTarget,sourceDipole,floor);
+        return plummerMagneticDipoleField(sourceToTarget,sourceDipole,floor);
     return regularizedDipoleField(sourceToTarget,sourceDipole,
         magneticRegularizationRadius,magneticRegularizationExponent);
 }
@@ -2426,10 +2511,15 @@ inline Vec3 pairDipoleForce(const Vec3& sourceToTarget,
     const double targetRadial=dot(targetDipole,sourceToTarget);
     const double sourceRadial=dot(sourceDipole,sourceToTarget);
     const double dipoleDot=dot(targetDipole,sourceDipole);
+    // Last term: -grad of the magnetization energy
+    // -(mu0/4 pi) 3 eps^2 (mu_t.mu_s)/rho^5, the contact attraction of
+    // parallel moments (see plummerMagnetizationField).
     return (sourceToTarget*(3.0*dipoleDot*inverseRhoFifth
                 -15.0*targetRadial*sourceRadial*inverseRhoSeventh)
            +(targetDipole*sourceRadial+sourceDipole*targetRadial)
-                *(3.0*inverseRhoFifth))*magneticConstant;
+                *(3.0*inverseRhoFifth)
+           -sourceToTarget*(15.0*floor*floor*dipoleDot*inverseRhoSeventh))
+        *magneticConstant;
 }
 
 inline MutualForces coulombForces(const State& s) {

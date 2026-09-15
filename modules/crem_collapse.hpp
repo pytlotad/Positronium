@@ -1262,16 +1262,20 @@ inline double azimuthAveragedDipoleEnergy(double separation,
                                    const Vec3& orbitNormal) {
     if(!(separation>0.0)) return 0.0;
     if(const double floor=separationFloor(); floor>0.0) {
-        // Plummer dipole (electrodynamics.hpp, pairDipoleField):
-        // U = mu0/(4 pi) [mu1.mu2 - 3 (r^2/rho^2)(mu1.n)(mu2.n)] / rho^3.
+        // Plummer current-loop dipole (electrodynamics.hpp, pairDipoleField):
+        // U = mu0/(4 pi) [mu1.mu2 - 3 (r^2/rho^2)(mu1.n)(mu2.n)] / rho^3
+        //     - mu0/(4 pi) 3 eps^2 mu1.mu2 / rho^5,
+        // the last term being the contact (magnetization) energy, which does
+        // not depend on the azimuth.
         const double rhoSquared=separation*separation+floor*floor;
         const double moments=dot(firstDipole,secondDipole);
         const double alongNormal=dot(firstDipole,orbitNormal)
             *dot(secondDipole,orbitNormal);
         const double averagedRadial=0.5*(moments-alongNormal);
-        return (mu0/(4.0*pi))*(moments
+        return (mu0/(4.0*pi))*((moments
             -3.0*(separation*separation/rhoSquared)*averagedRadial)
-            /std::pow(rhoSquared,1.5);
+            /std::pow(rhoSquared,1.5)
+            -3.0*floor*floor*moments/std::pow(rhoSquared,2.5));
     }
     const MagneticRadialProfile profile=magneticRadialProfile(separation);
     const double transverse=2.0*profile.vectorPotentialFactor

@@ -3631,6 +3631,66 @@ inline int runMaxwellSelfTest(
     }();
     const bool dipoleSphericalAverageOk=dipoleSphericalAverage>=0.0
         &&dipoleSphericalAverage<1.0e-14;
+    // DIPOLE CONTACT TERM.  A magnetic moment is a current loop, and a loop's
+    // field integrates to +(2 mu0/3) m over space; that integral is the Fermi
+    // contact term, which attracts parallel moments (para) and repels
+    // antiparallel ones (ortho).  The softened field of two separated poles
+    // integrates to -(mu0/3) m instead.  From 00f0071 until section 84 the
+    // pair field was the poles' one, i.e. the contact term had the opposite
+    // sign, and nothing here noticed (audit sections 83-84).  Two locks:
+    //   integral  Lebedev shells (degree 11, exact for the dipole's degree-2
+    //             angular structure) on a Gauss-Legendre radial grid in
+    //             t = r/(r+eps); the far field averages to zero shell by
+    //             shell, so only the contact content remains.
+    //   curl      pairDipoleField equals the curl of the model's vector
+    //             potential (mu0/4 pi) m x r / rho^3 by central differences.
+    const auto [dipoleContactIntegral,dipoleCurlResidual]=[&]{
+        const double softening=separationFloor();
+        if(!(softening>0.0)||lebedevWeight<=0.0)
+            return std::pair<double,double>{2.0/3.0,0.0};
+        const Vec3 unitMoment{0.0,0.0,1.0};
+        constexpr int radialNodes=64;
+        double integral=0.0;
+        for(int node=0;node<radialNodes;++node) {
+            // Gauss-Legendre on t in (0,1) via cosine nodes (Chebyshev-
+            // Gauss with its weight), r = eps t/(1-t), dr = eps/(1-t)^2 dt.
+            const double angle=pi*(node+0.5)/radialNodes;
+            const double t=0.5*(1.0-std::cos(angle));
+            const double weight=0.5*pi/radialNodes*std::sin(angle);
+            const double radius=softening*t/(1.0-t);
+            const double jacobian=softening/((1.0-t)*(1.0-t));
+            double shell=0.0;
+            for(const SphereQuadraturePoint& point:lebedevRule)
+                shell+=pairDipoleField(point.direction*radius,unitMoment).z
+                    *point.solidAngleWeight;
+            integral+=shell*radius*radius*jacobian*weight;
+        }
+        double curlResidual=0.0;
+        const Vec3 moment{0.3,-0.5,0.8};
+        const auto potential=[&](const Vec3& x) {
+            return cross(moment,x)*(mu0/(4.0*pi)
+                /std::pow(x.squaredNorm()+softening*softening,1.5));
+        };
+        for(const double scale:{0.3,1.0,4.0}) {
+            const Vec3 x=Vec3{0.62,-0.35,0.7}*(scale*softening);
+            const double step=1.0e-5*scale*softening;
+            const Vec3 ex{step,0,0},ey{0,step,0},ez{0,0,step};
+            const Vec3 curl{
+                (potential(x+ey).z-potential(x-ey).z
+                 -potential(x+ez).y+potential(x-ez).y)/(2.0*step),
+                (potential(x+ez).x-potential(x-ez).x
+                 -potential(x+ex).z+potential(x-ex).z)/(2.0*step),
+                (potential(x+ex).y-potential(x-ex).y
+                 -potential(x+ey).x+potential(x-ey).x)/(2.0*step)};
+            const Vec3 field=pairDipoleField(x,moment);
+            curlResidual=std::max(curlResidual,
+                (curl-field).norm()/field.norm());
+        }
+        return std::pair<double,double>{integral/mu0,curlResidual};
+    }();
+    const bool dipoleContactTermOk=std::isfinite(dipoleContactIntegral)
+        &&std::abs(dipoleContactIntegral-2.0/3.0)<1.0e-3
+        &&std::isfinite(dipoleCurlResidual)&&dipoleCurlResidual<1.0e-6;
     // N4: PARA'S MUTUAL ANGLE LIBRATES -- IT DOES NOT DESTROY THE SINGLET.
     //
     // This was originally recorded the other way round, as a progressive
@@ -5996,7 +6056,7 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,60> regressionChecks{{
+    const std::array<ValidationCheck,61> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
@@ -6008,6 +6068,7 @@ inline int runMaxwellSelfTest(
          inspiralAlphaPowerOk},
         {ValidationSection::AlgebraicIdentity,"dipole-tensor-s-state-average",
          dipoleSphericalAverageOk},
+        {ValidationSection::AlgebraicIdentity,"dipole-contact-term",dipoleContactTermOk},
         {ValidationSection::NumericalRegression,"mutual-angle-libration",
          mutualAngleLibrationOk},
         {ValidationSection::NumericalRegression,"two-body-lorentz-boost",twoBodyBoostOk},
