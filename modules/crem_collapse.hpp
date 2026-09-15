@@ -1416,8 +1416,13 @@ inline double dipoleAwarePeriapsis(const OsculatingElements& elements,
                 tangentialHat*(tangentialSpeed*secondMassHere/totalMassHere);
             turningPoint.secondVelocity=
                 tangentialHat*(-tangentialSpeed*firstMass/totalMassHere);
-            turningPoint.firstDipole=firstDipole;
-            turningPoint.secondDipole=secondDipole;
+            // The ledger term is the motional ELECTRIC dipole in the
+            // partner's Coulomb field (-p.E), so the turning-point state
+            // needs p as well as mu: set the carried moments as proper
+            // moments and let synchronizeCovariantDipoles boost them.
+            turningPoint.firstProperDipole=firstDipole;
+            turningPoint.secondProperDipole=secondDipole;
+            synchronizeCovariantDipoles(turningPoint);
             spinOrbit=chargeDipoleInteractionEnergy(turningPoint)/reducedMass;
         }
         return elements.specificEnergy+attractionParameter/r

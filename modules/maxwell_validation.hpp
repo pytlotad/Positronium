@@ -1272,6 +1272,16 @@ inline int runMaxwellSelfTest(
         yeeCoupledState.secondVelocity,yeeCoupledState.secondDipole,
         chargeCloudRestRadius);
     yeeCoupledField.finalizeInitialBoundSources();
+    // Synchronize AFTER depositing: the deposit takes the moments as set
+    // (proper moments, boosted inside), and every engine step synchronizes
+    // the state anyway.  Without this the energy ledger read the stale lab
+    // moments at the start and the boosted ones after the first step, and
+    // that jump WAS the reported raw residual: -8.8e-06 of |E| from this
+    // start against -7.7e-09 from a synchronized one, over the same four
+    // steps (audit section 82).  The old -mu.B(v_other) spin-orbit term,
+    // reading the same stale moment, cancelled part of the jump, which is
+    // what "the charge-dipole energy halves the residual" (8c85397) measured.
+    synchronizeCovariantDipoles(yeeCoupledState);
     const double yeeCoupledDt=0.18*yeeCoupledField.courantTimeStep();
     double yeeCoupledContinuity=0.0;
     for(int step=0;step<4;++step) {
@@ -3901,7 +3911,8 @@ inline int runMaxwellSelfTest(
                  .reactionModel=reaction,
                  .computeOutwardFlux=true,
                  .useRetardedExternalForces=retarded});
-            const double mechanicalStart=conservativeParticleEnergy(state);
+            const double mechanicalStart=
+                conservativeParticleEnergy(state,retarded?1.0:0.0);
             const double fluxStart=state.radiatedEnergy;
             const MutualForces initialExternal=retarded
                 ?retardedExternalForces(state,engine.history())
@@ -3920,7 +3931,8 @@ inline int runMaxwellSelfTest(
                 ?retardedExternalForces(state,engine.history())
                 :allExternalForces(state);
             const double mechanicalChange=
-                conservativeParticleEnergy(state)-mechanicalStart;
+                conservativeParticleEnergy(state,retarded?1.0:0.0)
+                -mechanicalStart;
             const double flux=state.radiatedEnergy-fluxStart;
             const double schott=explicitChargeSchottEnergy(state,finalExternal)
                 -schottStart;

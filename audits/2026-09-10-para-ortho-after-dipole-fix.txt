@@ -5103,3 +5103,94 @@ measurement of whether that survives a cascade.
 81f. LIMITS.  One seed; spin moments quantized (the default); the relaxed
      runs are one trajectory each and outside the validated domain; the
      10-18% excess over the classical inspiral was not decomposed.
+
+82. THE SPIN-ORBIT TERM OF THE ENERGY LEDGER AGAINST THE FORCES
+
+82a. QUESTION (left open in 80h).  Does chargeDipoleInteractionEnergy, the
+     ledger's spin-orbit term, match the forces after the Thomas
+     back-reaction was added?  Until now the ledger was only checked by an
+     engine residual, which mixes integrator error with ledger error.
+
+82b. METHOD.  Exact check along the model's own flow, free of integration
+     error (probes energyflow.cpp, energyscan*.cpp, ledgercand.cpp): at a
+     state, dE/dt of the full ledger by central difference of the flow map
+     x' = v, p' = F, mu_proper' = omega_BMT x mu_proper; spin sector = the
+     same state with moments minus without.  F is either allExternalForces
+     (instantaneous) or retardedExternalForces with a causal history.
+     Kepler nodes, e=0.3, moments at 40 degrees.
+
+82c. RESULT: THE TERM BELONGS TO THE RETARDED FORCES ONLY, AND HAD THE
+     WRONG FORM FOR UNEQUAL MASSES.  Mean |dE/dt| of the spin sector at
+     0.1 a_pair:
+
+     pair, forces, channel         no term    old -mu.B(v_other)   -p.E
+     e+e- retarded, ortho          3.4e-3 W   3.9e-6 W             3.9e-6 W
+     e+e- retarded, para           3.0e-6 W   2.0e-6 W             2.0e-6 W
+     p+e- retarded, para           2.7e-2 W   2.7e-2 W             9.8e-6 W
+     p+e- retarded, ortho          2.7e-2 W   2.7e-2 W             2.4e-5 W
+     e+e- instantaneous, ortho     9.3e-7 W   3.4e-3 W             3.4e-3 W
+     p+e- instantaneous, para      1.4e-8 W   2.7e-5 W             2.7e-2 W
+
+     - The retarded assembly couples a moment through U = mu.B + p.E, with
+       p the motional electric dipole at the particle's OWN velocity; its
+       ledger needs -p.E(partner's Coulomb field).  The old form, each moment
+       in the Biot-Savart field of the PARTNER's motion, coincides with it
+       for e+e- in the centre-of-mass frame and fails otherwise: for p+e-
+       it missed the electron's own motional dipole (moment on the electron
+       alone: 2.7e-2 W no matter the weight; with -p.E 9.8e-6 W; moment on
+       the proton alone: 5.5e-10 W).  With the centre of mass moving at
+       0.3 v_orb (e+e-, para) the old term doubles the error (3.5e-3 W
+       against 1.75e-3 without) and -p.E removes it (1.4e-6 W).
+     - The instantaneous sum derives from Lagrangians linear in the
+       velocities (q (v_q - v_mu).A and the Thomas term), which contribute
+       nothing to the energy function: it needs NO term.  This holds with
+       and without the Thomas back-reaction (CREM_NO_THOMAS_BACKREACTION).
+     - Remaining residuals scale as beta^2 of the spin-orbit rate
+       (1e-5 at a_pair, 3e-4 at 0.1 a_pair relative to |dU/dt|).
+     Engine runs, reaction off, spin-sector energy range in units of the
+     binding energy: e+e- ortho 0.1 a_pair retarded 3.8e-6 with the term
+     against 1.5e-3 without; instantaneous 1.5e-3 with against 3.3e-6
+     without (0.01 a_pair: 4.6e-2 against 3.4e-4); p+e- para retarded with
+     -p.E 3.6e-6 against 3.0e-3 without, instantaneous without 8.2e-7.
+
+82d. CHANGES.
+     - chargeDipoleInteractionEnergy is now -(p1.E2(r1) + p2.E1(r2)), p from
+       the moment boosted at the particle's own velocity (rebuilt locally,
+       so unsynchronized states read correctly), Plummer Coulomb field.
+     - conservativeParticleEnergy(state, chargeDipoleWeight=1): the weight is
+       retardedDipoleSectorWeight(state) in integrateElectrodynamicStep for
+       retarded forces (1, or the CREM_DIPOLE_INSTANTANEOUS_BELOW smoothstep,
+       now one shared function with the force blend) and 0 for
+       allExternalForces; the validation balance runs pass 0 or 1 by force
+       model.
+     - dipoleAwarePeriapsis synchronizes its turning-point state, since the
+       term now needs p.
+     - The validation's Yee-coupled probe state is synchronized after the
+       deposits (see 82e).
+
+82e. AN OLD MEASUREMENT WAS A SETUP ARTEFACT.  8c85397 supported the old
+     term by "the balance residual halves" (reaction off 3.97e-6 to 1.64e-6).
+     That probe set lab moments without synchronizing them, so every ledger
+     term read stale moments at the start and boosted ones after the first
+     step.  Replicated (benchledger.cpp): from that start dE_mech/|E| is
+     -8.80e-6 with no term, -8.81e-6 with -p.E and -6.16e-6 with the old
+     term, whose stale value happened to cancel part of the jump; from a
+     synchronized start all three give 1e-8 over the same four steps.  With
+     the probe synchronized: reaction raw off/LL/C 8.5e-7 / 4.2e-7 / 4.2e-7
+     (was 5.3e-6 / 5.8e-6 / 5.8e-6), dE_mech 1.4e-8 (the raw value is now the
+     radiated flux, as it must be with reaction off), shared-engine dJ
+     1.6e-6 (was 2.7e-4).  Shared-engine dE moved 1.8e-6 -> 4.4e-6; that
+     state has passed through the Yee push, where the two forms differ at
+     the 1e-6 floor, and the flow checks above are the discriminating test.
+
+82f. SCOPE.  Production unchanged to all printed digits: trace 42/2 gives
+     199.445464378 ps (para) and 199.475436586 ps (ortho).  Validation 60/60,
+     header isolation 37/37.  What changes: the ledger in instantaneous and
+     blended runs, any pair other than e+e- in the centre-of-mass frame, and
+     the energy diagnostics built on conservativeParticleEnergy.
+
+82g. LIMITS.  One eccentricity and tilt in the flow checks; the retarded
+     flow uses a causal history built at each state, not an engine history;
+     crem_trajectory's frame and Schott diagnostics still call the ledger
+     with weight 1 whatever the force model; the 1e-6-level differences of
+     the two forms on symmetric states were not resolved.

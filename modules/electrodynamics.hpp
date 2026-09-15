@@ -3465,6 +3465,25 @@ inline Vec3 covariantDipoleGradientForce(const State& state,
         +targetVelocity*(targetGamma*materialRate/(c*c));
 }
 
+// Weight of the RETARDED dipole sector at this state: 1 by default, and the
+// smoothstep that CREM_DIPOLE_INSTANTANEOUS_BELOW blends the retarded sector
+// with the instantaneous one below N..2N floors.  Shared by the force blend
+// and by the energy ledger, whose charge-dipole term belongs to the retarded
+// sector only (see chargeDipoleInteractionEnergy).
+inline double retardedDipoleSectorWeight(const State& s) {
+    static const double instantaneousDipoleFloors=[] {
+        const char* text=std::getenv("CREM_DIPOLE_INSTANTANEOUS_BELOW");
+        const double value=text?std::atof(text):0.0;
+        return (std::isfinite(value)&&value>0.0)?value:0.0;
+    }();
+    if(!gDipoleForceEnabled||!(instantaneousDipoleFloors>0.0)
+       ||!(separationFloor()>0.0)) return 1.0;
+    const double inner=instantaneousDipoleFloors*separationFloor();
+    const double transition=std::clamp(
+        (separation(s)-inner)/inner,0.0,1.0);
+    return transition*transition*(3.0-2.0*transition);
+}
+
 inline MutualForces retardedExternalForces(const State& s,
                                     const StateHistory& history) {
     const ElectromagneticField secondField = lienardWiechertField(
@@ -3532,18 +3551,8 @@ inline MutualForces retardedExternalForces(const State& s,
     // every deep run came from; the integrator's own share was below 7 k/r0.
     // Whether that exchange is physics or an artefact of point dipoles at
     // these radii is a modelling choice, so it is a switch, not a fix.
-    static const double instantaneousDipoleFloors=[] {
-        const char* text=std::getenv("CREM_DIPOLE_INSTANTANEOUS_BELOW");
-        const double value=text?std::atof(text):0.0;
-        return (std::isfinite(value)&&value>0.0)?value:0.0;
-    }();
-    if(gDipoleForceEnabled&&instantaneousDipoleFloors>0.0
-       &&separationFloor()>0.0) {
-        const double inner=instantaneousDipoleFloors*separationFloor();
-        const double transition=std::clamp(
-            (separation(s)-inner)/inner,0.0,1.0);
-        const double retardedWeight=
-            transition*transition*(3.0-2.0*transition);
+    {
+        const double retardedWeight=retardedDipoleSectorWeight(s);
         if(retardedWeight<1.0) {
             const MutualForces chargeOnly{
                 lorentzForce(firstCharge,s.firstVelocity,secondField),
@@ -3689,52 +3698,75 @@ inline Vec3 noetherAngularMomentum(const State& s) {
 // against a reference carrying the same truncation at the same phase, which
 // is exactly what crem_collapse.hpp's background run is for.  See the README
 // section on the deterministic threshold in the energy balance.
-// CHARGE-DIPOLE (SPIN-ORBIT) INTERACTION ENERGY -- each moment sitting in the
-// regularized Biot-Savart field of the OTHER particle's moving charge.
+// CHARGE-DIPOLE (SPIN-ORBIT) INTERACTION ENERGY -- the motional electric
+// dipole of each moving moment in the Coulomb field of the other charge,
 //
-// This is the term the completeness audit found missing: chargeDipoleForces
-// carried the force with no counterpart anywhere in the energy ledger, while
-// every other interaction in the model (Coulomb, Darwin, dipole-dipole) had
-// both.
+//     U = -( p_1 . E_2(r_1) + p_2 . E_1(r_2) ),   p_i = lab electric dipole,
 //
-// B at particle 1 from particle 2's motion is (mu0/4pi) q2 (v2 x r_hat)/r^2,
-// and vice versa with r_hat reversed.  vectorPotentialFactor is weight/r^3, so
-// crossing with the separation VECTOR rather than its unit vector leaves
-// exactly weight/r^2 -- the same short-range weight the dipole field itself
-// uses, so this term is tamed at small r by the same regulator and not by a
-// second, independent one.
+// p_i being the tensor partner lorentzBoostDipole gives the proper magnetic
+// moment at the particle's OWN velocity (p = gamma v x mu/c^2 at leading
+// order), with E the Plummer (floor on) or regularized field of the charge.
 //
-// STRUCTURE.  Substituting q2 = -q1 and v2 = -v1 (equal masses, opposite
-// charges) collapses the sum to
+// WHICH TERM, AND FOR WHICH FORCES.  Measured along the model's own flow
+// (audit section 82: x' = v, p' = F, mu' = BMT; dE/dt of the full ledger by
+// central difference, spin sector = with moments minus without):
 //
-//     (mu0/4pi) q1 (mu2 - mu1).(v1 x r12) / r^2
+//                               no term     old -mu.B(v_other)   -p.E
+//   e+e- retarded, ortho 0.1    3.4e-3 W    3.9e-6 W             3.9e-6 W
+//   p+e- retarded, para 0.1     2.7e-2 W    2.7e-2 W             9.8e-6 W
+//   e+e- instantaneous, ortho   9.3e-7 W    3.4e-3 W             3.4e-3 W
+//   p+e- instantaneous, para    1.4e-8 W    2.7e-5 W             2.7e-2 W
 //
-// the DIFFERENCE of the moments: zero for para, maximal for ortho.  It is the
-// exact complement of M1, which carries the sum.  An earlier version of this
-// derivation gave the sum, by counting three sign reversals as two -- the
-// charge, the velocity AND the direction to the field point all reverse.  The
-// measured 27x ortho/para asymmetry in the energy-balance residual is what
-// caught that.
+// The retarded assembly couples each moment through U = mu.B + p.E, so its
+// ledger needs -p.E.  The old form, each moment in the Biot-Savart field of
+// the OTHER charge's motion, is identical for equal masses (v_2 = -v_1) and
+// wrong for any other pair: for p+e- it missed the electron's own motional
+// dipole entirely.  The instantaneous sum derives from Lagrangians linear in
+// the velocities (q (v_q - v_mu).A and the Thomas term), which contribute
+// nothing to the energy function, so it needs NO term.  conservative-
+// ParticleEnergy therefore takes the retarded-sector weight: 1 for the
+// retarded assembly, 0 for allExternalForces, the smoothstep in between
+// under CREM_DIPOLE_INSTANTANEOUS_BELOW.
+//
+// History: introduced by 8c85397 as -mu.B(v_other).  Its supporting
+// measurement, "the balance residual halves", was an artefact of an
+// unsynchronized validation start state (section 82): from a synchronized
+// start the residual is 1e-8 with or without the term over that window, and
+// the flow check above is what actually tests it.  For e+e- in the centre-of-
+// mass frame the two forms agree, so production is unchanged.
 inline double chargeDipoleInteractionEnergy(const State& state) {
     const Vec3 firstMinusSecond = state.firstPosition - state.secondPosition;
     const double distance = firstMinusSecond.norm();
     const double floor = separationFloor();
     if(!(distance > 0.0) && !(floor > 0.0)) return 0.0;
-    // The Plummer charge's field (section 66): v x r / rho^3.
+    // The Plummer charge's field (section 66): k q d / rho^3.
     const double radialFactor = floor > 0.0
         ? 1.0/std::pow(distance*distance + floor*floor, 1.5)
         : magneticRadialProfile(distance).vectorPotentialFactor;
-    constexpr double magneticConstant = mu0 / (4.0 * pi);
-    const Vec3 fieldAtFirst = cross(state.secondVelocity, firstMinusSecond)
-        * (magneticConstant * secondCharge * radialFactor);
-    const Vec3 fieldAtSecond = cross(state.firstVelocity, firstMinusSecond)
-        * (-magneticConstant * firstCharge * radialFactor);
-    const double energy = -dot(state.firstDipole, fieldAtFirst)
-                          -dot(state.secondDipole, fieldAtSecond);
+    const Vec3 fieldAtFirst = firstMinusSecond
+        * (coulomb * secondCharge * radialFactor);
+    const Vec3 fieldAtSecond = firstMinusSecond
+        * (-coulomb * firstCharge * radialFactor);
+    // p is rebuilt from the moments and velocities rather than read from
+    // state.firstElectricDipole: callers (validation probes, the secular
+    // turning point) build states that set a magnetic moment without ever
+    // synchronizing its electric partner, and a stale zero there reads as a
+    // jump of the whole term on the first engine step (it moved the shared-
+    // engine raw energy residual from 1.8e-6 to 8.4e-3).  synchronized is the
+    // same boost synchronizeCovariantDipoles applies, so on a synchronized
+    // state the result is identical.
+    State synchronized = state;
+    synchronizeCovariantDipoles(synchronized);
+    const double energy = -dot(synchronized.firstElectricDipole, fieldAtFirst)
+                          -dot(synchronized.secondElectricDipole, fieldAtSecond);
     return std::isfinite(energy) ? energy : 0.0;
 }
 
-inline double conservativeParticleEnergy(const State& state) {
+// chargeDipoleWeight: the retarded-sector weight of the charge-dipole term,
+// see chargeDipoleInteractionEnergy.  The default 1 is the production
+// (retarded) ledger; allExternalForces-driven callers pass 0.
+inline double conservativeParticleEnergy(const State& state,
+                                         double chargeDipoleWeight=1.0) {
     const PairGeometry geometry=clampedPairGeometry(state);
     const double kinetic=kineticEnergy(state.firstVelocity,firstMass)
         +kineticEnergy(state.secondVelocity,secondMass);
@@ -3744,7 +3776,7 @@ inline double conservativeParticleEnergy(const State& state) {
         state.firstPosition-state.secondPosition,
         state.firstDipole,state.secondDipole);
     return kinetic+coulombPotential+dipolePotential
-        +chargeDipoleInteractionEnergy(state)
+        +chargeDipoleWeight*chargeDipoleInteractionEnergy(state)
         +darwinInteractionEnergy(state)+state.dipoleConstraintEnergy;
 }
 
@@ -3940,7 +3972,13 @@ inline void integrateElectrodynamicStep(State& s, double dt,
     const bool quantizedRadiation=
         reactionModel==ChargeRadiationReactionModel::stochasticElectricDipole
         ||reactionModel==ChargeRadiationReactionModel::disabled;
-    const double initialMechanicalEnergy=conservativeParticleEnergy(balanceStart);
+    // The ledger must match the force model the step integrates.
+    const auto ledgerWeight=[&](const State& state) {
+        return useRetardedExternalForces
+            ?retardedDipoleSectorWeight(state):0.0;
+    };
+    const double initialMechanicalEnergy=conservativeParticleEnergy(
+        balanceStart,ledgerWeight(balanceStart));
     const CanonicalMomenta initialCanonical=canonicalMomenta(balanceStart);
     const Vec3 initialMechanicalMomentum=noetherMomentum(initialCanonical);
     const Vec3 initialMechanicalAngularMomentum=
@@ -4148,7 +4186,8 @@ inline void integrateElectrodynamicStep(State& s, double dt,
         // remainder; it is kept separate from the independently measured
         // mismatch of the LL force and coherent far radiation below.
         const double mechanicalEnergyChange=
-            conservativeParticleEnergy(trial)-initialMechanicalEnergy;
+            conservativeParticleEnergy(trial,ledgerWeight(trial))
+            -initialMechanicalEnergy;
         const CanonicalMomenta trialCanonical=canonicalMomenta(trial);
         const Vec3 mechanicalMomentumChange=
             noetherMomentum(trialCanonical)-initialMechanicalMomentum;
