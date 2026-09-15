@@ -676,6 +676,10 @@ inline int zeroPointModes = 64;
 //                          produces unphysical elements is stale; see
 //                          crem_collapse.hpp at the switch.
 //   CREM_SPIN_TRIM         Renormalize the spin after each transport step.
+//   CREM_NO_THOMAS_BACKREACTION
+//                          Drop the Thomas back-reaction force from the
+//                          instantaneous charge-dipole sum; restores the
+//                          4/3 (e+e-) spin-orbit torque that broke J.
 //   CREM_NO_APSIDAL_PRECESSION
 //                          Hold the apsidal line fixed across skipped orbits
 //                          (parallel transport with the plane only), the

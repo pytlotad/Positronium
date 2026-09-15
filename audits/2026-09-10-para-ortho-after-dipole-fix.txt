@@ -4950,3 +4950,83 @@ measurement of whether that survives a cascade.
      orbit that shrank to 0.73 a and was not repeated over 8 periods;
      external field and ZPF enter the force sum as in the engine's own E1
      power; M1 unchanged.
+
+80. THE 4/3 SPIN-ORBIT FACTOR: MISSING THOMAS BACK-REACTION IN THE
+    INSTANTANEOUS FORCE SUM
+
+80a. THE FINDING OF 77b.  The instantaneous pair pairDipoleForce +
+     chargeDipoleForces had the same dipole-dipole sector as the retarded
+     assembly but a spin-orbit sector 4/3 as large (apsidal rate 0.01105
+     against 0.00829 per particle at a_pair).
+
+80b. WHICH MODEL IS RIGHT.  Probe soprobe.cpp, orbit averages over Kepler
+     nodes (e=0.3; a_pair and 0.1 a_pair), moment on one particle only:
+       - third law: the instantaneous sum cancels exactly, the retarded one
+         to 1e-5..1e-4 (field momentum);
+       - orbit-averaged work: zero in both;
+       - angular momentum: torque on the orbit against -dS/dt from the
+         orbit-averaged Thomas-BMT rates.  Retarded: residual 3.2e-4 and
+         3.8e-4.  Instantaneous: residual 0.333, torque = 4/3 dS/dt.
+     So the retarded assembly conserves J = L + S with BMT spins, and the
+     instantaneous one does not.
+
+80c. WHY 4/3.  BMT contains Thomas precession, omega_T = -(v x a)/(2c^2).
+     The instantaneous force comes from L = q (v_charge - v_dipole).A_mu,
+     which couples the moment only to its rest-frame magnetic field and has
+     no counterpart of omega_T.  For spin p in the Coulomb field of o the
+     orbital coupling weight is g_p/(2 m_p m_o) + (g_p-1)/(2 m_p^2) with
+     Thomas and g_p/(2 m_p m_o) + g_p/(2 m_p^2) without it (Barker and
+     O'Connell): 3/2 against 2 for equal masses, 1/2 against 1 for
+     m_o >> m_p.  The predicted ratios are 4/3 and 2.
+
+80d. TEST OF THE EXPLANATION.  Thomas Lagrangian
+     L_T = (q_p/(2 m_p c^2)) v_p.(E_o(r_p) x S_p), Euler-Lagrange forces,
+     added to the instantaneous sum (probe thomasforce.cpp):
+
+     pair  spin on      J residual inst / +T / ret     apsidal deg/orbit inst / +T / ret
+     e+e-  e (a_pair)   0.333 / 3.6e-6 / 3.8e-4        0.008468 / 0.006354 / 0.006351
+     e+e-  e (0.1)      0.333 / 3.9e-5 / 3.2e-4        0.2678 / 0.2009 / 0.2008
+     p+e-  e (a_pair)   0.997 / 3.6e-5 / 1.1e-3        0.01693 / 0.008479 / 0.008467
+     p+e-  e (0.1)      0.997 / 3.6e-4 / 9.8e-4        0.5355 / 0.2682 / 0.2673
+     p+e-  p (a_pair)   6.7e-5 / 3.1e-5 / 2.1e-4       -0.000026 in all three
+
+     For the electron of p+e- the instantaneous torque was 2x, as 80c
+     predicts; for the proton the Thomas term is negligible.  Node by node
+     the forces still differ by about half their size (total time
+     derivatives that average out), so the identity is secular, not
+     pointwise.
+
+80e. FIX.  thomasBackReactionForces (electrodynamics.hpp), analytic, same
+     Plummer profile as the charge field, added inside chargeDipoleForces.
+     L_T is linear in the velocities, so the energy function at fixed S is
+     unchanged.  CREM_NO_THOMAS_BACKREACTION removes it.
+
+80f. ENGINE WITH INSTANTANEOUS FORCES, 20 orbits, 0.1 a_pair, e=0.3,
+     moments at 40 degrees, against the J-conserving secular transport
+     (which now includes the apsidal rate of section 77):
+
+     case    quantity       before fix   after fix   secular
+     ortho   tilt of L      8.777        7.652       7.651
+     ortho   apsidal angle  +16.09       +13.42      +13.43
+     ortho   dJ/J           7.4e-3       3.1e-5      0
+     para    tilt of L      4.265        4.265       4.280
+     para    apsidal angle  -1.095       -1.096      -1.198
+     para    dJ/J           3.5e-4       1.9e-5      0
+
+     The retarded engine in the same test (section 76) had dJ/J 2.7e-4
+     (ortho) and 5.8e-4 (para).  The para spin-orbit sector cancels between
+     the two particles, so para is unchanged apart from its J drift; its
+     9% apsidal gap to the secular value is not from this term and is not
+     resolved.
+
+80g. SCOPE.  Default production uses the retarded assembly, which already
+     had the term: trace 42/2 gives 199.445464 ps (para) and 199.475437 ps
+     (ortho), identical to before.  The fix changes CREM_DIPOLE_
+     INSTANTANEOUS_BELOW, CREM_DARWIN_FORCES / useRetardedExternalForces
+     off, the seed accelerations of causalInitialHistory (overwritten by its
+     retarded Picard pass) and the Schott diagnostic.  Validation 60/60,
+     header isolation 37/37.
+
+80h. LIMITS.  The energy ledger term chargeDipoleInteractionEnergy was not
+     re-examined against the corrected force; the tilted-pair energy errors
+     measured with the instantaneous switch in section 66 were not rerun.

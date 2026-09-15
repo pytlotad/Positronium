@@ -2863,6 +2863,91 @@ inline ChargeDipolePairForces chargeDipolePairForces(
     return {onCharge, onCharge * -1.0};
 }
 
+// Orbital back-reaction of Thomas precession.
+//
+// chargeDipolePairForces derives the charge-dipole force from
+// L_qmu = q (v_charge - v_dipole).A_mu, which couples the moment only to the
+// magnetic field in its rest frame.  The moments themselves follow
+// Thomas-BMT, whose precession also contains the kinematic Thomas term
+// omega_T = -(v x a)/(2c^2).  A force law without its counterpart does not
+// conserve J = L + S: measured on Kepler orbits (e=0.3, 0.5; a_pair and
+// 0.1 a_pair) the orbit-averaged torque of the instantaneous sum was 4/3 of
+// -dS/dt for e+e- and 2x for the electron of p+e-, while the retarded
+// assembly balanced it to 3e-4.  4/3 and 2 are exactly the Barker-O'Connell
+// spin-orbit weights with and without the Thomas term: for spin p in the
+// Coulomb field of o the orbit couples through
+//
+//     g_p/(2 m_p m_o) + (g_p - 1)/(2 m_p^2)      (with Thomas)
+//     g_p/(2 m_p m_o) + g_p/(2 m_p^2)            (magnetic only),
+//
+// i.e. 3/2 against 2 for equal masses and 1/2 against 1 for m_o >> m_p.
+//
+// The missing term is the Lagrangian of Thomas precession,
+//
+//     L_T = -omega_T.S_p = (q_p/(2 m_p c^2)) v_p.(E_o(r_p) x S_p)
+//         = v_p.A_T,   A_T = C f(d) (d x S_p),   C = k q_o q_p/(2 m_p c^2),
+//
+// d = r_p - r_o and f the same radial profile the charge's field uses
+// (Plummer rho^-3 when the floor is on).  Euler-Lagrange with L_T depending
+// on r_p - r_o only:
+//
+//     F_p =  grad_d(v_p.A_T) - dA_T/dt,     F_o = -grad_d(v_p.A_T),
+//     dA_T/dt = C [ (grad f.v_rel)(d x S) + f (v_rel x S) + f (d x S') ].
+//
+// Checked against the retarded assembly (audit section 80): orbit-averaged
+// J balance 4e-6..4e-4, apsidal rate equal to 5e-4 (e+e-) and 3e-3 (p+e-).
+// Node by node the two differ by total time derivatives that average out.
+// L_T is linear in the velocities, so it adds nothing to the energy function
+// at fixed S.  CREM_NO_THOMAS_BACKREACTION removes it, for comparison.
+inline MutualForces thomasBackReactionForces(const State& s,
+                                             const DipoleDerivatives& derivatives) {
+    const Vec3 firstMinusSecond=s.firstPosition-s.secondPosition;
+    const double distance=firstMinusSecond.norm();
+    const double floor=separationFloor();
+    if(!(distance>0.0)&&!(floor>0.0)) return {};
+    double radialFactor=0.0,gradientFactor=0.0;   // f, and grad f = g d
+    if(floor>0.0) {
+        const double rhoSquared=distance*distance+floor*floor;
+        radialFactor=1.0/std::pow(rhoSquared,1.5);
+        gradientFactor=-3.0/std::pow(rhoSquared,2.5);
+    } else {
+        const MagneticRadialProfile profile=magneticRadialProfile(distance);
+        radialFactor=profile.vectorPotentialFactor;
+        gradientFactor=profile.firstDerivative/distance;
+    }
+    const auto contribution=[&](bool spinFirst) {
+        const double gyromagnetic=spinFirst?firstGyromagneticRatioOf()
+                                           :secondGyromagneticRatioOf();
+        if(!(std::abs(gyromagnetic)>0.0)) return MutualForces{};
+        const double spinCharge=spinFirst?firstCharge:secondCharge;
+        const double spinMass=spinFirst?firstMass:secondMass;
+        const double otherCharge=spinFirst?secondCharge:firstCharge;
+        const Vec3 spinVelocity=spinFirst?s.firstVelocity:s.secondVelocity;
+        const Vec3 otherVelocity=spinFirst?s.secondVelocity:s.firstVelocity;
+        const Vec3 spin=(spinFirst?s.firstDipole:s.secondDipole)/gyromagnetic;
+        const Vec3 spinRate=
+            (spinFirst?derivatives.first:derivatives.second)/gyromagnetic;
+        const Vec3 d=spinFirst?firstMinusSecond:firstMinusSecond*-1.0;
+        const double coefficient=coulomb*otherCharge*spinCharge
+            /(2.0*spinMass*c*c);
+        const Vec3 spinCrossVelocity=cross(spin,spinVelocity);
+        const Vec3 gradient=(spinCrossVelocity*radialFactor
+            +d*(gradientFactor*dot(d,spinCrossVelocity)))*coefficient;
+        const Vec3 relativeVelocity=spinVelocity-otherVelocity;
+        const Vec3 potentialRate=(cross(d,spin)
+                *(gradientFactor*dot(d,relativeVelocity))
+            +cross(relativeVelocity,spin)*radialFactor
+            +cross(d,spinRate)*radialFactor)*coefficient;
+        const Vec3 onSpin=gradient-potentialRate;
+        const Vec3 onOther=gradient*-1.0;
+        return spinFirst?MutualForces{onSpin,onOther}
+                        :MutualForces{onOther,onSpin};
+    };
+    const MutualForces first=contribution(true);
+    const MutualForces second=contribution(false);
+    return {first.first+second.first,first.second+second.second};
+}
+
 inline MutualForces chargeDipoleForces(const State& s, const StateHistory& history) {
     const DipoleDerivatives derivatives = thomasBmtDipoleDerivatives(s, history);
     const Vec3 firstMinusSecond = s.firstPosition - s.secondPosition;
@@ -2876,8 +2961,14 @@ inline MutualForces chargeDipoleForces(const State& s, const StateHistory& histo
         firstMinusSecondVelocity * -1.0, secondCharge, s.firstDipole,
         derivatives.first, firstMinusSecond * -1.0);
 
-    return {firstChargeSecondDipole.onCharge + secondChargeFirstDipole.onDipole,
-            secondChargeFirstDipole.onCharge + firstChargeSecondDipole.onDipole};
+    static const bool thomasBackReaction=
+        std::getenv("CREM_NO_THOMAS_BACKREACTION")==nullptr;
+    const MutualForces thomas=thomasBackReaction
+        ?thomasBackReactionForces(s,derivatives):MutualForces{};
+    return {firstChargeSecondDipole.onCharge + secondChargeFirstDipole.onDipole
+                + thomas.first,
+            secondChargeFirstDipole.onCharge + firstChargeSecondDipole.onDipole
+                + thomas.second};
 }
 
 inline MutualForces allExternalForces(const State& s) {
