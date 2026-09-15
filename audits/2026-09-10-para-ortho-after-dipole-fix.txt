@@ -5469,3 +5469,9 @@ measurement of whether that survives a cascade.
      the engine cannot resolve orbits inside ~0.8 r* at tolerances that
      converge, so the wider moment's dynamics there is untested; step 3
      (a ZPF-generated L distribution) is not done.
+
+86i. THE 1e-10 ORTHO RUN PROMISED IN 86g.  Finished: the whole window,
+     r_min 1.0941 r*, |dE|max 2.07e-02 k/r*.  With 1.0936 r* at 1e-8 and
+     1.0942 r* at 1e-9 the three tolerances agree to four digits, so the
+     ortho hold at the wider moment is converged; para at 0 degrees remains
+     the unconverged case of 86g.
