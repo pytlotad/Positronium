@@ -2299,6 +2299,60 @@ inline int runMaxwellSelfTest(
         &&secularM1RelativeChange<1.0e-2
         // Still a real average, not the collapsed naive form.
         &&secularM1NaiveRatio>1.0e3;
+    // secular-apsidal-rate.  orbitAveragedApsidalRate's relativistic part
+    // must reproduce the 1PN periastron advance pi k^2/(c^2 L^2) per orbit
+    // that the retarded engine was measured to follow (audit section 76);
+    // without moments its magnetic part must vanish exactly; on a circle
+    // both are zero by definition.  For an equal-mass pair with moments
+    // normal to L the spin-orbit sector drops out and the dipole-dipole
+    // sector flips sign between parallel and antiparallel moments, so the
+    // two magnetic rates must be equal and opposite.
+    const double apsidalAxis=0.1*pairBohrRadius(activePair);
+    constexpr double apsidalEccentricity=0.3;
+    const double apsidalAngularMomentum=std::sqrt(pairReducedMass
+        *pairCoulombStrength*apsidalAxis
+        *(1.0-apsidalEccentricity*apsidalEccentricity));
+    const Vec3 apsidalL{0.0,0.0,apsidalAngularMomentum};
+    const double apsidalPeriod=2.0*pi*std::sqrt(pairReducedMass
+        *apsidalAxis*apsidalAxis*apsidalAxis/pairCoulombStrength);
+    const OrbitAveragedApsidalRate apsidalBare=orbitAveragedApsidalRate(
+        apsidalAxis,apsidalL,{},{},pairReducedMass,Vec3{1.0,0.0,0.0});
+    const double apsidalReference=pi*pairCoulombStrength*pairCoulombStrength
+        /(c*c*apsidalAngularMomentum*apsidalAngularMomentum);
+    const double apsidalRelativisticResidual=apsidalBare.valid
+        ?std::abs(apsidalBare.relativistic*apsidalPeriod/apsidalReference-1.0)
+        :std::numeric_limits<double>::infinity();
+    const Vec3 apsidalNormalMoment{std::cos(0.6),std::sin(0.6),0.0};
+    const OrbitAveragedApsidalRate apsidalParallel=orbitAveragedApsidalRate(
+        apsidalAxis,apsidalL,apsidalNormalMoment*firstMagneticMoment,
+        apsidalNormalMoment*secondMagneticMoment,pairReducedMass,
+        Vec3{1.0,0.0,0.0});
+    const OrbitAveragedApsidalRate apsidalAntiparallel=
+        orbitAveragedApsidalRate(apsidalAxis,apsidalL,
+            apsidalNormalMoment*firstMagneticMoment,
+            apsidalNormalMoment*(-secondMagneticMoment),pairReducedMass,
+            Vec3{1.0,0.0,0.0});
+    const bool apsidalEqualMasses=std::abs(firstMass-secondMass)
+        <=1.0e-12*std::max(firstMass,secondMass);
+    const double apsidalMirrorResidual=
+        (apsidalParallel.valid&&apsidalAntiparallel.valid)
+        ?std::abs(apsidalParallel.magnetic+apsidalAntiparallel.magnetic)
+            /std::max(std::abs(apsidalParallel.magnetic),1.0e-300)
+        :std::numeric_limits<double>::infinity();
+    const OrbitAveragedApsidalRate apsidalCircle=orbitAveragedApsidalRate(
+        apsidalAxis,Vec3{0.0,0.0,std::sqrt(pairReducedMass
+            *pairCoulombStrength*apsidalAxis)},
+        apsidalNormalMoment*firstMagneticMoment,
+        apsidalNormalMoment*secondMagneticMoment,pairReducedMass,
+        Vec3{1.0,0.0,0.0});
+    const bool secularApsidalRateOk=
+        apsidalBare.valid&&apsidalRelativisticResidual<1.0e-3
+        &&apsidalBare.relativistic>0.0&&apsidalBare.magnetic==0.0
+        &&apsidalParallel.valid&&apsidalAntiparallel.valid
+        &&std::isfinite(apsidalParallel.magnetic)
+        &&std::abs(apsidalParallel.magnetic)>0.0
+        &&(!apsidalEqualMasses||apsidalMirrorResidual<1.0e-2)
+        &&apsidalCircle.valid&&apsidalCircle.total()==0.0;
     const Vec3 secularReferenceTangential=cross(
         secularReferenceNormal,secularReferenceRadial);
     Vec3 dimensionlessPosition=secularReferenceRadial
@@ -5930,7 +5984,7 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,59> regressionChecks{{
+    const std::array<ValidationCheck,60> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
@@ -5980,6 +6034,7 @@ inline int runMaxwellSelfTest(
         {ValidationSection::Convergence,"coupled-secular-spin-orbit-convergence",secularSpinOrbitConvergenceOk},
         {ValidationSection::Convergence,"secular-eccentric-orbit",secularEccentricOrbitOk},
         {ValidationSection::Convergence,"m1-secular-orbit-average",secularM1OrbitAverageOk},
+        {ValidationSection::AlgebraicIdentity,"secular-apsidal-rate",secularApsidalRateOk},
         {ValidationSection::AlgebraicIdentity,"secular-zpf-phase-rate",secularZeroPointPhaseRateOk},
         {ValidationSection::AlgebraicIdentity,"zpf-faraday",zeroPointFaradayOk},
         {ValidationSection::AlgebraicIdentity,"dipole-gradient-force-covariance",dipoleGradientForceCovarianceOk},

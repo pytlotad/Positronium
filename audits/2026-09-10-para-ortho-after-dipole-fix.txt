@@ -4750,3 +4750,63 @@ measurement of whether that survives a cascade.
      not measured; one start azimuth of the moments; the 5.5 r* comparison
      is a sampled phase at every second orbit, not a fitted precession
      frequency.
+
+77. APSIDAL PRECESSION ADDED TO THE SECULAR LAYER
+
+77a. WHAT WAS ADDED.  orbitAveragedApsidalRate (secular_spin_orbit.hpp):
+     the secular Gauss equation for the Runge-Lenz vector, averaged in time
+     over the Kepler ellipse, projected on the in-plane direction normal to
+     e and divided by |e|.  advanceCoupledSecularSpinOrbit evaluates it once
+     per substep at the midpoint state and rotates the apsidal line about
+     the new normal.  e and the plane stay governed by |L| and J as before.
+     CREM_NO_APSIDAL_PRECESSION restores the old behaviour.  Below e=1e-4
+     the rate is set to zero.
+
+77b. WHICH FORCES.  Two parts, both measured against the engine (76c).
+     - Relativistic: darwinForces plus the 1PN kinetic term of
+       d(gamma m v)/dt = F.  Darwin alone gives 0.00790 degrees per orbit at
+       a_pair (3/4); with the kinetic term 0.01053 = pi k^2/(c^2 L^2), the
+       engine's 0.0106.
+     - Magnetic: retardedExternalForces with the moments minus without,
+       one-state history.  The instantaneous pair (pairDipoleForce +
+       chargeDipoleForces) was tried first and rejected.  Its dipole-dipole
+       sector equals the retarded one, but its spin-orbit sector is exactly
+       4/3 of it (0.01105 against 0.00829 per particle at a_pair), which
+       puts ortho 30% high (0.0186 against the engine's 0.0144).  That
+       mismatch between the two force models is itself open; it only
+       matters where CREM_DIPOLE_INSTANTANEOUS_BELOW is set.
+     - One-state history against causalInitialHistory: 6e-5 at a_pair,
+       6e-4 at 0.1 a_pair, 0.5-1% at 0.01 a_pair for e=0.3, at 1/8 of
+       the cost.  Quadrature: 16 to 128 nodes agree to 1e-6.
+
+77c. AGAINST THE ENGINE, 20 ORBITS, e=0.3 (apsidal angle, degrees).
+
+     case                 secular   engine   difference
+     a_pair   para 40     +0.1776   +0.1789  -0.7%
+     a_pair   ortho 40    +0.4978   +0.4991  -0.3%
+     0.1      para 40     -1.1815   -1.1778  +0.3%
+     0.1      ortho 40    +13.344   +13.643  -2.2%
+     0.1      para 90     +6.454    +6.894   -6.4%
+     0.1      ortho 90    -2.229    -2.389   -6.7%
+
+     Before this change the secular column was 0 throughout.
+
+77d. PRODUCTION.  16 trajectories per channel, seed 42, with the rate and
+     with CREM_NO_APSIDAL_PRECESSION:
+
+     channel  mean change   sd of change   moved   photons changed   wall
+     para     -0.000005 ps  0.000130 ps    5/16    0                 +0.1%
+     ortho    +0.000005 ps  0.000054 ps    2/16    0                 +0.5%
+
+     The largest single change is 0.00038 ps.  As 76d predicted, the
+     apsidal line reaches the lifetime only through the M1 share, and that
+     is negligible along these trajectories.  Validation 60/60 with the new
+     check secular-apsidal-rate (1PN reference to 1e-3, zero magnetic rate
+     without moments, para/ortho mirror for moments normal to L, zero on a
+     circle); header isolation 37/37.
+
+77e. LIMITS.  The comparison in 77c uses the engine runs of 76b (20
+     orbits, reaction off, one eccentricity); the 90-degree cases differ by
+     6-7%, not resolved further.  First-order averaging loses its meaning
+     where the precession approaches a revolution per orbit (0.01 a_pair
+     at e=0.9); the rate is applied there unchanged.

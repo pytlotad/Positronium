@@ -676,6 +676,10 @@ inline int zeroPointModes = 64;
 //                          produces unphysical elements is stale; see
 //                          crem_collapse.hpp at the switch.
 //   CREM_SPIN_TRIM         Renormalize the spin after each transport step.
+//   CREM_NO_APSIDAL_PRECESSION
+//                          Hold the apsidal line fixed across skipped orbits
+//                          (parallel transport with the plane only), the
+//                          behaviour before orbitAveragedApsidalRate.
 //   CREM_PAIR_L_WITH_E     Recompute angular momentum on the same schedule as
 //                          energy across a skipped span; this is the change
 //                          measured to remove 90% of the L/E separation.

@@ -100,6 +100,9 @@ struct SecularSpinOrbitAdvance {
     double relativeAngularMomentumResidual=
         std::numeric_limits<double>::infinity();
     Vec3 externalAngularMomentumTransfer;
+    // Total rotation of the apsidal line about L applied by
+    // orbitAveragedApsidalRate over the call, radians.
+    double apsidalAngle=0.0;
 };
 
 inline Vec3 rotateDipoleByAngularVelocity(const Vec3& dipole,
@@ -140,9 +143,10 @@ inline Vec3 orbitPlaneDirection(const Vec3& orbitalAngularMomentum,
 }
 
 // Minimal-rotation transport of the apsidal line when spin exchange or a
-// photon tilts L.  The reduced model has no independent Runge-Lenz equation;
-// parallel transport is the neutral closure that introduces no arbitrary
-// rotation about the new normal.  Projection at the end removes round-off.
+// photon tilts L.  This introduces no rotation about the new normal; the
+// physical in-plane precession is applied separately, from
+// orbitAveragedApsidalRate, inside advanceCoupledSecularSpinOrbit.  Photon
+// kicks use this transport alone.  Projection at the end removes round-off.
 inline Vec3 transportOrbitPlaneDirection(const Vec3& direction,
                                    const Vec3& oldAngularMomentum,
                                    const Vec3& newAngularMomentum) {
@@ -448,6 +452,193 @@ inline OrbitAveragedBmtAngularVelocities orbitAveragedBmtAngularVelocities(
     return result;
 }
 
+// Orbit-averaged rotation of the apsidal line about L.
+//
+// The skipped orbits used to carry the apsidal line only by parallel
+// transport with the plane (transportOrbitPlaneDirection), i.e. with no
+// in-plane rotation at all.  The resolved engine turns it, and audit
+// section 76 measured by how much, per orbit at e=0.3 (degrees):
+//
+//     a/a_pair   Darwin/1PN   magnetic para 40   magnetic ortho 40
+//     1          +0.0106      -0.0017            +0.0144
+//     0.1        +0.1049      -0.1638            +0.5772
+//
+// so for ortho the magnetic part already exceeds the relativistic one at
+// the Bohr radius, with the opposite sign for para.
+//
+// The rate is the secular Gauss equation for the Laplace-Runge-Lenz vector
+//
+//     e = v x h / K - r/|r|,     de/dt = (f x h + v x (r x f)) / K,
+//
+// with K = k/mu, h = r x v and f the perturbing relative acceleration
+// F1/m1 - F2/m2, averaged in time over the same Kepler ellipse and the same
+// eccentric-anomaly nodes as orbitAveragedBmtAngularVelocities.  The
+// in-plane component of <de/dt> perpendicular to e, divided by |e|, is the
+// angular velocity of the apsidal line about the orbit normal.  Its other
+// components change |e| and tilt the plane; those are NOT applied here,
+// because the secular state already fixes e through |L| and the plane
+// through J = L + S.
+//
+// f is split in two so either part can be read alone:
+//
+//   relativistic  darwinForces plus the 1PN kinetic correction of
+//                 d(gamma m v)/dt = F, i.e. -F v^2/(2c^2) - v (v.F)/c^2 per
+//                 particle with F the Coulomb force.  The Darwin interaction
+//                 alone gives 3/4 of the engine's precession; with the
+//                 kinetic term the average is pi k^2/(c^2 L^2) per orbit, the
+//                 value the retarded engine was measured to follow (0.0106
+//                 against 0.01053 degrees at a_pair, 0.1049 against 0.1053
+//                 at 0.1 a_pair, e=0.3).
+//
+//   magnetic      retardedExternalForces with the moments minus the same
+//                 call without them, i.e. the production force assembly
+//                 itself.  NOT the instantaneous pairDipoleForce +
+//                 chargeDipoleForces pair: its dipole-dipole sector agrees,
+//                 but its spin-orbit sector is 4/3 of the retarded one, so it
+//                 overstates the ortho rate by 30% (0.0186 against the
+//                 measured 0.0144 degrees per orbit at a_pair).  A one-state
+//                 history, as in orbitAveragedBmtAngularVelocities, instead of
+//                 causalInitialHistory: 8x cheaper, and it moves the average
+//                 by 6e-5 at a_pair, 6e-4 at 0.1 a_pair, 0.5-1% at 0.01 a_pair
+//                 for e=0.3 (9% at 0.01 a_pair, e=0.9, where the precession
+//                 exceeds a revolution per orbit and first-order averaging
+//                 has no meaning left anyway).
+//
+// Radiation reaction does not enter.  A configured external field or the
+// ZPF cancels from the magnetic difference except through the moments' own
+// coupling to it.
+//
+// For a circle the apsidal line is undefined and the quotient by |e| is
+// numerically unsafe, so below e=1e-4 both rates are reported as zero.
+struct OrbitAveragedApsidalRate {
+    double relativistic=0.0;   // rad/s about L/|L|
+    double magnetic=0.0;       // rad/s about L/|L|
+    int phaseNodes=0;
+    bool valid=false;
+    double total() const { return relativistic+magnetic; }
+};
+
+inline OrbitAveragedApsidalRate orbitAveragedApsidalRate(
+        double semiMajorAxis,const Vec3& orbitalAngularMomentum,
+        const Vec3& firstDipole,const Vec3& secondDipole,
+        double reducedMass,Vec3 periapsisDirection={}) {
+    OrbitAveragedApsidalRate result;
+    if(!(semiMajorAxis>0.0)||!(reducedMass>0.0)
+       ||!std::isfinite(semiMajorAxis)||!std::isfinite(reducedMass)
+       ||!isFinite(orbitalAngularMomentum)||!isFinite(firstDipole)
+       ||!isFinite(secondDipole)||!isFinite(periapsisDirection)) return result;
+    const double orbitalNorm=orbitalAngularMomentum.norm();
+    if(!(orbitalNorm>0.0)) return result;
+    const double circularAngularMomentumSquared=
+        reducedMass*pairCoulombStrength*semiMajorAxis;
+    if(!(circularAngularMomentumSquared>0.0)
+       ||!std::isfinite(circularAngularMomentumSquared)) return result;
+    const double oneMinusEccentricitySquared=std::min(1.0,
+        orbitalNorm*orbitalNorm/circularAngularMomentumSquared);
+    if(!(oneMinusEccentricitySquared>0.0)) return result;
+    const double eccentricity=
+        std::sqrt(std::max(0.0,1.0-oneMinusEccentricitySquared));
+    if(eccentricity<1.0e-4) {
+        result.valid=true;
+        return result;
+    }
+    const double eccentricityComplement=std::sqrt(oneMinusEccentricitySquared);
+    const Vec3 normal=orbitalAngularMomentum/orbitalNorm;
+    const Vec3 radialHat=orbitPlaneDirection(
+        orbitalAngularMomentum,periapsisDirection);
+    if(!(radialHat.norm()>0.0)) return result;
+    const Vec3 tangentialHat=cross(normal,radialHat);
+    const double meanMotion=std::sqrt(pairCoulombStrength
+        /(reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis));
+    if(!std::isfinite(meanMotion)||!(meanMotion>0.0)) return result;
+    const double attraction=pairCoulombStrength/reducedMass;
+    const double totalMassHere=firstMass+secondMass;
+    // Half the node schedule of the BMT average: the perturbing forces here
+    // are smooth r^-2..r^-4 profiles.  Measured for ortho moments at 40
+    // degrees, a_pair and 0.1 a_pair, e from 0.001 to 0.3: 16, 32, 64 and
+    // 128 nodes agree to 1e-6 relative, and the rate tends to a finite limit
+    // as e falls (1.2397e-2 degrees per orbit at a_pair), so the quotient by
+    // |e| is well conditioned down to the 1e-4 cut above.
+    const double targetPhaseNodes=
+        32.0/std::sqrt(std::max(1.0-eccentricity,1.0e-12));
+    int phaseNodes=32;
+    while(phaseNodes<2048&&phaseNodes<targetPhaseNodes) phaseNodes*=2;
+    result.phaseNodes=phaseNodes;
+    double relativisticSum=0.0,magneticSum=0.0;
+    for(int node=0;node<phaseNodes;++node) {
+        const double eccentricAnomaly=2.0*pi*node
+            /static_cast<double>(phaseNodes);
+        const double cosine=std::cos(eccentricAnomaly);
+        const double sine=std::sin(eccentricAnomaly);
+        const double timeWeight=1.0-eccentricity*cosine;
+        if(!(timeWeight>0.0)) return result;
+        const Vec3 relativePosition=
+            radialHat*(semiMajorAxis*(cosine-eccentricity))
+            +tangentialHat*(semiMajorAxis*eccentricityComplement*sine);
+        const Vec3 relativeVelocity=
+            (radialHat*(-semiMajorAxis*meanMotion*sine)
+             +tangentialHat*(semiMajorAxis*meanMotion
+                 *eccentricityComplement*cosine))/timeWeight;
+        State sample{};
+        sample.firstPosition=relativePosition*(secondMass/totalMassHere);
+        sample.secondPosition=relativePosition*(-firstMass/totalMassHere);
+        sample.firstVelocity=relativeVelocity*(secondMass/totalMassHere);
+        sample.secondVelocity=relativeVelocity*(-firstMass/totalMassHere);
+        if(!(sample.firstVelocity.norm()<c)
+           ||!(sample.secondVelocity.norm()<c)) return result;
+        sample.firstProperDipole=firstDipole;
+        sample.secondProperDipole=secondDipole;
+        synchronizeCovariantDipoles(sample);
+        const Vec3 specificAngularMomentum=
+            cross(relativePosition,relativeVelocity);
+        const auto apsidalProjection=[&](const Vec3& force1,
+                                         const Vec3& force2) {
+            const Vec3 perturbation=force1/firstMass-force2/secondMass;
+            const Vec3 eccentricityRate=
+                (cross(perturbation,specificAngularMomentum)
+                 +cross(relativeVelocity,
+                     cross(relativePosition,perturbation)))/attraction;
+            return dot(eccentricityRate,tangentialHat)*timeWeight;
+        };
+        const MutualForces darwin=darwinForces(sample);
+        const MutualForces coulombHere=coulombForces(sample);
+        const auto kinetic=[](const Vec3& force,const Vec3& velocity) {
+            return force*(-velocity.squaredNorm()/(2.0*c*c))
+                -velocity*(dot(velocity,force)/(c*c));
+        };
+        relativisticSum+=apsidalProjection(
+            darwin.first+kinetic(coulombHere.first,sample.firstVelocity),
+            darwin.second+kinetic(coulombHere.second,sample.secondVelocity));
+        if(gDipoleForceEnabled&&(firstDipole.squaredNorm()>0.0
+                                 ||secondDipole.squaredNorm()>0.0)) {
+            // Built from the kinematics alone: synchronizeCovariantDipoles
+            // restores a zero proper moment from the lab one, so zeroing
+            // only the proper slots of a copy would leave the moments in.
+            State bare{};
+            bare.firstPosition=sample.firstPosition;
+            bare.secondPosition=sample.secondPosition;
+            bare.firstVelocity=sample.firstVelocity;
+            bare.secondVelocity=sample.secondVelocity;
+            synchronizeCovariantDipoles(bare);
+            const StateHistory sampleHistory{State{sample}};
+            const StateHistory bareHistory{State{bare}};
+            const MutualForces withMoments=
+                retardedExternalForces(sample,sampleHistory);
+            const MutualForces withoutMoments=
+                retardedExternalForces(bare,bareHistory);
+            magneticSum+=apsidalProjection(
+                withMoments.first-withoutMoments.first,
+                withMoments.second-withoutMoments.second);
+        }
+    }
+    const double nodeCount=static_cast<double>(phaseNodes);
+    result.relativistic=relativisticSum/(nodeCount*eccentricity);
+    result.magnetic=magneticSum/(nodeCount*eccentricity);
+    result.valid=std::isfinite(result.relativistic)
+        &&std::isfinite(result.magnetic);
+    return result;
+}
+
 inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
         const SecularSpinOrbitState& initial,double semiMajorAxis,
         double reducedMass,double elapsedTime,
@@ -561,6 +752,7 @@ inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
             externalTorque(startRates,result.state.firstDipole,
                             result.state.secondDipole);
         Vec3 firstMid,secondMid,orbitalMid,midpointAngularMomentum;
+        Vec3 periapsisMidpoint;
         OrbitAveragedBmtAngularVelocities midpointRates;
         for(int retry=0;retry<24;++retry) {
             firstMid=rotateDipoleByAngularVelocity(
@@ -573,6 +765,7 @@ inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
             const Vec3 periapsisMid=transportOrbitPlaneDirection(
                 result.state.periapsisDirection,
                 result.state.orbitalAngularMomentum,orbitalMid);
+            periapsisMidpoint=periapsisMid;
             midpointRates=orbitAveragedBmtAngularVelocities(
                 semiMajorAxis,orbitalMid,firstMid,secondMid,reducedMass,
                 result.state.zeroPointPhase
@@ -601,10 +794,32 @@ inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
             angularMomentumAfter-spinTotal(firstAfter,secondAfter);
         if(!isFinite(orbitalAfter)||!(orbitalAfter.norm()>1.0e-300))
             return result;
-        const Vec3 periapsisAfter=transportOrbitPlaneDirection(
+        Vec3 periapsisAfter=transportOrbitPlaneDirection(
             result.state.periapsisDirection,
             result.state.orbitalAngularMomentum,orbitalAfter);
         if(!(periapsisAfter.norm()>0.0)) return result;
+        // In-plane apsidal precession, evaluated once per substep at the
+        // midpoint state and applied as a rotation about the new normal.  It
+        // does not bound the substep: the rotation is exact for a constant
+        // rate, and the spin rates above depend on the apsidal direction by
+        // at most 0.3% (audit section 76d), so a large apsidal angle per
+        // substep does not degrade the spin transport.
+        // CREM_NO_APSIDAL_PRECESSION restores the pure parallel transport.
+        static const bool apsidalPrecession=
+            std::getenv("CREM_NO_APSIDAL_PRECESSION")==nullptr;
+        if(apsidalPrecession) {
+            const OrbitAveragedApsidalRate apsidal=orbitAveragedApsidalRate(
+                semiMajorAxis,orbitalMid,firstMid,secondMid,reducedMass,
+                periapsisMidpoint);
+            if(!apsidal.valid) return result;
+            const Vec3 normalAfter=orbitalAfter/orbitalAfter.norm();
+            const double apsidalAngle=apsidal.total()*dt;
+            periapsisAfter=orbitPlaneDirection(orbitalAfter,
+                rotateDipoleByAngularVelocity(periapsisAfter,
+                    normalAfter*apsidal.total(),dt));
+            if(!(periapsisAfter.norm()>0.0)) return result;
+            result.apsidalAngle+=apsidalAngle;
+        }
 
         // CREM_DEBUG_ALIGN: the mutual angle obeys
         // d(mu1.mu2)/dt = (omega1-omega2).(mu1 x mu2), so an exactly collinear
