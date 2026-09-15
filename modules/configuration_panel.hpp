@@ -676,6 +676,10 @@ inline int zeroPointModes = 64;
 //                          produces unphysical elements is stale; see
 //                          crem_collapse.hpp at the switch.
 //   CREM_SPIN_TRIM         Renormalize the spin after each transport step.
+//   CREM_MAGNETIC_RADIUS_SCALE
+//                          Softening length of the magnetic moment's field in
+//                          units of r*; default the luminal current loop,
+//                          0.96682 r*.  0.05 restores the floor-softened field.
 //   CREM_NO_THOMAS_BACKREACTION
 //                          Drop the Thomas back-reaction force from the
 //                          instantaneous charge-dipole sum; restores the

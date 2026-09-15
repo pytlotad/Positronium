@@ -1927,7 +1927,7 @@ template<class MomentSampler>
 inline ElectromagneticField twoChargeLimitDipoleField(
     const Vec3& observationPosition,double observationTime,
     const StateHistory& history,const State& present,bool sourceIsFirst,
-    double poleSeparationFraction,MomentSampler&& momentAt) {
+    double poleSeparationFraction,double softening,MomentSampler&& momentAt) {
     const ChargeKinematics nowCharge=historicalCharge(
         history,present,sourceIsFirst,observationTime);
     double centralRetardedTime=observationTime
@@ -1975,7 +1975,7 @@ inline ElectromagneticField twoChargeLimitDipoleField(
     const double rawReferenceDistance=
         (observationPosition-referenceCharge.position).norm();
     const double referenceDistance=std::max(rawReferenceDistance,
-        separationFloor());
+        softening);
     // One short-range regularization for BOTH poles, set by the dipole's
     // own retarded distance.  Clamping each pole's distance separately
     // (max(distance, cutoff, floor) per pole) broke the pair whenever the
@@ -1993,7 +1993,7 @@ inline ElectromagneticField twoChargeLimitDipoleField(
     // the floor, where the factor is exactly 1.
     const double poleDistanceScale=
         rawReferenceDistance>std::numeric_limits<double>::min()
-            ?std::max(1.0,std::max(nuclearCutoff,separationFloor())
+            ?std::max(1.0,std::max(nuclearCutoff,softening)
                            /rawReferenceDistance)
             :1.0;
     if(!(poleSeparationFraction>0.0)
@@ -2089,7 +2089,7 @@ inline ElectromagneticField twoChargeLimitDipoleField(
         // scaling is smooth, so the straddle of section 56 cannot recur.
         double fieldDistance=distance*poleDistanceScale;
         double plummerScale=1.0;
-        if(const double floor=separationFloor(); floor>0.0) {
+        if(const double floor=softening; floor>0.0) {
             fieldDistance=distance;
             const double restDistance=distance*kappa
                 /std::sqrt(1.0-betaSquared);
@@ -2166,6 +2166,43 @@ inline bool historicalDipoleSourceIsStatic(const StateHistory& history,
 }
 
 // Plummer-softened dipole field; see pairDipoleField (section 66).
+// Softening length of a MAGNETIC moment's field.  A magnetic moment is a
+// current loop, and the smallest loop that carries mu with the particle's
+// charge at speeds not above c has radius R = 2 mu/(|q| c) = 2 r* for e+e-
+// (N1: mu/(e c) = r* exactly).  Its magnetization is a uniform disk of that
+// radius.  The model smears moments with a Plummer profile, so the loop is
+// represented by the Plummer length with the same contact weight: for the
+// r^-1/2 density of an orbit ensemble at small r (section 85) the disk gives
+// <r^-1/2> = (4/3) R^-1/2 and Plummer 1.5 B(5/4,5/4) eps^-1/2, hence
+//
+//     eps = [ (3/4) 1.5 B(5/4,5/4) ]^2 R = 0.48341 R = 0.96682 r*.
+//
+// It replaces the numerical separation floor (0.05 r*) for the magnetic
+// dipole sector only; charge fields keep the floor.  One length for the
+// whole moment field, not only its contact part: a magnetization term on a
+// different length than the rest of the field would give div B != 0.
+// CREM_MAGNETIC_RADIUS_SCALE (units of r*) overrides it; 0.05 reproduces
+// the floor-softened moment field of sections 66-84.  Audit section 86.
+inline double magneticDipoleRadius() {
+    const double floor=separationFloor();
+    if(!(floor>0.0)) return 0.0;
+    static const double overrideScale=[] {
+        const char* text=std::getenv("CREM_MAGNETIC_RADIUS_SCALE");
+        const double value=text?std::atof(text):0.0;
+        return (std::isfinite(value)&&value>0.0)?value:0.0;
+    }();
+    if(overrideScale>0.0) return overrideScale*comptonBarrierRadius;
+    static const double diskPlummerFraction=[] {
+        const double beta=std::tgamma(1.25)*std::tgamma(1.25)
+            /std::tgamma(2.5);
+        const double factor=0.75*1.5*beta;
+        return factor*factor;
+    }();
+    const double loopRadius=2.0*std::abs(firstMagneticMoment)
+        /(std::abs(firstCharge)*c);
+    return diskPlummerFraction*loopRadius;
+}
+
 inline Vec3 plummerDipoleField(const Vec3& sourceToTarget,
                                const Vec3& sourceDipole,double softening) {
     constexpr double magneticConstant=mu0/(4.0*pi);
@@ -2264,7 +2301,7 @@ inline ElectromagneticField retardedElectricDipoleFieldExact(
             observationTime,history,present,sourceIsFirst,false);
     }
     return twoChargeLimitDipoleField(observationPosition,observationTime,
-        history,present,sourceIsFirst,poleSeparationFraction,
+        history,present,sourceIsFirst,poleSeparationFraction,separationFloor(),
         [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
             const RetardedElectricDipoleKinematics dipole=
                 historicalIntegratedDipoleKinematics(
@@ -2293,14 +2330,14 @@ inline ElectromagneticField retardedMagneticDipoleFieldExact(
             const Vec3 moment=sourceIsFirst
                 ?present.firstDipole:present.secondDipole;
             return {{},plummerMagneticDipoleField(
-                observationPosition-position,moment,floor)};
+                observationPosition-position,moment,magneticDipoleRadius())};
         }
         return retardedMagneticDipoleFieldLowVelocity(observationPosition,
             observationTime,history,present,sourceIsFirst,false);
     }
     const ElectromagneticField dual=twoChargeLimitDipoleField(
         observationPosition,observationTime,history,present,sourceIsFirst,
-        poleSeparationFraction,
+        poleSeparationFraction,magneticDipoleRadius(),
         [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
             const RetardedElectricDipoleKinematics dipole=
                 historicalIntegratedDipoleKinematics(
@@ -2324,7 +2361,7 @@ inline ElectromagneticField retardedMagneticDipoleFieldExact(
                                       :present.secondDipole;
         const ElectromagneticField magnetization=movingMagnetizationField(
             observationPosition-source.position,source.velocity,
-            properMoment,floor);
+            properMoment,magneticDipoleRadius());
         field.electric+=magnetization.electric;
         field.magnetic+=magnetization.magnetic;
     }
@@ -2486,7 +2523,8 @@ inline Vec3 regularizedDipoleForce(const Vec3& sourceToTarget,
 inline Vec3 pairDipoleField(const Vec3& sourceToTarget,
                             const Vec3& sourceDipole) {
     if(const double floor=separationFloor(); floor>0.0)
-        return plummerMagneticDipoleField(sourceToTarget,sourceDipole,floor);
+        return plummerMagneticDipoleField(sourceToTarget,sourceDipole,
+                                          magneticDipoleRadius());
     return regularizedDipoleField(sourceToTarget,sourceDipole,
         magneticRegularizationRadius,magneticRegularizationExponent);
 }
@@ -2503,7 +2541,8 @@ inline Vec3 pairDipoleForce(const Vec3& sourceToTarget,
     if(!(floor>0.0))
         return regularizedDipoleForce(sourceToTarget,targetDipole,sourceDipole);
     constexpr double magneticConstant=mu0/(4.0*pi);
-    const double rhoSquared=sourceToTarget.squaredNorm()+floor*floor;
+    const double softening=magneticDipoleRadius();
+    const double rhoSquared=sourceToTarget.squaredNorm()+softening*softening;
     const double inverseRho=1.0/std::sqrt(rhoSquared);
     const double inverseRhoFifth=inverseRho*inverseRho*inverseRho
         *inverseRho*inverseRho;
@@ -2518,7 +2557,8 @@ inline Vec3 pairDipoleForce(const Vec3& sourceToTarget,
                 -15.0*targetRadial*sourceRadial*inverseRhoSeventh)
            +(targetDipole*sourceRadial+sourceDipole*targetRadial)
                 *(3.0*inverseRhoFifth)
-           -sourceToTarget*(15.0*floor*floor*dipoleDot*inverseRhoSeventh))
+           -sourceToTarget*(15.0*softening*softening*dipoleDot
+                *inverseRhoSeventh))
         *magneticConstant;
 }
 
@@ -2944,7 +2984,8 @@ inline ChargeDipolePairForces chargeDipolePairForces(
     constexpr double magneticConstant = mu0 / (4.0 * pi);
     const Vec3 magneticField = pairDipoleField(sourceToCharge, sourceDipole);
     const double radialFactor = floor > 0.0
-        ? 1.0/std::pow(distance*distance + floor*floor, 1.5)
+        ? 1.0/std::pow(distance*distance
+              + magneticDipoleRadius()*magneticDipoleRadius(), 1.5)
         : magneticRadialProfile(distance).vectorPotentialFactor;
     const Vec3 inducedElectricTerm = cross(sourceDipoleDerivative, sourceToCharge)
         * (magneticConstant * radialFactor);

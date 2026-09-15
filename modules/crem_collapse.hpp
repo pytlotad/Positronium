@@ -1267,7 +1267,8 @@ inline double azimuthAveragedDipoleEnergy(double separation,
         //     - mu0/(4 pi) 3 eps^2 mu1.mu2 / rho^5,
         // the last term being the contact (magnetization) energy, which does
         // not depend on the azimuth.
-        const double rhoSquared=separation*separation+floor*floor;
+        const double softening=magneticDipoleRadius();
+        const double rhoSquared=separation*separation+softening*softening;
         const double moments=dot(firstDipole,secondDipole);
         const double alongNormal=dot(firstDipole,orbitNormal)
             *dot(secondDipole,orbitNormal);
@@ -1275,7 +1276,7 @@ inline double azimuthAveragedDipoleEnergy(double separation,
         return (mu0/(4.0*pi))*((moments
             -3.0*(separation*separation/rhoSquared)*averagedRadial)
             /std::pow(rhoSquared,1.5)
-            -3.0*floor*floor*moments/std::pow(rhoSquared,2.5));
+            -3.0*softening*softening*moments/std::pow(rhoSquared,2.5));
     }
     const MagneticRadialProfile profile=magneticRadialProfile(separation);
     const double transverse=2.0*profile.vectorPotentialFactor

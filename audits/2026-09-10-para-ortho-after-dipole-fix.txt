@@ -5386,3 +5386,86 @@ measurement of whether that survives a cascade.
      the choice of eps as a physical size of the moment (step 2) is not yet
      argued beyond N1; virtual annihilation (3/7 of the splitting) stays
      outside the model.
+
+86. STEP 2: THE MOMENT'S FIELD IS SOFTENED AT ITS OWN LENGTH, NOT AT THE
+    NUMERICAL FLOOR
+
+86a. THE SCALE, FROM THE MOMENT ALONE.  The smallest current loop that
+     carries mu with charge |q| at speeds not above c has radius
+     R = 2 mu/(|q| c), which for e+e- is exactly 2 r* (N1: mu/(e c) = r*).
+     Its magnetization is a uniform disk of that radius.  The model smears
+     moments with a Plummer profile, so the loop is represented by the
+     Plummer length carrying the same contact weight: against the r^-1/2
+     density of section 85, a disk gives <r^-1/2> = (4/3) R^-1/2 and Plummer
+     1.5 B(5/4,5/4) eps^-1/2 = 0.927037 eps^-1/2, hence
+
+         eps = [(3/4) 0.927037]^2 R = 0.48341 R = 0.96682 r*.
+
+     A luminal rotating shell (R = 3 r*, uniformly magnetized sphere,
+     <r^-1/2> = 1.2 R^-1/2) would give 1.790 r* instead: the geometry is a
+     modelling choice worth one factor 1.85 in eps.  Matching the QED contact
+     term exactly would need 5.98 r*, which is a fit, not a derivation.
+
+86b. CHANGE.  magneticDipoleRadius() (electrodynamics.hpp) returns that
+     length and replaces separationFloor() throughout the MAGNETIC moment
+     sector: pairDipoleField/Energy/Force, the vector potential in
+     chargeDipolePairForces, the static and moving retarded dipole field
+     (the two-pole construction now takes its softening as an argument, so
+     the electric dipole keeps the floor), the contact term, and
+     azimuthAveragedDipoleEnergy.  Charge fields, the -p.E ledger term and
+     the Coulomb/Darwin sector keep the numerical floor.  One length for the
+     whole moment field: a magnetization term on a different length than the
+     rest would give div B != 0.  CREM_MAGNETIC_RADIUS_SCALE (units of r*)
+     overrides it; 0.05 reproduces sections 66-85 bit for bit (trace 42/2:
+     199.446240512 ps para, 199.475436591 ps ortho, both exact).
+
+86c. THE STEP-1 NUMBER IS NOW FLOOR-INDEPENDENT.
+
+     setting                       <n>/|psi0|^2   dE           dE/QED contact
+     default (0.96682 r*)          4.962          1.2012e-3 eV  2.487
+     default, floor 0.02 r*        4.962          1.2012e-3 eV  2.487
+     CREM_MAGNETIC_RADIUS_SCALE=1  4.879          1.1810e-3 eV  2.445
+     CREM_MAGNETIC_RADIUS_SCALE=0.05 21.832       5.2849e-3 eV 10.942
+
+     The a-priori prediction for the luminal loop was 2.487.  The quantum 1S
+     control through the same field stays at 0.9929 |psi0|^2.
+
+86d. VALIDATION.  61/61, isolation 37/37, after one reference moved:
+     dipole-boosted-static-field compares the field of a beta = 0.9995/0.9999
+     moment at 2 a_0 against the point boosted field, and the physical
+     softening shifts that by 4.5 eps^2/R^2 = 1.5e-5, above the check's 1e-5
+     bound.  Measured 1.41e-5, i.e. the predicted softening; the reference is
+     now the boosted Plummer loop and the residual is numerical again.
+
+86e. PRODUCTION UNCHANGED.  16 trajectories per channel, seed 42, new radius
+     against CREM_MAGNETIC_RADIUS_SCALE=0.05: para mean -0.000061 ps
+     (sd 0.000318), ortho +0.000018 ps (sd 0.000345), no photon count changed
+     in any of the 32, wall clock equal.  Mean terminal periapsis moves from
+     4.651 to 4.497 r* (para) and 4.929 to 4.991 r* (ortho) through
+     dipoleAwarePeriapsis, which now sees the wider moment.
+
+86f. THE LEDGER NEAR r* IMPROVES.  Flow check of section 82 at 0.5 r*,
+     spin-sector |dE/dt| relative to |U_dd| n: para 0 deg 45 -> 1.3e-3,
+     ortho 0 deg 3.3e-3 -> 6.6e-5, para 90 deg 0.27 -> 0.080.  The 1-14%
+     residuals of the tilt-90 cases are present with both radii and are not
+     from this change.
+
+86g. DEEP ENGINE RUNS, AND WHAT THEY DO NOT SHOW.  Tilted pairs started
+     between 1 and 3 r* (deeptilt.cpp, retarded forces, reaction off, six
+     periods).  With the wider moment ortho at 0 degrees, which used to fail
+     at 0.69 r*, now holds the whole window at r_min 1.0936 r*, and this is
+     converged: 1e-9 gives 1.0942 r* with the same energy error
+     (2.07e-2 against 2.09e-2 k/r*).  Para at 0 degrees appeared to fall to
+     0.468 r* -- but it is NOT converged, and the trend says so: 1e-8
+     completes the window with |dE| = 1.71 k/r*, 1e-9 fails at 0.593 r*
+     with 6.65e-2, 1e-10 fails at 0.827 r* with 7.56e-3.  That is the known
+     deep-orbit accuracy defect, not new physics, so no para/ortho ordering
+     is claimed from these runs; the ordering rests on 86c and 86f.
+     (A 1e-10 ortho run was still going when this was written.)
+
+86h. LIMITS.  The geometry behind eps is a choice (loop 0.967 r*, shell
+     1.790 r*); the disk-to-Plummer equivalence is matched for the r^-1/2
+     ensemble weight of section 85 and would differ for another ensemble;
+     the engine cannot resolve orbits inside ~0.8 r* at tolerances that
+     converge, so the wider moment's dynamics there is untested; step 3
+     (a ZPF-generated L distribution) is not done.

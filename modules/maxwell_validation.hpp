@@ -3169,8 +3169,16 @@ inline int runMaxwellSelfTest(
         const ElectromagneticField field=retardedMagneticDipoleField(
             movingDipoleState.firstPosition,0.0,movingDipoleHistory,
             movingDipoleState,false);
+        // With a separation floor the moment's field is the Plummer
+        // current loop of radius magneticDipoleRadius() (section 86): on the
+        // transverse axis B_z = -gamma mu0 m (R^2 - 2 eps^2)/(4 pi rho^5),
+        // rho^2 = R^2 + eps^2, which differs from the point field by
+        // 4.5 eps^2/R^2 = 1.5e-5 here -- above this check's 1e-5 bound.
+        const double softening=magneticDipoleRadius();
+        const double rhoSquared=radius*radius+softening*softening;
         const double expected=-mu0*secondMagneticMoment
-            /(4.0*pi*radius*radius*radius*std::sqrt(1.0-beta*beta));
+            *(radius*radius-2.0*softening*softening)
+            /(4.0*pi*std::pow(rhoSquared,2.5)*std::sqrt(1.0-beta*beta));
         return std::abs(field.magnetic.z-expected)/std::abs(expected);
     };
     const double boostedStaticDipoleFieldResidual9995=
@@ -3645,7 +3653,7 @@ inline int runMaxwellSelfTest(
     //   curl      pairDipoleField equals the curl of the model's vector
     //             potential (mu0/4 pi) m x r / rho^3 by central differences.
     const auto [dipoleContactIntegral,dipoleCurlResidual]=[&]{
-        const double softening=separationFloor();
+        const double softening=magneticDipoleRadius();
         if(!(softening>0.0)||lebedevWeight<=0.0)
             return std::pair<double,double>{2.0/3.0,0.0};
         const Vec3 unitMoment{0.0,0.0,1.0};
