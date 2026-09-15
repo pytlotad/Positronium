@@ -4810,3 +4810,74 @@ measurement of whether that survives a cascade.
      6-7%, not resolved further.  First-order averaging loses its meaning
      where the precession approaches a revolution per orbit (0.01 a_pair
      at e=0.9); the rate is applied there unchanged.
+
+78. HIGHER MULTIPOLES: WHAT THE FULL FLUX ADDS TO E1 + M1
+
+78a. QUESTION.  An outside review says the model has E1/M1/E2 but no
+     explicit, independent treatment of higher multipoles (E3, M2).  Code
+     state: electromagneticFieldFluxRates integrates the far-zone Poynting
+     flux of the full Lienard-Wiechert charge fields plus the exact boosted
+     dipole fields.  It is not a multipole expansion, so E3, M2, toroidal
+     terms and all classical interference are in it.  Production uses it
+     for the one measured orbit per checkpoint (radiatedEnergyBookkeeping
+     true, orbitalRadiatedEnergy).  The photon hazard for the skipped orbits
+     uses only larmorOrbitAveragedPower (E1, non-relativistic, Coulomb
+     acceleration of a Kepler ellipse) plus the coherent M1; the mechanical
+     quantized path uses E1 + M1 + E2.  E2 is identically zero for
+     positronium but absent from the secular path for asymmetric pairs.
+     So the review is right for the hazard and wrong for the flux.
+
+78b. MEASUREMENT.  Probe fluxcmp.cpp: engine with retarded forces,
+     reaction disabled, flux bookkeeping on, 3 Kepler periods at 128 steps,
+     first period discarded.  Along the same trajectory: Larmor with the
+     Coulomb acceleration k/(mu r^2) (what the secular formula averages) and
+     E1 with the engine's instantaneous forces allExternalForces (Coulomb,
+     Darwin, dipole forces).  beta^2 is (v_rel/c)^2 at radius a.
+
+     a/r*   e    moments      beta^2    flux/Larmor-1   flux/E1(forces)-1
+     548    0    none         5.3e-5    -3.17e-5        -1.84e-5
+     55     0    none         5.3e-4    -3.21e-4        -1.86e-4
+     16     0    none         1.8e-3    -1.09e-3        -6.22e-4
+     5.5    0    none         5.3e-3    -3.45e-3        -1.87e-3
+     2.7    0    none         1.1e-2    -7.44e-3        -3.74e-3
+     5.5    0.5  none         5.3e-3    +4.42e-4        +1.87e-3
+     55     0    para along L 5.3e-4    -1.56e-3        +5.77e-4
+     5.5    0    para along L 5.3e-3    -1.65e-1        +9.59e-4
+     5.5    0    ortho, anti  5.3e-3    +4.60e-1        +1.41e-2
+
+     M1 share of the flux: 0 without moments, 9e-10 for para at 5.5 r*
+     (moments along L do not precess).  e=0.9 at 5.5 r* was discarded: the
+     bound orbit grew to 4.8 a within two periods, so it is no test.
+
+78c. WHAT IT SAYS.
+     - Without moments the whole difference scales as -0.60 beta^2 (all
+       five radii), with a beta^4 coefficient near -9 at 2.7 r*.  That is
+       the relativistic correction to E1, one order below E3 and M2
+       (beta^4).  E3/M2 cannot be separated at this resolution; their share
+       is at most the beta^4 residual, 1e-3 at 2.7 r* and 2.8e-9 at a_pair.
+     - Against E1 built from the engine's own forces the remainder halves
+       (-0.35 beta^2): part of the Larmor gap is the Darwin force.
+     - The dominant piece with moments is not a multipole.  The flux follows
+       the real acceleration, which contains the dipole-dipole force.  With
+       moments along L that force repels for para and attracts for ortho,
+       and the E1 power moves with it: -1.2e-3 for para at 55 r*, -16% for
+       para and +46% for ortho at 5.5 r* (the ortho orbit also shrinks to
+       0.73 a in two periods).  Against E1 from the engine forces the flux
+       agrees to 1e-3 (para) and 1.4% (ortho).
+     - larmorOrbitAveragedPower sees none of this.  Its error for the photon
+       hazard is thus about -0.6 beta^2 from relativity and about 2 F_dd/F_C
+       from the dipole force, the latter para/ortho asymmetric and growing as
+       a^-2: 1e-5 at a_pair, 1e-3 at 55 r*, 10% near 5 r*.  The lifetime is
+       set at large radii, where both are below 1e-4.
+
+78d. CHANGE.  Only the comment in electrodynamics.hpp: its endpoint claim
+     (production stops at the ground state, beta^4 = 2.8e-9) held only under
+     --ground-state-floor; the default stops on the retardation limit near
+     4.9 r*, beta^4 = 3.5e-5.  The measurement is recorded there too.  No
+     physics was changed.
+
+78e. LIMITS.  Two measured periods per case, orbits started from Kepler
+     conditions that the full force law does not keep circular; moments only
+     along L, so the tilt dependence of the dipole-force term was not
+     measured; no asymmetric pair; the quantum amplitude interference the
+     review also names is not addressed by any of this.

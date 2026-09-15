@@ -1176,10 +1176,27 @@ enum class ChargeRadiationReactionModel {
     //
     // The error is in the SAFE direction: the neglected order is three
     // orders smaller than the comment claimed, so the decision not to
-    // implement it is better founded than its own justification said.  It
-    // also matters less than it did: production now stops at the ground
-    // state rather than the barrier, so the endpoint sits at beta^4 = 2.8e-9
-    // instead of 8.5e-4.  The
+    // implement it is better founded than its own justification said.
+    //
+    // The ENDPOINT claim that followed here is out of date.  It said
+    // production stops at the ground state, at beta^4 = 2.8e-9.  That holds
+    // only under --ground-state-floor, which is off by default.  The default
+    // run stops on the period/light-crossing limit of 150 (CollapseStopCause::
+    // RetardationLimit); trace 42/2 ends on a circular orbit at a = 4.9 r*,
+    // i.e. beta^2 = 4 alpha/4.9 = 5.9e-3 and beta^4 = 3.5e-5.  Still
+    // negligible for the lifetime, which is set at large radii.
+    //
+    // MEASURED (audit section 78): full far-zone flux against the secular
+    // formula's Coulomb-only Larmor power on the same engine trajectory,
+    // circular orbits, no moments.  flux/Larmor - 1 = -3.2e-5, -3.2e-4,
+    // -1.09e-3, -3.45e-3, -7.44e-3 at 548, 55, 16, 5.5 and 2.7 r*, i.e.
+    // -0.60 beta^2 with a beta^4 coefficient near -9 at the deepest point.
+    // So what the analytic ladder misses is dominated by the relativistic
+    // correction to E1 itself, not by E3/M2.  Larger still, and not a
+    // multipole at all: the flux follows the ACTUAL relative acceleration,
+    // which includes the dipole-dipole force.  With moments along L that
+    // shifts the E1 power by -1.2e-3 (para) at 55 r* and by -16% (para) /
+    // +46% (ortho) at 5.5 r*, which Coulomb-only Larmor cannot see.  The
     // one mechanically-measured orbit every checkpoint performs
     // (runMechanicalTrajectory, feeding deltaEnergyPerOrbit/
     // orbitalRadiatedEnergy above) genuinely radiates via the real
