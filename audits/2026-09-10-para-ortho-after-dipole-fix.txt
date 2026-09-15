@@ -5333,3 +5333,56 @@ measurement of whether that survives a cascade.
      uniform motion, checked above) and the present proper moment; the
      classical L = hbar orbits still do not sample r = 0, so the S-state
      hyperfine attraction of p-Ps remains outside the model (section 48).
+
+85. CONTACT HYPERFINE ENERGY OF A MICROCANONICAL ORBIT ENSEMBLE (STEP 1)
+
+85a. IDEA.  The contact term (section 84) needs a state with density at
+     r = 0.  A single radial orbit was rejected (cb607c9): its density
+     diverges as r^-3/2 and overshoots the splitting by ~190x.  A classical
+     ensemble at the 1S energy with ALL angular momenta (microcanonical,
+     isotropic in phase space) weights small L by L dL, which softens the
+     divergence to r^-1/2 and the regulator dependence to eps^-1/2.
+
+85b. METHOD (probe contactensemble.cpp).  Only the dipole-dipole energy
+     depends on position alone; velocity-linear terms average to zero in an
+     isotropic ensemble.  Exact integral, no sampling: radial density
+     rho(r) = sqrt(1/r - 1/2a) / [(pi^2/4)(2a)^(5/2)] on r < 2a (normalized to
+     1.00000), log radial grid, 194-point sphere rule, with the model's own
+     pairDipoleInteractionEnergy (current-loop Plummer field), moments
+     parallel (para) or antiparallel (ortho).  The smearing scale is the
+     separation floor, set by CREM_SEPARATION_FLOOR_SCALE.  Control: the same
+     integral over the quantum 1S density |psi|^2.  Reference: the QED
+     contact part of the splitting, 4/7 of (7/12) alpha^4 m c^2
+     = 4.8301e-4 eV; its classical-spin analogue at |psi(0)|^2,
+     2 (2 mu0/3) mu^2 |psi(0)|^2 = 2.4207e-4 eV (classical moments give
+     +-1 where sigma1.sigma2 gives +1 and -3: a factor 2).
+
+85c. RESULT.
+
+     eps        <U>_para      <U>_ortho     dE           <n>/|psi0|^2   dE/QED contact
+     0.05 r*    -2.6425e-3    +2.6425e-3    5.2849e-3    21.83          10.94
+     r*         -5.9052e-4    +5.9052e-4    1.1810e-3     4.879          2.445
+     2 r*       -4.1730e-4    +4.1730e-4    8.3460e-4     3.448          1.728
+     (energies in eV)
+
+     Quantum 1S control with the same field: <n>/|psi0|^2 = 0.9993, 0.9926,
+     0.9857 and dE = 2.419e-4, 2.403e-4, 2.386e-4 eV, i.e. the classical-spin
+     analogue to 0.1-1.4%: the integral and the field are right.
+     - Para is bound deeper and ortho less, as in QED.
+     - Scaling is eps^-1/2 to four digits: 21.83/4.879 = 4.475 against
+       sqrt(20) = 4.472; 4.879/3.448 = 1.415 against sqrt(2) = 1.414.
+     - The a-priori estimate (4.88, 3.45, 21.8) is confirmed.
+     - Against the rejected single radial orbit (~190x) the ensemble lands
+       within a factor 2.4 at the moment's own length r* = mu/(e c), and 1.7
+       at the loop radius 2 r*.  Matching the QED contact term exactly would
+       need eps = 5.98 r*; matching the classical-spin analogue, 23.8 r*.
+     - For contrast, the production state (circular L = hbar orbit at
+       a_pair) sees the contact term only through its tail,
+       2 (mu0/4 pi) 3 eps^2 mu^2 / a^5 ~ 1e-9 eV at eps = r*.
+
+85d. WHAT IT DOES NOT SHOW.  The microcanonical L distribution is assumed,
+     not produced by the dynamics (that is step 3, the ZPF); the density
+     still diverges as r^-1/2, so the answer depends on eps, only weakly;
+     the choice of eps as a physical size of the moment (step 2) is not yet
+     argued beyond N1; virtual annihilation (3/7 of the splitting) stays
+     outside the model.
