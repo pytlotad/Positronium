@@ -101,7 +101,33 @@ Przewidywanie na podstawie sekcji 29b: **nie**. Ten krok najpewniej
 potwierdzi brak emergentnych poziomów — i to jest wynik, nie porażka, bo
 dziś nie jest zmierzony, tylko wnioskowany z jednego startu.
 
-### Krok 3 — właściwy test intuicji: reguła emisji z momentami
+### Krok 3 — WYKONANY (sekcje 36 i 81 audytu), przewidywanie obalone
+
+**Status.** Reguła jest w kodzie jako opcja `CREM_PHOTON_FROM_SPIN`
+(kwant \(\hbar\max(|\omega_1|,|\omega_2|)\), określony dla para i orto),
+domyślnie wyłączona. Sekcja 36 zmierzyła ją dla para od \(n=2\), sekcja 81
+powtórzyła pomiar na obecnym kodzie dla obu kanałów:
+
+| start | kanał | reguła domyślna | foton na precesję | klasyczny ciągły kolaps |
+|---|---|---|---|---|
+| \(n=1\), 16 trajektorii | para | 199,45 ps, 3 fotony | 36,44 ps, 15 827 fotonów | 31,12 ps |
+| \(n=1\), 16 trajektorii | orto | 199,47 ps, 3 fotony | 36,88 ps, 21 669 fotonów | 31,12 ps |
+| \(n=2\), 1 trajektoria | para | 7491 ps | 2188 ps | 1992 ps |
+| \(n=2\), 1 trajektoria | orto | 7492 ps | 2199 ps | 1992 ps |
+
+- Kwant jest o 4–5 rzędów mniejszy od \(\hbar\omega_{\rm orb}\), więc
+  kaskada staje się praktycznie ciągła i czas kolapsu zbliża się do
+  klasycznego (+10–18%).
+- Gęstość fotonów na \(\ln a\) maleje monotonicznie w obu kanałach; przy
+  \(0{,}726\,\lambda_C\) nie ma żadnego wyróżnienia (para doprowadzona do
+  bariery Comptona).
+- Kanały rozchodzą się: orto żyje o 1,2% dłużej i emituje o 37% więcej
+  fotonów, bo kwant zawiera momenty.
+- Błąd przewidywania: szczyt \(\omega_s/\omega_o\) to szczyt fotonów na
+  obieg, a promień wyróżniałaby dopiero gęstość na \(\ln a\).
+
+Pierwotny opis kroku:
+
 
 Zamienić \(E_\gamma=\hbar\omega_{\rm orb}\) na regułę, w której momenty
 występują. Kandydat nieuznaniowy: **foton na obrót precesji spinu**, zamiast

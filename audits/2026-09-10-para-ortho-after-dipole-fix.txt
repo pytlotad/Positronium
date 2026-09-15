@@ -5030,3 +5030,76 @@ measurement of whether that survives a cascade.
 80h. LIMITS.  The energy ledger term chargeDipoleInteractionEnergy was not
      re-examined against the corrected force; the tilted-pair energy errors
      measured with the instantaneous switch in section 66 were not rerun.
+
+81. PLAN STEP 3 REVISITED: ONE PHOTON PER SPIN PRECESSION, PARA AND ORTHO,
+    ON THE CURRENT CODE
+
+81a. STATUS BEFORE THIS SECTION.  The rule exists since 14cc3e3 as
+     CREM_PHOTON_FROM_SPIN (quantum hbar*max(|omega1|,|omega2|), defined in
+     both channels), off by default.  Section 36 measured it once, from
+     n=2, on one trajectory whose channel it did not name, and before the
+     floor, apsidal, E1 and Thomas changes of sections 73-80.
+
+81b. SECTION 36 REPRODUCED.  Same tool (para_ortho_branch_trace, seed 42,
+     index 2, level 2):
+
+     code              channel  rule     lifetime     photons
+     14cc3e3 (old)     para     spin     2188.44 ps   122245
+     current           para     spin     2187.80 ps   119790
+     current           ortho    spin     2199.46 ps   148276
+     current           para     default  7491.36 ps   5
+     current           ortho    default  7491.73 ps   4
+
+     The old commit reproduces section 36 to the photon, so that run was
+     para.  Section 36's "default 199.4 ps, 3 photons" was a level-1
+     number; from n=2 the default rule takes 7491 ps.  The code changes
+     since then moved the spin-rule lifetime by 0.03%.
+
+81c. PRODUCTION START (n=1), 16 trajectories per channel, seed 42:
+
+     channel  rule     mean lifetime   sd        photons   stop a/r*
+     para     default  199.45 ps (*)   0.005     3         4.9-5.3
+     para     spin     36.435 ps       0.087     15827     12.0-15.6
+     ortho    default  199.471 ps      0.012     3         4.9-5.6
+     ortho    spin     36.880 ps       0.138     21669     12.9-16.3
+     (*) index 1 excluded (216.75 ps branch)
+
+     With the spin rule ortho lives 0.445 ps (1.2%) longer than para, ten
+     standard errors, and emits 37% more photons of smaller energy (mean
+     4.1e-4 against 5.4e-4 eV near 240 lambda_C).  The channels separate
+     because the quantum now contains the moments; under the default rule
+     they differ by 0.02 ps.
+
+81d. WHAT THE LIFETIME IS.  Classical continuous circular inspiral
+     (classicalInspiralCoefficient) from the same start: 31.12 ps from n=1,
+     1991.9 ps from n=2 (the end point does not matter).  The spin rule
+     gives 36.4-36.9 ps and 2188-2199 ps, i.e. the classical inspiral plus
+     10-18%.  A quantum four to five orders below hbar*omega_orb makes the
+     cascade effectively continuous; the default's 199 ps and 7491 ps are
+     set by the waiting time for three to five large photons, not by the
+     radiated power.
+
+81e. THE PREDICTED RADIUS, AGAIN.  Photons per quarter decade of
+     r/lambda_C, all 16 trajectories, n=1 start:
+
+     r/lambda_C   para     ortho
+     237          109405   144312
+     133          82273    104579
+     75           39650    57118
+     42           14337    25627
+     24           5378     11512
+     13           1805     3068
+     7.5          384      493
+
+     From n=2 (one trajectory each) the same fall from 60447/73534 at
+     750 lambda_C to 19/16 at 7.5 lambda_C.  With the retardation limit
+     relaxed to 2 the para run reaches the Compton barrier (a = 1.22 r*,
+     0.61 lambda_C): 15, 6 and 1 photons in the bins at 4.2, 2.4 and
+     1.3 lambda_C, still falling through 0.726 lambda_C.  The ortho run with
+     the relaxed limit ended in a numerical failure after reaching
+     2.4 lambda_C (outside the declared domain, not pursued).  No peak in
+     either channel; section 36's falsification stands, now for both.
+
+81f. LIMITS.  One seed; spin moments quantized (the default); the relaxed
+     runs are one trajectory each and outside the validated domain; the
+     10-18% excess over the classical inspiral was not decomposed.
