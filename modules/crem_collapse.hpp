@@ -496,6 +496,188 @@ inline double larmorOrbitAveragedPower(double semiMajorAxis,double eccentricity)
     return circular*dipoleEccentricityFactor(eccentricity);
 }
 
+// Orbit-averaged E1 power for the photon hazard of the skipped orbits, with
+// the two corrections audit section 78 found missing from
+// larmorOrbitAveragedPower:
+//
+//   1. The dipole force in the acceleration.  The full far-zone flux follows
+//      the actual relative acceleration, which includes the dipole-dipole
+//      and charge-dipole forces; Coulomb-only Larmor does not.  With moments
+//      along L that moved the engine's E1 power by -16% (para) and +46%
+//      (ortho) at 5.5 r*, -1.2e-3 (para) at 55 r*.
+//   2. The relativistic correction.  Without moments the engine flux sits at
+//      -0.60 beta^2 against Coulomb Larmor on circular orbits (548 to
+//      2.7 r*).
+//
+// Built as a product of two orbit averages on the carried Kepler ellipse:
+//
+//   forcePower   <|sum_i q_i a_i|^2>/(6 pi eps0 c^3), with a_i =
+//                relativisticAcceleration(v_i, F_i, m_i) and F_i the
+//                production force assembly retardedExternalForces on a
+//                synthetic history of the same ellipse, moments included.
+//                On a circle this alone gives -0.50 beta^2 against Coulomb
+//                Larmor (gamma and the retarded interaction), -0.78 beta^2 at
+//                e=0.5, and it carries the dipole force.  A one-state history
+//                agrees to 1e-3 beta^2 except deep and eccentric (-7.05
+//                against -6.50 beta^2 at 5.5 r*, e=0.9).
+//   spectral     <far-zone flux>/<kinematic Larmor> for an ideal Kepler
+//                ellipse, from electromagneticFieldFluxRates on a synthetic
+//                history of that ellipse.  It holds what no instantaneous
+//                acceleration can: retardation across the pair, harmonic
+//                content, E3/M2 and their interference.  -0.10 beta^2 on a
+//                circle, +0.054 beta^2 at e=0.5, +1.72 beta^2 at e=0.9.
+//
+// Together, -0.60 beta^2 on a circle, the engine's value.  Checked on engine
+// trajectories at 5.5 r* over 8 periods: the engine's stored accelerations
+// give Larmor within 0.02 beta^2 of the force average, and the flux over
+// that Larmor is -0.105, -0.061 and +0.056 beta^2 at e=0, 0.3, 0.5 against
+// the ideal-ellipse factor's -0.098, -0.048 and +0.065.  (Over only 2
+// periods the e=0.5 flux read +0.98 beta^2: the flux lags the acceleration
+// by the source radius over c, which does not cancel at the edges of a
+// window that is not a whole period of the deformed orbit.)  The
+// factorisation neglects the cross term between the dipole-force shift and
+// the spectral shape, i.e. (dipole force share) x beta^2.
+//
+// The external field and the ZPF enter the force sum exactly as they enter
+// the engine's own leadingElectricDipolePower.
+//
+// Nodes: eccentric anomaly with dt weights, 32/sqrt(1-e) up to 2048;
+// 32 history samples spanning eight light-crossing times.  Against 256 nodes
+// and 128 samples the spectral factor agrees to 2e-3 beta^2 relative (e=0,
+// 0.5) and 3e-3 beta^2 (e=0.9, 128 nodes).
+struct SecularElectricDipoleEmission {
+    double power=0.0;          // W, what the hazard uses
+    double forcePower=0.0;     // W, force-based Larmor average
+    double kinematicPower=0.0; // W, Coulomb Kepler Larmor by the same nodes
+    double spectralFactor=1.0;
+    int phaseNodes=0;
+    bool valid=false;
+};
+
+inline SecularElectricDipoleEmission secularElectricDipoleOrbitAveragedEmission(
+        double semiMajorAxis,const Vec3& orbitalAngularMomentum,
+        const Vec3& firstDipole,const Vec3& secondDipole,double reducedMass,
+        const Vec3& periapsisDirection) {
+    SecularElectricDipoleEmission result;
+    if(!(semiMajorAxis>0.0)||!std::isfinite(semiMajorAxis)
+       ||!(reducedMass>0.0)||!isFinite(orbitalAngularMomentum)
+       ||!isFinite(firstDipole)||!isFinite(secondDipole)) return result;
+    const double orbitalNorm=orbitalAngularMomentum.norm();
+    if(!(orbitalNorm>0.0)) return result;
+    const double oneMinusEccentricitySquared=std::min(1.0,
+        orbitalNorm*orbitalNorm
+        /(reducedMass*pairCoulombStrength*semiMajorAxis));
+    if(!(oneMinusEccentricitySquared>0.0)) return result;
+    const double eccentricity=
+        std::sqrt(std::max(0.0,1.0-oneMinusEccentricitySquared));
+    const double eccentricityComplement=std::sqrt(oneMinusEccentricitySquared);
+    const Vec3 normal=orbitalAngularMomentum/orbitalNorm;
+    const Vec3 radialHat=orbitPlaneDirection(
+        orbitalAngularMomentum,periapsisDirection);
+    if(!(radialHat.norm()>0.0)) return result;
+    const Vec3 tangentialHat=cross(normal,radialHat);
+    const double meanMotion=std::sqrt(pairCoulombStrength
+        /(reducedMass*semiMajorAxis*semiMajorAxis*semiMajorAxis));
+    if(!std::isfinite(meanMotion)||!(meanMotion>0.0)) return result;
+    const double attraction=pairCoulombStrength/reducedMass;
+    const double totalMassHere=firstMass+secondMass;
+    // Kepler state at time t since periapsis, with the exact Coulomb
+    // acceleration stored for the history interpolation.
+    const auto keplerState=[&](double time) {
+        const double meanAnomaly=meanMotion*time;
+        double anomaly=meanAnomaly;
+        for(int iteration=0;iteration<50;++iteration) {
+            const double correction=(anomaly-eccentricity*std::sin(anomaly)
+                -meanAnomaly)/(1.0-eccentricity*std::cos(anomaly));
+            anomaly-=correction;
+            if(std::abs(correction)<1.0e-15) break;
+        }
+        const double cosine=std::cos(anomaly);
+        const double sine=std::sin(anomaly);
+        const double timeWeight=1.0-eccentricity*cosine;
+        const Vec3 position=radialHat*(semiMajorAxis*(cosine-eccentricity))
+            +tangentialHat*(semiMajorAxis*eccentricityComplement*sine);
+        const Vec3 velocity=(radialHat*(-semiMajorAxis*meanMotion*sine)
+            +tangentialHat*(semiMajorAxis*meanMotion
+                *eccentricityComplement*cosine))/timeWeight;
+        const double distance=position.norm();
+        const Vec3 acceleration=
+            position*(-attraction/(distance*distance*distance));
+        State state{};
+        state.time=time;
+        state.firstPosition=position*(secondMass/totalMassHere);
+        state.secondPosition=position*(-firstMass/totalMassHere);
+        state.firstVelocity=velocity*(secondMass/totalMassHere);
+        state.secondVelocity=velocity*(-firstMass/totalMassHere);
+        state.firstAcceleration=acceleration*(secondMass/totalMassHere);
+        state.secondAcceleration=acceleration*(-firstMass/totalMassHere);
+        return state;
+    };
+    const double targetPhaseNodes=
+        32.0/std::sqrt(std::max(1.0-eccentricity,1.0e-12));
+    int phaseNodes=32;
+    while(phaseNodes<2048&&phaseNodes<targetPhaseNodes) phaseNodes*=2;
+    result.phaseNodes=phaseNodes;
+    constexpr int historySamples=32;
+    const double larmorCoefficient=1.0/(6.0*pi*epsilon0*c*c*c);
+    double forceSum=0.0,kinematicSum=0.0,fluxSum=0.0;
+    for(int node=0;node<phaseNodes;++node) {
+        const double eccentricAnomaly=2.0*pi*node
+            /static_cast<double>(phaseNodes);
+        const double timeWeight=1.0-eccentricity*std::cos(eccentricAnomaly);
+        if(!(timeWeight>0.0)) return result;
+        const double time=(eccentricAnomaly
+            -eccentricity*std::sin(eccentricAnomaly))/meanMotion;
+        State bare=keplerState(time);
+        if(!(bare.firstVelocity.norm()<c)||!(bare.secondVelocity.norm()<c))
+            return result;
+        synchronizeCovariantDipoles(bare);
+        State withMoments=bare;
+        withMoments.firstProperDipole=firstDipole;
+        withMoments.secondProperDipole=secondDipole;
+        synchronizeCovariantDipoles(withMoments);
+        // Two histories of the same ellipse: the bare one feeds the
+        // spectral flux, which must not see the moments' own M1 field; the
+        // one with moments feeds the retarded force.
+        const double span=8.0*separation(bare)/c;
+        StateHistory history,historyWithMoments;
+        for(int sample=historySamples;sample>=0;--sample) {
+            State past=keplerState(time-span*sample/historySamples);
+            State pastWithMoments=past;
+            synchronizeCovariantDipoles(past);
+            history.push_back(past);
+            pastWithMoments.firstProperDipole=firstDipole;
+            pastWithMoments.secondProperDipole=secondDipole;
+            synchronizeCovariantDipoles(pastWithMoments);
+            historyWithMoments.push_back(pastWithMoments);
+        }
+        const MutualForces forces=
+            retardedExternalForces(withMoments,historyWithMoments);
+        const Vec3 forceDipoleSecondDerivative=
+            relativisticAcceleration(withMoments.firstVelocity,forces.first,
+                                     firstMass)*firstCharge
+            +relativisticAcceleration(withMoments.secondVelocity,
+                                      forces.second,secondMass)*secondCharge;
+        const Vec3 kinematicDipoleSecondDerivative=
+            bare.firstAcceleration*firstCharge
+            +bare.secondAcceleration*secondCharge;
+        forceSum+=forceDipoleSecondDerivative.squaredNorm()*timeWeight;
+        kinematicSum+=kinematicDipoleSecondDerivative.squaredNorm()*timeWeight;
+        fluxSum+=electromagneticFieldFluxRates(bare,history).energy
+            *timeWeight;
+    }
+    const double nodeCount=static_cast<double>(phaseNodes);
+    result.forcePower=forceSum*larmorCoefficient/nodeCount;
+    result.kinematicPower=kinematicSum*larmorCoefficient/nodeCount;
+    const double idealFlux=fluxSum/nodeCount;
+    if(!(result.kinematicPower>0.0)||!std::isfinite(idealFlux)
+       ||!(idealFlux>0.0)) return result;
+    result.spectralFactor=idealFlux/result.kinematicPower;
+    result.power=result.forcePower*result.spectralFactor;
+    result.valid=std::isfinite(result.power)&&result.power>0.0;
+    return result;
+}
+
 // Orbit-averaged coherent M1 power from the pair's OWN carried magnetic
 // moments, precessing at the Thomas-BMT rates orbitAveragedBmtAngularVelocities
 // derives for the coupled secular spin-orbit solver (secular_spin_orbit.hpp).
@@ -3035,7 +3217,12 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // moment, which has neither.  Summing them here and drawing every
         // photon as E1 -- what this used to do -- gives the M1 share the wrong
         // spectrum and the wrong axis.  See the emission block below.
-        const double electricPowerForLoss=isStochastic
+        // secularElectricDipoleOrbitAveragedEmission, not Coulomb-only
+        // Larmor: it carries the dipole force in the acceleration and the
+        // relativistic/spectral correction (audit sections 78-79).
+        // CREM_COULOMB_LARMOR restores the closed form, which is also the
+        // fallback should the average fail.
+        const double coulombLarmorForLoss=isStochastic
             ?larmorOrbitAveragedPower(
                  semiMajorAxisForLoss,
                  std::sqrt(std::max(0.0,1.0+2.0*elements.specificEnergy
@@ -3043,6 +3230,29 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                      *elements.specificAngularMomentum
                      /(attractionParameter*attractionParameter))))
             :0.0;
+        static const bool coulombLarmorOnly=
+            std::getenv("CREM_COULOMB_LARMOR")!=nullptr;
+        const SecularElectricDipoleEmission electricEmissionForLoss=
+            (isStochastic&&!coulombLarmorOnly)
+                ?secularElectricDipoleOrbitAveragedEmission(
+                     semiMajorAxisForLoss,
+                     angularMomentumDirection
+                         *(elements.specificAngularMomentum*reducedMass),
+                     firstDipole,secondDipole,reducedMass,periapsisDirection)
+                :SecularElectricDipoleEmission{};
+        const double electricPowerForLoss=electricEmissionForLoss.valid
+            ?electricEmissionForLoss.power:coulombLarmorForLoss;
+        if(std::getenv("CREM_E1_CORRECTION")&&electricEmissionForLoss.valid)
+            std::fprintf(stderr,
+                "CREM_E1 t=%.9e a=%.9e force/coulomb=%.9e spectral=%.9e "
+                "kinematic/closed=%.9e total/coulomb=%.9e nodes=%d\n",
+                simulatedTimeTotal,semiMajorAxisForLoss,
+                electricEmissionForLoss.forcePower
+                    /electricEmissionForLoss.kinematicPower,
+                electricEmissionForLoss.spectralFactor,
+                electricEmissionForLoss.kinematicPower/coulombLarmorForLoss,
+                electricEmissionForLoss.power/coulombLarmorForLoss,
+                electricEmissionForLoss.phaseNodes);
         const CoherentMagneticDipoleEmission magneticEmissionForLoss=
             isStochastic
                 ?coherentMagneticDipoleOrbitAveragedEmission(

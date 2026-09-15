@@ -546,8 +546,10 @@ inline const std::vector<ScientificModel>& scientificModels() {
          "electric-dipole (E1) radiation of the pair's relative motion",
          "The a^-4 scaling, not the instantaneous formula, is what the "
          "secular estimator integrates.",
-         "larmorOrbitAveragedPower in modules/crem_collapse.hpp; it also sets "
-         "the photon hazard rate lambda = P/(hbar omega)."},
+         "larmorOrbitAveragedPower in modules/crem_collapse.hpp as the "
+         "closed-form reference; the photon hazard lambda = P/(hbar omega) "
+         "now uses secularElectricDipoleOrbitAveragedEmission, which adds the "
+         "dipole force and the relativistic/spectral correction."},
         {"schott_bound_field_energy", "jackson_classical_electrodynamics",
          0x0fU, "crem_collapse_time", "engine_model",
          "E_Schott = -q^2 (v.a)/(6 pi eps0 c^3), the total-derivative term of "
