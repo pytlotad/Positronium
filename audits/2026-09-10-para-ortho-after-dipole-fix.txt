@@ -5194,3 +5194,75 @@ measurement of whether that survives a cascade.
      crem_trajectory's frame and Schott diagnostics still call the ledger
      with weight 1 whatever the force model; the 1e-6-level differences of
      the two forms on symmetric states were not resolved.
+
+83. ATTRACTION OF THE MOMENTS IN p-Ps, REPULSION IN o-Ps: WHAT THE MODEL
+    HAS, AND A SIGN REGRESSION IN ITS CONTACT TERM
+
+83a. QUESTION.  Is an effect missing that attracts the magnetic moments in
+     para and repels them in ortho -- perhaps orbit-orbit?
+
+83b. ORBIT-ORBIT.  The Breit orbit-orbit (current-current) interaction is
+     the Darwin term, present as darwinForces/darwinInteractionEnergy.  It
+     does not depend on spin and cannot separate para from ortho.
+
+83c. THE TENSOR TERM IS PRESENT; ITS SIGN FOLLOWS THE TILT.  Azimuth average
+     in the orbit plane, parallel moments (para), units mu0 mu^2/(4 pi r^3),
+     positive = repulsive (probe ddsign.cpp):
+
+     r/r*    tilt 0    30       54.7     60       90
+     10      +1.000    +0.625   0.000    -0.125   -0.500
+     1       +0.996    +0.624   +0.002   -0.122   -0.494
+     0.2     +0.913    +0.591   +0.054   -0.054   -0.376
+
+     Ortho has the opposite sign.  Moments along the orbit normal: para
+     repels, ortho attracts; beyond the magic angle the reverse.  Averaged
+     over orientations it vanishes (N6, dipole-tensor-s-state-average), and
+     production samples the tilt isotropically, so the ensemble carries no
+     net para attraction from it.
+
+83d. THE EFFECT ASKED ABOUT IS THE FERMI CONTACT TERM, AND ITS SIGN IS NOW
+     WRONG.  In QED the attraction of p-Ps and repulsion of o-Ps is the
+     contact part of the spin-spin coupling, -(2 mu0/3) mu1.mu2 delta(r)
+     (4/7 of the 204.4 GHz splitting; the other 3/7, virtual annihilation,
+     acts in ortho only and has no classical counterpart here).  A current
+     loop's field carries it: integral B dV = +(2 mu0/3) m.  cb607c9
+     (2026-08-29) measured exactly that for the then-regularized field
+     (7.77694e-30 against 7.77839e-30).
+     The Plummer unification 00f0071 (2026-09-14, section 66) replaced the
+     field by (mu0/4 pi)[3 r(r.m) - m rho^2]/rho^5, which is the softened
+     field of a MAGNETIC-CHARGE dipole: integral B dV = -0.336 mu0 m
+     (expected -1/3), i.e. the contact term with the opposite sign and half
+     the strength.  Since then contact makes para repel and ortho attract,
+     the reverse of QED.  Isotropic average of U at fixed r, para, in the
+     units above: +2.58e-3 at 1 r*, +5.38e-2 at 0.2 r*, +1.77e-1 at
+     0.05 r* (repulsive).  It is also inconsistent inside the model: the
+     charge-dipole force uses the loop vector potential m x r/rho^3 but
+     this field for B.
+
+83e. THE CORRECT PLUMMER FIELD (probe loopfield.cpp).  The curl of the
+     same vector potential,
+         B = (mu0/4 pi) [3 r(r.m) - m (r^2 - 2 eps^2)] / rho^5
+           = current form + (mu0/4 pi) 3 eps^2 m / rho^5,
+     checked: B = curl A to 3.4e-10, div B = 0, integral B dV = +0.653 mu0
+     (+2/3 up to the finite sphere), far field equal to the current form
+     within 3 eps^2/r^2 (4.6e-3 at 1 r*).  Isotropic average for para turns
+     attractive: -4.87e-3 at 1 r*, -1.07e-1 at 0.2 r*, -3.54e-1 at 0.05 r*.
+     Energy U = -mu2.B1 = current U - (mu0/4 pi) 3 eps^2 (mu1.mu2)/rho^5.
+
+83f. RELEVANCE TO PRODUCTION: NONE MEASURABLE.  Trace 42/2 (CREM_SKIP
+     census, 63 checkpoints each): the smallest checkpoint periapsis is
+     39.7 r* (para) and 40.8 r* (ortho); only the final photon cascade takes
+     the circular orbit to ~4.9 r*.  The contact correction relative to the
+     tensor term, 3 (eps/r_p)^2, is 5e-6 at 40 r* and 3e-4 at 5 r*.  Even
+     with the right sign, the attraction the question has in mind is an
+     S-state property (|psi(0)|^2), and the model's L = hbar orbits never
+     sample r = 0 (cb607c9).
+
+83g. WHAT A FIX WOULD TOUCH (not done here).  pairDipoleField,
+     pairDipoleInteractionEnergy and pairDipoleForce (Plummer branch), the
+     contact correction in the retarded two-charge dipole construction
+     (retardedMagneticDipoleField and the far-zone field), the Plummer
+     branch of azimuthAveragedDipoleEnergy, and the validation references
+     moved in section 66.  Expected effect: nil in production (83f); real
+     for deep or radial orbits, floor-scale experiments and the sign of the
+     para/ortho contact physics the model claims to represent.
