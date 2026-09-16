@@ -2347,12 +2347,24 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             //     ortho   |B1|=2.200  |B2|=2.200  ratio 1       p1.p2 = +1
             //
             // The electric fields are equal in both; the whole asymmetry is
-            // magnetic and tracks the MOTIONAL electric dipole exactly.  That
-            // is forced, not incidental: p = gamma (v x mu)/c^2 is odd in v
-            // and even in mu, so with v2 = -v1 the ortho pair (mu2 = -mu1)
-            // has p2 = +p1 and stays symmetric, while the para pair
-            // (mu2 = +mu1) has p2 = -p1 and does not.  Para's mirror symmetry
-            // is broken by its own motional dipole.
+            // magnetic, and it TRACKS the motional electric dipole, whose
+            // parity is forced: p = gamma (v x mu)/c^2 is odd in v and even
+            // in mu, so with v2 = -v1 the ortho pair (mu2 = -mu1) has
+            // p2 = +p1 and stays symmetric while the para pair (mu2 = +mu1)
+            // has p2 = -p1 and does not.
+            //
+            // Tracking is not causing, and an earlier version of this comment
+            // said "is broken by its own motional dipole", which audit 90a
+            // measured and disproved.  p and the partner's dipole FIELD are
+            // two properties of the same moment, so they move together
+            // whatever drives the angle.  Removing the partner's dipole field
+            // alone, with every moment left in place, drops |w1-w2| by three
+            // orders at the Compton end and thirteen at a_pair and beyond
+            // (2.7582e+11 to 2.9341e+02 at a_pair).  The singlet is broken by
+            // the partner's magnetic dipole field -- which is exactly the
+            // interaction Wigner-Eckart forbids from mixing singlet with
+            // triplet, since two spin-1/2 have no S'=2 (audit 18a).  That is
+            // what makes it a defect and not a missing correction.
             //
             // Consequently omega1 - omega2 is 60% of omega1 for para at
             // --level 1 and identically zero for ortho, the para figure

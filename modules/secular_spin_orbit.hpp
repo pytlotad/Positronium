@@ -852,7 +852,26 @@ inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
                     <<" |mu1xmu2|/mumu="<<momentCross.norm()
                         /std::max(firstNorm*secondNorm,1.0e-300)
                     <<" dcos/dt="<<dot(rateDifference,momentCross)
-                        /std::max(firstNorm*secondNorm,1.0e-300)<<'\n';
+                        /std::max(firstNorm*secondNorm,1.0e-300)
+                    // (mu1+mu2).Lhat is the classical stand-in for the
+                    // antisymmetric spin-orbit operator (S1-S2).L, the only
+                    // term that can mix singlet with triplet at all.  Printed
+                    // normalized by one moment, so para starts at 2 and ortho
+                    // sits at 0, and any departure is the libration moving it.
+                    <<" mL="<<dot(firstBefore+secondBefore,
+                        orbitalAfter/std::max(orbitalAfter.norm(),1.0e-300))
+                        /std::max(firstNorm,1.0e-300)
+                    // mL is a PROJECTION, so it moves when Lhat turns as well
+                    // as when the moments do.  |m| separates the two: the sum
+                    // of the moments is what the channel weight reads, and it
+                    // cannot jump when only the axis has rotated.  Lhat is
+                    // printed with it so a sign change can be attributed.
+                    <<" m="<<(firstBefore+secondBefore).norm()
+                        /std::max(firstNorm,1.0e-300)
+                    <<" Lhat="<<orbitalAfter.x/std::max(orbitalAfter.norm(),1.0e-300)
+                    <<","<<orbitalAfter.y/std::max(orbitalAfter.norm(),1.0e-300)
+                    <<","<<orbitalAfter.z/std::max(orbitalAfter.norm(),1.0e-300)
+                    <<'\n';
             }
         }
         result.state.firstDipole=firstAfter;

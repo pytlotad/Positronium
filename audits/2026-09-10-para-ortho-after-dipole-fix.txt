@@ -5790,3 +5790,138 @@ measurement of whether that survives a cascade.
      section 79 to name secularElectricDipoleOrbitAveragedEmission instead of
      larmorOrbitAveragedPower, had been left uncommitted in the tree since
      then.  Neither is part of the time-step change.
+
+90. WHAT BREAKS THE SINGLET, MEASURED TERM BY TERM
+==================================================================
+
+     Section 18 asked whether the loss of the singlet is a defect or
+     physics and answered: a defect, and it is a LIBRATION rather than a
+     drift.  This section asks the question section 18 left open -- WHICH
+     TERM does it -- and the answer overturns the mechanism recorded in
+     crem_collapse.hpp.  Four of my own claims died on the way; they are in
+     90f because each of them read as a result first.
+
+90a. THE SEPARATION THAT WORKS.  The mutual angle moves at
+     d(mu1.mu2)/dt = (w1-w2).(mu1 x mu2), so the whole question is
+     |w1-w2|.  Subtracting the partner's dipole field alone -- recomputed
+     from retardedMagneticDipoleField and removed from the assembled local
+     field, WITHOUT touching any moment -- against the full field, para,
+     circular, the moments perpendicular to the orbit:
+
+       r/a_pair    |w1-w2| full     without the dipole field   ratio
+       0.0039      1.7049e+18       5.2122e+14                 3.0572e-04
+       0.0156      6.8226e+16       3.3239e+11                 4.8719e-06
+       0.0625      1.1256e+15       3.0871e+08                 2.7426e-07
+       0.25        1.7648e+13       3.0052e+05                 1.7029e-08
+       1           2.7582e+11       2.9341e+02                 1.0638e-09
+       4           4.3097e+09       2.8652e-01                 6.6483e-11
+       16          6.7340e+07       2.7937e-04                 4.1486e-12
+       64          1.0522e+06       2.6263e-07                 2.4960e-13
+
+     Three orders at the Compton end, thirteen at the far end.  The
+     singlet is broken by the PARTNER'S MAGNETIC DIPOLE FIELD, and by
+     nothing else that the assembly contains.
+
+90b. THE RECORDED MECHANISM WAS A CORRELATION.  crem_collapse.hpp says the
+     asymmetry "tracks the MOTIONAL electric dipole exactly", and derives
+     it from p = gamma (v x mu)/c^2 being odd in v and even in mu.  The
+     sentence has two halves and they fare differently.  "The whole asymmetry
+     is magnetic" is confirmed here: 90a leaves the electric sector untouched
+     and still accounts for everything.  "And tracks the MOTIONAL electric
+     dipole exactly" is the half that does not survive as a cause.  Tracking
+     is all it is: p = gamma (v x mu)/c^2 and the partner's dipole field are
+     two properties of the SAME moment, so they move together whatever drives
+     the angle, and removing "the moments" removes both at once.  90a removes
+     only the magnetic field of the partner's moment, and the asymmetry goes
+     with it.
+
+     Section 27a is NOT affected and its parity table stands: it switched the
+     charge and the moment off separately, which is a valid separation, and
+     its conclusion -- the dipole part is even for para and odd for ortho,
+     the motional part odd always -- is exactly what 90a's result requires.
+     What 90a settles is which of the two parts carries the effect, a
+     question that table does not answer.
+
+90c. THE ASYMMETRY IS NOT A v/c EFFECT.  Measured at FIXED beta = 0.007297,
+     scanning radius alone -- which the per-level figures (0.602, 0.270,
+     0.174 for n=1,2,3) cannot do, because a level changes r and beta
+     together:
+
+       r/a_pair    0.0156   0.0625   0.25    1      4      16     64
+       |w1-w2|/|w1| 2.104   2.463    7.985  1.001  0.182  0.043  0.010
+
+     Two orders of variation at constant beta.  The relativistic reading of
+     the per-level scaling was mine and it is wrong.
+
+90d. ORTHO IS ZERO BY CONSTRUCTION, ON A SECOND INSTRUMENT.  |w1-w2| is
+     identically 0 across all 18 scanned configurations, every radius and
+     every speed, and along a full trajectory (5302 substeps) ortho holds
+     cos = -1.000000, |w1-w2|/|w1| = 0.000000 and (mu1+mu2).Lhat = 0.000000
+     without exception.  This confirms section 27a on an independent probe:
+     it is an exact symmetry of the configuration, not a result the model
+     could have failed.
+
+90e. THE LIBRATION SURVIVES A LARGE AND PERMANENT ASYMMETRY.  Para, one
+     trajectory, 6932 spin-transport substeps, seed 42:
+
+       cos                    0.335085 .. 1.000000
+       |w1-w2|/|w1|           0.917242 .. 1.234250
+       returns to cos > 0.999            18
+       lifetime               199.45285 ps against ortho's 199.444493 ps
+
+     The rate asymmetry never falls below 0.92 -- it is always there, and
+     large -- and the singlet reassembles anyway, eighteen times.  So the
+     libration of sections 18c and 27b is not the asymmetry being weak.  It
+     is the asymmetry being PERIODIC.  That strengthens the section 17
+     conclusion: the terminal angle is a phase, and the two channels'
+     collapse times differ by 8 fs in 199 ps, so none of this reaches an
+     observable.
+
+90f. FOUR OF MY OWN CLAIMS THAT DIED, each recorded because it read as a
+     result before it was checked:
+
+     - "The motional term breaks the singlet."  A v/c mechanism was the
+       hypothesis this section started from.  90a and 90c killed it.
+     - "Zeroing the proper moments removes the dipole field."  It does not:
+       synchronizeCovariantDipoles refills the lab moment, |mu1_lab| comes
+       back at 9.2849e-24 against a true moment-free 0, and the field moves
+       in the sixth digit (0.7813741 against 0.7813793) instead of changing
+       from 0.78 to 1.56.  Three measurements compared the full field with
+       itself before a separate check caught it.  This is the same trap as
+       the secular magnetic term, and I walked into it again.
+     - "|w1-w2|/|w1| spikes to 170 near 0.3375 a_pair."  The RATIO does.
+       |w1-w2| itself falls smoothly, 1.76e13 to 1.66e12 across that whole
+       interval; the denominator |w1| collapses to 1.03e11 and recovers.  An
+       artefact of normalizing, not an amplification.
+     - "The mixing operator rotates: (mu1+mu2).Lhat changes sign."  It does
+       change sign, once in 6932 substeps, but |mu1+mu2| passes through it
+       continuously (1.78515 to 1.78453) while Lhat flips from
+       (0.286,-0.039,0.957) to (0.275,0.470,-0.839).  The projection moved
+       because the AXIS turned.
+
+90g. WHAT THE AXIS FLIP ACTUALLY IS, since it had to be excluded.  It is
+     the photon recoil, not an integration fault.  The flip sits between
+     substeps 4199 and 4200; CREM_PHOTON_LADDER puts the second photon
+     exactly there (70.63 eV at a/a_pair = 0.333).  Adjacent Lhat dot
+     products are above 0.9 for 6929 of 6931 steps, and the skip census
+     shows |L| descending in the matching steps, 1.00000 -> 0.57744 ->
+     0.27358 hbar, with the direction jumping at each one.
+
+90h. SO: DEFECT OR PHYSICS?  Defect, and section 20b already gave the
+     reason more deeply than this section can: the classical states are not
+     C eigenstates at all, because +-1 comes from the exchange symmetry of a
+     wavefunction and two vectors have none.  What 90a adds is the address.
+     The term that does it is the partner's dipole field -- exactly the
+     interaction that Wigner-Eckart forbids from mixing singlet with triplet
+     (section 18a), since two spin-1/2 have no S'=2.  The model's
+     singlet-breaking channel is therefore the one channel quantum mechanics
+     closes completely, which is what makes it a defect rather than a
+     missing correction.
+
+90i. LIMITS.  One seed and one trajectory per channel for the transport
+     figures; the scans are static configurations with the moments
+     perpendicular to the orbit, not sampled along a trajectory; the
+     fixed-beta scan uses unbound configurations outside the model's
+     declared domain and describes the structure of the term, not a
+     prediction; no external field, where the rank-1 Zeeman term genuinely
+     does mix S=0 with S=1 (section 18a) and this conclusion would not hold.
