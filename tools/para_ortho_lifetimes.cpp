@@ -1,5 +1,18 @@
 // Paired para/ortho collapse-time comparison.
 //
+// THIS TOOL NOW REQUIRES --spin-quantization TO MEAN ANYTHING.  Its whole
+// method rests on phenomenon 1 and phenomenon 2 preparing DIFFERENT moment
+// configurations from the same seed, and audit 91 removed that: the mutual
+// angle is drawn freely and the channel is a classification of the draw, so
+// the two phenomena now sample the identical ensemble (measured: both give
+// 24.7% of draws on the para side of cos = 0.5 and the same mean moment).
+// Run without quantization the pairing below compares an ensemble with
+// itself, which is a difference of exactly zero dressed up as a measurement
+// -- the same failure mode as the censored comparison of audit 89g.
+// gSpinQuantization is set from the command line of the program under test,
+// so pass --spin-quantization there, or set it before calling this.
+//
+// Under quantization, which is what the text below describes:
 // runCremCollapseExperiment seeds trajectory i from splitMix64(masterSeed+i)
 // regardless of the channel, and the quantized-spin branch of the sampler
 // derives the second moment from the first WITHOUT consuming an extra draw.
@@ -8,7 +21,8 @@
 // first moment, differing ONLY in the sign of the second moment -- para has
 // the moments aligned, ortho anti-aligned.  The pairing matters because the
 // initial conditions dominate the spread in collapse time and cancel in the
-// per-pair difference.
+// per-pair difference.  The free draw also consumes two extra numbers from
+// the shared generator, so seeded figures move between the two modes.
 //
 // Reports the paired difference, the geometric ratio with a confidence
 // interval, an exact sign test, and how often the two channels disagree on
@@ -79,6 +93,24 @@ int main(int argc,char** argv) {
              <<(gDeterministicEmission?"deterministic":"poisson")
              <<", level "<<gInitialPrincipalLevel<<", floor "
              <<(gGroundStateEmissionFloor?"on":"off")<<"\n";
+    // REFUSE TO REPORT A COMPARISON THAT CANNOT SEPARATE THE CHANNELS.
+    // Without the imposed mutual angle the two phenomena sample the identical
+    // ensemble, so every pair comes out with a difference of exactly zero and
+    // the summary below would read like a measured null result instead of an
+    // instrument with no resolving power (measured: 3/3 pairs identical to
+    // the last digit, ratio 1 with CI [1,1]).  Audit 89g records what that
+    // failure mode looks like when it is not caught.
+    if(!gSpinQuantization) {
+        std::cout<<"\nREFUSED: this comparison needs the imposed mutual angle."
+                 <<"\nSince audit 91 the mutual moment angle is drawn freely "
+                   "and the channel is a\nclassification of the draw, so "
+                   "phenomenon 1 and phenomenon 2 sample the SAME\nensemble: "
+                   "every pair would differ by exactly zero and that zero "
+                   "would measure\nnothing.  Set gSpinQuantization (the "
+                   "program's --spin-quantization) to restore\nthe cos = +-1 "
+                   "preparation this pairing was built for.\n";
+        return 1;
+    }
     const auto para=runCremCollapseExperiment(masterSeed,1,runCount,budget);
     const auto ortho=runCremCollapseExperiment(masterSeed,2,runCount,budget);
 

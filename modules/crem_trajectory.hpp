@@ -1170,6 +1170,18 @@ inline SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // all actual initial values inside that range remain random.
     // Menu order is para, ortho, direct collision, scattering. Internally the
     // samplers retain the order direct, scattering, para, ortho.
+    //
+    // SCENARIOS 2 AND 3 ARE NOW THE SAME ENSEMBLE, and the menu entry is a
+    // label rather than a selection.  They differed only in how the mutual
+    // moment angle was imposed -- exactly aligned against exactly
+    // anti-aligned under quantization, either side of cos = 0.5 under the
+    // band -- and with both impositions removed the orbital sampling below is
+    // identical for the two.  Measured over 2000 prepared states each
+    // (audit 91): both give 24.7% of draws on the para side of the threshold
+    // and 75.3% on the ortho side, the same mean cosine -0.0038 and the same
+    // |mu1+mu2|/mu of 1.3293.  What still separates a para trajectory from an
+    // ortho one is the angle it happened to DRAW, read off below, not the
+    // number passed in here.  --spin-quantization restores the old meaning.
     const std::array<int, 5> scenarioForMenuChoice = {0, 2, 3, 0, 1};
     const int sampledScenario = scenarioForMenuChoice[selectedPhenomenon];
     double radialSpeed = 0.0;
@@ -1341,23 +1353,42 @@ inline SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // that the channel difference becomes a property of the configuration
     // rather than of the --phenomenon switch.
     //
-    // Gated on gSpinQuantization, which is ON by default and independent of
+    // Gated on gSpinQuantization, which is OFF by default and independent of
     // --ground-state-floor.  It used to ride on that flag, which also zeroes
     // the emission hazard at n=1 and so stopped every trajectory before the
     // collision boundary -- meaning the one configuration that realizes this
     // asymmetry was exactly the one that could never be run to annihilation.
     // See gSpinQuantization's comment for the measured cost of the band.
+    // THE MUTUAL ANGLE IS NOW SAMPLED FREELY, and this is a deliberate
+    // removal of TWO impositions rather than one.  Both of the old branches
+    // decided the configuration in advance:
+    //
+    //   quantized  second moment set to +-first, i.e. cos = +-1 exactly;
+    //   band       a rejection loop that redrew until cos landed on the side
+    //              of 0.5 the selected channel wanted.
+    //
+    // The second was not the free alternative to the first: it imposed a
+    // threshold instead of a point.  A model whose quantization is supposed
+    // to COME OUT of the dynamics cannot be handed either.  So the direction
+    // is drawn uniformly and the channel is a CLASSIFICATION of what was
+    // drawn (dipoleAlignment >= 0.5 below), not an input to it.
+    //
+    // What this costs, stated because it is not small.  The exact
+    // cancellation |mu1+mu2| = 0 that made the coherent M1 channel a real
+    // para/ortho asymmetry is a property of cos = -1, and a uniform draw
+    // reaches it with probability zero.  Audit 91 measures the damage.
+    //
+    // Reproducibility: randomDirection consumes two draws from the shared
+    // mt19937_64, and the quantized branch consumed NONE for the second
+    // moment.  Every seeded number quoted in earlier audit sections therefore
+    // moves.  gSpinQuantization (now OFF by default, --spin-quantization)
+    // restores the old branch for reproducing them.
     if(gSpinQuantization && (sampledScenario==2||sampledScenario==3)) {
         const double sign = sampledScenario==2 ? 1.0 : -1.0;
         s.secondDipole = s.firstDipole
             * (sign*secondMagneticMoment/firstMagneticMoment);
     } else {
-        do {
-            s.secondDipole = randomDirection() * secondMagneticMoment;
-        } while ((sampledScenario == 2 && dot(s.firstDipole, s.secondDipole)
-                                      / (firstMagneticMoment*secondMagneticMoment) < 0.5)
-              || (sampledScenario == 3 && dot(s.firstDipole, s.secondDipole)
-                                      / (firstMagneticMoment*secondMagneticMoment) >= 0.5));
+        s.secondDipole = randomDirection() * secondMagneticMoment;
     }
 
     const double relativeEnergy = 0.5 * reducedMass * relativeVelocity.squaredNorm()

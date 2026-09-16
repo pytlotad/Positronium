@@ -5287,11 +5287,14 @@ int main(int argc, char** argv) {
                                                     // so existing command
                                                     // lines keep working
             } else if (argument == "--spin-quantization") {
-                gSpinQuantization = true;           // the default; see the
-                                                    // flag's own comment
+                gSpinQuantization = true;           // restores the exact
+                                                    // cos = +-1 preparation
+                                                    // earlier audit sections
+                                                    // were measured under
             } else if (argument == "--no-spin-quantization") {
-                gSpinQuantization = false;          // restores the band
-                                                    // sampling this replaced
+                gSpinQuantization = false;          // now the default; kept
+                                                    // so existing command
+                                                    // lines keep working
             } else if (argument == "--bohr-photon-energy") {
                 gBohrLevelPhotonEnergy = true;      // restores the historical
                                                     // level-difference rule

@@ -5925,3 +5925,113 @@ measurement of whether that survives a cascade.
      declared domain and describes the structure of the term, not a
      prediction; no external field, where the rank-1 Zeeman term genuinely
      does mix S=0 with S=1 (section 18a) and this conclusion would not hold.
+
+91. THE IMPOSED MUTUAL ANGLE IS GONE, AND SO IS THE BAND
+==================================================================
+
+     Asked to withdraw spin quantization, on the principle that quantization
+     should come out of the physics rather than be handed to it.  I argued
+     against it first, because it costs result N2 of the liberation plan;
+     the principle was reaffirmed and is the stronger claim, so it was done.
+     What the work found is that TWO impositions had to go, not one.
+
+91a. THE BAND WAS NOT THE FREE ALTERNATIVE.  The sampler had two branches.
+     The quantized one set the second moment to +-the first, cos = +-1
+     exactly.  The other was a REJECTION LOOP:
+
+         do { secondDipole = randomDirection()*mu; }
+         while ((scenario==2 && cos <  0.5)
+             || (scenario==3 && cos >= 0.5));
+
+     It redrew until the cosine landed on the side of 0.5 the selected
+     channel wanted.  That is a threshold imposed in place of a point, and it
+     fails the same principle.  Switching the default to the band would have
+     looked like compliance without being it.  Both branches are now off the
+     default path: the direction is drawn uniformly, once, and the channel is
+     a CLASSIFICATION of the draw (dipoleAlignment >= 0.5, which the sampler
+     already computed for its own phenomenon label).
+
+91b. WHAT THE FREE DRAW PREPARES, predicted then measured.  A uniform
+     direction gives cos uniform on [-1,1], so the 0.5 threshold splits the
+     ensemble 25/75 and the mean of |mu1+mu2|/mu = sqrt(2+2cos) follows by
+     integration.  Measured over 2000 prepared states per phenomenon:
+
+       quantity              predicted   measured (free draw)
+       para share              25.0%       24.7%  (494/2000)
+       ortho share             75.0%       75.3%  (1506/2000)
+       mean cos                 0.000      -0.0038
+       <|m|/mu> all             1.3333      1.3293
+       <|m|/mu> para label      1.8692      1.8681
+       <|m|/mu> ortho label     1.1547      1.1526
+
+     Control with --spin-quantization restored: cos exactly +1 or exactly -1,
+     |m|/mu exactly 2.0000 or 0.0000, label shares 100/0.
+
+91c. THE COST, STATED AS A LOSS.  Result N2 -- the shape of the Landau-Yang
+     rule from classical magnetostatics -- rests on |mu1+mu2| vanishing
+     EXACTLY for ortho, which is a property of cos = -1.  A uniform draw
+     reaches that point with probability zero, and the ortho LABEL now
+     carries 1.1526 mu of net moment on average instead of 0.  The coherent
+     M1 channel therefore no longer cancels for anything the model prepares
+     by default.  This is not a degradation of the measurement; it is the
+     removal of the configuration the measurement was about.
+
+     For the record, the band was no better: measured today, ortho under the
+     band prepared at cos = 0.1486 with |m|/mu = 1.5157 against para's
+     1.8440, i.e. 82% of para's net moment rather than zero.
+
+91d. THE TWO PHENOMENA ARE NOW ONE ENSEMBLE.  With the imposition gone,
+     scenarios 2 and 3 differ in nothing: the orbital sampling was always
+     shared, and the moment angle is now drawn the same way for both.
+     Measured: phenomenon 1 and phenomenon 2 give identical shares
+     (494/1506), identical mean cosine (-0.0038) and identical <|m|/mu>
+     (1.3293) over 2000 draws each.
+
+91e. AND THAT BREAKS THE PAIRING TOOL, WHICH NOW REFUSES.  tools/para_ortho_
+     lifetimes.cpp pairs phenomenon 1 against phenomenon 2 at a common seed.
+     Run under the free draw it produced:
+
+       idx    t_para(ps)     t_ortho(ps)    ratio   photons
+        0     216.731909     216.731909      1       3 / 3
+        1     199.460186     199.460186      1       3 / 3
+        2     199.448214     199.448214      1       3 / 3
+       DIFFERENCE ortho-para: 0 +/- 0 ps (0 sigma)
+       GEOMETRIC RATIO: 1, 95% CI [1, 1]
+
+     Identical to the last digit, because it compared an ensemble with
+     itself.  A difference of exactly zero reads like a measured null result
+     and is nothing of the kind -- the same failure mode as the censored
+     comparison of 89g.  The tool now checks gSpinQuantization and REFUSES,
+     naming the switch that restores its premise, rather than printing that
+     zero.
+
+91f. WHAT MOVED THAT IS NOT PHYSICS.  randomDirection consumes two numbers
+     from the shared mt19937_64, and the quantized branch consumed NONE for
+     the second moment.  Every seeded figure in earlier sections therefore
+     shifts between the two modes: the same master seed and index no longer
+     name the same trajectory.  --spin-quantization reproduces them.
+
+91g. VERIFICATION.  Validation 61/61 PASS, so no enforced check depended on
+     the imposed angle.  Header isolation 37/37.  The production binary
+     builds, and both --spin-quantization and --no-spin-quantization are
+     recognized (an unknown option exits 1).
+
+     A test of mine that proved nothing, recorded because it read as a pass:
+     the first switch check appended --help, which the program does not
+     accept, so both runs stopped at "unknown option --help" before doing
+     anything, and I read the exit code of a pipeline ending in head rather
+     than the program's.  Repeated properly, both switches are accepted.
+
+91h. WHAT I DID NOT DO.  Menu entries 1 and 2 are now duplicates under the
+     default, and they are kept: merging them would change the command-line
+     surface and every document that names --phenomenon 2, which is beyond
+     withdrawing the imposition.  The sampler comment and the pairing tool
+     both say so at the point of use.  Anything that needs the two channels
+     to differ needs --spin-quantization, and that includes the para/ortho
+     lifetime comparison this project's method was built on.
+
+91i. LIMITS.  The distribution figures are prepared states only, 2000 draws
+     per phenomenon, no inspiral; the lifetime figures are three trajectories
+     per channel at one seed and one budget; nothing here re-measures the
+     hyperfine, contact or M1 sections that were taken under the imposed
+     angle, and those remain valid only as statements about that preparation.

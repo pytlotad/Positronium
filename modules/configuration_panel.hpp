@@ -271,8 +271,23 @@ inline bool gGroundStateEmissionFloor = false;
 // before it reaches the collision boundary (measured: 0 of 4 collapses).  The
 // two are independent physical assertions and are now independent switches:
 // this one fixes the initial mutual angle, that one closes the ladder from
-// below.  --no-spin-quantization restores the band sampling.
-inline bool gSpinQuantization = true;
+// below.
+//
+// NOW OFF BY DEFAULT, and the sampled alternative is no longer the band
+// either.  Quantization that is imposed on the initial condition cannot be
+// cited as a result of the model, and the band imposed a threshold in its
+// place, so both were removed from the default path: the mutual angle is
+// drawn uniformly and the channel is a classification of the draw.  What it
+// costs is measured in audit 91 -- the exact |mu1+mu2| = 0 of ortho is a
+// property of cos = -1 and a uniform draw never reaches it.  The figures
+// quoted just above were measured under the BAND, which no longer exists as
+// a path; the free draw is wider still.
+//
+// --spin-quantization restores the exact cos = +-1 preparation, which is
+// what earlier audit sections were measured under and what reproduces their
+// seeded numbers (the free draw also consumes two extra draws from the
+// shared generator, so every seeded figure moves without it).
+inline bool gSpinQuantization = false;
 
 // The second of the three imported quantum facts (see
 // gGroundStateEmissionFloor's comment).  quantumFor (crem_collapse.hpp) needs

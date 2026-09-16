@@ -26,8 +26,13 @@
 #include <iomanip>
 
 // Circular-orbit pair at separation R, moments along z.  sign=+1 is para
-// (aligned moments), sign=-1 is ortho (anti-aligned) -- the same convention
-// the sampler uses for sampledScenario 2 and 3.
+// (aligned moments), sign=-1 is ortho (anti-aligned).  This probe BUILDS
+// those two exact configurations itself, which is what makes it a clean
+// two-point comparison; the sampler no longer prepares them, because audit
+// 91 removed the imposed mutual angle and now draws it freely (--spin-
+// quantization restores the old preparation).  So the two configurations
+// below are the endpoints of the model's range, not the two ensembles a
+// production run samples.
 State pairAt(double time, double radius, double sign) {
     const double relativeSpeed =
         std::sqrt(pairCoulombStrength/(pairReducedMass*radius));

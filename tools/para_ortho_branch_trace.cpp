@@ -40,9 +40,16 @@ int main(int argc,char** argv) {
     // into exactly that region.
     if(argc>5) gInitialPrincipalLevel=std::atoi(argv[5]);
     if(argc>6&&std::string(argv[6])=="floor") gGroundStateEmissionFloor=true;
-    // Spin quantization off restores the sampled mutual-angle band, which is
-    // the case where the prepared configuration is NEITHER of the two exact
-    // ones and the channel weight is genuinely intermediate.
+    // Spin quantization is now OFF by default (audit 91), so this argument
+    // asks for what is already the case: the mutual angle is drawn freely,
+    // the prepared configuration is neither of the two exact ones and the
+    // channel weight is genuinely intermediate.  It is kept so existing
+    // command lines keep working, and because the interesting comparison is
+    // now the other way round -- pass nothing here and set
+    // --spin-quantization on the program under test to get the exact
+    // cos = +-1 preparation the earlier branch measurements used.  Note that
+    // the two modes consume the shared generator differently, so the same
+    // master seed and index do NOT name the same trajectory across them.
     if(argc>7&&std::string(argv[7])=="noquant") gSpinQuantization=false;
     // CREM_START_RADIUS: continuous starting separation in metres, the probe
     // face of --start-radius.  Set it to a radius that is NOT n^2 a_pair to

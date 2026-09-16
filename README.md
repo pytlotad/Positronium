@@ -49,6 +49,13 @@ staje się wtedy dokładnie \(1/4\)), a normalizacja Rutherforda wychodzi
 **co do cyfry ta sama** na ścieżce ciągłej. Zmierzone niżej, w sekcji
 „Co przeżywa bez \(\hbar\omega\)".
 
+> **Wszystkie porównania para kontra orto w tym dokumencie zmierzono pod
+> narzuconym \(\cos=\pm1\).** Sekcja 91 audytu usunęła to narzucenie z
+> domyślnej ścieżki: kąt wzajemny jest losowany swobodnie, a kanał jest
+> klasyfikacją losowania, więc `--phenomenon 1` i `2` próbkują ten sam
+> zespół. Liczby poniżej pozostają zapisem tego, co zmierzono, i odtwarza je
+> `--spin-quantization`; nie opisują domyślnego zachowania modelu.
+
 *Czego odtworzyć się NIE udało, i to jest wynik negatywny, nie luka.* Stosunek
 czasów życia para do orto, wynoszący w rzeczywistości około \(1000\), **nie
 wychodzi**. Oba kanały różnią się na starcie wyłącznie znakiem
@@ -131,7 +138,7 @@ ponad to, że są wolniejsze**. Wszystkie wiersze niżej są zmierzone przy
 |---|---|---|---|---|
 | 1 | \(L=n\hbar\) na promieniu Bohra | start dokładnie kołowy przy \(a_n=n^2a_{\rm pary}\), więc \(n_E=L/\hbar=n\) z konstrukcji | `CREM_INITIAL_BAND=1` (usuwa tylko ostrość, nie promień) | mediana 6206,43 → **7346,35 ps** (+18,4%), 3/3, punkt zatrzymania bez zmian, ale rozrzut \(\sigma/\mu\) rośnie z \(2{,}7\cdot10^{-6}\) do **0,384** — pięć rzędów wielkości |
 | 2 | \(\hbar\omega\) jako kwant emisji | energia zabierana przez jeden foton | `--radiation-reaction individual` (ciągły Landau-Lifshitz) | mediana 6206,43 → **1974,56 ps** (**3,14× szybciej**); warunek zatrzymania i energia końcowa **bez zmian** — 100% przebiegów kończy na podłodze i wiązanie terminalne wynosi 6,80285 eV w obu ścieżkach |
-| 3 | kwantyzacja spinu | momenty dokładnie zgodne (para) albo dokładnie przeciwne (orto), nigdy w paśmie | `--no-spin-quantization` | **na czas kolapsu zero**: 6206,43 → 6206,43 ps, różnica \(2\cdot10^{-6}\) względnie przy własnym rozrzucie zespołu \(\sigma/\mu=2{,}7\cdot10^{-6}\) |
+| 3 | kwantyzacja spinu | **USUNIĘTY**: kąt wzajemny momentów jest losowany swobodnie, a kanał jest klasyfikacją losowania, nie jego wejściem | domyślnie; `--spin-quantization` przywraca dokładne \(\cos=\pm1\) | usunięto też pasmo, które narzucało próg zamiast punktu; cena jest w sekcji 91 audytu, nie w czasie kolapsu |
 | 4 | podłoga stanu podstawowego | nie istnieje stan niżej niż \(n=1\), więc emisja tam gaśnie | `--no-ground-state-floor` | na czas kolapsu prawie nic: 6206,43 → **6245,93 ps** (+0,6%); za to punkt zatrzymania spada z 547,5 na **31,10 \(r^*\)** (czynnik 17,6), 100% przebiegów kończy na **limicie retardacji**, a nie na \(n=1\), i 1 z 3 to awaria numeryczna |
 | 5 | drabina Bohra | energia fotonu to odstęp poziomów \(E(n)-E(n-1)\), a nie \(\hbar\omega_{\rm orb}\) | włącza go `--bohr-photon-energy` + `CREM_LADDER_BELOW_2=1` (domyślnie **wyłączony**) | mediana 6206,43 → **16456,6 ps** (**2,651\(\times\)**), 3/3, punkt zatrzymania bez zmian; ale ze 123 wywołań kwantu **0 trafia w gałąź podręcznikową \(n\ge2\)**, 92,68% w rozszerzenie poniżej \(n=2\), 7,32% spada poniżej \(n=1\) |
 | 6 | \(\hbar\) spinu fotonu w ścieżce sekularnej | foton zabiera dokładnie \(\hbar\) momentu pędu wzdłuż własnego kierunku | włącza go `CREM_SPIN_MAGNITUDE=1` (domyślnie **wyłączony**) | mediana 6206,43 → **7657,39 ps** (+23,4%), 3/3, punkt zatrzymania przy podłodze; prawdziwa cena jest poza zegarem — patrz niżej |
@@ -606,6 +613,10 @@ ukończonych" jest przez to obciążona w dół; czystym porównaniem para/orto
 pozostaje ten przy \(n=2\), gdzie obie próby były nieucięte
 (\(24/24\)).
 
+> **Zmierzone pod `--spin-quantization`.** Sekcja 91 audytu usunęła narzucony
+> \(\cos=\pm1\) z domyślnej ścieżki, więc oba kanały próbkują teraz ten sam
+> zespół; poniższe liczby odtwarza ten przełącznik.
+
 **Sprostowanie: ta mediana opisuje jedną z dwóch gałęzi.** Sparowany pomiar
 przy tej samej konfiguracji (`tools/para_ortho_lifetimes.cpp`, to samo ziarno
 w obu kanałach, więc \((E,L)\) i \(\boldsymbol\mu_1\) identyczne)
@@ -688,6 +699,10 @@ obwiednia **jest** dynamiką i kształt zostaje bez zmian; dla stochastycznego
 znika. Wymuszany test tożsamości hazard/energia zachowuje moc, bo obie jego
 strony przeszły na tę samą konwencję i pozostają ścisłą tożsamością
 algebraiczną.
+
+> **Zmierzone pod `--spin-quantization`.** Sekcja 91 audytu usunęła narzucony
+> \(\cos=\pm1\) z domyślnej ścieżki, więc oba kanały próbkują teraz ten sam
+> zespół; poniższe liczby odtwarza ten przełącznik.
 
 *Co z tego wynika dla porównania kanałów.* Po poprawce, ziarno nadrzędne
 \(42\), \(20\) ukończonych par: para \(199{,}430\) ps przy rozrzucie
@@ -1505,12 +1520,16 @@ przy \(81\)–\(98\%\) przebiegu, a spin całkowity wraca wtedy do
 libracji, nie do przewidywania stosunku rozgałęzień i nie do mierzenia
 uszkodzenia, którego nie ma.
 
-*Reguła degraduje się łagodnie.* Przy `--no-spin-quantization` konfiguracja
-przygotowana sama jest pośrednia i losowanie staje się naprawdę potrzebne.
-Zmierzone wagi: \(0{,}763\), \(0{,}903\), \(0{,}910\) dla para oraz
-\(0{,}067\), \(0{,}121\), \(0{,}706\) dla orto — czyli pasmo nie
-produkuje czystego orto, dokładnie jak zapisano niżej w sekcji o kwantowaniu
-spinu.
+*Reguła degraduje się łagodnie, a od sekcji 91 audytu działa tak domyślnie.*
+Bez narzuconego \(\cos=\pm1\) konfiguracja przygotowana sama jest
+pośrednia i losowanie staje się naprawdę potrzebne. Pod **pasmem**, które
+było pierwszą próbą zastąpienia kwantyzacji, zmierzone wagi wynosiły
+\(0{,}763\), \(0{,}903\), \(0{,}910\) dla para oraz \(0{,}067\),
+\(0{,}121\), \(0{,}706\) dla orto — czyli pasmo nie produkowało czystego
+orto. Pasmo jednak samo narzucało próg \(0{,}5\) przez pętlę odrzucającą,
+więc zostało usunięte razem z kwantyzacją: kąt jest teraz losowany
+jednostajnie, co daje \(\cos\) rozłożony równomiernie na \([-1,1]\),
+\(25\%\) trajektorii pod etykietą para i \(75\%\) pod orto.
 
 *Czego zrobić się nie da, i warto to zapisać.* Kryterium **geometryczne** na
 orientacji — „czy istnieje oś, na której rzut \(J\) jest dozwolony" — nie
