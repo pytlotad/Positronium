@@ -5779,3 +5779,14 @@ measurement of whether that survives a cascade.
      numerical error, so it separates the runs but does not measure the error
      of any one of them.  The tilt-90 plunge of 89e is the open item of
      section 88h seen from another side and is not fixed here.
+
+89k. WHAT ELSE RODE IN ON THIS COMMIT, stated because the message does not
+     cover it.  Sixteen figures under distributions/ were rewritten by the
+     Experiment 4 and 5 identity runs of 89f, which write their plots into
+     the project directory; they are kept, at the author's decision, and they
+     come from two single-seed runs rather than from a full regeneration of
+     the set like commit c3a99ea.  One line of ScientificalReferences.txt
+     also rode in: the entry for the E1 hazard rate, updated in the work of
+     section 79 to name secularElectricDipoleOrbitAveragedEmission instead of
+     larmorOrbitAveragedPower, had been left uncommitted in the tree since
+     then.  Neither is part of the time-step change.
