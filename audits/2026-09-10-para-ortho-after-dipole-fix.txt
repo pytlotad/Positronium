@@ -6190,3 +6190,78 @@ measurement of whether that survives a cascade.
 93e. LIMITS.  Static Kepler orbits without the ZPF, not ZPF-driven
      trajectories; e+e- with moments along the normal only; the dynamic
      route of 93c is an estimate.
+
+94. WITH THE ANGLE FREE, THE DYNAMICS DOES NOT SELECT IT
+==================================================================
+
+94a. QUESTION.  Section 91 removed the imposed mutual moment angle.  Does
+     the inspiral then carry the angle toward particular values -- cos = -1
+     and +1, the model's two fixed points of spin transport -- so that
+     something like quantization comes out of the dynamics?
+
+94b. SETUP.  Probe cosevo.cpp: 40 trajectories, production defaults with
+     gSpinQuantization = 0, one runCremCollapseExperiment call each so the
+     diagnostic lines cannot interleave, seeds 50000-50009, 50100-50109,
+     50200-50209, 50300-50309, phenomenon 1 (the same ensemble as 2 since
+     section 91), budget 300 s.  The angle is read at EVERY spin-transport
+     substep (CREM_DEBUG_ALIGN), 3986 to 7213 samples per trajectory, not
+     at checkpoints, which section 18d showed alias the libration phase.
+     All 40 reached the cutoff; none censored; every one emitted 3 photons.
+
+94c. RESULT: NO SELECTION.  Share of cos in five equal bins:
+
+       bins                         [-1,-.6) [-.6,-.2) [-.2,.2) [.2,.6) [.6,1]
+       start value, per trajectory   0.175    0.200    0.325    0.200   0.100
+       first 10% of samples, pooled  0.152    0.221    0.263    0.190   0.174
+       last 10% of samples, pooled   0.169    0.219    0.247    0.183   0.184
+       uniform                       0.200    0.200    0.200    0.200   0.200
+
+     Mean cos drifts by -0.0004 from the first 10% to the last, with a
+     spread of 0.2848 over 40 trajectories (standard error 0.045).  The
+     pooled share of |cos| > 0.9 rises from 0.046 to 0.085, but per
+     trajectory it rises in 5, falls in 4 and stays in 31: single
+     trajectories near the ends carry the pooled change.  The ensemble ends
+     as flat as it started.
+
+94d. WHAT THE DYNAMICS DOES DISTINGUISH: HOW WIDELY THE ANGLE SWINGS.
+     Libration band width, max - min of cos over the whole trajectory:
+
+       start cos      n    mean width   min     max
+       [-1.0,-0.6)    7    0.279        0.046   0.653
+       [-0.6,-0.2)    8    0.539        0.326   0.968
+       [-0.2,+0.2)   13    0.826        0.167   1.576
+       [+0.2,+0.6)    8    0.824        0.557   1.091
+       [+0.6,+1.0)    4    0.677        0.542   0.781
+
+     Near cos = -1 the swing is narrow, down to 0.046, as the exact
+     exchange symmetry of section 27a requires at -1 itself.  The +1 end
+     shows no such narrowing.  So the two ends differ in stiffness, not in
+     attraction: an angle near anti-alignment stays near it, an angle near
+     alignment does not, and nothing moves toward either.
+
+94e. LIFETIME AGAINST THE START ANGLE (data for the next step).  Lifetimes
+     take two values, 199.4-199.5 ps (27 trajectories) and 216.7-216.8 ps
+     (13).  By start cos:
+
+       start cos      n    216.7 ps   199.4 ps
+       [-1.0,-0.6)    7    0          7
+       [-0.6,-0.2)    8    2          6
+       [-0.2,+0.2)   13    7          6
+       [+0.2,+0.6)    8    3          5
+       [+0.6,+1.0)    4    1          3
+
+     Spearman rank correlation of branch with start cos: +0.206, n = 40,
+     against about 0.31 needed at 5% two-sided.  Not significant.  That no
+     trajectory below cos = -0.4 takes the long branch was noticed after
+     looking, so it is a lead for a fresh ensemble, not a result.  The
+     photon count is 3 in all 40 and carries no information here.
+
+94f. A WRONG HINT OF MINE.  After the first trajectory (start -0.397, band
+     -0.763 to -0.397) I suggested the start value might always lie on the
+     edge of the band, meaning a swing out from the start and back.  It
+     holds for 9 of 40 within 0.02.  It is not a pattern.
+
+94g. LIMITS.  40 trajectories, one budget, production defaults only; the
+     first and last 10% are counted in substeps, not in time, which is
+     adequate here because nothing drifts; e+e- only.  The probe lives in
+     the session scratch directory and is recorded here by what it does.
