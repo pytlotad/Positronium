@@ -4536,10 +4536,12 @@ inline int runMaxwellSelfTest(
         State before=value;
         for(int step=0;step<4096&&separation(value)>cutoff&&advanced;++step) {
             before=value;
-            const double radius=separation(value);
-            const double omega=std::sqrt(
-                pairCoulombStrength/(pairReducedMass*radius*radius*radius));
-            advanced=engine.advance(value,2.0*pi/(256.0*omega));
+            // The same regularized step the production loop takes, through
+            // the same function: 256 steps per local orbital period, with no
+            // absolute ceiling and no window to clip against here.
+            advanced=engine.advance(value,regularizedTimeStep(value,
+                std::numeric_limits<double>::infinity(),
+                RegularizedStep{256.0,std::numeric_limits<double>::infinity()}));
         }
         if(advanced&&separation(value)<=cutoff) {
             const double fraction=separationCrossingFraction(before,value,cutoff);

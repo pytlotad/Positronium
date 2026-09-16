@@ -1900,16 +1900,19 @@ BeamEvent simulateBeamEvent(
         const double radius = separation(state);
         const double relativeSpeed =
             (state.firstVelocity - state.secondVelocity).norm();
-        const double omega = std::sqrt(pairCoulombStrength
-                                      / (reducedMass * radius*radius*radius));
         const double transitStep = 0.02 * radius/std::max(relativeSpeed, 1.0);
         // Far from the interaction region the transit and orbital scales are
         // much longer than 2 as. A global attosecond cap forced tens of
         // thousands of needless steps before the particles reached one
         // another. The adaptive trajectory engine still subdivides this
         // ceiling whenever its local-error estimate requires it.
-        const double dt = std::min({1.0e-15, 2.0*pi/(320.0*omega), transitStep,
-            configuration.maximumFlightTime - state.time});
+        // The orbital part of this step is the shared regularized rule, 320
+        // steps per local orbital period under a 1 fs ceiling; the transit
+        // clip beside it is this loop's own, and has no analogue in a bound
+        // orbit.  See regularizedTimeStep in crem_engine.hpp.
+        const double dt = std::min({regularizedTimeStep(state,
+            configuration.maximumFlightTime - state.time,
+            RegularizedStep{320.0, 1.0e-15}), transitStep});
         if (!(dt > 0.0) || !std::isfinite(dt)) {
             return makeResult(BeamOutcome::NumericalFailure,
                 std::numeric_limits<double>::quiet_NaN(),
@@ -2467,11 +2470,11 @@ InteractionEvent simulateInteractionEvent(
         const double radius = separation(state);
         const double relativeSpeed =
             (state.firstVelocity - state.secondVelocity).norm();
-        const double omega = std::sqrt(coulombStrength
-                                       / (reducedMass*radius*radius*radius));
         const double transitStep = 0.02*radius/std::max(relativeSpeed, 1.0);
-        double dt = std::min({1.0e-15, 2.0*pi/(320.0*omega), transitStep,
-                              configuration.maximumFlightTime - state.time});
+        // Same shared rule and same transit clip as the beam loop above.
+        double dt = std::min({regularizedTimeStep(state,
+            configuration.maximumFlightTime - state.time,
+            RegularizedStep{320.0, 1.0e-15}), transitStep});
         // A step clamped to the end of a window can fall below the floating
         // point resolution of state.time, after which state.time += dt is a
         // no-op: the clock freezes and the event spins until the wall-clock

@@ -639,7 +639,7 @@ role=engine_model
 formula=P = q_eff^2 |d2d/dt2|^2/(6 pi eps0 c^3); orbit-averaged for a Kepler ellipse this gives <P> proportional to a^-4
 domain=electric-dipole (E1) radiation of the pair's relative motion
 assumptions=The a^-4 scaling, not the instantaneous formula, is what the secular estimator integrates.
-implementation=larmorOrbitAveragedPower in modules/crem_collapse.hpp; it also sets the photon hazard rate lambda = P/(hbar omega).
+implementation=larmorOrbitAveragedPower in modules/crem_collapse.hpp as the closed-form reference; the photon hazard lambda = P/(hbar omega) now uses secularElectricDipoleOrbitAveragedEmission, which adds the dipole force and the relativistic/spectral correction.
 
 [model:schott_bound_field_energy]
 source=jackson_classical_electrodynamics

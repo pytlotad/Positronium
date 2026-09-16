@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <deque>
 #include <iostream>
 #include <limits>
@@ -39,6 +40,88 @@ using positronium::objects::DipoleTensor;
 using positronium::objects::cross;
 using positronium::objects::dot;
 using namespace positronium::parameters;
+
+// --- Time regularization -------------------------------------------------
+//
+// A Kepler orbit spends most of its TIME near apoapsis and most of its
+// ACCELERATION near periapsis, so a constant dt can only resolve the bottom
+// of a deep orbit by paying for the top at the same rate.  Every stepping
+// site here instead sets dt from the current separation, a Sundman-type
+// regularization:
+//
+//   localOrbit     dt = 2 pi / (N omega_local) with omega_local =
+//                  sqrt(k/(mu r^3)), so dt ~ r^{3/2}: N steps per LOCAL
+//                  orbital period.  This is the production law and the
+//                  default, and the expression is the one the Experiment 42
+//                  loop used inline before it moved here.
+//   constantAngle  dt = 2 pi mu r^2 / (N L) = (2 pi / N) / (dphi/dt), i.e. N
+//                  steps per full turn of the true anomaly, so the swept
+//                  angle per step stays constant all the way down.
+//
+// What the measurement actually says (audit section 89, apoapsis 3 r*,
+// periapsis 0.3 r*, tolerance 1e-8) is narrower than the usual claim for
+// regularization, and worth stating exactly, because it is easy to assume
+// this buys accuracy or speed and it buys neither.  All three laws -- constant
+// dt included -- reach the SAME trajectory: the same periapsis 0.2631 r*, the
+// same apoapsis 45 r* afterwards, the same final L of 0.0421 hbar.  Nor is any
+// of them appreciably cheaper: 16915 force evaluations for localOrbit, 19021
+// for constantAngle, 17385 for constant dt, a spread of 12%.
+//
+// What regularization buys is SUBDIVISION DEPTH.  At maximumDepth 20 both
+// regularized laws carry the window through and constant dt breaks off during
+// the first plunge, at 0.523 of the window; constant dt needs depth 26 to
+// finish the same passage.  Six levels, a factor of 64 in the smallest step
+// the engine can reach, is the whole of the difference.  That is also the
+// warning: the binding resource at the bottom of the orbit is the subdivision
+// budget, not the outer step, and no choice of law removes the need for
+// maximumDepth 20 on this geometry.
+enum class TimeRegularizationLaw { localOrbit, constantAngle };
+
+struct RegularizedStep {
+    double stepsPerLocalOrbit=128.0;   // N above
+    double ceiling=5.0e-18;            // s, absolute cap on one outer step
+    TimeRegularizationLaw law=TimeRegularizationLaw::localOrbit;
+};
+
+// CREM_STEP_LAW=angle switches the production loop to the constant-angle law.
+// Read once: this sits in the innermost stepping loop.
+inline TimeRegularizationLaw configuredTimeRegularizationLaw() {
+    static const TimeRegularizationLaw configured=[]{
+        const char* requested=std::getenv("CREM_STEP_LAW");
+        return requested&&std::strcmp(requested,"angle")==0
+            ? TimeRegularizationLaw::constantAngle
+            : TimeRegularizationLaw::localOrbit;
+    }();
+    return configured;
+}
+
+// The outer step for one advance, clipped to the budget still owed.  Callers
+// keep their own guard on a non-finite or non-positive result: `remaining`
+// can legitimately arrive at zero at the end of a window.
+inline double regularizedTimeStep(const State& s,double remaining,
+                                  const RegularizedStep& rule={}) {
+    const double r=separation(s);
+    const double reducedMass=firstMass*secondMass/(firstMass+secondMass);
+    const double omega=std::sqrt(pairCoulombStrength/(reducedMass*r*r*r));
+    double regularized=2.0*pi/(rule.stepsPerLocalOrbit*omega);
+    if(rule.law==TimeRegularizationLaw::constantAngle) {
+        const double orbitalAngularMomentum=reducedMass
+            *cross(s.firstPosition-s.secondPosition,
+                   s.firstVelocity-s.secondVelocity).norm();
+        // The guard is for the exactly-radial orbit, where a swept angle
+        // measures nothing and this law would hand back infinity.  Do not
+        // mistake it for protection: a numerical orbit going radial never
+        // lands on L == 0 exactly.  Measured on the tilted deep geometry
+        // (audit 89e), L falls to 1.7e-4 hbar, this branch fires zero times
+        // in 1335 steps, and dt ~ r^2/L meanwhile grows to 44x the
+        // local-orbit step -- the law LENGTHENS the step exactly while the
+        // orbit is collapsing.  That is why constantAngle is a diagnostic.
+        if(orbitalAngularMomentum>0.0)
+            regularized=2.0*pi*reducedMass*r*r
+                       /(rule.stepsPerLocalOrbit*orbitalAngularMomentum);
+    }
+    return std::min({rule.ceiling,regularized,remaining});
+}
 
 inline StateHistory causalInitialHistory(const State& initial,double spanFactor=8.0,
                                   int intervalCount=64,

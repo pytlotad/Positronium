@@ -688,6 +688,18 @@ inline int zeroPointModes = 64;
 //                          Hold the apsidal line fixed across skipped orbits
 //                          (parallel transport with the plane only), the
 //                          behaviour before orbitAveragedApsidalRate.
+//   CREM_STEP_LAW=angle    Set the outer step from the swept ANGLE,
+//                          dt = 2 pi mu r^2 / (128 L), instead of the default
+//                          local orbital period, dt = 2 pi / (128 omega).
+//                          Both are Sundman-type regularizations and both
+//                          carry the deep passage (apoapsis 3 r*, periapsis
+//                          0.3 r*) through; the angle law costs about 12%
+//                          more force evaluations, so it is a diagnostic, not
+//                          a production setting.  Whichever law is chosen,
+//                          that passage needs Accuracy::maximumDepth 20: the
+//                          binding resource at the bottom of the orbit is the
+//                          SUBDIVISION budget, not the outer step.  A
+//                          constant dt of the same nominal fineness needs 26.
 //   CREM_PAIR_L_WITH_E     Recompute angular momentum on the same schedule as
 //                          energy across a skipped span; this is the change
 //                          measured to remove 90% of the L/E separation.

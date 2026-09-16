@@ -5631,3 +5631,151 @@ measurement of whether that survives a cascade.
      moment radius; the deep runs are three orbits, not a full inspiral; the
      1-14% tilt-90 residual of the energy ledger (section 86f) is a separate
      open item and is not touched by this fix.
+
+89. TIME REGULARIZATION AT THE BOTTOM OF THE ORBIT: ONE SHARED RULE, AND
+    WHAT IT ACTUALLY BUYS
+
+     Asked to "fix the time regularization at the bottom of the orbit".  The
+     rule turned out to be present already, four times over, and the premise
+     of the request turned out to be wrong: regularization does not improve
+     accuracy at the bottom of the orbit.  Both findings are below, with the
+     measurements that forced them.
+
+89a. WHAT WAS ALREADY THERE.  The production loop had set its step from the
+     current separation since long before this section, as an inline
+     expression:
+
+         dt = min(5e-18 s, 2 pi / (128 omega_local), remaining)
+
+     with omega_local = sqrt(k/(mu r^3)), so dt ~ r^{3/2}: 128 steps per
+     LOCAL orbital period.  That is a Sundman-type regularization.  The same
+     rule appeared inline in three more places, with different step counts:
+     the cutoff-arrival probe of maxwell_validation.hpp (256 per local
+     orbit), and the Experiment 3/4 beam loop and the Experiment 5
+     interaction sampler in positronium.cpp (320 per local orbit, under a
+     1 fs ceiling and beside a transit clip of their own).  Four copies of
+     one law, none of them named.
+
+89b. WHAT WAS DONE.  regularizedTimeStep() in crem_engine.hpp now holds the
+     rule, and all four sites call it.  It offers two laws:
+
+       localOrbit     dt = 2 pi / (N omega_local) ~ r^{3/2}, N steps per
+                      local orbital period.  The default, and the expression
+                      the production loop used inline, unchanged.
+       constantAngle  dt = 2 pi mu r^2 / (N L) = (2 pi / N) / (dphi/dt), N
+                      steps per turn of the true anomaly, so the swept angle
+                      per step is constant all the way down.  Opt-in through
+                      CREM_STEP_LAW=angle.
+
+89c. WHAT REGULARIZATION BUYS.  Deep untilted geometry, apoapsis 3 r*,
+     periapsis 0.3 r*, tolerance 1e-8, three orbital windows, 256 steps per
+     local orbit, subdivision depth 20:
+
+     law              window   periapsis   apoapsis   L final   force evals
+     constant dt      0.523    0.2928 r*   3.000 r*   0.0361    9302  (fails)
+     constant dt *    3.000    0.2631 r*   45.009 r*  0.0421    17385
+     localOrbit       3.000    0.2631 r*   44.991 r*  0.0421    16915
+     constantAngle    3.000    0.2631 r*   44.976 r*  0.0421    19021
+
+     * at depth 26 instead of 20; every other row is depth 20.
+
+     The whole of the difference is SUBDIVISION DEPTH.  At depth 20 the
+     constant step breaks off in the first plunge, at 0.523 of the window,
+     and it needs six more levels -- a factor of 64 in the smallest step the
+     engine can reach -- to finish the passage the regularized laws finish at
+     20.
+
+89d. WHAT IT DOES NOT BUY, AND THIS IS THE CORRECTION.  It buys neither a
+     different trajectory nor a cheaper one.  Given enough depth all three
+     laws agree: the same periapsis 0.2631 r*, the same apoapsis 45 r*
+     afterwards, the same final angular momentum 0.0421 hbar.  And the cost
+     in force evaluations spans 12%: 16915, 17385, 19021.  Regularization is
+     what makes the periapsis passage completable at a given depth, not what
+     makes it accurate and not what makes it fast.  The premise of the
+     request -- that the step law is what limits accuracy down there -- is
+     not what the measurement says.
+
+89e. THE TILTED GEOMETRY BREAKS THE STORY.  Apoapsis 3 r*, periapsis 1 r*,
+     tilt 90 deg, tolerance 1e-8, depth 20.  At 256 steps per local orbit all
+     three laws fail, at the same fraction of the window and at three
+     different places:
+
+     law            steps/orbit  window   periapsis   L final   dE_kepler
+     constant dt    256          0.316    0.2645 r*   0.0182    +5.11
+     localOrbit     256          0.324    0.0281 r*   0.0008    +130.7
+     constantAngle  256          0.320    0.0787 r*   0.0003    -39.8
+     constant dt    2048         0.319    0.1454 r*   0.0150    +0.047
+     localOrbit     2048         0.323    0.0307 r*   0.0041    -86.9
+     constantAngle  2048         0.323    0.0310 r*   0.0078    +211.3
+
+     All six break at 0.32 of the window, which says the event is physical
+     and not a step-size artefact: the tilted orbit sheds its angular
+     momentum to the spin sector, from 0.0523 hbar to between 0.015 and
+     0.0003, and goes very nearly radial.  On a radial plunge the constant
+     step refuses EARLIER and CLEANER (periapsis 0.1454 r*, Kepler drift
+     0.047 at 2048 steps) while the regularized laws are driven deeper into
+     the region where the numbers fall apart (0.0307 and 0.0310 r*, drifts
+     -86.9 and +211.3).
+
+     The constant-angle law fails here by a mechanism worth naming, because
+     it is the opposite of the intended one and it was measured rather than
+     argued.  Its dt ~ r^2/L grows as L collapses, so it LENGTHENS the step
+     exactly while the orbit is turning radial.  Along this trajectory the
+     angular momentum falls to 0.000174 hbar without ever reaching zero, so
+     the L <= 0 guard inside regularizedTimeStep fires zero times out of 1335
+     steps -- that branch is not what protects anything here -- and the
+     constant-angle step reaches 44.3x the local-orbit step at the same
+     point.  The guard catches only the exactly-radial case, which a
+     numerical orbit does not visit.  So 89c holds where the orbit stays
+     non-radial, and nowhere else.  Section 88f had already found
+     this geometry needs P/2048; it needs more than a finer step.
+
+89f. THE PRODUCTION PATH IS UNCHANGED, BIT FOR BIT.  The extraction was
+     meant to be a rename, so it was checked as one.  A probe built from the
+     HEAD tree and from the working tree, printing runMechanicalTrajectory's
+     final state to 17 digits, agrees exactly on three geometries:
+
+     geometry                        outcome           minimum separation
+     apo 3, peri 1, tilt 0, 2 windows  ObservationLimit   1.614e-13 m
+     apo 3, peri 1, tilt 90, 2 windows ReachedCutoff      9.665e-15 m
+     apo 3, peri 0.3, tilt 0, 1 window ObservationLimit   5.084e-14 m
+
+     Every printed digit of elapsed time, minimum separation, radiated
+     energy, maximum beta and both final four-vectors matches.  The second
+     row reaches the 0.05 r* cutoff at beta 0.87, so the loop was genuinely
+     subdividing, not idling.  For the two positronium.cpp sites the same
+     comparison was run on the experiments that drive them, HEAD against
+     working tree: Experiment 4 (--phenomenon 4 --runs 1 --seed 42, 31 lines)
+     and Experiment 5 (--phenomenon 5 --runs 5 --seed 42, 49 lines) are
+     identical.  Validation 61/61 PASS, header isolation 37/37.
+
+89g. A MEASUREMENT OF MINE THAT PROVED NOTHING.  The first identity check
+     was the paired lifetime tool at a 90 s per-event budget, HEAD against
+     working tree.  The diff was empty and it looked like a pass.  It was
+     not: both sides printed "only 0 complete pairs", because the budget
+     censored every trajectory before it collapsed.  Two empty results agree
+     trivially.  It is recorded here because it read as evidence and was not,
+     and it is replaced by 89f, which exercises the changed loop directly.
+
+89h. AN ARTEFACT THAT LOOKS LIKE A PATHOLOGY.  The constant-angle run
+     reports a smallest OUTER step of 4.8e-35 s, six orders below every
+     other run.  It is not the law misbehaving: it falls at r = 44.98 r*, at
+     the end of the window, and it is the clip to the remaining budget in
+     min(dt, target - t).  Worth stating because a step that small in a
+     census looks exactly like the defect of section 88.
+
+89i. NOT CHANGED.  Production defaults are untouched: the default law, 128
+     steps per local orbit, the 5e-18 s ceiling and the 1 fs ceiling of the
+     beam loops are all as before, which is what 89f measures.
+     CREM_STEP_LAW is opt-in and documented in the configuration panel,
+     together with the depth this geometry requires.
+
+89j. LIMITS.  Two geometries, both e+e- with the default floor and moment
+     radius, three orbital windows each rather than a full inspiral.  The
+     depth-20 and depth-26 thresholds are for apoapsis 3 r*, periapsis
+     0.3 r* at tolerance 1e-8 and are not a general rule.  The Kepler-energy
+     drift quoted in 89e is a comparative indicator only: deep down the real
+     dipole, Darwin and retardation terms contribute to it alongside
+     numerical error, so it separates the runs but does not measure the error
+     of any one of them.  The tilt-90 plunge of 89e is the open item of
+     section 88h seen from another side and is not fixed here.

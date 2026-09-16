@@ -610,7 +610,10 @@ inline MechanicalTrajectoryResult runMechanicalTrajectory(State s,
         const double clockResolution = std::max(std::abs(s.time),
             std::abs(observationTime)) * std::numeric_limits<double>::epsilon() * 8.0;
         if (remaining <= clockResolution) { reachedObservationCeiling=true; break; }
-        const double dt = std::min({5.0e-18, 2.0 * pi / (128.0 * omega), remaining});
+        // Same rule, one shared expression: see regularizedTimeStep in
+        // crem_engine.hpp for why the step is tied to the separation.
+        const double dt = regularizedTimeStep(beforeStep, remaining,
+            RegularizedStep{128.0, 5.0e-18, configuredTimeRegularizationLaw()});
         if (!(dt > 0.0) || !std::isfinite(dt)) break;
         if(!trajectory.advance(s,dt)) break;
         const double currentSeparation = separation(s);
