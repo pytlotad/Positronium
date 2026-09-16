@@ -5546,3 +5546,88 @@ measurement of whether that survives a cascade.
      (the retarded runs at 0.3 a_pair, 200 orbits, agree: +8% in <n> over
      the field-free control and L within 4% of circular); no run was
      followed to the end of its inspiral at a converged tolerance.
+
+88. THE ACCURACY DEFECT AT THE BOTTOM OF THE ORBIT: IT WAS THE MAGNETIZATION
+    TERM OF SECTION 84, AND IT IS FIXED
+
+88a. STARTING POINT.  Sections 84e, 86h and 87d all ended on the same
+     sentence: the engine cannot resolve an orbit inside ~0.8 r* at a
+     tolerance that converges.  Section 55 had diagnosed a dt^1 error from
+     the C1 history; sections 55a-55b fixed two channels of it and 55f left
+     the failure open.
+
+88b. WHAT THE CURRENT CODE ACTUALLY DOES.  Step-doubling error against dt at
+     three real failing states (orderfail.cpp; reaction off, retarded
+     forces), by force model:
+
+     state (r*, beta)     full retarded   no moments   instantaneous   no dipole force
+     0.539, 0.377         2.0             2.4-3.0      2.0             3.0
+     0.478, 0.410         2.1             2.7-3.0      2.0             3.1
+     0.318, 0.456         ~2              2.6-3.0      2.0             2.9-3.1
+     (convergence order; the "no dipole force" column is the retarded
+     charge sector alone)
+
+     So the order was not 1 any more, but with moments the ABSOLUTE error
+     was 40-70x larger at the same step, and the engine's own live
+     diagnostic showed the retarded sector falling 1.86-2.33x per halving
+     for five levels, then jumping 48x and only then settling at 4.00x.
+
+88c. THE KINK, LOCATED.  Along the engine's own trajectory every force term
+     was smooth (second differences falling as dt^2), so the defect was not
+     a node crossing.  Probing the coupling U = mu.B + p.E along the tangent
+     line instead showed a LEFT/RIGHT slope ratio that never converged with
+     the step: 1.2005 at 0.478 r* and 5.7786 at 0.539 r*, stable over six
+     decades of probe step.  Term by term the charge field's one-sided
+     slopes were equal to four digits and the dipole field's differed by
+     2.1x and 4.6x.  Excluded in turn, each by measurement: the retarded-time
+     threshold (tightening 1e-14 -> 1e-16 and 5 -> 12 iterations reproduced
+     every digit), history node density, the segment crossing (all probes in
+     segment 130), the pole separation (1e-4 to 1e-8 identical), the
+     pole-cancellation retreat (never fired, ratio 3.17 against a limit of
+     30), and the moment-derivative branch (all probes central, forcing it
+     changed nothing).  What remained: the magnetization term added in
+     section 84.  Measured alone it had a one-sided ratio of 1.65; the
+     two-pole construction without it gave exactly 1.0000.
+
+88d. THE CAUSE.  movingMagnetizationField was called with the source
+     kinematics at the OBSERVATION time and the proper moment from the
+     PRESENT state, while the two-pole construction beside it reads both at
+     the RETARDED time.  Displacing the observation event therefore moved
+     the two contributions by different rules, which is a kink in time, not
+     in space -- invisible to every spatial probe and to the trajectory-wise
+     smoothness test.
+
+88e. THE FIX.  retardedMagneticDipoleFieldExact now solves the retarded time
+     for the magnetization term as well (the same Newton iteration as the
+     central solve) and reads the moment from the history at that time.
+     After it:
+       one-sided slope ratio   0.9999 and 1.0000 (was 2.12 and 5.78)
+       step doubling           4.0x per halving down to 1.6e-10 at both
+                               failing states (was a floor at 1.08e-8 and
+                               4.28e-9)
+     Validation 61/61, header isolation 37/37.  Production trace 42/2:
+     para 199.446163 ps against 199.446151, ortho 199.475437 against
+     199.475437, i.e. 1.3e-5 ps.
+
+88f. WHAT DEEP ORBITS DO NOW.  With the plateau gone the step budget buys
+     depth again, and the deep failures are cost, not convergence:
+
+     outer step / depth    deepest radius reached (apo 3 r*, peri 0.3 r*)
+     P/256, depth 14       0.448 r* (refusal)
+     P/2048, depth 18      0.265 r* (refusal)
+     P/8192, depth 20      0.2631 r*, THREE FULL ORBITS, no refusal
+     P/2048, depth 18, tol 1e-6   0.2631 r*, three full orbits
+
+     The last two agree to four digits at different tolerances, so 0.2631 r*
+     is the orbit's true periapsis, not a numerical stopping point.  The
+     tilted case (apo 3, peri 1, 90 deg) reaches 0.1695 r* at P/2048.
+
+88g. NOT CHANGED.  The production defaults (depth 12, tolerance 1e-5) are
+     untouched: production never goes below 3.9 r*, where the required step
+     is far from binding, and tightening them would cost time for nothing.
+     Deep work now has a recipe instead of a wall: P/8192 with depth 20.
+
+88h. LIMITS.  Three failing geometries, all e+e- with the default floor and
+     moment radius; the deep runs are three orbits, not a full inspiral; the
+     1-14% tilt-90 residual of the energy ledger (section 86f) is a separate
+     open item and is not touched by this fix.

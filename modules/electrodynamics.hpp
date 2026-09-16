@@ -2349,16 +2349,48 @@ inline ElectromagneticField retardedMagneticDipoleFieldExact(
     ElectromagneticField field{dual.magnetic*(-c*c),dual.electric};
     // The poles give the moving dipole's field of separated charges; a
     // magnetic moment is a loop, so its local magnetization term is added
-    // (see plummerMagnetizationField).  Source kinematics at the
-    // observation time, proper moment from the present state.
+    // (see plummerMagnetizationField).
+    //
+    // READ AT THE RETARDED TIME, like the rest of the field.  The first
+    // version of this term took the source kinematics at the OBSERVATION
+    // time and the proper moment from the present state, while the two-pole
+    // construction beside it reads both at the retarded time.  The two
+    // recipes respond differently when the observation event is displaced,
+    // which left the coupling U with different left and right time
+    // derivatives -- a one-sided kink of 1.65 in the term alone and 2.12 in
+    // the total field (audit section 88).  That kink is what floored the
+    // step-doubling error of the whole retarded sector at 1e-8 and made the
+    // engine reject deep steps: with the term removed the same state
+    // converges cleanly at 4.0x per halving down to 2e-10, and the poles
+    // alone show left/right slopes equal to 1.0000.
     if(const double floor=separationFloor(); floor>0.0) {
-        const ChargeKinematics source=historicalCharge(
-            history,present,sourceIsFirst,observationTime);
-        Vec3 properMoment=sourceIsFirst
-            ?present.firstProperDipole:present.secondProperDipole;
+        double magnetizationTime=observationTime;
+        ChargeKinematics source=historicalCharge(
+            history,present,sourceIsFirst,magnetizationTime);
+        for(int iteration=0;iteration<16;++iteration) {
+            const Vec3 displacement=observationPosition-source.position;
+            const double distance=displacement.norm();
+            const double residual=magnetizationTime+distance/c
+                -observationTime;
+            const double derivative=std::max(1.0e-8,
+                1.0-dot(displacement/std::max(distance,
+                    std::numeric_limits<double>::min()),
+                    source.velocity/c));
+            const double refined=magnetizationTime-residual/derivative;
+            const bool converged=std::abs(refined-magnetizationTime)
+                <=1.0e-30+1.0e-14*std::abs(magnetizationTime);
+            magnetizationTime=refined;
+            source=historicalCharge(
+                history,present,sourceIsFirst,magnetizationTime);
+            if(converged) break;
+        }
+        const RetardedElectricDipoleKinematics retardedMoment=
+            historicalIntegratedDipoleKinematics(
+                history,present,sourceIsFirst,magnetizationTime,false);
+        Vec3 properMoment=retardedMoment.moment;
         if(properMoment.squaredNorm()==0.0)
-            properMoment=sourceIsFirst?present.firstDipole
-                                      :present.secondDipole;
+            properMoment=sourceIsFirst?present.firstProperDipole
+                                      :present.secondProperDipole;
         const ElectromagneticField magnetization=movingMagnetizationField(
             observationPosition-source.position,source.velocity,
             properMoment,magneticDipoleRadius());
