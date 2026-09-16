@@ -6035,3 +6035,158 @@ measurement of whether that survives a cascade.
      per channel at one seed and one budget; nothing here re-measures the
      hyperfine, contact or M1 sections that were taken under the imposed
      angle, and those remain valid only as statements about that preparation.
+
+92. THE TWO OPEN LEDGER ITEMS, RECHECKED: THE SECTOR WEIGHT OF 82g AND THE
+    TILT-90 RESIDUAL OF 86f
+==================================================================
+
+92a. THE WEIGHT IN crem_trajectory's DIAGNOSTICS: TRUE, AND INERT BY
+     DEFAULT.  82g said the frame and Schott diagnostics call the ledger
+     with weight 1 whatever the force model.  Still true to the letter:
+     conservativeParticleEnergy defaults chargeDipoleWeight to 1.0, and the
+     four calls in crem_trajectory.hpp (lines 86, 657, 665, 871) pass none.
+     But the file contains no Accuracy and no useRetardedExternalForces, so
+     the trajectory path always integrates the retarded forces (the engine
+     default is true); the only place that turns them off is the validation
+     probe, and it already passes retarded?1.0:0.0.  The integrator's own
+     weight, retardedDipoleSectorWeight, measured on circular e+e- states:
+
+       r/r*    default    CREM_DIPOLE_INSTANTANEOUS_BELOW=2
+       0.05    1.000000   0.000000
+       0.2     1.000000   1.000000
+       1.0     1.000000   1.000000
+       5.0     1.000000   1.000000
+
+     So with default settings the diagnostics and the integrator agree
+     everywhere.  The mismatch is reachable without recompiling, but only
+     under that switch and only below its threshold.  Describing it as an
+     inconsistency "in instantaneous-force mode" was wrong for this file:
+     it has no such mode.
+
+92b. THE TILT-90 RESIDUAL CANNOT BE COMPARED WITH 86f, AND WHY.  86f quoted
+     the spin-sector |dE/dt| "relative to |U_dd| n" (para 0 deg 45 -> 1.3e-3,
+     para 90 deg 0.27 -> 0.080, each pair being before -> after section 86).
+     That scale is defined nowhere in this audit, and the probes that
+     computed it (energyflow.cpp, energyscan*.cpp, ledgercand.cpp) were in a
+     session scratch directory and are gone.  The 1-14% figure is therefore
+     neither confirmed nor refuted here.  What can be measured is recorded
+     below, in a scale of its own.
+
+92c. THE REBUILT FLOW PROBE IS CORRECT.  82b's method: dE/dt of the full
+     ledger by central difference of the flow map, spin sector = with
+     moments minus without, allExternalForces or retardedExternalForces with
+     a causal history, Kepler nodes at e = 0.3.  The difference quotient is
+     converged, not frozen: the raw energy difference halves exactly with h
+     (2.037072e-20, 1.018536e-20, 5.092681e-21, 2.546340e-21 J) and the
+     quotient holds at 7.110997e+04 W.  Against a moment-free pair at
+     periapsis 0.5 r* the sector stands far above the background:
+
+       moments   forces          spin sector   background   ratio
+       0 deg     retarded        9.3772e+04 W  5.106e+01 W  1836
+       0 deg     instantaneous   3.5290e+03 W  1.137e+02 W    31
+       90 deg    retarded        1.1258e+05 W  5.106e+01 W  2205
+       90 deg    instantaneous   7.9611e+03 W  1.137e+02 W    70
+
+     The sector is present in BOTH force models, which is the half of the
+     note that this confirms.
+
+92d. NOTHING SINGLES OUT 90 DEGREES.  Moment angle swept from the orbital
+     axis, periapsis 0.5 r*, e = 0.3, 8 nodes; mean |dE/dt| of the sector:
+
+       angle   retarded      instantaneous
+        0      9.3772e+04    3.5290e+03
+       15      9.5009e+04    3.6963e+03
+       30      9.8407e+04    4.1536e+03
+       45      1.0309e+05    4.9482e+03
+       60      1.0782e+05    6.4545e+03
+       75      1.1130e+05    7.5574e+03
+       90      1.1258e+05    7.9611e+03
+
+     Monotone and smooth in both models: +20% retarded and x2.3
+     instantaneous from 0 to 90, with no feature at 90.
+
+92e. FIVE MISTAKES OF MINE ON THIS PROBE, recorded because each read as a
+     result.  Four times I diagnosed the probe as broken because its
+     quotient did not move with h -- the argument not reaching it, Euler
+     steps along a straight line, composition of substeps, forces taken from
+     the node -- and each fix changed nothing, because an h-independent
+     quotient in the linear regime is what a converged derivative looks
+     like.  And I first applied 82b's 40-degree offset to both tilts, which
+     put the moments at 40 and 130 degrees: mirror images with the same
+     |cos| = 0.766, so tilt 0 and tilt 90 came out 0.2687 and 0.2595 by
+     construction.  The sweep in 92d has no offset.
+
+92f. LIMITS.  One periapsis for the sweep, e = 0.3 only, e+e- only; static
+     Kepler nodes, not engine trajectories; the scale in 92c-d is this
+     probe's own and is not the scale of 86f.
+
+93. "THE ZPF BALANCES AT 0.1 a_pair" AGAINST "THE FIELD DRIVES THE ORBIT
+    OUT": NO CONTRADICTION, AND NO RERUN
+==================================================================
+
+93a. THE TWO STATEMENTS ARE AT DIFFERENT RADII.  "The model's zero-point
+     field does not hold the orbit there; it drives it outward" is 42d, and
+     section 42 is headed "STEP 4 MEASURED WHERE IT WORKS: 0.01 a_pair".
+     Section 75 places the balance at 0.1 a_pair and itself records that
+     "inside 0.03 a_pair the field drives the orbit out fast".  One monotone
+     picture, which 75e states: the pumping share falls with radius and
+     crosses 1 near 0.1 a_pair.
+
+       start        pumping share (75c)   behaviour
+       1 a_pair     -0.04 +- 0.35         shrinks at the radiative rate
+       0.3 a_pair   +0.27 +- 0.13         shrinks
+       0.1 a_pair   +0.87 (+-0.70)        balance in the mean only;
+                                          excursions 2-4.6x, ionizations
+       0.03 a_pair  >> 1                  driven out
+       0.01 a_pair  >> 1 (|W|/Larmor 9.74) driven out (42d)
+
+     And 75e never claimed a stationary state at 0.1 a_pair.
+
+93b. THE DIPOLE SECTOR DID CHANGE AFTER SECTION 75, BUT NOT WHERE THE NOTE
+     POINTED.  Section 75 is a19b9ee (2026-09-14).  After it: the Thomas
+     back-reaction on the instantaneous force (80de772), -p.E in the ledger
+     (8cb0c0a), the current-loop field (c81e31d), the moment's own radius
+     (eba786b) and the retarded magnetization (e36bf5c).  The ZPF runs used
+     the instantaneous forces with moments along the normal (74b), so on
+     that path, dipole force over Coulomb force:
+
+       r/a_pair   today        no Thomas    moment radius 0.05 r*
+       1          3.3512e-06   1.0008e-05   3.3515e-06
+       0.3        7.0663e-05   1.1117e-04   7.0692e-05
+       0.1        7.8807e-04   9.9857e-04   7.9040e-04
+       0.03       9.5572e-03   1.0839e-02   9.8426e-03
+       0.01       7.2114e-02   7.8774e-02   9.3489e-02
+
+     The moment radius, a factor 20 in softening, moves the force by 0.30%
+     at 0.1 a_pair.  The Thomas term moves it by 21% there and by a factor
+     3 at 1 a_pair: that is the change that matters, not the radius.
+
+93c. FORCE IS NOT WORK.  The balance is a ratio of work per orbit.  Work of
+     the dipole sector over one Kepler orbit, instantaneous forces,
+     against the Larmor energy of that orbit, at 0.1 a_pair:
+
+       e      today        no Thomas
+       0.0    1.19e-15     1.04e-15
+       0.3    2.86e-14     2.94e-14
+       0.6    2.84e-13     2.54e-13
+
+     All radii give 1e-15 to 8e-13.  The share at 0.1 a_pair is
+     1 - (-0.029)/(-0.218) = 0.87, and 75c's +-0.152 is the uncertainty of
+     the pair mean lnA, not of the share: propagated, the share is uncertain
+     by 0.152/0.218 = 0.70.  Against that the work is twelve orders of
+     magnitude short.  But this number is small
+     partly by construction: the conservative part of the force is a
+     gradient and does no work around a closed orbit.  It shows the sector
+     exchanges no net energy per orbit; it does not show the sector cannot
+     move the balance through the orbit's dynamics.  That route is
+     estimated, not measured: a force of 7.9e-4 of Coulomb, changed by 21%,
+     against a share uncertain by 0.70.
+
+93d. SO NO RERUN.  Nothing measured here can reach section 75's resolution,
+     and repeating the 8-hour runs would need a new probe: the long-run
+     probe is named nowhere in sections 74-75 and was never in the
+     repository (git log -S "pumping share" finds only the audit commit).
+
+93e. LIMITS.  Static Kepler orbits without the ZPF, not ZPF-driven
+     trajectories; e+e- with moments along the normal only; the dynamic
+     route of 93c is an estimate.
