@@ -5475,3 +5475,74 @@ measurement of whether that survives a cascade.
      1.0942 r* at 1e-9 the three tolerances agree to four digits, so the
      ortho hold at the wider moment is converged; para at 0 degrees remains
      the unconverged case of 86g.
+
+87. STEP 3: THE ZPF DOES NOT MAKE LOW-L ORBITS, AND THE INSPIRAL STAYS
+    CIRCULAR -- THE CONTACT TERM IS SAMPLED ONLY BY SHRINKING
+
+87a. QUESTION.  Step 1 assumed a microcanonical L distribution to give the
+     contact term something to sample.  Does the model's own ZPF produce
+     one?  Probe zpfcontact4.cpp: engine with the Landau-Lifshitz reaction,
+     instantaneous forces (consistent since sections 80 and 82), band
+     [0.3,3] x omega_orb, 64 modes, scale 1, moments para or ortho, starting
+     circular.  Accumulated in time: <n> = <3 eps^2/(4 pi rho^5)> in units of
+     |psi(0,a_pair)|^2, <L>, L_min, the time fraction below fixed L, and the
+     radius range.  Reference (contactensemble_f.cpp, same field):
+     microcanonical <n>/|psi(0,a_pair)|^2 = 4.96 at a_pair, 1.56e3 at
+     0.1 a_pair, 3.12e4 at 0.03 a_pair.
+
+87b. THE FIELD MOVES THE RADIUS, NOT THE ANGULAR MOMENTUM.  L_min against
+     the circular value at the same radius, L_c(r) = sqrt(r/547.5) hbar:
+
+     run (start, channel, seed)      orbits  <n>/|psi0|^2  L_min/L_c
+     0.1 a_pair para seed 1          1100    1.9e-03       1.110
+     0.1 a_pair para seed 2           600    2.6e-01       1.126
+     0.1 a_pair ortho seed 1          900    1.5e-02       1.095
+     0.1 a_pair ortho seed 2         1000    2.7e-01       1.131
+     0.03 a_pair para seed 1         4000    2.9e-01       1.038
+     0.03 a_pair para seed 3          297    3.4e+01       1.025
+
+     Every ratio is above 1: the orbit is never less circular than circular.
+     At 0.1 a_pair the time fraction below L = 0.2 hbar is exactly 0.000 in
+     all four runs.  What the field does do is pump the radius: seed 1 at
+     0.1 a_pair reached 869 r* and seed 1 at 0.03 a_pair reached 24296 r*
+     (44 a_pair), which is why their <n> is the smallest of the set.  Against
+     the microcanonical value at the same energy the ZPF runs fall short by
+     three to six orders (2.9e-1 against 3.12e4 at 0.03 a_pair).
+
+87c. THE INSPIRAL ITSELF STAYS CIRCULAR, AND IS CONVERGED.  The control (no
+     field, pure radiative inspiral at 0.03 a_pair) looked at first like the
+     opposite result: L_min = 1e-4 hbar, r down to 0.22 r*, <n> = 2.8e4.
+     That came from a tolerance-1e-6 run pushed to orbit 1591, where it ended
+     in numerical failure.  Compared at equal orbit numbers the picture is
+     stable and the plunge disappears:
+
+     orbit   tol 1e-6              tol 1e-7              tol 1e-8 (24 sub)
+     200     <n> 1.237e2, 0.997    1.241e2, 0.996        1.243e2, 1.000
+     400     1.803e2, 0.995        1.818e2, 0.993        1.826e2, 0.996
+     600     2.890e2, 0.988        2.933e2, 0.990        2.954e2, 0.988
+     (second number: L_min/L_c at the deepest radius reached)
+
+     The three tolerances agree on <n> to 2% and on L_min/L_c to 0.5%, and
+     the orbit remains circular to 1%.  So dipole radiation reaction shrinks
+     a circular orbit without making it radial -- as the textbook result for
+     E1 reaction says -- and the contact term is sampled only because r
+     itself approaches eps, not because L gets small.
+
+87d. WHAT STEP 3 COMES TO.  The ZPF does not generate the L distribution
+     step 1 assumed; it does not generate low L at all.  The classical
+     model therefore has no mechanism of its own that populates the
+     contact region the way |psi(0)|^2 does: the only route it has is to
+     shrink the orbit to r ~ eps, which is the regime where the model
+     declares itself invalid (inside r*) and where the integrator fails.
+     Steps 1 and 2 stand as they are: the contact energy of a
+     microcanonical ensemble at the 1S energy is 2.487x the QED contact
+     term at the moment's own softening length, but the ensemble remains an
+     assumption about the state, not a result of the dynamics.
+
+87e. LIMITS.  One band ([0.3,3] omega_orb) and 64 modes throughout; scale 1
+     only; two seeds for para and two for ortho at 0.1 a_pair, one each at
+     0.03 a_pair; runs reached 300-4000 orbits, several stopped by the wall
+     clock and two by numerical failure at r < 10 r*; instantaneous forces
+     (the retarded runs at 0.3 a_pair, 200 orbits, agree: +8% in <n> over
+     the field-free control and L within 4% of circular); no run was
+     followed to the end of its inspiral at a converged tolerance.
