@@ -7085,3 +7085,120 @@ measurement of whether that survives a cascade.
       since no exact ortho run had momentum to split.  Engine failures below
       ~0.16 r* end several runs early.  Production checkpoints sit at 40 r*
       and beyond, where none of this acts (104f).
+
+107. THE ENGINE FAILURES BELOW ~0.2 r*: A SUPERLUMINAL EXTRAPOLATION, A
+     STENCIL SWITCH, AND A HISTORY TOO COARSE FOR THE PLUNGE
+==================================================================
+
+107a. QUESTION.  Section 106 left several runs ending in engine failures
+      between 0.13 and 0.23 r*.  Why, and what can be fixed?
+
+107b. THE ENGINE'S OWN DIAGNOSTICS (POSITRONIUM_DEBUG_DIPOLE,
+      CREM_DEBUG_ORDER_LIVE) SPLIT THEM INTO TWO KINDS.
+        run                     where      reason
+        para 1 r* t90, depth 20  0.217 r*   accuracy: step-doubling error 2x
+                                            per halving, then 1.6e6x lower
+        para 1 r* t90, depth 26  0.030 r*   accuracy, same signature
+        ortho 0.5 r* t0          0.158 r*   non-finite trial step
+        ortho 0.35 r* t0         0.139 r*   non-finite trial step
+      An error that halves with the step and then collapses is a force
+      that jumps in time inside the step, not a lack of convergence.
+
+107c. NON-FINITE: THE MAGNETIZATION TERM EXTRAPOLATES PAST c.
+      - First lead, refuted: with reaction disabled the step still
+        evaluated the Landau-Lifshitz self force, only for a validity ratio
+        that disabled and stochasticElectricDipole never read; the NaN came
+        through it.  Skipping it (rule H1) leaves every output identical
+        and the step three times cheaper, but the failures stay: the trial
+        forces themselves are NaN.
+      - Cause (H2, both parts met): section 103 continues the source to the
+        observation time with v + a lag, lag ~ r/c.  In the plunge a r/c is
+        comparable to c; a debug build caught |v + a lag| = 1.06 c just
+        before the first NaN, where the Lorentz factor of
+        movingMagnetizationField is undefined.
+      - Fix: continue the four-velocity, u = gamma v + (gamma a +
+        gamma^3 v (v.a)/c^2) lag, v = u/sqrt(1+u^2/c^2).  Same slope at lag
+        0, exact in uniform motion, never reaches c.  Both ortho runs pass
+        their failure step (0.35 r* completes the orbit).
+
+107d. ACCURACY: A STENCIL SWITCH IN THE MOMENT DERIVATIVES.
+      tools/step_failure_jump.cpp replays the engine's recursion to the
+      failing step (same dt 8.8389e-29 s, error 3.551e-8, 116 history nodes)
+      and scans the step endpoint:
+      - the moment force |G| jumps 0.2292 -> 0.3435 within 1e-12 of the step;
+        the pinned history segment, the retarded segment and the material
+        rate do not change;
+      - of the six gradient probes, one (axis y-) changes its coupling U by
+        1.7e-3; split by field, only the pole part moves; in the pole trace
+        every quantity is equal except the sum of the two poles;
+      - per pole: pole -1's moment derivatives jump, m' 6.67e-21 ->
+        4.47e-21, m'' 42.96 -> 14.35, while its retarded time, velocity and
+        acceleration are continuous.  historicalIntegratedDipoleKinematics
+        switches from the central to the backward stencil when time + h
+        passes the present: there present - t_pole = h = 1.582e-22 s.
+      h is twice the mean history spacing.  appendStateHistory keeps
+      max(1e-20 s, 4 r/c) with 128 nodes, so below ~3.9 r* h stops
+      shrinking; h c = 0.245 r*.  Every retarded moment derivative whose
+      source is about 0.25 r* away therefore sits on a hard switch.
+      - Fix (H4, met): blend the two stencils with a C1 weight for present -
+        t between h and 2h; unchanged outside that band and next to the
+        history front.  Para 1 r* t90 depth 20 now runs to step 195 instead
+        of 42.
+      - Rejected (H3): dropping the 1e-20 s floor (h = r/16c) removed this
+        jump but added others (a 0.7% jump in the charge field at 0.158 r*,
+        NaN again at 0.35 r*) and changed trajectories at 1 r*.
+
+107e. NOT FIXED: THE HISTORY IS TOO COARSE FOR THE DEEPEST PASSAGES.
+      The failures that remain (ortho 0.35 r* at 0.179 r*, para t90 at
+      0.115 r*) jump in the partner's CHARGE field: ortho's |E| steps
+      3.44e17 -> 9.52e17 V/m exactly where the retarded time crosses
+      history node 73/74.  The history is a C1 cubic: position and velocity
+      continuous, acceleration not.  With the 1e-20 s floor the nodes are
+      7.8e-23 s apart, while the passage lasts ~1.3e-22 s, so the cubic
+      cannot follow the acceleration and its node jumps are of order one.
+      A finer history is the remedy; the cheap version of it (107d, H3) broke
+      other things, so this stays open.
+
+107f. SECTION 106 RUNS ON THE FIXED CODE (one orbit; steps completed and
+      the deepest separation reached, r*).
+        run                        before            after
+        para 1 r* t90, depth 20    42, 0.228         195, 0.120
+        para 1 r* t90, depth 26    208, 0.033        207, 0.011
+        ortho 0.5 r* t0            94, 0.158         full orbit, 0.124
+        ortho 0.35 r* t0           38, 0.132         44, 0.132 (107e)
+        ortho 0.5 r*, delta 5      94, 0.158         full orbit, 0.122
+        ortho 0.5 r*, delta 20     92, 0.158         98, 0.118
+        ortho 0.5 r*, delta 60     89, 0.157         100, 0.110
+      Exact ortho keeps P = 0 bit for bit.  Section 106's numbers move
+      slightly where the blend band is crossed: para 0.5 r* t0 |P| 1.189 ->
+      1.194 m c.
+
+107g. WHAT THE RUNS SHOW BEFORE THEY FAIL.  None of these trajectories is
+      physical by the time the engine gives up: para t90 passes beta 0.98
+      and +1322 |U_dd|; ortho 0.5 r*, which now completes, gains +71 |U_dd|
+      in one passage to 0.124 r* and is thrown out to 11.9 r* with zero
+      total momentum.  The ortho symmetry of 106 cancels the non-reciprocal
+      force in momentum, not in energy.  The failures are the last symptom
+      of the retarded dipole sector at short range (104-105), not the
+      problem itself.
+
+107h. PRODUCTION AND CHECKS.
+      - Validation 62/62, header isolation 37/37.
+      - Section 103 pairs (--spin-quantization), lab lifetimes: para
+        identical in all four seeds; ortho identical for 70003 and 70012,
+        -1e-9 ps for 70001 and -6.9e-5 ps (0.069 fs) for 70005.  The
+        Landau-Lifshitz skip alone is bit-identical; the extrapolation
+        alone moves 70005 by -0.53 fs.  HEAD reproduces the section 103
+        values exactly.
+      - One pair, seed 70001: 229 s on HEAD, 189 s fixed.
+      - Engine drift grid of 103d: 0.209, 0.063, 0.115, 0.184 and 0.073
+        |U_dd| as there (5 and 10 r* to every digit), 2.3-2.4x faster.
+      - Near-barrier ledger probe (86f): tilt 90 unchanged; the small tilt 0
+        values move within their size (1 r* para 1.2e-4 -> 5.8e-5, 1 r*
+        ortho 7.7e-8 -> 6.5e-7).  That probe builds its history from one
+        state, so it sits in the blend band.
+
+107i. NOT DONE.  The node-crossing jumps of 107e.  The sibling stencils
+      (historicalDipoleKinematics and the electric one) keep the hard switch;
+      they are not on the force path measured here.  Why the history floor
+      is 1e-20 s is not recorded anywhere; it was not changed.

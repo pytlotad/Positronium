@@ -1,0 +1,7 @@
+g++ -O3 -march=native -Wall -Wextra -Wpedantic -pthread -std=c++20 -m64 -fsized-deallocation -I/usr/include/root -std=c++20 -Wno-unused-function -DPOSITRONIUM_ENABLE_FIELD_VALIDATION \
+	-DPOSITRONIUM_VALIDATION_EXECUTABLE -o positronium_validation positronium.cpp -L/usr/lib64/root -lCore -lImt -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lROOTVecOps -lTree -lTreePlayer -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lROOTNTuple -lROOTNTupleUtil -lMultiProc -lROOTDataFrame -Wl,-rpath,/usr/lib64/root -pthread -lm -ldl -rdynamic
+In file included from positronium.cpp:209:
+modules/electrodynamics.hpp: In function ‘MutualForces mutualForces(const positronium::objects::State&)’:
+modules/electrodynamics.hpp:2700:24: warning: variable ‘geometry’ set but not used [-Wunused-but-set-variable=]
+ 2700 |     const PairGeometry geometry = clampedPairGeometry(s);
+      |                        ^~~~~~~~

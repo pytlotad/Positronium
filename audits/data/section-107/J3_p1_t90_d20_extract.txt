@@ -1,0 +1,52 @@
+failure in outer step 43: r 0.21653 r*, beta1 0.2832, dt 8.8389e-29 s, error 3.551e-08, history 116 nodes
+tau/dt  |G1| |G2| (N)  rate1 rate2  pin1 pin2  seg_ret1 seg_ret2  frac_ret1
+0.0100   2.291704e-01 2.291704e-01  -8.866899e+06 -8.866900e+06  113 113  113 113  0.783227
+0.2500   2.291704e-01 2.291704e-01  -8.866899e+06 -8.866900e+06  113 113  113 113  0.783227
+0.5000   2.291704e-01 2.291704e-01  -8.866900e+06 -8.866903e+06  113 113  113 113  0.783228
+0.6800 * 2.291705e-01 3.435451e-01  -8.866903e+06 -8.866901e+06  113 113  113 113  0.783228
+0.6900 * 3.435451e-01 3.435451e-01  -8.866901e+06 -8.866901e+06  113 113  113 113  0.783228
+0.7500   3.435451e-01 3.435451e-01  -8.866900e+06 -8.866903e+06  113 113  113 113  0.783228
+1.0000   3.435452e-01 3.435452e-01  -8.866899e+06 -8.866901e+06  113 113  113 113  0.783228
+1.2500   3.435452e-01 3.435452e-01  -8.866902e+06 -8.866902e+06  113 113  113 113  0.783229
+1.5000   3.435453e-01 3.435453e-01  -8.866901e+06 -8.866903e+06  113 113  113 113  0.783229
+1.7500   3.435453e-01 3.435453e-01  -8.866905e+06 -8.866904e+06  113 113  113 113  0.783229
+2.0000   3.435454e-01 3.435454e-01  -8.866904e+06 -8.866904e+06  113 113  113 113  0.783230
+jump of |G1| between tau/dt 0.680887647742 and 0.680887647743: 2.291705e-01 -> 3.435451e-01
+tau/dt 0.680887647742
+  axis 0+ ratio 3.8545e+00 retreated 3.8546e+00  U 3.107682859890e-15  U_retreated 3.107682858438e-15  
+      U_charge 6.385226498348e-16  U_poles -1.366551896442e-15  U_magnetization 3.835712106497e-15
+      poles: central iterations 3 residual -5.918e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618096e+03 |sum| 1.009146e-01 early 0
+  axis 0- ratio 3.8526e+00 retreated 3.8527e+00  U 3.107155402497e-15  U_retreated 3.107155403087e-15  
+      U_charge 6.380793180139e-16  U_poles -1.366417053968e-15  U_magnetization 3.835493138451e-15
+      poles: central iterations 3 residual -5.875e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.619067e+03 |sum| 1.009026e-01 early 0
+  axis 1+ ratio 3.8528e+00 retreated 3.8529e+00  U 3.107267337990e-15  U_retreated 3.107267338809e-15  
+      U_charge 6.383179759605e-16  U_poles -1.366451907358e-15  U_magnetization 3.835401269388e-15
+      poles: central iterations 3 residual -5.924e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618907e+03 |sum| 1.009022e-01 early 0
+  axis 1- ratio 3.8543e+00 retreated 3.8544e+00  U 3.107570813747e-15  U_retreated 3.107570815613e-15  
+      U_charge 6.382838966753e-16  U_poles -1.366517066837e-15  U_magnetization 3.835803983909e-15
+      poles: central iterations 3 residual -5.870e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618256e+03 |sum| 1.009150e-01 early 0
+  axis 2+ ratio 3.8536e+00 retreated 3.8537e+00  U 3.109824556520e-15  U_retreated 3.109824556594e-15  
+      U_charge 6.407186935537e-16  U_poles -1.366491694190e-15  U_magnetization 3.835597557156e-15
+      poles: central iterations 3 residual -5.918e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618512e+03 |sum| 1.009083e-01 early 0
+  axis 2- ratio 3.8535e+00 retreated 3.8535e+00  U 3.105013452938e-15  U_retreated 3.105013453907e-15  
+      U_charge 6.358830502215e-16  U_poles -1.366477281795e-15  U_magnetization 3.835607684511e-15
+      poles: central iterations 3 residual -5.876e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618650e+03 |sum| 1.009089e-01 early 0
+tau/dt 0.680887647743
+  axis 0+ ratio 3.8545e+00 retreated 3.8546e+00  U 3.107682870454e-15  U_retreated 3.107682868024e-15  
+      U_charge 6.385226329184e-16  U_poles -1.366551911033e-15  U_magnetization 3.835712148569e-15
+      poles: central iterations 3 residual -5.919e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618096e+03 |sum| 1.009146e-01 early 0
+  axis 0- ratio 3.8526e+00 retreated 3.8527e+00  U 3.107155413064e-15  U_retreated 3.107155413783e-15  
+      U_charge 6.380793011037e-16  U_poles -1.366417068560e-15  U_magnetization 3.835493180520e-15
+      poles: central iterations 3 residual -5.876e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.619067e+03 |sum| 1.009026e-01 early 0
+  axis 1+ ratio 3.8528e+00 retreated 3.8529e+00  U 3.107267348570e-15  U_retreated 3.107267348663e-15  
+      U_charge 6.383179590566e-16  U_poles -1.366451921943e-15  U_magnetization 3.835401311456e-15
+      poles: central iterations 3 residual -5.924e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618907e+03 |sum| 1.009022e-01 early 0
+  axis 1- ratio 3.7955e+00 retreated 3.8544e+00  U 3.112748595104e-15  U_retreated 3.107570825137e-15  
+      U_charge 6.382838797527e-16  U_poles -1.361339310631e-15  U_magnetization 3.835804025982e-15
+      poles: central iterations 3 residual -5.870e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618256e+03 |sum| 9.937611e-02 early 0
+  axis 2+ ratio 3.8536e+00 retreated 3.8537e+00  U 3.109824567252e-15  U_retreated 3.109824567345e-15  
+      U_charge 6.407186768013e-16  U_poles -1.366491708776e-15  U_magnetization 3.835597599226e-15
+      poles: central iterations 3 residual -5.918e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618512e+03 |sum| 1.009083e-01 early 0
+  axis 2- ratio 3.8535e+00 retreated 3.8535e+00  U 3.105013463358e-15  U_retreated 3.105013463299e-15  
+      U_charge 6.358830331474e-16  U_poles -1.366477296372e-15  U_magnetization 3.835607726582e-15
+      poles: central iterations 3 residual -5.876e-33  pole charge 5.448675e-23  moment scale 1.018305e-40  |pole| 2.618650e+03 |sum| 1.009089e-01 early 0

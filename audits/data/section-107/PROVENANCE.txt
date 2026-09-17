@@ -1,0 +1,16 @@
+Raw outputs behind audit section 107 (2026-09-17).  *.gz are gzip'ed.
+  prereg_107.txt             rules H1-H4 with timestamps
+  dbg_*                      HEAD ledger_engine_drift with POSITRONIUM_DEBUG_DIPOLE,
+                             CREM_DEBUG_ORDER_LIVE, CREM_DEBUG_ORDER_TERMS
+  A_*, Adbg_*                variant A: Landau-Lifshitz skipped for disabled/stochastic
+  D_*                        LL debug variant (CREM_DEBUG_LL prints of the NaN)
+  D2_*                       superluminal print in movingMagnetizationField
+  F_*, Fdbg_*                variant F = A + four-velocity extrapolation
+  R_*, Rdbg_*                variant R = F + history retention max(1e-26, 4r/c) (rejected)
+  S_*, Sdbg_*                variant S = F + blended moment-derivative stencil
+  J_*, J2_*, J5_*, JS_*      tools/step_failure_jump.cpp (J5: one-off per-pole patch)
+  J3_*_extract.txt           the same with JUMP_SPLIT, probe lines only (the full
+                             CREM_DEBUG_GRAD output was 800 MB)
+  verify/                    fixed working tree: validation, pairs (section 103 seeds,
+                             HEAD, A, F), timing, drift grid of 103d, near-barrier
+                             ledger (86f), section 106 cases (deep_*)

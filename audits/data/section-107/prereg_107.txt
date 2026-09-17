@@ -1,0 +1,48 @@
+Zapisano 2026-09-17T17:35:15+02:00, przed wariantami.
+Widziane: para 1 r* t90 d20: reason=accuracy, blad 2x na polowienie, skok
+grad 0.3435 -> 0.2292 miedzy dtFail a dtFail/2 (nieciaglosc w czasie).
+Orto 0.5 r* t0 d26 i orto 0.35 r* t0 d26: reason=coarse-nonfinite, w kroku
+probnym ll=nan przy skonczonym lead; reakcja wylaczona.
+Hipoteza H1: awarie orto to NaN w nieuzywanej diagnostyce LL.
+Regula: H1 potwierdzona, gdy wariant A (LL pomijane dla disabled i
+stochasticElectricDipole) przechodzi przez miejsce awarii (krok 94 dla 0.5 r*,
+krok 38 dla 0.35 r*) albo zawodzi z innym powodem niz nonfinite; oraz gdy
+przebieg niezawodzacy (orto 1 r* t45, para 1 r* t0) daje identyczny wydruk.
+
+2026-09-17T17:39:55+02:00: H1 obalona.  Wariant A (bez LL) daje identyczny wydruk dla
+orto 1 r* t45 (12 s zamiast 36 s), ale orto 0.35 i 0.5 r* t0 nadal zawodza w
+krokach 38 i 94: w kroku probnym NaN w samych silach (lead=nan, ll=0).
+LL_DEBUG: przy t=7.42146e-22, r=0.139 r*, beta 0.951 sila 1e-24 s wczesniej
+skonczona (144 N), 1e-24 s pozniej NaN.
+H2: NaN z movingMagnetizationField, gdy ekstrapolowana predkosc zrodla
+v + a*lag (sekcja 103, lag ~ r/c) przekracza c.
+Regula: H2 potwierdzona, gdy (i) wariant D2 zglasza |v_ekstr| >= c w kroku
+awarii, i (ii) wariant F (ekstrapolacja czteropredkosci, v < c zawsze)
+przechodzi krok awarii albo zawodzi z powodem innym niz nonfinite.
+Wariant F nie moze zmienic wydruku orto 1 r* t45 o wiecej niz 1e-6 wzglednie
+w E i r (tam a*lag << c).
+
+2026-09-17T17:55:36+02:00: H2 potwierdzona (D2: |v_ekstr|/c = 1.06 przed pierwszym NaN;
+F przechodzi krok 38 przy 0.35 r* i krok 94 przy 0.5 r*).  F przy 0.5 r*
+zawodzi w kroku 103 z reason=accuracy (skok grad 37.6 -> 2.67).
+Klasa skoku zlokalizowana (para 1 r* t90 d20): w jednym punkcie szablonu
+gradientu biegun -1 przechodzi w historicalIntegratedDipoleKinematics z galezi
+centralnej na wsteczna (present - t_pole = h = 1.582e-22 s); m'' 42.96 -> 14.35.
+h = 2 x srednie odstepy historii; historia ma dlugosc ~max(1e-20 s, 4r/c),
+wiec h*c ~ 0.245 r* ponizej ~3.9 r*.
+H3: skoki znikna, gdy retencja bedzie 4r/c bez progu 1e-20 s (h = r/16c).
+Regula: wariant R (= F + retencja max(1e-26, 4r/c)) przechodzi obieg orto 0.5 r*
+t0 i para 1 r* t90 d20 bez reason=accuracy albo zawodzi w odleglosci ponizej
+polowy dotychczasowej.  Dodatkowo R nie moze zmienic produkcji: slad
+produkcyjny i pary z sekcji 98 bit w bit (produkcja nie schodzi pod 3.9 r*).
+
+2026-09-17T18:13:07+02:00: H3 obalona.  R: para t90 d20 zawodzi w kroku 54 przy 0.158 r*
+(reason=accuracy, tym razem skok takze w polu LW 0.7%), orto 0.35 r* znowu NaN
+(fine2-nonfinite), orto 0.5 r* krok 95 przy 0.161 r*; R zmienia tez orto 1 r* t45
+(r 4.1550 zamiast 4.1549).  R odrzucony.
+H4: skok znika, gdy przejscie centralny/wsteczny w
+historicalIntegratedDipoleKinematics jest ciagle: dla s=(present-t)/h w [1,2]
+mieszanie smoothstep(s-1) szablonu centralnego i wstecznego (s>=2 bez zmian,
+s<=1 bez zmian).  Wariant S = A + F + mieszanie.
+Regula: S usuwa awarie reason=accuracy w para 1 r* t90 d20 w kroku 43
+(przechodzi krok 43), a orto 1 r* t45 daje wydruk identyczny z F.

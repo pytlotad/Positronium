@@ -1,0 +1,206 @@
+CREM attribution: publications based on this program or modified versions should cite https://github.com/pytlotad/Positronium and credit Tadeusz Slawomir Pytlos (tadeusz.slawomir.pytlos@gmail.com).
+Pair: electron + positron
+Maxwell-AMR self-test
+2-body role E/P:    4.8082837e-16 / 0
+2-body role swap:   4.5619044e-16
+2-body boost K/V:   2.7136347e-14 / 9.9409847e-17
+2-body inverse:     2.0790741e-11
+2-body comoving K:  0 eV
+2-body max beta:    0.9999999999990906
+levels:             3
+finest dx/r_c:      0.5
+neutral charge/e:   -7.5125689e-17
+Gauss residual:     1.6081274e+22 V/m2
+relative Gauss:     2.3068312e-06
+max |div B|:        0 T/m
+vacuum energy drift:0.016654138%
+continuity residual:2.0396255e-10
+deposit curl:       7.45253e-17
+coupled max beta:   0.0011520812
+dipole norm residual:0
+particle-field dE:  0.00036431898
+particle-field dP:  1.843994e-16
+particle-field dJ:  0.00090569978
+absorbed fraction:  0.76207411
+boundary flux/E0:   0.26497116
+late interior E/E0: 0.003076422
+CPML reflection:    2.2452032e-32
+div J_M relative:   6.7487882e-17
+Gauss coarse/fine:  0.00023186592 / 2.3068312e-06
+AMR synchronized:   2000 cells
+moving levels:      1
+regrid E retention: 0.99999248
+subcycle dE:        0.0028744661
+coarse/fine shell:  0
+J four-norm drift:  1.9613889e-16
+M antisymmetry:     0
+T symmetry:         0
+m_em/m_physical:    0.001502193
+m_bare/m_physical:  0.99849781
+grid self-force/F0: 0.010943241
+self phase seam:    1.3827653e-07
+self charge sign:   0
+bound continuity:   1.8042977e-16
+bound net charge/e: -3.0272499e-21
+retarded Gauss:     7.1459092e-06
+retarded div B:     3.0774723e-09
+retarded accel:     1.4649235e-09
+wave coarse/fine:  0.13436782 / 0.033687196
+Maxwell order:      1.9959154
+Lorentz field:      5.0956763e-16
+field invariants:   2.8203835e-16
+particle boost run: 1
+particle boost x/v:6.7615298e-13 / 2.7953107e-12
+particle boost D:  0.0038558844
+dipole repr gap:   0.0038558844
+covariant BMT:    3.409609e-12
+BMT vs eff field: 2.3649827e-15 / 2.3649827e-15  (closed form vs integrated specification)
+BMT precession:   0 / 0  (mu.dmu/dt, must be 0 for a precession)
+quantized drain:  0 / 0  (charge force / dipole reservoir; both must be 0)
+quantized torque: 0.48873305 / 0 / 0  (stochastic travel / disabled travel / norm drift)
+BMT norm (2 rad): 1.3322676e-15 / 1.3322676e-15  (production routine, no renormalization)
+secular spin J/norm: 0 / 2.220446e-16
+secular apsidal geometry: 1.110223e-16  (unit length / perpendicular to L)
+secular spin coarse/fine/ref: 1.181122e-05 / 2.9402159e-06  (4/8/16 substeps)
+secular external dJ/hbar: 0.083940715
+secular eccentric BMT/orbit: 9.5827616e-10 / 5.8253277e-09  (e^2=0.945, nodes=512, reference ratio=128x)
+role routing:     0  (obrot 4.6669861e-06)
+particle boost F/R:1.2962342e-12 / 0.00069901298
+dipole grad boost F:2.5333621e-09 / 2.5333621e-09  (265.671 with the coupling's former relative minus)
+  supporting measurements for the m.B+p.E sign:
+    field-boost anchor vs Lienard-Wiechert: 0.036972688
+    U invariance under physical transport, m.B-p.E / m.B+p.E: 56.934493 / 1.3812083e-15
+    same on the trajectory states, state / boosted tensor: 400.60754 / 2.1647415e-11
+    DU/Dt boost ratio 0.93676465 vs 1/gamma 0.9367497
+boost accumulated R:2.0252651e-06 (restE=1.4941093e-26, movingE=1.5949924e-26, expectedE=1.5949931e-26)
+dipole boost back:  2.3646176e-17
+dipole invariants:  0 / 3.9571079e-18
+induced electric p:1.4400116e-16
+electric dipole E: 5.4441907e-10
+tensor grad static:3.0771869e-08
+dipole coupling inv:4.4466448e-10
+induction curl vs A_reg:1.9146606e-11
+E1-M1 interference/significance: 1.3341403e-14 / 7.3891055e-08 (even=-1.6940659e-21)
+dipole pole convergence, leading (beta=0/alpha/0.3/0.8): 0 / 4.1638562e-11 / 6.6930299e-11 / 7.8125487e-11
+  ...motional convergence, same betas: 0 / 4.8642039e-11 / 7.3591268e-11 / 7.8125614e-11
+dipole boosted-static B (beta=0.9995/0.9999): 3.6965079e-08 / 1.8696854e-07
+pair patch cover:  1 / 1
+pair patches moved:1
+branch restricted:  20
+branch dE:          6.0648366e-06
+branch dP:          6.0671622e-06
+branch parallel:    0
+branch speedup:     1.0045943
+Yee continuity:     6.2469343e-16
+Yee Gauss+P/M cont.:2.3398672e-14
+Yee Gaussian q/e:   1
+Yee div B:          0 / 2.3160103e-16
+Yee AMR restriction:0
+Yee AMR continuity: 2.8740777e-14
+Yee AMR div B:      0
+Yee CPML interior:  0.0065922735 / 0.40848553
+Yee CPML div B:     0
+Yee pusher reverse: 0
+conservative reverse:1.9415986e-19
+Yee coupled cont.:  5.3320836e-13
+Yee coupled q/e:    3.4783882e-18
+Yee coupled beta:   0.024969857
+Visual/stat engine: 0
+pair-field IDENTITY:0 / 0 / 2.0507235e-26
+raw dE/dP/dJ:       4.4230615e-06 / 2.0827023e-11 / 1.6281486e-06  (IDENTITY closes by construction; raw is the measurement)
+photon recoil dE/dP: 1.3728974e-11 / 8.1460464e-13
+reaction/flux dE:   0.496399
+LL validity |F|:    7.9911485e-05
+reaction raw off/LL/C:8.5138346e-07 / 4.2088675e-07 / 4.2088675e-07
+  of which dE_mech/|E| = 1.3273542e-08 and E_rad/|E| = 8.3810992e-07 (reaction off, so no force removes that flux from the mechanics)
+  refinement ratio (full/half; ~1 means the residual is PHYSICAL, not discretization): 1.0055245 / 1.0112388 / 1.0112388
+reaction flux off/LL/C:1 / 0.48871041 / 0.48871041
+reaction mism/E_mech:8.3810992e-07 / 4.0959303e-07 / 4.0959303e-07
+reaction step off/LL/C:5.5631402e-11 / 5.5831832e-11 / 5.5831832e-11
+coherent/LL cost:   1.0070747
+automatic raw/flux/step:4.2088675e-07 / 0.48871041 / 5.5831832e-11
+auto smooth/kR/w:   0.00039393304 / 0.04930194 / 1
+E2 vs analytic:      2.9802693e-16
+E2 |Q|/scale:        2.9802693e-16
+E2 trace/symmetry:   1.4396069e-16 / 4.1131625e-17
+coherent E1 d3/Fsum:3.8661187e-15 / 0
+coherent M1 +/-:     4 / 0
+exchange gap o/p:   0 / 0.85432229  (ortho exact by parity, para O(1))
+inspiral in a^-5 units: 0.5  (1/2 exactly; tau_2gamma is 2)
+dipole tensor <U>_sphere: 5.8124172e-16  (exact zero: nothing to the S-state splitting)
+para libration cos:  0.79901629 .. 0.99989546  (|S| up to 0.3170045 hbar; returns, not destroyed)
+ZPF phase rate/n:   1.5977934 (expected 1.5977934, circular residual 0)
+ZPF Faraday coarse/fine: 4.1666083e-05 / 4.129014e-09  (amplitude 0, E-cB 0)
+M1 orbit avg 512/1k/2k: 9.4396684e+20 / 9.6013733e+20 / 9.6423214e+20  (order 3.9490168, vs naive x1.3293511e+14)
+coherent M1 T/J/P/PC:0 / 0 / 1.6657123e-16 / 0
+far N=26/50/98:     0.0082462106 / 0.00085805033 / 0.0011526804
+Lebedev w/moment:   8.4814792e-16 / 2.1203698e-16
+far R=1e4/5/6 a0:   8.7768287e-08 / 6.7298924e-08 / 0
+Larmor norm ratio:  1.0000692 (radiation-only) / 1.0000455 (production sampling)
+Larmor accumulation:0.99997207
+long balance dE/Efar:0.059633305  (Efar=0.0024753001 eV, dE_S=2.9969442e-10 eV)
+long balance refined:0.010067086  (tol 1e-8; discretization shrinks, a real leak does not)
+balance amplification:13741.458  (|E_mech|/E_far: gain on any dE_mech error)
+balance radius sweep (R/a_pair: amplif / coarse / refined):
+  0.05: 1718.3281 / 0.068657382 / 0.022143613
+  0.2: 13741.458 / 0.059633305 / 0.010067086
+  0.8: 109911.54 / 0.23572657 / 0.067695861   (amplification must follow R^1.5)
+balance matrix M/F,S/F,R:
+  retarded + none: -0.55969874 / 1.1902915e-07 / 0.44030138
+  Darwin + coherent:-0.99126923 / -6.804659e-08 / 0.0087307042
+  retarded + self: -1.0596334 / 1.2107398e-07 / -0.059633305
+  retarded + coher:-1.0596334 / 1.2107398e-07 / -0.059633305
+near R=1e4/5/6 a0:  1.8760136e-06 / 1.8761372e-07 / 1.8761393e-08
+step tol=1e-5/6/7:  5.5499443e-06 / 1.3835676e-06 / 3.9145325e-07
+step dt/(dt/2):     0
+depth reject/rollback/resolve: 0 / 0 / 1
+history span r/c:   8
+history 4/8 vs 16: 1.4925232e-07 / 2.8709662e-13
+history construct early/settled: 1.2351998e-07 / 1.4925232e-07
+cutoff scan f=0.004/5/6 t/t_pair: 0.0024329804 / 0.0023790924 / 0.0023176327
+cutoff event residuals: 1.1925849e-16 / 0 / 0
+reg-radius scan .5/1/2 residual: 0 / 0 / 0
+reg-radius scan advanced .5/1/2: 1 / 1 / 1
+history linear/H:  0.0012497396 / 0.00041661459
+Hermite order:     1.999459
+dipole src linear: 0.0012497396  (order 1.9990982)
+dipole static limit:0
+reg a=.75/.5/.25 rc:0.38783634 / 0.0031723385 / 7.7486029e-07
+reg p=4/6/8 @10a:  0.00049991001 / 6.999987e-06 / 8.9999998e-08
+reg core suppress: 1.1e-23
+reg peak U T/R:    0.49999684 / 0.20511184
+reg curl(A) peak:  2.7783468
+reg exact U/m c2:  0.5
+cutoff surface:     0
+CFL dt:             4.8407585e-22 s
+field storage:      3.1640625 MiB
+statistics profile: small (N=4096)
+photon <cos>/<cos2>:0.0045284767 / 0.4017337 (expected 0 / 0.4)
+photon azimuth mean:0.011695976
+Poisson Exp mean/var:1.0089228 / 0.9714387 (expected 1 / 1)
+statistics replay:  exact
+impact <b/s>/<b2/s2>:1.2553884 / 2.0052914 (Rayleigh: 1.2533141 / 2)
+impact azimuth mean:0.010047182
+impact replay:      exact
+validation wall:    86.923664 s
+field-step rate:    2.7150259 steps/s
+steps per ps:       2.065792e+09
+estimated s/ps:     7.6087376e+08
+
+Categorized validation verdict
+  algebraic identities: 25/25 PASS
+  numerical regressions: 20/20 PASS
+  convergence checks: 10/10 PASS
+  independent balances: 2/2 PASS
+  physical-domain guards: 5/5 PASS
+
+Informational diagnostics (no pass/fail criterion)
+  BMT vs effective-field comparison
+  flux-normalized reaction residual across heavy pairs
+  pair-field balance identities closed by boundField*
+  performance, memory and wall-clock estimates
+
+Enforced checks:     62/62
+validation verdict: PASS
+scope: regression and declared-domain validation; not a QED validation
+exit 0

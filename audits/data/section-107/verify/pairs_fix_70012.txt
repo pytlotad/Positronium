@@ -1,0 +1,6 @@
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 900 s).
+CREM calibrations: 1/1
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 900 s).
+CREM calibrations: 1/1
+PAIR seed 70012 para_lab_ps 198.979708880 orto_lab_ps 198.788964474 para_out 0 orto_out 0 para_ph 3 orto_ph 3
+DONE

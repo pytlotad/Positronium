@@ -695,14 +695,37 @@ inline RetardedElectricDipoleKinematics historicalIntegratedDipoleKinematics(
     }
     Vec3 first,second;
     if(derivativeStep>0.0) {
-        if(time+derivativeStep>present.time) {
+        // The central and backward stencils meet at time + h = present, where
+        // their second derivatives differ at O(h).  A hard switch there made
+        // every retarded dipole field jump in time whenever its source sat
+        // h c from the observer: once h stops shrinking with r (the history
+        // floor of appendStateHistory), that is ~0.25 r* for e+e-, and one
+        // pole of one gradient probe crossing it moved m'' by 3x and the
+        // moment force by 50% within 1e-40 s (audit section 107).  Between
+        // reach 1 and 2 the two are blended with a C1 weight; outside that
+        // band, and next to the history front, nothing changes.  The sibling
+        // stencils (historicalDipoleKinematics, the electric one) are not on
+        // the force path measured there and keep the hard switch.
+        const double reach=(present.time-time)/derivativeStep;
+        const bool nearFront=time-derivativeStep<history.front().time;
+        if(reach<1.0||(reach<2.0&&!nearFront)) {
             const Vec3 before=sample(time-derivativeStep);
             const Vec3 twiceBefore=sample(time-2.0*derivativeStep);
             first=(moment*3.0-before*4.0+twiceBefore)
                 /(2.0*derivativeStep);
             second=(moment-before*2.0+twiceBefore)
                 /(derivativeStep*derivativeStep);
-        } else if(time-derivativeStep<history.front().time) {
+            if(reach>1.0) {
+                const Vec3 after=sample(time+derivativeStep);
+                const double x=reach-1.0;
+                const double weight=x*x*(3.0-2.0*x);
+                first=first*(1.0-weight)
+                    +((after-before)/(2.0*derivativeStep))*weight;
+                second=second*(1.0-weight)
+                    +((after-moment*2.0+before)
+                      /(derivativeStep*derivativeStep))*weight;
+            }
+        } else if(nearFront) {
             const Vec3 after=sample(time+derivativeStep);
             const Vec3 twiceAfter=sample(time+2.0*derivativeStep);
             first=(after*4.0-moment*3.0-twiceAfter)
@@ -1372,14 +1395,26 @@ inline ParticleMultipoleRadiation particleMultipoleRadiation(
     const bool needsQuadrupolePower=needsBlendingGates
         ||reactionModel
             ==ChargeRadiationReactionModel::stochasticElectricDipole;
-    const MutualForces ll=individualLandauLifshitzSelfForces(
-        state,externalForces,history,
-        !mutualRadiationAlreadyRetarded
-            &&reactionModel
-                !=ChargeRadiationReactionModel::individualLandauLifshitzSelfOnly);
-    result.landauLifshitzValidity=std::max(
-        ll.first.norm()/std::max(externalForces.first.norm(),1.0e-300),
-        ll.second.norm()/std::max(externalForces.second.norm(),1.0e-300));
+    // disabled and stochasticElectricDipole never read the Landau-Lifshitz
+    // force or its validity ratio (the ratio feeds only the automatic
+    // model's gate), yet it costs two more retarded force sums per call,
+    // three times the whole step, and a NaN in it rejected the step as
+    // non-finite (audit section 107).  landauLifshitzValidity stays 0 there.
+    const bool needsLandauLifshitz=
+        reactionModel!=ChargeRadiationReactionModel::disabled
+        &&reactionModel
+            !=ChargeRadiationReactionModel::stochasticElectricDipole;
+    const MutualForces ll=needsLandauLifshitz
+        ?individualLandauLifshitzSelfForces(
+            state,externalForces,history,
+            !mutualRadiationAlreadyRetarded
+                &&reactionModel
+                    !=ChargeRadiationReactionModel::individualLandauLifshitzSelfOnly)
+        :MutualForces{};
+    if(needsLandauLifshitz)
+        result.landauLifshitzValidity=std::max(
+            ll.first.norm()/std::max(externalForces.first.norm(),1.0e-300),
+            ll.second.norm()/std::max(externalForces.second.norm(),1.0e-300));
     if(computeOutwardFlux)
         result.outwardFlux=electromagneticFieldFluxRates(state,history);
 
@@ -2418,11 +2453,24 @@ inline ElectromagneticField retardedMagneticDipoleFieldExact(
         //     2 r* (3.0e-3 against 2.3e-6);
         //   second order: smooth (1.0000), exact in uniform motion, and the
         //     ledger back to the pre-regression digits (2.31e-6 at 2 r*).
+        //
+        // The velocity is continued through the FOUR-velocity u = gamma v,
+        // whose lab-time derivative is gamma a + gamma^3 v (v.a)/c^2: the same
+        // slope at lag 0 as v + a lag, but it cannot reach c.  v + a lag did,
+        // in deep plunges where a r/c is comparable to c (beta 1.06 measured
+        // at 0.13 r*), and the Lorentz factor below turned the force into NaN
+        // -- the "non-finite" engine failures of section 106 (section 107).
         const double lag=observationTime-magnetizationTime;
         const Vec3 extrapolatedSourcePosition=source.position
             +source.velocity*lag+source.acceleration*(0.5*lag*lag);
-        const Vec3 extrapolatedSourceVelocity=source.velocity
-            +source.acceleration*lag;
+        const double sourceGamma=1.0/std::sqrt(std::max(
+            1.0-source.velocity.squaredNorm()/(c*c),1.0e-300));
+        const Vec3 extrapolatedFourVelocity=source.velocity*sourceGamma
+            +(source.acceleration*sourceGamma
+              +source.velocity*(sourceGamma*sourceGamma*sourceGamma
+                  *dot(source.velocity,source.acceleration)/(c*c)))*lag;
+        const Vec3 extrapolatedSourceVelocity=extrapolatedFourVelocity
+            /std::sqrt(1.0+extrapolatedFourVelocity.squaredNorm()/(c*c));
         const ElectromagneticField magnetization=movingMagnetizationField(
             observationPosition-extrapolatedSourcePosition,
             extrapolatedSourceVelocity,

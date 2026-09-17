@@ -1,0 +1,2 @@
+KONCOWY P/(m c) +0.000e+00 +0.000e+00 +0.000e+00  |P| 0.000e+00  po 1024 krokach  r 1.7155 r*
+r 1.0 ch orto tilt 0 tol 1e-08 N 256 depth 20 | ok 1024/1024 | zakres E/|U_dd| 7.286e-02 | E_koniec-E0 /|U_dd| +1.407e-02 | r 0.9934..1.7964 r* | 51 s
