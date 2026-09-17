@@ -1,0 +1,7 @@
+Raw outputs behind audit section 112 (2026-09-17).
+  prereg_112.txt   the 1:3 window and the candidate measures, timestamped
+  scan40.txt       tools/channel_measure_scan 40 42 1 600: prepared and
+                   terminal cosines, terminal two-photon weights and collapse
+                   times, then the measure averages and the Boltzmann tilts
+  analytic.txt     the exact integrals quoted in 112b and 112c (M5, M6, the
+                   Langevin scale, p ~ (1-cos)^2)

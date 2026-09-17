@@ -1,0 +1,16 @@
+Zapisano 2026-09-17T21:13:37+02:00, przed pomiarem.
+Pytanie: czy inna MIARA na kacie wzajemnym (nie inna interpolacja) daje 1:3?
+Algebra: w(cos) = (1+cos)/2 jest ustalona, wiec E[w] = (1+<cos>)/2 i warunek
+E[w] = 1/4 znaczy DOKLADNIE <cos> = -1/2.
+Regula: miara "daje 1:3", gdy zmierzone E[w] mieszczy sie w [0.24, 0.26].
+Kandydatury:
+  M1 miara przygotowania (izotropowa, obecna): przewidywane E[w] = 0.5.
+  M2 miara koncowa z dynamiki: kat w chwili zatrzymania
+     (CREM_CHANNEL_AT_ANNIHILATION), 40 trajektorii, model ciagly.
+  M3 miara wazona czasem zycia: te same 40 trajektorii, wagi proporcjonalne
+     do t i do 1/t (zespol "obserwowany przy rozpadzie").
+  M4 waga boltzmannowska exp(-U_dd/E) na kacie, dla skal E obecnych w modelu
+     (sprzezenie dipol-dipol, energia wiazania, hbar*omega_orb); podaje takze
+     skale E, ktora byla potrzebna, zeby dac <cos> = -1/2.
+Jesli zadna nie spelnia reguly, odpowiedz brzmi: nie, bez zaimportowania wag
+1:3 albo kwantyzacji kata.

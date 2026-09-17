@@ -1567,8 +1567,14 @@ wraca do \(1\) albo \(0\) i równoważność jest ścisła
 (\(1{,}000\) i \(0{,}000\) na \(4000\) stanach) — to było właśnie
 ostrze noża. Osobna sprawa: statystyka spinowa daje
 \(P(2\gamma)=1/4\), a izotropowy kąt daje \(1/2\) tożsamościowo, więc
-model ma dwa razy za dużo rozpadów dwufotonowych. Akapit poniżej opisuje stan
-z kwantyzacją.
+model ma dwa razy za dużo rozpadów dwufotonowych. Sprawdzone osobno (audyt 112):
+warunek \(1{:}3\) to jeden moment rozkładu, \(\langle\cos\rangle=-1/2\), a
+miary, które model sam wytwarza, otaczają go, ale w niego nie trafiają —
+izotropowa \(0{,}5\), końcowa z dynamiki \(0{,}499\), ważona czasem życia
+\(0{,}499\), ważona tempem M1 \(2/3\), ważona spinem wypadkowym
+\(1/3\). Trafiają w niego tylko miary, których model nie ma: kwantyzacja
+kąta z wagami \(1{:}3\), \(p\sim(1-\cos)^2\) albo termostat o
+\(kT=0{,}29\) K. Akapit poniżej opisuje stan z kwantyzacją.
 
 *Kanał jest przy tym **deterministyczny**, i to bez progowania.* Waga jest
 czytana z momentów **przygotowanych**, gdzie kwantowanie spinu ustawia

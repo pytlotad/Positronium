@@ -7472,3 +7472,69 @@ measurement of whether that survives a cascade.
       reading remains the default for the reason recorded at it.  The stale
       comment that called the channel deterministic "by default" has been
       corrected.
+
+112. WOULD ANOTHER MEASURE OVER THE MUTUAL ANGLE GIVE 1:3?  ONLY ONES THE
+     MODEL DOES NOT PRODUCE
+==================================================================
+
+112a. THE QUESTION (from section 111e).  The weight w = (1+cos)/2 is fixed by
+      the two forced ends, so the branching ratio is a property of the MEASURE
+      over the mutual angle.  Is there a measure that gives 1:3, and does the
+      model produce one?
+
+112b. THE CONDITION IS ONE MOMENT.  E[w] = (1+<cos>)/2, so
+      E[w] = 1/4 <=> <cos> = -1/2 exactly, and nothing else about the measure
+      matters.  Measures that satisfy it:
+        two points cos = +-1 with weights 1:3   the withdrawn quantization of
+                                                audit 91 plus the imported
+                                                statistical weights
+        p ~ (1-cos)^2                           E[w] = 1/4 exactly; in spin
+                                                variables that is |S_total|^4
+        p ~ exp(-1.7965 cos)                    Langevin: coth(l)-1/l = 1/2
+      The exponential one names the scale it needs: with the model's own
+      U_dd(a_pair) = 4.539e-05 eV, kT would have to be 2.526e-05 eV = 0.29 K,
+      i.e. 0.56 of the coupling itself and 3.7e-06 of the binding.
+
+112c. WHAT THE MODEL ACTUALLY PRODUCES.  40 trajectories, seed base 42,
+      continuous reaction, terminal weights read with
+      CREM_CHANNEL_AT_ANNIHILATION:
+        measure                                        <cos>     E[w]
+        M1 preparation (isotropic by construction)     -0.059    0.470
+           (4000 draws in section 111c)                +0.011    0.506
+        M2 terminal, produced by the dynamics          -0.0012   0.4994
+        M3 the same, weighted by the collapse time                0.4993
+           the same, weighted by 1/t                              0.4994
+        M4 Boltzmann on U_dd(a_pair), aligning sign               0.657
+           the same, anti-aligning sign                           0.343
+           Boltzmann at kT = binding, or at hbar omega_orb        0.5000
+        M5 weighted by the coherent M1 rate, p ~ (1+cos)          2/3
+        M6 weighted by the resultant spin, p ~ (1-cos)            1/3
+      None is inside the pre-registered window [0.24, 0.26].
+      M2 is the interesting one: the dynamics does move each angle (the
+      terminal cosine regresses on the prepared one with slope 0.81, mean
+      |cos| 0.49 -> 0.46, individual trajectories move by up to 0.3), but it
+      COMPRESSES the distribution without tilting it -- the mean stays at
+      zero to three decimals, which is why the ratio does not budge.  M3 has
+      no power to tilt anything either: the 40 collapse times span
+      30.62-30.69 ps, a spread of 3.6e-04.
+
+112d. READING.  The measures the model has BRACKET the answer -- 1/3 from the
+      resultant spin, 1/2 isotropic, 2/3 from the M1 rate -- and none reaches
+      1/4.  Getting there needs a net anti-alignment of <cos> = -1/2, i.e. a
+      50% polarization of the mutual angle, while the only angle-dependent
+      energy in the model is 7e-06 of the binding and, at the production
+      geometry (moments along the orbital normal, U = -2 (mu0/4pi) mu^2
+      cos/r^3), tilts toward ALIGNMENT, i.e. the wrong way.  So the answer to
+      the question is: yes such measures exist, no the model does not supply
+      one, and the two that work are exactly the two imports this project
+      has been removing -- quantization of the angle with the 1:3 weights, or
+      a thermal reservoir at 0.29 K.
+
+112e. LIMITS.  M2 and M3 are 40 trajectories at one seed base and one
+      preparation radius.  The terminal weight comes from
+      CREM_CHANNEL_AT_ANNIHILATION, which the code warns against reading as a
+      prediction (it carries the singlet-drift defect); it is used here as a
+      MEASURE, which is what the question asks about.  Three one-parameter
+      families were tried, chosen because they are the only angle-dependent
+      rates or energies the model has; this does not exclude some other
+      derivation, and 112b says exactly what any candidate has to satisfy.

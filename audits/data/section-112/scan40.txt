@@ -1,0 +1,57 @@
+Running 40 CREM collapse calibrations on 4 workers (per-event wall-clock budget 600 s).
+CREM calibrations: 10/40
+CREM calibrations: 20/40
+CREM calibrations: 30/40
+CREM calibrations: 40/40
+ROW 0 cos_prepared +0.148606 w_prepared 0.574303 w_terminal 0.735999 cos_terminal +0.471999 t_ps 30.685897
+ROW 1 cos_prepared +0.107425 w_prepared 0.553713 w_terminal 0.700885 cos_terminal +0.401769 t_ps 30.660118
+ROW 2 cos_prepared -0.757886 w_prepared 0.121057 w_terminal 0.279968 cos_terminal -0.440064 t_ps 30.679198
+ROW 3 cos_prepared +0.411014 w_prepared 0.705507 w_terminal 0.561309 cos_terminal +0.122618 t_ps 30.664868
+ROW 4 cos_prepared +0.011448 w_prepared 0.505724 w_terminal 0.537574 cos_terminal +0.075147 t_ps 30.668285
+ROW 5 cos_prepared -0.865849 w_prepared 0.067076 w_terminal 0.187096 cos_terminal -0.625809 t_ps 30.666635
+ROW 6 cos_prepared +0.348281 w_prepared 0.674141 w_terminal 0.597602 cos_terminal +0.195205 t_ps 30.662890
+ROW 7 cos_prepared -0.380198 w_prepared 0.309901 w_terminal 0.290957 cos_terminal -0.418086 t_ps 30.676332
+ROW 8 cos_prepared +0.414435 w_prepared 0.707217 w_terminal 0.792874 cos_terminal +0.585748 t_ps 30.656193
+ROW 9 cos_prepared -0.052861 w_prepared 0.473569 w_terminal 0.434479 cos_terminal -0.131043 t_ps 30.663170
+ROW 10 cos_prepared -0.539503 w_prepared 0.230249 w_terminal 0.256834 cos_terminal -0.486333 t_ps 30.644377
+ROW 11 cos_prepared -0.250569 w_prepared 0.374716 w_terminal 0.275266 cos_terminal -0.449469 t_ps 30.674153
+ROW 12 cos_prepared +0.476725 w_prepared 0.738363 w_terminal 0.727245 cos_terminal +0.454491 t_ps 30.666254
+ROW 13 cos_prepared +0.542270 w_prepared 0.771135 w_terminal 0.664011 cos_terminal +0.328021 t_ps 30.663617
+ROW 14 cos_prepared -0.614527 w_prepared 0.192736 w_terminal 0.255716 cos_terminal -0.488568 t_ps 30.666833
+ROW 15 cos_prepared +0.881112 w_prepared 0.940556 w_terminal 0.921778 cos_terminal +0.843556 t_ps 30.656628
+ROW 16 cos_prepared +0.841971 w_prepared 0.920986 w_terminal 0.893094 cos_terminal +0.786188 t_ps 30.653328
+ROW 17 cos_prepared -0.748662 w_prepared 0.125669 w_terminal 0.349552 cos_terminal -0.300897 t_ps 30.668618
+ROW 18 cos_prepared +0.256765 w_prepared 0.628382 w_terminal 0.790642 cos_terminal +0.581284 t_ps 30.617564
+ROW 19 cos_prepared +0.149988 w_prepared 0.574994 w_terminal 0.633744 cos_terminal +0.267487 t_ps 30.661658
+ROW 20 cos_prepared -0.058663 w_prepared 0.470669 w_terminal 0.562287 cos_terminal +0.124574 t_ps 30.663560
+ROW 21 cos_prepared -0.290158 w_prepared 0.354921 w_terminal 0.367229 cos_terminal -0.265542 t_ps 30.663620
+ROW 22 cos_prepared -0.976074 w_prepared 0.011963 w_terminal 0.062228 cos_terminal -0.875543 t_ps 30.668410
+ROW 23 cos_prepared -0.482045 w_prepared 0.258978 w_terminal 0.294315 cos_terminal -0.411371 t_ps 30.668520
+ROW 24 cos_prepared +0.704001 w_prepared 0.852001 w_terminal 0.912519 cos_terminal +0.825039 t_ps 30.662859
+ROW 25 cos_prepared +0.357068 w_prepared 0.678534 w_terminal 0.755122 cos_terminal +0.510244 t_ps 30.671661
+ROW 26 cos_prepared +0.070190 w_prepared 0.535095 w_terminal 0.334380 cos_terminal -0.331239 t_ps 30.666309
+ROW 27 cos_prepared +0.690290 w_prepared 0.845145 w_terminal 0.771878 cos_terminal +0.543756 t_ps 30.665874
+ROW 28 cos_prepared -0.876185 w_prepared 0.061907 w_terminal 0.178680 cos_terminal -0.642640 t_ps 30.673373
+ROW 29 cos_prepared +0.816356 w_prepared 0.908178 w_terminal 0.615501 cos_terminal +0.231003 t_ps 30.665432
+ROW 30 cos_prepared +0.092209 w_prepared 0.546104 w_terminal 0.517303 cos_terminal +0.034606 t_ps 30.665735
+ROW 31 cos_prepared -0.844339 w_prepared 0.077831 w_terminal 0.224158 cos_terminal -0.551685 t_ps 30.675743
+ROW 32 cos_prepared -0.776738 w_prepared 0.111631 w_terminal 0.331566 cos_terminal -0.336868 t_ps 30.671220
+ROW 33 cos_prepared -0.696450 w_prepared 0.151775 w_terminal 0.167717 cos_terminal -0.664566 t_ps 30.675678
+ROW 34 cos_prepared -0.885034 w_prepared 0.057483 w_terminal 0.295136 cos_terminal -0.409728 t_ps 30.673425
+ROW 35 cos_prepared +0.207169 w_prepared 0.603585 w_terminal 0.782014 cos_terminal +0.564028 t_ps 30.658743
+ROW 36 cos_prepared +0.727638 w_prepared 0.863819 w_terminal 0.902840 cos_terminal +0.805680 t_ps 30.661769
+ROW 37 cos_prepared -0.699741 w_prepared 0.150129 w_terminal 0.118454 cos_terminal -0.763092 t_ps 30.684061
+ROW 38 cos_prepared -0.220682 w_prepared 0.389659 w_terminal 0.161973 cos_terminal -0.676054 t_ps 30.665908
+ROW 39 cos_prepared +0.389028 w_prepared 0.694514 w_terminal 0.733673 cos_terminal +0.467347 t_ps 30.654966
+
+completed 40 trajectories (seed base 42, phenomenon 1)
+M1 preparation measure : <cos> -0.0593  E[w] 0.4703
+M2 terminal measure    : <cos> -0.0012  E[w] 0.4994
+M3 weighted by t       : E[w] 0.4993;  by 1/t: E[w] 0.4994
+M4 Boltzmann tilt, coupling U_dd(a_pair) = 7.272e-24 J = 4.539e-05 eV
+   E = U_dd itself      : E[w] 0.6565
+   E = binding 6.803e+00 eV : E[w] 0.5000
+   E = hbar omega 1.361e+01 eV: E[w] 0.5000
+   needed: p(cos) ~ exp(-lambda cos) with lambda 1.7965, i.e. an energy scale 2.526e-05 eV
+     = 5.57e-01 of U_dd(a_pair) and 3.71e-06 of the binding
+rule: a measure gives 1:3 when E[w] is in [0.24, 0.26]

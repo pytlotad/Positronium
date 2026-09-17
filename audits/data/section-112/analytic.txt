@@ -1,0 +1,12 @@
+Analytic parts of audit section 112 (all exact, integrals over cos in [-1,1]).
+  requirement            E[w] = (1+<cos>)/2 = 1/4  <=>  <cos> = -1/2
+  p ~ (1-cos)^2          E[w] = 1/4 exactly        (= |S_total|^4)
+  p ~ exp(-lambda cos)   coth(lambda)-1/lambda = 1/2 -> lambda = 1.7965
+                         U_dd(a_pair) = 4.539e-05 eV, so the scale needed is
+                         2.526e-05 eV = 0.293 K = 0.56 U_dd = 3.7e-06 binding
+  p ~ (1+cos)            E[w] = 2/3   (coherent M1 rate)
+  p ~ (1-cos)            E[w] = 1/3   (resultant spin |S|^2)
+  Boltzmann at lambda=1  E[w] = 0.3435 (anti-aligning sign)
+                                0.6565 (aligning sign, which is the one the
+                                production geometry gives: for moments along
+                                the orbital normal U = -2 (mu0/4pi) mu^2 cos/r^3)
