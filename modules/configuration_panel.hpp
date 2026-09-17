@@ -679,7 +679,11 @@ inline int zeroPointModes = 64;
 //                          estimator.
 //   CREM_FORCE_M1=<x>      Force the magnetic-dipole share of radiated power
 //                          to a stated value instead of the computed one.
-//   CREM_AXIAL_SPIN        Constrain the spin to the orbital axis.
+//   CREM_AXIAL_SPIN        Take each PHOTON's angular momentum as hbar along
+//                          the orbital axis instead of hbar along its own
+//                          direction of flight.  It does NOT constrain the
+//                          particles' spins (audit 100 corrects the old
+//                          description, which said it did).
 //   CREM_SPIN_MAGNITUDE    Take the orbital angular momentum a photon
 //                          removes from the PHOTON'S OWN SPIN -- the
 //                          hbar-along-its-direction subtraction -- instead of

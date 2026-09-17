@@ -6590,3 +6590,67 @@ measurement of whether that survives a cascade.
 99f. LIMITS.  Four pairs, one checkpoint size, production defaults
      otherwise; CREM_FORCE_M1 acts at photon selection and was not used to
      isolate M1.
+
+100. WHAT MAKES ORTHO SHORTER: THE SECULAR SPIN-ORBIT TRANSPORT, BY THE
+     SIGN OF L.S
+==================================================================
+
+100a. A SWITCH THAT WAS MISDESCRIBED.  The next test was meant to use
+      CREM_AXIAL_SPIN, which the configuration panel described as "constrain
+      the spin to the orbital axis".  It does not.  It takes each photon's
+      angular momentum as hbar along the orbital axis instead of along the
+      photon's direction of flight, and never touches the particles' spins.
+      The panel now says so.  No switch freezes the spin-orbit exchange.
+
+100b. A CORRELATION FOUND AFTER LOOKING.  The 20 pairs of section 98 A,
+      against the direction of the first moment relative to the orbital
+      normal z (six correlations checked, permutation p):
+
+        ortho - para   ~ cos z    Spearman -0.716   p 0.0005
+        ortho          ~ cos z             -0.681     0.0013
+        para           ~ cos z             +0.123     0.60
+        para           ~ |cos z|           +0.672     0.0017
+        ortho - para   ~ |cos z|           +0.075     0.76
+
+      By the sign of cos z: mean ortho - para -147.8 fs for the ten pairs
+      with cos z > 0 and -48.0 fs for the ten with cos z < 0.  Ortho depends
+      on the SIGN, para only weakly on the magnitude.
+
+100c. WHAT THE SIGN MEANS.  The first particle is the electron (gyromagnetic
+      ratio -1.761e11).  For ortho at seed 70012 the first moment has
+      cos z = +0.8265 and the total spin S.z = -0.8265 hbar with |S| = hbar;
+      the orbital angular momentum points along +z.  So cos z > 0 is total
+      spin antiparallel to the orbit, L.S < 0, and that is where ortho is
+      shortest.  Para has S = 0 and no L.S at all.
+
+100d. THE CAUSAL TEST.  A temporary copy of the tree skips the secular
+      spin-orbit half-step (advanceSpinOrbitHalf) under an environment
+      variable; the repository is unchanged.  Prediction written first: the
+      split by sign disappears.  Four pairs, s_max 0.30, lab clock:
+
+        seed    cos z    default    transport frozen
+        70012   +0.83    -191.08    -17.03 fs
+        70003   +0.83    -158.63    -15.46 fs
+        70001   -0.89      -2.05    +11.16 fs
+        70005   -0.54     -15.11    +11.69 fs
+
+      Control: 70001 from the same copy without the variable gives -2.05 fs,
+      identical to the repository build.  The mean over the four pairs falls
+      from -91.7 fs to -2.4 fs.
+
+100e. READING.  The secular spin-orbit transport produces nearly all of the
+      para/ortho lifetime difference, through ortho's total spin: with L.S < 0
+      ortho is shorter by about 150 fs, with L.S > 0 by about 50 fs.  The
+      prediction holds only approximately: a residue of about +-14 fs keeps
+      the sign dependence after freezing (-16 fs for L.S < 0, +11 fs for
+      L.S > 0), from some other sign-dependent term that is not identified.
+
+100f. CAVEATS.  Freezing the half-step removes both the exchange of angular
+      momentum between spin and orbit and the precession of the moments, and
+      this test cannot tell the two apart.  Para, which has no L.S, still
+      moves by +17 to +22 fs when frozen, so part of what the freeze removes
+      is not L.S.  The correlation in 100b was found after looking; the
+      causal test has four pairs.
+
+100g. LIMITS.  --spin-quantization pairs only, one checkpoint size,
+      production defaults otherwise, e+e- only.
