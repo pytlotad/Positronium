@@ -1,0 +1,15 @@
+Para przy 1 r*, przechyl 0: +293 |U_dd| w 4 obiegach (|U_dd| przy r* = k/r* ~ 3.7 keV).
+Zapis PRZED pomiarem.
+A. Rozdzielczosc: 256/1024/4096 krokow na obieg, tol 1e-8 i 1e-10, glebokosc 26.
+   Numeryka, jesli zysk maleje co najmniej 2x przy kazdym czterokrotnym zageszczeniu.
+   Nie numeryka, jesli zysk i r_min sa zgodne w granicach 10% miedzy rozdzielczosciami.
+B. Rozklad bilansu na skladniki wzdluz trajektorii: wskazac czlon, ktory niesie zysk.
+2026-09-17T15:24:34+02:00
+C (dopisane PRZED pomiarem): zrodlem samonapedu jest czlon, po ktorego wylaczeniu
+beta_cm po jednym obiegu spada z 0.31 ponizej 0.02.  Warianty: bez sil dipolowych,
+maly promien momentu (0.05 r*), sily chwilowe, kontrola bez zmian.
+2026-09-17T15:52:05+02:00
+D (PRZED pomiarem): CREM_DIPOLE_INSTANTANEOUS_BELOW=20 (sily chwilowe ponizej 1 r*,
+przejscie do 2 r*).  Opozniony sektor dipolowy na krotkich odleglosciach jest
+zrodlem, jesli beta_cm po obiegu spada do poziomu sil chwilowych (<= 0.05).
+2026-09-17T15:58:00+02:00

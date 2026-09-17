@@ -1,0 +1,1 @@
+r 1.0 ch para tilt 0 tol 1e-08 N 1024 depth 26 | ok 4096/4096 | zakres E/|U_dd| 2.930e+02 | E_koniec-E0 /|U_dd| +2.929e+02 | r 0.2893..3.3361 r* | 923 s

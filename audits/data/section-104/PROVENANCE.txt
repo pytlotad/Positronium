@@ -1,0 +1,5 @@
+Raw outputs behind audit section 104 (2026-09-17), tools/ledger_engine_drift.cpp.
+  p1_*   para 1 r* tilt 0: trace, resolution scan, centre-of-mass trace
+  sp_*   one orbit: control, CREM_NO_DIPOLE_FORCE, CREM_MAGNETIC_RADIUS_SCALE=0.05,
+         instantaneous forces, CREM_DIPOLE_INSTANTANEOUS_BELOW=20
+  prereg_para1r.txt  rules A-D with timestamps

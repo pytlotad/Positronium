@@ -6890,3 +6890,72 @@ measurement of whether that survives a cascade.
 103h. TOOLS.  moving_magnetization_field.cpp and coupling_one_sided_slopes.cpp
       join tools/; build_variant.sh gains --revert.  Raw data in
       audits/data/section-103.
+
+104. PARA AT 1 r*: NOT THE LEDGER, NOT THE STEP -- THE RETARDED DIPOLE
+     SECTOR PROPELS THE PAIR AT SHORT RANGE
+==================================================================
+
+104a. THE CASE.  Engine, retarded forces, reaction off, circular start at
+      1 r*, para with moments along the orbital normal: over four orbits the
+      ledger gains 293 |U_dd| (section 103g).  At r* the identity mu/(e c) = r*
+      makes |U_dd| equal to k/r*, about 3.7 keV, so the gain is ~1.1 MeV.
+
+104b. RESOLUTION: RULED OUT.  Rule written first: numerical if the gain falls
+      at least twofold per fourfold refinement; not numerical if gain and
+      periapsis agree within 10%.
+        steps/orbit  depth  gain          r_min
+        256          20     +292.9 |U_dd|  0.2899 r*
+        1024         26     +292.9         0.2893 r*
+        4096         26     +292.9         0.2893 r*
+      Sixteen-fold refinement leaves the fourth digit alone.  (A tolerance
+      1e-10 run had not finished when this was written.)
+
+104c. THE LEDGER: RULED OUT.  Split into its terms along the run, the gain is
+      kinetic: +288.8 |U_dd| kinetic against at most ~15 in Coulomb,
+      dipole-dipole, -p.E, Darwin and the dipole constraint together.
+
+104d. WHAT IT IS: THE PAIR AS A WHOLE ACCELERATES.
+        t/P    r         beta_cm   |P|/(m c)   K_cm   K_rel   (|U_dd|)
+        0.25   0.59 r*   0.24      0.50        23     9.7
+        1.00   0.53 r*   0.31      0.69        41     9.7
+        2.00   1.48 r*   0.56      1.36        130    0.6
+        3.00   1.77 r*   0.67      1.84        187    0.8
+      Relative kinetic energy stays small; the gain is centre-of-mass motion,
+      and the mechanical momentum reaches 1.84 m c (~940 keV/c), hundreds of
+      times the interaction energy scale, so it is not exchange with field
+      momentum.  The forces on the two particles are not equal and opposite.
+      It starts in the first plunge and grows in steps at deep passages (the
+      largest, +49 |U_dd|, at 0.29 r*).
+
+104e. WHICH TERM.  Rule written first: the source is the term whose removal
+      takes beta_cm after one orbit from 0.31 below 0.02.
+        variant (one orbit)                         beta_cm  gain    r_min
+        control, retarded                           0.315    +51.3   0.37 r*
+        CREM_NO_DIPOLE_FORCE                        0.000    -0.16   0.98 r*
+        CREM_MAGNETIC_RADIUS_SCALE=0.05             0.015    +0.04   1.00 r*
+        instantaneous forces                        0.041    -3.3    0.39 r*
+        CREM_DIPOLE_INSTANTANEOUS_BELOW=20          0.020    -1.5    0.37 r*
+          (instantaneous dipole sector below 1 r*, blend to 2 r*)
+      - The dipole sector is the source: without it the momentum is exactly
+        zero and the orbit stays at 1 r*.
+      - The plunge and the propulsion are separate.  The plunge to ~0.4 r*
+        happens with retarded and with instantaneous forces, so it is the
+        model's own short-range moment attraction.  The propulsion is eight
+        times stronger with retarded forces (0.315 against 0.041), and
+        replacing the dipole sector by its instantaneous form below 1 r*
+        brings it to 0.020 with the same plunge (the last rule, <= 0.05,
+        written before that run).  The small-radius run passes the threshold
+        without deciding anything: that orbit never goes deep.
+      So: the retarded dipole sector breaks action and reaction at short
+      range, inside ~1 r*, and a bound pair that passes there is propelled.
+
+104f. PRODUCTION.  Production's last cascade ends near 4.9 r* and its
+      checkpoints sit at 40 r* and beyond; nothing here reaches it.  The
+      existing switch CREM_DIPOLE_INSTANTANEOUS_BELOW already removes the
+      effect for deep work.
+
+104g. NOT DONE.  Which part of the retarded dipole construction carries the
+      momentum imbalance (the per-pole softened two-pole field, the
+      magnetization term, or the material-derivative force) is not
+      identified.  The instantaneous sector also leaves a residue (0.02-0.04
+      per orbit) that was not examined.  Tilt 0 para only; one start radius.

@@ -1,0 +1,5 @@
+TRACE step 64 t/P 0.2500 r 0.5984 r* beta 0.1799 beta_cm 0.0253 |P|/(m c) 0.0523 K_cm 2.620e-01 K_rel 9.920e+00 | dE -1.203e+00 | kin +7.384e+00 coul -3.991e+00 dd -3.876e+00 cd -8.415e-01 dar +1.224e-01 con +0.000e+00
+TRACE step 128 t/P 0.5000 r 0.6991 r* beta 0.1408 beta_cm 0.0072 |P|/(m c) 0.0147 K_cm 2.126e-02 K_rel 7.457e+00 | dE -5.719e-01 | kin +4.572e+00 coul -2.563e+00 dd -2.476e+00 cd -1.782e-01 dar +7.337e-02 con +0.000e+00
+TRACE step 192 t/P 0.7500 r 0.9160 r* beta 0.1004 beta_cm 0.0144 |P|/(m c) 0.0290 K_cm 8.493e-02 K_rel 3.197e+00 | dE -9.044e-01 | kin +2.927e-01 coul -5.468e-01 dd -4.769e-01 cd -1.762e-01 dar +2.832e-03 con +0.000e+00
+TRACE step 256 t/P 1.0000 r 0.7610 r* beta 0.1295 beta_cm 0.0201 |P|/(m c) 0.0407 K_cm 1.653e-01 K_rel 5.286e+00 | dE -1.510e+00 | kin +2.500e+00 coul -1.871e+00 dd -1.770e+00 cd -4.047e-01 dar +3.588e-02 con +0.000e+00
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 4.882e+00 | E_koniec-E0 /|U_dd| -1.510e+00 | r 0.3740..0.9998 r* | 214 s
