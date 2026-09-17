@@ -1,0 +1,7 @@
+prepared 4000 states (phenomenon 1, base seed 1)
+cos: mean +1.0000 median +1.0000 min +1.0000 max +1.0000
+two-photon weight: mean 1.0000 (= P(2 gamma) over the ensemble)
+label cos>=0.5 (p-Ps): 4000/4000 = 100.0%; below (o-Ps): 0 = 0.0%
+drawn 2 gamma: 4000/4000 = 100.0%
+  P(2 gamma | labelled p-Ps) = 4000/4000 = 1.000
+spin statistics for comparison: P(2 gamma) = 1/4 = 0.250

@@ -1554,6 +1554,22 @@ dokładnie to, co kanał M1 modelu już robi, i jedyna interpolacja liniowa w
 amplitudzie, która trafia w oba końce. To słabsze założenie niż kwantowanie
 \(|J|\), i nie wprowadza nowej stałej.
 
+**Aktualizacja (audyt 111): po wycofaniu kwantyzacji spinu w audycie 91 ten
+kanał nie jest już deterministyczny i nie jest już tym samym podziałem co
+p-Ps/o-Ps.** Kąt wzajemny jest losowany swobodnie, więc \(\cos\) jest
+rozłożony równomiernie na \([-1,1]\), waga \(w=(1+\cos)/2\) jest ciągła, a
+krotność fotonów to losowanie Bernoulliego. Zmierzone na \(4000\)
+przygotowanych stanach: etykieta \(\cos\ge0{,}5\) obejmuje \(25{,}0\%\)
+zespołu, \(P(2\gamma)=0{,}506\), przy czym
+\(P(2\gamma\,|\,\text{p-Ps})=0{,}878\) i
+\(P(2\gamma\,|\,\text{o-Ps})=0{,}383\). Z `--spin-quantization` waga
+wraca do \(1\) albo \(0\) i równoważność jest ścisła
+(\(1{,}000\) i \(0{,}000\) na \(4000\) stanach) — to było właśnie
+ostrze noża. Osobna sprawa: statystyka spinowa daje
+\(P(2\gamma)=1/4\), a izotropowy kąt daje \(1/2\) tożsamościowo, więc
+model ma dwa razy za dużo rozpadów dwufotonowych. Akapit poniżej opisuje stan
+z kwantyzacją.
+
 *Kanał jest przy tym **deterministyczny**, i to bez progowania.* Waga jest
 czytana z momentów **przygotowanych**, gdzie kwantowanie spinu ustawia
 \(\cos=\pm1\) ściśle, więc wychodzi dokładnie \(1\) albo dokładnie

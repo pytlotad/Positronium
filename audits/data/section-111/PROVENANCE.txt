@@ -1,0 +1,8 @@
+Raw outputs behind audit section 111 (2026-09-17).
+  prereg_111.txt   the equivalence rule and the analytic prediction, timestamped
+  free_p1.txt      tools/annihilation_channel_split 4000 1 1 -- production
+                   ensemble, phenomenon 1
+  free_p2.txt      the same for phenomenon 2 (identical, as audit 91 requires)
+  quant_p1.txt     the same with the withdrawn imposition (--spin-quantization):
+                   weight exactly 1, P(2 gamma | p-Ps) = 1.000
+  quant_p2.txt     the same for the ortho side: weight exactly 0

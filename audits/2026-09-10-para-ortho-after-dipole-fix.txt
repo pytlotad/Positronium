@@ -7418,3 +7418,57 @@ measurement of whether that survives a cascade.
       dominate the clock, but production stops at 15.9 r*.  The accumulated
       momentum is a partial cancellation of rotating per-orbit kicks,
       measured here rather than assumed, and only at two radii.
+
+111. THE 2 GAMMA / 3 GAMMA KNIFE EDGE IS NO LONGER THE p-Ps / o-Ps
+     DIVISION, AND SINCE AUDIT 91 IT IS NOT A KNIFE EDGE EITHER
+==================================================================
+
+111a. THE QUESTION.  Is the split into two or three photons now equivalent
+      to the split into p-Ps and o-Ps?
+
+111b. WHAT THE CODE DOES.  The multiplicity is decided by the two-photon
+      weight w = |mu1+mu2|^2/(|mu1|+|mu2|)^2 = (1+cos)/2 of the PREPARED
+      moments, drawn as a branching ratio, not thresholded.  The channel
+      LABEL is the knife edge cos >= 0.5 on the same moments.  Two different
+      functions of one number.
+
+111c. MEASURED, 4000 prepared states, the production ensemble.
+        quantity                                    value
+        cos: mean / median                          +0.011 / +0.025
+        label cos >= 0.5 (p-Ps)                     25.0%
+        P(2 gamma) over the ensemble = E[w]         0.506
+        P(2 gamma | labelled p-Ps)                  0.878
+        P(2 gamma | labelled o-Ps)                  0.383
+        |cos| < 0.5, i.e. neither label's interior  50.4%, 2 gamma 0.515
+      The pre-registered rule for equivalence (0.99 and 0.01) is missed by
+      far in both directions.  Phenomenon 1 and 2 give identical numbers,
+      as audit 91 requires.  The analytic prediction for cos uniform on
+      [-1,1] -- 0.25, 0.5, 0.875, 0.375 -- is reproduced, so this is the
+      free draw's own arithmetic, not a sampling accident.
+
+111d. SO THE ANSWER IS NO, AND THE KNIFE EDGE WENT WITH IT.  Equivalence
+      held exactly under the withdrawn imposition: with --spin-quantization
+      the prepared cos is +-1 to machine precision, w is exactly 1 or 0, and
+      the measurement gives P(2 gamma | p-Ps) = 1.000 over 4000 states and
+      P(2 gamma | o-Ps) = 0.000.  That was the knife edge: one number that
+      was only ever allowed two values.  With the angle free, the same
+      formula becomes a continuous branching ratio, and a labelled o-Ps
+      trajectory emits two photons 38% of the time.
+
+111e. WHERE IT LEAVES THE MODEL AGAINST MEASUREMENT.  Spin statistics give
+      P(2 gamma) = 1/4: one singlet state out of four.  The model's free
+      ensemble gives 0.506, i.e. twice too many two-photon events, because
+      an isotropic mutual angle makes E[(1+cos)/2] = 1/2 identically.  The
+      ends of the interpolation are forced by the algebra of audit 91
+      (aligned moments give w = 1 and zero total spin, anti-aligned w = 0
+      and the full hbar); what is not forced, and now visibly wrong by a
+      factor of two, is the MEASURE over the angle.  Nothing in the
+      classical model selects the 1:3 weighting that spin statistics give.
+
+111f. NOT DONE.  Whether some other measure over the mutual angle -- rather
+      than another interpolation between the two forced ends -- would give
+      1:3 is not investigated here.  The terminal-moment variant
+      (CREM_CHANNEL_AT_ANNIHILATION) was not remeasured; the prepared
+      reading remains the default for the reason recorded at it.  The stale
+      comment that called the channel deterministic "by default" has been
+      corrected.

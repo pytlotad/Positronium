@@ -2755,12 +2755,20 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 // for perfect alignment and 0 for perfect anti-alignment
                 // without assuming either is reached.
                 //
-                // Read from the PREPARED moments it is exactly 1 or exactly
-                // 0 -- spin quantization fixes cos = +-1 at preparation --
-                // so the channel is DETERMINISTIC and no draw is needed.
-                // That is the default, for one reason: the drift away from
-                // those two values is a known defect of this model, not
-                // physics.  Real positronium conserves S, so the state that
+                // Read from the PREPARED moments, which is the default.
+                // Under --spin-quantization that is exactly 1 or exactly 0,
+                // because the imposed angle fixes cos = +-1, and the channel
+                // is then DETERMINISTIC with no draw needed.  Audit 91
+                // withdrew that imposition, so by default the prepared angle
+                // is drawn freely: cos is uniform on [-1,1], the weight is
+                // (1+cos)/2, and the multiplicity is a genuine Bernoulli
+                // draw.  Measured over 4000 prepared states (audit 111):
+                // P(2 gamma) = 0.506, and by the cos >= 0.5 label
+                // P(2 gamma | p-Ps) = 0.878, P(2 gamma | o-Ps) = 0.383 --
+                // the two divisions are NOT the same one any more.
+                // The reason to read the prepared moments rather than the
+                // terminal ones is unchanged: the drift away from collinear
+                // is a known defect of this model, not physics.  Real positronium conserves S, so the state that
                 // annihilates IS the state that was prepared; the classical
                 // pair loses the singlet because two classical vectors
                 // cannot represent an entangled one, and the anti-aligned

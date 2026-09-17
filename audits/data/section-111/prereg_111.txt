@@ -1,0 +1,12 @@
+Zapisano 2026-09-17T20:46:42+02:00, przed pomiarem.
+Pytanie: czy podzial 2/3 fotony jest teraz rownowazny podzialowi p-Ps / o-Ps?
+Kod: waga w = |mu1+mu2|^2/(|mu1|+|mu2|)^2 = (1+cos)/2 z momentow PRZYGOTOWANYCH
+decyduje o krotnosci i jest losowana jako stosunek rozgalezien; etykieta kanalu
+to prog cos >= 0.5 na tych samych momentach.
+Regula: "rownowazne", gdy P(2 gamma | etykieta p-Ps) >= 0.99 oraz
+P(2 gamma | etykieta o-Ps) <= 0.01 na zespole 4000 przygotowanych stanow.
+Przewidywanie analityczne przy cos rozlozonym rownomiernie na [-1,1]:
+P(etykieta p-Ps) = 0.25, E[w] = 0.5, E[w | p-Ps] = 0.875, E[w | o-Ps] = 0.375.
+Dla porownania statystyka spinowa daje P(2 gamma) = 1/4.
+Sprawdzam takze wariant z --spin-quantization, gdzie waga ma byc dokladnie 1
+albo 0 i wtedy rownowaznosc ma byc spelniona.
