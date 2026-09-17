@@ -6486,3 +6486,57 @@ measurement of whether that survives a cascade.
 
 97g. LIMITS.  Four seeds, three s_max values, production defaults, e+e-
      only.  Validation 61/61, header isolation 37/37, production builds.
+
+98. PARA AGAINST ORTHO ON THE LAB CLOCK, AFTER THE CLOCK FIX
+==================================================================
+
+98a. QUESTION AND DESIGN.  Is there a collapse-time difference between para
+     and ortho once the checkpoint clock no longer quantizes lifetimes
+     (section 97)?  Hypotheses fixed before the run (2026-09-17T09:50:33),
+     lab clock throughout:
+       A  --spin-quantization pairs at s_max 0.30, seeds 70000-70019:
+          H1  mean ortho - para differs from zero (sign test, Wilcoxon)
+       B  the same pairs at s_max 0.15, seeds 70000-70009:
+          H2  same sign and a consistent size
+       C  default free draw at s_max 0.30, seeds 71000-71039:
+          H3  lab lifetime correlates with the start cos (Spearman)
+     The pairing premise was checked first: at a common seed the prepared
+     states have cos exactly +1 and -1 and an identical first moment.
+
+98b. RESULT.  No run censored; photon counts equal in every pair.
+
+       stage            n     para (ps)    ortho (ps)   ortho - para
+       A  s_max 0.30    20    198.971131   198.873207   -97.9 +- 14.4 fs
+       B  s_max 0.15    10    198.955581   198.869469   -86.1 +- 20.2 fs
+
+     A: ortho shorter in 20 of 20, sign test and exact Wilcoxon p ~ 2e-6.
+     B: ortho shorter in 9 of 10, sign test p = 0.022, Wilcoxon p = 0.006.
+     On the ten common seeds A gives -78.4 fs and B -86.1 fs, with the same
+     sign in 9 of 10 pairs.  So the difference is not the 45 fs step residue
+     of section 97.  H1 and H2 hold.
+
+     C: Spearman of lab lifetime against the start cos +0.472, permutation
+     p = 0.0024; lifetimes 198.856 to 199.077 ps.  Grouped by the 0.5 label,
+     para 198.975111 ps (n = 9, error 5.0 fs) and ortho 198.943312 ps
+     (n = 31, error 8.5 fs).  The gap is smaller than in A because the ortho
+     label spans every angle below 0.5.  H3 holds: in the default model the
+     lifetime grows with the mutual cosine.
+
+98c. SIZE.  About -90 fs on 198.9 ps, 4.5e-4 relative.  Under the whole-
+     checkpoint clock a per-trajectory error of up to 18.675 ps buried it;
+     the paired comparison of README "Co z tego wynika dla porownania
+     kanalow" ended with a sign test of p = 1.
+
+98d. SEEN AFTER LOOKING, NOT TESTED.  Across seeds, para barely moves
+     (spread 27 fs in A) while ortho moves a lot (184 fs), so the pair
+     difference runs from -2 to -191 fs.  The seed sets only the direction
+     of the first moment relative to the orbit, so that direction matters
+     for ortho and hardly for para.  The mechanism is not identified.
+
+98e. AGAINST THE REAL SYSTEM.  In positronium ortho outlives para by a
+     factor of about 1100.  Here the sign is the opposite and the effect is
+     4.5e-4.  This model's collapse time is not an annihilation lifetime, so
+     the comparison is orientation only.
+
+98f. LIMITS.  20, 10 and 40 trajectories; two checkpoint sizes; production
+     defaults otherwise; e+e- only.
