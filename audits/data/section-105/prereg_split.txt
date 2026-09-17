@@ -1,0 +1,9 @@
+Ktora czesc opoznionego sektora dipolowego lamie akcje i reakcje (sekcja 105).
+Para 1 r*, przechyl 0, jeden obieg, te same stany trajektorii kontrolnej.
+Szesc wkladow do F1+F2 (ladunek/moment x pole ladunku/biegunow/magnetyzacji)
+oraz czlon materialny sily na moment.  PRZED pomiarem: zrodlem jest wklad
+dajacy > 50% calki sily wypadkowej wzdluz koncowego pedu pary.
+2026-09-17T16:28:37+02:00
+Potwierdzenie na trajektorii (PRZED pomiarem): z CREM_PROBE_NO_LW_IN_MOMENT beta_cm po
+jednym obiegu spada z 0.315 ponizej 0.05.
+2026-09-17T16:34:00+02:00

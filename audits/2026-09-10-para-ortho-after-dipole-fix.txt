@@ -6959,3 +6959,62 @@ measurement of whether that survives a cascade.
       magnetization term, or the material-derivative force) is not
       identified.  The instantaneous sector also leaves a residue (0.02-0.04
       per orbit) that was not examined.  Tilt 0 para only; one start radius.
+
+105. WHAT BREAKS ACTION AND REACTION: THE FORCE ON THE MOMENT IN THE
+     PARTNER'S CHARGE FIELD, NOT THE POLES, THE MAGNETIZATION OR THE
+     MATERIAL TERM
+==================================================================
+
+105a. QUESTION.  Section 104 traced the propulsion of para at 1 r* to the
+      retarded dipole sector.  Which part: the two softened poles, the
+      magnetization term, or the material-derivative term?
+
+105b. THE SECTOR HAS TWO ROADS, NOT ONE.  retardedExternalForces moves the
+      orbit through (1) the Lorentz force on each CHARGE in the partner's
+      dipole field, poles plus magnetization, and (2) the force on each
+      MOMENT, covariantDipoleGradientForce, which differentiates U = mu.B + p.E
+      in the partner's FULL field -- its Lienard-Wiechert charge field as well
+      as its pole and magnetization fields -- and adds the material term
+      gamma v DU/Dt / c^2.  So there are six contributions, charge or moment in
+      the partner's charge, pole or magnetization field, and the material
+      term runs across all of road (2).
+
+105c. METHOD.  A temporary tree adds six run-time probe switches
+      (tools/build_variant.sh --probe-switches).  The probe follows the section
+      104 control trajectory and at each of its 256 steps evaluates F1+F2 on
+      the same state and engine history under nine switch combinations;
+      the fields are linear in each part, so differences isolate each
+      contribution.  Rule written first: the source carries more than 50% of
+      the integrated net force along the pair's final momentum.
+
+105d. RESULT, one orbit.
+        contribution                                along P     share
+        1 charge in the partner's charge field      +0.015 mc     2.1%
+        2 charge in the partner's POLE field        -0.035 mc    -5.2%
+        3 charge in the partner's MAGNETIZATION     +0.106 mc    15.6%
+        4 MOMENT in the partner's CHARGE field      +0.601 mc    88.1%
+        5 moment in the partner's pole field        +0.002 mc     0.3%
+        6 moment in the partner's magnetization     -0.007 mc    -1.0%
+          the MATERIAL term, all fields             -0.041 mc    -6.0%
+      Checks: the six sum to the full net force within 2.9e-13; the integral
+      of F1+F2, 0.682 mc, matches the mechanical momentum gained, 0.688 mc.
+
+105e. CONFIRMED ON THE TRAJECTORY.  With CREM_PROBE_NO_LW_IN_MOMENT (road 2
+      loses the partner's charge field), beta_cm after one orbit is 0.047
+      against 0.315 (rule, written first: below 0.05), with the same plunge to
+      0.36 r* and a ledger change of -1.1 |U_dd| instead of +51.  The residue
+      is the size of the instantaneous sector's (0.041, section 104e).
+
+105f. READING.  None of the three named suspects carries it.  The propulsion
+      is the spin-orbit road: the force on each moment in the partner's
+      retarded charge field.  Its reaction is the force on each charge in the
+      moment's field (2 and 3), which adds only +0.07 mc, so it does not
+      balance it.  Of the three suspects only the magnetization matters, at
+      15.6%, and it acts on the CHARGE, not on the moment.
+
+105g. NOT DONE.  Why road (2)'s spin-orbit force is unbalanced in the
+      retarded sector is not established.  One lead, untested: the Thomas
+      back-reaction added in section 80 sits in chargeDipoleForces, the
+      instantaneous sum, and does not appear in retardedExternalForces.
+      Hidden momentum and field momentum were not computed.  One
+      configuration (para, tilt 0, 1 r*), one orbit.

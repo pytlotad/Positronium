@@ -1,0 +1,5 @@
+Raw outputs behind audit section 105 (2026-09-17).
+  split_result.txt  tools/dipole_sector_momentum_split.cpp (built with --probe-switches)
+  split_traj.txt    tools/ledger_engine_drift.cpp built with --probe-switches,
+                    CREM_PROBE_NO_LW_IN_MOMENT=1, para 1 r* tilt 0, one orbit
+  prereg_split.txt  rules with timestamps

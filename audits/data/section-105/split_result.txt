@@ -1,0 +1,15 @@
+t/P 0.25  r 0.593 r*  |P|/mc 0.5043  |integral T|/mc 0.5035
+t/P 0.50  r 0.812 r*  |P|/mc 0.3793  |integral T|/mc 0.3788
+t/P 0.75  r 0.962 r*  |P|/mc 0.8295  |integral T|/mc 0.8313
+t/P 1.00  r 0.533 r*  |P|/mc 0.6875  |integral T|/mc 0.6817
+
+ok po obiegu; |P| mechaniczny 0.6875 mc, calka F1+F2 wzdluz P 0.6817 mc
+wklad                                         wzdluz P/mc     udzial  |wektor|/mc
+1 ladunek w polu ladunku partnera (LW)            +0.0145       2.1%       0.0150
+2 ladunek w polu biegunow partnera                -0.0354      -5.2%       0.0360
+3 ladunek w polu magnetyzacji partnera            +0.1063      15.6%       0.1071
+4 moment w polu ladunku partnera                  +0.6009      88.1%       0.6010
+5 moment w polu biegunow partnera                 +0.0022       0.3%       0.0022
+6 moment w polu magnetyzacji partnera             -0.0069      -1.0%       0.0144
+   w tym czlon materialny (wszystkie pola)        -0.0410      -6.0%       0.0412
+suma 1-6 wzdluz P +0.6817 mc wobec pelnej +0.6817 mc (domkniecie 2.89e-13)
