@@ -1,0 +1,5 @@
+Krok 1: wynik orto-para z sekcji 98A na HEAD z cofnietym wylacznie e36bf5c.
+Ziarna 70000-70019, --spin-quantization, s_max 0.30, zegar laboratoryjny.
+Dla kazdego ziarna: zmiana = (orto-para)_cofniete - (orto-para)_HEAD.
+Wynik 98 ZMIENIA SIE, jesli |srednia zmiana| > 3 bledy standardowe i > 10 fs.
+2026-09-17T13:33:09+02:00

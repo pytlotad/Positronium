@@ -1,0 +1,3 @@
+Categorized validation verdict
+Enforced checks:     62/62
+validation verdict: PASS

@@ -727,6 +727,9 @@ inline int zeroPointModes = 64;
 //                          binding resource at the bottom of the orbit is the
 //                          SUBDIVISION budget, not the outer step.  A
 //                          constant dt of the same nominal fineness needs 26.
+//                          Measured before audit 103's field correction; since
+//                          it the passage reaches 0.2095 r* and localOrbit
+//                          needs depth 26 as well.
 //   CREM_PAIR_L_WITH_E     Recompute angular momentum on the same schedule as
 //                          energy across a skipped span; this is the change
 //                          measured to remove 90% of the L/E separation.

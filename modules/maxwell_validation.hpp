@@ -3190,6 +3190,53 @@ inline int runMaxwellSelfTest(
         &&std::isfinite(boostedStaticDipoleFieldResidual9999)
         &&boostedStaticDipoleFieldResidual9995<1.0e-5
         &&boostedStaticDipoleFieldResidual9999<1.0e-5;
+    // The check above sits at 2 Bohr radii, about 274 r*, where the moment's
+    // magnetization (contact) term is ~(eps/R)^2 = 1e-5 of the field, so it
+    // could not see that term centred in the wrong place: e36bf5c put it on
+    // the RETARDED position with the lab moment, an 8% error at beta 0.05 and
+    // 58% at beta 0.3 near 1 r*, and passed every check (audit section 103).
+    // Here the full B and E of a uniformly moving loop are compared with the
+    // boosted rest-frame loop field inside the moment radius's range.
+    const auto movingMagnetizationResidual=[&](double beta,double radiusInRStar) {
+        const Vec3 velocity{beta*c,0,0};
+        const Vec3 properMoment{0.2*secondMagneticMoment,-0.4*secondMagneticMoment,
+                                0.8*secondMagneticMoment};
+        State now;
+        now.firstPosition={1.0e4*comptonBarrierRadius,0,0};
+        now.secondVelocity=velocity;
+        now.secondProperDipole=properMoment;
+        synchronizeCovariantDipoles(now);
+        StateHistory history;
+        const double span=40.0*comptonBarrierRadius/c;
+        for(int sample=64;sample>=0;--sample) {
+            State past=now;
+            past.time=-span*static_cast<double>(sample)/64.0;
+            past.secondPosition=velocity*past.time;
+            synchronizeCovariantDipoles(past);
+            history.push_back(past);
+        }
+        const double gammaFactor=1.0/std::sqrt(1.0-beta*beta);
+        const Vec3 observation=Vec3{0.5,0.7,-0.4}*(radiusInRStar*comptonBarrierRadius);
+        const ElectromagneticField field=retardedMagneticDipoleField(
+            observation,0.0,history,now,false);
+        Vec3 restFrameOffset=observation;
+        restFrameOffset.x*=gammaFactor;
+        const Vec3 restField=plummerMagneticDipoleField(
+            restFrameOffset,properMoment,magneticDipoleRadius());
+        const Vec3 expectedMagnetic=restField*gammaFactor
+            -velocity*(gammaFactor*gammaFactor/(gammaFactor+1.0)
+                       *dot(velocity,restField)/(c*c));
+        const Vec3 expectedElectric=cross(velocity,restField)*(-gammaFactor);
+        return std::max((field.magnetic-expectedMagnetic).norm()/expectedMagnetic.norm(),
+                        (field.electric-expectedElectric).norm()/expectedElectric.norm());
+    };
+    double movingMagnetizationWorst=0.0;
+    for(double beta:{0.05,0.3})
+        for(double radius:{1.0,2.0})
+            movingMagnetizationWorst=std::max(movingMagnetizationWorst,
+                movingMagnetizationResidual(beta,radius));
+    const bool movingMagnetizationOk=std::isfinite(movingMagnetizationWorst)
+        &&movingMagnetizationWorst<1.0e-8;
     // retardedMagneticDipoleField declares its dynamic terms as coming from
     // A_reg=w(r)[m(t_r)xn/r^2+mdot(t_r)xn/(cr)], but only multiplied the
     // unregularized induction/radiation formulas by w(r) -- not the full
@@ -6066,7 +6113,7 @@ inline int runMaxwellSelfTest(
         && gPhotonBalanceAudit.belowThreshold.load()==0
         && gPhotonBalanceAudit.worstNullResidual.load()<1.0e-6;
 
-    const std::array<ValidationCheck,61> regressionChecks{{
+    const std::array<ValidationCheck,62> regressionChecks{{
         {ValidationSection::PhysicalDomain,"retarded-field-causality",
          retardedCausalityOk},
         {ValidationSection::IndependentBalance,"photon-four-momentum-balance",
@@ -6096,6 +6143,7 @@ inline int runMaxwellSelfTest(
         {ValidationSection::PhysicalDomain,"particle-covariance",particleCovarianceOk},
         {ValidationSection::AlgebraicIdentity,"dipole-tensor-covariance",dipoleTensorCovarianceOk},
         {ValidationSection::AlgebraicIdentity,"dipole-boosted-static-field",boostedStaticDipoleFieldOk},
+        {ValidationSection::AlgebraicIdentity,"dipole-moving-magnetization",movingMagnetizationOk},
         {ValidationSection::AlgebraicIdentity,"regularized-induction-curl",regularizedInductionCurlOk},
         {ValidationSection::AlgebraicIdentity,"electric-magnetic-dipole-interference",electricMagneticDipoleInterferenceOk},
         {ValidationSection::NumericalRegression,"mass-and-self-force",massAndSelfForceOk},

@@ -75,6 +75,13 @@ using namespace positronium::parameters;
 // warning: the binding resource at the bottom of the orbit is the subdivision
 // budget, not the outer step, and no choice of law removes the need for
 // maximumDepth 20 on this geometry.
+//
+// THOSE NUMBERS PREDATE AUDIT 103 and were taken with the magnetization term
+// centred on the retarded position.  With the corrected field the same
+// geometry dips to 0.2095 r*, not 0.2631, and localOrbit at N = 256 needs
+// maximumDepth 26 to finish three windows; the periapsis agrees at
+// tolerances 1e-8 and 1e-6 (20992 and 2311 force evaluations).  The
+// comparison between the three laws has not been repeated on it.
 enum class TimeRegularizationLaw { localOrbit, constantAngle };
 
 struct RegularizedStep {

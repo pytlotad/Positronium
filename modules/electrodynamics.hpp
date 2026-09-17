@@ -2384,15 +2384,48 @@ inline ElectromagneticField retardedMagneticDipoleFieldExact(
                 history,present,sourceIsFirst,magnetizationTime);
             if(converged) break;
         }
-        const RetardedElectricDipoleKinematics retardedMoment=
-            historicalIntegratedDipoleKinematics(
-                history,present,sourceIsFirst,magnetizationTime,false);
-        Vec3 properMoment=retardedMoment.moment;
+        // The PROPER moment at the retarded time.  movingMagnetizationField
+        // boosts a rest-frame magnetization, so it needs the proper moment;
+        // historicalIntegratedDipoleKinematics returns mu_lab/gamma, the
+        // moment of a source integral, which differs at second order in beta
+        // and left the boosted loop off by 1.2e-2 at beta 0.3 (section 103).
+        const State retardedState=
+            historicalState(history,present,magnetizationTime);
+        Vec3 properMoment=sourceIsFirst?retardedState.firstProperDipole
+                                       :retardedState.secondProperDipole;
         if(properMoment.squaredNorm()==0.0)
             properMoment=sourceIsFirst?present.firstProperDipole
                                       :present.secondProperDipole;
+        // CENTRED ON THE EXTRAPOLATED PRESENT POSITION, not on the retarded
+        // one (audit section 103).  Reading the kinematics at the retarded
+        // time is what removed the kink of section 88, but a boosted static
+        // field is centred where the source IS at the observation time, as the
+        // Lienard-Wiechert velocity field is.  Centring it on the retarded
+        // position shifted it back by beta R along the motion: against the
+        // boosted loop in uniform motion it erred by 8% at beta 0.05 and 58%
+        // at beta 0.3 near 1 r*, and on engine trajectories the tangential
+        // force it left did work, pumping energy into para and draining ortho
+        // (sections 101e-102).
+        //
+        // The retarded event is extrapolated to the observation time to
+        // SECOND order, with the retarded acceleration the pole fields beside
+        // it already use.  Three recipes were measured (section 103):
+        //   kinematics at the observation time: the ledger is exact again, but
+        //     the one-sided slope ratio returns to 5.84 -- section 88's kink;
+        //   first-order extrapolation: smooth (1.0000) and exact in uniform
+        //     motion, but on a circular orbit it misses by a^2 dt^2/2 and
+        //     turns the velocity by omega dt, leaving the ledger 1e3 off at
+        //     2 r* (3.0e-3 against 2.3e-6);
+        //   second order: smooth (1.0000), exact in uniform motion, and the
+        //     ledger back to the pre-regression digits (2.31e-6 at 2 r*).
+        const double lag=observationTime-magnetizationTime;
+        const Vec3 extrapolatedSourcePosition=source.position
+            +source.velocity*lag+source.acceleration*(0.5*lag*lag);
+        const Vec3 extrapolatedSourceVelocity=source.velocity
+            +source.acceleration*lag;
         const ElectromagneticField magnetization=movingMagnetizationField(
-            observationPosition-source.position,source.velocity,
+            observationPosition-extrapolatedSourcePosition,
+            extrapolatedSourceVelocity,
             properMoment,magneticDipoleRadius());
         field.electric+=magnetization.electric;
         field.magnetic+=magnetization.magnetic;

@@ -1,0 +1,5 @@
+Categorized validation verdict
+  algebraic identities: 24/25 FAIL
+    FAILED: dipole-moving-magnetization
+Enforced checks:     61/62
+validation verdict: FAIL

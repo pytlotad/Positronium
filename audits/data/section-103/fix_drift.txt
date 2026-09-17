@@ -1,0 +1,12 @@
+r 1.0 ch bez tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 2.696e-01 | E_koniec-E0 /|U_dd| -2.696e-01 | r 0.9190..1.0142 r* | 12 s
+r 1.0 ch orto tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 2.229e-01 | E_koniec-E0 /|U_dd| -2.062e-01 | r 0.9585..1.7670 r* | 417 s
+r 2.0 ch bez tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.901e-01 | E_koniec-E0 /|U_dd| -1.901e-01 | r 1.9418..2.0124 r* | 9 s
+r 2.0 ch para tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 2.109e-01 | E_koniec-E0 /|U_dd| -3.101e-02 | r 1.9127..2.3234 r* | 490 s
+r 2.0 ch orto tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.592e+00 | E_koniec-E0 /|U_dd| -1.592e+00 | r 1.5113..1.9999 r* | 699 s
+r 5.0 ch para tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 6.243e-02 | E_koniec-E0 /|U_dd| -6.243e-02 | r 4.9815..5.9664 r* | 287 s
+r 5.0 ch bez tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.109e-01 | E_koniec-E0 /|U_dd| -1.109e-01 | r 4.9626..5.0120 r* | 15 s
+r 5.0 ch orto tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 4.686e-01 | E_koniec-E0 /|U_dd| -4.686e-01 | r 3.6847..4.9998 r* | 382 s
+r 10.0 ch bez tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.326e-01 | E_koniec-E0 /|U_dd| -1.326e-01 | r 9.9745..10.0125 r* | 12 s
+r 10.0 ch para tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.146e-01 | E_koniec-E0 /|U_dd| -1.146e-01 | r 9.9832..10.5759 r* | 172 s
+r 10.0 ch orto tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.996e-01 | E_koniec-E0 /|U_dd| -1.996e-01 | r 9.1089..9.9999 r* | 172 s
+r 1.0 ch para tilt 0 tol 1e-08 | AWARIA 739/1024 | zakres E/|U_dd| 1.298e+02 | E_koniec-E0 /|U_dd| +3.634e+01 | r 0.2160..0.9998 r* | 2919 s

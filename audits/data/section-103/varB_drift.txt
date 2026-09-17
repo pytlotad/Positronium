@@ -1,0 +1,2 @@
+r 2.0 ch para tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 2.013e-01 | E_koniec-E0 /|U_dd| -4.013e-02 | r 1.9071..2.2910 r* | 149 s
+r 2.0 ch orto tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 3.410e-01 | E_koniec-E0 /|U_dd| -3.410e-01 | r 1.6359..1.9999 r* | 204 s

@@ -1,0 +1,2 @@
+--- self-contained: 37/37, failing: 0 ---
+produkcja: 964752 B

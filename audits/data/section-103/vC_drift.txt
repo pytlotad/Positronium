@@ -1,0 +1,5 @@
+r 10.0 ch para tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.146e-01 | E_koniec-E0 /|U_dd| -1.146e-01 | r 9.9831..10.5758 r* | 85 s
+r 5.0 ch para tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 6.311e-02 | E_koniec-E0 /|U_dd| -6.311e-02 | r 4.9814..5.9655 r* | 144 s
+r 2.0 ch bez tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.901e-01 | E_koniec-E0 /|U_dd| -1.901e-01 | r 1.9418..2.0124 r* | 6 s
+r 10.0 ch orto tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 1.842e-01 | E_koniec-E0 /|U_dd| -1.842e-01 | r 9.1110..9.9999 r* | 83 s
+r 1.0 ch para tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 2.930e+02 | E_koniec-E0 /|U_dd| +2.929e+02 | r 0.2899..3.3361 r* | 629 s

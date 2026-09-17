@@ -1,0 +1,4 @@
+wykladnik r^1.5 krokow/obieg   256 gleb 26 | cale okno krokow     300  ukonczone 3.000 orbity  perycentrow 1  r_min 0.2095 r*  czas 19.2 s
+        r_max 21.418 r*  dryf E_kepler +1.364e+00 wzgl.  L koncowe 0.0208 hbar (start 0.0316)
+        najmniejszy krok ZEWNETRZNY 8.889e-24 s przy r=0.2095 r*, L=0.0264 hbar
+        wywolan kroku: 2311, sredni dt 6.528e-23 s, najmniejszy 1.597e-27 s

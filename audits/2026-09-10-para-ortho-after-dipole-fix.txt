@@ -6804,3 +6804,89 @@ measurement of whether that survives a cascade.
       small inside ~10 r*.  This is a candidate, not a finding.
 
 102g. LIMITS.  Tilt 0 only, four orbits, one start per radius, e+e- only.
+
+103. THE MAGNETIZATION TERM, CENTRED CORRECTLY: e36bf5c's LEDGER REGRESSION
+     FIXED WITHOUT BRINGING BACK SECTION 88's KINK
+==================================================================
+
+103a. STEP 1: SECTION 98 DOES NOT DEPEND ON THE REGRESSION.  The pairs of 98A
+      on HEAD with ONLY e36bf5c reverted (tools/build_variant.sh --revert;
+      reverting to 776a57e would also have brought back the whole-checkpoint
+      clock).  Rule written first: 98 changes if the mean per-seed change of
+      ortho - para exceeds three standard errors and 10 fs.
+        ortho - para, reverted     -98.099 +- 14.416 fs   (98A: -97.924)
+        per-seed change            -0.175 +- 0.092 fs, n = 20
+      Not met; ortho shorter in 20 of 20.  Production's checkpoints sit at
+      40 r* and beyond, where the regression is invisible.
+
+103b. THE CAUSE: TWO ERRORS IN ONE LINE.  Section 84b's check -- a uniformly
+      moving moment's retarded field against the boosted rest-frame loop --
+      had drifted out of use (its reference still used the numerical floor).
+      Redone with magneticDipoleRadius(), B relative error:
+        beta   r      776a57e    HEAD (e36bf5c)
+        0.05   1 r*   3.8e-10    8.3e-02
+        0.30   1 r*   3.6e-10    5.8e-01
+        0.30   2 r*   4.9e-10    3.2e-01
+      e36bf5c read the magnetization term at the retarded time, which is what
+      removed section 88's kink, but (i) centred the boosted field on the
+      RETARDED position, an error first order in beta, and (ii) passed
+      mu_lab/gamma from historicalIntegratedDipoleKinematics where
+      movingMagnetizationField boosts a PROPER moment, an error second order
+      in beta.  On an orbit (i) leaves a tangential force that does work:
+      the energy pumping of sections 101e-102.
+
+103c. THREE RECIPES, MEASURED.  All keep the retarded proper moment.
+
+                              one-sided   86f probe     engine drift, |U_dd|
+      centre and velocity     slope       2 r* para 0   2 r* ortho  5 r* ortho
+      e36bf5c (retarded)      1.0000      3.20e-01      34.4 FAIL   4.61
+      A  first-order extrap.  1.0000      3.02e-03      1.59        0.469
+      B  observation time     5.84        2.31e-06      0.341       0.290
+      C  second-order extrap. 1.0000      2.31e-06      0.300       0.287
+      776a57e (before)        5.78*       2.31e-06      0.341       0.290
+      (* section 88's value before its fix)
+
+      B restores the ledger exactly and brings the kink straight back.  A is
+      smooth and exact in uniform motion but misses a dt^2/2 and turns the
+      velocity by omega dt on a circular orbit.  C extrapolates the retarded
+      event with the retarded acceleration the pole fields already use:
+      smooth, exact in uniform motion, and every ledger digit of the probe
+      back to its pre-regression value (2.31e-6, 2.14e-6, 1.22e-4, 7.71e-8 at
+      2 and 1 r*; 1.32e-3, 6.60e-5, 8.00e-2, 0.141 at 0.5 r*).  C is adopted.
+
+103d. VERIFIED ON THE WORKING TREE.
+      - Engine drift, |U_dd| over four orbits (776a57e / HEAD / C):
+          2 r* para 0.201 / 1.540 / 0.209;  5 r* para 0.063 / 0.222 / 0.063;
+          10 r* para 0.115 / 0.037 / 0.115; 10 r* ortho 0.184 / 0.341 / 0.184;
+          1 r* ortho 0.079 / 14.8 FAIL / 0.073; no moments identical in all.
+      - One-sided slopes 1.0000 at both section 88 geometries.
+      - Section 98 pairs (70012, 70003, 70001, 70005): each lifetime moves by
+        at most 0.93 fs, each ortho - para by at most 1.1 fs.
+      - Validation 62/62, header isolation 37/37, production builds.
+
+103e. THE REGRESSION NOW HAS A CHECK.  The existing dipole-boosted-static-field
+      check sits at 2 Bohr radii, ~274 r*, where the magnetization term is
+      ~1e-5 of the field, so even a 58% error in it passed.  New check
+      dipole-moving-magnetization: full B and E of a uniformly moving loop at
+      beta 0.05 and 0.3, 1 and 2 r*, against the boosted loop, bound 1e-8
+      (correct code ~5e-10).  With HEAD's electrodynamics.hpp restored,
+      validation reports 61/62 with exactly this check failing.
+
+103f. A CORRECTION TO SECTIONS 88f AND 89.  Their deep passage (apoapsis 3 r*,
+      periapsis 0.3 r*) reaching 0.2631 r* in three windows at depth 20 was
+      measured with the mis-centred field.  With C the same passage dips to
+      0.2095 r*; at depth 20 it breaks off in the first plunge (one-sided
+      slopes 1.0000 at the failing state: not a kink), at depth 26 it finishes
+      three windows with the periapsis 0.2095 r* at both tolerance 1e-8 and
+      1e-6 (20992 and 2311 force evaluations).  The deep work recipe becomes
+      depth 26; crem_engine.hpp and the panel say so.  Section 89's comparison
+      of step laws was not repeated.
+
+103g. STILL OPEN.  Para at 1 r*, tilt 0, plunges to 0.29 r* and gains 293
+      |U_dd| over four orbits under C.  Before the regression it gained 436;
+      HEAD's 11.9 came from the very energy pumping fixed here.  Whether that
+      is the deep-orbit ledger or step resolution is not determined.
+
+103h. TOOLS.  moving_magnetization_field.cpp and coupling_one_sided_slopes.cpp
+      join tools/; build_variant.sh gains --revert.  Raw data in
+      audits/data/section-103.

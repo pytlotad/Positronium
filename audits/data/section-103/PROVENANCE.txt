@@ -1,0 +1,10 @@
+Raw outputs behind audit section 103 (2026-09-17).
+  rvA_*.out, prereg_revert98.txt   step 1: section 98A pairs on HEAD with only e36bf5c
+                                   reverted (tools/build_variant.sh --revert e36bf5c)
+  fix_*.txt                        first-order extrapolation (variant A)
+  varB_*.txt                       observation-time kinematics (variant B)
+  varC_*.txt                       second-order extrapolation (variant C, adopted)
+  vC_*.txt                         verification of variant C in the working tree
+  dC_*.txt                         deep orbit apo 3 / peri 0.3 r* under variant C
+Tools: ledger_engine_drift, ledger_near_barrier, coupling_one_sided_slopes,
+moving_magnetization_field, time_step_law_compare, para_ortho_lab_pairs.

@@ -1,0 +1,4 @@
+wykladnik r^1.5 krokow/obieg   256 gleb 20 | AWARIA    krokow     174  ukonczone 0.523 orbity  perycentrow 1  r_min 0.2095 r*  czas 169.9 s
+        r_max 2.999 r*  dryf E_kepler -4.396e-01 wzgl.  L koncowe 0.0209 hbar (start 0.0316)
+        najmniejszy krok ZEWNETRZNY 8.890e-24 s przy r=0.2095 r*, L=0.0264 hbar
+        wywolan kroku: 16325, sredni dt 1.612e-24 s, najmniejszy 2.948e-29 s

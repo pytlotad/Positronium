@@ -1,0 +1,1 @@
+r 5.0 ch orto tilt 0 tol 1e-08 | ok 1024/1024 | zakres E/|U_dd| 2.869e-01 | E_koniec-E0 /|U_dd| -2.869e-01 | r 3.7111..4.9998 r* | 132 s
