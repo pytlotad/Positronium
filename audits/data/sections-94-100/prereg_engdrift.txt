@@ -1,0 +1,11 @@
+Czy regresja bilansu z e36bf5c jest prawdziwa?  Zapis PRZED pomiarem.
+Test: silnik, sily opoznione, reakcja wylaczona, orbita kolowa 2 r* i 1 r*,
+momenty wzdluz normalnej (para, orto) i para bez momentow; 776a57e kontra HEAD;
+zakres conservativeParticleEnergy w 4 obiegach / |U_dd|.
+Prawdziwa: na HEAD dryf z momentami >= 10x wiekszy niz na 776a57e przy
+niezmienionym dryfie bez momentow.  Artefakt sondy: oba w granicach 3x.
+Kontrola: 2 r* para przy tol 1e-9 na obu zapisach.
+2026-09-17T12:48:10+02:00
+Uzupelnienie przed pomiarem przy 5 i 10 r*: produkcja jest narazona, jesli na HEAD
+dryf z momentami przekracza dryf bez momentow co najmniej 3x i rozni sie od 776a57e.
+2026-09-17T13:06:56+02:00

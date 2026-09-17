@@ -6742,3 +6742,65 @@ measurement of whether that survives a cascade.
 101g. LIMITS.  The tools are copies of the probes as they ran, with headers
       added; they were not refactored.  Sections 85, 87 and 89's tools were
       built but not rerun here.
+
+102. THE LEDGER REGRESSION OF e36bf5c IS REAL ON ENGINE TRAJECTORIES
+==================================================================
+
+102a. QUESTION.  Section 101e found the spin sector of the ledger far less
+      conservative since e36bf5c, but on a flow taken over a history
+      synthesized from one state, which e36bf5c's retarded-time iteration
+      reads.  Real inconsistency or probe artefact?
+
+102b. TEST.  tools/ledger_engine_drift.cpp: the engine itself, retarded
+      forces, reaction off, circular start, moments along the orbital
+      normal, four orbits at 256 steps each; range of conservativeParticleEnergy
+      over the window in units of |U_dd|.  Built on 776a57e (before) and on
+      HEAD 049a4f7 (after).  Decision rule written first: real if the drift
+      with moments grows at least tenfold while the moment-free drift is
+      unchanged; artefact if within threefold.  Exposure of production (at
+      5 and 10 r*, rule added before those runs): HEAD drift with moments at
+      least three times the moment-free drift, and different from before.
+
+102c. RESULT.
+
+        r/r*  case        776a57e             HEAD
+        1     no moments  0.270               0.270
+        1     para        436.5 (to 0.26 r*)  11.9 (out to 22.8 r*)
+        1     ortho       0.079               14.8, FAILED at 0.23 r*
+        2     no moments  0.190               0.190
+        2     para        0.201               1.540 (out to 3.74 r*)
+        2     ortho       0.341               34.4, FAILED at 0.30 r*
+        5     no moments  0.111               0.111
+        5     para        0.063               0.222
+        5     ortho       0.290               4.611 (down to 3.11 r*)
+        10    no moments  0.133               0.133
+        10    para        0.115               0.037
+        10    ortho       0.184               0.341
+
+      The moment-free drift is identical to every digit on both commits,
+      and tolerance 1e-9 reproduces 1e-8 at 2 r* on both (0.2013 and 1.540).
+
+102d. READING.  Real.  With moments, HEAD pumps energy into para and drains
+      it from ortho far above the moment-free background: at 2 r* ortho
+      grows 100-fold and the engine fails below the barrier, at 1 r* ortho
+      186-fold.  Before e36bf5c both channels at 2 r* held the background
+      level.  But e36bf5c also removed a worse defect: para at 1 r* went from
+      +436 |U_dd| and a plunge to 0.26 r* to +11.9.  It traded one defect for
+      another.  Trajectories diverge between the commits, so part of each
+      number is where the orbit went; the direction of the energy change
+      (up for para, down for ortho) is systematic.
+
+102e. PRODUCTION.  Exposed at 5 r*: ortho's drift is 42 times the background
+      and 16 times its value before, with the orbit sinking from 5 to 3.1 r*
+      in four orbits.  Para at 5 r* stays below the threshold, and at 10 r*
+      both channels are within a factor two.  Production's last cascade ends
+      near 4.9 r*, while its checkpoints sit at 40 r* and beyond.  The effect
+      on lifetimes, including the para/ortho difference of sections 98-100,
+      is not measured.
+
+102f. LIKELY PLACE, NOT DIAGNOSED.  The force reads the magnetization term at
+      the retarded time since e36bf5c; the ledger's contact energy is
+      instantaneous, and with a moment radius of 0.97 r* that term is not
+      small inside ~10 r*.  This is a candidate, not a finding.
+
+102g. LIMITS.  Tilt 0 only, four orbits, one start per radius, e+e- only.
