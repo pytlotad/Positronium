@@ -1,0 +1,6 @@
+Krok 2, hipotezy zapisane PRZED uruchomieniem nowego zespolu (ziarna 60000-60079).
+H1: przy cos startowym < -0.4 nie wystepuje galaz 216.7 ps.
+H2: galaz koreluje z cos startowym (Spearman, 5% dwustronnie).
+H3: wewnatrz kazdej galezi czas zycia koreluje z cos startowym (Spearman).
+Ocenzurowane trajektorie wylaczone z testow i zliczone osobno.
+2026-09-17T07:26:46+02:00

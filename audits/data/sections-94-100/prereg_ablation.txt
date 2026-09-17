@@ -1,0 +1,6 @@
+Ablacja roznicy orto-para (pomiar A, s_max 0.30), ziarna 70012 70003 70001 70005.
+Przewidywania zapisane PRZED pomiarem:
+ kontakt (CREM_MAGNETIC_RADIUS_SCALE=0.05): roznica zmienia sie o < 10 fs w kazdej parze.
+ bez sil dipolowych (CREM_NO_DIPOLE_FORCE=1): wieksza czesc roznicy znika.
+ bez reakcji Thomasa: bez przewidywania.
+2026-09-17T11:20:24+02:00

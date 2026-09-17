@@ -1,0 +1,9 @@
+Para kontra orto po poprawce zegara (6dc807b). Hipotezy zapisane PRZED pomiarem.
+A: pary z kwantyzacja, s_max 0.30, ziarna 70000-70019, czas laboratoryjny.
+   H1: srednia roznica orto-para != 0 (test znakow i Wilcoxon, 5% dwustronnie).
+B: pary z kwantyzacja, s_max 0.15, ziarna 70000-70009.
+   H2: roznica ma ten sam znak i zgodna wielkosc co w A.
+C: losowanie swobodne, s_max 0.30, ziarna 71000-71039.
+   H3: czas laboratoryjny koreluje z cos startowym (Spearman, 5%).
+Ocenzurowane wylaczone i zliczone osobno.
+2026-09-17T09:50:33+02:00

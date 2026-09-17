@@ -1,0 +1,6 @@
+Zamrozenie secularnego transportu spin-orbita (kopia drzewa, CREM_FREEZE_SPIN_ORBIT).
+Ziarna 70012 70003 (cos z > 0, bazowo -191, -159 fs), 70001 70005 (cos z < 0, -2, -15 fs).
+Przewidywanie PRZED pomiarem: zaleznosc od znaku cos z znika, cztery roznice
+przestaja sie dzielic na dwie grupy.  Kontrola: 70001 z tej samej kopii bez zmiennej
+musi odtworzyc -2.05 fs.
+2026-09-17T11:42:08+02:00

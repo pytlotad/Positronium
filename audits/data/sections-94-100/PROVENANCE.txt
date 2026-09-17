@@ -1,0 +1,19 @@
+Raw outputs behind audit sections 94-100 (2026-09-17), kept so the analyses in
+tools/ can be rerun.  Model commits: 94-96 on 2c34070 and earlier (whole-
+checkpoint clock), 97-100 on 6dc807b and later (clock ends at the photon).
+
+  94  cosevo_[0-3].out, cosevo_[0-3].err.gz   tools/moment_angle_evolution.{cpp,py}
+      (the .err.gz keep only TRAJ markers and cos= from CREM_DEBUG_ALIGN)
+  95  step2_[0-3].out                          tools/lifetime_vs_start_angle.{cpp,py}
+  96  pairs.txt, trace_<seed>.out/.err.gz      tools/checkpoint_photon_trace.{cpp,py}
+  98  poA_*.out, poB_*.out, poC_*.out          tools/para_ortho_lab_pairs.{cpp,py}
+  99  abl_<condition>_<seed>.out               same tool, environment switches
+  100 tilt.txt, frz_<seed>.out, frz_control_70001.out
+                                               same tool; tools/build_variant.sh
+  prereg_*.txt  the hypotheses as written before each run, with timestamps
+
+Rerun an analysis in place, e.g.
+  tools/para_ortho_lab_pairs.py audits/data/sections-94-100
+
+  101 bisect_<commit>.txt   tools/ledger_near_barrier.cpp built on eba786b,
+      776a57e and e36bf5c (section 101e)

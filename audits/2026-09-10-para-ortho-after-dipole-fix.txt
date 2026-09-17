@@ -6654,3 +6654,91 @@ measurement of whether that survives a cascade.
 
 100g. LIMITS.  --spin-quantization pairs only, one checkpoint size,
       production defaults otherwise, e+e- only.
+
+101. KEY PROBES MOVED TO tools/, RAW DATA KEPT, AND WHAT THE MOVE FOUND
+==================================================================
+
+101a. WHY.  Three results could not be rerun in this session because their
+      probes had gone with a session scratch directory.  The probes behind
+      sections 82-100 are now in tools/, each with the section it backs, a
+      build line and the exact run used:
+
+        tool                                     sections
+        ledger_spin_orbit_candidates.cpp         82c
+        ledger_near_barrier.cpp                  86f, 101e
+        ledger_spin_sector_rate.cpp              92c-d
+        ledger_spin_sector_background.cpp        92c
+        contact_ensemble.cpp                     85
+        zpf_contact_sampling.cpp                 87
+        time_step_law_compare.cpp                89
+        singlet_field_split.cpp                  90a
+        dipole_force_ratio.cpp                   93b
+        dipole_work_per_orbit.cpp                93c
+        moment_angle_evolution.cpp, .py          94
+        lifetime_vs_start_angle.cpp, .py         95
+        checkpoint_photon_trace.cpp, .py         96-97
+        para_ortho_lab_pairs.cpp, .py            98-100
+        build_variant.sh                         96-98, 100
+
+      build_variant.sh builds a tool against a temporary copy of HEAD with
+      maximumJumpParameter changed or the secular spin-orbit half-step
+      skippable, which is how the checkpoint scans and the freeze test ran.
+      The analyses take the data directory as an argument.
+
+101b. RAW DATA.  audits/data/sections-94-100 (1.1 MB) holds the outputs of
+      sections 94-100 and the pre-registered hypotheses with their
+      timestamps.  Section 94's diagnostic dumps are cut to trajectory
+      markers and cos values and compressed (42 MB to under 1 MB).
+
+101c. CHECKED.  All fourteen C++ tools build from the repository root.  Run
+      on the repository data, the analyses reproduce the recorded numbers to
+      the last printed digit: drift -0.0004 and branch Spearman +0.206 (94),
+      H2 +0.390 with p 0.0003 (95), first photon after checkpoint 10 and 11
+      in both pairs (96), ortho - para -97.924 fs (98A) and tilt Spearman
+      -0.716 with p 0.0005 (100b).  build_variant.sh builds both variants and
+      refuses an option without a value.
+
+101d. A CORRECTION: TWO OF THE THREE "LOST" PROBES WERE NOT LOST.  Section
+      82's flow probes (energyflow, energyscan, energyscan2, ledgercand) and
+      section 86f's probe (deepledger) were in this session's scratch
+      directory all along.  Section 92b said otherwise without checking the
+      file list.  86f's scale IS defined, in the probe: |U_dd| averaged over
+      16 azimuths of a CIRCULAR orbit times its angular frequency, moments
+      along (0.8 sin t, 0.6 sin t, cos t).  Section 92's rebuilt probe used a
+      Kepler orbit at e = 0.3 and another moment convention, which is why its
+      numbers could not match.  Only section 75's long ZPF probe is lost; it
+      predates this session and is named nowhere.
+
+101e. THE 86f PROBE REPRODUCES 86f, AND SHOWS A REGRESSION.  Built on the
+      commits around it, spin-sector |dE/dt| relative to |U_dd| n:
+
+        r/r*  ch     tilt   eba786b / 776a57e   e36bf5c and today
+        2.0   para    0     2.31e-06            3.20e-01
+        2.0   ortho   0     2.14e-06            3.25e-01
+        2.0   para   90     1.55e-02            1.45e-01
+        1.0   para    0     1.22e-04            6.54e-01
+        1.0   ortho   0     7.70e-08            6.27e-01
+        1.0   ortho  90     5.93e-02            2.67e-01
+        0.5   para    0     1.32e-03            1.43e-01
+        0.5   ortho   0     6.60e-05            1.36e-01
+        0.5   para   90     8.00e-02            1.58e-01
+        0.5   ortho  90     1.41e-01            1.95e-01
+
+      eba786b and 776a57e give 86f's numbers exactly (1.32e-3, 6.60e-5,
+      0.080).  e36bf5c -- section 88, which moved the magnetization term to
+      the retarded time -- makes the spin sector of the ledger far less
+      conservative, most at tilt 0 and away from the barrier: 2.3e-6 to
+      0.32 at 2 r*.  Section 92's rebuilt probe ran after e36bf5c, so its
+      numbers already carry this.
+
+101f. NOT DIAGNOSED.  Two candidates, neither tested.  A real inconsistency:
+      the force now reads the magnetization at the retarded time while the
+      ledger's contact energy is instantaneous, and with a moment radius of
+      0.97 r* that term is not small at 2 r*.  Or a probe artefact: the flow
+      is taken on a causal history synthesized from one state, and e36bf5c
+      iterates the retarded time over that history.  Production stops near
+      4.9 r*; its exposure has not been measured.
+
+101g. LIMITS.  The tools are copies of the probes as they ran, with headers
+      added; they were not refactored.  Sections 85, 87 and 89's tools were
+      built but not rerun here.

@@ -1,0 +1,32 @@
+gSpinQuantization=0 (0 = kat losowany swobodnie)
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50200 t_ps 199.449615 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50201 t_ps 199.455349 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50202 t_ps 199.458533 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50203 t_ps 199.429845 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50204 t_ps 199.455955 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50205 t_ps 199.452154 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50206 t_ps 199.452036 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50207 t_ps 199.451151 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50208 t_ps 199.454335 outcome 0 photons 3
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 300 s).
+CREM calibrations: 1/1
+RESULT seed 50209 t_ps 199.458063 outcome 0 photons 3
+DONE

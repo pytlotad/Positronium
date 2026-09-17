@@ -1,0 +1,13 @@
+# promien momentu 0.9668 r*
+r=2.0 r* para tilt  0 | |dE/dt|_spin 1.019e-02 W | skala |U_dd| n 4.417e+03 W | wzgl. 2.31e-06
+r=2.0 r* para tilt 90 | |dE/dt|_spin 1.508e+02 W | skala |U_dd| n 9.724e+03 W | wzgl. 1.55e-02
+r=2.0 r* orto tilt  0 | |dE/dt|_spin 9.453e-03 W | skala |U_dd| n 4.417e+03 W | wzgl. 2.14e-06
+r=2.0 r* orto tilt 90 | |dE/dt|_spin 3.503e+02 W | skala |U_dd| n 9.724e+03 W | wzgl. 3.60e-02
+r=1.0 r* para tilt  0 | |dE/dt|_spin 6.499e+00 W | skala |U_dd| n 5.317e+04 W | wzgl. 1.22e-04
+r=1.0 r* para tilt 90 | |dE/dt|_spin 2.137e+03 W | skala |U_dd| n 1.447e+05 W | wzgl. 1.48e-02
+r=1.0 r* orto tilt  0 | |dE/dt|_spin 4.094e-03 W | skala |U_dd| n 5.317e+04 W | wzgl. 7.70e-08
+r=1.0 r* orto tilt 90 | |dE/dt|_spin 8.574e+03 W | skala |U_dd| n 1.447e+05 W | wzgl. 5.93e-02
+r=0.5 r* para tilt  0 | |dE/dt|_spin 1.265e+03 W | skala |U_dd| n 9.616e+05 W | wzgl. 1.32e-03
+r=0.5 r* para tilt 90 | |dE/dt|_spin 9.422e+04 W | skala |U_dd| n 1.177e+06 W | wzgl. 8.00e-02
+r=0.5 r* orto tilt  0 | |dE/dt|_spin 6.347e+01 W | skala |U_dd| n 9.616e+05 W | wzgl. 6.60e-05
+r=0.5 r* orto tilt 90 | |dE/dt|_spin 1.665e+05 W | skala |U_dd| n 1.177e+06 W | wzgl. 1.41e-01
