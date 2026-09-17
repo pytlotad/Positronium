@@ -6335,3 +6335,89 @@ measurement of whether that survives a cascade.
 95g. LIMITS.  One budget and production defaults only; e+e- only; the
      photon count is 3 throughout and carries no information here; the step
      near cos = -0.2 is post hoc.
+
+96. WHAT SELECTS THE LIFETIME BRANCH: THE CHECKPOINT CLOCK, AND THE
+    LIFETIME IS NOT CONVERGED IN IT
+==================================================================
+
+96a. QUESTION.  Sections 94 and 95 found two lifetimes, 199.4 and 216.7 ps,
+     with nothing in between, and a branch that correlates with the start
+     angle (Spearman +0.390, p = 0.0003).  Is the branch physics or the
+     secular path's discretization?  The branches of README "Co wybiera
+     galaz" are a different pair (0.278 ps apart, a defect already fixed).
+
+96b. NOT THE INITIAL STATE.  The orbit is prepared sharply: over 120
+     trajectories the radius is identical and the energy differs only in
+     the fifth digit.  No prepared quantity separates the branches: the best,
+     |mu1+mu2| projected on the total angular momentum, classifies 83.3%,
+     against 66.7% with no information and 68.3% for the mutual angle.
+
+96c. THE FIRST PHOTON'S CHECKPOINT.  Two pairs with close start features
+     from different branches, traced with CREM_SKIP_CENSUS and
+     CREM_PHOTON_LADDER.  At n = 1 one checkpoint skips 61438 orbits,
+     18.675 ps.  In both pairs the 13.606 eV ground-state photon fires after
+     checkpoint 10 in the short branch and after checkpoint 11 in the long
+     one, and everything after it shifts rigidly:
+
+       pair            photon 2 (short / long)   photon 3 (short / long)
+       50009 / 60002   198.4973 / 215.7906 ps    199.4427 / 216.7434 ps
+       60040 / 60075   198.4968 / 215.7877 ps    199.4532 / 216.7490 ps
+
+     A shift of 17.29-17.30 ps each time.  It is one checkpoint minus 1.38 ps
+     by which the next stage runs shorter in the long branch; excess hazard
+     carried past the threshold is the likely reason, not verified.
+
+96d. WHY A CHECKPOINT DECIDES IT.  Each checkpoint adds its whole skip's
+     hazard at once, and the emission loop fires while the running hazard
+     exceeds the threshold.  The position of the photon inside the skip,
+     sAtPhoton, is computed, but it sets only the photon's energy ratio and
+     recoil speed.  The clock does not use it: crem_collapse.hpp advances
+     simulatedTimeTotal += checkpointProperTime, the full checkpoint.  So
+     the photon's consequences start at the next checkpoint, and a crossing
+     that lands just before or just after a checkpoint boundary moves the
+     rest of the cascade by about one checkpoint.
+
+96e. THE DECISIVE TEST: SHRINK THE CHECKPOINT.  maximumJumpParameter is a
+     constexpr, so the variants were built from temporary copies of the tree
+     (production code untouched), same four seeds:
+
+       s_max           50009      60002      60040      60075     photon 1
+       0.30 (default)  199.4503   216.7510   199.4600   216.7566  after 10/11
+       0.15            207.7439   207.7501   207.7397   207.7409  after 21
+       0.075           203.3851   203.3806   203.3816   203.3775  after 41
+
+     Halving the checkpoint removes the branches: all four seeds agree to
+     about 10 fs.  The branch is a discretization artefact.
+
+96f. WHY IT CORRELATED WITH THE ANGLE.  The three grids bracket the first
+     photon's true threshold crossing.  Recorded at the end of its
+     checkpoint, it lies in (186.74, 205.42] at 0.30, in (186.74, 196.08] at
+     0.15 and in (186.76, 191.43] at 0.075: between 186.76 and 191.43 ps.
+     The default grid has a boundary at 186.745 ps, right at the lower end.
+     The start angle changes the radiated power very slightly, which moves
+     the crossing across that boundary.  So H2 of section 95 is the angle
+     nudging a crossing that happens to sit on a grid line: a property of
+     the method.  The within-branch slope of 95e, -7.6 +- 2.5 fs per unit
+     of cos, is the size a real power dependence would have, but it is not
+     separated from the method here.
+
+96g. THE LIFETIME ITSELF IS NOT CONVERGED.  With the clock advancing in
+     whole checkpoints, the reported lifetime is late by up to one
+     checkpoint.  Across the three grids it moves from 199.45 or 216.75 to
+     207.74 to 203.38 ps.  The cascade after the first photon takes 11.3 to
+     12.7 ps in every case, so the converged value would lie roughly between
+     198 and 203.4 ps.  The README table showing the lifetime flat within
+     0.4% over s_max 0.045-0.30 (199.428, 198.970, 198.944, 199.747 ps) does
+     not show convergence in general: an error of up to one checkpoint only
+     looks flat when the crossing happens to fall inside each grid's
+     checkpoints.  Every lifetime quoted at the default s_max carries this
+     quantization.
+
+96h. WHAT FOLLOWS, NOT DONE HERE.  The clock should advance to the emission
+     point inside the skip, or the checkpoint should end at the first
+     emission, and lifetime convergence in s_max should then be measured
+     again.  Until then the discrete branches, and the angle dependence of
+     95d, belong to the method.
+
+96i. LIMITS.  Four seeds, three s_max values, production defaults, e+e-
+     only; the 1.38 ps residue of 96c is not explained.
