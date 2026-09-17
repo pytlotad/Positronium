@@ -1,0 +1,12 @@
+Raw outputs behind audit section 110 (2026-09-17).
+  prereg_110.txt      rules C, D, E with timestamps, including the amendment
+                      that replaced bit-identity of the lab cascade times with
+                      a 1e-6 bound once the correction was seen to touch them
+  C_r<R>_t<T>_n<N>.txt  tools/ledger_engine_drift: N orbits from a circular
+                      start, para, retarded forces, tol 1e-8, 256 steps/orbit
+  production_before_tools_fix.txt  ./positronium --mode statistical
+                      --phenomenon 1 --runs 4 --seed 42 -- the run that first
+                      printed the drift line (30.6732 ps, beta 6.12e-4)
+  cascade_pair_70001.txt  tools/para_ortho_lab_pairs quant 70001 after the tool
+                      was made to select the quantized channel: para moved by
+                      4.9e-8 ps, ortho is bit-identical

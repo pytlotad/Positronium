@@ -197,6 +197,21 @@ struct CremCollapseEstimate {
     SimulationOutcome collapseTransitOutcome=
         SimulationOutcome::NumericalFailure;
     double collapseTransitCensoredSeconds=0.0;
+    // DRIFT OF THE PAIR'S OWN CENTRE OF MASS, as |P|/((m1+m2)c) at the end of
+    // the run (audit section 110).  The retarded dipole sector is not
+    // reciprocal (sections 104-106), so the pair gains momentum on every
+    // orbit: 1.7e-5 m c per orbit at 16 r*, adding up coherently over the
+    // ~2e5 orbits of an inspiral.  The osculating elements carry only the
+    // RELATIVE motion, so this is the part of the trajectory the secular
+    // estimator would otherwise drop -- and it is what makes the estimator's
+    // own clock a proper clock of a moving frame.  lifetimeSecondsLab and
+    // calibrationSecondsLab now integrate gamma of it, so they are lab
+    // times; lifetimeSeconds stays the proper time.
+    double centreOfMassDriftBeta=0.0;
+    // The same quantity for the collapse-transit run, so the report can say
+    // how fast the frame the collapse time was measured in ends up moving.
+    double collapseTransitDriftBeta=
+        std::numeric_limits<double>::quiet_NaN();
     // Mean over checkpoints of (measured orbital energy loss rate) / (Larmor
     // rate for the same osculating orbit).  1 means the engine reproduces
     // coherent electric-dipole radiation exactly.
@@ -2051,6 +2066,12 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     // (every continuous/non-stochastic model), diverging only once photon
     // recoil has actually accumulated a nonzero pair velocity.
     double labFrameTimeTotal=0.0;
+    // Momentum the non-reciprocal retarded dipole sector hands the pair,
+    // accumulated over the whole trajectory (audit section 110).  Every
+    // checkpoint reconstructs its measurement state at zero total momentum,
+    // so this is read from the measured orbit and carried here rather than
+    // being fed back into the elements.
+    Vec3 dipoleDriftMomentum;
     double radiatedEnergyTotal=0.0;
     // Revolutions completed so far.  Every orbit the loop accounts for is
     // counted here exactly once: the resolved measurement orbit is the first
@@ -2872,6 +2893,18 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         const MechanicalTrajectoryResult run=runMechanicalTrajectory(
             measurementState,period,nuclearCutoff,measureOptions,
             activeReactionModel);
+        // Total momentum the measured orbit ends with, minus the zero it was
+        // prepared with: the drift of audit section 110.  Taken from the real
+        // run, NOT background-subtracted, because the imbalance lives in the
+        // retarded dipole sector, which the background carries too -- the
+        // subtraction that isolates the radiative loss would cancel exactly
+        // the effect being measured here.
+        const Vec3 driftPerOrbit=isFinite(run.finalState)
+            ?(momentum(run.finalState.firstVelocity,firstMass)
+                +momentum(run.finalState.secondVelocity,secondMass))
+             -(momentum(measurementState.firstVelocity,firstMass)
+                +momentum(measurementState.secondVelocity,secondMass))
+            :Vec3{};
 
         // Angular momentum and energy are both read from the measured
         // orbit's actual start/end state rather than from a formula: L is
@@ -2966,7 +2999,10 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             // centreOfMassVelocity -- and therefore beta/gamma -- is exactly
             // constant across the whole of run.elapsedTime.
             result.lifetimeSecondsLab=labFrameTimeTotal
-                +gammaFromBeta(centreOfMassVelocity.norm()/c)*run.elapsedTime;
+                +gammaFromBeta(centreOfMassVelocity.norm()/c)
+                    *gammaFromBeta(dipoleDriftMomentum.norm()
+                        /((firstMass+secondMass)*c))
+                    *run.elapsedTime;
             result.meanRadiatedPowerWattsLab=result.lifetimeSecondsLab>0.0
                 ?radiatedEnergyTotal/result.lifetimeSecondsLab
                 :std::numeric_limits<double>::quiet_NaN();
@@ -5562,6 +5598,21 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             const double tailBeta=centreOfMassVelocity.norm()/c;
             labIncrement+=gammaFromBeta(tailBeta)
                 *(totalProperThisCheckpoint-properTimeUpToS(previousS));
+            // The pair's own drift (audit section 110) multiplies the whole
+            // checkpoint, evaluated at its MIDPOINT so a checkpoint is not
+            // timed entirely at either end's speed.  Factorized against the
+            // photon-recoil gammas above rather than added inside each
+            // segment: the two speeds are independent to O(beta^2
+            // beta_drift^2), and at the drift speeds measured here (5e-3 at
+            // the end of an inspiral) that cross term is below 1e-10.
+            const Vec3 driftAtMidpoint=dipoleDriftMomentum
+                +driftPerOrbit*(0.5*static_cast<double>(orbitsToSkip));
+            labIncrement*=gammaFromBeta(
+                driftAtMidpoint.norm()/((firstMass+secondMass)*c));
+            dipoleDriftMomentum=dipoleDriftMomentum
+                +driftPerOrbit*static_cast<double>(orbitsToSkip);
+            result.centreOfMassDriftBeta=
+                dipoleDriftMomentum.norm()/((firstMass+secondMass)*c);
             labFrameTimeTotal+=labIncrement;
         }
         revolutionsTotal+=static_cast<double>(orbitsToSkip);
@@ -5692,15 +5743,23 @@ inline void measureCollapseTransit(CremCollapseEstimate& target,
     if(!(std::abs(transit.initialSemiMajorAxis/startRadius-1.0)<=1.0e-6))
         return;
     if(transit.calibrationOutcome!=SimulationOutcome::ReachedCutoff
-       ||!std::isfinite(transit.lifetimeSeconds)) return;
+       ||!std::isfinite(transit.lifetimeSecondsLab)) return;
     // The mid-orbit cutoff branch stops ON the Compton barrier and records no
     // terminal elements; everything else records the terminal semi-major axis.
     const double stopRadius=std::isfinite(transit.terminalSemiMajorAxis)
         ?transit.terminalSemiMajorAxis:comptonBarrierRadius;
+    // The tail is a closed-form PROPER time of the drifting pair, so it
+    // carries the drift's gamma like the measured part does (audit 110).
     target.collapseTransitTailSeconds=
-        (std::pow(stopRadius,3.0)-std::pow(endRadius,3.0))/coefficient;
+        (std::pow(stopRadius,3.0)-std::pow(endRadius,3.0))/coefficient
+        /std::sqrt(std::max(1.0e-300,
+            1.0-transit.centreOfMassDriftBeta
+                *transit.centreOfMassDriftBeta));
+    target.collapseTransitDriftBeta=transit.centreOfMassDriftBeta;
+    // LAB time: lifetimeSecondsLab integrates gamma of the recoil and of the
+    // pair's own drift checkpoint by checkpoint.
     target.collapseTransitSeconds=
-        transit.lifetimeSeconds+target.collapseTransitTailSeconds;
+        transit.lifetimeSecondsLab+target.collapseTransitTailSeconds;
 }
 
 // HARMONIC-TABLE ENERGY IDENTITY, enforced once per process.

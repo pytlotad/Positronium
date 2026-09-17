@@ -606,6 +606,19 @@ raportowany czas kolapsu jest mierzony wprost, bez drugiego przebiegu:
 trajektoriach spada z \(388\) s do \(47\) s. Kaskadę fotonową włącza
 `--radiation-reaction stochastic`.
 
+**To jest czas laboratoryjny (audyt 110).** Para sama się rozpędza, więc
+zegar estymatora był zegarem własnym układu, który dryfuje: elementy
+oskulacyjne noszą tylko ruch względny, a pęd z niesymetrycznego sektora
+dipolowego był z zegara pomijany. Estymator zbiera teraz ten pęd z mierzonych
+orbit i mnoży czas własny każdego checkpointu przez \(\gamma\) dryfu.
+Zmierzone w produkcji: \(\beta=6{,}1\cdot10^{-4}\) na końcu przebiegu,
+\(\gamma-1=1{,}9\cdot10^{-7}\), czyli czas kolapsu zostaje
+\(30{,}6732\) ps — poprawka jest o sześć rzędów poniżej drukowanej
+dokładności, ale liczba jest teraz czasem laboratoryjnym, a nie z założenia.
+W kanale kwantowym para przesuwa się o \(4{,}9\cdot10^{-8}\) ps, a **orto
+zostaje bit w bit**: idealne orto nie nosi pędu (symetria z audytu 106), więc
+nie ma tam czego poprawiać.
+
 **Samonapęd z audytów 104-106 nie wchodzi do tej liczby.** Sięga on powyżej
 \(0{,}01a_0\) — pęd po jednym obiegu to \(6{,}9\cdot10^{-3}\,mc\) przy
 \(2{,}74\,r^*\), \(1{,}3\cdot10^{-3}\) przy \(5\,r^*\) i dalej maleje

@@ -346,6 +346,9 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     // Closed-form remainder from where each transit run stopped to the
     // boundary, so its weight is visible rather than asserted.
     std::vector<double> transitTails;
+    // How fast the frame the collapse time was measured in ends up moving:
+    // the pair's own centre-of-mass drift, audit section 110.
+    std::vector<double> transitDriftBetas;
     double transitReferenceSeconds=std::numeric_limits<double>::quiet_NaN();
     std::vector<double> calibrationPowers;
     // Right-censored sample for the product-limit estimator: every trajectory
@@ -421,9 +424,14 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         // COLLAPSE TIME (audit section 108): the continuous electric-dipole
         // transit from a_pair to 0.005 a_pair, measured by a second run of
         // the same seed (CremCollapseEstimate::collapseTransitSeconds).  It
-        // has no photon recoil, so its proper and lab clocks coincide.
+        // fires no photon, but it is a LAB time all the same: the pair's own
+        // centre of mass drifts under the non-reciprocal retarded dipole
+        // sector, and lifetimeSecondsLab integrates gamma of that drift
+        // (audit section 110).
         if(std::isfinite(estimate.collapseTransitReferenceSeconds))
             transitReferenceSeconds=estimate.collapseTransitReferenceSeconds;
+        if(std::isfinite(estimate.collapseTransitDriftBeta))
+            transitDriftBetas.push_back(estimate.collapseTransitDriftBeta);
         if(std::isfinite(estimate.collapseTransitTailSeconds))
             transitTails.push_back(
                 estimate.collapseTransitTailSeconds*timeScale);
@@ -657,6 +665,17 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             std::cout << " (" << tailMoments.mean/collapseMoments.mean
                       << " of the total)";
         std::cout << '\n';
+    }
+    if(!transitDriftBetas.empty()) {
+        const GaussianFitSummary driftMoments=
+            gaussianMaximumLikelihood(transitDriftBetas);
+        const double driftGamma=1.0/std::sqrt(std::max(1.0e-300,
+            1.0-driftMoments.mean*driftMoments.mean));
+        std::cout << "  frame drift at the stop  beta = " << driftMoments.mean
+                  << " (the pair's own centre of mass, from the non-reciprocal "
+                     "retarded dipole sector);\n    the time above is a LAB "
+                     "time: gamma-1 = " << driftGamma-1.0
+                  << " is integrated checkpoint by checkpoint\n";
     }
     if(!cascadeTimes.empty()) {
         const GaussianFitSummary cascadeMoments=

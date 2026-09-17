@@ -1,0 +1,27 @@
+Zapisano 2026-09-17T20:20:14+02:00, przed pomiarami.
+Zadanie: czy czas kolapsu jest czasem wlasnym ukladu, ktory sam sie rozpedza,
+i poprawka na czas laboratoryjny.
+Pomiar C (narastanie pedu): tools/ledger_engine_drift, para, przechyl 0 i 90,
+r = 16 i 50 r*, 1/2/4/8/16 obiegow, tol 1e-8, 256 krokow/obieg, glebokosc 20.
+Regula C: narastanie "spojne", gdy |P| rosnie jak N^1 w granicach czynnika 2
+na 16 obiegach; "losowe", gdy jak N^0.5 w tych samych granicach.
+Pomiar D (skala poprawki): z wykladnika zasiegu (sekcja 109, r^-3.9) i z
+narastania wyliczam beta_cm na koncu inspiralu przy 15.9 r* i gamma-1.
+Poprawka: estymator ma prowadzic osobny akumulator pedu dryfu z mierzonych
+orbit i liczyc przyrost czasu laboratoryjnego jako gamma(beta_dryf) razy czas
+wlasny; czas kolapsu ma byc raportowany z zegara laboratoryjnego.
+Regula E (kontrola regresji): czas kolapsu po poprawce nie moze zmienic sie
+bardziej niz o 3 sigma (0.016 ps), bo zmierzone bety sa male; jesli zmieni sie
+wiecej, to znak, ze dryf jest duzy i wtedy raportuje to jako wynik, nie jako
+regresje.  Czasy kaskady (ziarno 70001) musza zostac bit w bit.
+
+Poprawka 2026-09-17T20:23:44+02:00, przed wdrozeniem.  Regula C spelniona: przy 16 r*
+|P| = 1.67e-5, 3.30e-5, 6.40e-5, 1.18e-4 mc dla 1, 2, 4, 8 obiegow, czyli
+liniowo (8 obiegow daje 7.1x).  Narastanie jest spojne.
+Szacunek D (analitycznie, z wykladnika 3.9 i punktu 16 r*): ~204 000 obiegow,
+suma spojna |P| = 1.07e-2 mc, beta dryfu 5.3e-3 przy 16 r*, poprawka czasu
+laboratoryjnego 1.8e-8 ps, czyli 5.9e-10 wzglednie.
+Regula E poprawiona: poprawka dotyka takze sciezki kwantowej, wiec czasy
+kaskady nie moga byc bit w bit.  Wymagam: czasy WLASNE (proper) bit w bit, a
+czasy laboratoryjne zmienione najwyzej o 1e-6 wzglednie.  Czas kolapsu
+najwyzej o 3 sigma (0.016 ps).

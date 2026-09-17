@@ -7348,3 +7348,73 @@ measurement of whether that survives a cascade.
       construction rather than measured to be absent; with the cascade on
       that stretch is integrated down to 4.9 r*, and section 104f's switch
       is still what removes the sector for deep work.
+
+110. THE COLLAPSE TIME WAS A PROPER TIME OF A DRIFTING FRAME; IT IS NOW A
+     LAB TIME
+==================================================================
+
+110a. THE OBJECTION.  The pair accelerates itself (sections 104-106), so the
+      collapse time of section 108 is measured on a clock that moves with it;
+      at the speeds section 107 reached (beta_cm 0.99) the difference is
+      enormous.  Correct it to lab time.
+
+110b. THE OBJECTION IS RIGHT IN KIND.  The secular estimator reconstructs
+      every checkpoint at zero total momentum, because osculating elements
+      carry only the RELATIVE motion, so the drift the dipole sector adds was
+      dropped from the clock entirely.  Its lab clock integrated gamma of the
+      PHOTON recoil alone -- and with emission off (section 109) that is
+      exactly zero, so the reported time was a proper time.
+
+110c. HOW BIG IT IS, MEASURED.  One orbit of a circular start carries
+      1.67e-5 m c at 16 r* (section 109), and the gain adds up over orbits
+      (rule C: linear within a factor 2 over 16 orbits):
+        r, tilt      1 orbit    16 orbits   ratio to linear
+        16 r*, 0     1.67e-5    1.91e-4     0.71
+        16 r*, 90    1.97e-5    8.19e-6     0.03  (the direction reverses)
+        50 r*, 0     1.93e-7    2.30e-6     0.74
+        50 r*, 90    1.86e-7    3.71e-6     1.25
+      Summing the r^-3.9 law of section 109 coherently over the ~2e5 orbits
+      of an inspiral gives an UPPER bound of |P| = 1.07e-2 m c, beta 5.3e-3
+      at 16 r*, and a lab-time correction of 1.8e-8 ps (5.9e-10 relative).
+      The measured drift is smaller, as the reversing case above implies.
+
+110d. THE CORRECTION, AS IMPLEMENTED.  estimateCremCollapse now reads the
+      momentum the measured orbit ends with (not background-subtracted: the
+      imbalance sits in the retarded dipole sector, which the background
+      carries too), multiplies it by the checkpoint's skipped orbits and
+      accumulates it in dipoleDriftMomentum.  Each checkpoint's proper time
+      is multiplied by gamma of that drift at the checkpoint MIDPOINT,
+      factorized against the photon-recoil gammas (exact to O(beta^2
+      beta_drift^2)).  collapseTransitSeconds is now built from
+      lifetimeSecondsLab instead of lifetimeSeconds, and the closed-form tail
+      carries the same gamma.  centreOfMassDriftBeta and
+      collapseTransitDriftBeta report the drift.
+
+110e. WHAT IT CHANGES.  Production, experiment 1, 4 trajectories, seed 42:
+        frame drift at the stop      beta = 6.12e-4
+        lab-time factor              gamma - 1 = 1.87e-7
+        collapse time                30.6732 +- 0.0052 ps, unchanged
+      Rule E is met: the correction is six orders below the printed
+      precision, so the number stands as reported in sections 108-109 -- but
+      it now stands as a LAB time rather than by assumption.
+      Cascade times (quantized channel, seed 70001): para 198.974732577 ps
+      against 198.974732528 before, i.e. +4.9e-8 ps (2.5e-10 relative);
+      ORTHO IS BIT-IDENTICAL at 198.971579221 ps.  That is the symmetry of
+      section 106 showing up in the clock: exact ortho carries no momentum,
+      so it has no drift to correct.
+      Validation 62/62.
+
+110f. A CONSEQUENCE OF SECTION 109 FOUND HERE.  The seven tools that measure
+      the photon cascade read the default reaction model, which is no longer
+      the quantized one, so they silently measured the continuous inspiral
+      instead (para_ortho_lab_pairs printed 30.67 ps where section 107 has
+      198.97).  They now select stochasticElectricDipole explicitly.
+
+110g. LIMITS.  The drift is carried on the CLOCK only; it is not fed back
+      into the dynamics, because the checkpoint's own elements have no place
+      to put it.  The factorization of the two gammas is exact only to
+      O(beta^2 beta_drift^2), which at these speeds is below 1e-10.  Below
+      ~1 r* the same drift reaches beta_cm 0.99 (section 107) and would
+      dominate the clock, but production stops at 15.9 r*.  The accumulated
+      momentum is a partial cancellation of rotating per-orbit kicks,
+      measured here rather than assumed, and only at two radii.

@@ -1,0 +1,2 @@
+KONCOWY P/(m c) +1.360e-06 -6.817e-08 +0.000e+00  |P| 1.362e-06  po 2048 krokach  r 49.9758 r*
+r 50.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 2048/2048 | zakres E/|U_dd| 6.081e-01 | E_koniec-E0 /|U_dd| -6.081e-01 | r 49.9758..50.1330 r* | 65 s

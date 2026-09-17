@@ -55,8 +55,12 @@ void summarize(const char* label,std::vector<double> sample,int attempted) {
 }
 
 int main(int argc,char** argv) {
-  // Reads the photon-cascade time only; skip the collapse-transit run
-  // (audit section 108), which would double the cost.
+  // Measures the PHOTON CASCADE, so it selects the quantized channel
+  // explicitly: production stopped defaulting to it in audit section 109,
+  // and without this the tool would silently measure the continuous
+  // inspiral instead and stop being comparable with sections 94-108.
+  gRadiationReactionModel=ChargeRadiationReactionModel::stochasticElectricDipole;
+  // The collapse-transit run of audit section 108 would only double the cost.
   gMeasureCollapseTransit=false;
     const int runCount=argc>1?std::atoi(argv[1]):24;
     const std::uint64_t masterSeed=

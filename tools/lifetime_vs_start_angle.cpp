@@ -28,8 +28,12 @@ static double startCos(unsigned long long masterSeed){
   return dot(a,b)/(a.norm()*b.norm());
 }
 int main(int argc,char** argv){
-  // Reads the photon-cascade time only; skip the collapse-transit run
-  // (audit section 108), which would double the cost.
+  // Measures the PHOTON CASCADE, so it selects the quantized channel
+  // explicitly: production stopped defaulting to it in audit section 109,
+  // and without this the tool would silently measure the continuous
+  // inspiral instead and stop being comparable with sections 94-108.
+  gRadiationReactionModel=ChargeRadiationReactionModel::stochasticElectricDipole;
+  // The collapse-transit run of audit section 108 would only double the cost.
   gMeasureCollapseTransit=false;
   const bool run=argc>1&&std::strcmp(argv[1],"run")==0;
   const unsigned long long base=argc>2?strtoull(argv[2],nullptr,10):60000ULL;
