@@ -1880,6 +1880,31 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         splitMix64(seed^0x506f6973736f6e5fULL);
     double stochasticSkipHazard=0.0;
     double stochasticSkipThreshold=drawEmissionThreshold(stochasticSkipStream);
+    // CHECKPOINT CLOCK (audit 97).  A checkpoint used to add its whole skip to
+    // both clocks even when a photon fired partway through it, so every orbit
+    // after the photon was counted at the OLD orbit's period and the photon's
+    // consequences started only at the next checkpoint.  The reported
+    // lifetime was therefore late by up to one checkpoint -- 18.675 ps at n=1
+    // -- and moved with maximumJumpParameter (199.45 or 216.75, 207.74,
+    // 203.38 ps at s_max 0.30, 0.15, 0.075, audit 96).
+    //
+    // The hazard is linear in the number of orbits and the stochastic orbit
+    // does not change between photons, so the orbit on which the running
+    // hazard reaches the threshold can be predicted from the exact per-orbit
+    // hazard of the previous checkpoint, and the checkpoint ENDS there.
+    // Every clock, the revolution count and both spin-orbit half-steps derive
+    // from orbitsToSkip, so they stay consistent with no further change; the
+    // lab clock already splits each checkpoint at its photons for the gamma
+    // factor, and with the checkpoint ending at the photon that split is now
+    // the whole story.  The first checkpoint of a trajectory and the first
+    // after every photon run one orbit, because the orbit is new and its rate
+    // is not known yet.  CREM_CHECKPOINT_CLOCK=whole restores the old clock.
+    const bool checkpointEndsAtPhoton=[]{
+        const char* text=std::getenv("CREM_CHECKPOINT_CLOCK");
+        return !(text&&std::strcmp(text,"whole")==0);
+    }();
+    double hazardPerOrbitPrevious=0.0;
+    bool hazardRatePrimed=false;
     // Recoil bookkeeping, same lifetime/gating as the hazard state above.
     // CREM's bound initial conditions are always prepared at EXACTLY zero
     // total momentum (crem_trajectory.hpp splits the sampled relative
@@ -3368,6 +3393,20 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 :static_cast<double>(maxOrbitsSkippedAtOnce);
             orbitsToSkip=static_cast<int>(boundedOrbits);
         }
+        if(isStochastic&&checkpointEndsAtPhoton) {
+            if(!hazardRatePrimed) {
+                // New orbit, rate unknown: measure it on one orbit first.
+                orbitsToSkip=1;
+            } else if(hazardPerOrbitPrevious>0.0) {
+                const double remainingHazard=
+                    stochasticSkipThreshold-stochasticSkipHazard;
+                const double orbitsToThreshold=
+                    std::ceil(remainingHazard/hazardPerOrbitPrevious);
+                if(std::isfinite(orbitsToThreshold)&&orbitsToThreshold>=1.0
+                   &&orbitsToThreshold<static_cast<double>(orbitsToSkip))
+                    orbitsToSkip=static_cast<int>(orbitsToThreshold);
+            }
+        }
         // CREM_SKIP_CENSUS: the integer that the checkpoint stepping turns a
         // continuous loss rate into.  requestedOrbits carries the M1 share
         // (through lossPerOrbit), so an M1 difference of 1e-19 shifts it by
@@ -4026,6 +4065,11 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                     :skipEnergy*magneticLossFraction/photonEnergyReference;
                 const double skipHazard=
                     electricSkipHazard+magneticSkipHazard;
+                // Exact, linear in orbitsToSkip: the predictor for the next
+                // checkpoint's length (see checkpointEndsAtPhoton).
+                hazardPerOrbitPrevious=orbitsToSkip>0
+                    ?skipHazard/static_cast<double>(orbitsToSkip):0.0;
+                hazardRatePrimed=true;
                 double hazardConsumedThisSkip=0.0;
                 // Hazard-side reassembly of the same checkpoint envelope
                 // (see the three totals' comment on CremCollapseEstimate).
@@ -5434,6 +5478,9 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
             elements.specificAngularMomentum*=
                 std::pow(energyGrowth,angularExponent);
         }
+        // A photon changed the orbit: the rate measured on the old one no
+        // longer predicts the next threshold crossing.
+        if(!photonTimingsThisCheckpoint.empty()) hazardRatePrimed=false;
         simulatedTimeTotal+=checkpointProperTime;
         // Lab-frame counterpart (README point N): the checkpoint's elapsed
         // proper time as a function of position s in [0,jumpParameter]

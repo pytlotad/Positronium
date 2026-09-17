@@ -6421,3 +6421,68 @@ measurement of whether that survives a cascade.
 
 96i. LIMITS.  Four seeds, three s_max values, production defaults, e+e-
      only; the 1.38 ps residue of 96c is not explained.
+
+97. THE CHECKPOINT CLOCK ENDS AT THE PHOTON
+==================================================================
+
+97a. THE DEFECT (section 96).  A stochastic checkpoint added its whole skip
+     to the proper clock and to the lab clock even when a photon fired
+     partway through it.  The orbits after the photon were counted at the
+     old orbit's period, and the photon's consequences began only at the
+     next checkpoint.  The lab clock already split each checkpoint at its
+     photons, but only to weight each piece by gamma; the total was still
+     the whole checkpoint.  Lifetimes were late by up to one checkpoint,
+     18.675 ps at n = 1, and fell on two branches.
+
+97b. THE FIX.  The hazard is linear in the number of orbits, and the
+     stochastic orbit does not change between photons.  So the exact hazard
+     per orbit of one checkpoint predicts on which orbit the next checkpoint
+     reaches the threshold, and orbitsToSkip is cut to that orbit before the
+     checkpoint runs.  Both clocks, the revolution count and both spin-orbit
+     half-steps derive from orbitsToSkip, so they stay consistent without
+     further change, and the photon now sits at the end of its checkpoint,
+     where the lab clock's gamma split already puts it.  The rate is unknown
+     on a new orbit, so the first checkpoint of a trajectory and the first
+     after every photon run one orbit.  A slightly wrong prediction costs at
+     most about one orbit, 0.3 fs at n = 1.  CREM_CHECKPOINT_CLOCK=whole
+     restores the old clock.
+
+97c. VERIFIED ON THE LAB CLOCK.  Same four seeds as section 96,
+     lifetimeSecondsLab in ps, the variants built from copies of the
+     working tree:
+
+       clock, s_max    50009     60002     60040     60075     mean
+       whole, 0.30     199.450   216.751   199.460   216.757   two branches
+       new,   0.30     198.988   198.995   198.980   198.992   198.989
+       new,   0.15     198.974   198.978   198.975   198.974   198.975
+       new,   0.075    198.942   198.945   198.945   198.943   198.944
+
+     The branches are gone at the production setting: the four seeds agree
+     to 15 fs where they differed by 17.3 ps.  The dependence on s_max drops
+     from about 13 ps (section 96) to 45 fs.  The lab clock and the proper
+     clock differ by 2e-6 fs in every run, 1e-11 relative: the photon recoil
+     is too slow for its dilation to matter, so the proper-clock figures of
+     sections 94-96 were not misleading.
+
+97d. A RESIDUE THAT IS NOT CONVERGING, AND IS NOT EXPLAINED.  The 45 fs is
+     not the one-orbit prediction error, which is 0.3 fs.  Nor does it shrink
+     like a discretization error: from 0.30 to 0.15 the mean moves by -14 fs,
+     from 0.15 to 0.075 by -32 fs.  One candidate is the measured mechanical
+     orbit each checkpoint credits with its real retarded-field flux, whose
+     number doubles with every halving (62, 125, 254 checkpoints); it is
+     untested.  Until it is found, lifetimes carry a step dependence of
+     about 2e-4 relative.
+
+97e. COST.  Wall time per trajectory at s_max 0.30 rises from 138-161 s to
+     193-203 s, about +35%, from the one-orbit checkpoints after each photon
+     and the cut checkpoints.
+
+97f. WHAT CHANGES FOR EARLIER NUMBERS.  Every stochastic lifetime quoted at
+     the default setting before this commit was measured on the whole-
+     checkpoint clock and is late by a fraction of one checkpoint: -0.46 ps
+     for the short branch here, -17.8 ps for the long one.  The branch
+     correlation of section 95 was an artefact of that clock (section 96).
+     README figures have not been recomputed.
+
+97g. LIMITS.  Four seeds, three s_max values, production defaults, e+e-
+     only.  Validation 61/61, header isolation 37/37, production builds.

@@ -703,6 +703,14 @@ inline int zeroPointModes = 64;
 //                          Hold the apsidal line fixed across skipped orbits
 //                          (parallel transport with the plane only), the
 //                          behaviour before orbitAveragedApsidalRate.
+//   CREM_CHECKPOINT_CLOCK=whole
+//                          Advance both clocks by the whole checkpoint even
+//                          when a photon fires inside it, the behaviour before
+//                          audit 97.  By default a stochastic checkpoint ends
+//                          on the orbit where the hazard reaches the threshold,
+//                          which removed the 199.4 / 216.7 ps lifetime branches
+//                          and cut the lifetime's dependence on
+//                          maximumJumpParameter from about 13 ps to 45 fs.
 //   CREM_STEP_LAW=angle    Set the outer step from the swept ANGLE,
 //                          dt = 2 pi mu r^2 / (128 L), instead of the default
 //                          local orbital period, dt = 2 pi / (128 omega).
