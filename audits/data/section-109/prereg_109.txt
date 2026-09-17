@@ -1,0 +1,17 @@
+Zapisano 2026-09-17T20:00:57+02:00, przed pomiarami.
+Zadanie: (1) wylaczyc emisje fotonow w produkcji, (2) sprawdzic, czy samonaped
+z sekcji 104-106 wychodzi powyzej 0.01 a0 = 0.005 a_pary = 2.74 r* i czy widac
+go w czasie kolapsu.
+Pomiar A (zasieg): tools/ledger_engine_drift, jeden obieg, tol 1e-8, 256 krokow,
+glebokosc 20, sily opoznione; r = 2.74, 5, 10, 20, 50 r*; para przechyl 0 i 90.
+Regula A1: samonaped "wychodzi poza 0.01 a0", gdy |P| po obiegu przekracza
+1e-3 m c przy r >= 2.74 r*.
+Regula A2: zasieg opisuje potega: dopasowuje log|P| do log r na tych punktach i
+podaje wykladnik; bez progu, to opis.
+Pomiar B (czy widac w czasie kolapsu): produkcja, 4 trajektorie, ziarno 42,
+budzet 600 s, model ciagly, trzy warianty:
+  kontrola (domyslna),
+  CREM_NO_DIPOLE_FORCE=1 (bez sektora dipolowego),
+  CREM_DIPOLE_INSTANTANEOUS_BELOW=20 (sektor chwilowy ponizej 1 r*).
+Regula B: samonaped "widac w czasie kolapsu", gdy roznica sredniej wobec
+kontroli przekracza 3 sigma sredniej kontroli (3 x 0.0052 = 0.016 ps) i 0.01 ps.

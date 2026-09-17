@@ -7274,3 +7274,77 @@ measurement of whether that survives a cascade.
       touches what the model does or does not contain: annihilation remains
       absent -- a missing class of mechanism, not a missing term -- and the
       124.49 ps p-Ps lifetime stays in the report as a scale reference only.
+
+109. PHOTON EMISSION OFF IN PRODUCTION, AND HOW FAR THE SELF-PROPULSION
+     REACHES: OUT TO ~5 r*, AND NOT INTO THE COLLAPSE TIME
+==================================================================
+
+109a. TWO REQUESTS.  Switch photon emission off in production; and check
+      whether the self-propulsion of sections 104-106 reaches above
+      0.01 a0 = 0.005 a_pair = 2.74 r* and whether it shows in the collapse
+      time.
+
+109b. EMISSION OFF.  gRadiationReactionModel now defaults to
+      individualLandauLifshitz: the same E1 power leaves as a continuous
+      drag instead of photons.  --radiation-reaction stochastic restores the
+      cascade.  Consequences, measured on experiment 1, 4 trajectories,
+      seed 42, budget 600 s:
+      - The collapse time is unchanged, 30.6732 +- 0.0052 ps, because
+        section 108 already measured it on a continuous run.
+      - The photon-cascade line and the photon panels report nothing, and
+        the cascade sample is only collected when a trajectory actually
+        emitted (emittedPhotonCount > 0).
+      - Cost falls from 388 s to 47 s: the quantized cascade is gone and the
+        transit run is the production run itself.
+      - The report now prints the closed-form tail as its own line.
+
+109c. HOW FAR THE PROPULSION REACHES (rule A1: |P| > 1e-3 m c after one
+      orbit).  Circular start, para, retarded forces, one orbit:
+        r        tilt 0      tilt 90     |P|/(m c)
+        2.74 r*  6.9e-3      1.8e-1 (*)
+        5 r*     1.3e-3      1.7e-3
+        10 r*    1.0e-4      1.3e-4
+        20 r*    7.0e-6      8.0e-6
+        50 r*    1.9e-7      1.9e-7
+      So yes: it reaches above 0.01 a0, and the rule is met at 2.74 and
+      5 r*.  The fall-off is steep, |P| per orbit ~ r^-3.9 between 5 and
+      50 r* (rule A2, a description with no threshold).
+      (*) At 2.74 r* with the moments in the orbital plane the circular
+      orbit does not survive one turn: it plunges to 0.53 r*, gains
+      +7.5 |U_dd| and carries 0.183 m c.  The boundary radius is already
+      inside the range where the moment attraction rules the orbit.
+
+109d. DOES IT SHOW IN THE COLLAPSE TIME (rule B: more than 3 sigma of the
+      control, 0.016 ps, and more than 0.01 ps).  Experiment 1 as above:
+        variant                                 mean collapse time
+        control                                 30.6732 +- 0.0052 ps
+        CREM_NO_DIPOLE_FORCE=1                  30.6657 +- 0.0037 ps
+        CREM_DIPOLE_INSTANTANEOUS_BELOW=20      30.6732 +- 0.0052 ps
+      Removing the dipole sector ENTIRELY moves the mean by 0.0075 ps, i.e.
+      1.4 sigma and 2.4e-4 relative: rule B is not met.  Replacing the
+      retarded dipole sector by its instantaneous form below 1 r* changes
+      nothing at all.  So: no, the propulsion does not show in the collapse
+      time.
+
+109e. WHY NOT, AND WHERE THE INTEGRATION ACTUALLY ENDS.  With emission off
+      every run stops on the retardation margin at a periapsis of 15.9 r*
+      (ratio 146.8 against the threshold of 150), not at the boundary: the
+      whole region below ~10 r* where the propulsion lives sits inside the
+      CLOSED-FORM tail, which carries 0.00070 ps, 2.3e-5 of the total.  And
+      t ~ a^3 puts almost all of the time at large radii, where the
+      per-orbit momentum is 1e-5 m c and below.  The quantized channel
+      reached 4.9 r* (section 108), still above the propulsion's own range.
+
+109f. A CORRECTION TO SECTION 108.  Its text put the tail at ~1e-6 of the
+      total from an assumed stop near 0.015 a0.  Measured, the stop is at
+      15.9 r* = 0.029 a0 and the tail is 2.3e-5 of the total.  The report
+      prints it, so this cannot drift again.
+
+109g. LIMITS.  Measurement A is one orbit from a circular start at each
+      radius, para only -- exact ortho carries no momentum at all by the
+      symmetry of section 106.  Measurement B is 4 trajectories at one
+      seed, all censored-free.  The tail is a closed form, so whatever the
+      propulsion does between 15.9 r* and the boundary is excluded by
+      construction rather than measured to be absent; with the cascade on
+      that stretch is integrated down to 4.9 r*, and section 104f's switch
+      is still what removes the sector for deep work.

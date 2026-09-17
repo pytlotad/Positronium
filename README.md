@@ -599,6 +599,23 @@ retardacji przy \(a\approx0{,}015\,a_0\), a resztę drogi do granicy dokłada
 człon analityczny \((a_{\rm stop}^3-r^3)/(3C)\), który waży
 \(\sim10^{-6}\) całości.
 
+**Emisja fotonów jest w produkcji wyłączona (audyt 109).** Domyślnym
+modelem reakcji jest znów `individual`, czyli ciągły Landau-Lifshitz, więc
+raportowany czas kolapsu jest mierzony wprost, bez drugiego przebiegu:
+\(30{,}6732\pm0{,}0052\) ps, a koszt eksperymentu 1 na czterech
+trajektoriach spada z \(388\) s do \(47\) s. Kaskadę fotonową włącza
+`--radiation-reaction stochastic`.
+
+**Samonapęd z audytów 104-106 nie wchodzi do tej liczby.** Sięga on powyżej
+\(0{,}01a_0\) — pęd po jednym obiegu to \(6{,}9\cdot10^{-3}\,mc\) przy
+\(2{,}74\,r^*\), \(1{,}3\cdot10^{-3}\) przy \(5\,r^*\) i dalej maleje
+jak \(r^{-3{,}9}\) — ale przebieg zatrzymuje się na marginesie retardacji
+przy perycentrum \(15{,}9\,r^*\), a resztę drogi dokłada człon analityczny
+o wadze \(2{,}3\cdot10^{-5}\). Wyłączenie całego sektora dipolowego
+(`CREM_NO_DIPOLE_FORCE=1`) przesuwa średnią o \(0{,}0075\) ps, czyli
+\(1{,}4\sigma\), a przejście na sektor chwilowy poniżej \(1\,r^*\) nie
+zmienia jej wcale.
+
 **Czego ta liczba nie jest.** Nie jest czasem anihilacji: anihilacja jest
 mechanizmem kwantowym, którego ten model nie ma wcale — nie brakuje w nim
 członu, brakuje klasy mechanizmu. Zmierzone \(124{,}49\) ps dla para-Ps
@@ -2709,6 +2726,9 @@ Test na 10 ziarnach: 10/10 trajektorii dochodzi do granicy (100% ukończenia,
 zero cenzury/awarii) — mechanizm jest stabilny, nie tylko poprawny
 punktowo.
 
+*(Cofnięte w audycie 109, również na prośbę: emisja fotonów jest w
+produkcji wyłączona, a domyślnym modelem jest znów `individual`.)*
+
 **Na wyraźną prośbę: `stochastic` zastąpił `individual` jako domyślny
 model produkcyjny (stały inicjalizator `gRadiationReactionModel` w
 `positronium.cpp`), nie tylko opcjonalny tryb obok niego.** To odwraca
@@ -4084,6 +4104,9 @@ równaniem Thomasa–BMT. W czasie laboratoryjnym ma ono postać
 
 Promieniowanie zmiennego momentu jest księgowane z mocą
 \(P_\mu=\mu_0|\ddot{\boldsymbol\mu}|^2/(6\pi c^3)\). W trybie
+*(Od audytu 109 domyślny jest `individual`; poniżej opisany jest tryb
+`stochastic`.)*
+
 `--radiation-reaction stochastic` (domyślnym) ta moc **nie jest** odprowadzana
 w sposób ciągły — patrz „Kwantyzacja wszystkich kanałów" niżej. Odpowiadający mu
 moment reakcyjny jest wyznaczany z \(\boldsymbol\mu\times
@@ -4224,6 +4247,8 @@ skalujących się**.
 Koszt: +2,8 s.
 
 ### Kwantyzacja wszystkich kanałów promieniowania
+
+*(Od audytu 109 `stochastic` nie jest już domyślny — patrz niżej.)*
 
 W trybie `stochastic` (domyślnym, `gRadiationReactionModel`) **żaden** kanał
 promieniowania nie odprowadza energii w sposób ciągły. Cała moc klasyczna —
@@ -4886,6 +4911,9 @@ emisji orbitalnej w ogóle, a więc usunęłaby z modelu badany kolaps.
 Pierwsza wersja tego akapitu podawała \(n^6\) bez zastrzeżeń, co jest
 poprawne wyłącznie dla modeli ciągłych: tam \(dE/dt\sim a^{-4}\) przy
 \(E\sim-1/a\) całkuje się do \(t\sim a^3\), czyli \(n^6\).
+
+*(Od audytu 109 domyślna jest ciągła reakcja Landaua-Lifshitza; tryb
+stochastyczny opisany poniżej włącza `--radiation-reaction stochastic`.)*
 
 Domyślny tryb stochastyczny rządzi się hazardem, a hazard czyta także
 **energię** fotonu. Przy \(P\sim a^{-4}\sim n^{-8}\) i

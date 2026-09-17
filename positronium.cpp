@@ -343,6 +343,9 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     // was the reported collapse time until audit section 108; kept beside
     // the collapse time, not in place of it.
     std::vector<double> cascadeTimes;
+    // Closed-form remainder from where each transit run stopped to the
+    // boundary, so its weight is visible rather than asserted.
+    std::vector<double> transitTails;
     double transitReferenceSeconds=std::numeric_limits<double>::quiet_NaN();
     std::vector<double> calibrationPowers;
     // Right-censored sample for the product-limit estimator: every trajectory
@@ -421,6 +424,9 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         // has no photon recoil, so its proper and lab clocks coincide.
         if(std::isfinite(estimate.collapseTransitReferenceSeconds))
             transitReferenceSeconds=estimate.collapseTransitReferenceSeconds;
+        if(std::isfinite(estimate.collapseTransitTailSeconds))
+            transitTails.push_back(
+                estimate.collapseTransitTailSeconds*timeScale);
         if(std::isfinite(estimate.collapseTransitSeconds)) {
             decayTimes.push_back(estimate.collapseTransitSeconds*timeScale);
             survivalSample.push_back(
@@ -434,7 +440,11 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
             survivalSample.push_back(
                 {estimate.collapseTransitCensoredSeconds*timeScale,false});
         }
-        if(std::isfinite(estimate.lifetimeSecondsLab))
+        // Only the quantized channel has a cascade to report; with photon
+        // emission off (the default since audit section 109) lifetimeSeconds
+        // is the same continuous inspiral the collapse time already measures.
+        if(std::isfinite(estimate.lifetimeSecondsLab)
+           &&estimate.emittedPhotonCount>0)
             cascadeTimes.push_back(estimate.lifetimeSecondsLab*timeScale);
         if(estimate.calibrationOutcome==SimulationOutcome::ReachedCutoff) {
             switch(estimate.stopCause) {
@@ -636,6 +646,17 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     } else {
         std::cout << "  mean of completed runs unavailable: no collapse was "
                      "observed\n";
+    }
+    if(!transitTails.empty()) {
+        const GaussianFitSummary tailMoments=
+            gaussianMaximumLikelihood(transitTails);
+        std::cout << "  closed-form tail       " << tailMoments.mean << ' '
+                  << timeUnit << " of it, added from where the run stopped "
+                     "to the boundary";
+        if(collapseMoments.count>0&&collapseMoments.mean>0.0)
+            std::cout << " (" << tailMoments.mean/collapseMoments.mean
+                      << " of the total)";
+        std::cout << '\n';
     }
     if(!cascadeTimes.empty()) {
         const GaussianFitSummary cascadeMoments=

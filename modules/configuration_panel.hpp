@@ -74,21 +74,29 @@
 
 // Selected once from --radiation-reaction and read by every trajectory
 // constructed below (visual, beam and interaction experiments alike).
-// Defaults to stochasticElectricDipole (radiation ON): the same E1 dipole
-// power individualLandauLifshitz would remove as a continuous drag force is
-// instead banked as Poissonian hazard and paid out in discrete,
-// momentum-conserving photon kicks -- see the enum's own comment in
-// electrodynamics.hpp for why (deterministic drag has no photon to report;
-// --emission deterministic bypasses the Poisson draw but still uses this
-// channel).  estimateCremCollapse now measures the classical inspiral
-// mechanically rather than assuming it, so it needs some such channel
-// switched on to observe anything; --radiation-reaction individual restores
-// the continuous-drag alternative.
+// Radiation is ON either way; what the default changed (section 109) is
+// whether it leaves as a continuous drag or as photons.  Under
+// stochasticElectricDipole the same E1 dipole power individualLandauLifshitz
+// removes continuously is banked as Poissonian hazard and paid out in
+// discrete, momentum-conserving photon kicks -- see the enum's own comment in
+// electrodynamics.hpp (deterministic drag has no photon to report;
+// --emission deterministic bypasses the Poisson draw but still uses that
+// channel).  estimateCremCollapse measures the inspiral mechanically rather
+// than assuming it, so it needs one of these channels switched on to observe
+// anything at all.
 // [[maybe_unused]] because the validation executable's main() never reaches
 // the trajectory constructors that read this, so GCC sees no use in that
 // build.
+// PHOTON EMISSION IS OFF BY DEFAULT (audit section 109).  The quantized
+// channel does not move the orbit between photons, so with it on the reported
+// time was dominated by one waiting time -- 187 of 199 ps at a_pair, where the
+// first photon carries 2|E0| (section 108) -- and the inspiral itself was 12 ps
+// of it.  The continuous reduced-order Landau-Lifshitz drag radiates the same
+// Larmor envelope without a quantum, which is what the collapse time of
+// section 108 measures.  --radiation-reaction stochastic restores the photon
+// cascade, and with it labFramePhotons and the photon panels.
 [[maybe_unused]] inline ChargeRadiationReactionModel gRadiationReactionModel =
-    ChargeRadiationReactionModel::stochasticElectricDipole;
+    ChargeRadiationReactionModel::individualLandauLifshitz;
 
 // Starting separation the bound scenarios are PREPARED at, a_n = n^2 a_pair
 // (a_pair itself comes from the pair's measured magnetic moment -- see

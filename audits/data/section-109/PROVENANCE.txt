@@ -1,0 +1,9 @@
+Raw outputs behind audit section 109 (2026-09-17).
+  prereg_109.txt   rules A1, A2 and B with timestamps
+  A_r<R>_t<T>.txt  tools/ledger_engine_drift: one orbit from a circular start,
+                   para, retarded forces, tol 1e-8, 256 steps, depth 20
+  B_ctl.txt        ./positronium --mode statistical --phenomenon 1 --runs 4
+                   --seed 42 --crem-wallclock-budget-s 600, emission off
+  B_nodip.txt      the same with CREM_NO_DIPOLE_FORCE=1
+  B_inst.txt       the same with CREM_DIPOLE_INSTANTANEOUS_BELOW=20
+  B_ctl2.txt       the control again, after the report gained the tail line
