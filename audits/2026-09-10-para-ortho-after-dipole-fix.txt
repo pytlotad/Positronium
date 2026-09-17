@@ -6265,3 +6265,73 @@ measurement of whether that survives a cascade.
      first and last 10% are counted in substeps, not in time, which is
      adequate here because nothing drifts; e+e- only.  The probe lives in
      the session scratch directory and is recorded here by what it does.
+
+95. LIFETIME AGAINST THE START ANGLE: THE REGRESSION THAT REPLACES PAIRING
+==================================================================
+
+95a. WHY.  Since section 91 phenomena 1 and 2 are one ensemble, so the
+     para/ortho pairing tool refuses to run.  The start angle is now a
+     continuous variable, so the comparison becomes a regression over one
+     ensemble.  Section 94e left one lead, noticed after looking: no long
+     lifetime branch below cos = -0.4, in 7 trajectories.
+
+95b. HYPOTHESES FIXED BEFORE THE RUN (written 2026-09-17T07:26:46+02:00,
+     fresh seeds 60000-60079, censored runs to be excluded and counted):
+       H1  no 216.7 ps branch at start cos < -0.4
+       H2  the branch correlates with the start cos (Spearman, 5% two-sided)
+       H3  within each branch the lifetime correlates with the start cos
+
+95c. SETUP.  80 trajectories, production defaults, budget 300 s, one call
+     each.  The start angle is read from the prepared state exactly as
+     estimateCremCollapse prepares it (simulate on splitMix64(masterSeed)
+     with a 1e-24 s window), with no integration.  Checked first against the
+     40 trajectories of section 94, read there from the first transport
+     substep: 40 of 40 agree, largest difference 4e-7.  p-values by 20000
+     permutations.
+
+95d. RESULT.  All 80 reached the cutoff, none censored, all emitted 3
+     photons.  Lifetimes again take exactly two values: 199.4-199.5 ps (53)
+     and 216.7-216.8 ps (27).
+
+       hypothesis                     measured                     verdict
+       H1 no long branch below -0.4   2 of 23 long                 refuted
+       H2 branch ~ start cos          Spearman +0.390, p = 0.0003  holds
+       H3 short branch, t ~ cos       Spearman -0.415, p = 0.0023  holds
+       H3 long branch, t ~ cos        Spearman -0.266, p = 0.18    not sig.
+
+     H2 and the short-branch H3 also pass a correction for four tests
+     (threshold 0.0125).
+
+       start cos      n    long branch
+       [-1.0,-0.6)   13     1
+       [-0.6,-0.2)   20     1
+       [-0.2,+0.2)   20    12
+       [+0.2,+0.6)   15     7
+       [+0.6,+1.0)   12     6
+
+     Below cos = -0.2 the long branch is taken 2 times in 33, above it 25
+     times in 47.  That reads like a step rather than a line, but the cut
+     was placed after looking and is description only.
+
+95e. THE SIZE OF EACH EFFECT.  Choosing the branch moves the lifetime by
+     17.3 ps.  Within the short branch the slope is -7.6 +- 2.5 fs per unit
+     of cos, about 15 fs from anti-aligned to aligned, 7.6e-5 of the
+     lifetime; the long branch gives -6.2 +- 4.6 fs, the same sign, not
+     significant.  So the start angle acts on the lifetime almost entirely
+     through which branch the trajectory takes.
+
+95f. WHAT THIS DOES AND DOES NOT MEAN.  The regression resolves structure
+     the pairing could not: the paired comparison under quantization ended
+     with a sign test of p = 1 (README, "Co z tego wynika dla porownania
+     kanalow").  But the branch is discrete, a 17.3 ps gap with nothing in
+     between across 120 trajectories, and tools/para_ortho_branch_trace.cpp
+     was written on the premise that the checkpoint skip integer of the
+     secular path selects it.  That premise is untested.  If it holds, the
+     start angle is steering a discretization of the numerical method, and
+     the strong H2 is a property of the method, not of positronium.  Which
+     one it is, is the next question.  For scale: the physical para/ortho
+     lifetime ratio is about 1000; the continuous effect here is 7.6e-5.
+
+95g. LIMITS.  One budget and production defaults only; e+e- only; the
+     photon count is 3 throughout and carries no information here; the step
+     near cos = -0.2 is post hoc.
