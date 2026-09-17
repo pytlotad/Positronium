@@ -1,0 +1,1 @@
+r 0.3 ch orto tilt 0 tol 1e-08 N 256 depth 20 | AWARIA 38/256 | zakres E/|U_dd| 3.108e+02 | E_koniec-E0 /|U_dd| +3.072e+02 | r 0.1324..0.3499 r* | 228 s

@@ -1,0 +1,5 @@
+Raw outputs behind audit section 106 (2026-09-17), all tools/ledger_engine_drift.cpp.
+  traj_r<R>_ch<C>_t<T>.txt  grid, depth 20, trace every 64 steps (no momentum components)
+  sym_*.txt                 depth 26, trace every 8 steps with P components and KONCOWY line
+  scan_d<delta>.txt         start 0.5 r*, ortho, tilt 0, second moment rotated by delta about y
+  prereg_106.txt            rules with timestamps, including the two amendments

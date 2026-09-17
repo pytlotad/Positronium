@@ -7018,3 +7018,70 @@ measurement of whether that survives a cascade.
       instantaneous sum, and does not appear in retardedExternalForces.
       Hidden momentum and field momentum were not computed.  One
       configuration (para, tilt 0, 1 r*), one orbit.
+
+106. PARA AND ORTHO: THE PROPULSION IS FORBIDDEN BY SYMMETRY IN ORTHO AND
+     GROWS WITH THE DEPARTURE FROM IT
+==================================================================
+
+106a. QUESTION.  Does the self-propulsion of sections 104-105 act the same
+      way in para and in ortho?  In ledger_engine_drift.cpp the stored
+      vectors are the magnetic moments: para has mu1 = +mu2, ortho mu1 = -mu2.
+
+106b. SYMMETRY.  Let I be space inversion combined with particle exchange and
+      charge conjugation.  Inversion reverses positions and velocities and
+      leaves axial vectors alone; C reverses charges and moments.  A circular
+      start is I-invariant exactly when mu1 = -mu2, at any tilt: that is
+      ortho.  The forces then obey F1 = -F2 at every instant, so the total
+      momentum stays zero, whatever the retarded sector does to each particle.
+      Para has no such symmetry.  At tilt 90 only rotation by 180 degrees
+      about the normal, again with exchange and C, protects para, and only the
+      in-plane momentum.  (This replaced a weaker first rule, written before
+      any tilt-45 or momentum-component run; both are in prereg_106.txt.)
+
+106c. TRAJECTORIES, one orbit, retarded forces, reaction off.
+        start   tilt   para beta_cm / r_min      ortho |P| / r_min
+        1 r*    0      0.315  / 0.37 r*          0 / 1.00 r* (moves out)
+        1 r*    45     |P| 1.54 mc / 0.22 r*     exactly 0 / 1.00 r*
+        1 r*    90     P_z 19.8 mc, FAIL 0.03    0 / 1.00 r*
+        0.5 r*  0      0.504  / 0.27 r*          exactly 0, FAIL at 0.158 r*
+        0.5 r*  45     |P| 1.49 mc / 0.20 r*     exactly 0 / 0.50 r*
+        0.5 r*  90     0.943  / 0.10 r*          0 / 0.50 r*
+        0.35 r* 0      0.438  / 0.25 r*          FAIL at 0.13 r*
+        0.35 r* 90     0.527  / 0.19 r*          0 / 0.35 r*
+      Runs with momentum components (depth 26) give ortho P = 0.000e+00 in
+      all three components, bit for bit, including the passage to 0.158 r*,
+      deeper than para's 0.27 r* at the same start and tilt.  Para at
+      tilt 90: in-plane P 4.7e-9 m c at step 64, 2.1e-7 at the end against
+      P_z 19.8 m c, i.e. 1e-8 relative, the integration tolerance.  Rule 3'
+      met.  Rule 1 (compare at matched depth, same tilt) decides nothing:
+      ortho either leaves 1 r* or dives below every para periapsis.
+
+106d. AWAY FROM EXACT ORTHO.  Start 0.5 r*, tilt 0, second moment turned by
+      delta about y (0 = ortho, 180 = para).  |P| at step 64 (quarter orbit):
+        delta   |P|/(m c)    share of para   r_min
+        0       0            0               0.158 FAIL
+        5       3.46e-3      0.35%           0.158 FAIL
+        20      2.11e-2      2.1%            0.158 FAIL
+        60      1.65e-1      17%             0.157 FAIL
+        120     6.58e-1      67%             0.292
+        180     9.83e-1      100%            0.270
+      The imbalance returns at once and grows smoothly; at step 32 the ratio
+      20/5 is 4.5, linear in delta, and 6.1 by step 64 as the deviation
+      feeds back.  Rule 4: linear onset met; "ortho is protected only at a
+      point" (share at 20 degrees above 10%) not met, 2.1%.  So the
+      protection is a smooth suppression around exact ortho, not a knife edge.
+
+106e. READING.  The non-reciprocal force of section 105 exists in both
+      channels.  In exact ortho the two particles are I-mirror images, so
+      their unbalanced parts cancel pairwise; in para they add.  Ortho also
+      seldom gets there: from 1 r* and from 0.5 r* at tilts 45 and 90 the
+      moments repel and the orbit leaves.  The labelled ortho band of
+      production (cos >= 0.5 of the spins) reaches 60 degrees from exact
+      ortho, where in this geometry the imbalance is already 17% of para's.
+
+106f. NOT DONE.  Precession moves the moments away from mu1 = -mu2 only if
+      something breaks I, and nothing here does; the angle scan sets the
+      departure by hand.  The section 105 decomposition was not repeated,
+      since no exact ortho run had momentum to split.  Engine failures below
+      ~0.16 r* end several runs early.  Production checkpoints sit at 40 r*
+      and beyond, where none of this acts (104f).

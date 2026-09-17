@@ -1,0 +1,1 @@
+r 1.0 ch para tilt 90 tol 1e-08 N 256 depth 20 | AWARIA 42/256 | zakres E/|U_dd| 3.624e+00 | E_koniec-E0 /|U_dd| -3.616e+00 | r 0.2280..0.9997 r* | 101 s

@@ -10,9 +10,12 @@
 //                      <orbits> <tolerance> [steps per orbit, default 256]
 //                      [maximumDepth, default 20] [trace every N steps, 0 = off]
 //                      [retarded forces 1/0, default 1]
+//                      [rotation of the second moment about y, degrees]
 // Trace lines (audit section 104) split the ledger into its terms, in |U_dd|
 // units relative to their start values: kinetic, Coulomb, dipole-dipole,
-// charge-dipole (-p.E), Darwin, dipole constraint.
+// charge-dipole (-p.E), Darwin, dipole constraint, then the three components of
+// the total momentum; a KONCOWY line gives the momentum where the run stopped
+// (section 106).
 // Section 102 grid: r in 1 2 5 10, channel 0 1 2, tilt 0, 4 orbits, 1e-8.
 //
 // Build from the repository root:
@@ -34,7 +37,11 @@ int main(int argc,char** argv){
   s.firstPosition={r*secondMass/M,0,0}; s.secondPosition={-r*firstMass/M,0,0};
   s.firstVelocity={0,v*secondMass/M,0}; s.secondVelocity={0,-v*firstMass/M,0};
   if(ch!=2){ s.firstProperDipole=dir*firstMagneticMoment;
-             s.secondProperDipole=dir*(ch?-secondMagneticMoment:secondMagneticMoment); }
+             s.secondProperDipole=dir*(ch?-secondMagneticMoment:secondMagneticMoment);
+             // Optional 11th argument (section 106): rotate the second moment by
+             // delta degrees about y, so ortho (delta 0) turns into para (180).
+             if(argc>10){ const double d=atof(argv[10])*pi/180; const Vec3 m=s.secondProperDipole;
+               s.secondProperDipole={m.x*std::cos(d)+m.z*std::sin(d),m.y,-m.x*std::sin(d)+m.z*std::cos(d)}; } }
   synchronizeCovariantDipoles(s);
   // |U_dd| scale of the moment configuration, also used for the bare control.
   const double udd=std::abs(pairDipoleInteractionEnergy(
@@ -71,10 +78,16 @@ int main(int argc,char** argv){
       const Vec3 vrel=s.firstVelocity-s.secondVelocity;
       const double kcm=0.5*(firstMass+secondMass)*vcm.squaredNorm();
       const double krel=0.5*pairReducedMass*vrel.squaredNorm();
-      std::printf("TRACE step %d t/P %.4f r %.4f r* beta %.4f beta_cm %.4f |P|/(m c) %.4f K_cm %.3e K_rel %.3e | dE %+.3e | kin %+.3e coul %+.3e dd %+.3e cd %+.3e dar %+.3e con %+.3e\n",
+      std::printf("TRACE step %d t/P %.4f r %.4f r* beta %.4f beta_cm %.4f |P|/(m c) %.4f K_cm %.3e K_rel %.3e | dE %+.3e | kin %+.3e coul %+.3e dd %+.3e cd %+.3e dar %+.3e con %+.3e | P/(m c) %+.3e %+.3e %+.3e\n",
         done,s.time/period,sep/comptonBarrierRadius,beta1,vcm.norm()/c,totalMomentum.norm()/(firstMass*c),kcm/udd,krel/udd,(E-E0)/udd,
-        (T.kin-T0.kin)/udd,(T.coul-T0.coul)/udd,(T.dd-T0.dd)/udd,(T.cd-T0.cd)/udd,(T.dar-T0.dar)/udd,(T.con-T0.con)/udd);
+        (T.kin-T0.kin)/udd,(T.coul-T0.coul)/udd,(T.dd-T0.dd)/udd,(T.cd-T0.cd)/udd,(T.dar-T0.dar)/udd,(T.con-T0.con)/udd,
+        totalMomentum.x/(firstMass*c),totalMomentum.y/(firstMass*c),totalMomentum.z/(firstMass*c));
     }
+  }
+  {
+    const Vec3 Pend=momentum(s.firstVelocity,firstMass)+momentum(s.secondVelocity,secondMass);
+    std::printf("KONCOWY P/(m c) %+.3e %+.3e %+.3e  |P| %.3e  po %d krokach  r %.4f r*\n",
+      Pend.x/(firstMass*c),Pend.y/(firstMass*c),Pend.z/(firstMass*c),Pend.norm()/(firstMass*c),done,separation(s)/comptonBarrierRadius);
   }
   const double wall=std::chrono::duration<double>(std::chrono::steady_clock::now()-t0).count();
   std::printf("r %.1f ch %s tilt %.0f tol %.0e N %d depth %d | %s %d/%d | zakres E/|U_dd| %.3e | E_koniec-E0 /|U_dd| %+.3e | r %.4f..%.4f r* | %.0f s\n",

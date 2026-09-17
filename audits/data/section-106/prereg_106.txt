@@ -1,0 +1,50 @@
+Zapisano 2026-09-17T16:41:57+02:00, przed pomiarem.
+Pytanie: czy samonapęd z sekcji 104-105 występuje tak samo w para i orto?
+Siatka: silnik, siły opóźnione, reakcja wyłączona, start kołowy, jeden obieg,
+256 kroków, tol 1e-8, głębokość 20; kanał para/orto; przechył 0 i 90;
+promień startu 1, 0.5, 0.35 r*.
+Reguła 1 (głębokość dopasowana): porównuję przebiegi para i orto o tym samym
+przechyle, których r_min różni się najwyżej o 25%.  "Tak samo", gdy beta_cm po
+obiegu ma stosunek orto/para w [0.5, 2]; "inaczej" poza tym przedziałem.
+Jeśli żadna para przebiegów nie ma dopasowanego r_min, reguła 1 nie rozstrzyga.
+Reguła 2 (mechanizm): dla orto z beta_cm > 0.05 rozkład jak w 105; ten sam
+mechanizm, gdy wkład 4 (moment w polu ładunku partnera) przekracza 50%.
+
+Uzupełnienie 2026-09-17T16:48:54+02:00, po pierwszych czterech przebiegach
+(orto 1 r* t0 i t90: beta_cm 0.0000; para 1 r* t90 awaria; orto 0.5 r* t0 awaria
+po 92 krokach, beta_cm 0.0000 przy kroku 64), przed przebiegami z przechyłem 45.
+Hipoteza symetrii: S = sprzężenie ładunkowe (q, mu -> -q, -mu) o zamiana cząstek
+o obrót C2 wokół normalnej orbity.  Stan jest S-niezmienniczy, gdy mu1 = -R mu2.
+ - orto, przechył 0: S plus odbicie w płaszczyźnie orbity -> P = 0 dokładnie.
+ - para, przechył 90: S -> składowa P w płaszczyźnie = 0; P_z niechronione.
+ - przechył 45: żaden kanał niechroniony.
+Reguła 3: hipoteza potwierdzona, gdy orto t0 ma |P| < 1e-8 m c przez cały obieg
+(także przy głębokim przejściu), para t90 ma |P_xy| < 1e-8 m c, a przechył 45
+w obu kanałach daje beta_cm > 1e-3 po obiegu lub do awarii.
+Dodatkowe przebiegi: przechył 45, kanały 0 i 1, start 1 i 0.5 r*; nowy ślad
+podaje składowe P (Px, Py, Pz) z 3 cyframi znaczącymi.
+
+Poprawka 2026-09-17T16:58:48+02:00, przed przebiegami sym_* (jeszcze nie ruszyły; widziane
+dodatkowo: orto 0.35 r* t90 beta_cm 0.0000 przy starcie wewnątrz 1 r*,
+para 0.5 r* t0 beta_cm 0.504).
+Silniejsza symetria: I = inwersja przestrzenna o zamiana cząstek o sprzężenie
+ładunkowe.  Inwersja odwraca położenia i prędkości, nie zmienia wektorów
+osiowych; C odwraca ładunki i momenty.  Stan jest I-niezmienniczy, gdy
+mu1 = -mu2, przy DOWOLNYM przechyle.  To dokładnie orto w tym narzędziu
+(para: mu1 = +mu2).  Wtedy F1 = -F2 w każdej chwili, więc P = 0.
+Reguła 3 zastąpiona regułą 3':
+ - orto, przechył 0, 45 i 90: |P| < 1e-8 m c przez cały przebieg;
+ - para, przechył 45: beta_cm > 1e-3 po obiegu lub do awarii;
+ - para, przechył 90: |P_xy| < 1e-8 m c (symetria C2z), P_z bez przewidywania.
+Obalona, jeśli orto przy 45 da |P| >= 1e-8 m c.
+
+Skan kąta 2026-09-17T17:05:27+02:00, przed pomiarem.  Widziane dotąd: orto t45 przy 1 i
+0.5 r* oraz orto t0 przy 0.5 r* (do 0.158 r*, awaria po 94 krokach): P = 0.000e+00
+dokładnie.  Przebiegi para t45 i para t90 depth 26 jeszcze trwają.
+Nowy argument narzędzia: obrót drugiego momentu o kąt delta wokół osi y.
+delta = 0 to orto, delta = 180 to para.  Start 0.5 r*, przechył 0, depth 26,
+ślad co 8 kroków.  delta: 0, 5, 20, 60, 120, 180.
+Reguła 4: porównuję |P| w kroku 64 (przed awariami widzianymi dotąd).
+ - Symetria jako jedyny powód różnicy: |P|(delta) rośnie od 0 przy delta = 0,
+   a dla małych kątów |P| ~ delta (stosunek |P|(20)/|P|(5) w [2, 8]).
+ - Orto chronione tylko punktowo: |P|(20) > 0.1 |P|(180).

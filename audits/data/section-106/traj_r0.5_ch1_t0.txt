@@ -1,0 +1,2 @@
+TRACE step 64 t/P 0.2500 r 0.4131 r* beta 0.1633 beta_cm 0.0000 |P|/(m c) 0.0000 K_cm 0.000e+00 K_rel 1.726e+00 | dE -1.372e-01 | kin +8.075e-01 coul -3.898e-01 dd +2.670e-01 cd -8.400e-01 dar +1.811e-02 con +0.000e+00
+r 0.5 ch orto tilt 0 tol 1e-08 N 256 depth 20 | AWARIA 92/256 | zakres E/|U_dd| 2.102e+00 | E_koniec-E0 /|U_dd| -1.114e+00 | r 0.1754..0.5000 r* | 210 s
