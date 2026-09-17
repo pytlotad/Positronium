@@ -6540,3 +6540,53 @@ measurement of whether that survives a cascade.
 
 98f. LIMITS.  20, 10 and 40 trajectories; two checkpoint sizes; production
      defaults otherwise; e+e- only.
+
+99. THE PARA/ORTHO LIFETIME DIFFERENCE IS NOT THE MOMENTS' ATTRACTION
+==================================================================
+
+99a. THE OBJECTION.  Section 84 restored the contact term's sign, so the
+     moments attract in para and repel in ortho.  Attraction should make para
+     collapse faster, yet section 98 found ortho about 90 fs shorter.
+
+99b. WHAT SECTIONS 83-84 ALREADY SAID.  The contact correction relative to
+     the tensor term is 3 (eps/r)^2: 5e-6 at 40 r*, where the production
+     checkpoints stop, and 3e-4 at the final ~4.9 r* orbit (83f).  Its
+     measured effect on production was +0.78 fs for para and nothing for
+     ortho (84d).  The long-range tensor term changes sign with the tilt of
+     the moments and averages to zero (83c).  So neither was expected to set
+     the lifetime ordering.
+
+99c. MEASURED BY SWITCHING TERMS OFF.  Four pairs from section 98 A,
+     --spin-quantization, s_max 0.30, lab clock, ortho - para in fs.
+     Predictions written first (2026-09-17): contact off changes each pair by
+     under 10 fs; dipole forces off remove most of the difference.
+
+       seed    default   contact off   dipole forces off   Thomas off
+       70012   -191.08   -190.07       -170.18             -191.08
+       70003   -158.63   -158.41       -143.75             -158.63
+       70001     -2.05     -2.07        -12.86               -2.05
+       70005    -15.11    -15.92        -37.14              -15.11
+
+     Contact off: CREM_MAGNETIC_RADIUS_SCALE=0.05, which shrinks the contact
+     term about 370-fold.  Dipole forces off: CREM_NO_DIPOLE_FORCE.  Thomas
+     off: CREM_NO_THOMAS_BACKREACTION.
+
+99d. READING.
+     - The contact term moves each difference by at most 1.0 fs.  The first
+       prediction holds: the section 84 fix plays no part here.
+     - With every dipole force off, the difference stays at -13 to -170 fs.
+       The second prediction fails: the lifetime difference is not an
+       attraction or repulsion effect.
+     - The Thomas switch leaves every digit unchanged, so it does not reach
+       this path at all.
+
+99e. WHAT IS LEFT, NOT TESTED.  Para and ortho still differ in two ways that
+     need no dipole force.  Their total spin is 0 and hbar, so the secular
+     spin-orbit exchange that conserves J acts only in ortho; that would also
+     explain why ortho depends on the direction of the first moment (184 fs
+     spread) and para hardly at all (27 fs), section 98d.  And the coherent
+     M1 channel radiates only for para.  Neither is established.
+
+99f. LIMITS.  Four pairs, one checkpoint size, production defaults
+     otherwise; CREM_FORCE_M1 acts at photon selection and was not used to
+     isolate M1.
