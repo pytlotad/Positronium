@@ -159,6 +159,44 @@ struct CremCollapseEstimate {
     double initialSemiMajorAxis=std::numeric_limits<double>::quiet_NaN();
     double initialEccentricity=std::numeric_limits<double>::quiet_NaN();
     double analyticCollapseSeconds=std::numeric_limits<double>::quiet_NaN();
+    // COLLAPSE TIME, as reported since audit section 108: the time the pair
+    // takes to pass from its ground-state separation a_pair to the collision
+    // boundary 0.005 a_pair (0.01 a0 for e+e-) under CONTINUOUS electric-
+    // dipole radiation reaction (individual Landau-Lifshitz), measured by a
+    // second run of this estimator from the same seed.  It is the quantity
+    // of the classical inspiral t = mu^2 c^3 r0^3/(4 k^2 e^4) [1-(r/r0)^3],
+    // 31.12 ps for positronium, and it is what the program compares with.
+    //
+    // Why a second run and not the quantized trajectory's own clock.  Under
+    // stochasticElectricDipole the orbit does not move between photons, and
+    // the first photon carries hbar omega = 2|E0| at a_pair, so the pair
+    // waits 2|E0|/P = 6 |E0|/(3P) ~ 187 ps at a_pair before it leaves;
+    // the remaining cascade takes ~12 ps.  Measured on seeds 42-44:
+    // 199.0 ps in total, 186.7 of them before the first photon, against
+    // 30.69 ps for the continuous transit.  That factor is the emission
+    // model, not the definition of the clock, and lifetimeSecondsLab keeps
+    // reporting it as the photon-cascade time.
+    //
+    // The continuous run stops at the retardation margin (period/light-
+    // crossing 150, a ~ 0.015 a0 for e+e-) or at the Compton barrier, not at
+    // 0.005 a_pair.  The remainder between its terminal semi-major axis and
+    // the boundary is added in closed form, (a_stop^3 - r_end^3)/(3C) with
+    // the dipole coefficient of classicalInspiralSeconds for a circular
+    // orbit, and reported separately; it is ~1e-6 of the total and may be
+    // negative when the run stopped inside the boundary.
+    //
+    // NaN when the transit is not defined: --ground-state-floor (the floor
+    // holds the orbit at a_pair), a start away from a_pair (--level > 1,
+    // --start-radius), or a transit run that did not complete (then
+    // collapseTransitOutcome says why and collapseTransitCensoredSeconds is
+    // the time it reached).  With gMeasureCollapseTransit off nothing is run.
+    double collapseTransitSeconds=std::numeric_limits<double>::quiet_NaN();
+    double collapseTransitTailSeconds=std::numeric_limits<double>::quiet_NaN();
+    double collapseTransitReferenceSeconds=
+        std::numeric_limits<double>::quiet_NaN();
+    SimulationOutcome collapseTransitOutcome=
+        SimulationOutcome::NumericalFailure;
+    double collapseTransitCensoredSeconds=0.0;
     // Mean over checkpoints of (measured orbital energy loss rate) / (Larmor
     // rate for the same osculating orbit).  1 means the engine reproduces
     // coherent electric-dipole radiation exactly.
@@ -1693,7 +1731,9 @@ inline State osculatingPeriapsisState(const OsculatingElements& elements,
 // collapse instead of iterating uselessly.
 inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                                            int selectedPhenomenon,
-                                           double wallClockBudgetSeconds) {
+                                           double wallClockBudgetSeconds,
+                                           ChargeRadiationReactionModel
+                                               activeReactionModel) {
     CremCollapseEstimate result;
     const double reducedMass=firstMass*secondMass
         /(firstMass+secondMass);
@@ -1860,10 +1900,10 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     double backgroundEnergyRatio=0.0;
     double backgroundAngularRatio=0.0;
     double energyAtLastBackground=0.0;
-    // Read once, thread-safely: runCremCollapseExperiment runs many of these
-    // concurrently, so the global must not be re-read (or, worse, mutated)
-    // from here on.
-    const ChargeRadiationReactionModel activeReactionModel=gRadiationReactionModel;
+    // The reaction model is a parameter, read from the global once by the
+    // overload below: runCremCollapseExperiment runs many of these
+    // concurrently, and the collapse-transit run needs a different model
+    // from the same thread, so the global must not be re-read or mutated.
 
     // Poisson-process bookkeeping for stochasticElectricDipole, unused (and
     // costing nothing) for every other model.  Unlike the analogous state in
@@ -5617,6 +5657,52 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     return result;
 }
 
+// The historical signature: the reaction model selected on the command line.
+inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
+                                           int selectedPhenomenon,
+                                           double wallClockBudgetSeconds) {
+    return estimateCremCollapse(seed,selectedPhenomenon,wallClockBudgetSeconds,
+                                gRadiationReactionModel);
+}
+
+// Fills the collapse-time fields of `target` (see collapseTransitSeconds):
+// the continuous electric-dipole transit from a_pair to collisionBoundaryRadius
+// for the same seed and channel.  `sameModelRun` is the estimate already made
+// under the command-line model; when that model IS the continuous one it is
+// reused instead of integrated twice.
+inline void measureCollapseTransit(CremCollapseEstimate& target,
+                                   const CremCollapseEstimate& sameModelRun,
+                                   std::uint64_t seed,int selectedPhenomenon,
+                                   double wallClockBudgetSeconds) {
+    constexpr ChargeRadiationReactionModel continuousModel=
+        ChargeRadiationReactionModel::individualLandauLifshitz;
+    const double startRadius=pairBohrRadius(activePair);
+    const double endRadius=collisionBoundaryRadius;
+    const double coefficient=3.0*classicalInspiralCoefficient();
+    target.collapseTransitReferenceSeconds=
+        (std::pow(startRadius,3.0)-std::pow(endRadius,3.0))/coefficient;
+    if(gGroundStateEmissionFloor) return;
+    const CremCollapseEstimate transit=
+        gRadiationReactionModel==continuousModel
+            ?sameModelRun
+            :estimateCremCollapse(seed,selectedPhenomenon,
+                                  wallClockBudgetSeconds,continuousModel);
+    target.collapseTransitOutcome=transit.calibrationOutcome;
+    target.collapseTransitCensoredSeconds=transit.calibrationSeconds;
+    if(!(std::abs(transit.initialSemiMajorAxis/startRadius-1.0)<=1.0e-6))
+        return;
+    if(transit.calibrationOutcome!=SimulationOutcome::ReachedCutoff
+       ||!std::isfinite(transit.lifetimeSeconds)) return;
+    // The mid-orbit cutoff branch stops ON the Compton barrier and records no
+    // terminal elements; everything else records the terminal semi-major axis.
+    const double stopRadius=std::isfinite(transit.terminalSemiMajorAxis)
+        ?transit.terminalSemiMajorAxis:comptonBarrierRadius;
+    target.collapseTransitTailSeconds=
+        (std::pow(stopRadius,3.0)-std::pow(endRadius,3.0))/coefficient;
+    target.collapseTransitSeconds=
+        transit.lifetimeSeconds+target.collapseTransitTailSeconds;
+}
+
 // HARMONIC-TABLE ENERGY IDENTITY, enforced once per process.
 //
 // This is the half of the quantized channel's energy balance that the
@@ -5709,9 +5795,16 @@ inline std::vector<CremCollapseEstimate> runCremCollapseExperiment(
         while(true) {
             const int index=nextIndex.fetch_add(1);
             if(index>=runCount) break;
-            estimates[static_cast<size_t>(index)]=estimateCremCollapse(
-                splitMix64(masterSeed+static_cast<std::uint64_t>(index)),
-                selectedPhenomenon,wallClockBudgetSeconds);
+            const std::uint64_t trajectorySeed=
+                splitMix64(masterSeed+static_cast<std::uint64_t>(index));
+            CremCollapseEstimate& estimate=
+                estimates[static_cast<size_t>(index)];
+            estimate=estimateCremCollapse(trajectorySeed,selectedPhenomenon,
+                                          wallClockBudgetSeconds);
+            if(gMeasureCollapseTransit)
+                measureCollapseTransit(estimate,estimate,trajectorySeed,
+                                       selectedPhenomenon,
+                                       wallClockBudgetSeconds);
             const int done=completed.fetch_add(1)+1;
             if(done%10==0||done==runCount) {
                 std::lock_guard<std::mutex> lock(outputMutex);

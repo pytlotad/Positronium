@@ -339,6 +339,11 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         runCremCollapseExperiment(seed,selectedPhenomenon,runCount,
                                   wallClockBudgetSeconds);
     std::vector<double> decayTimes;
+    // Photon-cascade time of the quantized run (lifetimeSecondsLab), which
+    // was the reported collapse time until audit section 108; kept beside
+    // the collapse time, not in place of it.
+    std::vector<double> cascadeTimes;
+    double transitReferenceSeconds=std::numeric_limits<double>::quiet_NaN();
     std::vector<double> calibrationPowers;
     // Right-censored sample for the product-limit estimator: every trajectory
     // contributes, a completed one as an observed collapse and a stopped one
@@ -410,8 +415,27 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         // trajectory's total duration (README point N) -- genuinely
         // converted, not merely relabelled, even though the correction is
         // far below this sample's own statistical noise.
+        // COLLAPSE TIME (audit section 108): the continuous electric-dipole
+        // transit from a_pair to 0.005 a_pair, measured by a second run of
+        // the same seed (CremCollapseEstimate::collapseTransitSeconds).  It
+        // has no photon recoil, so its proper and lab clocks coincide.
+        if(std::isfinite(estimate.collapseTransitReferenceSeconds))
+            transitReferenceSeconds=estimate.collapseTransitReferenceSeconds;
+        if(std::isfinite(estimate.collapseTransitSeconds)) {
+            decayTimes.push_back(estimate.collapseTransitSeconds*timeScale);
+            survivalSample.push_back(
+                {estimate.collapseTransitSeconds*timeScale,true});
+            measuredCollapse.push_back(
+                estimate.collapseTransitSeconds*timeScale);
+            analyticCollapse.push_back(
+                estimate.collapseTransitReferenceSeconds*timeScale);
+        } else if(estimate.collapseTransitOutcome
+                  ==SimulationOutcome::ObservationLimit) {
+            survivalSample.push_back(
+                {estimate.collapseTransitCensoredSeconds*timeScale,false});
+        }
         if(std::isfinite(estimate.lifetimeSecondsLab))
-            decayTimes.push_back(estimate.lifetimeSecondsLab*timeScale);
+            cascadeTimes.push_back(estimate.lifetimeSecondsLab*timeScale);
         if(estimate.calibrationOutcome==SimulationOutcome::ReachedCutoff) {
             switch(estimate.stopCause) {
                 case CollapseStopCause::ComptonBarrier: ++barrierStops; break;
@@ -433,24 +457,6 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                 finalPeriods.push_back(estimate.finalPeriodSeconds);
             if(std::isfinite(estimate.revolutions))
                 revolutionCounts.push_back(estimate.revolutions);
-            // Deliberately S'-frame on BOTH sides, not lab-converted like
-            // decayTimes above: analyticCollapseSeconds is a zero-free-
-            // parameter closed-form prediction from the trajectory's own
-            // osculating elements (classicalInspiralSeconds), with no
-            // recoil-velocity concept to boost in the first place -- "does
-            // the engine reproduce this theory" is a statement about S'
-            // dynamics either way, and boosting only the measured side would
-            // manufacture a mismatch (~1e-11 relative, see README point N)
-            // this panel's actual, far larger systematic offset does not
-            // need and this reference cannot be given a matching lab-frame
-            // counterpart to compare against.
-            if(std::isfinite(estimate.lifetimeSeconds)
-               &&std::isfinite(estimate.analyticCollapseSeconds)
-               &&estimate.analyticCollapseSeconds>0.0) {
-                measuredCollapse.push_back(estimate.lifetimeSeconds*timeScale);
-                analyticCollapse.push_back(
-                    estimate.analyticCollapseSeconds*timeScale);
-            }
         }
         // Independent of completion: both are properties of the prepared
         // orbit and of orbits actually resolved, so a censored run still
@@ -516,22 +522,10 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         switch(estimate.calibrationOutcome) {
             case SimulationOutcome::ReachedCutoff:
                 ++reachedCutoffCount;
-                if(std::isfinite(estimate.lifetimeSecondsLab)) {
-                    survivalSample.push_back(
-                        {estimate.lifetimeSecondsLab*timeScale,true});
-                }
                 break;
             case SimulationOutcome::ObservationLimit:
-                // Both stopped states are right-censored: the pair was still
-                // bound when observation ended, so the collapse time is known
-                // only to exceed the simulated time reached.  A non-decaying
-                // trajectory is the limiting case of that.  Lab-converted
-                // (calibrationSecondsLab), same reasoning as the completed-
-                // collapse branch above -- mixing an S'-frame bound into a
-                // lab-frame observed sample would corrupt the Kaplan-Meier
-                // estimate that combines them.
-                survivalSample.push_back(
-                    {estimate.calibrationSecondsLab*timeScale,false});
+                // Counts for the quantized photon-cascade run.  The collapse
+                // time's own censoring comes from the transit run above.
                 if(estimate.preparedBelowGroundState) {
                     ++preparedBelowFloorCount; break;
                 }
@@ -596,12 +590,22 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                  "annihilation generator is a quantum prescription independent\n"
                  "of the classical model, and its self-consistency is checked "
                  "in positronium_validation.\n"
-              << "Collapse time over all "
+              << "Collapse time = transit from a_pair to 0.005 a_pair (0.01 a0) "
+                 "under continuous electric-dipole radiation reaction,\n"
+                 "measured by a second run of each seed, over "
               << (survival.eventCount+survival.censoredCount)
               << " usable trajectories (" << survival.eventCount
-              << " observed collapses, " << survival.censoredCount
-              << " right-censored\nat the simulated time they reached).  "
-                 "Completion fraction: " << completionPercent << "%.\n";
+              << " observed, " << survival.censoredCount
+              << " right-censored).  Completion fraction: "
+              << completionPercent << "%.\n";
+    if(std::isfinite(transitReferenceSeconds))
+        std::cout << "  closed form            "
+                  << transitReferenceSeconds*timeScale << ' ' << timeUnit
+                  << "  (mu^2 c^3 r0^3/(4 k^2 e^4) [1-(r/r0)^3], r0 = a_pair, "
+                     "r = 0.005 a_pair)\n";
+    if(gGroundStateEmissionFloor)
+        std::cout << "  not measured: --ground-state-floor holds the orbit at "
+                     "a_pair, so there is no transit from it\n";
     if(survival.medianReached) {
         std::cout << "  Kaplan-Meier median    " << survival.medianSurvival
                   << ' ' << timeUnit << '\n';
@@ -625,9 +629,29 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         std::cout << "  mean of completed runs " << estimatedLifetime * timeScale
                   << " +/- " << estimatedError * timeScale << ' ' << timeUnit
                   << " (sigma/mean = " << relativeSpread << ")\n";
+        if(std::isfinite(transitReferenceSeconds)
+           &&transitReferenceSeconds>0.0)
+            std::cout << "  mean / closed form     "
+                      << estimatedLifetime/transitReferenceSeconds << '\n';
     } else {
         std::cout << "  mean of completed runs unavailable: no collapse was "
                      "observed\n";
+    }
+    if(!cascadeTimes.empty()) {
+        const GaussianFitSummary cascadeMoments=
+            gaussianMaximumLikelihood(cascadeTimes);
+        std::cout << "Photon-cascade time of the quantized run (the collapse "
+                     "time reported before audit section 108): mean\n  "
+                  << cascadeMoments.mean << " +/- "
+                  << (cascadeMoments.count>1
+                      ?cascadeMoments.sigma
+                          /std::sqrt(static_cast<double>(cascadeMoments.count))
+                      :std::numeric_limits<double>::quiet_NaN())
+                  << ' ' << timeUnit << " over " << cascadeMoments.count
+                  << " completed runs.  Most of it is the wait for the first "
+                     "photon (2|E0|) at a_pair, where the\n  quantized orbit "
+                     "does not move; that is the emission model, not the "
+                     "clock.\n";
     }
     // Annihilation tied to the terminal radius.  The pair this model
     // integrated is BOUND when it stops, so its invariant energy is below
@@ -785,7 +809,10 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
                  "angular momentum, not its radius, so it can trigger above "
                  "or below the Compton barrier depending on the orbit) --\n"
                  "or the per-event wall-clock budget is spent (then censored, "
-                 "not extrapolated).  External lifetime is comparison only.\n";
+                 "not extrapolated).  External lifetime is comparison only.\n"
+                 "The collapse-time run uses the same limits under individual "
+                 "Landau-Lifshitz reaction; the closed-form remainder from where "
+                 "it stops\nto 0.005 a_pair (~1e-6 of the total) is added.\n";
     if (gGroundStateEmissionFloor) {
         std::cout
             << "WHAT THIS RUN REPORTS: the emission floor is ON (the default), "
@@ -845,14 +872,14 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
     }
     if(observationLimitCount>0) {
         std::cout<<"Note: "<<observationLimitCount<<" of "<<runCount
-                 <<" trajectories did not reach the boundary within the "
-                    "per-event wall-clock budget and were excluded from the "
-                    "mean above; raise --crem-wallclock-budget-s to reduce "
-                    "censoring.\n"
-                 <<"  Simulated time covered by censored trajectories: mean "
+                 <<" photon-cascade runs did not reach the boundary within the "
+                    "per-event wall-clock budget and are missing from the\n"
+                    "  photon-cascade time; raise --crem-wallclock-budget-s to "
+                    "reduce censoring.  The collapse time above comes from the "
+                    "separate transit run.\n"
+                 <<"  Simulated time covered by censored cascade runs: mean "
                  <<(censoredSimulatedTimeSum/observationLimitCount)*1.0e12
-                 <<" ps, max "<<censoredSimulatedTimeMax*1.0e12<<" ps"
-                    " (out of the classical estimate of a few ps to collapse).\n";
+                 <<" ps, max "<<censoredSimulatedTimeMax*1.0e12<<" ps.\n";
     }
     if(preparedBelowFloorCount>0) {
         std::cout<<"Note: "<<preparedBelowFloorCount<<" of "<<runCount
@@ -1217,19 +1244,16 @@ int showBoundDecayStatistics(std::uint64_t seed, int selectedPhenomenon,
         plot_style::key(true, false, false, true),
         AnalysisLine("Reference: da/dt = -C/a^{2}, C = 8ke^{4}/(6#pi#varepsilon_{0}c^{3}m^{2}),",
             plot_style::theory()),
-        AnalysisLine("orbit-averaged with the DIPOLE factor (1+e^{2}/2)/(1-e^{2})^{5/2}",
+        AnalysisLine("circular orbit from a_{pair} to 0.005 a_{pair}: (r_{0}^{3}-r^{3})/(3C).",
             plot_style::theory()),
-        AnalysisLine("evaluated at each trajectory's own a and e. Zero free parameters.",
+        AnalysisLine("Measured: continuous E1 transit over the same span. Zero free parameters.",
             plot_style::theory()),
         AnalysisLine("completed trajectories: N = "
             + std::to_string(measuredCollapse.size()), plot_style::crem()),
         "#LTt_{CREM}/t_{classical}#GT = "
             + compactNumber(collapseRatioMoments.mean, 4)
             + " #pm " + compactNumber(collapseRatioMoments.sigma, 3),
-        AnalysisLine("dashed: exact agreement. Eccentricity is held fixed in",
-            plot_style::theory()),
-        AnalysisLine("the reference; radiation actually circularizes the orbit.",
-            plot_style::theory())
+        AnalysisLine("dashed: exact agreement.", plot_style::theory())
     }, 0.019);
 
     // --- Pad 4: radiation sector against the Larmor rate ---

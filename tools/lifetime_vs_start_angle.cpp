@@ -28,6 +28,9 @@ static double startCos(unsigned long long masterSeed){
   return dot(a,b)/(a.norm()*b.norm());
 }
 int main(int argc,char** argv){
+  // Reads the photon-cascade time only; skip the collapse-transit run
+  // (audit section 108), which would double the cost.
+  gMeasureCollapseTransit=false;
   const bool run=argc>1&&std::strcmp(argv[1],"run")==0;
   const unsigned long long base=argc>2?strtoull(argv[2],nullptr,10):60000ULL;
   const int count=argc>3?atoi(argv[3]):20;

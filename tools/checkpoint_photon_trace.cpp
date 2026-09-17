@@ -16,6 +16,9 @@
 #include <cstdio>
 #include <cstdlib>
 int main(int argc,char** argv){
+  // Reads the photon-cascade time only; skip the collapse-transit run
+  // (audit section 108), which would double the cost.
+  gMeasureCollapseTransit=false;
   const unsigned long long seed=strtoull(argv[1],nullptr,10);
   const double budget=argc>2?atof(argv[2]):900.0;
   const auto t0=std::chrono::steady_clock::now();

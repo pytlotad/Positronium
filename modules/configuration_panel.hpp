@@ -59,6 +59,7 @@
 #include "physical_constants.hpp"
 
 #include <cstdint>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 
@@ -246,6 +247,18 @@ inline bool gDeterministicEmission = true;
 // channel and no rate, established separately.  --ground-state-floor restores
 // the n=1 cascade-time reading documented above.
 inline bool gGroundStateEmissionFloor = false;
+
+// COLLAPSE TIME = CONTINUOUS TRANSIT a_pair -> 0.005 a_pair (audit section
+// 108).  runCremCollapseExperiment runs every trajectory a second time under
+// individual Landau-Lifshitz reaction to measure it (see
+// CremCollapseEstimate::collapseTransitSeconds), which roughly doubles the
+// cost of experiments 1 and 2.  Tools that only read the photon-cascade
+// time (lifetimeSecondsLab) switch it off; CREM_COLLAPSE_TRANSIT=0 does the
+// same from the environment.
+inline bool gMeasureCollapseTransit = [] {
+    const char* text = std::getenv("CREM_COLLAPSE_TRANSIT");
+    return !(text && text[0] == '0' && text[1] == '\0');
+}();
 
 // SPIN QUANTIZATION, split out of --ground-state-floor and defaulted ON.
 //

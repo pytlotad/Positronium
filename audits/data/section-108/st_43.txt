@@ -1,0 +1,6 @@
+Running 1 CREM collapse calibrations on 1 worker (per-event wall-clock budget 3000 s).
+CREM calibrations: 1/1
+SEED 43 model stochastic out 0 stop 2 lab_ps 198.997513 proper_ps 198.997513 photons 3 first_photon_ps 186.760933 last_photon_ps 198.997513 transit_ps 12.236579 analytic_ps 31.123522 a0/aPs 1.000000
+  photon 0 t_lab 186.760933 ps E 13.6047 eV
+  photon 1 t_lab 198.726247 ps E 70.6460 eV
+  photon 2 t_lab 198.997513 ps E 620.0431 eV

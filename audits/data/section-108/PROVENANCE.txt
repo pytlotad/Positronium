@@ -1,0 +1,9 @@
+Raw outputs behind audit section 108 (2026-09-17).
+  st_4[234].txt        photon lab times and the transit split, stochastic channel
+  cont_42.txt          the same seed under individual Landau-Lifshitz
+                       (both from a temporary probe that added the emission time
+                        to LabFramePhoton; that field is not kept)
+  production_*.txt     ./positronium --mode statistical --phenomenon 1|2 --runs 4
+                       --seed 42 --crem-wallclock-budget-s 600, with the new report
+  cascade_bit_check.txt  tools/para_ortho_lab_pairs quant 70001: cascade times
+                       unchanged against section 107

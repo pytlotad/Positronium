@@ -55,6 +55,9 @@ void summarize(const char* label,std::vector<double> sample,int attempted) {
 }
 
 int main(int argc,char** argv) {
+  // Reads the photon-cascade time only; skip the collapse-transit run
+  // (audit section 108), which would double the cost.
+  gMeasureCollapseTransit=false;
     const int runCount=argc>1?std::atoi(argv[1]):24;
     const std::uint64_t masterSeed=
         argc>2?std::strtoull(argv[2],nullptr,10):42ULL;

@@ -34,6 +34,9 @@ static void prepared(unsigned long long seed,int ph,double& c,Vec3& m1){
   c=dot(m1,m2)/(m1.norm()*m2.norm());
 }
 int main(int argc,char** argv){
+  // Reads the photon-cascade time only; skip the collapse-transit run
+  // (audit section 108), which would double the cost.
+  gMeasureCollapseTransit=false;
   const char* mode=argv[1];
   const unsigned long long base=strtoull(argv[2],nullptr,10);
   const int count=atoi(argv[3]);

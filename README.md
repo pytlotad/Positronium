@@ -580,6 +580,40 @@ za osiadłą, zanim ta ruszy. Zmierzone: `--level 1 --ground-state-floor` daje
 \(S(t)=1\) przy \(0\) ps, brak mediany. To nie jest kolaps zerowej długości,
 tylko brak kaskady do zmierzenia.
 
+#### Definicja czasu kolapsu: przejście \(a_{\rm pary}\to 0{,}005\,a_{\rm pary}\)
+
+**Od audytu 108 „czas kolapsu" znaczy to samo, co w podręcznikowym wzorze na
+radiacyjny spadek orbity: czas przejścia od odległości charakterystycznej dla
+stanu podstawowego pary do granicy zderzenia.** Dla \(e^+e^-\) to droga od
+\(a_{\rm pary}=2a_0\) do \(0{,}005\,a_{\rm pary}=0{,}01\,a_0\), przy
+ciągłej reakcji promienistej (`--radiation-reaction individual`). Zamknięta
+postać, bez ani jednego parametru swobodnego,
+
+\[t=\frac{\mu^2c^3r_0^3}{4k^2e^4}\left[1-\left(\frac{r}{r_0}\right)^3\right]
+  = 31{,}1235\ \text{ps},\qquad \mu=\tfrac{m_e}{2},\ r_0=2a_0,\]
+
+a model mierzy \(30{,}6732\pm0{,}0052\) ps, czyli \(0{,}9855\) tej
+wartości (4 trajektorie, ziarno \(42\), \(\sigma/\mu=3{,}4\cdot10^{-4}\);
+para i orto dają identyczne cyfry). Przebieg zatrzymuje się na marginesie
+retardacji przy \(a\approx0{,}015\,a_0\), a resztę drogi do granicy dokłada
+człon analityczny \((a_{\rm stop}^3-r^3)/(3C)\), który waży
+\(\sim10^{-6}\) całości.
+
+**Czego ta liczba nie jest.** Nie jest czasem anihilacji: anihilacja jest
+mechanizmem kwantowym, którego ten model nie ma wcale — nie brakuje w nim
+członu, brakuje klasy mechanizmu. Zmierzone \(124{,}49\) ps dla para-Ps
+zostaje w raporcie wyłącznie jako odniesienie skali.
+
+**Kwantowa emisja mierzy inną wielkość.** Przy domyślnym kanale
+stochastycznym pierwsza emisja zabiera \(\hbar\omega=2|E_0|\) i orbita
+**nie opada** przed nią, więc para czeka \(2|E_0|/P=6\cdot|E_0|/(3P)\) w
+\(a_{\rm pary}\). Zmierzone na ziarnach \(42\)–\(44\): \(199{,}0\) ps
+razem, z czego \(186{,}7\) ps przed pierwszym fotonem, a samo przejście po
+nim \(12{,}2\) ps. Czynnik \(6{,}4\) wobec \(31\) ps jest więc własnością
+modelu emisji, nie definicji zegara; raport podaje tę wielkość osobno, jako
+czas kaskady fotonowej (\(198{,}985\pm0{,}0197\) ps na tych czterech
+trajektoriach).
+
 #### Czas kolapsu ustawia promień startowy
 
 | konfiguracja | mediana | wobec \(\tau_{\rm para}=124{,}49\) ps |

@@ -7202,3 +7202,75 @@ measurement of whether that survives a cascade.
       (historicalDipoleKinematics and the electric one) keep the hard switch;
       they are not on the force path measured here.  Why the history floor
       is 1e-20 s is not recorded anywhere; it was not changed.
+
+108. THE COLLAPSE TIME IS NOW THE TRANSIT a_pair -> 0.005 a_pair, AND WHY
+     THE QUANTIZED CHANNEL READS 199 ps INSTEAD OF 31 ps
+==================================================================
+
+108a. THE REQUEST.  Report as the collapse time the transit from the pair's
+      ground-state separation to its minimal physical separation, so that it
+      can be compared with the closed-form classical inspiral
+      t = mu^2 c^3 r0^3/(4 e^4 k^2) [1-(r/r0)^3] = 31 ps for e+e-.
+
+108b. THE PREMISE, CHECKED FIRST: THE CLOCK WAS ALREADY THAT.  Production
+      prepares an exact circular orbit at a_pair (sharp preparation, --level
+      1) and stops at the Compton barrier or the retardation margin, so the
+      reported time already ran from a_pair to the bottom.  The end radius
+      barely matters either: t scales as r^3, so moving the end from the
+      retardation margin (~0.015 a0) to 0.01 a0 changes the total by ~1e-5 ps.
+      The gap between 199 ps and 31 ps is therefore not the definition.
+
+108c. WHAT IT IS, MEASURED.  Seeds 42, 43 and 44, default free draw:
+        channel                                     lab time
+        continuous reaction (individual LL)          30.686 ps
+        closed form, a_pair -> 0.005 a_pair          31.123 ps
+        quantized emission, total                    198.93-199.04 ps
+          of which: before the first photon          186.67-186.79 ps
+          of which: the cascade after it             12.24-12.26 ps
+      The first photon carries hbar omega = 13.6047 eV = 2 |E0| at a_pair,
+      and under the quantized channel the orbit does not move between
+      photons, so the pair waits 2|E0|/P = 6 x |E0|/(3P) there -- six times
+      the whole classical inspiral.  That factor is the emission model.
+      (A probe added the emission lab time to LabFramePhoton for this; the
+      field is not kept.)
+
+108d. WHAT IS NOW REPORTED (the choice made).  The collapse time is the
+      CONTINUOUS transit from a_pair to collisionBoundaryRadius = 0.005
+      a_pair (0.01 a0 for e+e-, the pair-general form of the historical
+      constant).  Implementation:
+      - estimateCremCollapse takes the reaction model as a parameter; the old
+        signature reads the command line as before.
+      - runCremCollapseExperiment runs each trajectory a second time under
+        individual Landau-Lifshitz and fills collapseTransitSeconds,
+        collapseTransitTailSeconds, collapseTransitReferenceSeconds and
+        collapseTransitOutcome.  The transit run stops where the engine's own
+        limits stop it and the remainder to the boundary is added in closed
+        form; that tail is ~1e-6 of the total.
+      - The survival curve, the histogram and the theory panel of experiments
+        1 and 2 now use the transit; the quantized lifetimeSecondsLab is
+        reported beside them as the photon-cascade time.
+      - gMeasureCollapseTransit (CREM_COLLAPSE_TRANSIT=0) switches the second
+        run off; the seven tools that read only the cascade time set it false,
+        so their cost is unchanged.
+
+108e. VERIFIED.
+      - Production, 4 trajectories, seed 42, budget 600 s, para and ortho
+        alike (identical since audit 91): collapse time 30.6732 +- 0.0052 ps
+        against the closed form 31.1235 ps, ratio 0.9855, sigma/mean 3.4e-4;
+        photon-cascade time 198.985 +- 0.0197 ps.
+      - Cascade times bit-identical to before: seed 70001 gives para
+        198.974732528 ps and ortho 198.971579221 ps, as in section 107.
+      - Validation 62/62, header isolation 37/37.
+      - Cost: experiment 1 with 4 trajectories took 388 s against 190 s of
+        cascade alone, i.e. the second run roughly doubles it.
+
+108f. LIMITS.  The transit is not defined, and is reported as such, with
+      --ground-state-floor (the floor holds the orbit at a_pair), with
+      --level > 1 or --start-radius (the preparation is not at a_pair), or
+      when the transit run is censored.  The measured transit sits 1.4% below
+      the closed form; that gap is not explained here.  It is a SECOND run of
+      the same seed, not the same trajectory as the quantized one, so the two
+      times are not two clocks on one history.  Nothing in this section
+      touches what the model does or does not contain: annihilation remains
+      absent -- a missing class of mechanism, not a missing term -- and the
+      124.49 ps p-Ps lifetime stays in the report as a scale reference only.

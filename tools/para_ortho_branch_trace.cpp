@@ -25,6 +25,9 @@
 #include <string>
 
 int main(int argc,char** argv) {
+  // Reads the photon-cascade time only; skip the collapse-transit run
+  // (audit section 108), which would double the cost.
+  gMeasureCollapseTransit=false;
     if(argc<4) {
         std::cerr<<"usage: "<<argv[0]<<" <master seed> <index> <para|ortho>"
                  <<" [budget seconds]\n";
