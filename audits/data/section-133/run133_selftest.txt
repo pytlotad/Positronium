@@ -1,0 +1,6 @@
+R133a self-test, dipole terms zeroed:
+           e    J_r/h numerical  J_r/h closed form       relative
+       0.100     0.005012562893     0.005012562893       4.67e-15
+       0.500     0.133974596216     0.133974596216       0.00e+00
+       0.900     0.564110105646     0.564110105646       1.38e-15
+turning points at e = 0.5: inner/outer 0.500000000000 1.500000000000 a_pair against 0.5 and 1.5

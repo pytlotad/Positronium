@@ -1,0 +1,50 @@
+PRE-REGISTRATION, audit section 133 (the full radial action, without the
+circularity assumption 132i flagged).  Written before any number of this
+section was computed.
+written 2026-09-18T15:39:03Z
+
+WHAT IS BEING CLOSED.  Sections 131 and 132 used the Kepler closed form
+J_r = 2 pi (K sqrt(mu/2|E|) - L), which went NEGATIVE along the collapse
+(-0.0054 typically, -0.0158 at the margin-50 deep end) -- impossible for a
+real radial action, so the label was wrong there.  132 measured the source
+(the dipole term, zero under ablation) but assumed the orbit is circular in
+the model's own potential, which is the same statement as the gap being
+small.  This section drops that assumption and integrates
+
+  J_r = 2 integral_{r1}^{r2} p_r dr,   p_r = mu sqrt(2 h(r)),
+  h(r) = eps + K/r - u_dd(r) - u_so(r,L) - L^2/(2 r^2),
+
+the same h the estimator's dipoleAwarePeriapsis solves, between the model's
+own turning points.  The trace is extended to print both moments and the
+orbit normal at every checkpoint, so the potential is the one the
+trajectory actually had rather than a fixed geometry.
+
+RULES, decided now.
+R133a  THE INTEGRATOR IS VALIDATED if, with the dipole terms zeroed, the
+       numerical J_r matches the Kepler closed form to 1e-8 relative at
+       eccentricities 0.1, 0.5 and 0.9.  Below that accuracy nothing else
+       in this section is reported.
+R133b  THE CIRCULARITY ASSUMPTION of 131-132 HOLDS if the measured
+       J_r/h stays below 0.02 at every checkpoint of the collapse, which is
+       the size of the Kepler gap it was compared with.
+R133c  INCONSISTENT STATES.  If a checkpoint's (eps, L) has no accessible
+       radial region in the model's potential, that is an inconsistency
+       between the osculating elements and the potential.  Their count and
+       radii are reported, not smoothed over.
+R133d  WHICH NUMBERS MOVE.  Report the total (J_r + J_phi)/h at the prepared
+       state and at the stop.  If they differ from 131's 1.000000000 and
+       0.0962 by more than 1%, that is a correction to 131 and must be
+       stated as one.
+R133e  THE SIGN LEFT OPEN IN 132e.  J_r cannot be negative, so the question
+       is its size: if J_r/h comes out of order 0.005-0.016 at the deep-end
+       states, the true radial action accounts for the Kepler gap; if it
+       comes out near zero, the gap is purely a label artefact and the orbit
+       is genuinely circular in the model's potential.  Both answers are
+       reportable; what is not allowed is to call it either without the
+       integral.
+
+PREDICTION (mine, before the numbers).  The integrator validates; J_r/h
+stays below 1e-3 in the outer region and rises at the deep end but stays
+under 0.02, so R133b holds; a few deep-end states may come out
+inconsistent; and 131's two headline actions move by well under 1%, since
+at a_pair the dipole is 3.3e-06 of Coulomb.

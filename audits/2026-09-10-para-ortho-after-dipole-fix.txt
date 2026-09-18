@@ -9035,3 +9035,100 @@ measurement of whether that survives a cascade.
       section does not test.  The probe mirrors dipoleAwarePeriapsis's
       turning-point state construction; the two energy functions themselves
       are called, not copied.
+
+133. THE FULL RADIAL ACTION: WHERE IT EXISTS IT IS TINY, AND TWO THIRDS OF THE
+     COLLAPSE IS NOT AN ORBIT OF THE MODEL'S OWN POTENTIAL
+==================================================================
+
+133a. THE ASSUMPTION BEING DROPPED.  Sections 131 and 132 read the actions off
+      the Kepler closed forms, and 132i admitted that treating the collapse as
+      circular in the model's own potential is the same statement as the gap
+      being small.  tools/radial_action_eccentric.cpp integrates
+        J_r = 2 integral_{r1}^{r2} mu sqrt(2 h(r)) dr,
+        h(r) = eps + K/r - u_dd(r) - u_so(r,L) - L^2/(2 r^2),
+      between the model's own turning points, h being the same radial function
+      dipoleAwarePeriapsis solves.  The sqrt vanishes at both ends, so the
+      quadrature runs in r = c - b cos(theta), where the integrand is smooth.
+      CREM_ACTION_TRACE now prints eps, L, both moments and the orbit normal
+      at every checkpoint, so the potential is the one the trajectory actually
+      had; section 132's probe had to assume moments along the normal, and
+      that is why its residual came out with the opposite sign.
+
+133b. THE INTEGRATOR, VALIDATED (rule R133a).  With the dipole terms zeroed,
+      against the closed form:
+        e = 0.1   0.005012562893 vs 0.005012562893   rel 5.2e-15
+        e = 0.5   0.133974596216 vs 0.133974596216   rel 0.0e+00
+        e = 0.9   0.564110105646 vs 0.564110105646   rel 1.4e-15
+      and the turning points at e = 0.5 come out 0.500000000000 and
+      1.500000000000 a_pair.  R133a asked for 1e-8; measured 1e-15.
+
+133c. WHERE THE RADIAL ACTION EXISTS, IT IS TINY (rule R133b).  Four
+      trajectories, seeds 42 and 43 at margins 150 and 50:
+        trace    accessible  no region  max J_r/h  max |Kepler J_r|  of J_phi
+        150/42       14         55       0.000981      0.005433        1.96%
+        150/43       24         45       0.000242      0.007154        2.56%
+         50/42       26         56       0.002441      0.005433        1.96%
+         50/43       27         50       0.000299      0.029187       23.10%
+      R133b asked for J_r/h below 0.02 at every checkpoint: the largest
+      anywhere is 0.0024.  So the circularity assumption of 131-132 was
+      right about the SIZE of the radial action.
+
+133d. AND WRONG ABOUT THE STATE (rule R133c).  At 45 to 56 of the 69 to 82
+      checkpoints -- two thirds to four fifths -- the osculating pair (eps, L)
+      has NO accessible radial region in the model's own potential: L exceeds
+      what that energy allows.  This is exactly the over-circular seam the
+      secular layer documents ("a value above the circular limit is not an
+      ellipse with this energy") and it is where the Kepler J_r went negative.
+      Now it is quantified: the excess reaches 1.96-2.56% of J_phi inside the
+      declared domain and 23.1% in the margin-50 runs below it.
+
+133e. SO THE SIGN QUESTION OF 132e HAS A THIRD ANSWER, NOT ONE OF MY TWO.
+      R133e offered the choice "of order 0.005-0.016, hence the Kepler gap is
+      real" or "near zero, hence a label artefact".  Neither.  At a state
+      whose Kepler label reads -0.005361 the model's potential either has no
+      orbit at all, which is most of them, or has one with J_r/h = +0.000020
+      (checkpoint 65 of 150/42) -- a factor 270 below the label.  The negative
+      Kepler value is not a radial action of any size; it is a flag that the
+      elements and the potential disagree, and the estimator's own response to
+      it is the projection to e = 0 that the action label then inherits.
+
+133f. THE STOP IS ECCENTRIC, AND ITS ACTION IS TIGHTER THAN 131 REPORTED.
+        trace     J_r/h    J_phi/h   total model   total Kepler   r_out/r_in
+        150/42   0.000981  0.096794    0.097775      0.096794       1.3357
+        150/43   0.000242  0.097645    0.097887      0.097645       1.0104
+         50/42   0.000730  0.096469    0.097199      0.080655       1.0320
+         50/43      -          -        no region     0.097152         -
+      In the model's own potential the three measurable stops agree to 0.7%
+      (0.097199 to 0.097887) while the Kepler label spread them over 20%
+      (0.080655 to 0.097645).  Section 132c said that scatter was in the
+      label; this is the measurement.  And at 150/42's stop the orbit is
+      genuinely eccentric, r_out/r_in = 1.3357 or e about 0.14, where the
+      Kepler label reported e = 0.
+
+133g. CORRECTIONS TO 131 AND 132 (rule R133d).  The prepared state's total
+      action is 1.000002029 h, not h to nine digits: the nine digits were a
+      property of the Kepler labels, and in the model's potential the
+      prepared orbit already has J_r/h = 0.000002 with r_out/r_in = 1.0040.
+      The stopping action is 0.0975 +- 0.0004 rather than 0.0962 +- 0.0014,
+      which is +1.0% for 150/42 and +20.5% for 50/42 -- over the 1% threshold
+      R133d set, so it is recorded as a correction.
+
+133h. NO VERDICT MOVES.  The stopping action is still not an integer: 0.0975
+      against the nearest nonzero integer is a factor 10.3.  The stop is
+      still the retardation margin, whose own ratio 132b printed.  And
+      --ground-state-floor is still the n = 1 action floor, since at a_pair
+      the whole correction is 2e-06.
+
+133i. UNCHANGED.  Validation 62/62, header isolation 37/37, and the extended
+      trace is inert: seed 42 stops with three photons and the same cause in
+      every run of sections 131-133.
+
+133j. LIMITS.  Four trajectories, two seeds, one pair, one preparation.  The
+      spin-orbit term of h is exact at the turning points and is used as an
+      r-dependent potential between them, which is what the estimator itself
+      does; no separate check of that extension exists.  The quadrature is
+      Gauss-Legendre in the cosine variable with 400 nodes, validated only
+      against the Kepler case, where it is exact to 1e-15.  What is NOT
+      offered here is a repaired action for the inaccessible states: for
+      those, the model has no orbit and therefore no action, and this section
+      counts them rather than inventing a value.

@@ -1,0 +1,16 @@
+Raw outputs behind audit section 133 (2026-09-18).
+  prereg_133.txt        rules R133a-e, written before any number
+  run133_selftest.txt   tools/radial_action_eccentric.cpp --selftest: the
+                        integrator against the Kepler closed form (R133a)
+  run133_<margin>_err_<seed>.txt
+                        the per-checkpoint table: J_r/h in the model's own
+                        potential, the Kepler label, J_phi/h, both totals and
+                        r_out/r_in, with NO REGION where the osculating
+                        elements admit no orbit
+  run133_summary.txt    the four traces summarized (133c, 133d, 133f)
+  state_traces.tar.gz   the ACTION lines that fed it, now carrying eps, L,
+                        both moments and the orbit normal, plus MARGIN and
+                        PHOTON_LADDER
+  results.txt           the RESULT lines, with stop_cause
+Reproduce a table with:
+  grep ^ACTION t133_m150_err_42.txt | /tmp/ecc 400

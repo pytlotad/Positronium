@@ -2126,12 +2126,20 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                 elements.specificAngularMomentum*reducedMass/hbar;
             std::fprintf(stderr,
                 "ACTION checkpoint=%d t=%.9e a_over_apair=%.9f"
-                " n=%.9f Jphi_over_h=%.9f Jr_over_h=%.9f e=%.9f\n",
+                " n=%.9f Jphi_over_h=%.9f Jr_over_h=%.9f e=%.9f"
+                " eps=%.17e L=%.17e"
+                " mu1=%.9e,%.9e,%.9e mu2=%.9e,%.9e,%.9e"
+                " nhat=%.9e,%.9e,%.9e\n",
                 checkpoint,simulatedTimeTotal,
                 binding>0.0?groundBinding/binding:0.0,total,azimuthal,
                 total-azimuthal,
                 total>0.0?std::sqrt(std::max(0.0,
-                    1.0-azimuthal*azimuthal/(total*total))):0.0);
+                    1.0-azimuthal*azimuthal/(total*total))):0.0,
+                elements.specificEnergy,elements.specificAngularMomentum,
+                firstDipole.x,firstDipole.y,firstDipole.z,
+                secondDipole.x,secondDipole.y,secondDipole.z,
+                angularMomentumDirection.x,angularMomentumDirection.y,
+                angularMomentumDirection.z);
         }
         if(std::getenv("CREM_DEBUG_PRECISE")) {
             std::cerr<<std::setprecision(17)
