@@ -3310,15 +3310,37 @@ inline MutualForces allExternalForces(const State& s) {
                 + mixedMagneticForces.second + externalField.second};
 }
 
+// ONE SOFTENING LENGTH FOR BOTH SIDES OF THE MOMENT-CHARGE INTERACTION
+// (audit 126), on by default; CREM_NO_MATCHED_SOFTENING restores the old
+// mismatch.  The moment is a loop of radius magneticDipoleRadius(), so it
+// samples the partner's charge field averaged over its own extent, exactly as
+// the charge samples the moment's field softened at that same length.  Audit
+// 125 traced the pair's self-propulsion to the mismatch -- 0.05 r* acting on
+// the moment against 0.9668 r* acting back on the charge -- and audit 126
+// measured what matching them does: in the synthetic circular test at 1 r*
+// the net force falls 868 times, on a real orbit the gained momentum falls
+// from 1.1714 to 0.0061 m c with the plunge intact, and in the exact
+// uniform-motion case both sides then deviate from the point-dipole answer by
+// the SAME 1.05% while their net matches the analytic net to four digits.
+// Production is untouched: it runs at 15 r* and beyond, where a 0.9668 r*
+// softening is nothing -- the collapse time moves by 0.0003 ps and a cascade
+// lifetime by 1e-9 ps.
+inline double matchedMomentSoftening() {
+    static const bool enabled=
+        std::getenv("CREM_NO_MATCHED_SOFTENING")==nullptr;
+    return enabled?magneticDipoleRadius():0.0;
+}
+
 inline ElectromagneticField fieldFromOtherParticleAt(
     const Vec3& observationPosition,double observationTime,
     const State& state,const StateHistory& history,bool targetIsFirst,
-    double poleSeparationFraction=1.0e-5) {
+    double poleSeparationFraction=1.0e-5,
+    double chargePlummerFloor=0.0) {
     const bool sourceIsFirst=!targetIsFirst;
     const double sourceCharge=sourceIsFirst?firstCharge:secondCharge;
     ElectromagneticField field=lienardWiechertField(
         observationPosition,observationTime,history,state,sourceIsFirst,
-        sourceCharge);
+        sourceCharge,0.0,chargePlummerFloor);
     const ElectromagneticField magneticDipole=retardedMagneticDipoleField(
         observationPosition,observationTime,history,state,sourceIsFirst,
         poleSeparationFraction);
@@ -3344,7 +3366,8 @@ inline double dipoleCouplingMaterialRate(const State& state,
     const auto couplingAt=[&](double offset) {
         const Vec3 point=position+velocity*offset;
         ElectromagneticField field=fieldFromOtherParticleAt(
-            point,state.time+offset,state,history,targetIsFirst);
+            point,state.time+offset,state,history,targetIsFirst,1.0e-5,
+            matchedMomentSoftening());
         // Match the spatial stencil's pole-cancellation recovery.
         if(gPoleCancellationRatio>30.0) {
             const ElectromagneticField retreated=fieldFromOtherParticleAt(
@@ -3392,7 +3415,8 @@ inline Vec3 hiddenMomentumRateForce(const State& state,
         1.0e-4*separation(state),1.0e-3*nuclearCutoff)/c;
     const auto electricAt=[&](double offset) {
         return fieldFromOtherParticleAt(position+velocity*offset,
-            state.time+offset,state,history,targetIsFirst).electric;
+            state.time+offset,state,history,targetIsFirst,1.0e-5,
+            matchedMomentSoftening()).electric;
     };
     const Vec3 now=electricAt(0.0);
     const Vec3 before=electricAt(-derivativeStep);
@@ -3474,7 +3498,8 @@ inline Vec3 covariantDipoleGradientForce(const State& state,
     int probeIndex=0;
     const auto coupling=[&](const Vec3& point) {
         ElectromagneticField field=fieldFromOtherParticleAt(
-            point,state.time,state,history,targetIsFirst);
+            point,state.time,state,history,targetIsFirst,1.0e-5,
+            matchedMomentSoftening());
         // Captured BEFORE the retreat, which overwrites the global with its
         // own (healthy) value -- reading it afterwards reports 1.09 for every
         // probe and hides exactly what is being looked for.

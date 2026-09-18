@@ -1,0 +1,18 @@
+Zapisano 2026-09-18T15:25:55+02:00, przed pomiarem.
+Naprawa z sekcji 125e: JEDNA dlugosc regularizacji po obu stronach
+oddziaływania.  Moment jest petla o promieniu magneticDipoleRadius = 0.9668 r*,
+wiec pole ladunku, ktore na niego dziala, ma byc zmiekczone tym samym profilem
+Plummera i ta sama dlugoscia, co pole momentu dzialajace na ladunek.
+Przelacznik CREM_MATCHED_SOFTENING, domyslnie wylaczony.
+Pomiary i reguly:
+  R126a ruch jednostajny (beta 0.05, 1 r*): |F1+F2|/|F1| ponizej 1e-6.
+  R126b kolowa 1 r*, beta 0.1: |F1+F2| ma spasc co najmniej 10x wobec
+     2.856e-03 N (z wlaczonym tempem pedu ukrytego).
+  R126c test dokladny przy 20 r*: sila na moment ma sie teraz roznic od
+     dokladnej AMPEROWSKIEJ (punktowej) o tyle samo, co reakcja, czyli okolo
+     1.05e-2, i oba odchylenia maja byc tego samego znaku; to jest test
+     spojnosci, nie zgodnosci z punktowym dipolem.
+  R126d trajektoria 1 r*, jeden obieg: |P| i beta_cm maja spasc wobec
+     1.1714 mc i 0.5015.
+  R126e produkcja: walidacja 62/62, izolacja 37/37; czas kolapsu i dryf
+     raportowane.

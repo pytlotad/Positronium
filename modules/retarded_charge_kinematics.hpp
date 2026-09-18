@@ -367,7 +367,8 @@ inline ElectromagneticField lienardWiechertField(const Vec3& observationPosition
                                           const State& presentState,
                                           bool sourceIsFirst,
                                           double sourceCharge,
-                                          double regularizationRadius=0.0) {
+                                          double regularizationRadius=0.0,
+                                          double plummerFloorOverride=0.0) {
     ChargeKinematics source = historicalCharge(
         history, presentState, sourceIsFirst, observationTime);
     double retardedTime = observationTime
@@ -465,7 +466,11 @@ inline ElectromagneticField lienardWiechertField(const Vec3& observationPosition
     const double betaSquared = beta.squaredNorm();
     const double kappa = std::max(1.0e-8, 1.0 - dot(direction, beta));
     double plummerScale=1.0;
-    if(const double floor=separationFloor(); floor>0.0) {
+    // plummerFloorOverride replaces separationFloor() for this one call: the
+    // field acting ON A MOMENT is softened at the moment's own radius, so
+    // that both sides of one interaction carry the same length (audit 126).
+    if(const double floor=plummerFloorOverride>0.0
+            ?plummerFloorOverride:separationFloor(); floor>0.0) {
         // The distance in the source's instantaneous rest frame,
         // gamma kappa R = u.(x - x_ret)/c, is a Lorentz scalar, so scaling the
         // field tensor by a function of it keeps the field covariant; for a

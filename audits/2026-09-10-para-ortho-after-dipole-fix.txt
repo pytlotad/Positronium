@@ -8428,3 +8428,79 @@ measurement of whether that survives a cascade.
       3e-08.  The reaction comparison uses the static dipole field, which is
       exact only because the moment is at rest in this test.  The trajectory
       numbers are one orbit at one radius.
+
+126. ONE SOFTENING LENGTH FOR BOTH SIDES: THE SELF-PROPULSION IS GONE, THE
+     PLUNGE IS NOT, AND PRODUCTION DOES NOT MOVE
+==================================================================
+
+126a. THE REPAIR SECTION 125e NAMED.  Not a new value for the moment radius,
+      but ONE length on both sides of one interaction.  The moment is a loop
+      of radius magneticDipoleRadius() = 0.9668 r*, so it samples the
+      partner's charge field averaged over its own extent; the charge already
+      feels the moment's field softened at that length.  The charge field
+      acting on a moment is therefore now softened with the same Plummer
+      length (lienardWiechertField gained a floor override;
+      matchedMomentSoftening supplies it in the three moment-force paths --
+      the gradient stencil, the material rate and the hidden-momentum rate).
+      ON by default; CREM_NO_MATCHED_SOFTENING restores the mismatch.
+
+126b. THE SYNTHETIC TESTS.
+        rigid drift, beta 0.05, 1 r*     |F1+F2| 1.68e-13 N, ratio 1.5e-11
+        circular, 1 r*, beta 0.1         2.856e-03 -> 3.289e-06 N
+                                         ratio 0.2266 -> 0.000294, factor 868
+      Rule R126a is met (the case that must stay balanced does) and R126b is
+      met 87 times over.
+
+126c. THE EXACT TEST IS THE ONE THAT SETTLES IT.  Charge in uniform motion
+      past a moment at rest, 20 r*, beta 0.05, against the closed form:
+        quantity                       mismatched      matched
+        force on the moment, error     2.81e-05        1.0465e-02
+        reaction on the charge, error   1.0465e-02     1.0465e-02
+        net of the two / |action|       1.1675e-02     1.2508e-03
+        the same for the EXACT pair     1.2508e-03     1.2508e-03
+      Read the columns rather than the rows: with one length the two sides
+      deviate from the point-dipole answer by exactly the SAME 1.05% -- which
+      is the loop averaging, a modelling choice, not an error -- and their net
+      then reproduces the analytic net to four digits.  With two lengths the
+      moment force looked better against the point dipole (2.8e-05) while the
+      pair's net force was nine times too large.  Consistency between the two
+      sides is what momentum conservation needs; agreement with a point
+      dipole is not.  Rule R126c is met.
+
+126d. THE REAL ORBIT.  Para, 1 r*, tilt 0, one orbit, depth 26:
+        variant                          |P| [m c]   beta_cm   dE [|U_dd|]  r_min
+        before audit 123                 0.5992      0.2729    +47.3        0.367
+        with the hidden-momentum rate    1.1714      0.5015    +113.1       0.286
+        and with one softening length    0.0061      0.0030    -1.08        0.361
+      The self-propulsion is gone -- 192 times smaller than the previous
+      default and 98 times smaller than before the hidden-momentum term --
+      and the ledger now LOSES 1.08 |U_dd| over the orbit instead of gaining
+      113.  What survives is the plunge to 0.36 r*, which is the moments'
+      own attraction and was never the defect.
+
+126e. PRODUCTION DOES NOT MOVE.  Experiment 1, 4 trajectories, seed 42:
+      collapse time 30.6720 +- 0.0045 ps against 30.6723 before, the drift at
+      the stop beta = 7.89e-07 against 2.72e-06, periapsis 15.87 r*.  Cascade
+      lifetimes: seed 70001 gives para 198.975153994 ps and ortho
+      198.966547464 ps, the second identical and the first moved by 1e-09 ps.
+      That is the expected shape: production runs at 15 r* and beyond, where
+      a 0.9668 r* softening is nothing.  Validation 62/62, header isolation
+      37/37, and the default-on build reproduces the environment-variable run
+      bit for bit.
+
+126f. WHAT IS NOW CLOSED.  The self-propulsion thread of sections 104-126:
+      the imbalance was 46% a missing force term (the hidden-momentum rate,
+      audits 122-124) and the rest a broken action-reaction pair caused by
+      two different regularization lengths (audits 125-126).  Neither was a
+      missing momentum carrier: hidden momentum, field momentum and the
+      Thomas back-reaction were each measured and each too small (119-121).
+
+126g. LIMITS AND WHAT THIS CHANGES ELSEWHERE.  The matched length applies to
+      the FORCE on a moment only; the energies (pairDipoleInteractionEnergy,
+      azimuthAveragedDipoleEnergy) and the charge-charge force are untouched,
+      so the ledger's own consistency below 1 r* has not been re-measured
+      here.  Deep-passage trajectories now differ from every number recorded
+      in sections 104-125, which were taken with the mismatch; the audit
+      trail keeps them as the history of the defect, not as current
+      behaviour.  One geometry for the exact test, one orbit for the
+      trajectory, positronium only.

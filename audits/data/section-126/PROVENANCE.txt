@@ -1,0 +1,11 @@
+Raw outputs behind audit section 126 (2026-09-18).
+  prereg_126.txt          rules R126a-e, timestamped
+  traj_matched.txt        tools/ledger_engine_drift, para 1 r*, one orbit,
+                          depth 26, with the matched length
+  pairs_matched.txt       tools/para_ortho_lab_pairs with CREM_MATCHED_SOFTENING
+  pairs_default_on.txt    the same after the default was flipped: identical
+  production_matched.txt  ./positronium --mode statistical --phenomenon 1
+                          --runs 4 --seed 42 --crem-wallclock-budget-s 600
+  The synthetic and exact comparisons come from
+  tools/uniform_motion_balance.cpp and tools/moving_charge_dipole_force.cpp
+  built from the working tree, run with and without the switch.

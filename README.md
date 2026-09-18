@@ -606,6 +606,18 @@ raportowany czas kolapsu jest mierzony wprost, bez drugiego przebiegu:
 trajektoriach spada z \(388\) s do \(47\) s. Kaskadę fotonową włącza
 `--radiation-reaction stochastic`.
 
+**Samonapęd jest zamknięty (audyt 126).** Oddziaływanie moment-ładunek
+używa teraz **jednej** długości zmiękczenia po obu stronach: moment jest pętlą
+o promieniu \(0{,}9668\,r^*\), więc pole ładunku działające na niego jest
+zmiękczone tak samo jak pole momentu działające na ładunek. Na orbicie przy
+\(1\,r^*\) zyskany pęd spada z \(1{,}1714\) na \(0{,}0061\,mc\), a bilans
+zamiast rosnąć o \(113\,|U_{dd}|\) traci \(1{,}08\); spadek do
+\(0{,}36\,r^*\) zostaje, bo to przyciąganie momentów, a nie wada. W teście
+dokładnym obie strony odchylają się od punktowego dipola o te same
+\(1{,}05\%\), a ich wypadkowa zgadza się z analityczną do czterech cyfr.
+Produkcja się nie rusza: czas kolapsu \(30{,}6720\) ps wobec
+\(30{,}6723\) ps.
+
 **Samonapęd pary jest w produkcji mniejszy o dwa rzędy (audyt 124).** Do
 sumy sił opóźnionych weszło tempo pędu ukrytego pętli prądowej,
 \(-(1/c^2)\,d(\boldsymbol\mu\times\mathbf E)/dt\). Czas kolapsu zmienia się
