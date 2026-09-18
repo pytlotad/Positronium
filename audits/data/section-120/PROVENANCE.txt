@@ -1,0 +1,9 @@
+Raw outputs behind audit section 120 (2026-09-18).
+  prereg_120.txt         rules R120a-c, timestamped
+  ctl_*.txt, thomas_*.txt  tools/ledger_engine_drift, one orbit, para, tilt 0,
+                         with and without CREM_RETARDED_THOMAS
+  thomas_share.txt       the section 105 split probe with the term enabled --
+                         it cancels in every difference, which is why the
+                         share was measured directly instead
+  thomas_force_share.cpp/.txt  the one-off probe that evaluates the term on
+                         the control trajectory without applying it

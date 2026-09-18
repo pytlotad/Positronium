@@ -1,0 +1,7 @@
+krok  64 r 0.6291 r*  |F_thomas|/|F_total| 3.2858e-01  |net Thomas|/|net total| 2.9584e-01
+krok 128 r 1.0459 r*  |F_thomas|/|F_total| 1.5312e-01  |net Thomas|/|net total| 2.3760e-01
+krok 192 r 0.7500 r*  |F_thomas|/|F_total| 4.1703e-01  |net Thomas|/|net total| 3.5081e-01
+krok 256 r 1.2282 r*  |F_thomas|/|F_total| 4.2059e-01  |net Thomas|/|net total| 2.2352e-01
+
+najwiekszy |F_thomas|/|F_total| 4.2246e-01; najwiekszy udzial w wypadkowej 3.5601e-01
+calka wypadkowej: Thomas 0.026073 mc, calosc 0.624268 mc, stosunek 0.0418

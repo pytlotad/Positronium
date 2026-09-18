@@ -1,0 +1,16 @@
+Zapisano 2026-09-18T12:25:13+02:00, przed pomiarem.
+R2: czy brak reakcji Thomasa w sumie OPOZNIONEJ tlumaczy samonaped?
+thomasBackReactionForces istnieje tylko w chargeDipoleForces (suma chwilowa);
+retardedExternalForces jej nie ma.  Dodaje przelacznik diagnostyczny
+CREM_RETARDED_THOMAS=1, ktory dolacza ten czlon do sumy opoznionej z
+pochodnymi momentu liczonymi z tej samej historii.  Domyslnie wylaczony, wiec
+produkcja zostaje bit w bit.
+Pomiar: tools/ledger_engine_drift, para, 1 r*, przechyl 0, jeden obieg, 256
+krokow, tol 1e-8, glebokosc 20 -- najpierw kontrola na HEAD, potem z
+przelacznikiem; nastepnie 0.5 r* (glebokosc 26).
+Reguly:
+  R120a "to byla przyczyna": beta_cm po obiegu przy 1 r* spada ponizej 0.05.
+  R120b "czesciowa przyczyna": spadek co najmniej pieciokrotny wobec kontroli.
+  R120c "nie tlumaczy": ponizej dwukrotnego, albo wzrost.
+Zapisuje takze, ile wynosi sam czlon Thomasa w sumie sil (jego wypadkowa
+F1+F2 wzgledem pelnej sily).

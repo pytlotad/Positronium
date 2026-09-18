@@ -3874,6 +3874,17 @@ inline MutualForces retardedExternalForces(const State& s,
                 tensorGradient.second*w+instantaneous.second*(1.0-w)};
         }
     }
+    // CREM_RETARDED_THOMAS: the orbital back-reaction of Thomas precession,
+    // which allExternalForces carries inside chargeDipoleForces and this sum
+    // has never had (audit sections 105g, 120).  Off by default, so
+    // production is bit-identical without it; the moment derivatives come
+    // from the same retarded history the rest of this sum uses.
+    static const bool retardedThomas=
+        std::getenv("CREM_RETARDED_THOMAS")!=nullptr;
+    MutualForces thomas;
+    if(retardedThomas)
+        thomas=thomasBackReactionForces(s,
+            thomasBmtDipoleDerivatives(s,history));
     // Same uniform external field as in the instantaneous sum.  It is not
     // retarded because it is not sourced by either particle.
     MutualForces externalField{
@@ -3899,8 +3910,10 @@ inline MutualForces retardedExternalForces(const State& s,
             +gZeroPointField.gradientForce(s.secondPosition,orbitalFrequency,
                 s.zeroPointPhase,s.secondDipole);
     }
-    return {chargeCharge.first+tensorGradient.first+externalField.first,
-            chargeCharge.second+tensorGradient.second+externalField.second};
+    return {chargeCharge.first+tensorGradient.first+externalField.first
+                +thomas.first,
+            chargeCharge.second+tensorGradient.second+externalField.second
+                +thomas.second};
 }
 
 struct CanonicalMomenta { Vec3 first, second; };
