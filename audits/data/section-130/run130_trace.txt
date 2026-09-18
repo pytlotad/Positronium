@@ -1,0 +1,5 @@
+substeps 1842 ratio1 -176086000000.0 ratio2 176086000000.0
+cos(mu1,mu2): start +0.1486 end +0.5235 min +0.1265 max +0.7303
+time mean +0.4696, substep mean +0.4874
+E[w] from this trajectory: time 0.7348, substep 0.7437
+last 10% of the time: <cos_mu> +0.4963 -> E[w] 0.7482

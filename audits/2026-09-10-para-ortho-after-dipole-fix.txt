@@ -8695,3 +8695,111 @@ measurement of whether that survives a cascade.
       measured |d psi| per cycle (3.14 and 3.22 rad) shows the cycles do
       close to within 3%.  The J_max bound uses |S1| = |S2| = hbar/2 exactly,
       which audit 128 measured to fifteen digits.
+
+130. THE TWO OBSERVABLES ARE NOT IN CONFLICT -- THEY ARE DECOUPLED, WHICH IS
+     WORSE: ONE FIXES J, THE OTHER FIXES L
+==================================================================
+
+130a. THE NECESSARY CONDITION.  One spin content must give both
+      O1  the ratio 2 gamma : 3 gamma = 1:3, i.e. E[w] = (1+<cos>)/2 = 1/4,
+      O2  the splitting U(anti-aligned) - U(aligned) = 203.3941 GHz.
+      Section 112 answered O1 alone and found measures that satisfy it; the
+      question here is whether ONE of them also carries O2, within a factor
+      1.5, with no refitting between the two.  A new tool,
+      tools/two_observable_consistency.cpp, evaluates both from the model's
+      own functions (azimuthAveragedDipoleEnergy and the orbit-averaged BMT
+      rates) as a scan over the orbital angular momentum at fixed a_pair.
+
+130b. THE MEASURE'S SCALE NOW COMES FROM INSIDE THE MODEL.  The Boltzmann
+      candidate of 112b had a free temperature, which is why 112 could not
+      close this.  Section 129 removed it: the mutual angle's own oscillation
+      has an action J = 0.0985 hbar at the start of the collapse and
+      0.1383 hbar at its end, invariant to a factor 1.40 in between, so
+      E_lib = J |omega1 - omega2| is an internal energy for exactly the
+      degree of freedom the measure lives on.
+
+130c. THE FIRST RESULT IS AN IDENTITY, NOT A NUMBER.  Measured across the
+      scan, hbar |omega1 - omega2| / A = 4.0000 at L = hbar and 3.997-3.999
+      down to L = 0.1 hbar.  It is exact: the precession is omega_i =
+      gamma_i B and the energy amplitude is A = |mu| B in the SAME field, the
+      two gyromagnetic ratios are exactly opposite (-1.76086e11 and
+      +1.76086e11 in the trace), so
+        hbar |omega1-omega2| / A = 2 hbar |gamma| / |mu| = 4
+      because |mu| = |gamma| hbar/2 (audit 128, to fifteen digits).  Hence
+        x = A/E_lib = hbar/(4J)      exactly,
+      and E[w] = (1 - Langevin(hbar/4J))/2 depends ONLY on the action.  The
+      orbit cancels out of O1 completely: over L = 0.1..1.0 hbar, 91 nodes,
+      E[w] moves by 1.4e-04.
+
+130d. SO THE TWO OBSERVABLES DO NOT COMPETE -- THEY ARE INDEPENDENT.
+        O1 is a function of J alone and of no orbit.
+        O2 is a function of the orbit alone: 2A = 21.95 GHz at L = hbar and
+           203.3941 GHz at L = 0.4761 hbar (116d).
+      At that L the same measure gives E[w] = 0.1907, a factor 1.311 from
+      1/4, so rule R130a's evaluable half is MET.  Its other half and rule
+      R130b are void as written: they assumed both observables tune with L,
+      and O1 does not, so "L(O1)" does not exist (the 0.0567 hbar the
+      bisection reports is the sign flip inside the moment radius, not a
+      polarization).  My pre-registered prediction was wrong in its
+      mechanism: I expected x to rise steeply as r falls; it is constant.
+      Parameter-free variants, all L-independent:
+        J             secular omega      traced omega (129)
+        0.0985 hbar        0.1907             0.3130
+        0.1383 hbar        0.2489             0.3609
+      All four lie inside the factor-1.5 window [0.1667, 0.3750].  O1 exactly
+      needs J = 0.1391 hbar against the 0.1383 measured at the last libration
+      cycle -- 0.6% -- but with the traced frequency instead of the secular
+      one it needs 0.0675 hbar, so that agreement sits inside the factor-2.06
+      ambiguity of rule R130d and is not evidence.
+
+130e. AND THE MODEL DOES NOT PRODUCE THAT MEASURE.  Read straight off the
+      section 129 trace, with no Boltzmann assumption and no temperature, the
+      time distribution of the mutual moment cosine on the model's own
+      trajectory is
+        cos(mu1,mu2)  start +0.1486  end +0.5235  min +0.1265  max +0.7303
+        time mean +0.4696  ->  E[w] = 0.7348
+        last 10% of the time +0.4963  ->  E[w] = 0.7482,
+      i.e. the dynamics carries the moments TOWARD alignment, to 1:0.36
+      rather than 1:3, a factor 2.94 and on the far side of the isotropic
+      0.5.  The Boltzmann measure at the libration scale predicts the
+      opposite sign.  The model's ensemble measure, 40 trajectories in 112c,
+      is 0.4994: isotropic, factor 2.00 from O1.
+
+130f. A CORRECTION TO 112d.  It said the model's only angle-dependent energy
+      "tilts toward ALIGNMENT, i.e. the wrong way", quoting
+      U = -2 (mu0/4pi) mu^2 cos/r^3.  That formula is for moments along the
+      SEPARATION; at the production geometry (moments along the orbital
+      normal) the sign is the opposite, A = +4.5387e-05 eV, so the ENERGY
+      favours anti-alignment, which is the direction O1 needs.  The verdict
+      of 112d survives, but for the other reason measured in 130e: it is the
+      precession, not the energy, that goes the wrong way.
+
+130g. THE ANSWER TO R3.  The necessary condition can be met, but only by an
+      imported measure, and the reason is the opposite of the one the test
+      anticipated.  It is not that fitting one moment spoils the other: in
+      this model the two observables are exactly decoupled, O1 living on the
+      libration action and O2 on the orbital angular momentum, so there are
+      two knobs for two numbers and matching both is worth nothing.
+        candidate                    E[w]     O1     implied splitting   fitted
+        two points +-1 as 1:3       0.2500   1.00    none (degeneracy)     1
+        p ~ (1-cos)^2 = |S|^4       0.2500   1.00    none (scale-free)     0*
+        Boltzmann at E_lib          0.191    1.31    203.39 at L=0.476     1 (L)
+        the model's ensemble (112c) 0.4994   2.00    21.95 at L=hbar       0
+        this trajectory (130e)      0.7348   2.94    21.95 at L=hbar       0
+      (* it fits O1 by its functional form and predicts nothing for O2.)
+      Quantum mechanics has no knob at all: 1:3 is the degeneracy of four
+      levels and 203.3941 GHz is the gap between the same four.  That is what
+      the model cannot imitate, and 130c says why in one line -- its own
+      angle carries an action of 0.1 hbar, so the ratio it implies is set by
+      J alone and can be tuned without touching any energy.
+
+130h. LIMITS.  The trajectory measure of 130e is ONE trajectory and one
+      prepared angle; 112c's ensemble is the ensemble statement, and 112c
+      also showed the dynamics compresses the distribution without tilting
+      it, so 0.7348 is this libration centre, not an ensemble prediction.
+      The Langevin form is an assumption about a single librating degree of
+      freedom, which is not a reservoir: its distribution is peaked at the
+      turning points, not Boltzmann, and 130e is the direct measurement that
+      does not need it.  The scan is analytic on a Kepler ellipse at fixed
+      a_pair, as 116d and 117c were, and the secular libration rate is a
+      factor 2.06 below the traced one (rule R130d, inside its factor 3).

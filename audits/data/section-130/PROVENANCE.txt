@@ -1,0 +1,11 @@
+Raw outputs behind audit section 130 (2026-09-18).
+  prereg_130.txt    rules R130a-e and the method, written before any number
+  run130_main.txt   tools/two_observable_consistency.cpp, defaults
+                    (J = 0.0985 hbar, a = a_pair): the L scan, the
+                    hbar omega/A identity, the robustness box and the
+                    112b candidates
+  run130_trace.txt  the mutual-moment measure read off the section 129
+                    SPINPAIR trace with no Boltzmann assumption (130e)
+  trace_measure.py  the script that produces it; run it inside
+                    audits/data/section-129 after gunzipping the trace to
+                    trace.txt

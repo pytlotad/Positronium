@@ -1,0 +1,36 @@
+semi-major axis 1.0000 a_pair; libration action J = 0.0985 hbar (audit 129)
+O1 asks for E[w] = 0.2500, O2 for a splitting of 203.3941 GHz
+
+  L/hbar         A [eV]       2A [GHz]    f_lib [GHz]     E_lib [eV]         x     <cos>     E[w]
+    1.00  +4.538705e-05        21.9491        43.8985  +1.788262e-05    -2.538   -0.6186   0.1907
+    0.70  +1.323378e-04        63.9983       127.9738  +5.213181e-05    -2.539   -0.6186   0.1907
+    0.50  +3.630522e-04       175.5713       351.0356  +1.429990e-04    -2.539   -0.6187   0.1907
+    0.30  +1.675213e-03       810.1296      1619.4101  +6.596882e-04    -2.539   -0.6187   0.1906
+    0.20  +5.558925e-03      2688.2840      5372.7020  +2.188641e-03    -2.540   -0.6188   0.1906
+    0.10  +3.235462e-02     15646.6270     31273.4568  +1.273966e-02    -2.540   -0.6188   0.1906
+    0.05  -2.682191e-02     12971.0191     25880.6295  +1.054282e-02     2.544   +0.6193   0.8097
+    0.03  -8.141396e-02     39371.6175     79352.1395  +3.232515e-02     2.519   +0.6160   0.8080
+    0.01  -6.345159e-02     30685.0534     62775.3898  +2.557239e-02     2.481   +0.6111   0.8055
+
+R130d calibration: secular f_lib at L = hbar is 43.8985 GHz against the traced 90.5510 GHz, ratio 0.485
+R130c sign at the production geometry: A = +4.538705e-05 eV, so the measure polarizes the angle ANTI-ALIGNED (what 1:3 needs)
+
+L(O1), where E[w] = 0.2500:      L = 0.0567 hbar; there 2A = 116.3684 GHz (factor 1.748 from 203.3941)
+L(O2), where 2A = 203.3941 GHz: L = 0.4761 hbar; there E[w] = 0.1907 (factor 1.311 from 0.2500)
+R130b L(O1)/L(O2) = 0.119
+
+hbar omega_lib / A at L = 1.00, 0.50, 0.20, 0.10: 4.0000 3.9988 3.9971 3.9975
+E[w] over L = 0.1..1.0 (91 nodes): 0.1906..0.1907, spread 1.4e-04 -- O1 does not select an orbit at all
+
+robustness box, E[w] (all L-independent):
+                          secular omega     traced omega
+  J = 0.0985 hbar                0.1907           0.3130
+  J = 0.1383 hbar                0.2489           0.3609
+O1 within a factor 1.5 (E[w] in 0.1667..0.3750) needs J in 0.3206..0.0847 hbar; 129 measured 0.0985..0.1383
+O1 exactly (E[w] = 0.2500) needs J = 0.1391 hbar
+
+112b candidates, with the scale each one needs:
+  two points cos = +-1 weighted 1:3   <cos> = -1/2 by construction; the weights are degeneracies, so the measure implies NO splitting at all
+  p ~ (1-cos)^2 = |S_total|^4         scale-free, so it also implies no splitting
+  p ~ exp(-1.7965 cos)                needs kT = A/1.7965; with the model's own A(L = hbar) = 4.538705e-05 eV that is 2.526415e-05 eV = 0.2932 K
+  the same measure fitted to O2 instead needs A = 4.205852e-04 eV, i.e. 9.27 times the model's own at L = hbar

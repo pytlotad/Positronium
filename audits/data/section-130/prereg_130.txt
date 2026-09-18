@@ -1,0 +1,61 @@
+PRE-REGISTRATION, audit section 130 (R3: the two-observable
+consistency test).  Written before any number of this section was
+computed.
+written 2026-09-18T14:33:11Z
+
+THE TEST.  One spin content must produce BOTH observables:
+  O1  the annihilation ratio 2 gamma : 3 gamma = 1:3, i.e.
+      E[w] = (1 + <cos>)/2 = 1/4 exactly (audit 112b);
+  O2  the splitting U(anti-aligned) - U(aligned) = 203.3941 GHz.
+A candidate is a PAIR (measure over the mutual angle, energy of the
+mutual angle).  O1 constrains a dimensionless ratio, O2 an absolute
+scale, so a candidate is only predictive if the same scale serves both
+with NO per-observable refitting.
+
+WHAT SUPPLIES THE MEASURE'S SCALE.  The model has no reservoir, so the
+Langevin/Boltzmann measure of 112b has a free temperature.  Section 129
+closed that hole: the mutual angle's own oscillation has an action
+J = 0.0985 hbar (0.1383 at the end of the collapse, adiabatically
+invariant to a factor 1.40), so its energy E_lib = J omega_lib is an
+INTERNAL scale.  The measure used here is therefore
+  p(cos) ~ exp(-U(cos)/E_lib),  U from azimuthAveragedDipoleEnergy,
+          E_lib = J |omega1 - omega2| from the model's own orbit-averaged
+          BMT rates,
+with no free parameter once J is taken from 129.
+
+METHOD.  Scan the orbital angular momentum at fixed semi-major axis
+a_pair, as sections 116d and 117c did.  At each L compute A(L) (half the
+splitting analogue, orbit-averaged), omega_lib(L), E_lib(L), the implied
+<cos> and E[w], and the implied splitting 2A.  Then locate
+  L(O1): where E[w] = 1/4,
+  L(O2): where 2A = 203.3941 GHz,
+and compare.
+
+RULES, decided now.
+R130a  THE USER'S RULE.  The two observables are consistent if ONE
+       measure does both within a factor 1.5: the splitting at L(O1)
+       inside [135.6, 305.1] GHz, AND E[w] at L(O2) inside
+       [1/6, 3/8] = [0.1667, 0.3750].
+R130b  L-CONSISTENCY.  Stronger and axis-independent: consistent if
+       L(O1)/L(O2) is within 1.5 of 1.
+R130c  SIGN.  The model's own sign at the production geometry (moments
+       along the orbital normal) must be the one that polarizes the angle
+       ANTI-aligned; if it aligns, O1 is unreachable at any scale and
+       this is recorded as a failure of the candidate, not of the scan.
+R130d  CALIBRATION.  The secular omega_lib at L = hbar must agree with
+       the libration frequency measured on the full trace in 129
+       (90.551 GHz) within a factor 3; otherwise the scan is reported as
+       an order-of-magnitude statement only.
+R130e  FREE PARAMETERS.  Record, for each candidate of 112b and for this
+       one, how many parameters were fitted to an observable.  A candidate
+       that needs one parameter per observable is declared cosmetic
+       regardless of how well it fits.
+
+PREDICTION (mine, before the numbers).  O2 needs L = 0.476 hbar (116d).
+I expect L(O1) to be much smaller, because x = A/E_lib rises steeply as
+r falls (A ~ r^-3 while omega_lib rises more slowly), so the polarization
+saturates deep in the cascade and 1:3 is crossed somewhere inside
+L < 0.3 hbar.  I therefore expect R130a and R130b to FAIL, and R130c to
+fail as well on the production sign.  If instead L(O1) lands near
+0.476 hbar, the model has a non-trivial two-observable coincidence and
+that would be the strongest positive result of this whole line.
