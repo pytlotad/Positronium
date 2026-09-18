@@ -8780,12 +8780,12 @@ measurement of whether that survives a cascade.
       this model the two observables are exactly decoupled, O1 living on the
       libration action and O2 on the orbital angular momentum, so there are
       two knobs for two numbers and matching both is worth nothing.
-        candidate                    E[w]     O1     implied splitting   fitted
-        two points +-1 as 1:3       0.2500   1.00    none (degeneracy)     1
-        p ~ (1-cos)^2 = |S|^4       0.2500   1.00    none (scale-free)     0*
-        Boltzmann at E_lib          0.191    1.31    203.39 at L=0.476     1 (L)
-        the model's ensemble (112c) 0.4994   2.00    21.95 at L=hbar       0
-        this trajectory (130e)      0.7348   2.94    21.95 at L=hbar       0
+        candidate                    E[w]     O1    splitting [GHz]    fit
+        two points +-1 as 1:3       0.2500   1.00   none, a degeneracy   1
+        p ~ (1-cos)^2 = |S|^4       0.2500   1.00   none, scale-free     0*
+        Boltzmann at E_lib          0.191    1.31   203.39 at L=0.476    1
+        the model's ensemble (112c) 0.4994   2.00   21.95 at L=hbar      0
+        this trajectory (130e)      0.7348   2.94   21.95 at L=hbar      0
       (* it fits O1 by its functional form and predicts nothing for O2.)
       Quantum mechanics has no knob at all: 1:3 is the degeneracy of four
       levels and 203.3941 GHz is the gap between the same four.  That is what
