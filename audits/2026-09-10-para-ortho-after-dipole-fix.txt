@@ -9489,3 +9489,68 @@ measurement of whether that survives a cascade.
 137g. UNCHANGED.  No model file was modified by this section; validation
       62/62 and header isolation 37/37 stand from 136, and the cascade is
       bit-identical.
+
+138. THE LADDER IN THE MODEL'S OWN ACTION: THE THIRD RUNG HAS THREE
+     WELL-DEFINED VALUES, 4.4% APART
+==================================================================
+
+138a. WHAT WAS STILL KEPLER.  Sections 132 and 133 measured the label's
+      breakdown and integrated the full radial action, but 131c's LADDER was
+      still quoted in n = (K/hbar) sqrt(mu/2|E|), and its law was derived from
+      E = -R/n^2.  tools/action_ladder_full_potential.cpp walks the same
+      ladder in the model's own action: it inverts the energy to the model's
+      circular radius in U = -K/r + u_dd + u_so + L^2/2r^2 and reads J/h
+      there, using the MEASURED photon energies of the trace.
+
+138b. THE INVERSION, VALIDATED (rule R138c).  Going r -> E -> r recovers the
+      radius to 2e-11..2e-10 at every rung, and the action it reports at those
+      radii -- 0.999994996, 0.577323984, 0.273013799, 0.092509441 -- is
+      section 132d's table to all nine digits.  R138c asked for 1e-03.
+
+138c. THE TWO LADDERS.
+        photon   E [eV]        Kepler n'     model J'/h   model/Kepler
+        start        -        1.000000000    0.999996664    0.99999666
+            1   13.604509     0.577367016    0.577349685    0.99996998
+            2   70.670787     0.273299133    0.273136124    0.99940355
+            3  634.225835     0.096846807    0.093690532    0.96740961
+      Rule R138a reports a rung wherever the two differ by more than 0.1%:
+      the first two do not (0.003% and 0.06%), the third does, by 3.3%.  So
+      the correction to 131c is confined to the last rung, which is where 132
+      and 133 found everything else as well.
+
+138d. AND THE THIRD RUNG HAS THREE VALUES, NOT TWO.
+        0.093691   the model's action if the landing were CIRCULAR in its own
+                   potential, with the moments along the orbital normal
+        0.096847   the Kepler label of the same energy (and the trace's own
+                   n, which it reproduces to 0.05%)
+        0.097775   the action actually traced there (section 133f), which is
+                   J_phi 0.096794 plus J_r 0.000981 on an orbit with
+                   r_out/r_in = 1.3357
+      They span 4.4%.  Rule R138b asked the model ladder to reproduce the
+      traced landing to 1% and it does not, so the residual is reported and
+      not absorbed.  Its two parts are both already named: the landing is NOT
+      circular in the model's potential (133f measured e about 0.14 there),
+      and this probe fixes the moments along the normal while the trajectory
+      does not (132e measured that this flips the sign of the label gap).
+      Attributing the 4.4% between those two would need the eccentric action
+      walked with the traced moments, which is section 133's integrator fed
+      by this section's inversion, and is not done here.
+
+138e. WHAT THIS SETTLES AND WHAT IT DOES NOT.  Settled: the ladder of 131c is
+      a Kepler label, it is accurate to 0.06% for the first two rungs, and it
+      is 3.3% off at the third.  The three symptoms 132 and 133 chased --
+      J_r going negative, the landing law's 0.9861, the margin-50 scatter --
+      are all the same fact seen three ways, and this adds the fourth view:
+      the rung itself moves.  Not settled: which of the two causes carries
+      the 4.4%, and that is the only piece of the "Kepler label on a
+      non-Kepler orbit" thread still open.
+
+138f. NO VERDICT MOVES (rule R138d).  0.0937, 0.0968 and 0.0978 are equally
+      far from any nonzero integer; the stop is still the retardation margin,
+      whose own ratio 132b printed; and --ground-state-floor is still the
+      n = 1 action floor, since at a_pair the three values agree to 3e-06.
+
+138g. LIMITS.  Circular orbits with the moments along the orbital normal, one
+      pair, the three measured photon energies of one trace.  The model's
+      ladder assumes each landing is circular, which 133f shows the third is
+      not; that assumption is the subject of 138d rather than a hidden step.

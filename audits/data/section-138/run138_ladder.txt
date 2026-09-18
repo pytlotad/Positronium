@@ -1,0 +1,14 @@
+R138c inversion check (r -> E -> r, and the action there):
+  a/a_pair   1.000000  recovered   1.000000  relative 1.96e-10  J/h 0.999994996
+  a/a_pair   0.333333  recovered   0.333333  relative 1.01e-10  J/h 0.577323984
+  a/a_pair   0.074670  recovered   0.074670  relative 3.02e-11  J/h 0.273013799
+  a/a_pair   0.009369  recovered   0.009369  relative 2.45e-11  J/h 0.092509441
+
+the ladder, walked from the prepared state with the MEASURED photon energies:
+  photon         E [eV]      Kepler n'     model J'/h   model/Kepler    Delta J/h
+   start              -    1.000000000    0.999996664    0.999996664            -
+       1      13.604509    0.577367016    0.577349685    0.999969984  0.422646979
+       2      70.670787    0.273299133    0.273136124    0.999403551  0.304213561
+       3     634.225835    0.096846807    0.093690532    0.967409605  0.179445592
+
+traced landings for comparison (audit 131c): 0.577269 0.272406 0.096794

@@ -1,0 +1,39 @@
+PRE-REGISTRATION, audit section 138 (the ladder in the model's own
+action, not in the Kepler label).  Written before any number of this
+section was computed.
+written 2026-09-18T19:59:35Z
+
+WHAT IS LEFT.  Sections 132 and 133 measured the Kepler label's breakdown
+and integrated the full radial action, but the LADDER of section 131c is
+still quoted in the Kepler n: 1 -> 0.577350 -> 0.273258 -> 0.094740, and
+its law Delta n = n[1-(1+2/n)^(-1/2)] was derived from E = -R/n^2, which
+is the Coulomb relation.  This section walks the same ladder in the
+model's own action.
+
+METHOD.  For the model's potential the circular orbit at radius r has L
+from dU/dr = 0 and E from U(r), so inverting E -> r -> J/h gives the
+action label of any energy.  Starting from the prepared state and
+subtracting the MEASURED photon energies of the trace (13.604509,
+70.670787 and 634.225835 eV), the ladder is walked twice, once in the
+Kepler label and once in the model's action, and both are compared with
+the landings the trace actually recorded.
+
+RULES, decided now.
+R138a  The model's ladder is REPORTED as the correction to 131c wherever
+       it differs from the Kepler one by more than 0.1% on any rung.
+R138b  The landing law's third-rung discrepancy (0.9861 in 131c) is
+       EXPLAINED if, walked in the model's action with the measured photon
+       energies, the predicted landing matches the traced one to 1% on
+       every rung including the third.  If it does not, the residual is
+       reported as still unattributed rather than absorbed.
+R138c  The inversion E -> J/h must be checked against section 133's direct
+       integration at the same radii, to 1e-3, or the ladder is not
+       reported at all.
+R138d  Nothing in this section may change 131's three verdicts; if one
+       moves, it is stated as a correction in those words.
+
+PREDICTION (mine).  The first two rungs agree to better than 0.01% between
+the two ladders and the third differs by a few tenths of a percent, since
+132d measured the label gap at 0.000163 there; the landing law comes out
+exact once both the energy and the action are the model's own, because
+then it is only energy conservation plus a monotone relation.

@@ -1,0 +1,9 @@
+Raw outputs behind audit section 138 (2026-09-18).
+  prereg_138.txt      rules R138a-d, written before any number
+  run138_ladder.txt   tools/action_ladder_full_potential.cpp with its
+                      defaults: the inversion check against section 132d's
+                      table, then the ladder walked twice from the prepared
+                      state with the measured photon energies of the section
+                      131 trace (13.604509, 70.670787, 634.225835 eV)
+The traced landings it is compared with are audit 131c's, and the traced
+action at the stop is audit 133f's.
