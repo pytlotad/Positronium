@@ -1,0 +1,5 @@
+r 1.0    t45 domyslnie: AWARIA 6/256 | zakres E/|U_dd| 1.045e-03
+r 2.0    t45 domyslnie: AWARIA 9/256 | zakres E/|U_dd| 1.066e-03
+r 5.0    t45 domyslnie: ok 256/256 | zakres E/|U_dd| 5.484e-02 |
+r 20.0   t45 domyslnie: ok 256/256 | zakres E/|U_dd| 9.594e-02 |
+r 100.0  t45 domyslnie: ok 256/256 | zakres E/|U_dd| 1.838e-01 |

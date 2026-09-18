@@ -10272,3 +10272,84 @@ measurement of whether that survives a cascade.
       sweep; the moment-radius sweep is at 1 r* only, which is where the
       question was.  The alpha^-5 arithmetic is checked against the closed
       forms and not re-derived.
+
+148. 107e IS CLOSED -- AUDIT 126 FIXED IT, NOT A FINER HISTORY -- AND AUDIT
+     124 PUT A NEW FAILURE IN ITS PLACE AT EVERY NONZERO TILT
+==================================================================
+
+148a. THE PLAN AND WHERE IT BROKE.  107e left two engine failures open (para
+      1 r* tilt 90 near 0.12 r*, ortho started at 0.35 r*) and named a finer
+      retarded history as the remedy.  The plan here was to run both through
+      section 139's moment-radius scan, on the guess that they were the
+      near-field sensitivity 139 mapped.  The first measurement broke the
+      guess: at the default settings para 1 r* tilt 90 now fails at step 6 of
+      256 at r = 0.988 r*, not at step 195 at 0.120 r*.  It is not 107e's
+      failure at all, so the pre-registered dichotomy of R148a/R148b, which
+      assumed one object throughout, does not apply.
+
+148b. WHAT MOVED, ISOLATED.  Para 1 r* tilt 90, one orbit, 256 steps,
+      depth 20, tolerance 1e-8:
+        configuration                        steps      r reached [r*]
+        current default                      6/256      0.9876..0.9997
+        without the hidden-momentum force    256/256    0.1665..0.9997
+        without the matched softening        6/256      0.9876..0.9997
+        without both                         195/256    0.1196..0.9997
+      The last row reproduces 107f's recorded "195, 0.120" exactly, which is
+      what makes the other three readable.  Audit 126's matched softening
+      TURNS THAT FAILURE INTO A COMPLETED ORBIT reaching 0.167 r*, deeper
+      than the old run got before dying.  So 107e is closed: it was a
+      consequence of the two mismatched softening lengths, and the finer
+      history it asked for was never needed.
+      And audit 124's hidden-momentum force fails at step 6 with or without
+      the matched softening, so it is a separate, later defect.
+
+148c. THE NEW FAILURE, BOUNDED.  Para at 1 r*, one orbit each:
+        tilt    with the hidden-momentum force    without it
+          0     ok 256/256                        ok 256/256
+         30     FAILS 6/256                       ok 256/256
+         45     FAILS 6/256                       ok 256/256
+         60     FAILS 6/256                       ok 256/256
+         75     FAILS 6/256                       ok 256/256
+         90     FAILS 6/256                       ok 256/256
+      Every nonzero tilt, and only the hidden-momentum force decides it.  In
+      radius, tilt 45:
+        1 r*  FAILS 6/256      5 r*   ok 256/256
+        2 r*  FAILS 9/256      20 r*  ok 256/256
+                               100 r* ok 256/256
+      So it is confined to r <= 2 r*.  Production is unaffected and
+      bit-identical: seed 42's cascade still gives 199.039646721 ps, and it
+      runs at a_pair = 547.5 r*.
+
+148d. WHY IT WENT UNNOTICED.  Audit 127 re-measured the deep-passage numbers
+      after 126 changed them, and section 139 scanned the moment radius over
+      eight values -- both at tilt 0, the one tilt that still completes.  The
+      tilted configurations were the workhorse of sections 104 to 127 and
+      nobody ran one after 124.  That is the lesson rather than the defect:
+      a re-measurement that keeps one parameter at the value where the new
+      term happens to vanish is not a re-measurement.
+
+148e. THE OTHER 107e CONFIGURATION AGREES.  Ortho started at 0.35 r*, tilt 0,
+      across the moment radius:
+        0.05 r*    FAILS 0/256        1.9336 r*  ok 256/256
+        0.4834 r*  FAILS 11/256       3.8672 r*  ok 256/256
+        0.9668 r*  ok 256/256 (0.350..1.765)
+      It completes at the default and above, and fails only at moment radii
+      below half the default.  Same verdict: 126 fixed it, and what remains
+      is a small-softening artefact rather than a history problem.
+
+148f. WHAT THIS LEAVES.  Closed: 107e, after nine sections of standing open,
+      by a fix made for another reason entirely.  Opened: the
+      hidden-momentum force cannot integrate a tilted pair inside 2 r*.
+      Audit 124 installed that term on the strength of the clean synthetic
+      tests of 122-123 and the momentum balance, and audit 142 has since
+      shown it does exactly what it was meant to -- it cancels the entire
+      first-order non-reciprocity.  So this is not an argument for removing
+      it; it is a defect in how it is evaluated at short range, and it needs
+      its own section.  Nothing is changed here (rule R148e).
+
+148g. LIMITS.  One orbit per point, 256 steps, depth 20, tolerance 1e-8,
+      reaction disabled, para at 1 r* except where stated.  The step-6
+      failure is not diagnosed further here: which quantity goes non-finite
+      and why is exactly what the next section would have to print, and
+      107b's own diagnostics (POSITRONIUM_DEBUG_DIPOLE) are the instrument
+      for it.

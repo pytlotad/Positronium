@@ -1,0 +1,7 @@
+0.05    para 1r* t90 : AWARIA 6/256 | zakres E/|U_dd| 3.192e-03 | E_koniec-E0 /|U_dd| -3.192e-03 | r 0.9353..0.9983 r* | 1 s
+0.2417  para 1r* t90 : AWARIA 6/256 | zakres E/|U_dd| 1.216e-03 | E_koniec-E0 /|U_dd| +1.216e-03 | r 0.9426..0.9985 r* | 1 s
+0.4834  para 1r* t90 : AWARIA 6/256 | zakres E/|U_dd| 2.734e-03 | E_koniec-E0 /|U_dd| +2.734e-03 | r 0.9603..0.9989 r* | 1 s
+0.9668  para 1r* t90 : AWARIA 6/256 | zakres E/|U_dd| 5.301e-04 | E_koniec-E0 /|U_dd| -4.645e-04 | r 0.9876..0.9997 r* | 0 s
+1.9336  para 1r* t90 : AWARIA 6/256 | zakres E/|U_dd| 5.275e-04 | E_koniec-E0 /|U_dd| -4.400e-04 | r 0.9988..1.0000 r* | 0 s
+3.8672  para 1r* t90 : ok 256/256 | zakres E/|U_dd| 3.251e-01 | E_koniec-E0 /|U_dd| -3.251e-01 | r 0.9806..1.0012 r* | 7 s
+9.668   para 1r* t90 : ok 256/256 | zakres E/|U_dd| 4.461e+00 | E_koniec-E0 /|U_dd| -4.461e+00 | r 0.9802..1.0139 r* | 7 s

@@ -1,0 +1,44 @@
+PRE-REGISTRATION, audit section 148 (closing 107e with 139's instrument).
+Written before any number of this section was computed.
+written 2026-09-18T23:20:16Z
+
+WHAT 107e SAYS.  Two engine failures survived the fixes of section 107:
+para at 1 r* tilt 90, failing near 0.115-0.120 r*, and ortho started at
+0.35 r*, failing near 0.132-0.179 r*.  The diagnosis recorded there is
+that the retarded history is a C1 cubic whose node spacing (7.8e-23 s at
+the 1e-20 s floor) cannot follow an acceleration that turns over in about
+1.3e-22 s, so the partner's CHARGE field jumps by order one at a node
+crossing.  A finer history was named as the remedy and the cheap version
+broke other things, so it stayed open.
+
+WHAT 139 FOUND THAT BEARS ON IT.  The deep plunge at 1 r* exists only in a
+narrow band of the moment radius around the model's default value: at
+0.4834 r* the orbit stays above 1.00 r*, at 0.9668 it reaches 0.36 r*, at
+1.9336 it stays above 0.78 r*.  Since audit 126 the same length also
+softens the charge side of the moment-charge interaction, so it reaches
+the very field 107e says jumps.
+
+THE TEST.  Run both 107e configurations across the same moment-radius
+scan, one orbit each, depth 20, 256 steps, tolerance 1e-8, and record
+whether the engine completes, at which step it stops, and the deepest
+separation reached.
+
+RULES, decided now.
+R148a  107e is RECLASSIFIED as the near-field sensitivity 139 mapped if
+       both configurations complete the orbit at moment radii away from the
+       default band.
+R148b  It REMAINS an integrator defect if the failure persists across the
+       whole scan, since then it cannot be a property of that band.
+R148c  The deepest separation reached is reported at every point, because
+       the mechanism 107e names is triggered by the depth of the passage
+       and not by the radius the orbit started from.
+R148d  If the failures vanish and the plunges vanish with them, the
+       conclusion is that the failure is DOWNSTREAM of the plunge -- the
+       coarse history is the proximate mechanism and the near-field
+       sensitivity is the cause -- and it must be stated that way rather
+       than as the integrator having improved.
+R148e  No model file changes.  The scan runs through the existing switch.
+
+PREDICTION (mine).  Both failures disappear off the band, because the
+orbit stops going deep enough to reach the node-crossing regime; so R148a
+and R148d, with 107e reclassified rather than fixed.

@@ -1,0 +1,15 @@
+Raw outputs behind audit section 148 (2026-09-19).
+  prereg_148.txt     rules R148a-e, written before any number.  Its
+                     dichotomy assumed the failure was still 107e's and the
+                     first measurement broke that assumption, which 148a
+                     records rather than hiding
+  para_t90.txt       para 1 r* tilt 90 across the moment radius
+  ortho_035.txt      ortho started at 0.35 r* across the same scan (148e)
+  tilt_scan.txt      para 1 r* at six tilts, with and without the
+                     hidden-momentum force (148c)
+  radius_bound.txt   tilt 45 at 1, 2, 5, 20 and 100 r*, which bounds the new
+                     failure to r <= 2 r*
+All from tools/ledger_engine_drift with one orbit, 256 steps, depth 20,
+tolerance 1e-8.  The isolation table of 148b is four runs of the same
+configuration under CREM_NO_HIDDEN_MOMENTUM_FORCE and
+CREM_NO_MATCHED_SOFTENING.

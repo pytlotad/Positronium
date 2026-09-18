@@ -1,0 +1,12 @@
+tilt 0   domyslnie: ok 256/256 | zakres E/|U_dd| 1.328e+00 | E_koniec-E0 /|U_d
+tilt 0   bez pedu : ok 256/256 | zakres E/|U_dd| 1.235e+00 | E_koniec-E0 /|U_d
+tilt 30  domyslnie: AWARIA 6/256 | zakres E/|U_dd| 1.254e-03 | E_koniec-E0 /|U
+tilt 30  bez pedu : ok 256/256 | zakres E/|U_dd| 7.785e-01 | E_koniec-E0 /|U_d
+tilt 45  domyslnie: AWARIA 6/256 | zakres E/|U_dd| 1.045e-03 | E_koniec-E0 /|U
+tilt 45  bez pedu : ok 256/256 | zakres E/|U_dd| 8.327e-01 | E_koniec-E0 /|U_d
+tilt 60  domyslnie: AWARIA 6/256 | zakres E/|U_dd| 7.942e-04 | E_koniec-E0 /|U
+tilt 60  bez pedu : ok 256/256 | zakres E/|U_dd| 7.404e-01 | E_koniec-E0 /|U_d
+tilt 75  domyslnie: AWARIA 6/256 | zakres E/|U_dd| 5.807e-04 | E_koniec-E0 /|U
+tilt 75  bez pedu : ok 256/256 | zakres E/|U_dd| 5.454e-01 | E_koniec-E0 /|U_d
+tilt 90  domyslnie: AWARIA 6/256 | zakres E/|U_dd| 5.301e-04 | E_koniec-E0 /|U
+tilt 90  bez pedu : ok 256/256 | zakres E/|U_dd| 5.754e-01 | E_koniec-E0 /|U_d

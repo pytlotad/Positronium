@@ -1,0 +1,5 @@
+0.05    : r 0.3 ch orto tilt 0 tol 1e-08 N 256 depth 20 | AWARIA 0/256 | zakres E/|U_dd| 0.000e+00 | E_koniec-E0 /|U_dd| +0.000e+00 | r inf..0.0000 r* | 0 s
+0.4834  : r 0.3 ch orto tilt 0 tol 1e-08 N 256 depth 20 | AWARIA 11/256 | zakres E/|U_dd| 2.343e-01 | E_koniec-E0 /|U_dd| +2.343e-01 | r 0.3505..0.4037 r* | 2 s
+0.9668  : r 0.3 ch orto tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 1.506e+00 | E_koniec-E0 /|U_dd| +1.506e+00 | r 0.3501..1.7650 r* | 4 s
+1.9336  : r 0.3 ch orto tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 4.192e+00 | E_koniec-E0 /|U_dd| -1.147e+00 | r 0.3361..0.4030 r* | 5 s
+3.8672  : r 0.3 ch orto tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 3.001e+01 | E_koniec-E0 /|U_dd| -1.757e+01 | r 0.3234..0.3758 r* | 7 s
