@@ -1,0 +1,24 @@
+=== scale 0.05 ===
+KONCOWY P/(m c) -2.428e-04 -3.203e-04 +0.000e+00  |P| 4.019e-04  po 256 krokach  r 8.0512 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 1.305e-02 | E_koniec-E0 /|U_dd| +9.515e-03 | r 1.0009..8.0512 r* | 6 s
+=== scale 0.2417 ===
+KONCOWY P/(m c) -8.528e-05 -3.172e-04 +0.000e+00  |P| 3.285e-04  po 256 krokach  r 6.8082 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 9.146e-03 | E_koniec-E0 /|U_dd| +6.915e-03 | r 1.0006..6.8082 r* | 5 s
+=== scale 0.4834 ===
+KONCOWY P/(m c) +7.153e-05 -1.179e-04 +0.000e+00  |P| 1.379e-04  po 256 krokach  r 3.0037 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 1.027e-02 | E_koniec-E0 /|U_dd| -1.027e-02 | r 1.0000..3.0037 r* | 11 s
+=== scale 0.9668 ===
+KONCOWY P/(m c) -3.779e-03 +4.833e-03 +0.000e+00  |P| 6.135e-03  po 256 krokach  r 0.7058 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 1.328e+00 | E_koniec-E0 /|U_dd| -1.084e+00 | r 0.3614..0.9998 r* | 64 s
+=== scale 1.9336 ===
+KONCOWY P/(m c) -6.641e-06 +1.012e-04 +0.000e+00  |P| 1.015e-04  po 256 krokach  r 0.7888 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 1.532e-01 | E_koniec-E0 /|U_dd| -1.532e-01 | r 0.7771..1.0000 r* | 19 s
+=== scale 3.8672 ===
+KONCOWY P/(m c) +1.691e-06 -2.756e-07 +0.000e+00  |P| 1.713e-06  po 256 krokach  r 0.9806 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 3.588e-01 | E_koniec-E0 /|U_dd| -3.588e-01 | r 0.9806..1.0000 r* | 9 s
+=== scale 9.668 ===
+KONCOWY P/(m c) -3.685e-08 +1.523e-08 +0.000e+00  |P| 3.987e-08  po 256 krokach  r 0.9802 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 4.533e+00 | E_koniec-E0 /|U_dd| -4.533e+00 | r 0.9802..1.0139 r* | 10 s
+=== scale 452 ===
+KONCOWY P/(m c) -4.933e-09 +1.570e-10 +0.000e+00  |P| 4.935e-09  po 256 krokach  r 0.9801 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | ok 256/256 | zakres E/|U_dd| 4.490e+05 | E_koniec-E0 /|U_dd| -4.490e+05 | r 0.9801..1.0142 r* | 13 s

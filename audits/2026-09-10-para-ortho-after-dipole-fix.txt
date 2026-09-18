@@ -9554,3 +9554,89 @@ measurement of whether that survives a cascade.
       pair, the three measured photon energies of one trace.  The model's
       ladder assumes each landing is circular, which 133f shows the third is
       not; that assumption is the subject of 138d rather than a hidden step.
+
+139. THE MOMENT RADIUS: A DEPENDENCY MAP.  THE HEADLINE NUMBER DOES NOT MOVE,
+     AND THE MODEL'S OWN VALUE SITS ON A PEAK OF THE RESIDUAL
+==================================================================
+
+139a. WHAT THIS IS.  magneticDipoleRadius() = 0.9668 r* comes from a current
+      loop, not a fit, and since audit 126 the same length softens the charge
+      side of every moment-charge interaction as well.  This section does not
+      test that value and prefers none (rule R139d): it maps what moves when
+      the constant does.  CREM_MAGNETIC_RADIUS_SCALE sets it in units of r*
+      and is read once into a static, so one process per value.
+
+139b. THE MAP.  Eight scales, from the old separation floor to section 118's
+      452 r*.  Transit and coupling from one production trajectory each
+      (seed 42); |P| and the ledger from one engine orbit each (para, 1 r*,
+      tilt 0, retarded forces, reaction off, 256 steps).
+        scale   transit   split      split      |P|/(m c)  ledger   r range
+        [r*]    [ps]      a_pair     2 r*                  [|U_dd|]  [r*]
+        0.05    30.68753  21.94939   4.490e+08  4.019e-04  1.31e-02 1.00-8.05
+        0.2417  30.68753  21.94937   4.216e+08  3.285e-04  9.15e-03 1.00-6.81
+        0.4834  30.68753  21.94931   3.451e+08  1.379e-04  1.03e-02 1.00-3.00
+        0.9668  30.68588  21.94908   1.419e+08  6.135e-03  1.33e+00 0.36-1.00
+        1.9336  30.68751  21.94816   7.520e+07  1.015e-04  1.53e-01 0.78-1.00
+        3.8672  30.68747  21.94446   5.967e+07  1.713e-06  3.59e-01 0.98-1.00
+        9.668   30.74205  21.91861   7.026e+06  3.987e-08  4.53e+00 0.98-1.01
+        452     30.66528   2.17353   7.802e+01  4.935e-09  4.49e+05 0.98-1.01
+      The ledger column is normalized by |U_dd|, which itself moves with the
+      scale, so only its orders are comparable across rows.
+
+139c. THE VERDICTS, on doubling the radius from its default (rule R139a).
+        observable            default      doubled     change    verdict
+        collapse transit      30.6859 ps   30.6875 ps   +0.005%  INSENSITIVE
+        splitting at a_pair   21.9491 GHz  21.9482 GHz  -0.004%  INSENSITIVE
+        revolutions            201 090      201 545     +0.23%   marginal
+        splitting at 1 r*     6.016e+08    4.774e+08    -20.6%   SENSITIVE
+        splitting at 2 r*     1.419e+08    7.520e+07    -47.0%   SENSITIVE
+        ledger range          1.328        0.153        -88.5%   SENSITIVE
+        |P|/(m c)             6.135e-03    1.015e-04    -98.3%   SENSITIVE
+      Logarithmic slopes from the default to four times it (rule R139b):
+      transit +0.0000, splitting at a_pair -0.0002, at 2 r* -0.6248, at
+      1 r* -1.2771, ledger -0.9440, |P| -5.9032.
+
+139d. SO THE HEADLINE NUMBER IS SAFE AND THE NEAR FIELD IS NOT.  The collapse
+      transit moves by 5e-05 across a factor of 77 in the constant (0.05 to
+      3.87 r*), by 0.18% at 9.668 and by -0.07% even at 452 r*, where the
+      moment radius is comparable to the orbit.  The splitting analogue at
+      a_pair is equally immovable until that point, then falls by a factor
+      ten.  Everything evaluated inside a few r* -- the coupling there, the
+      ledger, the self-propulsion residual, the depth of the passage -- moves
+      by tens of percent for a factor of two.
+
+139e. AND THE MODEL'S VALUE SITS ON A PEAK, WHICH I DID NOT EXPECT.
+        scale [r*]   0.05   0.2417  0.4834  0.9668  1.9336  3.8672  9.668
+        |P|/(m c)   4.0e-4  3.3e-4  1.4e-4  6.1e-3  1.0e-4  1.7e-6  4.0e-8
+      The residual self-propulsion is NOT monotone in the radius: it is a
+      few 1e-04 below the default, 6.1e-03 AT it, and falls by five orders
+      above it.  The ledger range does the same (1.33 at the default against
+      1.0e-02 below and 1.5e-01 above), and the default is the only scale in
+      this scan at which the para orbit at 1 r* plunges to 0.36 r* instead of
+      staying near its start.  So the deep-passage behaviour that sections
+      103g, 107e and 127 chased is specific to a narrow band of this constant
+      around the value the model uses.
+      Rule R139c is nevertheless met, and that is the point: |P| stays at or
+      below 6.1e-03 m c at EVERY scale, five orders under the 1.17 m c of the
+      broken construction (audit 123).  Audit 126's claim that the matching
+      of the two lengths is what removed the self-propulsion, not their
+      value, survives the scan -- with the sharpening that what is left over
+      after the matching peaks where the model happens to sit.
+
+139f. THE 452 r* POINT (rule R139e).  It runs without failing, and it is not
+      a candidate for anything: the splitting analogue at a_pair falls from
+      21.95 to 2.17 GHz, the near field is flattened to 78 GHz at both 1 and
+      2 r*, and the ledger range reaches 4.5e+05 |U_dd|.  A moment radius of
+      452 r* is 0.83 of the pair's own semi-major axis, so the dipole field
+      is nearly uniform across the orbit and the construction is far outside
+      the domain it was built for.  Section 118's requirement is a statement
+      about what the contact term would need, not a value this model could
+      take.
+
+139g. LIMITS.  One trajectory and one seed per scale; one engine orbit per
+      scale, para and tilt 0 only, so the para/ortho difference is NOT in
+      this map -- it needs the paired protocol and was too expensive here.
+      The transit values differ from the audit's 30.672 ps because that is an
+      ensemble median and this is one seed.  The default row uses 0.9668
+      exactly while the model computes 0.966823, which is why its transit
+      sits 5e-05 off the trend of its neighbours rather than exactly on it.

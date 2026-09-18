@@ -1,0 +1,27 @@
+observable         at default      at double       change    verdict
+transit_ps            30.6859        30.6875      0.0053% INSENSITIVE
+split_apair           21.9491        21.9482     -0.0042% INSENSITIVE
+split_2rstar      1.41888e+08    7.51957e+07    -47.0034%  SENSITIVE
+split_1rstar      6.01566e+08    4.77352e+08    -20.6484%  SENSITIVE
+P_over_mc            0.006135      0.0001015    -98.3456%  SENSITIVE
+ledger                  1.328         0.1532    -88.4639%  SENSITIVE
+revolutions            201090         201545      0.2263%   marginal
+
+R139b logarithmic slopes d ln(obs)/d ln(scale), default -> 4x default:
+  transit_ps      +0.0000
+  split_apair     -0.0002
+  split_2rstar    -0.6248
+  split_1rstar    -1.2771
+  P_over_mc       -5.9032
+  ledger          -0.9440
+  revolutions     +0.0016
+
+the residual |P| is NOT monotone: it peaks AT the default
+   scale   0.0500 r*   |P|/mc 4.019e-04
+   scale   0.2417 r*   |P|/mc 3.285e-04
+   scale   0.4834 r*   |P|/mc 1.379e-04
+   scale   0.9668 r*   |P|/mc 6.135e-03 <-- default
+   scale   1.9336 r*   |P|/mc 1.015e-04
+   scale   3.8672 r*   |P|/mc 1.713e-06
+   scale   9.6680 r*   |P|/mc 3.987e-08
+   scale 452.0000 r*   |P|/mc 4.935e-09

@@ -1,0 +1,49 @@
+PRE-REGISTRATION, audit section 139 (the moment radius: a dependency map,
+not a physics test).  Written before any number of this section was
+computed.
+written 2026-09-18T20:07:55Z
+
+WHAT THIS IS AND IS NOT.  The model uses magneticDipoleRadius() = 0.9668
+r*, from a current-loop argument rather than a fit, and since audit 126
+the same length also softens the charge side of every moment-charge
+interaction.  Section 118 measured that the contact term would need 452
+r* instead.  This section does NOT test either value and does not prefer
+one: it maps which results move when the constant does, so that any
+future change to it has a known blast radius.
+
+THE SCAN.  CREM_MAGNETIC_RADIUS_SCALE in units of r*, one process per
+value, at 0.05 (the old separation floor), 0.2417, 0.4834, 0.9668 (the
+default), 1.9336, 3.8672, 9.668 and 452 (section 118's requirement).
+
+THE OBSERVABLES.
+  O1  the collapse transit a_pair -> 0.005 a_pair, production's headline
+  O2  the photon-cascade lifetime and the revolution count
+  O3  the model's own splitting analogue at a_pair, at 2 r* and at 1 r*
+  O4  the self-propulsion |P|/(m c) after one orbit, para at 1 r*, tilt 0,
+      retarded forces, reaction off -- the quantity audits 104-126 chased
+  O5  the energy-ledger range over that orbit, in units of |U_dd|
+  O6  where the engine stops or fails on that orbit
+
+RULES, decided now.
+R139a  An observable is SENSITIVE if it moves by more than 1% when the
+       radius DOUBLES from the default, INSENSITIVE below 0.1%, and
+       marginal between.  The verdict is recorded per observable.
+R139b  Report the logarithmic slope d ln(observable) / d ln(scale) across
+       the range where the observable stays defined, so the map carries a
+       number and not only a label.
+R139c  Audit 126 concluded that the self-propulsion vanished because the
+       two softening lengths MATCH, not because of their value.  That
+       predicts O4 stays small at every scale.  If |P| instead grows with
+       the scale, 126's claim is weaker than it was recorded and this
+       section says so.
+R139d  No value is preferred by this section.  If a scale improves an
+       observable, that is recorded as a dependency and not as a reason to
+       change the constant.
+R139e  A scale that makes a run fail is kept in the table with its failure
+       mode, not dropped.
+
+PREDICTION (mine).  O1 and O2 insensitive, because the transit ends at
+0.005 a_pair = 2.7 r* where the dipole is still a few percent of Coulomb;
+O3 strongly sensitive at 1-2 r* and insensitive at a_pair; O4 small at
+every scale, confirming 126; and the 452 r* point pathological, since the
+moment radius would then be comparable to the orbit itself.

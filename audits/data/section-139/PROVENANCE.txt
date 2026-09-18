@@ -1,0 +1,16 @@
+Raw outputs behind audit section 139 (2026-09-18).
+  prereg_139.txt          rules R139a-e, written before any number, with
+                          R139d fixing in advance that no value is preferred
+  transit_and_coupling.txt  tools/moment_radius_sensitivity.cpp, one line per
+                          scale: the radius as the model sees it, the matched
+                          softening, the splitting analogue at a_pair, 2 r*
+                          and 1 r*, the collapse transit, the cascade time,
+                          the stop cause and the revolution count
+  orbit_and_momentum.txt  tools/ledger_engine_drift.cpp, one engine orbit per
+                          scale (para, 1 r*, tilt 0, 256 steps, tolerance
+                          1e-8): the terminal |P|/(m c), the ledger range and
+                          the radial range
+  run139_slopes.txt       the verdicts of R139a and the logarithmic slopes of
+                          R139b, computed from those two files
+  scan.sh                 the driver; CREM_MAGNETIC_RADIUS_SCALE is read once
+                          into a static, so it runs one process per value
