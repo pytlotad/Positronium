@@ -1,0 +1,12 @@
+Raw outputs behind audit section 147 (2026-09-19).
+No pre-registration: this answers a question about two numbers already
+recorded, and the answer is two sweeps of a quantity section 146 had
+reported at a single point.
+  radius_sweep.txt              max |q-mu|/|E| and max |q-mu|/|U_dd| over one
+                                orbit at 1, 2, 5, 20, 100 and 547.509 r*,
+                                para tilt 0, instantaneous forces
+  moment_radius_dependence.txt  the same quantity at 1 r* with
+                                CREM_MAGNETIC_RADIUS_SCALE at 0.4834, 0.9668,
+                                1.9336 and 3.8672 r*
+The alpha^-5 arithmetic of 147c is a five-line closed-form check against
+alpha = 1/137.035999177 and needs no data file.

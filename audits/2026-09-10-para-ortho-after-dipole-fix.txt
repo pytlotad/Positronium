@@ -10208,3 +10208,67 @@ measurement of whether that survives a cascade.
       relative motion does.  Whether the conserved energy should also replace
       the ledger in the four places listed in 146e is not decided by this
       section.
+
+147. THE TWO FOURS ARE NOT THE SAME FOUR, AND SECTION 146c NEEDED THE
+     QUALIFICATION THIS SECTION ADDS
+==================================================================
+
+147a. THE QUESTION.  Section 146c reported the charge-dipole term reaching
+      3.991 |U_dd| at para tilt 0, matching the 3.98 section 145 measured
+      from the other side.  Separately the audit records an exact factor 4
+      between the classical inspiral time and the 2 gamma lifetime,
+        t_inspiral = a_pair^3/(3C) = lambda_C/(2 alpha^5 c) = 31.1235 ps,
+        tau_2gamma = 2 hbar/(alpha^5 m c^2) = 2 lambda_C/(alpha^5 c)
+                   = 124.4942 ps,
+      whose ratio is 4 exactly.  Are the two fours the same object?
+
+147b. NO, AND THE FIRST ONE IS NOT A FOUR.  Swept over the separation, para
+      tilt 0, one orbit each, instantaneous forces:
+        r [r*]      L/hbar     max |q-mu|/|E|     max |q-mu|/|U_dd|
+          1.000     0.0427       9.894e-01            3.9910
+          2.000     0.0604       6.459e-03            0.0342
+          5.000     0.0956       3.017e-04            0.0042
+         20.000     0.1911       6.990e-06            0.0014
+        100.000     0.4274       5.813e-08            0.0003
+        547.509     1.0000       3.548e-10            0.0001
+      The ratio falls by four orders of magnitude between 1 r* and a_pair.
+      At the production orbit -- the L = hbar state the alpha^-5 identity is
+      about -- it is 1e-04, not 4.  And it is not stable against the model's
+      own free constant either: sweeping the moment radius at 1 r* gives
+        0.4834 r*  0.0214      1.9336 r*  0.4572
+        0.9668 r*  3.9916      3.8672 r*  1.0122
+      so the near-4 appears only at the default moment radius, which is
+      exactly the peak section 139 mapped for the self-propulsion residual
+      and the ledger range.  It is a near-field artefact of that band.
+
+147c. WHAT THE SECOND FOUR IS.  A ratio of two prefactors, exact and
+      dimensionless: 2 in tau_2gamma against 1/2 in t_inspiral, with
+      alpha^5 and lambda_C cancelling between them.  It carries no length
+      scale, so there is nothing for a separation to do to it.  Recomputed
+      here independently of the code with alpha = 1/137.035999177:
+      t_inspiral 31.1235 ps, tau_2gamma 124.4942 ps, ratio 4.000000, and the
+      measured 125.164 ps sits +0.54% above the leading order, which is the
+      O(alpha) QED correction.
+      The fifth power is structural rather than fitted: alpha enters the model
+      in one place, as k = alpha hbar c, and a^3/C supplies three powers from
+      the radius (a ~ alpha^-1) and two from the Larmor coefficient
+      (C ~ alpha^2).  That the same power governs the annihilation width is a
+      statement about structure.  The factor 4 itself is NOT credited to the
+      model: it is the whole gap between an inspiral time and an annihilation
+      rate, and the audit names it as such.
+
+147d. SO THE ANSWER IS NO, WITH A CORRECTION TO MY OWN 146c.  One four is
+      exact, dimensionless and independent of everything; the other is a
+      measured energy ratio that ranges over 0.0001 to 4 with the separation
+      and over 0.02 to 4 with a constant the model is free to choose.  They
+      share a digit.
+      And 146c, by quoting only 1 r*, could be read as saying the ledger term
+      is comparable to the whole conserved energy in general.  It is not: at
+      the production orbit it is 3.5e-10 of it.  The term matters where the
+      model's deep passages go and nowhere else, which is the same place
+      every other near-field quantity matters.
+
+147e. LIMITS.  One orbit per point, instantaneous forces, para tilt 0 for the
+      sweep; the moment-radius sweep is at 1 r* only, which is where the
+      question was.  The alpha^-5 arithmetic is checked against the closed
+      forms and not re-derived.

@@ -1,0 +1,4 @@
+promien momentu 0.4834  r*: 0.0214
+promien momentu 0.9668  r*: 3.9916
+promien momentu 1.9336  r*: 0.4572
+promien momentu 3.8672  r*: 1.0122

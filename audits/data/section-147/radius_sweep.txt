@@ -1,0 +1,6 @@
+r    1.000 r*  L/hbar 0.0427  ok   max |q-mu|/|E| 9.894e-01  max |q-mu|/|U_dd| 3.9910
+r    2.000 r*  L/hbar 0.0604  ok   max |q-mu|/|E| 6.459e-03  max |q-mu|/|U_dd| 0.0342
+r    5.000 r*  L/hbar 0.0956  ok   max |q-mu|/|E| 3.017e-04  max |q-mu|/|U_dd| 0.0042
+r   20.000 r*  L/hbar 0.1911  ok   max |q-mu|/|E| 6.990e-06  max |q-mu|/|U_dd| 0.0014
+r  100.000 r*  L/hbar 0.4274  ok   max |q-mu|/|E| 5.813e-08  max |q-mu|/|U_dd| 0.0003
+r  547.509 r*  L/hbar 1.0000  ok   max |q-mu|/|E| 3.548e-10  max |q-mu|/|U_dd| 0.0001
