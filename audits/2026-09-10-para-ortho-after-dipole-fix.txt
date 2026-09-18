@@ -8215,3 +8215,73 @@ measurement of whether that survives a cascade.
       resolutions), not for the rate.  The remaining third is quoted as a
       magnitude, not attributed.  Nothing here is a fix: the candidate named
       in 122e has not been implemented or tested.
+
+123. THE HIDDEN-MOMENTUM RATE ADDED TO THE MOMENT FORCE: EXACTLY THE 46% IT
+     SHOULD REMOVE, AND THE ORBIT COMES OUT WORSE
+==================================================================
+
+123a. WHAT WAS ADDED.  hiddenMomentumRateForce: F = -(1/c^2) d(mu x E)/dt
+      along the particle's own worldline, with (dmu/dt) x E from the
+      Thomas-BMT precession of the same retarded history and mu x (DE/Dt)
+      from the same backward three-point stencil dipoleCouplingMaterialRate
+      uses.  Behind CREM_HIDDEN_MOMENTUM_FORCE, off by default.  It is the
+      term section 122e named: a current loop carries (mu x E)/c^2, which is
+      not in gamma m v, so the mechanical momentum obeys
+      dp/dt = F_gradient - d/dt (mu x E)/c^2.
+
+123b. ON THE CLEAN TESTS IT DOES EXACTLY WHAT IT SHOULD.
+        uniform motion, beta 0.05    |F1+F2| 4.5e-13 N, ratio 4.0e-11
+        circular, beta 0.01          5.315e-04 -> 2.855e-04 N   -46.3%
+        circular, beta 0.1           5.293e-03 -> 2.856e-03 N   -46.0%
+        circular, beta 0.2           1.046e-02 -> 5.709e-03 N   -45.4%
+      Rule R123a is met (rigid drift stays balanced to 1e-11) and R123b is
+      met with the reduction flat in beta, which is what a first-order term
+      with the right structure must give.  The remaining 54% is the part
+      section 122d could not attribute.
+
+123c. ON THE REAL TRAJECTORY IT IS WORSE.  Para, 1 r*, tilt 0, one orbit,
+      depth 26, tolerance 1e-8:
+                         control        with the term
+        |P| after 1 orbit  0.5992 m c     1.1714 m c
+        beta_cm            0.2729         0.5015
+        dE                 +47.29 |U_dd|  +113.1 |U_dd|
+        deepest r          0.3673 r*      0.2855 r*
+      Early in the orbit it is better -- at step 48 the momentum is 0.1836
+      against 0.3232 -- but the smaller early imbalance leaves the pair on a
+      deeper passage, and the deeper passage more than repays it.  At 0.5 r*
+      the same pattern: |P| 1.2817 against 1.1939, dE +11.46 against +16.83,
+      periapsis 0.2086 against 0.2709.  Rule R123c is not met.
+      At depth 20 the term also costs resolution: the same run breaks off at
+      step 49 (0.4002 r*) where the control completes, which is the stencil
+      cost of one more time derivative in the force.
+
+123d. WHAT THAT MEANS.  The term is right in form and wrong as a fix.  It
+      removes precisely the share that was attributable to it, at every speed
+      and without disturbing the case that must stay exactly balanced, so
+      section 122's attribution is confirmed by construction rather than by
+      fitting.  But a partial restoration of a broken balance is not an
+      improvement to a trajectory: with 54% of the imbalance still unsourced,
+      feeding back a half-corrected force simply moves the orbit somewhere
+      else.  The model does not get a better deep passage out of it, and the
+      switch therefore stays OFF by default.
+
+123e. UNCHANGED.  Validation 62/62, header isolation 37/37, and with the
+      switch off production is bit-identical: seed 70001 gives
+      para 198.974732577 ps and ortho 198.971579221 ps, the values of
+      section 110.
+
+123f. WHAT IS STILL MISSING.  The 54%.  Sections 119-122 have now measured
+      every carrier the classical theory offers -- hidden momentum, field
+      momentum, the Thomas back-reaction -- and this section has added the
+      one force term that was genuinely absent.  What remains is either a
+      second missing force term of the same first order in v/c, or an error
+      in the retarded moment force itself that no bookkeeping can absorb.
+      The clean synthetic setting of section 122 is the place to look for it:
+      it is one geometry, one separation, and the residual is reproducible
+      there to three digits.
+
+123g. LIMITS.  One geometry for the trajectory comparison (para, tilt 0, two
+      radii), one orbit each.  The new term uses the same backward stencil as
+      the material rate, so it inherits its resolution cost and the node-
+      crossing sensitivity of section 107e.  The synthetic tests are the same
+      as section 122's and share their limits.

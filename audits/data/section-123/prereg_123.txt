@@ -1,0 +1,16 @@
+Zapisano 2026-09-18T13:12:15+02:00, przed pomiarem.
+Zmiana: do sily na moment dochodzi tempo pedu ukrytego
+F = -(1/c^2) d(mu x E)/dt, liczone wzdluz linii swiata:
+(dmu/dt) x E + mu x (DE/Dt), gdzie dmu/dt to precesja Thomasa-BMT z tej samej
+historii, a DE/Dt szablon wsteczny jak w dipoleCouplingMaterialRate.
+Przelacznik CREM_HIDDEN_MOMENTUM_FORCE, domyslnie wylaczony.
+Pomiary i reguly:
+  R123a ruch jednostajny (beta 0.05, 1 r*): |F1+F2|/|F1| ma zostac ponizej
+     1e-6; czlon musi tam znikac, bo pole wzdluz linii swiata jest stale.
+  R123b kinematyka kolowa (1 r*, beta 0.1): |F1+F2| ma spasc o co najmniej
+     40% wobec 5.293e-03 N; to jest udzial zmierzony w sekcji 122.
+  R123c trajektoria rzeczywista (para, 1 r*, przechyl 0, jeden obieg):
+     beta_cm ma spasc wobec kontroli 0.2729.  "Naprawa dziala" gdy spadnie
+     ponizej 0.05; "czesciowa" gdy co najmniej dwukrotnie.
+  R123d walidacja 62/62 i izolacja naglowkow 37/37 bez zmian; przy
+     wylaczonym przelaczniku produkcja bit w bit (pary z ziarna 70001).

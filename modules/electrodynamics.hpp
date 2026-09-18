@@ -3364,6 +3364,47 @@ inline double dipoleCouplingMaterialRate(const State& state,
     return (3.0*(now-before)-(before-twiceBefore))/(2.0*derivativeStep);
 }
 
+// Rate of the hidden momentum a current loop carries in an external electric
+// field, as a force: F = -(1/c^2) d(mu x E)/dt along the particle's own
+// worldline (audit section 123).
+//
+// Why it belongs in the force sum.  A magnetic moment realized as a current
+// loop carries momentum (mu x E)/c^2 that is not in gamma m v, so Newton's
+// law for the MECHANICAL momentum reads dp/dt = F_gradient - d/dt (mu x E)/c^2.
+// Audit 122 measured the model's own momentum imbalance in a clean synthetic
+// setting -- first order in v/c, 92% of it in the force on the moments in the
+// partner's charge field -- and found this rate to be 46% of it, with the same
+// scaling.  The model had no such term.
+//
+// The derivative is taken the way dipoleCouplingMaterialRate takes its own:
+// along the instantaneous tangent worldline, with a backward three-point
+// stencil at the same spacetime step, so the two see the same field history.
+// d(mu x E)/dt = (dmu/dt) x E + mu x (DE/Dt), with dmu/dt the Thomas-BMT
+// precession from this history.
+inline Vec3 hiddenMomentumRateForce(const State& state,
+                              const StateHistory& history,
+                              bool targetIsFirst) {
+    const Vec3 moment=targetIsFirst?state.firstDipole:state.secondDipole;
+    if(moment.squaredNorm()==0.0) return {};
+    const Vec3 position=targetIsFirst?state.firstPosition:state.secondPosition;
+    const Vec3 velocity=targetIsFirst?state.firstVelocity:state.secondVelocity;
+    const double derivativeStep=std::max(
+        1.0e-4*separation(state),1.0e-3*nuclearCutoff)/c;
+    const auto electricAt=[&](double offset) {
+        return fieldFromOtherParticleAt(position+velocity*offset,
+            state.time+offset,state,history,targetIsFirst).electric;
+    };
+    const Vec3 now=electricAt(0.0);
+    const Vec3 before=electricAt(-derivativeStep);
+    const Vec3 twiceBefore=electricAt(-2.0*derivativeStep);
+    const Vec3 fieldRate=
+        (now*3.0-before*4.0+twiceBefore)*(1.0/(2.0*derivativeStep));
+    const DipoleDerivatives derivatives=
+        thomasBmtDipoleDerivatives(state,history);
+    const Vec3 momentRate=targetIsFirst?derivatives.first:derivatives.second;
+    return (cross(momentRate,now)+cross(moment,fieldRate))*(-1.0/(c*c));
+}
+
 inline Vec3 covariantDipoleGradientForce(const State& state,
                                   const StateHistory& history,
                                   bool targetIsFirst) {
@@ -3879,6 +3920,15 @@ inline MutualForces retardedExternalForces(const State& s,
     // has never had (audit sections 105g, 120).  Off by default, so
     // production is bit-identical without it; the moment derivatives come
     // from the same retarded history the rest of this sum uses.
+    // CREM_HIDDEN_MOMENTUM_FORCE: the rate of the loops' own hidden momentum
+    // (audit 123), the term named by section 122e.  Off by default until it
+    // is decided on; with it off every number is unchanged.
+    static const bool hiddenMomentumForce=
+        std::getenv("CREM_HIDDEN_MOMENTUM_FORCE")!=nullptr;
+    MutualForces hiddenRate;
+    if(hiddenMomentumForce&&gDipoleForceEnabled)
+        hiddenRate={hiddenMomentumRateForce(s,history,true),
+                    hiddenMomentumRateForce(s,history,false)};
     static const bool retardedThomas=
         std::getenv("CREM_RETARDED_THOMAS")!=nullptr;
     MutualForces thomas;
@@ -3911,9 +3961,9 @@ inline MutualForces retardedExternalForces(const State& s,
                 s.zeroPointPhase,s.secondDipole);
     }
     return {chargeCharge.first+tensorGradient.first+externalField.first
-                +thomas.first,
+                +thomas.first+hiddenRate.first,
             chargeCharge.second+tensorGradient.second+externalField.second
-                +thomas.second};
+                +thomas.second+hiddenRate.second};
 }
 
 struct CanonicalMomenta { Vec3 first, second; };

@@ -1,0 +1,10 @@
+Raw outputs behind audit section 123 (2026-09-18).
+  prereg_123.txt      rules R123a-d, timestamped
+  traj_ctl*.txt, traj_hidden*.txt   tools/ledger_engine_drift at depth 20/26,
+                      with and without CREM_HIDDEN_MOMENTUM_FORCE; the depth
+                      20 run with the term breaks off at step 49
+  d26_ctl.txt, d26_hidden.txt  the matched depth 26 pair quoted in 123c
+  pairs_default.txt   tools/para_ortho_lab_pairs with the switch off:
+                      production bit-identical to section 110
+  The synthetic uniform and circular numbers are from
+  tools/uniform_motion_balance.cpp built from the working tree.

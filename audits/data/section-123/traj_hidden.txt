@@ -1,0 +1,2 @@
+KONCOWY P/(m c) +6.484e-02 -1.955e-01 +0.000e+00  |P| 2.059e-01  po 49 krokach  r 0.4002 r*
+r 1.0 ch para tilt 0 tol 1e-08 N 256 depth 20 | AWARIA 49/256 | zakres E/|U_dd| 4.262e-01 | E_koniec-E0 /|U_dd| +1.535e-01 | r 0.4002..0.9998 r* | 9 s
