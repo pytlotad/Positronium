@@ -7969,3 +7969,61 @@ measurement of whether that survives a cascade.
       P3's radiated energy uses the E1 power of the unperturbed orbit, valid
       only while the loss is small -- it is not, by 7221, which is how the
       inconsistency shows.  Positronium only, one semi-major axis.
+
+119. HIDDEN MOMENTUM DOES NOT CLOSE THE BALANCE: IT IS 5-25% OF THE GAP AND
+     AT SHORT RANGE IT MAKES IT WORSE
+==================================================================
+
+119a. THE HYPOTHESIS.  A magnetic moment in an electric field carries hidden
+      momentum (mu x E)/c^2, and section 105 measured that 88% of the pair's
+      unbalanced force is the moment sitting in the partner's retarded charge
+      field -- the same configuration.  If the model's momentum ledger were
+      simply missing that term, the "self-propulsion" of sections 104-106
+      would be bookkeeping rather than a broken reaction.
+
+119b. MEASURED.  The trajectory of sections 104-106 (para, retarded forces,
+      one orbit) with the hidden momentum of BOTH particles accumulated
+      alongside the mechanical one:
+        start                 |P_mech| 0        |P_hidden| 0.0285 m c
+        1 r*, one orbit       |dP_mech| 0.5992  with hidden 0.4986  (1.20x)
+                              charge field only          0.5093  (1.18x)
+                              |P_hidden| at the end      0.1518
+        0.5 r*, one orbit     |dP_mech| 1.1939  with hidden 1.4168  (0.84x)
+                              charge field only          1.4356  (0.83x)
+      Rule R119a asked for a tenfold reduction.  At 1 r* the reduction is
+      1.20, inside the "does not close it" band, and at 0.5 r* the sum is
+      WORSE than the mechanical momentum alone by 1.19.  The hypothesis is
+      refuted.
+
+119c. WHY IT CANNOT WORK, WITH THE MEASUREMENT AS THE CHECK.  For a charge
+      and a magnetic dipole the interaction field momentum is exactly
+      -(mu x E)/c^2, i.e. minus the hidden momentum, which is why a static
+      system carries zero total momentum.  Adding one of the pair without the
+      other is not a conservation law, and that is what the numbers show:
+      the term is real and the right size to matter (0.03 to 0.29 m c along
+      these orbits, 5-25% of the gap), but it moves the balance in either
+      direction depending on the geometry rather than closing it.
+
+119d. A CONTROL THAT PASSED.  Exact ortho carries zero hidden momentum at
+      every step, as it carries zero mechanical momentum: the symmetry of
+      section 106 acts on this term too.  So the term could not have broken
+      that result, which is what makes the negative answer above a statement
+      about the gap rather than about the probe.
+
+119e. SIDE OBSERVATION.  The same trajectory now ends at 0.4515 r* with
+      0.5992 m c, against section 104's 0.5331 r* and 0.6875 m c: the
+      engine fixes of section 107 (the four-velocity extrapolation and the
+      blended stencil) moved the deep orbit slightly and reduced the gained
+      momentum by 13%.  The self-propulsion survives them.
+
+119f. WHAT IS NEXT.  The lead of section 105g stands and is now the leading
+      candidate: thomasBackReactionForces exists only in the instantaneous
+      sum, not in retardedExternalForces.  The test is the one written there:
+      add it to the retarded sum and ask whether beta_cm after one orbit at
+      1 r* falls from 0.315 below 0.05.
+
+119g. LIMITS.  Two geometries (1 and 0.5 r*, para, tilt 0), one orbit each,
+      reaction off.  The hidden momentum is evaluated from the lab moments
+      and the partner's field at the particle, with no attempt at the field
+      momentum integral itself, which is the other half of the cancellation
+      named in 119c.

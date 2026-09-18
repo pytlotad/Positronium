@@ -1,0 +1,7 @@
+Raw outputs behind audit section 119 (2026-09-18), all from
+tools/hidden_momentum_balance.cpp (retarded forces, reaction off, one orbit,
+256 steps, tolerance 1e-8).
+  prereg_119.txt        rules R119a-c, timestamped
+  r1_para_1rstar.txt    para, 1 r*, tilt 0, depth 20
+  r1_orto_1rstar.txt    ortho control: hidden momentum is zero throughout
+  r1_para_05.txt        para, 0.5 r*, tilt 0, depth 26

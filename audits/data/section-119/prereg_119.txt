@@ -1,0 +1,16 @@
+Zapisano 2026-09-18T12:17:40+02:00, przed pomiarem.
+R1: czy ped ukryty domyka bilans pedu pary?
+Dla momentu magnetycznego w polu elektrycznym klasyczna elektrodynamika ma
+p_ukryty = (mu x E)/c^2.  Sekcja 105: 88% niezrownowazonej sily to kanal
+"moment w polu ladunku partnera".
+Pomiar: silnik, para, 1 r*, przechyl 0, sily opoznione, jeden obieg, 256
+krokow, tol 1e-8, glebokosc 20 -- ta sama trajektoria co 104-106.  W kazdym
+kroku licze P_mech = suma gamma m v oraz
+  P_ukr_total = suma (mu_i x E_i)/c^2 dla pelnego pola partnera,
+  P_ukr_charge = to samo dla samego pola Lienarda-Wiecherta ladunku.
+Reguly:
+  R119a "pole ukryte domyka bilans": |zmiana (P_mech + P_ukr)| po obiegu jest
+     co najmniej 10x mniejsza niz |zmiana P_mech| (kontrola: 0.6875 mc).
+  R119b "czesciowo": zmniejszenie miedzy 2x a 10x.
+  R119c "nie domyka": ponizej 2x, albo suma jest gorzej zachowana.
+Podaje takze skale: |P_ukr| przy starcie i na koncu obiegu.

@@ -1,0 +1,7 @@
+start |P_mech| 0.0000e+00 mc  |P_hidden(full)| 2.8509e-02 mc  |P_hidden(charge)| 2.8508e-02 mc
+t/P 0.25 r 0.5922 r*  |dP_mech| 0.504008  |d(P_mech+P_hid_full)| 0.599128  |d(P_mech+P_hid_charge)| 0.605047  |P_hid_full| 0.078630
+t/P 0.50 r 0.8079 r*  |dP_mech| 0.377437  |d(P_mech+P_hid_full)| 0.375774  |d(P_mech+P_hid_charge)| 0.377830  |P_hid_full| 0.043403
+t/P 0.75 r 0.9529 r*  |dP_mech| 0.827377  |d(P_mech+P_hid_full)| 0.879133  |d(P_mech+P_hid_charge)| 0.881671  |P_hid_full| 0.033014
+t/P 1.00 r 0.4515 r*  |dP_mech| 0.599213  |d(P_mech+P_hid_full)| 0.498642  |d(P_mech+P_hid_charge)| 0.509346  |P_hid_full| 0.151767
+
+over the run: |dP_mech| 0.599213 mc; with hidden momentum (full field) 0.498642, ratio 1.202; (charge field only) 0.509346, ratio 1.176
