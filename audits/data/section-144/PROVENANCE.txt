@@ -1,0 +1,14 @@
+Raw outputs behind audit section 144 (2026-09-19).
+  prereg_144.txt        rules R144a-e, written before any number, with the
+                        edge defined as P(2g|menu 1) > 0.9 and
+                        P(2g|menu 2) < 0.1
+  spin_menu1.txt        tools/channel_measure_scan, 8 trajectories, seed 42,
+  spin_menu2.txt        budget 200 s, stochastic cascade, with
+                        CREM_SPIN_MAGNITUDE and CREM_AXIAL_SPIN both set
+  default_menu1.txt     the same without the two switches; these censored
+  default_menu2.txt     under the section's own run conditions (144g)
+  edge.txt              the conditional probabilities over the 2000-state
+                        prepared samples of audit 143 and the band's limits
+The CREM_SKIP census lines are stripped from the four run files; the tool
+was invoked with CREM_SKIP_CENSUS=1, which turns them ON, and they carry no
+information this section uses.

@@ -1,0 +1,10 @@
+prepared measure, 2000 states per channel (audit 143):
+  P(2 gamma | menu 1) = E[w|para]  = 0.8754
+  P(2 gamma | menu 2) = E[w|ortho] = 0.3770
+  label agrees with the multiplicity: 0.6818
+
+the band's own limits, which is why no edge is reachable:
+  ortho band cos in [-1, 0.5) -> w in [0.000, 0.750)
+  para  band cos in [0.5, 1]  -> w in [0.750, 1.000]
+  so P(2 gamma | ortho) can only vanish where cos = -1, a point the
+  uniform draw reaches with probability zero

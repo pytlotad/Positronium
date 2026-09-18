@@ -1,0 +1,36 @@
+PRE-REGISTRATION, audit section 144 (the 2 gamma / 3 gamma knife edge
+under conditioned channels and closed angular momentum).  Written before
+any number of this section was computed.
+written 2026-09-18T22:38:20Z
+
+THE SETTING.  Audit 143 gave the two channels back by conditioning, and
+audit 140 showed that CREM_SPIN_MAGNITUDE together with CREM_AXIAL_SPIN
+makes the orbit surrender exactly one hbar per photon, ending the cascade
+after one emission at L = 0.  Both are switched on here, for the
+measurement only: 140 concluded they must not be defaults and this
+section does not overturn that.
+
+THE QUESTION.  Is there a knife edge -- a configuration in which the
+channel LABEL and the emitted MULTIPLICITY are the same division?
+
+RULES, decided now.
+R144a  A KNIFE EDGE EXISTS if P(2 gamma | menu 1) > 0.9 and
+       P(2 gamma | menu 2) < 0.1 in some configuration measured here.
+R144b  A PARTIAL EDGE is recorded if the label agrees with the drawn
+       multiplicity in more than 90% of trajectories overall.  Below that
+       the separation is reported as a number and not as an edge.
+R144c  Report the PREPARED and the TERMINAL measure separately, since
+       audit 113 measured that the dynamics tilts the terminal one, and
+       the spin switches change the trajectory that does the tilting.
+R144d  If the closed-angular-momentum runs differ from the default ones
+       only through the terminal measure, say so: then the switches act on
+       the knife edge through the trajectory and not through the draw.
+R144e  Nothing here becomes a default.  The section reports what the two
+       switches do to this observable, with audit 140's verdict intact.
+
+PREDICTION (mine).  No knife edge.  The conditioned ensembles have mean
+cosines +0.7508 and -0.2461, so E[w] should come out near 0.875 and 0.377
+at preparation, giving label agreement near 0.66 overall -- well short of
+R144b -- and the terminal measure should sit closer to the prepared one
+with the switches on than without, because the cascade ends after one
+photon and the angle has less time to drift.

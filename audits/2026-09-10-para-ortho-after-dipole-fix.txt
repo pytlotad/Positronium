@@ -9970,3 +9970,80 @@ measurement of whether that survives a cascade.
       remain different questions.  The lifetime comparison is eight pairs at
       one seed and one budget; it resolves 0.015 ps and says nothing below
       that.
+
+144. THE KNIFE EDGE WITH BOTH SPIN SWITCHES ON: STILL NONE, AND THE BAND'S OWN
+     LIMITS SAY WHY -- BUT THE PAIR OF SWITCHES IS CHEAP, NOT COSTLY
+==================================================================
+
+144a. THE SETTING.  Audit 143 gave the two channels back by conditioning, and
+      audit 140 showed that CREM_SPIN_MAGNITUDE with CREM_AXIAL_SPIN makes
+      the orbit surrender exactly one hbar per photon.  Both are switched on
+      here for the measurement only; 140's verdict that they are not defaults
+      stands (rule R144e).  The question is whether the channel LABEL and the
+      emitted MULTIPLICITY become the same division.
+
+144b. MEASURED, eight trajectories per channel, seed 42, budget 200 s, the
+      terminal measure read with CREM_CHANNEL_AT_ANNIHILATION.
+        configuration      completed   2 gamma    label agrees   E[w] terminal
+        menu 1, switches      8/8       8/8 100%     8/8 100%       0.8711
+        menu 2, switches      5/8       3/5  60%     2/5  40%       0.4911
+        menu 1, default       0/8         -            -              -
+        menu 2, default       1/8       0/1   0%     1/1 100%       0.1252
+      Rule R144a asked for P(2 gamma | menu 1) > 0.9 AND
+      P(2 gamma | menu 2) < 0.1.  The first holds at 1.00; the second fails
+      at 0.60.  NO KNIFE EDGE.  Rule R144b asked for 90% overall agreement:
+      measured 10 of 13, 77%.  No partial edge either.
+
+144c. AND THE BAND'S OWN LIMITS SAY WHY IT CANNOT APPEAR.  The label is a
+      threshold at cos = 0.5 and the multiplicity is drawn from
+      w = (1+cos)/2, so
+        para  band  cos in [0.5, 1]   ->  w in [0.750, 1.000]
+        ortho band  cos in [-1, 0.5)  ->  w in [0.000, 0.750)
+      P(2 gamma | ortho) can only vanish where cos = -1, which a uniform
+      draw reaches with probability zero.  Over the large prepared samples of
+      143 -- 2000 states per channel, where the statistics are not limited by
+      which trajectories completed -- the two conditional probabilities are
+        P(2 gamma | menu 1) = 0.8754     P(2 gamma | menu 2) = 0.3770
+      and the label agrees with the multiplicity in 0.6818 of the free
+      ensemble.  So the edge is not merely unobserved at N = 8: it is outside
+      the reach of any conditioning on a threshold, and only the withdrawn
+      cos = +-1 preparation can produce it.
+
+144d. WHAT THE SWITCHES DO CHANGE (rule R144d).  They act through the
+      trajectory, not through the draw.  With them on, the terminal measure
+      tracks the prepared one closely -- menu 1 goes from E[w] 0.8762
+      prepared to 0.8711 terminal, 0.6%, and menu 2 from 0.5149 to 0.4911,
+      4.6% -- where audit 113 measured the default dynamics tilting it.  The
+      reason is in 140: the cascade ends after the first photon, so the
+      mutual angle has far less time to drift before annihilation.  So these
+      switches make the model's own terminal measure nearly equal to its
+      preparation measure, which is the opposite of sharpening a knife edge:
+      it removes the one mechanism that was moving the angle at all.
+
+144e. A CORRECTION TO AUDIT 140's COST STATEMENT.  140 measured
+      CREM_SPIN_MAGNITUDE ALONE as unaffordable -- 0 of 8 cascades completed
+      within 1800 s, against 8 of 8 within 150 s for the default -- and that
+      stands.  The PAIR is the opposite: under identical conditions here, the
+      same budget, the same parallel load and the same stderr traffic, the
+      switched runs completed 13 of 16 trajectories while the default
+      completed 1 of 16.  The eccentric slow orbit the single switch produces
+      is what costs; adding the axial projection ends the cascade at L = 0
+      after one photon and the pair then falls radially, which is fast.  So
+      the pair is cheap and the single switch is not, and 140's cost sentence
+      must be read as being about the single switch.
+
+144f. WHAT THIS DOES NOT CHANGE.  Neither switch becomes a default: with them
+      on the cascade is one photon and the model's collapse time is no longer
+      a cascade time at all, which is 140's verdict and is untouched.  Nor
+      does the conditioning of 143 become a knife edge; 144c says it cannot.
+      The 2 gamma / 3 gamma division and the para/ortho label remain two
+      different questions, which is audit 111's result, now measured under
+      the two configurations that were supposed to be most favourable to it.
+
+144g. LIMITS.  Eight trajectories per channel at one seed base and a 200 s
+      budget, which is why 144c leans on the 2000-state prepared samples for
+      the conditional probabilities and uses the trajectories only for the
+      terminal measure.  Three of the eight switched menu-2 runs ended on
+      outcome 2 rather than completing.  The default rows censored under this
+      section's own run conditions and are reported as such rather than as a
+      property of the default configuration.

@@ -1,0 +1,11 @@
+Running 8 CREM collapse calibrations on 4 workers (per-event wall-clock budget 200 s).
+CREM calibrations: 8/8
+ROW 0 cos +0.763977  (no terminal weight: outcome 1)
+ROW 1 cos +0.700137  (no terminal weight: outcome 1)
+ROW 2 cos +0.525222  (no terminal weight: outcome 1)
+ROW 3 cos +0.806729  (no terminal weight: outcome 1)
+ROW 4 cos +0.829498  (no terminal weight: outcome 1)
+ROW 5 cos +0.819283  (no terminal weight: outcome 1)
+ROW 6 cos +0.862033  (no terminal weight: outcome 1)
+ROW 7 cos +0.711968  (no terminal weight: outcome 1)
+no completed trajectories

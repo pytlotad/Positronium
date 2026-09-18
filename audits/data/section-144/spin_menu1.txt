@@ -1,0 +1,24 @@
+Running 8 CREM collapse calibrations on 4 workers (per-event wall-clock budget 200 s).
+CREM calibrations: 8/8
+ROW 0 cos_prepared +0.763977 w_prepared 0.881988 w_terminal 0.888079 cos_terminal +0.776158 photons 2 t_ps 186.732943
+ROW 1 cos_prepared +0.700137 w_prepared 0.850069 w_terminal 0.944913 cos_terminal +0.889826 photons 2 t_ps 186.745950
+ROW 2 cos_prepared +0.525222 w_prepared 0.762611 w_terminal 0.775839 cos_terminal +0.551679 photons 2 t_ps 186.733751
+ROW 3 cos_prepared +0.806729 w_prepared 0.903365 w_terminal 0.748115 cos_terminal +0.496231 photons 2 t_ps 560.073979
+ROW 4 cos_prepared +0.829498 w_prepared 0.914749 w_terminal 0.912846 cos_terminal +0.825692 photons 2 t_ps 186.720218
+ROW 5 cos_prepared +0.819283 w_prepared 0.909642 w_terminal 0.764290 cos_terminal +0.528581 photons 2 t_ps 373.413131
+ROW 6 cos_prepared +0.862033 w_prepared 0.931016 w_terminal 0.970406 cos_terminal +0.940811 photons 2 t_ps 373.422257
+ROW 7 cos_prepared +0.711968 w_prepared 0.855984 w_terminal 0.964051 cos_terminal +0.928101 photons 2 t_ps 186.725567
+completed 8 trajectories (seed base 42, phenomenon 1, imposed angle 0, quantized channel 1)
+terminal weight: min 0.7481 max 0.9704 mean 0.8711
+emitted 2 gamma 8/8 = 100.0%; a draw on the terminal weight would give 7/8 = 87.5%
+label cos>=0.5 8/8; label agrees with the multiplicity 8/8 = 100.0%
+M1 preparation measure : <cos> +0.7524  E[w] 0.8762
+M2 terminal measure    : <cos> +0.7421  E[w] 0.8711
+M3 weighted by t       : E[w] 0.8500;  by 1/t: E[w] 0.8846
+M4 Boltzmann tilt, coupling U_dd(a_pair) = 7.272e-24 J = 4.539e-05 eV
+   E = U_dd itself      : E[w] 0.6565
+   E = binding 6.803e+00 eV : E[w] 0.5000
+   E = hbar omega 1.361e+01 eV: E[w] 0.5000
+   needed: p(cos) ~ exp(-lambda cos) with lambda 1.7965, i.e. an energy scale 2.526e-05 eV
+     = 5.57e-01 of U_dd(a_pair) and 3.71e-06 of the binding
+rule: a measure gives 1:3 when E[w] is in [0.24, 0.26]
