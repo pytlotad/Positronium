@@ -8923,3 +8923,115 @@ measurement of whether that survives a cascade.
       own statement and are reported as bookkeeping probes, not physics.
       The action is computed from osculating elements, so it is the action of
       the instantaneous Kepler ellipse, not of the retarded two-body system.
+
+132. THE TWO REPAIRS TO 131: THE MARGIN'S OWN RATIO, MEASURED, AND THE KEPLER
+     LABEL'S BREAKDOWN, LOCALIZED TO ONE RUNG
+==================================================================
+
+132a. WHAT WAS OWED.  Section 131 left two debts.  131f asserted, without
+      measuring it, that the estimator's period/light-crossing ratio sits
+      about 1.7 times below the circular Kepler estimate 2 pi n / alpha at
+      margin 50.  And 131 computed every action from the KEPLER formulas
+      while the model's radial potential carries dipole terms, leaving three
+      symptoms unexplained: J_r/h drifting to -0.0158, the landing law
+      agreeing to 0.9861 on the last rung against 1.0000 earlier, and a 20%
+      scatter in the margin-50 stop.
+
+132b. THE MARGIN'S OWN RATIO (repair 1).  CREM_ACTION_TRACE now prints a
+      second line with the estimator's own ratio, the Kepler estimate, the
+      dipole-aware periapsis and the true separation.  At the stopping
+      checkpoint:
+        margin  n_stop     own ratio   Kepler estimate   over
+          300   0.273285    235.305       235.305        1.000002
+          150   0.096794     83.353        83.342        1.000142
+           50   0.080655     48.544        69.446        1.4306
+           50   0.097152     49.464        83.650        1.6911
+      Rule R132a asked for the stop ratio within 10% of 50 and the Kepler
+      estimate above it by 1.4 to 2.0: measured 48.54 and 49.46, over by
+      1.43 and 1.69.  CONFIRMED, and the 1.7 I guessed in 131f is the upper
+      of the two.  The new fact is the other half of the table: at margins
+      150 and 300 the two ratios agree to 1e-4 and 2e-6, so the closed form
+      is not an approximation there at all -- it is exact until the pair
+      reaches the few-r* region, and then it fails by 43-69%.
+
+132c. AND THE 20% SCATTER IS IN THE LABEL, NOT IN THE STOP.  The two
+      margin-50 runs stop at ratios 48.54 and 49.46, a 2% spread, at
+      separations 5.095 and 8.739 r*.  The stop condition is therefore as
+      sharp there as anywhere; what scatters by 20% is n, because the map
+      from the ratio to n is the Kepler one and it has broken down by 1.43
+      versus 1.69 in those two states.  Section 131's third symptom was an
+      artefact of the label.
+
+132d. THE LABEL'S BREAKDOWN, MEASURED AGAINST THE MODEL'S OWN POTENTIAL
+      (repair 2).  tools/radial_action_full_potential.cpp puts the model's
+      own circular orbit at a radius -- L from dU/dr = 0 in
+      U = -K/r + u_dd + u_so + L^2/2r^2, the same assembly
+      dipoleAwarePeriapsis solves -- and prints the energy label against the
+      angular one, which must agree on a circle:
+        a/a_pair     r*      n from E     L/hbar      gap     |u_dd/u_C|
+        1.000000  547.509   0.999998332  0.999994996  0.000003  3.34e-06
+        0.333333  182.503   0.577341317  0.577323984  0.000017  3.00e-05
+        0.074670   40.883   0.273177026  0.273013799  0.000163  5.97e-04
+        0.009369    5.130   0.095752904  0.092509441  0.003243  3.24e-02
+        0.006505    3.562   0.079956740  0.075226632  0.004730  5.63e-02
+      With the dipole terms zeroed the same table gives a gap of 0.000000 at
+      every radius, to all printed digits.  Rule R132d asked for the gap to
+      fall below 10% of its value under that ablation; it falls to zero
+      exactly.  ATTRIBUTED.
+      The spin-orbit part contributes nothing in this geometry: u_so goes as
+      (mu2 - mu1).(v x r), and with both moments along the orbital normal
+      that difference vanishes identically, so the whole gap is u_dd.
+
+132e. A CORRECTION TO MY OWN SIZE ESTIMATE.  I said the dipole term is "tens
+      of percent of Coulomb at the last rung".  Measured, it is 3.24% at the
+      stop radius of 5.13 r* and 5.63% at 3.56 r*.  The 44.7% quoted in the
+      estimator's own comment is at the TERMINAL radius near r*, which these
+      trajectories never reach: they stop at 4.3-8.7 r*.  The symptom sizes
+      follow that scale, not the 44.7%.
+      The measured trace gap is -0.0054 typically and -0.0158 at the
+      margin-50 deep end, against the probe's +0.0032 to +0.0047 at the same
+      radii: same order, opposite sign.  The probe fixes the moments along
+      the orbital normal and the real trajectory does not, so the sign of the
+      residual is the moment orientation.  What is settled is the SOURCE
+      (the ablation gives exactly zero) and the ORDER; the sign along a real
+      trajectory is not.
+
+132f. THE LANDING LAW IS EXACT; ONLY ITS KEPLER INPUT WAS NOT.  Feeding
+      energy conservation the MEASURED photon energy instead of 2R/n^3,
+      n' = sqrt(R/(R/n^2 + E_photon)) with R = 6.802846579 eV:
+        n_before  E measured [eV]  2R/n^3 [eV]  ratio  landing law/meas.
+        0.999980       13.604509      13.606510   0.9999        0.9998
+        0.577269       70.670787      70.727118   0.9992        0.9968
+        0.272406      634.225835     673.086167   0.9423        0.9999
+      Rule R132c asked for 0.5%: the landings come out to 0.02%, 0.32% and
+      0.01%.  EXACT.  Rule R132b's answer is the third rung: the photon
+      energy is the Kepler correspondence quantum to 0.01% at n = 1 and to
+      0.08% at n = 0.577, and departs by 5.8% at n = 0.272.  That 5.8% is
+      the whole of 131c's 0.9861, which is therefore not a failure of the
+      law but the Kepler value of R/n^3 standing in for the model's own
+      orbital frequency at 40 r*.
+
+132g. WHAT MOVES IN SECTION 131 AND WHAT DOES NOT (rule R132e).  None of the
+      three verdicts moves: the stopping action is not an integer, the stop
+      is the retardation margin (now with the estimator's own ratio printed
+      at the stop in all four runs), and --ground-state-floor is the n = 1
+      action floor -- that last one is algebra at a_pair, where the dipole is
+      3.3e-06 of Coulomb, so nothing here touches it.
+      Two numbers do move.  131e's "measured mean / predicted rung = 1.0155"
+      is not a discrepancy: at that radius the label's own two definitions
+      already differ by 3.4%, which is more than the 1.6% being compared.
+      And 131c's last-rung ratio is explained rather than merely recorded.
+
+132h. UNCHANGED.  Validation 62/62, header isolation 37/37; the new trace
+      line is behind the same environment variable as the first and prints
+      only, so the four runs reproduce section 131's trajectories.
+
+132i. LIMITS.  Two seeds at margin 50 and one each at 150 and 300; the probe
+      is circular orbits at six radii with the moments along the orbital
+      normal and one pair.  The full radial action J_r = 2 integral p_r dr
+      was NOT computed for an eccentric orbit, because along this collapse
+      the orbit is circular to within the label gap itself -- which is the
+      same statement as the gap being small, so it is an assumption this
+      section does not test.  The probe mirrors dipoleAwarePeriapsis's
+      turning-point state construction; the two energy functions themselves
+      are called, not copied.

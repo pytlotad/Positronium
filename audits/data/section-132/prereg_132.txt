@@ -1,0 +1,48 @@
+PRE-REGISTRATION, audit section 132 (the two repairs section 131 left
+open).  Written before any number of this section was computed.
+written 2026-09-18T15:18:11Z
+
+WHAT IS BEING REPAIRED.
+  P1  131f claimed, without measuring it, that the closed form
+      n = margin alpha / 2 pi fails at margin 50 because the estimator
+      uses the REGULARIZED period and the actual periapsis separation,
+      about 1.7 times below their circular Kepler values.  The estimator's
+      own ratio was never printed.
+  P2  131 computed the actions from the KEPLER formulas while the model's
+      radial potential carries a dipole term that is tens of percent of
+      Coulomb at the last rung.  Three symptoms were recorded and left
+      unexplained: J_r/h going to -0.0158 (the over-circular seam), the
+      landing law agreeing to 0.9861 on the last rung against 1.0000 on
+      the earlier ones, and the 20% scatter of the margin-50 stop.
+
+RULES, decided now.
+R132a  P1 is confirmed if, at the margin-50 stop, the estimator's own
+       period/light-crossing ratio is within 10% of 50 (i.e. that test is
+       what fired) AND the circular Kepler estimate 2 pi n / alpha at the
+       same state exceeds it by a factor between 1.4 and 2.0.  A factor
+       outside that band refutes the number I put in 131f and the section
+       must say so.
+R132b  The Kepler label is declared adequate at a rung where the measured
+       photon energy agrees with the correspondence quantum 2R/n^3 to 1%,
+       and inadequate where it does not.  The rung at which it fails is
+       the answer, not a free parameter.
+R132c  The landing law is exact if, fed the MEASURED photon energy instead
+       of 2R/n^3, energy conservation
+         n' = sqrt(R/(R/n^2 + E_photon))
+       reproduces each measured landing to 0.5%.  If it does, then only
+       the law's Kepler INPUT was approximate, not the law.
+R132d  The energy-versus-L label gap is attributed to the dipole term only
+       if removing that term from the model's own circular balance drops
+       the gap below 10% of its measured value.  Otherwise the gap stays
+       unexplained and is recorded as such.
+R132e  Any verdict of section 131 that moves must be stated as a
+       correction: the three to check are "no integer action at the stop",
+       "the stop is the retardation margin", and "--ground-state-floor is
+       the n = 1 action floor".
+
+PREDICTION (mine, before the numbers).  R132a confirmed near the middle of
+the band; the photon energy departs from 2R/n^3 only on the last rung, by
+a few percent; R132c exact, because energy conservation cannot fail; R132d
+confirmed, since the dipole is the only other radial term at those radii.
+None of 131's three verdicts moves, because all three are statements about
+integers and causes rather than about the third decimal.

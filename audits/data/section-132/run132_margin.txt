@@ -1,0 +1,12 @@
+=== m150_err_42.txt  stop_cause 2 photons 3 ===
+MARGIN checkpoint=67 n=0.272425951 ratio=239.243652 kepler_ratio=234.564894 over=0.980444 periapsis_over_rstar=42.270878 separation_over_rstar=42.270967 period=6.520812406e-18
+MARGIN checkpoint=68 n=0.096793768 ratio=83.353494 kepler_ratio=83.341620 over=0.999858 periapsis_over_rstar=4.342717 separation_over_rstar=5.130362 period=2.757343690e-19
+=== m300_err_42.txt  stop_cause 2 photons 2 ===
+MARGIN checkpoint=30 n=0.577274160 ratio=497.173687 kepler_ratio=497.046084 over=0.999743 periapsis_over_rstar=182.548563 separation_over_rstar=182.548584 period=5.852018698e-17
+MARGIN checkpoint=31 n=0.273285100 ratio=235.305168 kepler_ratio=235.304640 over=0.999998 periapsis_over_rstar=40.890576 separation_over_rstar=40.890668 period=6.204042588e-18
+=== m50_err_42.txt  stop_cause 2 photons 3 ===
+MARGIN checkpoint=80 n=0.080729327 ratio=52.790582 kepler_ratio=69.509773 over=1.316708 periapsis_over_rstar=4.698329 separation_over_rstar=4.698329 period=1.599259580e-19
+MARGIN checkpoint=81 n=0.080655416 ratio=48.544329 kepler_ratio=69.446134 over=1.430572 periapsis_over_rstar=5.095279 separation_over_rstar=5.095279 period=1.594871020e-19
+=== m50_err_43.txt  stop_cause 2 photons 3 ===
+MARGIN checkpoint=75 n=0.097174470 ratio=51.169420 kepler_ratio=83.669412 over=1.635145 periapsis_over_rstar=8.453799 separation_over_rstar=8.453799 period=2.789211831e-19
+MARGIN checkpoint=76 n=0.097151666 ratio=49.464531 kepler_ratio=83.649778 over=1.691106 periapsis_over_rstar=8.739020 separation_over_rstar=8.739020 period=2.787248678e-19

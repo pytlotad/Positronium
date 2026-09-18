@@ -2277,6 +2277,32 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // the Compton barrier, where classical point-particle
         // electrodynamics does not apply at all.  Results from it are probes
         // of the model's own bookkeeping, never physical claims.
+        // CREM_ACTION_TRACE, second line (audit 132): the estimator's OWN
+        // period/light-crossing ratio next to the circular Kepler estimate
+        // 2 pi n / alpha that section 131f compared it with, plus the
+        // dipole-aware periapsis the barrier test reads.  131f attributed
+        // the gap between the two ratios to the regularized period and the
+        // true periapsis without measuring it; this line is that
+        // measurement.
+        if(std::getenv("CREM_ACTION_TRACE")) {
+            const double binding=-elements.specificEnergy*reducedMass;
+            const double groundBinding=
+                -groundStateSpecificEnergy()*reducedMass;
+            const double level=binding>0.0
+                ?std::sqrt(groundBinding/binding):0.0;
+            const double fineStructure=pairCoulombStrength/(hbar*c);
+            std::fprintf(stderr,
+                "MARGIN checkpoint=%d n=%.9f ratio=%.6f kepler_ratio=%.6f"
+                " over=%.6f periapsis_over_rstar=%.6f"
+                " separation_over_rstar=%.6f period=%.9e\n",
+                checkpoint,level,periodToLightCrossingRatio,
+                2.0*pi*level/fineStructure,
+                periodToLightCrossingRatio>0.0
+                    ?(2.0*pi*level/fineStructure)/periodToLightCrossingRatio
+                    :0.0,
+                periapsis/comptonBarrierRadius,
+                periapsisSeparation/comptonBarrierRadius,period);
+        }
         const double minimumPeriodToLightCrossingRatio=
             std::getenv("CREM_RETARDATION_LIMIT")
             ?std::atof(std::getenv("CREM_RETARDATION_LIMIT")):150.0;

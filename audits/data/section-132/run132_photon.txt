@@ -1,0 +1,5 @@
+R = 6.802846579 eV (the pair's ground binding, from the model)
+run                n_before  E measured eV      2R/n^3 eV    ratio landing meas  landing law    ratio
+err_42             0.999980      13.604509      13.606510   0.9999     0.577269     0.577363   0.9998
+err_42             0.577269      70.670787      70.727118   0.9992     0.272406     0.273289   0.9968
+err_42             0.272406     634.225835     673.086167   0.9423     0.096794     0.096807   0.9999

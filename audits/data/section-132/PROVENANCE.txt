@@ -1,0 +1,15 @@
+Raw outputs behind audit section 132 (2026-09-18).
+  prereg_132.txt      rules R132a-e, written before any number
+  run132_margin.txt   the estimator's OWN period/light-crossing ratio at the
+                      stop, against the circular Kepler estimate, at margins
+                      300, 150 and 50 (132b)
+  run132_radial.txt   tools/radial_action_full_potential.cpp, with the dipole
+                      terms on and zeroed: the energy label against the
+                      angular one on the model's own circular orbit (132d)
+  run132_photon.txt   the measured photon energy against the Kepler quantum
+                      2R/n^3 and the exact landing (132f)
+  photon_energy_law.py  the script for that comparison; takes R in eV and a
+                      glob of trace files
+  margin_traces.tar.gz  the MARGIN, ACTION and PHOTON_LADDER lines of the
+                      four runs (m<margin>_err_<seed>)
+  results.txt         their RESULT lines, with stop_cause
