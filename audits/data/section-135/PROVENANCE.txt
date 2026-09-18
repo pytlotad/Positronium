@@ -1,0 +1,18 @@
+Raw outputs behind audit section 135 (2026-09-18).
+  prereg_135.txt          rules R135a-e, written before any number, after
+                          reading what the code already computes
+  m1_share_stochastic.txt CREM_M1_SHARE per checkpoint in the photon cascade,
+                          the only configuration where the model evaluates M1
+  m1_share_production.txt the same under the production reaction model: E1
+                          and M1 are identically zero (135b, rule R135c)
+  moment_trace.txt.gz     CREM_DEBUG_SPINPAIR: both moments per substep, the
+                          input to the traced second derivative
+  run135_stoch.txt        the first pass, whose substep stencil turned out to
+                          be integrator jitter -- kept because R135e's
+                          resolution test is what caught it
+  run135_resolved.txt     m1_resolved.py: the stencil sweep and the plateau
+                          (135c)
+  run135_attribution.txt  the three scales against the booked and traced
+                          powers, and the damping times (135d, 135e)
+  m1_from_trace.py, m1_resolved.py  the two scripts, in that order
+  results.txt             the RESULT lines of both runs

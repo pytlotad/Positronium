@@ -1,0 +1,11 @@
+substeps 6360, span 1.9889e-10 s
+stencil 1: <|m''|^2> 2.400230e+20  -> P_M1 5.938811e-13 W  (max 1.911650e-09 W)
+stencil 2: <|m''|^2> 1.597153e+14  -> P_M1 3.951783e-19 W  (max 2.114384e-15 W)
+R135e stencil agreement: 0.0000
+mean substep 3.1272e-14 s; libration period 1.1044e-11 s -> 353.2 samples
+E_lib = J omega = 5.909973e-24 J = 3.688715e-05 eV
+radiated per libration period 6.558526e-24 J, i.e. 1.110e+00 of E_lib
+damping time E_lib/P = 9.951441e-12 s = 3.244e-01 collapse times (30.672 ps)
+model books M1 at 68 checkpoints: min 1.037150e-24 max 1.617153e-13 median 1.865877e-14 W
+E1 median 3.762344e-04 W; M1/E1 median 4.881e-11
+R135a ratio traced/booked (medians): 31.8285

@@ -1,0 +1,2 @@
+RESULT seed 42 lab_ps 199.039646721 proper_ps 199.039646720 lab_minus_proper_fs 0.000001 outcome 0 photons 3 wall_s 62.4
+RESULT pair positron,electron sector both seed 42 a_pair 1.058354e-10 m mass_ratio 1.0000 moment_ratio 1.000000 outcome 0 stop_cause 2 photons 0 wall_s 19.9

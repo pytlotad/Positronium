@@ -1,0 +1,44 @@
+PRE-REGISTRATION, audit section 135 (does the model's M1 channel see the
+libration, and does it damp it).  Written before any number of this
+section was computed.
+written 2026-09-18T19:11:02Z
+
+THE QUESTION.  The mutual angle librates (68 GHz by the consecutive-extrema
+definition of 115, 90.6 GHz by the whole-cycle one of 129) and the pair's
+total moment swings with it, |S1+S2| running 0.37-0.66 hbar.  That is an
+oscillating magnetic moment, i.e. an M1 source.  Does the model's own M1
+channel carry it, and does the radiation damp the libration?  If it does
+not, the libration amplitude that 113 and 115 rest on has no sink.
+
+WHAT THE CODE ALREADY HAS, read before measuring:
+  coherentMagneticDipoleOrbitAveragedEmission gives
+  P_M1 = mu0 <|d2(mu1+mu2)/dt2|^2> / (6 pi c^3), built from the two BMT
+  rates at the orbital phase nodes, and CREM_M1_SHARE prints it beside E1
+  per checkpoint.  It is gated on isStochastic, so under the production
+  reaction model (individual Landau-Lifshitz, the default since audit 109)
+  it is not evaluated at all.
+
+RULES, decided now.
+R135a  THE CHANNEL IS CLOSED if the M1 power the model books agrees, within
+       a factor 2, with the power recomputed from the TRACE's own total
+       moment, P = mu0 |d2(mu1+mu2)/dt2|^2/(6 pi c^3), differentiated
+       numerically along the same trajectory at the same checkpoints.
+R135b  THE LIBRATION IS DAMPED if the M1 energy radiated over one libration
+       period exceeds 1% of the libration's own energy, E_lib = J omega_lib
+       with J = 0.0985 hbar from audit 129.  Below that the amplitude is
+       not inflated by a missing sink, because the sink cannot act.
+R135c  PRODUCTION.  If the production configuration books ZERO M1 power,
+       that is stated plainly: the channel would then be not merely small
+       but absent from the trajectories 113 and 115 were measured on.
+R135d  Report the damping time E_lib/P_M1 against the 30.672 ps collapse
+       and against the libration period itself.
+R135e  The numerical second derivative must be shown to be resolved: the
+       substep spacing against the libration period, and the same quantity
+       at two stencil widths, agreeing to 10%.  Otherwise the comparison of
+       R135a is reported as an order-of-magnitude statement.
+
+PREDICTION (mine).  The two powers agree in order, since the model's
+second derivative is built from the same two rates whose beat IS the
+libration; the damping is negligible by many orders, so R135b fails and
+the amplitude is not inflated; and production books exactly zero because
+of the isStochastic gate.

@@ -1,0 +1,14 @@
+scales: omega_orb 2.0669e+16, omega_prec 4.1342e+11, omega_lib 5.6895e+11 rad/s
+  omega_orb/omega_lib = 3.6328e+04
+  libration, omega_lib^2 A                             |m''| 5.3990e-01  P 7.2122e-34 W
+  precession, omega_prec^2 |m|                         |m''| 2.4024e+00  P 1.4280e-32 W
+  precession modulated at the orbit, omega_prec omega_orb |m| |m''| 1.2011e+05  P 3.5694e-23 W
+
+booked by the model      P 1.431974e-23 W  -> |m''| 7.6075e+04
+traced from the moments  P 2.678280e-32 W  -> |m''| 3.2901e+00
+R135a booked/traced = 5.347e+08
+booked / (orbit-modulated estimate) = 0.401
+
+E_lib 5.9100e-24 J; damping time E_lib/P:
+  traced libration M1          2.2066e+08 s = 7.194e+18 collapse times; per libration period 5.005e-20 of E_lib
+  everything the model books   4.1272e-01 s = 1.346e+10 collapse times; per libration period 2.676e-11 of E_lib

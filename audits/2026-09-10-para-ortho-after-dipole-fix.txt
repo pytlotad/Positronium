@@ -9234,3 +9234,95 @@ measurement of whether that survives a cascade.
       The mu+mu- and p+antip runs stop on the Compton barrier rather than the
       retardation margin, so their covered ranges are shorter (737 and zero
       substeps); the e+e- and mu+e- and p+e- runs stop on the margin.
+
+135. THE LIBRATION'S OWN M1 RADIATION: THE BOOKED CHANNEL IS A DIFFERENT
+     MODULATION, AND NOTHING DAMPS THE LIBRATION EITHER WAY
+==================================================================
+
+135a. THE QUESTION.  The mutual angle librates and the pair's total moment
+      swings with it, so it is an M1 source.  Does the model's own M1 channel
+      carry that radiation, and does it damp the libration?  If not, the
+      libration amplitude behind sections 113 and 115 has no sink.
+
+135b. WHAT THE MODEL BOOKS, AND WHERE.  coherentMagneticDipoleOrbitAveraged-
+      Emission computes P_M1 = mu0 <|d2(mu1+mu2)/dt2|^2>/(6 pi c^3) from the
+      two BMT rates at the ORBITAL phase nodes, with the moments held fixed
+      across the average, and CREM_M1_SHARE prints it beside E1 per
+      checkpoint.  It is gated on isStochastic.
+      Rule R135c, measured: under the production reaction model (individual
+      Landau-Lifshitz, the default since audit 109) the printed line reads
+      E1 = 0.000000e+00 and M1 = 0.000000e+00 at every checkpoint.  This
+      secular radiated-power accounting is evaluated only in the photon
+      cascade; production's sink is the per-particle Landau-Lifshitz force,
+      which is a charge-acceleration term and carries no magnetic-dipole
+      piece at all.  So on the trajectories 113 and 115 were measured on, the
+      M1 channel books nothing.
+
+135c. THE MEASUREMENT, in the stochastic path where it is evaluated.  One
+      cascade, seed 42, 6360 substeps, with the moments traced.  Over the
+      first 2.49e-11 s (about two libration periods, 110 samples each)
+        |mu1+mu2|/muB   min 1.502752   max 1.862441   amplitude 0.1798 muB
+      and the second derivative of the traced total moment, swept over
+      stencil widths (rule R135e):
+        stride   span/T_lib   <|m''|^2>     P [W]
+             1      0.018     2.9135e+02   7.21e-31     integrator jitter
+             2      0.036     2.0074e+01   4.97e-32
+             5      0.090     1.1541e+01   2.86e-32
+            10      0.181     1.0825e+01   2.68e-32     the plateau
+            20      0.361     8.6703e+00   2.15e-32
+            40      0.722     3.5328e+00   8.74e-33     stencil too wide
+            80      1.445     3.0848e-01   7.63e-34
+      The substep stencil is noise: it disagrees with the next width by a
+      factor 15.  The plateau at strides 5-20 varies by 30%, so this is an
+      order-of-magnitude measurement, which R135e says is then what it is
+      called.
+
+135d. THE CHANNEL IS NOT CLOSED, AND THE REASON IS A SCALE.  Against the
+      1.431974e-23 W the model books at the same instant, the traced
+      2.678280e-32 W is a factor 5.3e+08 below -- rule R135a asked for 2.
+      The three scales, all evaluated on the same state:
+        source                                     |m''|        P [W]
+        libration,  omega_lib^2 A                 5.40e-01    7.21e-34
+        precession, omega_prec^2 |m|              2.40e+00    1.43e-32
+        precession modulated at the ORBIT,
+          omega_prec omega_orb |m|                1.20e+05    3.57e-23
+        what the model books                      7.61e+04    1.43e-23
+        what the moments trace                    3.29e+00    2.68e-32
+      The booked number sits on the orbit-modulated line, to a factor 0.401,
+      while the traced moments sit on the precession line, to 1.37.  The
+      ratio omega_orb/omega_lib is 3.6e+04, and its square is the 1.3e+09
+      that separates the two columns.  So the model's M1 channel is not
+      blind to the moments -- it radiates from their precession modulated at
+      the orbital period, which is a real and much faster process -- but the
+      libration's own contribution is nine orders below what that channel
+      books, and cannot be seen inside it.
+
+135e. AND NOTHING DAMPS THE LIBRATION, WHICH IS WHAT THE QUESTION WAS FOR.
+      With E_lib = J omega_lib = 5.91e-24 J (J = 0.0985 hbar, audit 129):
+        sink assumed                fraction of E_lib per       damping time
+                                    libration period
+        the traced libration M1          5.0e-20              2.2e+08 s
+        ALL of the booked M1             2.7e-11              4.1e-01 s
+      against a collapse of 30.672 ps.  Rule R135b asked for 1% per period;
+      the generous case misses it by nine orders and the honest one by
+      eighteen.  Even crediting the libration with the entire M1 power the
+      model books -- which 135d shows it does not own -- the damping time is
+      1.3e+10 collapse times.
+
+135f. SO 113 AND 115 ARE NOT AFFECTED, BUT NOT FOR THE REASON PROPOSED.  The
+      concern was that a missing sink inflates the libration amplitude.  The
+      sink is indeed missing, twice over -- absent in production by the
+      isStochastic gate, and nine orders too small in the cascade -- but it
+      could not have acted: a channel that removes 5e-20 of the libration
+      energy per period cannot set its amplitude over a 30.672 ps collapse.
+      The libration amplitude is a property of the initial mutual angle and
+      the precession rates, as 129 measured, and radiation has no part in it.
+
+135g. LIMITS.  One trajectory, one seed; the resolved second derivative is an
+      order-of-magnitude number by 135c's own stencil sweep, which is enough
+      for a 5.3e+08 comparison and would not be for a factor 2.  The window
+      is the first two libration periods at a_pair, where the libration is
+      slowest and cleanest; deeper in the cascade the libration frequency
+      rises by five orders (129) and this section does not follow it there,
+      so the damping ratios quoted are for the prepared state.  The scales of
+      135d are evaluated analytically on the prepared orbit, not integrated.
