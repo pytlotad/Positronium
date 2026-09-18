@@ -9425,3 +9425,67 @@ measurement of whether that survives a cascade.
       coherent case is covered by the existing validation check on aligned
       versus cancelling pairs, which tests the power and not this balance.
       The cone damping is quoted at the prepared state's precession rate.
+
+137. THE REPAIR 136g RECOMMENDED IS REFUSED, AND THE RECOMMENDATION IS
+     WITHDRAWN: THE TORQUE COVERS 0.008% OF THE TRAJECTORY
+==================================================================
+
+137a. WHAT WAS ASKED.  Carry out 136g's candidate repair: drop the magnetic
+      term from expectedLossPerOrbit, since the engine's M1 torque already
+      takes that energy out of the moments.  Rule R137a said to make it only
+      if the torque actually covers the trajectory, and R137b said to refuse
+      and withdraw the recommendation if it covers less than 1%.
+
+137b. THE DECIDING NUMBER.  One cascade, seed 42:
+        total revolutions                       862 383
+        mechanically integrated orbits               68
+        fraction the torque can act on         7.885e-05
+      The estimator exists in order to skip orbits, and it skips 99.992% of
+      them.  Over those the mechanics never runs, so the torque never fires,
+      and the secular formula is the ONLY thing that accounts for M1 there.
+      Removing its magnetic term would leave 0.999921 of the M1 energy
+      unaccounted -- a gap 12 700 times larger than the overlap it closes.
+      R137b applies: the repair is refused and 136g's recommendation is
+      withdrawn.
+
+137c. AND THE OVERLAP, KEPT AS A NUMBER (rule R137c).  Where both do act --
+      the 68 measured orbits -- the same radiation is charged twice, to the
+      orbit by the formula and to the moments by the torque.  That overlap is
+      7.885e-05 of the M1 energy, which is itself between 1.2268e-15 and
+      2.2134e-08 of the radiated power, so between 9.7e-20 and 1.7e-12 of the
+      total.  It is a real inconsistency and it is eighteen orders below
+      anything the model reports.
+
+137d. AND THEY ARE NOT EVEN THE SAME QUANTITY (rule R137d).  "Double
+      counting" was the wrong description twice over.  The secular formula
+      builds <|mu''|^2> from the BMT rates differentiated AROUND THE ORBIT
+      and gets 1.43e-23 W at a_pair; the torque builds it from the moments'
+      own history, and on the uniform precession of section 136d that is
+      1.56e-33 W.  The ten orders between them are the orbital modulation
+      (section 135d measured the same gap from the other side).  On a
+      mechanically integrated orbit the history does carry that modulation,
+      so the two approach each other there; on a skipped orbit there is no
+      history at all.  So the formula and the torque are not two accounts of
+      one number, they are one number's two regimes.
+
+137e. WHAT WOULD ACTUALLY BE RIGHT, AND ITS SIZE.  The reservoir mismatch
+      132g named survives: over skipped orbits the formula charges the M1
+      energy to the ORBIT, while physically a precessing moment pays for its
+      own M1 radiation out of the precession.  Fixing that means adding a
+      secular spin damping to the skipped orbits, not removing anything.  Its
+      size is already measured: 136e's cone time constant is 3.66e+09 s
+      against a 30.672 ps collapse, so over a whole collapse the correct sink
+      would close the precession cone by 8.4e-21 of itself.  That is why this
+      is not worth building: the right repair is real, well defined, and
+      changes the twenty-first digit.
+
+137f. WHAT I GOT WRONG, PLAINLY.  136g proposed a repair without measuring
+      the fraction of the trajectory each mechanism covers, and without
+      noticing that the magnetic term also carries the M1 photon channel's
+      hazard split, so removing it deletes a channel rather than a line of
+      bookkeeping.  Both were one reading away.  The audit keeps 136g as
+      written and this section as its correction.
+
+137g. UNCHANGED.  No model file was modified by this section; validation
+      62/62 and header isolation 37/37 stand from 136, and the cascade is
+      bit-identical.

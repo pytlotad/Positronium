@@ -1,0 +1,10 @@
+Raw outputs behind audit section 137 (2026-09-18).
+  prereg_137.txt          rules R137a-d, written before the numbers, with
+                          R137a naming the condition under which the repair
+                          WOULD have been made
+  run137_revolutions.txt  the deciding measurement: total revolutions of one
+                          cascade against the number of mechanically
+                          integrated orbits, which is the fraction of the
+                          trajectory on which the M1 torque can act
+The checkpoint count is the number of CREM_M1_SHARE lines from the same run.
+No model file was changed by this section.

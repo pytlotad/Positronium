@@ -1,0 +1,39 @@
+PRE-REGISTRATION, audit section 137 (executing 136g's repair, or not).
+Written before the numbers of this section were computed.
+written 2026-09-18T19:41:47Z
+
+THE REQUEST.  Carry out the repair 136g named: drop the magnetic term
+from expectedLossPerOrbit, on the reasoning that the engine's M1 torque
+already pays for that radiation.
+
+WHAT I FOUND ON READING FURTHER, BEFORE TOUCHING ANYTHING.  The term does
+more than charge the orbit: magneticLossFraction splits the skipped
+orbits' energy into an E1 and an M1 hazard, each divided by its own
+photon reference, and the checkpoint envelope identity is built on that
+split.  Removing the term therefore removes the M1 PHOTON channel, not
+just a line in a budget.  And the two mechanisms cover different parts of
+the trajectory: the torque acts only while an orbit is mechanically
+integrated, the formula acts over every skipped orbit.
+
+THE DECIDING MEASUREMENT.  The fraction of a cascade that is mechanically
+integrated, i.e. where the torque can act at all:
+  measured orbits (checkpoints) / total revolutions.
+If that fraction is small, the formula is the only thing covering the
+rest and 136g's repair would open a gap instead of closing an overlap.
+
+RULES, decided now.
+R137a  THE REPAIR IS MADE only if the measured-orbit fraction is above
+       50%, i.e. if the torque really does cover the trajectory.
+R137b  If the fraction is below 1%, the repair is REFUSED and 136g's
+       recommendation is withdrawn in those words, with the gap it would
+       have opened stated as a number: (1 - fraction) of the M1 energy.
+R137c  Either way, report the overlap the current code does have -- the
+       measured-orbit fraction times the M1 share -- so the defect 136g
+       pointed at keeps a size.
+R137d  If the two mechanisms turn out to compute DIFFERENT powers rather
+       than the same one, say so: then "double counting" was the wrong
+       description and the section says which quantity each carries.
+
+PREDICTION (mine).  The fraction is small, of order 1e-4, because the
+estimator exists in order to skip orbits; so R137b applies and my own
+recommendation falls.
