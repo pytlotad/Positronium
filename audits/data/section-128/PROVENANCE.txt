@@ -1,0 +1,8 @@
+Raw outputs behind audit section 128 (2026-09-18).
+  prereg_128.txt        the three gaps of section 115 and their rules
+  moving.txt            tools/moment_projection_quantization 200 1 1 -- the
+                        section 115 ensemble on today's code
+  atrest.txt            the same with the velocities zeroed ("atrest"), which
+                        removes the lab moment's boost
+  trajectory_trace.txt.gz  CREM_DEBUG_PROJECTION on one production trajectory:
+                        the spin-norm history re-measured after audits 123-127

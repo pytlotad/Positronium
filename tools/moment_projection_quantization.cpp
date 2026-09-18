@@ -31,6 +31,12 @@ int main(int argc,char** argv) {
     const unsigned long long base=argc>2?strtoull(argv[2],nullptr,10):1ULL;
     const int phenomenon=argc>3?atoi(argv[3]):1;
     if(argc>4&&std::string(argv[4])=="quant") gSpinQuantization=true;
+    // "atrest" zeroes the velocities before the moments are synchronized, so
+    // the lab moment IS the proper one: audit 115 attributed its 3e-6 residue
+    // in |S_i| and 1e-5 in the pair identity to the boost, and audit 128
+    // checks that by removing the boost (the state is then unphysical as an
+    // orbit, which is the point -- only the algebra is being measured).
+    const bool atRest=argc>5&&std::string(argv[5])=="atrest";
     std::vector<double> projections,fieldProjections;
     // R1 of audit 115: the spin-norm budget.  |S_i| = mu_i/gamma_i, and the
     // pair's own identity (|mu1+mu2|/(|mu1|+|mu2|))^2 + (|S1+S2|/hbar)^2 = 1
@@ -63,8 +69,10 @@ int main(int argc,char** argv) {
         const double relativeSpeed=
             std::sqrt(pairCoulombStrength/(pairReducedMass*radius));
         const double total=firstMass+secondMass;
-        state.firstVelocity=tangential*(relativeSpeed*secondMass/total);
-        state.secondVelocity=tangential*(-relativeSpeed*firstMass/total);
+        state.firstVelocity=atRest?Vec3{}
+            :tangential*(relativeSpeed*secondMass/total);
+        state.secondVelocity=atRest?Vec3{}
+            :tangential*(-relativeSpeed*firstMass/total);
         state.firstDipole=frame.firstDipole;
         state.secondDipole=frame.secondDipole;
         state.firstProperDipole=frame.firstDipole;
@@ -156,6 +164,32 @@ int main(int argc,char** argv) {
         meanSquare/=static_cast<double>(pairSpin.size());
         std::printf("R1 <|S|^2>/hbar^2: %.4f  (1:3 branching needs 0.75, "
                     "quantum statistics give 1.50)\n",meanSquare);
+        // The extreme the model can reach, built directly rather than waited
+        // for: spins parallel, i.e. the two MOMENTS anti-parallel (audit 128).
+        {
+            const double firstRatio=firstGyromagneticRatioOf();
+            const double secondRatio=secondGyromagneticRatioOf();
+            State extreme{};
+            extreme.firstPosition={0.5*pairBohrRadius(activePair),0.0,0.0};
+            extreme.secondPosition={-0.5*pairBohrRadius(activePair),0.0,0.0};
+            extreme.firstProperDipole={0.0,0.0,firstMagneticMoment};
+            extreme.secondProperDipole={0.0,0.0,-secondMagneticMoment};
+            synchronizeCovariantDipoles(extreme);
+            const Vec3 spin=extreme.firstDipole*(1.0/firstRatio)
+                +extreme.secondDipole*(1.0/secondRatio);
+            const double scaleExtreme=extreme.firstDipole.norm()
+                +extreme.secondDipole.norm();
+            const double coherentExtreme=scaleExtreme>0.0
+                ?(extreme.firstDipole+extreme.secondDipole).norm()/scaleExtreme
+                :0.0;
+            std::printf("R1 extreme configuration at rest (moments "
+                        "anti-parallel): |S1+S2|/hbar %.15f, identity "
+                        "residual %.3e  (the quantum triplet needs %.6f)\n",
+                        spin.norm()/hbar,
+                        coherentExtreme*coherentExtreme
+                            +spin.squaredNorm()/(hbar*hbar)-1.0,
+                        std::sqrt(2.0));
+        }
     }
     if(!fieldProjections.empty()) {
         double fieldSum=0.0;

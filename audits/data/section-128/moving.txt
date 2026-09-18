@@ -1,0 +1,11 @@
+prepared 200 states (base seed 1, phenomenon 1)
+cos(mu1, BMT axis of the partner's field): mean +0.0010 median +0.0296 min -0.9824 max +0.9885
+spin projection S1.axis: mean +0.0005 hbar, i.e. no pile-up at +-0.5 unless the next line says so
+within 0.05 of +-1 (a quantized axis would be ~100%): 6/200 = 3.0%  (a uniform cos gives 5%)
+deciles of cos: 15 20 27 19 18 26 21 13 19 22
+R1 |S_i|/hbar: min 0.500000023296561 max 0.500003327957968 (quantum spin-1/2 is exactly 0.5)
+R1 |S1+S2|/hbar: min 0.060335 max 0.997428 mean 0.679642 (quantum triplet needs 1.414214)
+R1 identity (|mu1+mu2|/(2mu))^2 + (|S|/hbar)^2 - 1: worst 1.300e-05
+R1 <|S|^2>/hbar^2: 0.5133  (1:3 branching needs 0.75, quantum statistics give 1.50)
+R1 extreme configuration at rest (moments anti-parallel): |S1+S2|/hbar 1.000000000000000, identity residual 0.000e+00  (the quantum triplet needs 1.414214)
+for reference, cos(mu1, B_partner) alone: mean -0.0083 over 200 states

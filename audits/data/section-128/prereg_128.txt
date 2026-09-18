@@ -1,0 +1,13 @@
+Zapisano 2026-09-18T16:06:35+02:00, przed pomiarem.
+Domkniecie trzech luk pomiaru z sekcji 115 (budzet normy spinu):
+(1) Czy resztki 3.3e-6 w |S_i| i 1.3e-5 w tozsamosci to naprawde boost
+    momentu laboratoryjnego?  Test: ten sam pomiar na stanie o ZEROWYCH
+    predkosciach.  Regula: przy v = 0 ma byc |S_i|/hbar = 0.5 i reszta
+    tozsamosci ponizej 1e-14; jesli tak, przypisanie z 115 jest potwierdzone.
+(2) Czy max |S1+S2| = hbar dokladnie przy cos = +1 (spiny rownolegle, czyli
+    momenty przeciwne)?  Test: zbudowac te konfiguracje wprost.  Regula:
+    1.000000 z dokladnoscia 1e-12 przy v = 0.
+(3) Dryf |S| wzdluz trajektorii na dzisiejszym kodzie (sekcja 115 mierzyla
+    0.652 -> 0.515 przed zmianami sil 123-127).  Bez reguly, pomiar
+    odtworzeniowy; sekcja 116 przypisala dryf czlonowi tensorowemu, ktorego
+    audyt 126 nie dotyczyl, wiec oczekuje podobnej wartosci.
