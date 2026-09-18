@@ -1,0 +1,10 @@
+beta 0.0300  separation 1.00 r*  tilt 0 deg  nodes 512  span 40 r/c
+  |F1| 1.198487e-02  |F2| 1.039098e-02  |F1+F2| 1.593891e-03  ratio 1.330e-01
+  F1 -1.198487e-02 -4.885495e-07 +0.000000e+00
+  F2 +1.039098e-02 +4.662312e-07 +0.000000e+00
+  without CREM_PROBE_NO_POLES          |F1+F2| 1.869687e-03  ratio 1.560e-01
+  without CREM_PROBE_NO_MAGNETIZATION  |F1+F2| 1.194311e-03  ratio 9.965e-02
+  without CREM_PROBE_NO_LW_IN_MOMENT   |F1+F2| 1.237838e-04  ratio 1.033e-02
+  without CREM_PROBE_NO_MATERIAL       |F1+F2| 1.593891e-03  ratio 1.330e-01
+  without CREM_PROBE_NO_DIPOLE_ON_CHARGE |F1+F2| 1.470107e-03  ratio 1.227e-01
+  without CREM_PROBE_NO_MOMENT_FORCE   |F1+F2| 1.237838e-04  ratio 1.033e-02

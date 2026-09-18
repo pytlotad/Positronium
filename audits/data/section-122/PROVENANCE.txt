@@ -1,0 +1,8 @@
+Raw outputs behind audit section 122 (2026-09-18), all from
+tools/uniform_motion_balance.cpp built with tools/build_variant.sh
+--probe-switches (the ablations need the switches of audit 105).
+  prereg_122.txt     rules R122a and R122b, timestamped
+  b005_r1_t0.txt     uniform motion, beta 0.05: the balance holds to 2.6e-11
+  circ_b<beta>.txt   synthetic circular kinematics at 1 r*, beta 0.001..0.2
+  circ_full_b01.txt  the same at beta 0.1 with UNIFORM_FIELD_RATE=1, which
+                     adds the interaction field momentum's rate

@@ -1,0 +1,18 @@
+Zapisano 2026-09-18T13:06:25+02:00, przed pomiarem.
+Pytanie: czy opozniony sektor dipolowy lamie zachowanie pedu juz w RUCHU
+JEDNOSTAJNYM, gdzie nie ma promieniowania ani zmiany konfiguracji?
+Uklad testowy: obie czastki o tej samej stalej predkosci, stala separacja,
+zerowe przyspieszenia, momenty stale.  Caly wzor pola przesuwa sie sztywno,
+wiec ped pola jest staly, a wypadkowa sila F1+F2 MUSI byc zerem.
+Historia syntetyczna: wezly wstecz w czasie z ta sama predkoscia.
+Pomiar: |F1+F2|/|F1| dla beta = 0, 0.01, 0.05, 0.2 i separacji 1, 5, 20 r*,
+dla momentow wzdluz normalnej i w plaszczyznie.
+Reguly:
+  R122a "konstrukcja spojna w ruchu jednostajnym": |F1+F2|/|F1| < 1e-6 dla
+     kazdego przypadku z beta > 0.
+  R122b "lamie zachowanie pedu juz tutaj": przekroczenie 1e-3 w co najmniej
+     jednym przypadku; wtedy rozkladam wypadkowa na szesc czesci sondy z
+     sekcji 105 i wskazuje, ktora nie ma reakcji.
+Kontrola: przy beta = 0 (para w spoczynku) obie sily maja byc zerowe, bo
+nieruchomy ladunek nie ma pola magnetycznego, a nieruchomy moment nie ma pola
+elektrycznego.

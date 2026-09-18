@@ -8144,3 +8144,74 @@ measurement of whether that survives a cascade.
       entirely and is not measured here, so a radiative momentum flux is not
       excluded by this section -- only by the separate flux bookkeeping the
       engine already carries, which these runs had switched off.
+
+122. THE DEFECT LOCALIZED: FIRST ORDER IN v/c, IN THE MOMENT FORCE, AND ONLY
+     46% OF IT IS THE HIDDEN-MOMENTUM RATE
+==================================================================
+
+122a. THE CLEAN TEST.  A pair drifting rigidly -- one common velocity, fixed
+      separation, no acceleration -- carries a field pattern that only
+      translates, so the field momentum is constant and F1 + F2 must vanish
+      exactly.  Measured with a synthetic uniform-motion history at
+      beta = 0.05, separation 1 r*, moments along the normal:
+        |F1| = |F2| = 1.117343e-02 N,  |F1+F2| = 2.9e-13 N,  ratio 2.6e-11.
+      The construction is therefore consistent where nothing moves relative
+      to anything: the defect needs RELATIVE motion, not merely retardation.
+
+122b. WITH RELATIVE MOTION IT IS FIRST ORDER IN v/c.  Synthetic CIRCULAR
+      kinematics at the same separation (both particles on a circle, opposite
+      phases, exact velocities and accelerations, no radiation reaction):
+        beta     |F1+F2| [N]     |F1+F2|/|F1|
+        0.001    5.315e-05       4.74e-03
+        0.003    1.594e-04       1.42e-02
+        0.01     5.315e-04       4.64e-02
+        0.03     1.594e-03       1.33e-01
+        0.1      5.293e-03       3.82e-01
+        0.2      1.046e-02       6.34e-01
+      The net force is exactly linear in beta over two decades (x3.00 per x3),
+      so it is a VELOCITY effect, not an acceleration one: at fixed radius the
+      acceleration goes as beta^2 and would have shown as a quadratic.
+
+122c. THE CARRIER, CONFIRMED IN THE CLEAN SETTING.  Removing single parts
+      (the probe switches of audit 105) at beta = 0.1:
+        removed                          |F1+F2| [N]   against 5.293e-03
+        the moment force entirely        4.143e-04     12.8x smaller
+        the LW field inside it           4.143e-04     12.8x smaller
+        the magnetization                3.944e-03
+        the dipole field on the charge   4.879e-03
+        the poles                        6.229e-03     larger
+        the material term                5.293e-03     unchanged
+      So 92% of the imbalance is the force on the moments in the partner's
+      Lienard-Wiechert charge field, exactly as section 105 found on a real
+      trajectory, and the material term contributes nothing to it.
+
+122d. HOW MUCH OF IT IS LEGITIMATE.  A rotating configuration MAY carry a net
+      force: what must hold is F1+F2 = d(P_field + P_hidden)/dt.  Both rates
+      were computed on the same synthetic history:
+        hidden momentum rate d/dt (mu x E)/c^2   2.437e-03 N   46.0% of the net
+        interaction field momentum rate          8.377e-04 N   15.8%
+      The hidden-momentum share is stable in beta (0.4629 at 0.01, 0.4604 at
+      0.1), i.e. it has the same first-order structure as the imbalance.
+      Together the two account for at most 62% (they are not collinear, so
+      the vector sum accounts for less), leaving about a third of the net
+      force with no carrier at all.
+
+122e. WHAT THIS SAYS THE DEFECT IS.  The model's force on a moment is
+      grad(mu.B + p.E)/gamma plus a material term.  The classical force on a
+      current loop in an external field carries, besides the gradient, the
+      rate of its own hidden momentum, -(1/c^2) d(mu x E)/dt -- and that term
+      is precisely 46% of what is missing here, with the right scaling.  The
+      model has no such term: its material derivative is a different object
+      (it differentiates the coupling along the worldline, and the ablation
+      above shows it contributes nothing to the imbalance).  So the concrete
+      candidate fix is to add the hidden-momentum rate to the moment force
+      and re-measure; that is a force-sector change, which is where sections
+      119-121 concluded the remedy had to be.
+
+122f. LIMITS.  Synthetic kinematics, one separation (1 r*), moments along the
+      orbital normal, one tilt.  The field-momentum rate uses a 48x12x24 grid
+      out to 12 r* and a centred difference; its own convergence was checked
+      only through the static integral of section 121 (0.6% between two
+      resolutions), not for the rate.  The remaining third is quoted as a
+      magnitude, not attributed.  Nothing here is a fix: the candidate named
+      in 122e has not been implemented or tested.
