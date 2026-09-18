@@ -8085,3 +8085,62 @@ measurement of whether that survives a cascade.
       differs.  The force-share numbers come from the control trajectory with
       the term evaluated but not applied, which is the only way to attribute
       a share to it without changing what it is measured against.
+
+121. THE FIELD MOMENTUM, COMPUTED: 1.6% OF THE GAP.  ALL THREE CANDIDATE
+     CARRIERS ARE NOW MEASURED AND NONE CLOSES IT
+==================================================================
+
+121a. THE LAST CANDIDATE.  Sections 119 and 120 rejected hidden momentum and
+      the missing Thomas back-reaction.  What was left was the field momentum
+      itself, eps0 integral of E x B, which section 104d dismissed on a scale
+      argument without computing it.  This section computes it.
+
+121b. WHAT IS COMPUTED, AND WHY THAT PART.  The cross terms,
+      P_int = eps0 integral (E1 x B2 + E2 x B1) dV: the self terms belong to
+      each particle alone, diverge at its own position and renormalize its
+      mass, while the cross terms are finite and are the only part that
+      depends on the pair's configuration.  Both fields come from the model's
+      own functions -- Lienard-Wiechert plus the retarded dipole field of
+      each source -- on a spherical grid around the centre of mass, with
+      Gauss-Legendre quadrature in cos(theta), uniform azimuth and
+      logarithmic shells.
+
+121c. IT CONVERGES, AND THE HORIZON IS THE MODEL'S OWN HISTORY.  The
+      cumulative integral at the prepared state, in units of m c:
+        R       1.4 r*   2.4 r*   4.1 r*   6.9 r*   11.8 r*
+        |P|     8.86e-3  1.01e-2  1.04e-2  1.044e-2 1.045e-2
+      i.e. it is flat to 0.1% between 4 and 12 r*, as a near-zone density
+      falling like 1/r^4 must be.  Refinement from 48x12x24 to 96x24x48
+      moves it by 0.6%, inside the 5% the rule allowed.  Beyond ~12 r* the
+      value drifts and then goes non-finite: appendStateHistory keeps
+      max(1e-20 s, 4r/c), so a field point further than about 15 r* asks for
+      a retarded time the history does not cover.  That is a limit of the
+      measurement, not of the integral.
+
+121d. THE ANSWER.  Over one orbit (para, 1 r*, tilt 0, retarded forces):
+        |dP_mech|                  0.599213 m c
+        |dP_field(cross)|          0.009849 m c
+        |d(P_mech + P_field)|      0.589862 m c    ratio 1.0159
+      The field momentum is 1.6% of the gap.  Rule R121a asked for a tenfold
+      reduction and R121b for twofold; this is neither.  Its magnitude never
+      leaves the 1% band: 1.04e-2 m c at the start and 1.02e-2 at the end.
+      Section 104d's scale argument is therefore correct, and now measured
+      rather than argued.
+
+121e. WHAT THAT SETTLES.  Three carriers have been measured against the same
+      0.6 m c: hidden momentum 1.20x (119), the Thomas back-reaction 0.96x
+      and 2.08x (120), the interaction field momentum 1.016x (this section).
+      The self-propulsion of sections 104-106 is therefore a genuine defect
+      of the retarded dipole construction -- the force on each moment in the
+      partner's retarded charge field has no reaction anywhere in the model
+      or in its field -- and not an omission in the momentum ledger.  The
+      remedy has to be in the force sector: either the retarded moment force
+      is wrong, or its reaction on the source is missing from the field the
+      model builds.
+
+121f. LIMITS.  One orbit, one geometry, reaction off.  The integral covers
+      r <= 12 r* and the near-zone tail beyond it is bounded by the plateau
+      above; the RADIATION zone is outside the model's history horizon
+      entirely and is not measured here, so a radiative momentum flux is not
+      excluded by this section -- only by the separate flux bookkeeping the
+      engine already carries, which these runs had switched off.

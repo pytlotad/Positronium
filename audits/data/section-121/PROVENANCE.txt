@@ -1,0 +1,9 @@
+Raw outputs behind audit section 121 (2026-09-18), all from
+tools/field_momentum_integral.cpp.
+  prereg_121.txt      rules R121a-c and the convergence requirement
+  coarse_start.txt    the first run, out to 1e4 r*: shows where the model's
+                      history horizon turns the integrand non-finite
+  coarse.txt          48x12x24 grid to 30 r*
+  fine.txt            96x24x48 grid to 30 r*: 0.6% from the coarse one
+  orbit.txt           64x16x32 grid to 12 r*, at the prepared state and after
+                      one orbit -- the numbers quoted in 121d

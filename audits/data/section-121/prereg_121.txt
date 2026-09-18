@@ -1,0 +1,19 @@
+Zapisano 2026-09-18T12:46:37+02:00, przed pomiarem.
+Pytanie: czy ped pola, epsilon0 calka E x B, unosi roznice pedu z sekcji
+104-106?
+Licze czlony SKROSNE: P_int = eps0 calka (E1 x B2 + E2 x B1) dV.  Czlony
+wlasne (E1 x B1) naleza do kazdej czastki osobno i renormalizuja jej mase, a
+przy tym rozbiegaja sie w r -> 0; czlony skrosne sa zbiezne i to one zaleza od
+konfiguracji pary.
+Siatka: sferyczna wokol srodka masy, promien logarytmiczny od 0.05 r* do
+1e4 r*, kwadratura Gaussa po cos(theta) i rownomierna po azymucie.  Podaje
+P_int(R) narastajaco, zeby bylo widac, czy calka sie stabilizuje.
+Stany: poczatek i koniec jednego obiegu (para, 1 r*, przechyl 0, sily
+opoznione, 256 krokow, tol 1e-8, glebokosc 20), czyli ta sama trajektoria co
+w sekcjach 104-106 i 119-120, gdzie |dP_mech| = 0.599 mc.
+Reguly:
+  R121a "ped pola domyka bilans": |d(P_mech + P_int)| <= 0.1 |dP_mech|.
+  R121b "czesciowo": redukcja miedzy 2x a 10x.
+  R121c "nie domyka": ponizej 2x albo wzrost.
+Kontrola zbieznosci: podwojenie rozdzielczosci katowej i promieniowej ma
+zmienic P_int o mniej niz 5%.

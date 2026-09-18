@@ -1,0 +1,14 @@
+start: |P_mech| 0.000000e+00 mc, |P_field(cross)| 1.065845e-02 mc
+cumulative field momentum against the cut-off:
+   R  5.713e-02 r*   |P_field| 2.420658e-06 mc
+   R  9.736e-02 r*   |P_field| 3.103894e-05 mc
+   R  1.659e-01 r*   |P_field| 1.664210e-04 mc
+   R  2.827e-01 r*   |P_field| 7.564971e-04 mc
+   R  4.818e-01 r*   |P_field| 2.781092e-03 mc
+   R  8.211e-01 r*   |P_field| 5.873865e-03 mc
+   R  1.399e+00 r*   |P_field| 8.864198e-03 mc
+   R  2.385e+00 r*   |P_field| 1.011592e-02 mc
+   R  4.064e+00 r*   |P_field| 1.039481e-02 mc
+   R  6.926e+00 r*   |P_field| 1.044137e-02 mc
+   R  1.180e+01 r*   |P_field| 1.044667e-02 mc
+   R  2.011e+01 r*   |P_field| 1.059895e-02 mc
