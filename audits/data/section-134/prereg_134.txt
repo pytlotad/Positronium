@@ -1,0 +1,43 @@
+PRE-REGISTRATION, audit section 134 (is omega1 = omega2 in the charge
+sector a property of the sector or of the pair).  Written before any
+number of this section was computed.
+written 2026-09-18T15:55:10Z
+
+THE CLAIM BEING SHARPENED.  Section 116b measured that keeping ONLY the
+partner's charge field in the precession conserves |S1+S2| exactly, and
+116c built an argument on it.  That was one pair: equal masses, opposite
+charges.
+
+WHY I EXPECT THE SYMMETRY TO SURVIVE FOR mu+mu-, AGAINST THE PREMISE OF
+THE REQUEST.  In the centre-of-mass frame the field each particle sees
+from the partner's moving charge is
+  B_1 ~ q2 (v2 x r_hat21)/r^2,   B_2 ~ q1 (v1 x r_hat12)/r^2,
+and with EQUAL MASSES v1 = -v2 and r_hat12 = -r_hat21, so with opposite
+charges B_2 = -B_1.  The precession rate carries q_i/m_i, so
+  omega_1 ~ (q1/m) B_1,  omega_2 ~ (q2/m) B_2 = (-q1/m)(-B_1) = omega_1.
+The equality therefore rests on equal masses AND opposite charges, not on
+the species.  mu+mu- has both, so it should conserve |S| exactly as e+e-
+does; only p+e-, where the mass ratio is 1836, breaks it.  If mu+mu-
+drifts, this reading of the mechanism is wrong and the section says so.
+
+RULES, decided now.
+R134a  mu+mu- conserves |S| in the charge sector if its drift stays below
+       1e-06 over the covered range, i.e. the same "exact" as e+e-.  A
+       drift above that refutes my reading and confirms the premise.
+R134b  p+e- breaks it if the charge sector alone drifts |S| by more than
+       1e-03 over the covered range.
+R134c  Reported for every pair beside the drift: |w1|/|w2| from the same
+       trace and whether cos12 moves at all, since equal rate NORMS are
+       necessary but not sufficient for equal rate VECTORS, and 116b's
+       evidence was that the mutual angle did not move.
+R134d  The CONTROL (both sectors kept) is run for every pair, so the
+       charge-sector drift is read against that pair's own total drift
+       rather than against e+e-'s.
+R134e  The e+e- rows must reproduce 116b (0.000 in the charge sector,
+       0.138 in the control) within the setup difference -- this section
+       switches the collapse-transit second run off so the trace carries
+       one trajectory.  If they do not reproduce, that is reported before
+       anything is concluded about the other pairs.
+
+PREDICTION (mine).  e+e- 0.000 and mu+mu- 0.000 in the charge sector, both
+to every printed digit; p+e- nonzero and of the order of its own control.

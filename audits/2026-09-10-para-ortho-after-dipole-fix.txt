@@ -9132,3 +9132,105 @@ measurement of whether that survives a cascade.
       offered here is a repaired action for the inaccessible states: for
       those, the model has no orbit and therefore no action, and this section
       counts them rather than inventing a value.
+
+134. omega1 = omega2 IN THE CHARGE SECTOR IS A PROPERTY OF THE PAIR, NOT OF
+     THE SECTOR -- AND THE TWO RATES ARE TWO DIFFERENT TERMS
+==================================================================
+
+134a. THE CLAIM BEING SHARPENED.  Section 116b measured that keeping only the
+      partner's charge field in the precession conserves |S1+S2| exactly, and
+      116c built on it the statement that the spin-orbit sector "rotates BOTH
+      moments the same way, so it cannot change the angle between them".  That
+      was one pair.  tools/spin_rate_symmetry.cpp runs the same ablation on
+      any --pair, one trajectory each, seed 42.
+
+134b. WHAT I EXPECTED, AGAINST THE PREMISE OF THE REQUEST.  The request
+      expected the symmetry to vanish for mu+mu- as well as for p+e-.  I
+      pre-registered the opposite for mu+mu-: in the centre-of-mass frame
+      equal masses give v1 = -v2 and r_hat12 = -r_hat21, so with opposite
+      charges each particle's field is the negative of the other's, the two
+      q/m are opposite, and the rates coincide.  The equality rests on equal
+      masses AND opposite charges, not on the species.
+
+134c. MEASURED, charge sector only (CREM_SPIN_RATE_SECTOR=charge):
+        pair     m1/m2     mu1/mu2  steps  |S| range  |w2|/|w1|   cos12 end
+        e+e-      1.0000   1.000000   1390   0.00e+00     1.0000     0.148606
+        mu+mu-    1.0000   1.000000    737   0.00e+00     1.0000     0.148606
+        mu+e-   206.7683   0.004836   1791   3.57e-01   104.2375    -0.740515
+        p+e-   1836.1527   0.001519   1782   3.59e-01   329.6547    -0.618998
+      All four start at |S| = 0.652455 and cos12 = 0.148606.  Rule R134a is
+      met: mu+mu- freezes |S| to 0.00e+00 with the rate ratio at 1.0000 and
+      the mutual angle not moving in the last digit, exactly as e+e- does.
+      Rule R134b is met too: both asymmetric pairs break it, by 357 and 359
+      thousandths of hbar, which is the whole width their controls reach.
+      So the answer is: a property of the PAIR.  116b's statement holds for
+      equal masses and opposite charges and for nothing else; for p+e- and
+      mu+e- the charge sector is not the conserving one, it is the driver.
+
+134d. AND THE TWO RATES ARE TWO DIFFERENT TERMS, WHICH IS WHY THE RATIO IS SO
+      LARGE.  In the charge sector each rate is magnetic plus Thomas,
+        omega_mag = (g q / 2m) (mu0/4pi) e v_partner / r^2,
+        omega_Th  = a x v / 2 c^2,
+      both evaluated on the prepared circular orbit against the traced first
+      substep:
+        pair     particle   traced        magnetic      Thomas
+        p+e-     heavy     3.34465e+09   x1.0005       x10261
+                 light     1.10268e+12   x920.1         x1.0034
+        mu+e-    heavy     1.05321e+10   x1.0025       x415.0
+                 light     1.09793e+12   x104.5        x1.0120
+        e+e-     both      4.13417e+11   x1.5006       x3.0046
+        mu+mu-   both      8.54822e+13   x1.5006       x3.0047
+      For the symmetric pairs the traced rate is the SUM: Thomas is exactly
+      half the magnetic term (g = 2), so traced = 1.5 x magnetic, and BOTH
+      terms are separately equal between the two particles -- which is why
+      the conservation is exact rather than approximate.  For the asymmetric
+      pairs each equality breaks and, more than that, the two particles end
+      up dominated by DIFFERENT terms: the heavy one by the magnetic rate
+      (to 0.05% and 0.25%), the light one by Thomas (to 0.34% and 1.2%).
+      The naive expectation from the magnetic term alone would have been
+      |w2|/|w1| = 0.3585 for p+e-; measured 329.68, a factor 920, and that
+      factor is the electron's Thomas precession.
+
+134e. WHERE THE ASYMMETRIC PAIRS TAKE |S|.  Up, to the ceiling: |S| max is
+      0.999594 hbar for mu+e- and 0.999928 for p+e-, against the exact
+      ceiling of hbar that audit 128 established, while the mutual moments
+      swing from cos12 = +0.1486 to -0.62 and -0.74.  For e+e- and mu+mu-
+      the full sector moves |S| DOWN instead (minima 0.4523 and 0.3672).
+
+134f. A METHODOLOGICAL CORRECTION TO 116b AND 117d (rule R134e).  Their
+      charge-sector row reproduces exactly: 0.000 then, 0.00e+00 now.  Their
+      CONTROL row does not: 116b recorded a drift of 0.138 and this run
+      gives an endpoint difference of 0.0338.  The reason is not the pair or
+      the code -- it is the statistic.  |S1+S2| OSCILLATES along the
+      trajectory: 65 turning points on the e+e- control, between 0.4523 and
+      0.7183.  The endpoint difference is therefore a phase sample, while the
+      RANGE reproduces: 0.266 now against 0.294 then, 10%.  The "drift"
+      columns of 116b and 117d should be read as range, and the tables in
+      this section report range for that reason.  Switching the
+      collapse-transit second run on (CREM_COLLAPSE_TRANSIT=1) changes
+      nothing, which was the other candidate and is now excluded.
+
+134g. WHAT COULD NOT BE TESTED.  p+antip was the natural fourth pair, being
+      symmetric at yet another scale, and it cannot be run: its a_pair is
+      5.764e-14 m, INSIDE the model's own Compton barrier of 1.933e-13 m, so
+      the trajectory stops at once with the barrier as its cause and no
+      substeps at all.  The model's validity limit excludes its own heaviest
+      symmetric pair.
+
+134h. WHAT THIS DOES TO 116c.  116c concluded that the root of the |S| drift
+      is the dipole tensor term "rather than the spin-orbit coupling that an
+      L != 0 state brings in".  That conclusion is now bounded: it is true
+      for a pair with equal masses and opposite charges, where the spin-orbit
+      sector cancels exactly, and false in general -- for p+e- the spin-orbit
+      sector alone produces the entire drift.  The quantum statement it was
+      compared against (S^2 is a good quantum number once the tensor term
+      averages away) also holds only for equal masses, since hydrogen's
+      hyperfine structure has exactly this asymmetry.
+
+134i. LIMITS.  One trajectory, one seed, one preparation per pair; no photon
+      cascade (the production default since audit 109).  The rate
+      attribution of 134d is evaluated at the PREPARED orbit and compared
+      with the first traced substep, not integrated along the trajectory.
+      The mu+mu- and p+antip runs stop on the Compton barrier rather than the
+      retardation margin, so their covered ranges are shorter (737 and zero
+      substeps); the e+e- and mu+e- and p+e- runs stop on the margin.

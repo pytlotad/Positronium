@@ -1,0 +1,11 @@
+run                        substeps   S start     S min     S max     range   |w2|/|w1|    cos end
+antimuon_electron_charge       1791  0.652455  0.642960  0.999594  3.57e-01    104.2375  -0.740515
+muon_antimuon_both              938  0.652455  0.367239  0.660856  2.94e-01      1.0195   0.392119
+muon_antimuon_charge            737  0.652455  0.652455  0.652455  0.00e+00      1.0000   0.148606
+positron_electron_both         1830  0.652455  0.452293  0.718307  2.66e-01      0.3683   0.234471
+positron_electron_charge       1390  0.652455  0.652455  0.652455  0.00e+00      1.0000   0.148606
+proton_antiproton_charge   no PROJ lines
+proton_electron_both           1835  0.652455  0.641364  0.999785  3.58e-01    231.9873  -0.773228
+proton_electron_charge         1782  0.652455  0.641171  0.999928  3.59e-01    329.6547  -0.618998
+transit_pe_both                1830  0.652455  0.452293  0.718307  2.66e-01      0.3683   0.234471
+transit_pe_charge              1390  0.652455  0.652455  0.652455  0.00e+00      1.0000   0.148606

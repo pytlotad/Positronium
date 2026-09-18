@@ -1,0 +1,16 @@
+p+e-  a_pair 5.2947e-11 m
+  particle 1: traced 3.34465e+09 | magnetic 3.34306e+09 (x1.0005) | Thomas 3.25956e+05 (x10261.0559)
+  particle 2: traced 1.10268e+12 | magnetic 1.19840e+09 (x920.1291) | Thomas 1.09895e+12 (x1.0034)
+  traced |w2|/|w1| 329.6847 ; magnetic-only would give 0.3585 ; Thomas-only 3371456.6401
+mu+e-  a_pair 5.3174e-11 m
+  particle 1: traced 1.05321e+10 | magnetic 1.05063e+10 (x1.0025) | Thomas 2.53765e+07 (x415.0336)
+  particle 2: traced 1.09793e+12 | magnetic 1.05063e+10 (x104.5023) | Thomas 1.08492e+12 (x1.0120)
+  traced |w2|/|w1| 104.2461 ; magnetic-only would give 1.0000 ; Thomas-only 42753.1227
+e+e-  a_pair 1.0584e-10 m
+  particle 1: traced 4.13417e+11 | magnetic 2.75505e+11 (x1.5006) | Thomas 1.37593e+11 (x3.0046)
+  particle 2: traced 4.13417e+11 | magnetic 2.75505e+11 (x1.5006) | Thomas 1.37593e+11 (x3.0046)
+  traced |w2|/|w1| 1.0000 ; magnetic-only would give 1.0000 ; Thomas-only 1.0000
+mu+mu-  a_pair 5.1186e-13 m
+  particle 1: traced 8.54822e+13 | magnetic 5.69660e+13 (x1.5006) | Thomas 2.84498e+13 (x3.0047)
+  particle 2: traced 8.54822e+13 | magnetic 5.69660e+13 (x1.5006) | Thomas 2.84498e+13 (x3.0047)
+  traced |w2|/|w1| 1.0000 ; magnetic-only would give 1.0000 ; Thomas-only 1.0000

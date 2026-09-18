@@ -1,0 +1,10 @@
+RESULT pair antimuon,electron sector charge seed 42 a_pair 5.317365e-11 m mass_ratio 206.7683 moment_ratio 0.004836 outcome 0 stop_cause 2 photons 0 wall_s 58.8
+RESULT pair muon,antimuon sector both seed 42 a_pair 5.118553e-13 m mass_ratio 1.0000 moment_ratio 1.000000 outcome 0 stop_cause 1 photons 0 wall_s 8.1
+RESULT pair muon,antimuon sector charge seed 42 a_pair 5.118553e-13 m mass_ratio 1.0000 moment_ratio 1.000000 outcome 0 stop_cause 1 photons 0 wall_s 7.6
+RESULT pair positron,electron sector both seed 42 a_pair 1.058354e-10 m mass_ratio 1.0000 moment_ratio 1.000000 outcome 0 stop_cause 2 photons 0 wall_s 20.5
+RESULT pair positron,electron sector both seed 42 a_pair 1.058354e-10 m mass_ratio 1.0000 moment_ratio 1.000000 outcome 0 stop_cause 2 photons 0 wall_s 31.3
+RESULT pair positron,electron sector charge seed 42 a_pair 1.058354e-10 m mass_ratio 1.0000 moment_ratio 1.000000 outcome 0 stop_cause 2 photons 0 wall_s 20.1
+RESULT pair positron,electron sector charge seed 42 a_pair 1.058354e-10 m mass_ratio 1.0000 moment_ratio 1.000000 outcome 0 stop_cause 2 photons 0 wall_s 31.2
+RESULT pair proton,antiproton sector charge seed 42 a_pair 5.763978e-14 m mass_ratio 1.0000 moment_ratio 1.000000 outcome 0 stop_cause 1 photons 0 wall_s 0.0
+RESULT pair proton,electron sector both seed 42 a_pair 5.294654e-11 m mass_ratio 1836.1527 moment_ratio 0.001519 outcome 0 stop_cause 2 photons 0 wall_s 61.3
+RESULT pair proton,electron sector charge seed 42 a_pair 5.294654e-11 m mass_ratio 1836.1527 moment_ratio 0.001519 outcome 0 stop_cause 2 photons 0 wall_s 72.9

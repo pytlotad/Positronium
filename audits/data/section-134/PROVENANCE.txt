@@ -1,0 +1,18 @@
+Raw outputs behind audit section 134 (2026-09-18).
+  prereg_134.txt     rules R134a-e and the symmetry argument, written before
+                     any number, including the prediction that mu+mu- would
+                     conserve |S| against the premise of the request
+  run134_table.txt   the per-run table: substeps, |S| start/min/max/range,
+                     the median |w2|/|w1| and the terminal cos12 (134c, 134e)
+  run134_drift.txt   the same runs with the endpoint difference as well, the
+                     statistic 116b used (134f)
+  run134_rates.txt   each particle's traced rate against the magnetic and
+                     Thomas terms on the prepared orbit (134d)
+  proj_traces.tar.gz the PROJ lines behind all of it, one file per run
+                     (<pair>_<sector>, transit_pe_* is the
+                     CREM_COLLAPSE_TRANSIT=1 control of 134f)
+  results.txt        the RESULT lines: pair scales, outcome and stop cause
+  proj_drift.py      the analysis script; takes a glob of PROJ traces
+Reproduce a run with:
+  CREM_SPIN_RATE_SECTOR=charge CREM_DEBUG_PROJECTION=400000 \
+    tools/spin_rate_symmetry <pair> 300 42

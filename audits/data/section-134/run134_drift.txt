@@ -1,0 +1,7 @@
+run                        substeps   S start     S end     drift     range   |w2|/|w1| cos start   cos end
+muon_antimuon_both              938  0.652455  0.551308  1.01e-01  2.94e-01      1.0195  0.148606  0.392119
+muon_antimuon_charge            737  0.652455  0.652455  0.00e+00  0.00e+00      1.0000  0.148606  0.148606
+positron_electron_both         1830  0.652455  0.618680  3.38e-02  2.66e-01      0.3683  0.148606  0.234471
+positron_electron_charge       1390  0.652455  0.652455  0.00e+00  0.00e+00      1.0000  0.148606  0.148606
+proton_electron_both            825  0.652455  0.876737  2.24e-01  2.67e-01    256.4400  0.148606 -0.537335
+proton_electron_charge         1592  0.652455  0.925948  2.73e-01  3.59e-01    329.6644  0.148606 -0.714760
