@@ -83,7 +83,15 @@ inline Frame makeFrame(const State& s) {
     // Noether energy of the conservative approximate action.  The q-mu term
     // is homogeneous of degree one in both velocities and therefore cancels
     // in the Legendre transform.
-    const double conservativeNoetherEnergy=conservativeParticleEnergy(s);
+    //
+    // That sentence was here before audit 145 and the call under it did the
+    // opposite: conservativeParticleEnergy's default weight INCLUDES the q-mu
+    // term.  Two things were wrong at once -- the number disagreed with the
+    // comment, and it disagreed with the two per-particle energies reported
+    // three lines below, which have always excluded that term, so the total
+    // was not the sum of its parts.  conservedParticleEnergy is the Legendre
+    // transform this comment describes.
+    const double conservativeNoetherEnergy=conservedParticleEnergy(s);
     // One evaluation feeds all three Noether quantities below.
     const CanonicalMomenta canonical = canonicalMomenta(s);
     return {s.firstPosition,s.secondPosition,

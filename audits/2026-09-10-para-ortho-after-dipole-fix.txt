@@ -10133,3 +10133,78 @@ measurement of whether that survives a cascade.
       velocity-dependent path, or both.  The instantaneous-force runs are a
       diagnostic configuration, not the model's physics: the retarded forces
       are what production uses, and 145e is the statement about it.
+
+146. THE TWO ENERGIES SPLIT IN CODE: THE CONSERVED ONE AND THE RADIAL ONE ARE
+     NOW TWO FUNCTIONS, AND THE TOTAL IS AGAIN THE SUM OF ITS PARTS
+==================================================================
+
+146a. WHY.  Section 145 measured that the charge-dipole term does not belong
+      to the conserved energy: dropping it reduces the ledger's range over an
+      orbit by a factor of 24 to 104, while the other two candidate
+      corrections make it worse.  Two further things were found while doing
+      it, both in the code rather than in the physics.
+      First, the comment at the Noether energy in crem_trajectory.hpp already
+      said "the q-mu term is homogeneous of degree one in both velocities and
+      therefore cancels in the Legendre transform" -- and the call under it
+      used conservativeParticleEnergy's default weight, which INCLUDES that
+      term.  The number contradicted the sentence above it.
+      Second, the same frame reports two per-particle energies which have
+      always EXCLUDED the term, so the reported total was not the sum of its
+      reported parts.
+      This section is not a measurement but the split those two facts ask
+      for; its acceptance criteria are stated below and each is verified.
+
+146b. WHAT WAS DONE.  conservedParticleEnergy(state) is added beside
+      conservativeParticleEnergy: the Legendre-transform energy,
+      T + U_Coulomb + U_dd + U_Darwin + U_constraint, with the velocity-linear
+      charge-dipole term absent.  The Noether energy now calls it, which is
+      the one site whose own comment demanded it.  chargeDipoleInteractionEnergy
+      is untouched and so is its use as the radial potential at FIXED angular
+      momentum in dipoleAwarePeriapsis, where a velocity-linear term is a
+      function of r and L alone and belongs there.  One function was doing
+      two jobs; there are now two functions.
+
+146c. WHAT IT BUYS, MEASURED.  On 200 frames of one trajectory the reported
+      total now equals the sum of the two per-particle energies to
+        3.533e-16 relative
+      i.e. to machine precision, where before it differed by exactly the q-mu
+      term.  That term is not small: along one orbit at 1 r*, instantaneous
+      forces, 256 steps,
+        channel  tilt   max |q-mu|/|E|   max |q-mu|/|U_dd|
+        para      0        0.9894            3.991
+        para     90        4.0570            7.678
+        ortho     0        0.5263            1.021
+        ortho    90        0.0051            0.0018
+      So the quantity that was being added to the conserved energy reaches
+      99% of it at para tilt 0 and four times it at tilt 90.  It is exactly
+      zero at the prepared state whenever the two moments are equal, because
+      it carries (mu2 - mu1), and it grows only as the precession separates
+      them -- which is why this never showed up as an obvious offset.
+      The 3.991 at para tilt 0 is the same number section 145 measured as the
+      range E0 minus E1, 3.98, from the other direction.
+
+146d. PRODUCTION IS BIT-IDENTICAL.  Seed 42's cascade still gives
+      199.039646721 ps, as in sections 131 to 144; validation 62/62; header
+      isolation 37/37.  The split changes a REPORTED quantity, not a force:
+      nothing in the dynamics reads the Noether energy.
+
+146e. WHAT WAS DELIBERATELY NOT CHANGED.
+        the ledger diagnostics of sections 102-141, which read
+          conservativeParticleEnergy -- their numbers are the record of the
+          defect and must stay comparable with what was published;
+        the ground-state floor test in crem_trajectory.hpp, which compares
+          conservativeParticleEnergy against the floor: it is conceptually a
+          conserved-energy use, but changing it changes what
+          --ground-state-floor does, and that wants its own measurement;
+        the bound-field bookkeeping, which subtracts the ledger from a
+          balance and would silently move the field energy if the ledger
+          moved under it;
+        dipoleAwarePeriapsis, which is the radial use and is correct.
+      Each is a candidate for the same split and none is made here.
+
+146f. LIMITS.  One call site converted.  The consistency check is 200 frames
+      of one trajectory at one seed; the term's size is four configurations at
+      1 r*, where it is largest, and it falls with radius as the moments'
+      relative motion does.  Whether the conserved energy should also replace
+      the ledger in the four places listed in 146e is not decided by this
+      section.

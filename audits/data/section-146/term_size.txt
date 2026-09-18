@@ -1,0 +1,4 @@
+channel 0 tilt  0  ok   max |q-mu|/|E| 9.894e-01  max |q-mu|/|U_dd| 3.991e+00
+channel 0 tilt 90  ok   max |q-mu|/|E| 4.057e+00  max |q-mu|/|U_dd| 7.678e+00
+channel 1 tilt  0  ok   max |q-mu|/|E| 5.263e-01  max |q-mu|/|U_dd| 1.021e+00
+channel 1 tilt 90  ok   max |q-mu|/|E| 5.072e-03  max |q-mu|/|U_dd| 1.812e-03

@@ -4185,6 +4185,30 @@ inline double conservativeParticleEnergy(const State& state,
         +darwinInteractionEnergy(state)+state.dipoleConstraintEnergy;
 }
 
+// THE CONSERVED ENERGY, as opposed to the radial one (audit section 145).
+// conservativeParticleEnergy above sums every interaction the model carries,
+// including the charge-dipole term.  That term is -p.E with p = (v x mu)/c^2,
+// homogeneous of degree one in both velocities, so it cancels in the Legendre
+// transform H = sum v.(dL/dv) - L and does NOT belong to the conserved
+// energy: it generates a force -- the spin-orbit force, 88% of the moment
+// sector by audit 105 -- and that force does no work.
+//
+// Measured before this was split out: with instantaneous forces, where an
+// instantaneous ledger could be exact, including the term inflates the
+// ledger's range over one orbit by a factor of 24 to 104 across four
+// configurations, while the other two candidate corrections (the Darwin sign,
+// the proper moments) make it worse.  With the model's own retarded forces
+// the term is masked by the retardation, which contributes about 1.13 |U_dd|
+// per orbit of its own and with the opposite sign.
+//
+// The same energy IS the right radial potential at FIXED angular momentum,
+// where it is a function of r and L alone; that is how dipoleAwarePeriapsis
+// uses chargeDipoleInteractionEnergy, and nothing here changes it.  The two
+// quantities were one function and are now two.
+inline double conservedParticleEnergy(const State& state) {
+    return conservativeParticleEnergy(state,0.0);
+}
+
 inline FourVector fourVelocity(const Vec3& velocity) {
     const double relativisticGamma = gamma(velocity);
     return {relativisticGamma * c, velocity * relativisticGamma};

@@ -1,0 +1,2 @@
+r  547.509 r*  conserved -1.089903661e-18 J  q-mu term +0.000000e+00 J  term/|E| 0.000e+00  term/|U_dd| 0.000e+00
+r    1.000 r*  conserved -7.884075649e-16 J  q-mu term +0.000000e+00 J  term/|E| 0.000e+00  term/|U_dd| 0.000e+00

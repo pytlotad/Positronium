@@ -1,0 +1,16 @@
+Raw outputs behind audit section 146 (2026-09-19).
+There is no pre-registration here: this section is the code split that
+section 145's measurement asked for, not a new measurement, and its
+acceptance criteria are stated in 146a and verified in 146c-146d.
+  consistency_after.txt  200 frames of one trajectory: the reported total
+                         against the sum of the two per-particle energies,
+                         now agreeing to 3.533e-16 relative
+  gap.txt                the same term at the PREPARED state, where it is
+                         exactly zero for equal moments because it carries
+                         (mu2 - mu1); kept because that zero is why the
+                         inconsistency was never obvious
+  term_size.txt          the term along one orbit at 1 r* in four
+                         configurations, reaching 0.99 to 4.06 of the whole
+                         conserved energy
+The production check quoted in 146d is tools/checkpoint_photon_trace 42 300,
+giving 199.039646721 ps as in sections 131-144.
