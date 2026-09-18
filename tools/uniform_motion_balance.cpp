@@ -38,6 +38,19 @@ int main(int argc,char** argv) {
     const double span=argc>5?atof(argv[5]):40.0;
     const bool circular=argc>6&&std::string(argv[6])=="circular";
     const Vec3 drift{0.0,beta*c,0.0};
+    // CREM_BALANCE_NO_MOMENTS zeroes both magnetic moments, leaving the two
+    // charges and their retarded fields alone.  It answers "is the residual
+    // in the dipole sector at all", which no ablation of a dipole TERM can
+    // answer, since those leave the moment's own field in place (audit 142).
+    const double momentScale=[] {
+        if(std::getenv("CREM_BALANCE_NO_MOMENTS")) return 0.0;
+        // CREM_BALANCE_MOMENT_SCALE multiplies both moments, so the residual's
+        // POWER in mu separates a charge-moment interaction (linear) from a
+        // moment-moment one (quadratic) without ablating any term.
+        const char* text=std::getenv("CREM_BALANCE_MOMENT_SCALE");
+        const double value=text?std::atof(text):1.0;
+        return std::isfinite(value)?value:1.0;
+    }();
     const Vec3 direction{std::sin(tilt),0.0,std::cos(tilt)};
     const double angular=circular?beta*c/(0.5*separation):0.0;
     const auto build=[&](double time) {
@@ -60,8 +73,8 @@ int main(int argc,char** argv) {
             s.firstVelocity=velocity; s.secondVelocity=velocity*-1.0;
             s.firstAcceleration=acceleration;
             s.secondAcceleration=acceleration*-1.0;
-            s.firstProperDipole=direction*firstMagneticMoment;
-            s.secondProperDipole=direction*secondMagneticMoment;
+            s.firstProperDipole=direction*(firstMagneticMoment*momentScale);
+            s.secondProperDipole=direction*(secondMagneticMoment*momentScale);
             synchronizeCovariantDipoles(s);
             return s;
         }
@@ -69,8 +82,8 @@ int main(int argc,char** argv) {
         s.secondPosition=Vec3{-0.5*separation,0.0,0.0}+drift*time;
         s.firstVelocity=drift;
         s.secondVelocity=drift;
-        s.firstProperDipole=direction*firstMagneticMoment;
-        s.secondProperDipole=direction*secondMagneticMoment;
+        s.firstProperDipole=direction*(firstMagneticMoment*momentScale);
+        s.secondProperDipole=direction*(secondMagneticMoment*momentScale);
         synchronizeCovariantDipoles(s);
         return s;
     };

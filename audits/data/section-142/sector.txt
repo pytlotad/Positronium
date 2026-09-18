@@ -1,0 +1,6 @@
+beta 0.01  z momentami: 3.183989e-09  ratio 2.846e-07
+beta 0.01  bez momentow: 0.000000e+00  ratio 0.000e+00
+beta 0.1   z momentami: 3.290003e-06  ratio 2.943e-04
+beta 0.1   bez momentow: 0.000000e+00  ratio 0.000e+00
+beta 0.2   z momentami: 2.844708e-05  ratio 2.541e-03
+beta 0.2   bez momentow: 0.000000e+00  ratio 0.000e+00

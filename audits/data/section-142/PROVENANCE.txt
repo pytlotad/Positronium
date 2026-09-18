@@ -1,0 +1,18 @@
+Raw outputs behind audit section 142 (2026-09-19).
+  prereg_142.txt     rules R142a-d.  It states plainly that the four
+                     decomposition measurements were made BEFORE it, in an
+                     exploratory sequence, and pre-registers only the
+                     out-of-sample test that came after
+  stencil.txt        the residual against the history stencil, 9/2 to 512/40
+  sector.txt         with and without the moments: the charge-charge
+                     interaction is reciprocal to the bit (142c)
+  moment_power.txt   the residual against the moment scale, 0.25x to 4x:
+                     exactly linear (142d)
+  hidden.txt         with and without CREM_NO_HIDDEN_MOMENTUM_FORCE: the
+                     order in beta changes from three to one (142e)
+  outofsample.txt    beta 0.05 and 0.4, predicted before running (142f)
+All from tools/uniform_motion_balance in circular mode at 1 r*, tilt 0,
+65 history nodes over 16 light-crossing times, with the two switches this
+section added to the probe:
+  CREM_BALANCE_NO_MOMENTS       zero both moments
+  CREM_BALANCE_MOMENT_SCALE=x   multiply both moments by x

@@ -1,0 +1,37 @@
+PRE-REGISTRATION, audit section 142 (naming the third-order residual).
+written 2026-09-18T22:09:52Z
+
+ORDER OF WORK, STATED PLAINLY.  Four measurements were made BEFORE this
+was written, in an exploratory sequence, and are reported as such:
+  M1 stencil convergence: 3.2866e-06 at 9 nodes/span 2 against 3.2894e-06
+     at 512/40, i.e. 0.09% over a 57x refinement -- not numerical;
+  M2 sector: with both moments zeroed, |F1+F2| = 0.000000e+00 exactly at
+     beta 0.01, 0.1 and 0.2 -- the charge-charge retarded interaction is
+     reciprocal to the bit, and the whole residual is dipole-sector;
+  M3 power in the moment: scaling both moments by 0.25, 0.5, 1, 2, 4 gives
+     8.225e-07, 1.645e-06, 3.290e-06, 6.580e-06, 1.316e-05 -- exactly
+     linear, so it is the CHARGE-MOMENT interaction, not moment-moment;
+  M4 with CREM_NO_HIDDEN_MOMENTUM_FORCE the residual returns to FIRST
+     order in beta (9.178e-05, 9.254e-04, 1.901e-03; slopes 1.004 and
+     1.038) against third order with it.
+
+THE NAMING THIS SUGGESTS.  The residual is the third-order term of the
+charge-moment momentum balance whose first-order term is the hidden
+momentum (mu x E)/c^2 that audit 124 installed.  The model carries that
+series to first order only; the second order is absent because the series
+is odd in beta, and what is left is the third.
+
+RULES, decided now.
+R142a  THE NAMING IS ACCEPTED only if an OUT-OF-SAMPLE prediction holds:
+       the residual at beta = 0.05 and beta = 0.4, at the same geometry
+       and stencil, must follow |F1+F2|/|F1| = c beta^3 with c between
+       0.28 and 0.34, the band the three measured speeds span.  Predicted
+       before running: 4.0e-07 N at beta = 0.05 and 2.4e-04 N at 0.4.
+R142b  If either point falls outside that band, the naming is reported as
+       CONSISTENT BUT NOT ESTABLISHED, and the section says which point
+       broke it.
+R142c  The size at the production orbit is reported, so the naming carries
+       a consequence: beta at a_pair is 0.0036487, so the prediction there
+       is c beta^3 of |F1|.
+R142d  No model file is changed.  The moment-scale switch added to the
+       probe is a tool-side diagnostic.

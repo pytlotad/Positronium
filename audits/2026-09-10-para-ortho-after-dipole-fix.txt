@@ -9815,3 +9815,75 @@ measurement of whether that survives a cascade.
       measured, not a proof of exactly cubic.  |S| is the probe's own
       construction of the excess and is compared against the ledger's
       published values rather than re-derived here.
+
+142. THE THIRD-ORDER RESIDUAL, NAMED: IT IS THE NEXT ODD ORDER OF THE HIDDEN
+     MOMENTUM, AND IT IS 1.4e-08 OF THE COULOMB FORCE AT THE PRODUCTION ORBIT
+==================================================================
+
+142a. WHAT 141g OWED.  Section 141 left the remaining imbalance unattributed
+      and said naming it would need a third-order expansion of the retarded
+      fields.  It does not: four measurements name it, and none of them is an
+      expansion.
+
+142b. IT IS NOT NUMERICAL.  The history stencil refined 57-fold, from 9 nodes
+      over 2 light-crossing times to 512 over 40, moves the residual from
+      3.28656e-06 to 3.28940e-06 N at beta = 0.1 -- 0.09%.  Converged.
+
+142c. IT IS ENTIRELY DIPOLE-SECTOR, AND THE CHARGE SECTOR IS RECIPROCAL TO
+      THE BIT.  With both moments zeroed (CREM_BALANCE_NO_MOMENTS, added to
+      the probe for this) the net force is 0.000000e+00 N at beta = 0.01, 0.1
+      and 0.2 -- not small, zero to every printed digit.  No ablation of a
+      dipole TERM could have shown this, because each leaves the moment's own
+      field in place; only removing the moments does.
+
+142d. AND IT IS EXACTLY LINEAR IN THE MOMENT.  Scaling both moments over a
+      factor of sixteen, at beta = 0.1:
+        mu x 0.25   8.225007e-07 N        mu x 2   6.580005e-06 N
+        mu x 0.50   1.645001e-06 N        mu x 4   1.316001e-05 N
+        mu x 1      3.290003e-06 N
+      Each step doubles to every digit.  A moment-moment term would be
+      quadratic, so this is the CHARGE-MOMENT interaction.
+
+142e. AND THE HIDDEN MOMENTUM SETS ITS ORDER.  With
+      CREM_NO_HIDDEN_MOMENTUM_FORCE the residual is 9.178e-05, 9.254e-04 and
+      1.901e-03 N at the three speeds -- log-log slopes 1.004 and 1.038,
+      first order in beta.  With the term, 3.184e-09, 3.290e-06 and
+      2.845e-05 N -- slopes 3.014 and 3.103, third order.  So the term audit
+      124 installed cancels the ENTIRE first-order non-reciprocity of the
+      charge-moment pair, exactly, and what survives is the next order of the
+      same series.  The second order is absent because the series is odd in
+      beta.
+
+142f. THE NAMING, AND AN OUT-OF-SAMPLE TEST (rule R142a).  The residual is
+      the third-order term of the charge-moment momentum balance whose
+      first-order term is the hidden momentum (mu x E)/c^2.  Written as
+      |F1+F2|/|F1| = c beta^3, the coefficient measured at three speeds was
+      0.2846, 0.2943 and 0.3176, so the rule asked for two new speeds to land
+      in 0.28..0.34, predicting 4.0e-07 N at beta = 0.05 and 2.4e-04 N at
+      beta = 0.4 before running them.  Measured: 4.014030e-07 and
+      2.258791e-04 N, giving c = 0.2871 and 0.2963.  Both inside the band,
+      and c now spans 0.2846..0.3176 over a forty-fold range of beta.
+      ACCEPTED.
+
+142g. WHAT IT COSTS AT THE ORBIT THE MODEL ACTUALLY RUNS.  At a_pair the
+      pair's beta is 0.0036487, so the prediction there is
+        |F1+F2|/|F1| = 0.2846 x 4.858e-08 = 1.38e-08.
+      Fourteen parts per billion of the Coulomb force.  The repair the naming
+      implies -- carrying the (mu x E)/c^2 construction to the next odd order
+      in beta, as 124 carried it to the first -- is therefore well defined,
+      buildable, and worth nothing numerically.  It is named here so that the
+      thread is closed rather than left as a residue.
+
+142h. WHAT THIS CORRECTS.  141g said the source needed a third-order field
+      expansion.  That was the wrong instrument: the source is fixed by a
+      sector test, a scaling test and an ablation, all of which the existing
+      probe could do once it could zero and scale the moments.  Sections 104
+      to 141 chased this imbalance through eight named candidates; it ends as
+      the second term of the one candidate that turned out to be right.
+
+142i. UNCHANGED, AND LIMITS.  No model file was touched; the moment-zeroing
+      and moment-scaling switches are tool-side.  Validation 62/62 and header
+      isolation 37/37 stand from section 140.  One geometry (1 r*, tilt 0),
+      synthetic circular kinematics, five speeds; c drifts by 12% across them,
+      so "third order" is the measured 3.01-3.10 rather than an exact cube,
+      and the naming is of the leading behaviour, not a closed form.
