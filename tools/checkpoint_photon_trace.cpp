@@ -28,8 +28,9 @@ int main(int argc,char** argv){
   const auto t0=std::chrono::steady_clock::now();
   const auto r=runCremCollapseExperiment(seed,1,1,budget);
   const double wall=std::chrono::duration<double>(std::chrono::steady_clock::now()-t0).count();
-  std::printf("RESULT seed %llu lab_ps %.9f proper_ps %.9f lab_minus_proper_fs %.6f outcome %d photons %zu wall_s %.1f\n",
+  std::printf("RESULT seed %llu lab_ps %.9f proper_ps %.9f lab_minus_proper_fs %.6f outcome %d stop_cause %d photons %zu wall_s %.1f\n",
     seed,r[0].lifetimeSecondsLab*1e12,r[0].lifetimeSeconds*1e12,
     (r[0].lifetimeSecondsLab-r[0].lifetimeSeconds)*1e15,
-    (int)r[0].calibrationOutcome,r[0].labFramePhotons.size(),wall);
+    (int)r[0].calibrationOutcome,(int)r[0].stopCause,
+    r[0].labFramePhotons.size(),wall);
 }

@@ -1,0 +1,16 @@
+Raw outputs behind audit section 131 (2026-09-18).
+  prereg_131.txt      rules R131a-e, written before any number
+  run131_ladder.txt   tools/orbital_action_ladder.cpp: the identity check,
+                      the ladder the emission rule implies, and the action
+                      at every stopping condition
+  run131_law.txt      action_law.py: the closed form Delta n against both
+                      measured ladders, and the split of the action loss
+                      into photon steps and continuous drift
+  run131_stops.txt    the 13-trajectory ensemble of stopping actions (131e)
+  run131_phi.txt      the azimuthal action per photon against audit 21b
+  run131_margin.txt   the margin-shift test at 300 and 50
+  results.txt         the RESULT lines of every run, including stop_cause
+  action_traces.tar.gz  the ACTION and PHOTON_LADDER lines of each run
+                      (t131_err_<seed> default margin, long_err_<seed> the
+                      1500 s budget, m300_/m50_ the shifted margins)
+  action_law.py       the analysis script

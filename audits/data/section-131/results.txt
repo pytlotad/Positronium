@@ -1,0 +1,21 @@
+RESULT seed 45 lab_ps 198.970922632 proper_ps 198.970922630 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 113.8
+RESULT seed 46 lab_ps 198.919580174 proper_ps 198.919580172 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 107.3
+RESULT seed 49 lab_ps 198.904770619 proper_ps 198.904770519 lab_minus_proper_fs 0.000101 outcome 0 photons 3 wall_s 113.5
+RESULT seed 50 lab_ps 198.998151623 proper_ps 198.998151621 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 117.8
+RESULT seed 44 lab_ps 198.929410469 proper_ps 198.929409754 lab_minus_proper_fs 0.000715 outcome 0 photons 3 wall_s 103.0
+RESULT seed 54 lab_ps 198.982563982 proper_ps 198.982563980 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 100.9
+RESULT seed 48 lab_ps 198.940577605 proper_ps 198.940577603 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 117.6
+RESULT seed 52 lab_ps 198.933080301 proper_ps 198.933080299 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 103.8
+RESULT seed 43 lab_ps 199.000429243 proper_ps 199.000429242 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 114.8
+RESULT seed 42 lab_ps 198.765103807 proper_ps 198.765103806 lab_minus_proper_fs 0.000001 outcome 0 photons 2 wall_s 47.9
+RESULT seed 47 lab_ps 198.940677086 proper_ps 198.940677084 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 107.9
+RESULT seed 51 lab_ps 198.895757681 proper_ps 198.895757679 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 110.0
+RESULT seed 42 lab_ps 199.039756370 proper_ps 199.039756368 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 109.1
+RESULT seed 53 lab_ps 198.930572081 proper_ps 198.930572080 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 105.0
+RESULT seed 42 lab_ps 199.039756370 proper_ps 199.039756368 lab_minus_proper_fs 0.000002 outcome 0 stop_cause 2 photons 3 wall_s 125.1
+RESULT seed 43 lab_ps 198.728750870 proper_ps 198.728750869 lab_minus_proper_fs 0.000001 outcome 0 photons 2 wall_s 46.6
+RESULT seed 43 lab_ps 199.000543533 proper_ps 199.000543531 lab_minus_proper_fs 0.000002 outcome 0 photons 3 wall_s 92.5
+RESULT seed 42 lab_ps 198.765103807 proper_ps 198.765103806 lab_minus_proper_fs 0.000001 outcome 0 stop_cause 2 photons 2 wall_s 49.3
+RESULT seed 42 lab_ps 199.039646721 proper_ps 199.039646720 lab_minus_proper_fs 0.000001 outcome 0 stop_cause 2 photons 3 wall_s 94.9
+RESULT seed 42 lab_ps 199.039646721 proper_ps 199.039646720 lab_minus_proper_fs 0.000001 outcome 0 photons 3 wall_s 62.1
+RESULT seed 43 lab_ps 199.000543533 proper_ps 199.000543531 lab_minus_proper_fs 0.000002 outcome 0 stop_cause 2 photons 3 wall_s 109.3

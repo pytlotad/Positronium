@@ -2110,6 +2110,29 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                      <<elements.specificAngularMomentum<<" wall="
                      <<wallClockSpent()<<"s"<<std::endl;
         }
+        // CREM_ACTION_TRACE: the two Bohr-Sommerfeld actions of the
+        // osculating orbit at every checkpoint (audit 131).  For the Kepler
+        // problem J_phi = 2 pi L and J_r = 2 pi (K sqrt(mu/2|E|) - L), so
+        // (J_r + J_phi)/h is the same n_E the photon ladder prints; the split
+        // is what says whether a photon removes a quantum from one action
+        // without removing it from the total.  Nothing here feeds back.
+        if(std::getenv("CREM_ACTION_TRACE")) {
+            const double binding=-elements.specificEnergy*reducedMass;
+            const double groundBinding=
+                -groundStateSpecificEnergy()*reducedMass;
+            const double total=binding>0.0
+                ?std::sqrt(groundBinding/binding):0.0;
+            const double azimuthal=
+                elements.specificAngularMomentum*reducedMass/hbar;
+            std::fprintf(stderr,
+                "ACTION checkpoint=%d t=%.9e a_over_apair=%.9f"
+                " n=%.9f Jphi_over_h=%.9f Jr_over_h=%.9f e=%.9f\n",
+                checkpoint,simulatedTimeTotal,
+                binding>0.0?groundBinding/binding:0.0,total,azimuthal,
+                total-azimuthal,
+                total>0.0?std::sqrt(std::max(0.0,
+                    1.0-azimuthal*azimuthal/(total*total))):0.0);
+        }
         if(std::getenv("CREM_DEBUG_PRECISE")) {
             std::cerr<<std::setprecision(17)
                      <<"  PRECISE checkpoint "<<checkpoint<<": E="
@@ -4785,14 +4808,16 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             std::fprintf(stderr,
                                 "PHOTON_LADDER E=%.9e J  E_eV=%.9f"
                                 "  a=%.9e  a/a_pair=%.6f  n_E=%.6f"
-                                "  hbar_w_orb_eV=%.9f\n",
+                                "  hbar_w_orb_eV=%.9f  Jphi_over_h=%.9f\n",
                                 photonEnergy,photonEnergy/1.602176634e-19,
                                 pairBohrRadius(activePair)
                                     *groundBinding/std::max(bindingNow,1e-300),
                                 groundBinding/std::max(bindingNow,1e-300),
                                 std::sqrt(std::max(0.0,
                                     groundBinding/std::max(bindingNow,1e-300))),
-                                photonEnergyReference/1.602176634e-19);
+                                photonEnergyReference/1.602176634e-19,
+                                elements.specificAngularMomentum
+                                    *reducedMass/hbar);
                         }
                         LabFramePhoton labPhoton;
                         labPhoton.sourceBeta=sourceBeta;

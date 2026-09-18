@@ -8803,3 +8803,123 @@ measurement of whether that survives a cascade.
       does not need it.  The scan is analytic on a Kepler ellipse at fixed
       a_pair, as 116d and 117c were, and the secular libration rate is a
       factor 2.06 below the traced one (rule R130d, inside its factor 3).
+
+131. THE ORBITAL ACTION ALONG THE COLLAPSE: THE PREPARED STATE IS EXACTLY h,
+     THE PHOTON REMOVES LESS THAN h BY A LAW, AND THE STOP IS A MARGIN
+==================================================================
+
+131a. WHAT WAS ADDED.  CREM_ACTION_TRACE in the collapse estimator prints, at
+      every checkpoint, the two Bohr-Sommerfeld actions of the osculating
+      orbit: J_phi/h = L/hbar, J_r/h = n - L/hbar, with
+      n = (K/hbar) sqrt(mu/(2|E|)), plus the eccentricity.  They come from the
+      two osculating elements the estimator already carried, so nothing new
+      is integrated and nothing feeds back.  The photon-ladder trace gained
+      J_phi/h, and tools/orbital_action_ladder.cpp turns the emission rule
+      into the ladder it implies.
+
+131b. THE PREPARED STATE IS THE n = 1, k = 1 ORBIT TO NINE DIGITS.
+        n = 1.000000000   J_phi/h = 1.000000000   J_r/h = 0.000000000   e = 0
+      and the radial action is never excited afterwards: along the whole
+      collapse |J_r/h| stays under 0.0054, mean 0.0014, and it goes slightly
+      NEGATIVE, which is the over-circular seam (|L| a hair above the
+      circular limit for the current energy) and not a radial oscillation.
+      So the cascade is the descent of ONE action, J_phi, from exactly h.
+
+131c. Q1: A PHOTON DOES NOT REMOVE h, AND NOW THERE IS A LAW FOR IT.  The
+      emission rule is E_photon = hbar omega_orb = 2R/n^3 (audit 29), so
+      E' = -R/n^2 - 2R/n^3 and the landing is exact:
+        n -> n/sqrt(1+2/n),    Delta n = n [1 - (1+2/n)^(-1/2)].
+      Against the two measured ladders:
+        from n = 1 (this run)          measured Delta   law      ratio
+          1.000000 -> 0.577269           0.422731     0.422650   1.0002
+          0.577269 -> 0.272406           0.304863     0.304065   1.0026
+          0.272406 -> 0.096794           0.175612     0.178091   0.9861
+        from n = 2 (audit 29b)
+          1.999995 -> 1.414210           0.585785     0.585786   1.0000
+          1.414210 -> 0.910168           0.504042     0.504033   1.0000
+          0.910168 -> 0.508943           0.401225     0.401162   1.0002
+          0.508943 -> 0.228165           0.280778     0.279720   1.0038
+      Median |Delta n| is 0.3049 from n = 1 and 0.5040 from n = 2, so rule
+      R131a (0.9..1.1) is answered NO.  But the law says the quantum is
+      reached in the correspondence limit and only there: Delta n = 0.8713 at
+      n = 10, 0.9852 at n = 100, 0.9985 at n = 1000.  The model's emission
+      rule IS the correspondence principle, exactly; what it cannot do is
+      remove one quantum of action where n is of order one, which is the only
+      place this model lives.
+
+131d. AND THE ACTION LEAVES ONLY IN THOSE STEPS.  Over the whole collapse the
+      total drop is 0.903206 h, of which 0.902241 h is the three photon steps
+      and 0.000965 h is continuous drift between checkpoints -- 0.11%.  The
+      azimuthal part alone gives 0.4226, 0.2993, 0.1813 h, which reproduces
+      audit 21b's "demands 1 hbar, surrenders 0.4227, 0.3042, 0.1787" from
+      the new trace (rule R131e); six trajectories agree to 0.001-0.03.
+
+131e. Q2: THE STOP IS SHARP AND REPRODUCIBLE, AND IT IS A NUMERICAL MARGIN.
+      The retardation safety margin, period/light-crossing >= 150, is on a
+      circular orbit the statement
+        n >= margin * alpha / (2 pi) = 0.174211,
+      so the first rung of the ladder below it is n = 0.094740, after three
+      photons.  Thirteen trajectories, seeds 42-54, all stopped by the model
+      (no wall-clock censoring), all with three photons:
+        n_stop mean 0.096210   sd 0.001406   min 0.094497   max 0.099146
+        measured mean / predicted rung = 1.0155
+      The stop follows the margin when the margin moves.  At 300 the bound is
+      0.348423 and the predicted rung 0.273258; measured 0.273285 and
+      0.273322, a ratio of 1.0001, after two photons.
+
+131f. A FLAW IN MY OWN RULE, RECORDED.  R131b asked for the stopping actions
+      to fall within 0.1 of an integer, and 13 of 13 do -- because the
+      integer is ZERO.  The rule was ill-posed for a stop near the origin.
+      The substantive reading is the nearest NONZERO integer, n = 1, which is
+      10.4 times away, and the answer to Q2 is no.  R131b's other half, the
+      clustering test, passes with a spread of 0.0046 h, but the cluster is
+      the ladder's rung, not a floor: it is where the arithmetic of three
+      correspondence photons from n = 1 happens to land relative to a
+      numerical safety margin, which is not a quantization condition.
+      Below the declared domain the closed form fails, although the cause
+      does not.  At margin 50 the Kepler estimate predicts n = 0.020148 after
+      four photons; the runs stop after THREE, at n = 0.080655 and 0.097152,
+      and the recorded stop cause is still the retardation margin -- 4 of 4
+      re-runs with the cause printed give RetardationLimit, at margins 50,
+      150 and 300 alike.  The estimator's own ratio uses the REGULARIZED
+      period and the actual periapsis separation, and at these radii both sit
+      far enough below their circular Kepler values to fire the test about
+      1.7 times earlier in the ratio than n = margin alpha / 2 pi suggests.
+      The closed form is therefore a good guide in the outer region (1.0001
+      at margin 300, 1.016 at 150) and not at the deep end.
+
+131g. Q3: --ground-state-floor IS AN ACTION FLOOR AT n = 1, EXACTLY.  Its two
+      clamps, measured against the actions:
+        energy clamp   E >= -K/(2 a_pair)  ->  n = 1.000000000
+        angular clamp  L >= hbar           ->  J_phi/h = 1.000000000
+      These are the two halves of J_r + J_phi = h.  So R131c is YES: the flag
+      is not a hand-set radius dressed up as physics, it is the
+      Bohr-Sommerfeld condition, written twice.
+
+131h. WHAT IT COSTS, WHICH IS THE ANSWER TO R4.  The prepared state already
+      HAS n = 1 to nine digits, so an action floor at n = 1 forbids the first
+      photon rather than the last: the code says so itself
+      ("--ground-state-floor holds the orbit at a_pair, so there is no
+      transit from it").  The collapse the model actually measures runs from
+      n = 1 to n = 0.070711 at audit 108's endpoint of 0.005 a_pair, i.e. it
+      spends 93% of the ground-state action, and the Compton barrier is at
+      n = 0.042737.  So quantizing the orbital action does not stop the
+      inspiral at a physical radius; it deletes the inspiral, and with it the
+      30.672 ps that is this project's headline number.  The floor R4 asked
+      for exists, is exact, and is incompatible with the measurement it was
+      meant to protect.
+
+131i. UNCHANGED.  Validation 62/62, header isolation 37/37, and the trace
+      does not touch the trajectory: seed 42 run with CREM_ACTION_TRACE and
+      without it gives lab 199.039646721 ps and proper 199.039646720 ps,
+      identical to all printed digits.
+
+131j. LIMITS.  Thirteen trajectories at one preparation (phenomenon 1,
+      a_pair, para/free draw) and one pair; the margin test is two seeds per
+      margin.  The ladder law assumes the emission rule and a Keplerian
+      orbit, which is why its agreement degrades from 1.0000 to 0.986 on the
+      last rung, where the dipole term is tens of percent of Coulomb.  The
+      margin-50 runs are outside the model's declared domain by the code's
+      own statement and are reported as bookkeeping probes, not physics.
+      The action is computed from osculating elements, so it is the action of
+      the instantaneous Kepler ellipse, not of the retarded two-body system.

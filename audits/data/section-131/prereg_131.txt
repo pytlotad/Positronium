@@ -1,0 +1,50 @@
+PRE-REGISTRATION, audit section 131 (R4: the orbital action along the
+collapse).  Written before any number of this section was computed.
+written 2026-09-18T14:48:50Z
+
+THE QUANTITY.  For the Kepler problem the two actions are
+  J_phi = 2 pi L,
+  J_r   = 2 pi (K sqrt(mu/(2|E|)) - L),
+so J_r + J_phi = 2 pi K sqrt(mu/(2|E|)) = n h with
+  n = (K/hbar) sqrt(mu/(2|E|)),
+which is the n_E the CREM_PHOTON_LADDER trace already prints.  Both are
+built from the two osculating elements the estimator already carries
+(specificEnergy, specificAngularMomentum), so no new dynamics is needed.
+
+THE THREE QUESTIONS.
+  Q1  Does one photon remove Delta J = h?
+  Q2  Does the collapse stop where the total action is an integer
+      multiple of h?
+  Q3  Is --ground-state-floor the same object as an action floor at
+      n = 1, and what does imposing it cost?
+
+RULES, decided now.
+R131a  Q1 is answered YES if the median |Delta n| over the photons of a
+       cascade is inside 0.9..1.1.  The recorded ladder of 29b
+       (2.000 -> 1.414 -> 0.910 -> 0.509 -> 0.228) says it will not be,
+       so the measurement here has to ADD the reason and the law, not
+       just the verdict: I will fit Delta n against the closed form the
+       emission rule implies and report the agreement.
+R131b  Q2 is answered YES if, over an ensemble of at least 12 stopped
+       trajectories, more than 40% of the stopping actions fall within
+       0.1 of an integer (a uniform fractional part gives 20%), OR if
+       the stopping actions cluster with a spread below 0.1 h.
+R131c  Q3 is answered YES if the floor's own clamp is algebraically the
+       n = 1 action, i.e. if the energy it clamps to and L >= hbar are
+       the two halves of J_r + J_phi = h.
+R131d  COST OF THE FLOOR.  Record the action of the state production
+       actually prepares and the action at the transit endpoint
+       (0.005 a_pair).  If the prepared action is already h or below,
+       an action floor at n = 1 forbids the collapse the model measures,
+       and that has to be stated as the cost rather than buried.
+R131e  The radial and azimuthal actions are reported SEPARATELY, because
+       a photon could remove h from one without removing it from the
+       total; audit 21b measured the angular part alone (0.42, 0.30,
+       0.18, 0.16 hbar surrendered against 1 hbar demanded) and this
+       section must reproduce those numbers from the new trace or
+       explain the difference.
+
+PREDICTION (mine, before the numbers).  Q1 no, with Delta n rising
+toward 1 only for large n; Q2 no, continuous scatter; Q3 yes; and the
+prepared action exactly h, so the floor deletes the collapse rather than
+stopping it.

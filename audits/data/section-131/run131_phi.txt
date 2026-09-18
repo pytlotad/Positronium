@@ -1,0 +1,8 @@
+err_42.txt         Jphi/h 1.0000 0.5774 0.2781 0.0968 | surrendered 0.4226 0.2993 0.1813
+err_43.txt         Jphi/h 1.0000 0.5775 0.2760 | surrendered 0.4225 0.3015
+long_err_43.txt    Jphi/h 1.0000 0.5775 0.2800 0.0976 | surrendered 0.4225 0.2975 0.1824
+long_err_44.txt    Jphi/h 1.0003 0.5776 0.3005 0.0945 | surrendered 0.4226 0.2771 0.2060
+long_err_45.txt    Jphi/h 1.0001 0.5773 0.2771 0.0965 | surrendered 0.4228 0.3002 0.1806
+long_err_46.txt    Jphi/h 1.0002 0.5787 0.2758 0.0959 | surrendered 0.4214 0.3029 0.1799
+
+audit 21b, same quantity, different run: 0.4227 0.3042 0.1787 0.1578

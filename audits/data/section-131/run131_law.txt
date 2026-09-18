@@ -1,0 +1,26 @@
+closed form Delta n = n[1-(1+2/n)^-1/2]
+  n =      1.0  Delta n = 0.422650  landing 0.577350
+  n =      2.0  Delta n = 0.585786  landing 1.414214
+  n =      3.0  Delta n = 0.676210  landing 2.323790
+  n =     10.0  Delta n = 0.871291  landing 9.128709
+  n =    100.0  Delta n = 0.985246  landing 99.014754
+  n =   1000.0  Delta n = 0.998502  landing 999.001498
+
+this run, seed 42 (prepared at n=1)
+  1.000000 -> 0.577269   measured Delta 0.422731   law 0.422650   ratio 1.0002
+  0.577269 -> 0.272406   measured Delta 0.304863   law 0.304065   ratio 1.0026
+  0.272406 -> 0.096794   measured Delta 0.175612   law 0.178091   ratio 0.9861
+  median |Delta n| 0.3049, range 0.1756..0.4227
+audit 29b, prepared at 4 a_pair (n=2)
+  1.999995 -> 1.414210   measured Delta 0.585785   law 0.585786   ratio 1.0000
+  1.414210 -> 0.910168   measured Delta 0.504042   law 0.504033   ratio 1.0000
+  0.910168 -> 0.508943   measured Delta 0.401225   law 0.401162   ratio 1.0002
+  0.508943 -> 0.228165   measured Delta 0.280778   law 0.279720   ratio 1.0038
+  median |Delta n| 0.5040, range 0.2808..0.5858
+
+prepared  n 1.000000000  Jphi/h 1.000000000  Jr/h -0.000000000
+stopped   n 0.096793768  Jphi/h 0.096793768  Jr/h 0.000000000
+total action drop 0.903206 h
+continuous drift between checkpoints (steps < 0.05 h) 0.000965 h
+checkpoint-to-checkpoint jumps >= 0.05 h (the photons) 0.902241 h
+|Jr/h| along the whole collapse: max 0.005433, mean 0.001411

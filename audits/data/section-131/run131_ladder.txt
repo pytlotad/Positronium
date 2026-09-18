@@ -1,0 +1,24 @@
+a_pair = 1.058354e-10 m = 547.509 r*; n = sqrt(mu K a)/hbar, so n = sqrt(a/a_pair)
+identity check, n from a against J_r/h + J_phi/h on a circular orbit:
+  a/a_pair  1.000  n 1.000000000  J_phi/h 1.000000000  J_r/h 0.000000000
+  a/a_pair  0.500  n 0.707106781  J_phi/h 0.707106781  J_r/h 0.000000000
+  a/a_pair  0.100  n 0.316227766  J_phi/h 0.316227766  J_r/h 0.000000000
+  a/a_pair  0.010  n 0.100000000  J_phi/h 0.100000000  J_r/h 0.000000000
+
+the ladder the emission rule produces, from the prepared state:
+  photon 1: n 1.000000 -> 0.577350   Delta n 0.422650   a/a_pair 1.000000 -> 0.333333
+  photon 2: n 0.577350 -> 0.273258   Delta n 0.304093   a/a_pair 0.333333 -> 0.074670
+  photon 3: n 0.273258 -> 0.094740   Delta n 0.178517   a/a_pair 0.074670 -> 0.008976
+  photon 4: n 0.094740 -> 0.020148   Delta n 0.074592   a/a_pair 0.008976 -> 0.000406
+  photon 5: n 0.020148 -> 0.002012   Delta n 0.018136   a/a_pair 0.000406 -> 0.000004
+  photon 6: n 0.002012 -> 0.000064   Delta n 0.001948   a/a_pair 0.000004 -> 0.000000
+  and for reference Delta n at n = 10, 100, 1000: 0.871291 0.985246 0.998502 (the correspondence limit is 1)
+
+stopping conditions in action units:
+  --ground-state-floor   energy clamp n = 1.000000000, angular clamp J_phi/h = 1.000000000
+  retardation margin 150   n = 0.174211  (= margin alpha / 2 pi, alpha = 0.00729735)
+  Compton barrier        n = 0.042737  (a = r* = 1.9330e-13 m)
+  transit end 0.005 a    n = 0.070711  (audit 108's endpoint)
+
+starting from n = 1, the first rung below the retardation margin is n = 0.094740 after 3 photons
+so the stop is set by the margin, not by the action: it is the ladder's first rung below 0.174211, and nothing about it is an integer

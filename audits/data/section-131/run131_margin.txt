@@ -1,0 +1,4 @@
+m300 seed 42 outcome 0 photons 2 n_stop 0.273285100
+m300 seed 43 outcome 0 photons 2 n_stop 0.273322124
+m50 seed 42 outcome 0 photons 3 n_stop 0.080655416
+m50 seed 43 outcome 0 photons 3 n_stop 0.097151666
