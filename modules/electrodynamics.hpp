@@ -1576,6 +1576,13 @@ inline bool dipoleRadiationTorqueEnabled(ChargeRadiationReactionModel model) {
     // the magnetic moment which emitted it.  Keep that orientation reaction
     // active in the quantized model; only the fully disabled reference turns
     // every radiation-reaction channel off.
+    //
+    // CREM_NO_M1_TORQUE suppresses just this channel, leaving the charge
+    // sector untouched, so that "is the M1 reaction live in production" is a
+    // measurement rather than a reading of this function (audit 136).  It is
+    // a diagnostic ablation and is off by default.
+    static const bool suppressed=std::getenv("CREM_NO_M1_TORQUE")!=nullptr;
+    if(suppressed) return false;
     return model!=ChargeRadiationReactionModel::disabled;
 }
 

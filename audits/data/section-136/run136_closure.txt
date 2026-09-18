@@ -1,0 +1,11 @@
+cone 30.00 deg, precession 4.134170e+11 rad/s (period 1.519818e-11 s), moment 9.284765e-24 J/T
+ step/period       P flux [W]     -N.Omega [W]          ratio   P analytic [W] flux/analytic
+     1.0e-02  1.553597811e-33  1.599911815e-33    1.029810807  1.557692641e-33  0.997371220
+     3.0e-03  1.557323709e-33  1.561560106e-33    1.002720306  1.557692641e-33  0.999763155
+     1.0e-03  1.557651645e-33  1.558123025e-33    1.000302622  1.557692641e-33  0.999973681
+     3.0e-04  1.557688952e-33  1.557731383e-33    1.000027240  1.557692641e-33  0.999997631
+     1.0e-04  1.557692231e-33  1.557696944e-33    1.000003025  1.557692641e-33  0.999999737
+
+cone damping: d(theta)/dt = -1.429543e-10 rad/s, time constant theta/|d(theta)/dt| = 3.662700e+09 s
+against the collapse of 30.672 ps that is 1.194e+20 collapse times
+energy in the cone, mu B (1-cos) with B from the same precession: rate/gyromagnetic = 2.347813e+00 T

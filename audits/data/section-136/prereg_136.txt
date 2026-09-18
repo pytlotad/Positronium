@@ -1,0 +1,51 @@
+PRE-REGISTRATION, audit section 136 (production and the M1 channel: what
+is actually missing).  Written before any number of this section was
+computed.
+written 2026-09-18T19:22:43Z
+
+WHAT 135b SAID AND WHY IT MAY BE WRONG.  Section 135b reported that under
+the production reaction model the M1 channel "books nothing", from the
+CREM_M1_SHARE line reading zero.  Reading further: that line prints the
+SECULAR analytic decomposition, which is gated on isStochastic -- and so
+is its E1 counterpart, which also prints zero although production plainly
+radiates.  Meanwhile the ENGINE carries dipoleRadiationReaction, whose
+torques applyDipoleRadiationTorque applies under every reaction model
+except `disabled`, and in the continuous path the orbit's energy loss is
+MEASURED from the integrated orbit rather than taken from the secular
+formula.  So the zero may be a diagnostic gap and not a physical one, and
+135b would then be wrong in exactly the way that matters.
+
+THE THREE THINGS TO SETTLE.
+  T1  Is the M1 reaction torque live in production, i.e. does removing it
+      change a production trajectory?
+  T2  Is the channel CLOSED in the engine: does the torque remove the
+      energy the flux carries away?
+  T3  What does production omit once T1 and T2 are answered, and how big
+      is it?
+
+RULES, decided now.
+R136a  T1 is answered YES if a production trajectory with the M1 torque
+       suppressed differs from the same trajectory with it active, in any
+       printed digit of the terminal moments or the collapse time.  If it
+       is bit-identical, 135b stands and the torque is inert in production.
+R136b  T2, the closure, is answered on a controlled configuration rather
+       than on a trajectory, because M1/E1 is of order 1e-15 there and the
+       difference would be below double precision.  The channel is closed
+       if the torque's work rate, averaged over a full precession cycle,
+       matches the flux power within a factor 2.  Sign matters: the torque
+       must REMOVE energy, and a match with the wrong sign is a failure.
+R136c  The diagnostic is repaired if CREM_M1_SHARE prints the true E1 and
+       M1 powers under the production model too, AND the trajectory stays
+       bit-identical: the repair is diagnostics-only, so any change in the
+       collapse time refutes it and must be reverted rather than explained.
+R136d  Report M1/E1 along a production collapse, so "production accounts
+       for all physical effects" carries a number and not an adjective.
+
+PREDICTION (mine).  T1 yes, the torque is live -- so 135b's sentence about
+production is wrong and the section says so in those words.  T2 closed to
+within the Schott term, i.e. matching once averaged over a cycle and not
+instantaneously.  T3 the remaining omission is not the channel but its
+SECULAR bookkeeping: between checkpoints the estimator skips orbits using
+a loss that carries no M1 term, so the M1 sink acts only during the
+measured orbits, and the size of that is the M1/E1 ratio of R136d, which
+I expect near 1e-15 at a_pair.

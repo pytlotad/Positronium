@@ -1,0 +1,2 @@
+RESULT seed 42 lab_ps 199.039329891 proper_ps 199.039329890 lab_minus_proper_fs 0.000001 outcome 0 stop_cause 2 photons 3 wall_s 62.3
+RESULT seed 42 lab_ps 199.039646721 proper_ps 199.039646720 lab_minus_proper_fs 0.000001 outcome 0 stop_cause 2 photons 3 wall_s 62.5

@@ -1,0 +1,21 @@
+Raw outputs behind audit section 136 (2026-09-18).
+  prereg_136.txt        rules R136a-d, written after reading the code and
+                        before any number, including the prediction that
+                        135b's sentence about production would be wrong
+  results_production.txt  the two production runs, M1 torque on and off
+  results_cascade.txt   the same ablation in the photon cascade, where it
+                        moves the collapse time from 199.039646721 ps to
+                        199.039329891 ps (136b)
+  moment_trace_torque_on/off.txt.gz
+                        the moment traces those runs produced; they are
+                        bit-identical for 276 substeps and diverge after
+  m1_share_production_repaired.txt
+                        CREM_M1_SHARE under the production reaction model
+                        after the repair: E1 and M1 instead of two zeros
+  run136_share.txt      that file tabulated along the collapse (136f)
+  run136_closure.txt    tools/m1_channel_closure.cpp: the torque's work
+                        against the emitted flux on uniform precession, with
+                        the history step refined until the ratio converges
+                        on 1 (136d), and the cone damping time (136e)
+Reproduce the ablation with:
+  CREM_NO_M1_TORQUE=1 CREM_SKIP_CENSUS=1 tools/checkpoint_photon_trace 42 300

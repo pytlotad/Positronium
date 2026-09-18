@@ -9326,3 +9326,102 @@ measurement of whether that survives a cascade.
       rises by five orders (129) and this section does not follow it there,
       so the damping ratios quoted are for the prepared state.  The scales of
       135d are evaluated analytically on the prepared orbit, not integrated.
+
+136. A CORRECTION TO 135b: PRODUCTION IS NOT BLIND TO M1.  THE CHANNEL IS
+     CLOSED EXACTLY, AND WHAT WAS ZERO WAS THE PRINT
+==================================================================
+
+136a. THE SENTENCE BEING WITHDRAWN.  Section 135b read CREM_M1_SHARE's zeros
+      under the production reaction model and concluded that "on the
+      trajectories 113 and 115 were measured on, the M1 channel books
+      nothing".  That is wrong, and the mistake was reading a diagnostic as
+      if it were the dynamics.  The line prints the SECULAR analytic
+      decomposition, which is gated on isStochastic -- and so is its E1
+      counterpart, which printed zero as well although production plainly
+      radiates.  The engine meanwhile carries dipoleRadiationReaction, whose
+      torques applyDipoleRadiationTorque applies under every reaction model
+      except `disabled`.
+
+136b. THE TORQUE IS LIVE IN PRODUCTION, MEASURED (rule R136a).  A new
+      diagnostic ablation, CREM_NO_M1_TORQUE, suppresses that one channel and
+      leaves the charge sector alone.  One production trajectory, seed 42,
+      with and without it:
+        the moment traces are bit-identical for 276 substeps, diverge at 277
+        by 1.87e-06 relative, and reach 3.37e-06 by the end;
+        in the photon cascade the collapse time moves from 199.039646721 ps
+        to 199.039329891 ps, a relative 1.6e-06.
+      So the M1 reaction acts, and it acts through the moment ORIENTATION
+      rather than through the energy: the power ratio M1/E1 is 1.2e-15 at
+      a_pair, but the reorientation it causes feeds the dipole force and
+      moves the trajectory a million times more than that.
+
+136c. THE DIAGNOSTIC, REPAIRED (rule R136c).  CREM_M1_SHARE now evaluates
+      both secular powers under any reaction model, for the print only;
+      nothing downstream reads them.  Production reports, at a_pair,
+        E1 = 1.167257e-08 W   M1 = 1.431936e-23 W   share 1.2268e-15
+      instead of two zeros, and the trajectory is unchanged: seed 42 still
+      gives 199.039646721 ps, bit-identical to sections 131-133.
+
+136d. THE CHANNEL IS CLOSED, AND NOT ONLY WITHIN A FACTOR 2 (rule R136b).
+      On a trajectory M1/E1 is 1e-15 and the balance is below double
+      precision, so it is measured on a controlled configuration instead: one
+      moment precessing uniformly at the production rate with a 30 degree
+      cone, the model's own dipoleRadiationReaction called on that history.
+      The work the torque does on the precession against the flux it emits:
+        history step / period    P flux [W]      -N.Omega [W]      ratio
+              1.0e-02          1.553597811e-33  1.599911815e-33  1.0298108
+              3.0e-03          1.557323709e-33  1.561560106e-33  1.0027203
+              1.0e-03          1.557651645e-33  1.558123025e-33  1.0003026
+              3.0e-04          1.557688952e-33  1.557731383e-33  1.0000272
+              1.0e-04          1.557692231e-33  1.557696944e-33  1.0000030
+      The ratio converges on 1 as the history is refined, so the residual is
+      the finite-difference stencil and not the physics: the torque removes
+      exactly the energy the flux carries, with the right sign.  The flux
+      itself matches the closed form k mu^2 Omega^4 sin^2(theta) to 3e-07.
+
+136e. AND THE CONE DAMPING THAT IMPLIES.  The transverse part of the same
+      torque closes the precession cone at d(theta)/dt = -1.43e-10 rad/s, a
+      time constant of 3.66e+09 s, or 1.19e+20 collapse times.  That is the
+      same verdict section 135e reached from the other side and by another
+      route: the channel is real, it is exact, and it damps nothing on any
+      timescale this model runs.
+
+136f. WHAT PRODUCTION ACTUALLY OMITS, WHICH IS NOTHING (T3).  In the
+      continuous path the loss applied across skipped orbits is the MEASURED
+      energy change of an integrated orbit, and the M1 torque acts inside
+      that measurement.  There is no missing term to add: adding the secular
+      M1 power there would charge the same radiation twice.  The M1 share
+      along a production collapse, now that it prints:
+        a [m]        E1 [W]        M1 [W]        M1/(E1+M1)
+        1.058e-10  1.167257e-08  1.431936e-23   1.2268e-15
+        4.089e-11  5.240412e-07  5.969568e-20   1.1391e-13
+        1.245e-11  6.082708e-05  2.700424e-15   4.4395e-11
+        3.796e-12  6.974539e-03  1.543750e-10   2.2134e-08
+      It climbs seven orders as the orbit tightens and is still 2.2e-08 of
+      the radiated power at the last checkpoint.
+
+136g. ONE THING THIS DID FIND, LEFT OPEN.  The two reaction models charge the
+      M1 energy to DIFFERENT reservoirs.  The cascade's secular formula
+      subtracts magneticEmissionForLoss.power from the ORBITAL energy, while
+      the engine's torque takes the same radiation out of the moments'
+      ORIENTATION, and in the cascade both act.  Which orbits are charged
+      twice depends on whether the measured orbit is inside orbitsToSkip,
+      which this section did not settle.  The size bounds the question: the
+      overlap is at most the share of 136f, so between 1.2e-15 and 2.2e-08 of
+      the loss.  Physically the torque is the one that belongs -- M1 from a
+      precessing moment is paid for by the precession, not by the orbit --
+      so the candidate repair is to drop the magnetic term from
+      expectedLossPerOrbit rather than to add one anywhere.  It is not made
+      here: it would move every cascade number for an effect of 1e-15, and
+      that is a modelling decision rather than a bug fix.
+
+136h. UNCHANGED.  Validation 62/62, header isolation 37/37, and the
+      production trajectory is bit-identical with both new switches unset.
+      CREM_NO_M1_TORQUE is a diagnostic ablation, off by default.
+
+136i. LIMITS.  One trajectory per ablation, one seed.  The closure test is
+      uniform precession of a single moment with the second zeroed, chosen so
+      the balance is read without the coherent interference term; the
+      coherent case is covered by the existing validation check on aligned
+      versus cancelling pairs, which tests the power and not this balance.
+      The cone damping is quoted at the prepared state's precession rate.

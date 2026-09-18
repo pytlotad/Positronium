@@ -3460,15 +3460,42 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // the quantization that number cannot be the answer any more, and
         // this prints what replaces it.
         if(std::getenv("CREM_M1_SHARE")) {
-            const double total=electricPowerForLoss
-                +magneticEmissionForLoss.power;
+            // Both secular powers are gated on isStochastic because the
+            // continuous path MEASURES its loss from the integrated orbit
+            // instead of taking it from these formulas.  That left this
+            // diagnostic printing zeros under the production model, which
+            // audit 135b then read as "production books nothing" -- a
+            // statement about the print, not about the dynamics (the engine's
+            // M1 torque runs under every model but `disabled`).  Evaluated
+            // here, for the diagnostic only, so production reports the same
+            // two numbers the cascade does.  Nothing below reads them.
+            const SecularElectricDipoleEmission electricForReport=
+                electricEmissionForLoss.valid?electricEmissionForLoss
+                :secularElectricDipoleOrbitAveragedEmission(
+                     semiMajorAxisForLoss,orbitalAngularMomentumVector,
+                     firstDipole,secondDipole,reducedMass,periapsisDirection);
+            const CoherentMagneticDipoleEmission magneticForReport=
+                isStochastic?magneticEmissionForLoss
+                :coherentMagneticDipoleOrbitAveragedEmission(
+                     semiMajorAxisForLoss,orbitalAngularMomentumVector,
+                     firstDipole,secondDipole,reducedMass,zeroPointPhase,
+                     periapsisDirection);
+            const double electricForReportPower=electricForReport.valid
+                ?electricForReport.power
+                :larmorOrbitAveragedPower(semiMajorAxisForLoss,
+                     std::sqrt(std::max(0.0,1.0+2.0*elements.specificEnergy
+                         *elements.specificAngularMomentum
+                         *elements.specificAngularMomentum
+                         /(attractionParameter*attractionParameter))));
+            const double total=electricForReportPower
+                +magneticForReport.power;
             std::fprintf(stderr,
                 "CREM_M1_SHARE t=%.12e a=%.12e E1=%.6e M1=%.6e share=%.6e "
                 "|m|/mu=%.6e\n",
                 simulatedTimeTotal,
-                semiMajorAxisForLoss,electricPowerForLoss,
-                magneticEmissionForLoss.power,
-                total>0.0?magneticEmissionForLoss.power/total:0.0,
+                semiMajorAxisForLoss,electricForReportPower,
+                magneticForReport.power,
+                total>0.0?magneticForReport.power/total:0.0,
                 (firstDipole+secondDipole).norm()
                     /std::max(firstMagneticMoment,1.0e-300));
         }
