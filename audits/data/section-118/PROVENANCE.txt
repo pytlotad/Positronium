@@ -1,0 +1,6 @@
+Raw outputs behind audit section 118 (2026-09-18).
+  prereg_118.txt   rules P1, P2, P3 and the joint conclusion, timestamped
+  p12.txt          the first run, with the tensor average still sampled by
+                   Monte Carlo (4.5e-3, i.e. its own noise)
+  p123.txt         tools/radial_state_probe 1 100000: the quadrature version
+                   plus the radiated energy of one radial passage

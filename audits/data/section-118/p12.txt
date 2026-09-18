@@ -1,0 +1,6 @@
+P1 isotropic average of 3(mu1.n)(mu2.n)-mu1.mu2 over 100000 directions: -4.471e-03 of mu1.mu2 (a spherical state gives 0)
+P2 isotropic coupling, time-averaged over the radial orbit: 144548.4 GHz (target 116.8); deepest sampled 1.587e-42 m = 0.0000 r*
+   the same coupling at r = 0: 7.9723e+09 GHz; at a_pair: 21.949 GHz
+   moment radius that matches 116.8 GHz at contact: 8.7431e-11 m = 452.3 r* = 0.8261 a_pair (the model uses 0.9668 r*)
+P3 radial orbit at a = 1.0000 a_pair: circular period 3.0397e-16 s, free fall to the core 5.3734e-17 s = 0.0537 fs
+   for comparison the measured collapse time is 30.67 ps, i.e. 5.708e+05 times longer

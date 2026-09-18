@@ -7898,3 +7898,74 @@ measurement of whether that survives a cascade.
       approximation worth ~1e-5 at these speeds.  Both ablations change the
       moment derivatives the mixed magnetic forces read, so the five runs are
       not the same trajectory.  Positronium only.
+
+118. THE S-STATE ANALOGUE, TESTED: THE GEOMETRY WORKS, THE SCALE IS 1238x
+     OFF, AND THE STATE DOES NOT SURVIVE ITS FIRST PASSAGE
+==================================================================
+
+118a. THE QUESTION (left open by 117f).  Section 117 closed the hyperfine
+      structure because the model's coupling and its anisotropy are the same
+      number.  The escape it named was a ground state that samples r -> 0
+      ISOTROPICALLY, where the tensor term averages away and only the contact
+      term survives.  Can that be built classically -- L = 0, isotropic, with
+      a finite fall time?
+
+118b. P1, THE GEOMETRY: YES.  Averaged over an isotropic ensemble of orbit
+      directions, the tensor structure 3(mu1.n)(mu2.n) - mu1.mu2 vanishes: by
+      quadrature it is 5.0e-07 of mu1.mu2 (exactly zero analytically; a
+      100000-draw Monte Carlo would only show it to 3.2e-03).  This is the
+      one part that works, and it is what a spherical state does that a
+      single orbit's azimuth average cannot: audit 117's |b/a| = 3 came from
+      averaging around ONE normal, and an isotropic ensemble of normals
+      removes it entirely.
+
+118c. P2, THE SCALE: NO, BY THREE ORDERS.  Time-averaged over a radial
+      (L = 0) Kepler orbit of semi-major axis a_pair, the model's isotropic
+      coupling is 144548 GHz against the 116.8 GHz contact term -- 1238 times
+      too large -- because a radial orbit passes through the core, where the
+      coupling saturates at 7.97e+09 GHz rather than at a quantum |psi(0)|^2.
+      Stated as a length: the moment radius that would put the model's
+      contact energy on the Fermi term is 8.74e-11 m = 452 r* = 0.826 a_pair,
+      against the 0.9668 r* the model derives from the current loop that
+      carries mu at speeds below c (audit 86).  The two differ by 468.  And
+      0.83 a_pair is not an adjustable constant: the model DERIVES a_pair
+      from the same moments (pairBohrRadius), so a source region that size
+      would be the whole orbit.
+
+118d. P3, THE STATE: NO, IT DESTROYS ITSELF.  The radial orbit's free fall to
+      the core takes 0.0537 fs, 5.7e+05 times shorter than the 30.67 ps
+      collapse time -- that part of "finite fall time" is satisfied.  What is
+      not is survival: integrating the model's own E1 power along ONE radial
+      passage, with the Coulomb force softened at the same separation floor
+      the trajectory uses (0.05 r*), gives 4.91e+04 eV radiated against a
+      binding of 6.80 eV, i.e. 7221 times the binding.  The number is an
+      upper bound rather than a prediction -- an orbit that radiates
+      thousands of times its own binding does not complete the passage it was
+      computed on -- and that is exactly the point: a classical L = 0 pair is
+      not a state, it is a collision.  The pre-registered rule asked for ten
+      core passages; the model does not reach one.
+
+118e. THE ANSWER.  No.  The isotropic L = 0 ensemble has the right symmetry
+      and nothing else: its coupling is three orders too strong because a
+      classical orbit at the origin has no |psi(0)|^2 to cut it off, only a
+      softening length, and the softening length that would work is the size
+      of the atom; and the state radiates itself apart before completing one
+      fall.  Section 117's closure therefore stands without the escape: the
+      hyperfine structure is not reachable by choosing a better orbit.
+
+118f. WHAT WOULD HAVE TO CHANGE.  A stationary, non-radiating, spherically
+      symmetric distribution with density at contact is a WAVE FUNCTION, not
+      an orbit: it is stationary because it has no accelerating charge to
+      radiate, which is the one property a classical trajectory cannot have
+      while sampling r -> 0.  That is a missing class of object, in the same
+      sense as the annihilation channel of section 108 -- named here so it is
+      not looked for again as a missing term.
+
+118g. LIMITS.  P2 and P3 are analytic on the Kepler radial orbit with the
+      model's own softened energy and its own separation floor, not
+      integrated trajectories: the engine cannot follow a radial passage at
+      all (sections 104-107 show it failing below ~0.2 r* on far gentler
+      orbits), which is itself part of the answer but was not measured here.
+      P3's radiated energy uses the E1 power of the unperturbed orbit, valid
+      only while the loss is small -- it is not, by 7221, which is how the
+      inconsistency shows.  Positronium only, one semi-major axis.

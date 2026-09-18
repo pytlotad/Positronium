@@ -1,0 +1,19 @@
+Zapisano 2026-09-18T12:08:58+02:00, przed pomiarem.
+Pytanie: czy klasycznie da sie zbudowac stan o L = 0, probkujacy r -> 0
+izotropowo, o skonczonym czasie spadku, i czy mialby wlasciwa strukture?
+P1 (geometria): srednia czlonu tensorowego po IZOTROPOWYM zespole kierunkow
+  orbity.  Regula P1: "tensor znika", gdy srednia po 10^5 kierunkach jest
+  ponizej 1e-3 czesci izotropowej.
+P2 (skala): srednia po czasie sprzezenia izotropowego na orbicie RADIALNEJ
+  (L = 0) o polosi a_pary, z wlasnym zmiekczeniem modelu.  Podaje takze
+  promien momentu eps, ktory zrownalby czlon kontaktowy modelu przy r -> 0 z
+  kwantowym czlonem Fermiego (116.8 GHz).
+  Regula P2: "skala dobra", gdy srednia miesci sie w 116.8 GHz +- 20%.
+P3 (czas spadku): silnik, start radialny z r = a_pary z zerowa predkoscia,
+  reakcja ciagla, calkowanie do granicy 0.005 a_pary.  Mierze czas dojscia i
+  ile energii wypromieniowuje.  Analitycznie czas swobodnego spadku to
+  T/(4 sqrt 2) = 0.177 okresu kolowego, czyli okolo 0.054 fs przy a_pary.
+  Regula P3: "stan istnieje jako stan", gdy para przezywa co najmniej 10
+  przejsc przez rdzen, zanim dojdzie do granicy.
+Wniosek laczny: stan jest zbudowalny tylko wtedy, gdy P1, P2 i P3 zachodza
+razem.
