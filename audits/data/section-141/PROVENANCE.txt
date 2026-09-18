@@ -1,0 +1,14 @@
+Raw outputs behind audit section 141 (2026-09-19).
+  prereg_141.txt      rules R141a-e; its first block records what had
+                      already been measured when it was written, since the
+                      opening table is a re-measurement of a published one
+                      rather than a hypothesis test
+  current_model.txt   tools/uniform_motion_balance in circular mode on the
+                      current model at beta 0.01, 0.1 and 0.2: the residual,
+                      the hidden-momentum rate and the second piece S
+  ablations.txt       the same three speeds on a build carrying the probe
+                      switches, which had to be repaired first (141e)
+  slopes.txt          the orders in beta and the ratios of 141b-141d
+Build the ablation binary with:
+  tools/build_variant.sh tools/uniform_motion_balance.cpp /tmp/uniform_probe \
+    --probe-switches

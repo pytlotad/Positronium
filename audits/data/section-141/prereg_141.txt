@@ -1,0 +1,45 @@
+PRE-REGISTRATION, audit section 141 (the second piece of the residual,
+and the missing 31%).  Written before the ablation runs; the first block
+below records what had ALREADY been measured when it was written, so the
+order is not misrepresented.
+written 2026-09-18T22:02:54Z
+
+ALREADY MEASURED BEFORE THIS WAS WRITTEN (a re-measurement of a published
+table, not a hypothesis test).  tools/uniform_motion_balance in circular
+mode on the CURRENT model:
+  beta    |F1+F2| now     |F1+F2| in the 46/23/31 ledger    |S| now
+  0.01    3.184e-09 N     2.854e-04 N                      1.221e-04 N
+  0.10    3.287e-06 N     2.856e-03 N                      1.198e-03 N
+  0.20    2.825e-05 N     5.709e-03 N                      2.289e-03 N
+|S| reproduces the ledger's values exactly; the residual does not, being
+smaller by 89600, 869 and 202.  The residual has also changed its power in
+beta, from first order (the ledger's 2.854e-4, 2.856e-3, 5.709e-3 double
+and double again) to third (3.18e-9, 3.29e-6, 2.82e-5).
+
+WHAT THAT MEANS FOR THE TASK.  The 46/23/31 ledger describes the
+imbalance as it was BEFORE audit 126 matched the two softening lengths.
+The question "where is the missing 31%" therefore has a candidate answer
+that must be tested first: 126 removed it along with the other 69%.
+
+RULES, decided now.
+R141a  THE SECOND PIECE IS NOT ENABLED if |S| exceeds the current residual
+       at any of the three speeds.  Adding a term larger than the
+       imbalance it is meant to explain makes the imbalance worse, and no
+       argument about its physical pedigree overrides the measurement.
+R141b  THE MISSING 31% IS DECLARED CLOSED BY AUDIT 126 if 31% of the old
+       residual exceeds the whole current residual at every speed.  It is
+       declared STILL OPEN if any speed leaves room for it.
+R141c  The ablations must be run on a build that actually carries the
+       probe switches.  The six lines printed by the default build are
+       identical to the control, which means the switches are compiled
+       out; any ablation claim made from that build would be empty.
+R141d  If the ablations move nothing on a build that does carry them, the
+       current residual is recorded as UNATTRIBUTED, with its order in
+       beta, rather than assigned to a term by elimination.
+R141e  Nothing in this section changes production.  The second piece is
+       measured, not installed.
+
+PREDICTION (mine).  R141a triggers at all three speeds; R141b closes the
+31%; and the ablations move nothing, leaving an O(beta^3) residual of
+2.9e-04 of |F1| unattributed -- a different object from the one the
+ledger was about.

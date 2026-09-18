@@ -54,9 +54,11 @@ rep("""    if(const double floor=separationFloor(); floor>0.0) {
         double magnetizationTime=observationTime;""",
     """    if(const double floor=separationFloor(); floor>0.0&&!std::getenv("CREM_PROBE_NO_MAGNETIZATION")) {
         double magnetizationTime=observationTime;""")
-rep("""        sourceCharge);
+# The call gained chargePlummerFloor in audit 126, which stranded this
+# anchor and with it every probe ablation; fixed in audit 141.
+rep("""        sourceCharge,0.0,chargePlummerFloor);
     const ElectromagneticField magneticDipole=retardedMagneticDipoleField(""",
-    """        sourceCharge);
+    """        sourceCharge,0.0,chargePlummerFloor);
     if(std::getenv("CREM_PROBE_NO_LW_IN_MOMENT")) field=ElectromagneticField{};
     const ElectromagneticField magneticDipole=retardedMagneticDipoleField(""")
 rep("""    const double materialRate=dipoleCouplingMaterialRate(

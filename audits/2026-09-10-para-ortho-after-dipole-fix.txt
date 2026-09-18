@@ -9728,3 +9728,90 @@ measurement of whether that survives a cascade.
       each cascade rather than whole trajectories; the completion counts come
       from the 1800 s ensemble.  The axial combination was measured on the
       first photon only, because there is no second one.
+
+141. THE MISSING 31% WAS REMOVED BY AUDIT 126, AND THE SECOND PIECE MUST NOT
+     BE ENABLED: IT IS NOW 81 TO 38 000 TIMES THE RESIDUAL
+==================================================================
+
+141a. THE QUESTION.  Prepare to enable the second piece of the residual -- the
+      gradient-minus-convective excess S, the two rotation terms that
+      ∇(mu.B + p.E) carries beyond (mu.∇)B and (p.∇)E -- and find the 31% of
+      the original imbalance that the 46/23/31 ledger never attributed.
+
+141b. THE LEDGER IS PRE-126, AND THAT IS THE ANSWER TO BOTH HALVES.
+      tools/uniform_motion_balance in circular mode on the CURRENT model,
+      against the numbers the ledger was built from:
+        beta   |F1+F2| now    |F1+F2| then   shrinkage   |S| now     |S| then
+        0.01   3.184e-09 N    2.854e-04 N     89 637x    1.221e-04   1.221e-04
+        0.10   3.287e-06 N    2.856e-03 N        869x    1.198e-03   1.198e-03
+        0.20   2.825e-05 N    5.709e-03 N        202x    2.289e-03   2.289e-03
+      S reproduces the ledger exactly, to every digit quoted.  The residual
+      does not: it has collapsed, and it has changed ORDER.  Log-log slopes:
+        residual then   1.0003 and 0.9992   -- first order in beta
+        S               0.9918 and 0.9341   -- first order in beta
+        residual now    3.0138 and 3.1034   -- THIRD order in beta
+      So audit 126's matched softening removed the whole first-order-in-beta
+      imbalance.  What is left is a different object.
+
+141c. THE SECOND PIECE IS NOT ENABLED (rule R141a).  S is first order in
+      beta and unchanged, so against the residual it now stands at
+        beta 0.01   38 342x      beta 0.10   364x      beta 0.20   81x
+      Adding it would not explain 42% of an imbalance; it would create one
+      one to four orders larger than the imbalance that exists.  Its physical
+      pedigree does not survive that arithmetic, and in any case the model
+      already carries the standard Ampèrian pair ∇(m.B) - (1/c^2) d(m x E)/dt
+      since audit 124, so the rotation terms would be the second copy.
+
+141d. AND THE MISSING 31% GOES WITH IT (rule R141b).  Thirty-one percent of
+      the old residual is 27 788, 269 and 63 times the whole current
+      residual at the three speeds.  There is no room for it anywhere in
+      what the model now does: it was removed by 126 together with the 46%
+      and the 23% that had been attributed.  The ledger is closed, not by
+      finding the last term, but by the defect it was accounting for having
+      been fixed.
+
+141e. A TOOL HAD BEEN SILENTLY DEAD SINCE 126.  The ablation lines of the
+      default build were identical to the control, which rule R141c required
+      to be checked rather than believed: tools/build_variant.sh
+      --probe-switches patches the source at an anchor that audit 126 itself
+      invalidated, when fieldFromOtherParticleAt's call gained
+      chargePlummerFloor.  The script asserts and exits, so any ablation
+      attempted between 126 and now would have failed loudly -- but the
+      six lines printed by a build WITHOUT the switches are silently the
+      control value, and that is the trap.  The anchor is repaired here.
+
+141f. WITH THE SWITCHES BACK, THE ABLATIONS SAY THE OPPOSITE OF A DEFECT.
+      Residual at beta = 0.1, control 3.287e-06 N:
+        term removed                     |F1+F2|        against control
+        the partner's poles              9.387e-04 N        285x
+        the magnetization term           1.346e-03 N        410x
+        the LW field inside the moment   4.143e-04 N        126x
+        the material derivative          3.287e-06 N        1.00003x
+        the dipole force on the charge   4.111e-04 N        125x
+        the moment force entirely        5.077e-04 N        154x
+      Every named term except the material derivative is LOAD-BEARING: take
+      any one away and the balance breaks by two orders.  The near
+      cancellation to 2.9e-04 of |F1| is therefore a property of the five
+      terms together, not the accident of a small leftover, and the material
+      derivative is inert in it at the 3e-05 level.
+
+141g. WHAT IS STILL UNATTRIBUTED, STATED HONESTLY (rule R141d).  The
+      remaining residual is third order in beta, 2.9e-04 of |F1| at beta =
+      0.1 and 2.8e-07 at beta = 0.01, and no single-term ablation isolates
+      it, because every ablation makes it larger.  It is not the ledger's
+      31%: that was a first-order quantity and this is not.  Naming its
+      source needs a term-by-term expansion of the retarded fields to third
+      order, which this section does not do.
+
+141h. UNCHANGED.  No model file was touched; the only change is the repaired
+      anchor in tools/build_variant.sh, which patches a temporary copy of the
+      tree and never production.  Validation 62/62 and header isolation 37/37
+      stand from section 140.
+
+141i. LIMITS.  One geometry (separation 1 r*, tilt 0, moments as the probe
+      prepares them), three speeds, synthetic circular kinematics with nine
+      history nodes over two light-crossing times.  The order in beta is read
+      from three points, so it is "third order" to within the 3.01 and 3.10
+      measured, not a proof of exactly cubic.  |S| is the probe's own
+      construction of the excess and is compared against the ledger's
+      published values rather than re-derived here.

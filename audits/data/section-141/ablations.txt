@@ -1,0 +1,24 @@
+=== beta 0.01 ===
+  |F1| 1.118727e-02  |F2| 1.118726e-02  |F1+F2| 3.183948e-09  ratio 2.846e-07
+  without CREM_PROBE_NO_POLES          |F1+F2| 9.179227e-05  ratio 8.205e-03
+  without CREM_PROBE_NO_MAGNETIZATION  |F1+F2| 1.330308e-04  ratio 1.189e-02
+  without CREM_PROBE_NO_LW_IN_MOMENT   |F1+F2| 4.124490e-05  ratio 3.687e-03
+  without CREM_PROBE_NO_MATERIAL       |F1+F2| 3.183948e-09  ratio 2.846e-07
+  without CREM_PROBE_NO_DIPOLE_ON_CHARGE |F1+F2| 4.124172e-05  ratio 3.686e-03
+  without CREM_PROBE_NO_MOMENT_FORCE   |F1+F2| 5.053042e-05  ratio 4.517e-03
+=== beta 0.1 ===
+  |F1| 1.117732e-02  |F2| 1.117403e-02  |F1+F2| 3.286560e-06  ratio 2.940e-04
+  without CREM_PROBE_NO_POLES          |F1+F2| 9.386804e-04  ratio 8.398e-02
+  without CREM_PROBE_NO_MAGNETIZATION  |F1+F2| 1.346448e-03  ratio 1.205e-01
+  without CREM_PROBE_NO_LW_IN_MOMENT   |F1+F2| 4.143404e-04  ratio 3.707e-02
+  without CREM_PROBE_NO_MATERIAL       |F1+F2| 3.286762e-06  ratio 2.941e-04
+  without CREM_PROBE_NO_DIPOLE_ON_CHARGE |F1+F2| 4.110538e-04  ratio 3.678e-02
+  without CREM_PROBE_NO_MOMENT_FORCE   |F1+F2| 5.076996e-04  ratio 4.542e-02
+=== beta 0.2 ===
+  |F1| 1.119665e-02  |F2| 1.116843e-02  |F1+F2| 2.824541e-05  ratio 2.523e-03
+  without CREM_PROBE_NO_POLES          |F1+F2| 2.000644e-03  ratio 1.787e-01
+  without CREM_PROBE_NO_MAGNETIZATION  |F1+F2| 2.780783e-03  ratio 2.484e-01
+  without CREM_PROBE_NO_LW_IN_MOMENT   |F1+F2| 8.366187e-04  ratio 7.472e-02
+  without CREM_PROBE_NO_MATERIAL       |F1+F2| 2.832745e-05  ratio 2.530e-03
+  without CREM_PROBE_NO_DIPOLE_ON_CHARGE |F1+F2| 8.083787e-04  ratio 7.220e-02
+  without CREM_PROBE_NO_MOMENT_FORCE   |F1+F2| 1.039264e-03  ratio 9.282e-02

@@ -1,0 +1,30 @@
+=== beta 0.01 ===
+  |F1| 1.118727e-02  |F2| 1.118726e-02  |F1+F2| 3.183948e-09  ratio 2.846e-07
+  hidden momentum rate d/dt (mu x E)/c^2: 2.460198e-04 N (net force 3.183948e-09 N, ratio 77268.7865)
+  gradient-minus-convective excess: |S| 1.220781e-04 N, projection on the net force 1.220781e-04 N (38341.7225 of it), |net - S| 1.220749e-04 N (38340.7225)
+  without CREM_PROBE_NO_POLES          |F1+F2| 3.183948e-09  ratio 2.846e-07
+  without CREM_PROBE_NO_MAGNETIZATION  |F1+F2| 3.183948e-09  ratio 2.846e-07
+  without CREM_PROBE_NO_LW_IN_MOMENT   |F1+F2| 3.183948e-09  ratio 2.846e-07
+  without CREM_PROBE_NO_MATERIAL       |F1+F2| 3.183948e-09  ratio 2.846e-07
+  without CREM_PROBE_NO_DIPOLE_ON_CHARGE |F1+F2| 3.183948e-09  ratio 2.846e-07
+  without CREM_PROBE_NO_MOMENT_FORCE   |F1+F2| 3.183948e-09  ratio 2.846e-07
+=== beta 0.1 ===
+  |F1| 1.117732e-02  |F2| 1.117403e-02  |F1+F2| 3.286560e-06  ratio 2.940e-04
+  hidden momentum rate d/dt (mu x E)/c^2: 2.436986e-03 N (net force 3.286560e-06 N, ratio 741.5006)
+  gradient-minus-convective excess: |S| 1.197952e-03 N, projection on the net force 1.197894e-03 N (364.4826 of it), |net - S| 1.194666e-03 N (363.5004)
+  without CREM_PROBE_NO_POLES          |F1+F2| 3.286560e-06  ratio 2.940e-04
+  without CREM_PROBE_NO_MAGNETIZATION  |F1+F2| 3.286560e-06  ratio 2.940e-04
+  without CREM_PROBE_NO_LW_IN_MOMENT   |F1+F2| 3.286560e-06  ratio 2.940e-04
+  without CREM_PROBE_NO_MATERIAL       |F1+F2| 3.286560e-06  ratio 2.940e-04
+  without CREM_PROBE_NO_DIPOLE_ON_CHARGE |F1+F2| 3.286560e-06  ratio 2.940e-04
+  without CREM_PROBE_NO_MOMENT_FORCE   |F1+F2| 3.286560e-06  ratio 2.940e-04
+=== beta 0.2 ===
+  |F1| 1.119665e-02  |F2| 1.116843e-02  |F1+F2| 2.824541e-05  ratio 2.523e-03
+  hidden momentum rate d/dt (mu x E)/c^2: 4.755064e-03 N (net force 2.824541e-05 N, ratio 168.3482)
+  gradient-minus-convective excess: |S| 2.288920e-03 N, projection on the net force 2.283661e-03 N (80.8507 of it), |net - S| 2.260740e-03 N (80.0392)
+  without CREM_PROBE_NO_POLES          |F1+F2| 2.824541e-05  ratio 2.523e-03
+  without CREM_PROBE_NO_MAGNETIZATION  |F1+F2| 2.824541e-05  ratio 2.523e-03
+  without CREM_PROBE_NO_LW_IN_MOMENT   |F1+F2| 2.824541e-05  ratio 2.523e-03
+  without CREM_PROBE_NO_MATERIAL       |F1+F2| 2.824541e-05  ratio 2.523e-03
+  without CREM_PROBE_NO_DIPOLE_ON_CHARGE |F1+F2| 2.824541e-05  ratio 2.523e-03
+  without CREM_PROBE_NO_MOMENT_FORCE   |F1+F2| 2.824541e-05  ratio 2.523e-03
