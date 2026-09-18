@@ -1,0 +1,9 @@
+Raw outputs behind audit section 117 (2026-09-18).
+  prereg_117.txt        rules R117a and R117b, timestamped
+  a_split.txt           tools/spin_spin_coupling_scan 1: the isotropic and
+                        tensor parts of the model's own coupling against L
+  trace_isotropic.txt.gz  CREM_SPIN_RATE_SECTOR=isotropic with
+                        CREM_DEBUG_PROJECTION on one production trajectory
+  trace_tensor.txt.gz   the same with the tensor part kept instead
+  The control and the charge/dipole ablations are in section-115 and
+  section-116.

@@ -1,0 +1,18 @@
+Zapisano 2026-09-18T11:45:34+02:00, przed pomiarem.
+Pytanie: czy istnieje orbita, na ktorej izotropowa (kontaktowa) czesc
+sprzezenia modelu siega 116.8 GHz, a czesc tensorowa jest na tyle mala, ze |S|
+pozostaje prawie zachowane?
+Rozbicie: po usrednieniu po azymucie U = a(r) (mu1.mu2) + b(r) (mu1.n)(mu2.n),
+gdzie czlon z mu1.mu2 komutuje z S^2, a drugi nie.  Skan podaje 2 mu^2 a i
+2 mu^2 b (w GHz) usrednione po orbicie, dla L/hbar od 1 do 0.01.
+Ablacja pola: CREM_SPIN_RATE_SECTOR zyskuje wartosci "isotropic" i "tensor",
+ktore zostawiaja w polu dipolowym partnera tylko czesc proporcjonalna do mu2
+albo tylko czesc n(n.mu2); pomiar to dryf |S| po pelnym kolapsie.
+Reguly:
+  R117a "model moze niesc strukture nadsubtelna": istnieje L, przy ktorym
+     czesc izotropowa miesci sie w 116.8 GHz +- 20% i jednoczesnie
+     |b/a| <= 0.2 na tej orbicie.
+  R117b "czesc izotropowa sama zachowuje |S|": ablacja isotropic daje dryf
+     |S| ponizej 0.02 na pelnym kolapsie (kontrola 0.138).
+  Jesli R117a nie zachodzi dla zadnego L, wniosek: model nie moze niesc
+  struktury nadsubtelnej, bo skala i anizotropia sa zwiazane.

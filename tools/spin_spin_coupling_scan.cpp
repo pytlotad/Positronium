@@ -23,6 +23,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <utility>
 
 int main(int argc,char** argv) {
     const double axis=(argc>1?atof(argv[1]):1.0)*pairBohrRadius(activePair);
@@ -30,6 +31,35 @@ int main(int argc,char** argv) {
     const Vec3 aligned=normal*firstMagneticMoment;
     const Vec3 partner=normal*secondMagneticMoment;
     const double planck=2.0*pi*hbar;
+    // The azimuth-averaged energy is a(r) (mu1.mu2) + b(r) (mu1.n)(mu2.n).
+    // The first commutes with S^2 (it is the model's contact/isotropic part),
+    // the second does not (audit 117).  Both are read off the model's own
+    // function by evaluating it on two moment configurations rather than by
+    // copying its formula: aligned along the normal gives a+b, and one moment
+    // along the normal with the other in the plane gives a alone.
+    const Vec3 inPlane{1.0,0.0,0.0};
+    const auto coefficients=[&](double separation) {
+        const Vec3 partnerInPlane=inPlane*secondMagneticMoment;
+        const double bothNormal=azimuthAveragedDipoleEnergy(
+            separation,aligned,partner,normal);
+        const double mixed=azimuthAveragedDipoleEnergy(
+            separation,aligned,partnerInPlane,normal);
+        // mixed has mu1.mu2 = 0 and (mu1.n)(mu2.n) = 0, so it vanishes; the
+        // isotropic coefficient comes from the pair with both moments in the
+        // plane and parallel: there mu1.mu2 = mu^2 and (mu1.n)(mu2.n) = 0.
+        const double bothInPlane=azimuthAveragedDipoleEnergy(
+            separation,inPlane*firstMagneticMoment,partnerInPlane,normal);
+        (void)mixed;
+        const double isotropic=bothInPlane;          // a mu^2
+        const double tensor=bothNormal-bothInPlane;  // b mu^2
+        return std::pair<double,double>{isotropic,tensor};
+    };
+    const auto isotropicGHz=[&](double separation) {
+        return std::abs(2.0*coefficients(separation).first)/planck*1.0e-9;
+    };
+    const auto tensorGHz=[&](double separation) {
+        return std::abs(2.0*coefficients(separation).second)/planck*1.0e-9;
+    };
     const auto splittingGHz=[&](double separation) {
         const double up=azimuthAveragedDipoleEnergy(
             separation,aligned,partner,normal);
@@ -54,8 +84,9 @@ int main(int argc,char** argv) {
                 magneticDipoleRadius()/comptonBarrierRadius);
     std::printf("measured splitting 203.3941 GHz = contact 116.8 + virtual "
                 "annihilation 87.6 (the latter has no classical analogue)\n\n");
-    std::printf("%8s %12s %14s %16s %16s\n","L/hbar","periapsis","r_p/r*",
-                "at periapsis","orbit-averaged");
+    std::printf("%8s %12s %14s %16s %16s %14s %14s %10s\n","L/hbar",
+                "periapsis","r_p/r*","at periapsis","orbit-averaged",
+                "isotropic","tensor","|b/a|");
     for(double angular:{1.0,0.7,0.5,0.3,0.2,0.1,0.05,0.03,0.01}) {
         const double eccentricity=
             std::sqrt(std::max(0.0,1.0-angular*angular));
@@ -71,9 +102,19 @@ int main(int argc,char** argv) {
             sum+=splittingGHz(radius)*timeWeight;
             weight+=timeWeight;
         }
-        std::printf("%8.2f %12.4e %14.4f %16.3f %16.3f\n",angular,periapsis,
-                    periapsis/comptonBarrierRadius,splittingGHz(periapsis),
-                    sum/weight);
+        double isotropicSum=0.0,tensorSum=0.0;
+        for(int index=0;index<samples;++index) {
+            const double anomaly=2.0*pi*index/(samples-1.0);
+            const double radius=axis*(1.0-eccentricity*std::cos(anomaly));
+            const double timeWeight=1.0-eccentricity*std::cos(anomaly);
+            isotropicSum+=isotropicGHz(radius)*timeWeight;
+            tensorSum+=tensorGHz(radius)*timeWeight;
+        }
+        std::printf("%8.2f %12.4e %14.4f %16.3f %16.3f %14.3f %14.3f %10.3f\n",
+                    angular,periapsis,periapsis/comptonBarrierRadius,
+                    splittingGHz(periapsis),sum/weight,
+                    isotropicSum/weight,tensorSum/weight,
+                    (tensorSum/weight)/std::max(isotropicSum/weight,1.0e-300));
     }
     std::printf("\nat L = hbar (the production orbit): model with its contact "
                 "term %.3f GHz, bare point dipole %.3f GHz\n",
@@ -96,6 +137,53 @@ int main(int argc,char** argv) {
         }
         return sum/weight;
     };
+    // Where the ISOTROPIC part alone reaches the contact value, and what the
+    // tensor part is doing there: the question of audit 117.
+    {
+        const auto averagedIsotropic=[&](double angular) {
+            const double eccentricity=
+                std::sqrt(std::max(0.0,1.0-angular*angular));
+            const int samples=20001;
+            double sum=0.0,weight=0.0;
+            for(int index=0;index<samples;++index) {
+                const double anomaly=2.0*pi*index/(samples-1.0);
+                const double radius=axis*(1.0-eccentricity*std::cos(anomaly));
+                const double timeWeight=1.0-eccentricity*std::cos(anomaly);
+                sum+=isotropicGHz(radius)*timeWeight; weight+=timeWeight;
+            }
+            return sum/weight;
+        };
+        const auto averagedTensor=[&](double angular) {
+            const double eccentricity=
+                std::sqrt(std::max(0.0,1.0-angular*angular));
+            const int samples=20001;
+            double sum=0.0,weight=0.0;
+            for(int index=0;index<samples;++index) {
+                const double anomaly=2.0*pi*index/(samples-1.0);
+                const double radius=axis*(1.0-eccentricity*std::cos(anomaly));
+                const double timeWeight=1.0-eccentricity*std::cos(anomaly);
+                sum+=tensorGHz(radius)*timeWeight; weight+=timeWeight;
+            }
+            return sum/weight;
+        };
+        double low=0.005,high=1.0;
+        for(int iteration=0;iteration<60;++iteration) {
+            const double middle=0.5*(low+high);
+            if(averagedIsotropic(middle)>116.8) low=middle; else high=middle;
+        }
+        const double match=0.5*(low+high);
+        std::printf("\nisotropic part = 116.8 GHz at L = %.4f hbar; there the "
+                    "tensor part is %.1f GHz, ratio %.2f\n",match,
+                    averagedTensor(match),
+                    averagedTensor(match)/std::max(averagedIsotropic(match),
+                                                   1.0e-300));
+        std::printf("ratio tensor/isotropic at L = 1.00, 0.30, 0.10, 0.03: "
+                    "%.2f %.2f %.2f %.2f\n",
+                    averagedTensor(1.0)/averagedIsotropic(1.0),
+                    averagedTensor(0.3)/averagedIsotropic(0.3),
+                    averagedTensor(0.1)/averagedIsotropic(0.1),
+                    averagedTensor(0.03)/averagedIsotropic(0.03));
+    }
     for(double target:{116.8,203.3941}) {
         double low=0.02,high=1.0;
         for(int iteration=0;iteration<60;++iteration) {

@@ -7818,3 +7818,83 @@ measurement of whether that survives a cascade.
       Kepler ellipse at fixed a with the model's own softened energy, not an
       integrated trajectory, and the 1/r^3 divergence is cut only by the
       moment radius 0.9668 r*.
+
+117. THE MODEL CANNOT CARRY HYPERFINE STRUCTURE: ITS SCALE AND ITS
+     ANISOTROPY ARE THE SAME NUMBER
+==================================================================
+
+117a. THE QUESTION (from section 116f).  Split the model's own spin-spin
+      coupling into the part that commutes with S^2 and the part that does
+      not, follow both against the orbit's angular momentum, and ask whether
+      any orbit has the first at the contact value of 116.8 GHz while the
+      second is small enough to leave |S| nearly conserved.
+
+117b. THE SPLIT.  After the azimuth average the model's energy is
+      U = a(r) (mu1.mu2) + b(r) (mu1.n)(mu2.n).  The first term is the
+      isotropic one -- the model's contact/Fermi analogue, which commutes
+      with S^2 -- and the second is the tensor term, which does not.  Both
+      are read off azimuthAveragedDipoleEnergy itself by evaluating it on two
+      moment configurations (both moments in the orbital plane isolates a;
+      both along the normal gives a+b), not by copying its formula.
+
+117c. THE SCAN, orbit-averaged, at fixed semi-major axis a_pair, in GHz.
+        L/hbar   periapsis    isotropic      tensor     |b/a|
+        1.00     547.5 r*        10.975      32.924     3.000
+        0.70     156.5 r*        32.004      96.002     3.000
+        0.50      73.4 r*        87.841     263.413     2.999
+        0.30      25.2 r*       407.281    1217.411     2.989
+        0.20      11.1 r*      1382.762    4071.046     2.944
+        0.10       2.74 r*    11888.937   27535.564     2.316
+        0.05       0.685 r*   70675.938   57704.919     0.816
+        0.03       0.246 r*   87105.121   47733.503     0.548
+        0.01       0.027 r*   73508.228   42823.174     0.583
+      The isotropic part reaches 116.8 GHz at L = 0.4547 hbar, and THERE the
+      tensor part is 350.2 GHz -- ratio 3.00.  The ratio is 3 exactly
+      wherever the orbit stays outside the moment radius, which is the
+      multipole algebra rather than a coincidence, and it only falls below 1
+      inside it, where the isotropic part has run up to 7e4 GHz.
+
+117d. THE ABLATION, one full collapse each (CREM_SPIN_RATE_SECTOR).
+        sector kept in the precession    |S| drift   |w1-w2|/|w1|
+        both (control)                     0.1378       0.386
+        the partner's charge field         0.0000       0.000
+        its dipole field, whole            0.1843       0.256
+        its dipole field, ISOTROPIC part   0.0007       0.000
+        its dipole field, TENSOR part      0.2987       0.379
+      Rule R117b is met: the isotropic part alone conserves |S| to 7e-4 over
+      a whole inspiral, exactly as the quantum contact term does.  The tensor
+      part alone is the whole drift and more.
+
+117e. THE ANSWER: NO SUCH ORBIT EXISTS.  Rule R117a asked for an orbit with
+      the isotropic part within 20% of 116.8 GHz and |b/a| <= 0.2.  At the
+      radius where the magnitude is right the ratio is 3.00, fifteen times
+      the bound; at the radius where the ratio finally drops to 0.55 the
+      isotropic part is 87105 GHz, 746 times the target.  The two conditions
+      move in opposite directions and there is no crossing.
+      So this is not a factor-of-ten gap that a better constant could close.
+      The model's spin-spin scale and its anisotropy are the SAME quantity
+      evaluated at the same radius, locked at a ratio of 3 by the multipole
+      structure of a classical dipole field.  Quantum mechanics separates
+      them by the state: a spherical S state averages the tensor term to zero
+      and leaves a contact term fixed by |psi(0)|^2.  A classical orbit has
+      no averaging that does this, because its own anisotropy IS the source
+      of the coupling.
+
+117f. WHAT THIS CLOSES AND WHAT IT LEAVES.  Closed: the hyperfine doublet, on
+      the same footing as the 1:3 branching of section 115 -- both fail for a
+      structural reason, not for a missing term, and both failures are the
+      absence of a spherical ground state with density at contact.  Left
+      open: the model's own contact term is not useless -- it is what makes
+      the isotropic sector conserve |S| to 7e-4 -- so a version of the model
+      whose ground state sampled r -> 0 isotropically would have the right
+      structure; whether such a state can be built classically with L = 0 and
+      a finite inspiral time is a separate question this section does not
+      touch.
+
+117g. LIMITS.  The scan is analytic on a Kepler ellipse at fixed semi-major
+      axis with the model's own softened energy, not an integrated
+      trajectory; the ablations are one trajectory each and use the STATIC
+      Plummer split of the partner's field in place of the retarded one, an
+      approximation worth ~1e-5 at these speeds.  Both ablations change the
+      moment derivatives the mixed magnetic forces read, so the five runs are
+      not the same trajectory.  Positronium only.

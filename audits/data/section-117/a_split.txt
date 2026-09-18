@@ -1,0 +1,21 @@
+semi-major axis 1.0000 a_pair = 1.0584e-10 m; moment radius 0.9668 r*
+measured splitting 203.3941 GHz = contact 116.8 + virtual annihilation 87.6 (the latter has no classical analogue)
+
+  L/hbar    periapsis         r_p/r*     at periapsis   orbit-averaged      isotropic         tensor      |b/a|
+    1.00   1.0584e-10       547.5091           21.949           21.949         10.975         32.924      3.000
+    0.70   3.0254e-11       156.5094          939.508           63.998         32.004         96.002      3.000
+    0.50   1.4179e-11        73.3523         9120.434          175.571         87.841        263.413      2.999
+    0.30   4.8749e-12        25.2187       223128.418          810.130        407.281       1217.411      2.989
+    0.20   2.1383e-12        11.0619      2571313.574         2688.284       1382.762       4071.046      2.944
+    0.10   5.3051e-13         2.7444     97795934.015        15646.627      11888.937      27535.564      2.316
+    0.05   1.3238e-13         0.6848   2161159889.230        38888.845      70675.938      57704.919      0.816
+    0.03   4.7637e-14         0.2464   6590226992.328        63182.353      87105.121      47733.503      0.548
+    0.01   5.2919e-15         0.0274   7953185690.398        53667.908      73508.228      42823.174      0.583
+
+at L = hbar (the production orbit): model with its contact term 21.949 GHz, bare point dipole 21.949 GHz
+the report's dipoleCouplingHz uses the bare form; at this radius the two agree to 1.0000
+
+isotropic part = 116.8 GHz at L = 0.4547 hbar; there the tensor part is 350.2 GHz, ratio 3.00
+ratio tensor/isotropic at L = 1.00, 0.30, 0.10, 0.03: 3.00 2.99 2.32 0.55
+the model's orbit-averaged coupling equals 116.8 GHz at L = 0.5728 hbar
+the model's orbit-averaged coupling equals 203.4 GHz at L = 0.4761 hbar

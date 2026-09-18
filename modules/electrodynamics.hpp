@@ -2810,20 +2810,46 @@ inline LocalElectromagneticFields localRelativisticFields(
     // chargeDipoleForces reads, and nothing else: the Lorentz and gradient
     // forces assemble their own fields.  Unset (the default) leaves every
     // number bit-identical.
+    // "isotropic" and "tensor" (audit section 117) split the partner's dipole
+    // field the way the energy splits: the part proportional to the partner's
+    // moment, which carries mu1.mu2 and commutes with S^2, against the part
+    // along the separation, which carries (mu1.n)(mu2.n) and does not.  Both
+    // are the STATIC Plummer forms rather than the retarded field, an
+    // approximation worth 1e-5 at the orbital speeds here, and they are
+    // diagnostics: only the precession sees them.
     static const int rateSector=[]{
         const char* text=std::getenv("CREM_SPIN_RATE_SECTOR");
         if(!text) return 0;
         if(std::strcmp(text,"charge")==0) return 1;
         if(std::strcmp(text,"dipole")==0) return 2;
+        if(std::strcmp(text,"isotropic")==0) return 3;
+        if(std::strcmp(text,"tensor")==0) return 4;
         return 0;
     }();
-    if(rateSector==2) { atFirst=ElectromagneticField{};
+    if(rateSector>=2) { atFirst=ElectromagneticField{};
                         atSecond=ElectromagneticField{}; }
-    if(rateSector!=1) {
+    if(rateSector<=0||rateSector==2) {
         atFirst.electric+=secondDipole.electric;
         atFirst.magnetic+=secondDipole.magnetic;
         atSecond.electric+=firstDipole.electric;
         atSecond.magnetic+=firstDipole.magnetic;
+    } else if(rateSector>=3) {
+        const double softening=magneticDipoleRadius();
+        constexpr double magneticConstant=mu0/(4.0*pi);
+        const auto part=[&](const Vec3& sourceToTarget,const Vec3& moment) {
+            const double rhoSquared=sourceToTarget.squaredNorm()
+                +softening*softening;
+            if(!(rhoSquared>std::numeric_limits<double>::min())) return Vec3{};
+            const double inverseRho=1.0/std::sqrt(rhoSquared);
+            const double inverseRhoCubed=inverseRho*inverseRho*inverseRho;
+            if(rateSector==4)
+                return sourceToTarget*(3.0*dot(sourceToTarget,moment)
+                    *inverseRhoCubed*inverseRho*inverseRho*magneticConstant);
+            return moment*(-inverseRhoCubed*magneticConstant)
+                +plummerMagnetizationField(sourceToTarget,moment,softening);
+        };
+        atFirst.magnetic+=part(s.firstPosition-s.secondPosition,s.secondDipole);
+        atSecond.magnetic+=part(s.secondPosition-s.firstPosition,s.firstDipole);
     }
     // The external field is uniform, so both roles see the same addition and
     // no gradient force follows from it.  Adding it here rather than only in
