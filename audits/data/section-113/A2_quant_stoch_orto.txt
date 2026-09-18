@@ -1,0 +1,30 @@
+Running 12 CREM collapse calibrations on 4 workers (per-event wall-clock budget 600 s).
+CREM calibrations: 10/12
+CREM calibrations: 12/12
+ROW 0 cos_prepared -1.000000 w_prepared 0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.850853
+ROW 1 cos_prepared -1.000000 w_prepared -0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.873388
+ROW 2 cos_prepared -1.000000 w_prepared -0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.885711
+ROW 3 cos_prepared -1.000000 w_prepared 0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.872737
+ROW 4 cos_prepared -1.000000 w_prepared 0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.857468
+ROW 5 cos_prepared -1.000000 w_prepared 0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.904223
+ROW 6 cos_prepared -1.000000 w_prepared 0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.785882
+ROW 7 cos_prepared -1.000000 w_prepared -0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.779818
+ROW 8 cos_prepared -1.000000 w_prepared 0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.868890
+ROW 9 cos_prepared -1.000000 w_prepared -0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.767410
+ROW 10 cos_prepared -1.000000 w_prepared -0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.904970
+ROW 11 cos_prepared -1.000000 w_prepared -0.000000 w_terminal 0.000000 cos_terminal -1.000000 photons 3 t_ps 198.821204
+
+completed 12 trajectories (seed base 42, phenomenon 2, imposed angle 1, quantized channel 1)
+terminal weight: min 0.0000 max 0.0000 mean 0.0000
+emitted 2 gamma 0/12 = 0.0%; a draw on the terminal weight would give 0/12 = 0.0%
+label cos>=0.5 0/12; label agrees with the multiplicity 12/12 = 100.0%
+M1 preparation measure : <cos> -1.0000  E[w] -0.0000
+M2 terminal measure    : <cos> -1.0000  E[w] 0.0000
+M3 weighted by t       : E[w] 0.0000;  by 1/t: E[w] 0.0000
+M4 Boltzmann tilt, coupling U_dd(a_pair) = 7.272e-24 J = 4.539e-05 eV
+   E = U_dd itself      : E[w] 0.6565
+   E = binding 6.803e+00 eV : E[w] 0.5000
+   E = hbar omega 1.361e+01 eV: E[w] 0.5000
+   needed: p(cos) ~ exp(-lambda cos) with lambda 1.7965, i.e. an energy scale 2.526e-05 eV
+     = 5.57e-01 of U_dd(a_pair) and 3.71e-06 of the binding
+rule: a measure gives 1:3 when E[w] is in [0.24, 0.26]

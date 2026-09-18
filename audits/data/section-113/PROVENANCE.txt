@@ -1,0 +1,10 @@
+Raw outputs behind audit section 113 (2026-09-18), all from
+tools/channel_measure_scan.cpp with CREM_CHANNEL_AT_ANNIHILATION set inside
+the probe: 12 trajectories, seed base 42, budget 600 s.
+  prereg_113.txt              the reproduction rule and the configurations
+  A1_quant_stoch_para.txt     imposed angle + photon cascade, phenomenon 1
+  A2_quant_stoch_orto.txt     the same, phenomenon 2
+  B_free_stoch_para.txt       free draw + photon cascade
+  C_free_cont_para.txt        free draw + continuous reaction (same seeds as B)
+  D1_quant_cont_para.txt      imposed angle + continuous reaction
+  D2_quant_cont_orto.txt      the same, phenomenon 2

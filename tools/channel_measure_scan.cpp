@@ -12,6 +12,10 @@
 //
 // Usage: channel_measure_scan <trajectories> [seed base, default 42]
 //        [phenomenon, default 1] [budget s, default 600]
+//        [quant to impose the mutual angle] [stochastic for the photon cascade]
+// The last two reproduce the configuration the terminal-moment numbers of
+// README ("Kanal wybiera teraz dynamika") were taken in: audit 91 withdrew
+// the imposition and audit 109 switched the default channel to continuous.
 // Build from the repository root:
 // g++ -std=c++20 -O2 -I . $(root-config --cflags)
 //     tools/channel_measure_scan.cpp -o /tmp/measure $(root-config --libs)
@@ -19,6 +23,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 int main(int argc,char** argv) {
@@ -26,6 +31,15 @@ int main(int argc,char** argv) {
   const unsigned long long base=argc>2?strtoull(argv[2],nullptr,10):42ULL;
   const int phenomenon=argc>3?atoi(argv[3]):1;
   const double budget=argc>4?atof(argv[4]):600.0;
+  bool imposedAngle=false,quantizedChannel=false;
+  for(int index=5;index<argc;++index) {
+    if(std::string(argv[index])=="quant") imposedAngle=true;
+    if(std::string(argv[index])=="stochastic") quantizedChannel=true;
+  }
+  gSpinQuantization=imposedAngle;
+  if(quantizedChannel)
+    gRadiationReactionModel=
+        ChargeRadiationReactionModel::stochasticElectricDipole;
   // The weight must come from the TERMINAL moments here: that is the measure
   // the dynamics produces, as opposed to the one the sampler draws.
   setenv("CREM_CHANNEL_AT_ANNIHILATION","1",1);
@@ -33,6 +47,8 @@ int main(int argc,char** argv) {
   const std::vector<CremCollapseEstimate> estimates=
       runCremCollapseExperiment(base,phenomenon,count,budget);
   std::vector<double> preparedCos,terminalWeight,lifetimes;
+  int drawnTwoPhoton=0,emittedTwoPhoton=0,labelPara=0,labelAgrees=0;
+  std::uint64_t drawStream=splitMix64(base^0x5851f42d4c957f2dULL);
   for(int index=0;index<count;++index) {
     const CremCollapseEstimate& estimate=estimates[static_cast<size_t>(index)];
     SimulationOptions options;
@@ -54,11 +70,21 @@ int main(int argc,char** argv) {
     preparedCos.push_back(cosine);
     terminalWeight.push_back(estimate.annihilationTwoPhotonWeight);
     lifetimes.push_back(estimate.lifetimeSecondsLab);
+    // What the run itself emitted, and what the terminal weight would draw.
+    const std::size_t emitted=estimate.annihilationPhotonEnergies.size();
+    if(emitted==2) ++emittedTwoPhoton;
+    const bool draws=drawUniformUnit(drawStream)
+        <estimate.annihilationTwoPhotonWeight;
+    if(draws) ++drawnTwoPhoton;
+    const bool para=cosine>=0.5;
+    if(para) ++labelPara;
+    if(para==(emitted==2)) ++labelAgrees;
     std::printf("ROW %d cos_prepared %+.6f w_prepared %.6f w_terminal %.6f "
-                "cos_terminal %+.6f t_ps %.6f\n",index,cosine,0.5*(1.0+cosine),
+                "cos_terminal %+.6f photons %zu t_ps %.6f\n",
+                index,cosine,0.5*(1.0+cosine),
                 estimate.annihilationTwoPhotonWeight,
                 2.0*estimate.annihilationTwoPhotonWeight-1.0,
-                estimate.lifetimeSecondsLab*1e12);
+                emitted,estimate.lifetimeSecondsLab*1e12);
   }
   const int total=static_cast<int>(terminalWeight.size());
   if(total==0) { std::printf("no completed trajectories\n"); return 1; }
@@ -77,8 +103,23 @@ int main(int argc,char** argv) {
     inverseLifetime.push_back(value>0.0?1.0/value:0.0);
   std::vector<double> preparedWeight;
   for(double value:preparedCos) preparedWeight.push_back(0.5*(1.0+value));
-  std::printf("\ncompleted %d trajectories (seed base %llu, phenomenon %d)\n",
-              total,base,phenomenon);
+  std::printf("\ncompleted %d trajectories (seed base %llu, phenomenon %d, "
+              "imposed angle %d, quantized channel %d)\n",
+              total,base,phenomenon,imposedAngle?1:0,quantizedChannel?1:0);
+  {
+    std::vector<double> sortedWeight=terminalWeight;
+    std::sort(sortedWeight.begin(),sortedWeight.end());
+    std::printf("terminal weight: min %.4f max %.4f mean %.4f\n",
+                sortedWeight.front(),sortedWeight.back(),
+                average(terminalWeight,none));
+    std::printf("emitted 2 gamma %d/%d = %.1f%%; a draw on the terminal "
+                "weight would give %d/%d = %.1f%%\n",
+                emittedTwoPhoton,total,100.0*emittedTwoPhoton/total,
+                drawnTwoPhoton,total,100.0*drawnTwoPhoton/total);
+    std::printf("label cos>=0.5 %d/%d; label agrees with the multiplicity "
+                "%d/%d = %.1f%%\n",labelPara,total,labelAgrees,total,
+                100.0*labelAgrees/total);
+  }
   std::printf("M1 preparation measure : <cos> %+.4f  E[w] %.4f\n",
               average(preparedCos,none),average(preparedWeight,none));
   std::printf("M2 terminal measure    : <cos> %+.4f  E[w] %.4f\n",

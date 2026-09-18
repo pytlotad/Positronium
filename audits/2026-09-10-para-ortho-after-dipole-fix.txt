@@ -7538,3 +7538,62 @@ measurement of whether that survives a cascade.
       families were tried, chosen because they are the only angle-dependent
       rates or energies the model has; this does not exclude some other
       derivation, and 112b says exactly what any candidate has to satisfy.
+
+113. THE TERMINAL-MOMENT VARIANTS, REPEATED: ORTHO REPRODUCES EXACTLY, PARA
+     DRIFTS LESS THAN IT DID, AND PHOTONS TILT THE ANGLE DOWN
+==================================================================
+
+113a. WHAT WAS REPEATED.  CREM_CHANNEL_AT_ANNIHILATION reads the two-photon
+      weight from the moments the trajectory ENDS with instead of the ones it
+      was prepared with.  README's record of it ("Kanal wybiera teraz
+      dynamika") has para's terminal weight spread over 0.43..0.94 with 8/12
+      = 67% two-photon emissions, and ortho at exactly 0 with 0/12.  Those
+      numbers predate audit 91 (which withdrew the imposed angle), audits
+      96-107 (the clock and field fixes) and audit 109 (which switched the
+      default channel off the photon cascade), so the configuration they were
+      taken in has to be restored explicitly: imposed angle plus the
+      stochastic channel.  Twelve trajectories each, seed base 42, budget
+      600 s.
+
+113b. RESULT.
+        configuration              terminal weight        emitted 2 gamma
+        A1 imposed para, photons   0.576..0.997 (0.845)   11/12 = 92%
+        A2 imposed ortho, photons  0.0000 exactly         0/12  = 0%
+        B  free draw, photons      0.074..0.763 (0.385)   5/12
+        C  free draw, continuous   0.187..0.793 (0.471)   5/12
+        D1 imposed para, cont.     0.815..0.982 (0.922)   8/12 = 67%
+        D2 imposed ortho, cont.    0.0000 exactly         0/11  = 0%
+      (D2's twelfth trajectory ended in a NumericalFailure and carries no
+      terminal state; the other eleven are exact.)
+
+113c. AGAINST THE RECORD.  Ortho reproduces exactly, in both channels and
+      without a single exception: the anti-aligned configuration is a
+      symmetry (section 106), not a fixed point the dynamics has to find.
+      Para does NOT reproduce.  Its terminal weight now spans 0.576..0.997
+      with the photon cascade against the recorded 0.43..0.94, i.e. the
+      singlet drift is SMALLER and the mean weight is 0.845 against 0.758,
+      and the emitted share is 92% against 67% -- outside the pre-registered
+      67% +- 14% window.  The old number is not reproducible on today's code;
+      the fixes between then and now (the magnetization centring of audit
+      103 above all, which was pumping the dipole sector) left the aligned
+      configuration closer to where it was prepared.
+
+113d. WHAT THE REPEAT ADDS: THE EMISSION CHANNEL TILTS THE MEASURE.  On the
+      SAME twelve seeds and the same prepared angles (mean weight 0.4414):
+        continuous reaction   terminal mean 0.4709   shift +0.0295
+        photon cascade        terminal mean 0.3851   shift -0.0563
+      and with the imposed para angle the drift away from weight 1 is 0.078
+      continuous against 0.155 with photons.  So the quantized channel pushes
+      the mutual angle toward ANTI-alignment, i.e. toward three photons,
+      while the continuous drag pushes the other way.  That is a measure the
+      model produces on its own and it moves in the direction section 112
+      needs -- but by 0.06, where 1:3 needs the mean weight at 0.25.
+
+113e. LIMITS.  Twelve trajectories per configuration, one seed base; the
+      free-draw sample happened to contain no prepared para label at all
+      (0/12, which has probability 0.75^12 = 3%), so B and C say nothing
+      about the label agreement.  The terminal reading remains what the code
+      warns it is: it carries the model's singlet drift, so it is a
+      measurement of that drift and of the measure it produces, not a
+      branching-ratio prediction.  The +0.03/-0.06 tilt is 12 trajectories
+      wide and was not tested for convergence in the step or the budget.

@@ -1,0 +1,17 @@
+Zapisano 2026-09-18T10:29:53+02:00, przed pomiarem.
+Zadanie: powtorzyc warianty czytajace momenty KONCOWE
+(CREM_CHANNEL_AT_ANNIHILATION), ktore README opisuje w "Kanal wybiera teraz
+dynamika": para waga koncowa rozrzucona 0.43..0.94, wyemitowane 2 gamma 8/12 =
+67%, orto waga dokladnie 0 i 0/12 dwufotonowych.  Tamte liczby pochodza z
+konfiguracji: kwantyzacja spinu WLACZONA (przed audytem 91) i kanal
+stochastyczny (przed audytem 109).
+Konfiguracje, po 12 trajektorii, budzet 600 s, ziarno bazowe 42:
+  A1 kwantyzacja + stochastyczny, kanal 1 (para)
+  A2 kwantyzacja + stochastyczny, kanal 2 (orto)
+  B  swobodne losowanie + stochastyczny, kanal 1
+  C  swobodne losowanie + ciagly, kanal 1
+  D1 kwantyzacja + ciagly, kanal 1;  D2 to samo, kanal 2
+Regula: "odtworzone", gdy dla A1 zakres wagi koncowej przecina [0.43, 0.94] i
+udzial 2 gamma miesci sie w 67% +- 14% (blad dwumianowy dla 12), a dla A2 waga
+koncowa wynosi 0 i udzial 2 gamma to 0%.
+Zapisuje tez, czy etykieta cos >= 0.5 zgadza sie z wyemitowana krotnoscia.

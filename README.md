@@ -1554,6 +1554,18 @@ dokładnie to, co kanał M1 modelu już robi, i jedyna interpolacja liniowa w
 amplitudzie, która trafia w oba końce. To słabsze założenie niż kwantowanie
 \(|J|\), i nie wprowadza nowej stałej.
 
+**Aktualizacja (audyt 113): liczby z momentów końcowych poniżej nie
+odtwarzają się dla para.** Powtórzone w tej samej konfiguracji (narzucony kąt,
+kanał stochastyczny, \(12\) trajektorii): waga końcowa para mieści się w
+\(0{,}576\)–\(0{,}997\) przy średniej \(0{,}845\), a nie w
+\(0{,}43\)–\(0{,}94\) przy \(0{,}758\), i \(11/12\) rozpadów jest
+dwufotonowych wobec zapisanych \(8/12\). Dryf singletu jest dziś **mniejszy**,
+po poprawkach z audytów 96-107. Orto odtwarza się dokładnie: waga
+\(0{,}0000\) i \(0/12\) w obu kanałach. Nowa obserwacja: na tych samych
+ziarnach kaskada fotonowa przechyla kąt w stronę przeciwnej równoległości
+(\(-0{,}056\) na wadze), a reakcja ciągła w drugą stronę
+(\(+0{,}030\)).
+
 **Aktualizacja (audyt 111): po wycofaniu kwantyzacji spinu w audycie 91 ten
 kanał nie jest już deterministyczny i nie jest już tym samym podziałem co
 p-Ps/o-Ps.** Kąt wzajemny jest losowany swobodnie, więc \(\cos\) jest
