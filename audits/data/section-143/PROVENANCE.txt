@@ -1,0 +1,11 @@
+Raw outputs behind audit section 143 (2026-09-19).
+  prereg_143.txt    rules R143a-f, written before any number, including the
+                    four predicted values and R143f's requirement that the
+                    unrepaired M1 statement be repeated rather than dropped
+  conditioned.txt   tools/annihilation_channel_split, 2000 prepared states
+                    per menu item at seed base 42: the label shares, the mean
+                    cosine and <|mu1+mu2|/mu> for menus 1, 2 and 5 (143c)
+  lifetimes.txt     tools/para_ortho_lifetimes on eight pairs, seed 42,
+                    300 s: the comparison that used to refuse to run (143e)
+Reproduce the unconditioned behaviour, i.e. what earlier sections were
+measured under, with CREM_FREE_CHANNEL_DRAW=1.

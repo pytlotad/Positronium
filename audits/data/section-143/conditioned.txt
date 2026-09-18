@@ -1,0 +1,12 @@
+=== menu 1 ===
+cos: mean +0.7508 median +0.7496 min +0.5002 max +0.9998
+label cos>=0.5 (p-Ps): 2000/2000 = 100.0%; below (o-Ps): 0 = 0.0%
+<|mu1+mu2|/mu> = 1.8697
+=== menu 2 ===
+cos: mean -0.2461 median -0.2456 min -0.9948 max +0.4970
+label cos>=0.5 (p-Ps): 0/2000 = 0.0%; below (o-Ps): 2000 = 100.0%
+<|mu1+mu2|/mu> = 1.1563
+=== menu 5 ===
+cos: mean -0.0143 median -0.0122 min -0.9946 max +0.9998
+label cos>=0.5 (p-Ps): 466/2000 = 23.3%; below (o-Ps): 1534 = 76.7%
+<|mu1+mu2|/mu> = 1.3220

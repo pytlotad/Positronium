@@ -1,6 +1,10 @@
 // Paired para/ortho collapse-time comparison.
 //
-// THIS TOOL NOW REQUIRES --spin-quantization TO MEAN ANYTHING.  Its whole
+// SINCE AUDIT 143 THIS TOOL RUNS ON THE DEFAULT BUILD AGAIN, because menu 1
+// and menu 2 are two ensembles once more -- conditioned on the model's own
+// classifier rather than handed a cosine.  It refuses only when that
+// conditioning is switched off too (CREM_FREE_CHANNEL_DRAW).  The paragraph
+// below is why the refusal exists at all and is kept as the record of it.  Its whole
 // method rests on phenomenon 1 and phenomenon 2 preparing DIFFERENT moment
 // configurations from the same seed, and audit 91 removed that: the mutual
 // angle is drawn freely and the channel is a classification of the draw, so
@@ -107,15 +111,19 @@ int main(int argc,char** argv) {
     // instrument with no resolving power (measured: 3/3 pairs identical to
     // the last digit, ratio 1 with CI [1,1]).  Audit 89g records what that
     // failure mode looks like when it is not caught.
-    if(!gSpinQuantization) {
-        std::cout<<"\nREFUSED: this comparison needs the imposed mutual angle."
-                 <<"\nSince audit 91 the mutual moment angle is drawn freely "
-                   "and the channel is a\nclassification of the draw, so "
-                   "phenomenon 1 and phenomenon 2 sample the SAME\nensemble: "
-                   "every pair would differ by exactly zero and that zero "
-                   "would measure\nnothing.  Set gSpinQuantization (the "
-                   "program's --spin-quantization) to restore\nthe cos = +-1 "
-                   "preparation this pairing was built for.\n";
+    // Audit 143 gave the two channels back, by CONDITIONING rather than
+    // imposition: menu 1 keeps only draws the model's own classifier calls
+    // para and menu 2 only those it calls ortho, so the two ensembles are
+    // distinct again (mean cosine +0.7508 against -0.2461, <|mu1+mu2|/mu>
+    // 1.8697 against 1.1563) without any cosine being set by hand.  The
+    // refusal therefore applies only when that conditioning is off as well.
+    if(!gSpinQuantization&&std::getenv("CREM_FREE_CHANNEL_DRAW")) {
+        std::cout<<"\nREFUSED: with CREM_FREE_CHANNEL_DRAW set and no "
+                   "quantization, phenomenon 1 and\nphenomenon 2 sample the "
+                   "SAME ensemble (audit 91): every pair would differ by\n"
+                   "exactly zero and that zero would measure nothing.  Unset "
+                   "it to use the\nconditioned channels of audit 143, or set "
+                   "--spin-quantization for cos = +-1.\n";
         return 1;
     }
     const auto para=runCremCollapseExperiment(masterSeed,1,runCount,budget);

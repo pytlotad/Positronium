@@ -1345,6 +1345,15 @@ koherentnej sumy \(\mathbf m=\boldsymbol\mu_1+\boldsymbol\mu_2\), więc
 | para | \(1{,}626\)…\(2{,}000\) | \(2{,}74\cdot10^{-24}\) | \(2{,}24\cdot10^{-10}\) |
 | orto | \(0{,}000\)…\(0{,}000\) | \(1{,}15\cdot10^{-48}\) | \(7{,}58\cdot10^{-43}\) |
 
+> **Ta tabela należy do przygotowania z narzuconym kątem**
+> (`--spin-quantization`), a nie do przebiegu domyślnego. Audyt 91 wycofał
+> narzucenie, a audyt 143 przywrócił dwa kanały **warunkowaniem** na własnym
+> klasyfikatorze modelu, nie narzuceniem wartości: domyślnie \(\langle|\mathbf
+> m|/\mu\rangle\) wynosi \(1{,}8697\) dla para i \(1{,}1563\) dla orto
+> (2000 stanów na kanał), więc dokładne kasowanie \(|\mathbf m|=0\) nie
+> zachodzi dla niczego, co domyślny przebieg przygotowuje, i te 32 rzędy
+> różnicy nie są własnością domyślnej konfiguracji.
+
 **Para może emitować M1, orto nie może.** Maksima różnią się o
 \(\mathbf{32}\) **rzędy wielkości**, a resztka orto to zaokrąglenie:
 \(|\mathbf m|\) wypisuje się jako dokładnie \(0{,}000000\) na każdym

@@ -1,0 +1,47 @@
+PRE-REGISTRATION, audit section 143 (two channels restored by
+conditioning, not by imposition).  Written before any number of this
+section was computed.
+written 2026-09-18T22:16:56Z
+
+THE DEFECT.  Audit 91 withdrew both impositions on the mutual angle, so
+menu items 1 and 2 (scenarios 2 and 3) now sample the IDENTICAL ensemble:
+494/1506 on either side of the threshold, mean cosine -0.0038 and
+|mu1+mu2|/mu = 1.3293 for both.  The menu entry became a label, the
+paired comparison tool refuses to run, and the README still describes a
+physics the default run does not produce.
+
+THE REPAIR BEING MADE.  Menu 1 draws only states the model itself
+classifies as p-Ps, menu 2 only those it classifies as o-Ps, and menu 5
+keeps the free draw with identification after the fact.  This is
+CONDITIONING on the model's own classification (dipoleAlignment >= 0.5),
+not imposition of a value: no cosine is set, nothing is aligned by hand,
+and the accepted states are exactly the states the free draw already
+produces.  It is therefore not the quantization audit 91 removed, and the
+section must not be read as restoring it.
+
+RULES, decided now.
+R143a  After the change, menu 1 must classify as ParaPositronium in 100%
+       of prepared states and menu 2 as OrthoPositronium in 100%; any
+       leakage is a wiring error, not a statistic.
+R143b  The two channels must now differ in the quantities that were
+       identical: report the mean cosine and <|mu1+mu2|/mu> per channel
+       over at least 2000 prepared states each, against the 1.3293 and
+       -0.0038 both gave before.
+R143c  Menu 5 must be UNCHANGED, bit for bit, since the free draw is what
+       it keeps: the same seed must give the same prepared state as before
+       the change.
+R143d  The acceptance rates must match the measured shares -- about 24.7%
+       for para and 75.3% for ortho -- or the conditioning is not drawing
+       from the distribution it claims to condition.
+R143e  The cost is reported: extra RNG draws per prepared state, and the
+       fact that every seeded number quoted for menus 1 and 2 moves.
+R143f  The audit's standing statement that the hyperfine, contact and M1
+       sections were never re-measured after 91 is NOT repaired by this
+       change and must be repeated, not quietly dropped: conditioning
+       restores two ensembles, it does not restore cos = -1, so the exact
+       cancellation |mu1+mu2| = 0 that the M1 result stood on is still
+       reached with probability zero.
+
+PREDICTION (mine).  R143a and R143d hold by construction; the conditioned
+channels give mean cosines near +0.75 and -0.25 and <|m|/mu> near 1.87
+and 1.15; R143c holds because menu 5's code path is untouched.

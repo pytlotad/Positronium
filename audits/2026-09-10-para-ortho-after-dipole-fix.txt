@@ -9887,3 +9887,86 @@ measurement of whether that survives a cascade.
       synthetic circular kinematics, five speeds; c drifts by 12% across them,
       so "third order" is the measured 3.01-3.10 rather than an exact cube,
       and the naming is of the leading behaviour, not a closed form.
+
+143. THE TWO CHANNELS ARE BACK, BY CONDITIONING RATHER THAN IMPOSITION -- AND
+     THE M1 RESULT IS STILL NOT
+==================================================================
+
+143a. THE DEFECT.  Audit 91 withdrew both impositions on the mutual angle, and
+      with them the distinction between menu 1 and menu 2: both sampled the
+      identical ensemble, 494/1506 either side of the threshold, mean cosine
+      -0.0038, |mu1+mu2|/mu = 1.3293 for both.  The menu entry was a label,
+      the paired comparison tool refused to run, and the README still
+      described a physics the default run did not produce.
+
+143b. THE REPAIR.  Menu 1 now keeps only draws the model's OWN classifier
+      calls para, menu 2 only those it calls ortho, and menu 5 keeps the free
+      draw with identification after the fact.  The direction is drawn
+      exactly as the free draw draws it; a draw is kept or redrawn on the
+      same dipoleAlignment >= 0.5 test the phenomenon label uses.  So the
+      accepted states are a SUB-ENSEMBLE of what menu 5 produces -- no cosine
+      is set, nothing is aligned by hand, and this is not the cos = +-1
+      import 91 removed.  CREM_FREE_CHANNEL_DRAW restores the unconditioned
+      behaviour.
+
+143c. MEASURED, 2000 prepared states per channel, seed base 42.
+        menu   label share            mean cos    <|mu1+mu2|/mu>
+        1      2000/2000 para         +0.7508     1.8697
+        2      2000/2000 ortho        -0.2461     1.1563
+        5      466/1534, 23.3%/76.7%  -0.0143     1.3220
+      Rule R143a asked for 100% and 100%: met exactly.  Rule R143b asked the
+      two channels to differ in the quantities that were identical: the mean
+      cosine now spans 1.00 between them where it was -0.0038 for both, and
+      the coherent moment 1.8697 against 1.1563 where it was 1.3293 for both.
+      Rule R143d asked the acceptance rates to match the measured shares:
+      menu 5 gives 23.3%/76.7% against the 24.7%/75.3% of audit 91, the
+      difference being the seed base and the count.
+      My four pre-registered predictions -- +0.75, -0.25, 1.87 and 1.15 --
+      all hold.
+
+143d. MENU 5 IS UNTOUCHED (rule R143c).  With and without the conditioning it
+      gives the same mean cosine -0.0143, the same median -0.0122 and the
+      same 1.3220: the loop is entered only for scenarios 2 and 3, so the
+      free draw's stream is unchanged.  And with CREM_FREE_CHANNEL_DRAW both
+      menus 1 and 2 return to 23.3%/76.7%, i.e. to being duplicates, which is
+      the behaviour earlier sections were measured under.
+
+143e. THE TOOL THAT REFUSED NOW MEASURES.  tools/para_ortho_lifetimes
+      refused on the default build because a pair of identical ensembles
+      gives 0 +- 0 ps, which reads as a null result and is an instrument with
+      no resolving power.  Its refusal is now conditional on
+      CREM_FREE_CHANNEL_DRAW.  Run on eight pairs, seed 42, 300 s:
+        mean t_para    198.971157 ps
+        mean t_ortho   198.955752 ps
+        difference     -0.0154048 +- 0.0151902 ps   (1.014 sigma)
+        ratio          0.999922557, 95% CI [0.999772946, 1.00007219]
+        sign test      ortho longer in 3 of 8, exact p = 0.7266
+      A null result, but a real one: the pairs differ, the instrument
+      resolves, and it finds no significant para/ortho difference at N = 8.
+      That is a different object from the 0 +- 0 it printed before.
+
+143f. WHAT THIS DOES NOT REPAIR, REPEATED RATHER THAN DROPPED (rule R143f).
+      Conditioning restores two ensembles; it does not restore cos = -1.  The
+      exact cancellation |mu1+mu2| = 0 that the M1 result stood on is reached
+      by a uniform draw with probability zero, and the conditioned ortho
+      channel carries 1.1563 mu of coherent moment, not zero.  So the
+      README's M1 table -- para 1.626..2.000, ortho 0.000..0.000, maxima 32
+      orders apart -- remains a statement about the QUANTIZED preparation,
+      and a note saying so is now printed beside it in the README itself.
+      The hyperfine, contact and M1 sections of the audit are still valid
+      only as statements about that preparation, and this section does not
+      change that.
+
+143g. UNCHANGED.  Validation 62/62, header isolation 37/37.  Menu 5, menus 3
+      and 4, and every continuous-path number are untouched; what moves is
+      every seeded number quoted for menus 1 and 2, because the conditioning
+      loop consumes draws from the shared stream -- about four per para state
+      and 1.3 per ortho one.
+
+143h. LIMITS.  The conditioning is on the model's own threshold, so "p-Ps" in
+      menu 1 means exactly "cos >= 0.5", with the band's own consequences:
+      audit 111 measured that a cos = 0.5 state still emits three photons a
+      quarter of the time, so the channel label and the photon multiplicity
+      remain different questions.  The lifetime comparison is eight pairs at
+      one seed and one budget; it resolves 0.015 ps and says nothing below
+      that.

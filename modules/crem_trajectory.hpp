@@ -1383,12 +1383,44 @@ inline SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // moment.  Every seeded number quoted in earlier audit sections therefore
     // moves.  gSpinQuantization (now OFF by default, --spin-quantization)
     // restores the old branch for reproducing them.
+    // CHANNEL CONDITIONING (audit 143).  With both impositions gone, menu 1
+    // and menu 2 sampled the identical ensemble and the menu entry was a
+    // label.  They are two ensembles again, and by CONDITIONING rather than
+    // imposition: the direction is drawn exactly as the free draw draws it,
+    // and a draw is kept only if the model's OWN classifier -- the same
+    // dipoleAlignment >= 0.5 used below -- puts it in the requested channel.
+    // Nothing is aligned by hand and no cosine is set, so the accepted states
+    // are a sub-ensemble of what menu 5 produces, not the cos = +-1 import
+    // audit 91 removed.  Menu 5 (scenario 1) is untouched and keeps the free
+    // draw with identification after the fact.
+    //
+    // The acceptance rates are the measured shares, about 24.7% for para and
+    // 75.3% for ortho, so this costs about four draws per para state and 1.3
+    // per ortho one; the cap exists so a pathological moment magnitude cannot
+    // spin here forever, and falling through it leaves the free draw's state,
+    // which the classifier below then labels honestly.
+    //
+    // Every seeded number quoted for menus 1 and 2 moves, because the loop
+    // consumes draws from the shared stream.  CREM_FREE_CHANNEL_DRAW restores
+    // the unconditioned behaviour for reproducing them.
     if(gSpinQuantization && (sampledScenario==2||sampledScenario==3)) {
         const double sign = sampledScenario==2 ? 1.0 : -1.0;
         s.secondDipole = s.firstDipole
             * (sign*secondMagneticMoment/firstMagneticMoment);
     } else {
         s.secondDipole = randomDirection() * secondMagneticMoment;
+        static const bool freeChannelDraw=
+            std::getenv("CREM_FREE_CHANNEL_DRAW")!=nullptr;
+        if(!freeChannelDraw&&(sampledScenario==2||sampledScenario==3)) {
+            const bool wantPara = sampledScenario==2;
+            const double scale=firstMagneticMoment*secondMagneticMoment;
+            for(int attempt=0;attempt<10000;++attempt) {
+                const double alignment=scale>0.0
+                    ?dot(s.firstDipole,s.secondDipole)/scale:0.0;
+                if((alignment>=0.5)==wantPara) break;
+                s.secondDipole = randomDirection() * secondMagneticMoment;
+            }
+        }
     }
 
     const double relativeEnergy = 0.5 * reducedMass * relativeVelocity.squaredNorm()

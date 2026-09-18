@@ -15,6 +15,7 @@
 //     tools/annihilation_channel_split.cpp -o /tmp/split $(root-config --libs)
 #include "modules/crem_collapse.hpp"
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -89,5 +90,13 @@ int main(int argc,char** argv) {
         std::printf("  |cos| < 0.5 (neither label is a band edge): %d = %.1f%%, "
                     "of which 2 gamma %.3f\n",band,100.0*band/total,
                     static_cast<double>(bandTwoPhoton)/band);
+    // <|mu1+mu2|/mu>, the quantity audit 91 measured at 1.3293 for both
+    // channels and audit 143 separates again by conditioning.
+    {
+        double coherentSum=0.0;
+        for(double weight:weights) coherentSum+=2.0*std::sqrt(weight);
+        std::printf("<|mu1+mu2|/mu> = %.4f\n",
+                    coherentSum/static_cast<double>(weights.size()));
+    }
     std::printf("spin statistics for comparison: P(2 gamma) = 1/4 = 0.250\n");
 }
