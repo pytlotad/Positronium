@@ -1,0 +1,18 @@
+=== r 2.0 kanal 0 tilt 0, sily chwilowe ===
+                                    ledger   range/|U_dd|   drift/|U_dd|      vs E0
+                    E0  the model's ledger   3.455987e-02  -3.321474e-03     1.0000
+          E1  minus the charge-dipole term   3.306809e-04  -1.287703e-04     0.0096
+           E2  and the Darwin sign flipped   1.632685e-02  +1.547140e-02     0.4724
+        E3  and U_dd on the proper moments   1.754548e-02  +1.662159e-02     0.5077
+=== r 1.0 kanal 1 tilt 0, sily chwilowe ===
+                                    ledger   range/|U_dd|   drift/|U_dd|      vs E0
+                    E0  the model's ledger   9.939355e-01  +9.938386e-01     1.0000
+          E1  minus the charge-dipole term   1.673551e-02  +1.665858e-02     0.0168
+           E2  and the Darwin sign flipped   5.836901e-02  +5.835268e-02     0.0587
+        E3  and U_dd on the proper moments   6.584914e-02  +6.583367e-02     0.0663
+=== r 1.0 kanal 0 tilt 90, sily chwilowe ===
+                                    ledger   range/|U_dd|   drift/|U_dd|      vs E0
+                    E0  the model's ledger   8.030869e+00  +3.219555e-02     1.0000
+          E1  minus the charge-dipole term   3.360920e-01  +6.882922e-02     0.0419
+           E2  and the Darwin sign flipped   8.390162e-01  +3.441718e-02     0.1045
+        E3  and U_dd on the proper moments   5.364333e-01  +2.837426e-02     0.0668

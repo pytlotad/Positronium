@@ -10047,3 +10047,89 @@ measurement of whether that survives a cascade.
       outcome 2 rather than completing.  The default rows censored under this
       section's own run conditions and are reported as such rather than as a
       property of the default configuration.
+
+145. WHAT THE DYNAMICS CONSERVES: THE LEDGER CARRIES A TERM THAT DOES NO WORK,
+     AND THE OLD ~1 |U_dd| PER ORBIT IS THE RETARDATION
+==================================================================
+
+145a. THE DEFECT, RECORDED TWICE AND NEVER MEASURED.  Three terms of the
+      ledger depend on velocity: the charge-dipole term is -p.E with
+      p = (v x mu)/c^2, linear in v; the Darwin term goes as v1.v2,
+      quadratic; and U_dd is evaluated on the LAB moments, which the boost
+      makes velocity-dependent.  For L = T - U(r,v) the conserved quantity is
+      H = sum v.(dL/dv) - L, and a velocity-LINEAR potential drops out of it
+      entirely while a quadratic one enters with the opposite sign.  So the
+      ledger may be summing quantities that do not belong to the conserved
+      energy.  tools/velocity_dependent_energy reads four ledgers off the
+      SAME states of one engine orbit (rule R145c).
+
+145b. WITH THE MODEL'S OWN RETARDED FORCES, NOTHING WORKS.  Para, 1 r*,
+      tilt 0, one orbit, 256 steps, tolerance 1e-8:
+        ledger                                range/|U_dd|    vs E0
+        E0  the model's ledger                  1.328177      1.0000
+        E1  minus the charge-dipole term        1.221060      0.9194
+        E2  and the Darwin sign flipped         1.896215      1.4277
+        E3  and U_dd on the proper moments      1.497418      1.1274
+      Rule R145a asked for a variant below 10% of E0's range: none is even
+      below 50%, and two are WORSE.  My prediction that E1 would win here was
+      wrong, and rule R145b's fallback candidate -- the instantaneous ledger
+      against retarded forces, named in 125e -- takes over.
+
+145c. WITH INSTANTANEOUS FORCES IT WORKS, BY A FACTOR OF 44.  The same orbit,
+      integrated with instantaneous forces instead, which is the
+      configuration the instantaneous ledger could be exact for:
+        E0  the model's ledger                  4.068990      1.0000
+        E1  minus the charge-dipole term        0.091378      0.0225
+        E2  and the Darwin sign flipped         0.660517      0.1623
+        E3  and U_dd on the proper moments      0.273438      0.0672
+      E1 is 2.25% of E0: rule R145a is met, in the configuration that
+      isolates the question.  And it holds across the others:
+        configuration                   E0        E1        E1/E0
+        r 1, para,  tilt 0            4.069     0.0914     0.0225
+        r 2, para,  tilt 0            0.0346    0.000331   0.0096
+        r 1, ortho, tilt 0            0.9939    0.0167     0.0168
+        r 1, para,  tilt 90           8.031     0.3361     0.0419
+      Removing the velocity-linear term reduces the ledger's range by a
+      factor of 24 to 104, in every configuration tried.
+
+145d. AND TWO OF MY THREE CANDIDATE CORRECTIONS ARE WRONG.  Flipping the
+      Darwin sign makes the range 7.2 times worse than E1 and putting U_dd on
+      the proper moments 3.0 times worse, at 1 r*, and both are worse at
+      every other configuration too.  So the model is RIGHT about the Darwin
+      term's sign and right to evaluate U_dd on the lab moments; only the
+      charge-dipole term does not belong in the conserved energy.  That is
+      what a velocity-linear potential is: it generates a force -- the
+      spin-orbit force, audit 105 measured it as 88% of the moment sector --
+      and that force does no work.
+
+145e. WHICH DECOMPOSES THE RESIDUAL THE AUDIT HAS CARRIED SINCE 104
+      (rule R145d).  On the same orbit, in |U_dd| per orbit:
+        the ledger's spurious velocity-linear term    3.98
+        the retarded-versus-instantaneous mismatch    1.13
+        what the model reports as its drift           1.33
+      The first is E0 minus E1 with instantaneous forces, the second is E1
+      retarded minus E1 instantaneous, and the third is E0 retarded.  The two
+      errors have opposite signs and PARTIALLY CANCEL: the model's reported
+      1.33 is smaller than either of its parts.  So the famous ~1 |U_dd| per
+      orbit is the retardation mismatch, and it was sitting on top of a
+      larger ledger error that was hiding it.
+
+145f. WHAT THIS DOES AND DOES NOT LICENCE.  It does not licence deleting the
+      term from chargeDipoleInteractionEnergy: that same function is the
+      radial potential of dipoleAwarePeriapsis, where a velocity-linear term
+      enters legitimately at FIXED L, being a function of r and L alone.  The
+      distinction is exact and worth stating: the term belongs in the radial
+      energy at fixed angular momentum and does not belong in the conserved
+      total energy.  Changing conservativeParticleEnergy is therefore a
+      separate decision with its own blast radius -- every ledger number in
+      sections 102 to 141, the engine's own accuracy gates, and the
+      secularLossAbsent test all read it -- and rule R145e keeps this section
+      to the measurement.
+
+145g. UNCHANGED, AND LIMITS.  No model file was touched.  Four
+      configurations, one orbit each, reaction disabled, 256 steps at
+      tolerance 1e-8; the E1 residual of 0.0914 |U_dd| at 1 r* is not
+      resolved further here and may be integration error, a fourth
+      velocity-dependent path, or both.  The instantaneous-force runs are a
+      diagnostic configuration, not the model's physics: the retarded forces
+      are what production uses, and 145e is the statement about it.

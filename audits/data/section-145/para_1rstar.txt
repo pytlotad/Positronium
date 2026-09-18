@@ -1,0 +1,7 @@
+r 1.00 r*  channel 0  tilt 0 deg  orbits 1  tol 1e-08  steps 256/256 ok
+|U_dd| = 1.993097e-16 J
+                                    ledger   range/|U_dd|   drift/|U_dd|      vs E0
+                    E0  the model's ledger   1.328177e+00  -1.084283e+00     1.0000
+          E1  minus the charge-dipole term   1.221060e+00  -1.141025e+00     0.9194
+           E2  and the Darwin sign flipped   1.896215e+00  -1.261888e+00     1.4277
+        E3  and U_dd on the proper moments   1.497418e+00  -1.214649e+00     1.1274

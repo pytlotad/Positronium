@@ -1,0 +1,45 @@
+PRE-REGISTRATION, audit section 145 (what the dynamics actually conserves:
+the velocity-dependent part of the ledger).  Written before any number of
+this section was computed.
+written 2026-09-18T22:53:00Z
+
+THE DEFECT, RECORDED TWICE AND NEVER MEASURED.  The model's ledger is
+  E = T + U_Coulomb + U_dd + U_chargeDipole + U_Darwin + U_constraint,
+and three of those terms depend on VELOCITY, each differently:
+  (a) U_chargeDipole is -p.E with p = (v x mu)/c^2, LINEAR in v;
+  (b) U_Darwin goes as v1.v2, QUADRATIC in v;
+  (c) U_dd is evaluated on the LAB moments, which synchronizeCovariantDipoles
+      boosts, so it carries v through the boost.
+For a Lagrangian L = T - U(r,v) the conserved quantity is
+H = sum v.(dL/dv) - L, not T + U, and the two differ exactly in those
+terms: a velocity-LINEAR potential drops out of H entirely, and a
+velocity-quadratic one enters with the opposite sign.  So the ledger may be
+adding to the conserved energy quantities that do not belong to it.
+
+THE TEST.  Along one engine orbit, compute four ledgers on the SAME states:
+  E0 = the model's ledger as it stands;
+  E1 = E0 without the charge-dipole term (the velocity-linear one);
+  E2 = E1 with the Darwin term's sign flipped (2 U_Darwin subtracted);
+  E3 = E2 with U_dd evaluated on the PROPER moments instead of the lab ones.
+Report each one's range and its end-minus-start drift, in units of |U_dd|.
+
+RULES, decided now.
+R145a  A variant EXPLAINS the drift if its range falls below 10% of E0's on
+       the same orbit.  The first variant that does is the answer, and the
+       later ones are then refinements rather than the explanation.
+R145b  If no variant falls below 50% of E0's range, the velocity-dependent
+       terms are NOT the source and the section says so; the candidate is
+       then the retarded-versus-instantaneous mismatch named in audit 125e.
+R145c  The comparison must be on the SAME trajectory, not on re-integrated
+       ones: the variants are read off the same states so that no difference
+       can come from the dynamics diverging.
+R145d  Report what this does to the ~1 |U_dd| per orbit residual that the
+       audit has carried open since section 104.
+R145e  No model file changes in this section.  If a variant wins, changing
+       the ledger is a separate decision with its own measurement.
+
+PREDICTION (mine).  E1 wins: the charge-dipole term is linear in v, does no
+work, and cannot appear in H, and audit 105 measured it as the largest
+single contribution to the force sector too (88%).  I expect E1's range
+below 10% of E0's, the Darwin flip to matter at the percent level because
+it is O(v^2/c^2), and the proper-moment variant to matter least.

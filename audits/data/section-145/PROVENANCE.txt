@@ -1,0 +1,14 @@
+Raw outputs behind audit section 145 (2026-09-19).
+  prereg_145.txt          rules R145a-e, written before any number, with
+                          R145b naming in advance the fallback candidate the
+                          measurement ended up needing
+  para_1rstar.txt         the four ledgers on one engine orbit with the
+                          model's own RETARDED forces: nothing works (145b)
+  para_instantaneous.txt  the same orbit with instantaneous forces, where
+                          dropping the velocity-linear term reduces the
+                          range by a factor 44.5 (145c)
+  robustness.txt          three further configurations, all instantaneous:
+                          2 r* para, 1 r* ortho and 1 r* para at tilt 90
+Reproduce with:
+  tools/velocity_dependent_energy <r/r*> <channel> <tilt> 1 1e-8 256 [0]
+where the trailing 0 selects instantaneous forces.
