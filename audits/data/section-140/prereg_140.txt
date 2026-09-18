@@ -1,0 +1,51 @@
+PRE-REGISTRATION, audit section 140 (the per-photon angular momentum:
+enabling CREM_SPIN_MAGNITUDE, or measuring why not).  Written before any
+number of this section was computed.
+written 2026-09-18T20:27:03Z
+
+THE DEFECT.  Energy leaves in quanta hbar omega while angular momentum is
+removed by the classical secular law, so each photon demands 1 hbar and
+the orbit surrenders 0.42, 0.30, 0.18, 0.16 (audit 21b).  Sharper: before
+the first emission L = 1.0000 hbar, so a photon carrying its own hbar
+would land the orbit at L = 0, where E1 is forbidden; the model takes
+0.4227 hbar and emits three more.  The whole cascade past the first photon
+exists because L is not conserved photon by photon.
+
+WHAT THE CODE ALREADY SAYS, read before measuring.  CREM_SPIN_MAGNITUDE
+takes the subtraction from the photon's own spin and closes J: the
+surrendered fraction goes from 0.266 (range 0.158-0.423) to 0.879 (range
+0.451-2.305).  The old objection -- unphysical elements -- is already
+marked stale in the comment, with a remeasurement showing e^2 never
+negative over ten emissions on four seeds.  The CURRENT reason it is not
+the default is cost: the orbit becomes eccentric (e = 0.844 after the
+first photon on seed 42), the eccentricity factor is then 30.6, and
+trajectories censor on the default wall-clock budget.  The comment asks
+for an ensemble rather than four seeds, and that is what this section is.
+
+RULES, decided now.
+R140a  The switch BECOMES THE DEFAULT if, over at least 8 seeds:
+       (a) the mean surrendered fraction of the photon's hbar is above
+           0.8, against 0.266 today;
+       (b) no emission produces e^2 < 0; and
+       (c) at least half the seeds complete their cascade within a budget
+           of 1800 s, ten times what the cascade tools use today.
+R140b  Whatever moves in the cascade numbers -- collapse time, photon
+       count, stopping cause -- is reported as a correction, not buried.
+       The audit's cascade-dependent numbers are expected to move.
+R140c  PRODUCTION MUST BE BIT-IDENTICAL.  Since audit 109 production runs
+       individual Landau-Lifshitz with photons off, so this switch cannot
+       touch it; the collapse transit of seed 42 must reproduce to all
+       printed digits or the change is reverted rather than explained.
+R140d  If the cost makes (c) fail, the switch is NOT defaulted, and the
+       section reports the measured cost as the reason -- with the
+       ensemble the comment asked for, so the question is closed either
+       way instead of being left to the next reader.
+R140e  This change does NOT address the energy-sector remark that the
+       dipole potential is velocity-dependent and KE+U is therefore not
+       what the dynamics conserves.  That is a separate defect and the
+       section says so rather than letting the fix be over-claimed.
+
+PREDICTION (mine).  (a) and (b) pass, since the comment already measured
+them on four seeds; (c) is the open one, and I expect it to fail for a
+majority of seeds, because an eccentricity factor of 30.6 multiplies the
+step count at periapsis where the engine is already slowest.

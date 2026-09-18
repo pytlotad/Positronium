@@ -1,0 +1,8 @@
+RESULT seed 43 lab_ps nan proper_ps nan lab_minus_proper_fs nan outcome 1 stop_cause 0 photons 2 wall_s 1800.0
+RESULT seed 45 lab_ps nan proper_ps nan lab_minus_proper_fs nan outcome 1 stop_cause 0 photons 3 wall_s 1800.4
+RESULT seed 47 lab_ps nan proper_ps nan lab_minus_proper_fs nan outcome 1 stop_cause 0 photons 5 wall_s 1800.0
+RESULT seed 49 lab_ps nan proper_ps nan lab_minus_proper_fs nan outcome 1 stop_cause 0 photons 3 wall_s 1800.0
+RESULT seed 42 lab_ps nan proper_ps nan lab_minus_proper_fs nan outcome 1 stop_cause 0 photons 2 wall_s 1800.1
+RESULT seed 44 lab_ps nan proper_ps nan lab_minus_proper_fs nan outcome 1 stop_cause 0 photons 1 wall_s 1800.1
+RESULT seed 48 lab_ps nan proper_ps nan lab_minus_proper_fs nan outcome 1 stop_cause 0 photons 3 wall_s 1800.0
+RESULT seed 46 lab_ps nan proper_ps nan lab_minus_proper_fs nan outcome 1 stop_cause 0 photons 1 wall_s 1800.0

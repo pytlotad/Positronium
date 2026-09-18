@@ -9640,3 +9640,91 @@ measurement of whether that survives a cascade.
       ensemble median and this is one seed.  The default row uses 0.9668
       exactly while the model computes 0.966823, which is why its transit
       sits 5e-05 off the trend of its neighbours rather than exactly on it.
+
+140. THE PER-PHOTON ANGULAR MOMENTUM: CLOSING IT EXACTLY DELETES THE CASCADE,
+     AND THE SWITCH THAT WAS SUPPOSED TO CLOSE IT DOES NOT
+==================================================================
+
+140a. THE DEFECT.  Energy leaves in quanta hbar omega while angular momentum
+      is removed by the classical secular law, so the two bookkeepings
+      disagree photon by photon (audit 21b).  Sharper: before the first
+      emission L = 1.0000 hbar, so a photon carrying its own hbar would land
+      the orbit at L = 0.  CREM_SPIN_MAGNITUDE exists for this, and the
+      comment beside it records "the orbit surrenders 0.879 of what the
+      photon demands against 0.266 with k(e)", with the old objection about
+      unphysical elements already marked stale.  The comment asks for an
+      ensemble instead of its four seeds, and that is this section.
+
+140b. AN INSTRUMENT HAD TO BE FIXED FIRST.  CREM_L_UPDATE prints the
+      CLASSICAL candidate as Lnew even when the switch installs something
+      else, so the per-photon closure could not be read from it at all.  A
+      second line, CREM_LUSED, now prints the value actually installed.  It
+      is a diagnostic behind the same variable; production is bit-identical
+      (seed 42 still 199.039646721 ps), validation 62/62, headers 37/37.
+
+140c. THE DEFAULT, MEASURED.  Eight seeds, 24 emissions:
+        surrendered per photon   mean 0.3054 hbar, range 0.1799..0.4228
+        e^2 at the emission      0.000000 in every case
+        photon energy            0.9879 of the correspondence quantum 2R/n^3
+      So today the ENERGY bookkeeping is closed to 1.2% and the ANGULAR one
+      is open at 0.31 of a quantum, which is the defect stated as two
+      numbers.
+
+140d. AND THE SWITCH ALONE DOES NOT CLOSE IT.  Same eight seeds, 15
+      emissions with CREM_SPIN_MAGNITUDE:
+        surrendered per photon   mean 0.2927 hbar, range 0.0534..0.6906
+        e^2                      never negative (maximum 3.7e-05)
+        photon energy            0.5024 of the correspondence quantum
+        cascades completed       0 of 8 within 1800 s, against 8 of 8
+                                 within 150 s for the default
+      The angular closure is NOT improved -- 0.2927 against 0.3054, the same
+      to the spread -- while the energy quantum is halved and the cost is
+      total.  The comment's 0.879 is a ratio to the photon's own PROJECTED
+      demand, not the hbar it removes from |L|; read as the latter it does
+      not reproduce, and the comment is corrected here.  Its "unphysical
+      elements are stale" half does reproduce: e^2 is never negative.
+
+140e. THE REASON IS GEOMETRY, AND THE COMBINATION THAT FIXES IT.  A photon
+      carries hbar along its OWN flight direction, so its projection on the
+      orbital axis is hbar cos(theta) < hbar, and |L| can only lose the
+      projection.  CREM_AXIAL_SPIN takes the photon's hbar along the orbital
+      axis instead.  With both switches, eight seeds:
+        surrendered per photon   1.000000 hbar on every seed, range zero
+        L after the first photon 0.000027 hbar
+      Exactly one quantum, and the orbit lands on L = 0.
+
+140f. WHERE IT LANDS IS THE WHOLE POINT.  With L = 0 the cascade ENDS:
+      every one of the eight seeds emits exactly ONE photon, and the pair
+      then falls radially, five of the eight reaching the Compton barrier in
+      16 to 47 seconds of wall clock.  Against the default's three to five
+      photons.  So the audit's own sharper claim is now a measurement rather
+      than an argument: the cascade past the first photon exists only because
+      angular momentum is not conserved photon by photon.
+
+140g. SO THIS CANNOT BE REPAIRED BY A DEFAULT, AND THE SWITCH IS NOT MADE ONE
+      (rule R140d).  Closing the angular bookkeeping exactly deletes the
+      cascade; leaving it open keeps the cascade and the contradiction.  The
+      code's own comment names the only real repair -- draw the photon's
+      energy and its hbar consistently with each other, which is a change to
+      the EMISSION rather than to a subtraction line -- and this section adds
+      what that repair would have to accept: the orbit has exactly one hbar
+      to give, so any emission model that conserves angular momentum per
+      photon produces a one-photon cascade from the prepared state.  There is
+      no version of this model in which four E1 photons leave an L = hbar
+      orbit.
+      Rule R140a is therefore answered in its own terms: (a) fails for the
+      switch alone at 0.2927 and passes exactly for the combination; (b)
+      passes everywhere; (c) fails for the switch alone, 0 of 8.
+
+140h. WHAT THIS DOES NOT TOUCH (rule R140e).  The energy sector's own
+      version of the same theme -- the dipole potential is velocity
+      dependent, so the force does not differentiate it and KE+U is not what
+      the dynamics conserves -- is a separate defect and is not addressed
+      here.  Nor is the alpha^-5 identity affected: it is the continuous
+      inspiral in closed form, with no photon ladder in it.
+
+140i. LIMITS.  Eight seeds, one preparation, phenomenon 1.  The short runs
+      are 150 s budgets, so they measure the first one to three emissions of
+      each cascade rather than whole trajectories; the completion counts come
+      from the 1800 s ensemble.  The axial combination was measured on the
+      first photon only, because there is no second one.

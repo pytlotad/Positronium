@@ -1,0 +1,21 @@
+Raw outputs behind audit section 140 (2026-09-18).
+  prereg_140.txt        rules R140a-e, written before any number, after
+                        reading what the switch's own comment already claimed
+  results_1800s_ensemble.txt
+                        eight seeds with CREM_SPIN_MAGNITUDE at a 1800 s
+                        budget: none completes (140d)
+  results_short_runs.txt
+                        the paired 150 s runs, default against the switch and
+                        against the switch plus CREM_AXIAL_SPIN
+  emission_traces.tar.gz
+                        their CREM_LUPD, CREM_LUSED and PHOTON_LADDER lines,
+                        one file per run; CREM_LUSED is the line this section
+                        had to add, since CREM_LUPD prints the classical
+                        candidate rather than the installed value
+  run140_per_photon.txt the per-photon closure for the default and the switch
+  run140_axial.txt      the same for the combination: 1.000000 hbar and a
+                        one-photon cascade (140e, 140f)
+  per_photon.py         the analysis; ladder_closure.py is the earlier
+                        version, kept because it is what showed that
+                        differencing consecutive photons measures the secular
+                        drift as well and cannot answer the question

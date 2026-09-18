@@ -5487,11 +5487,20 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
                             elements.specificAngularMomentum*reducedMass/hbar,
                             classicalAngularMomentumMagnitude
                                 *reducedMass/hbar);
-                    elements.specificAngularMomentum=
+                    const double installedAngularMomentum=
                         clampAboveGroundStateAngularMomentum(
                             (useSpinMagnitude&&directionTrialNorm>1.0e-300)
                                 ?directionTrialNorm/reducedMass
                                 :classicalAngularMomentumMagnitude);
+                    // The line above prints the CLASSICAL candidate as Lnew,
+                    // which under CREM_SPIN_MAGNITUDE is not what is
+                    // installed, so the per-photon closure could not be read
+                    // from that trace at all (audit 140).  Printed here
+                    // instead, after the choice, for the diagnostic only.
+                    if(std::getenv("CREM_L_UPDATE"))
+                        std::fprintf(stderr,"CREM_LUSED Lused=%.17e\n",
+                            installedAngularMomentum*reducedMass/hbar);
+                    elements.specificAngularMomentum=installedAngularMomentum;
                     if(gPhotonBalanceAudit.enabled) {
                         // Same balance as the two-body path, on the variables
                         // this one keeps: J = L_vector + S_1 + S_2, and the

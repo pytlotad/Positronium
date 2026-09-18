@@ -708,13 +708,17 @@ inline int zeroPointModes = 64;
 //   CREM_SPIN_MAGNITUDE    Take the orbital angular momentum a photon
 //                          removes from the PHOTON'S OWN SPIN -- the
 //                          hbar-along-its-direction subtraction -- instead of
-//                          from the classical secular law k(e).  Conserves
-//                          angular momentum per photon far better (the orbit
-//                          surrenders 0.88 of what the photon demands against
-//                          0.27 with k(e)) at the cost of an eccentric orbit
-//                          and a ~30x wall-clock penalty.  The note that it
-//                          produces unphysical elements is stale; see
-//                          crem_collapse.hpp at the switch.
+//                          from the classical secular law k(e).  The 0.88
+//                          quoted here was a ratio to the photon's PROJECTED
+//                          demand; in hbar removed from |L| it changes
+//                          nothing (0.2927 against 0.3054 over eight seeds),
+//                          halves the photon energy against 2R/n^3 and
+//                          censors every cascade at 1800 s (audit 140).
+//                          Combined with CREM_AXIAL_SPIN it removes exactly
+//                          1.000000 hbar and the cascade ends after ONE
+//                          photon at L = 0.  The note about unphysical
+//                          elements is stale and stays stale: e^2 is never
+//                          negative.
 //   CREM_SPIN_TRIM         Renormalize the spin after each transport step.
 //   CREM_MAGNETIC_RADIUS_SCALE
 //                          Softening length of the magnetic moment's field in
