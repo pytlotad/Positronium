@@ -1,0 +1,19 @@
+Zapisano 2026-09-18T13:28:08+02:00, przed pomiarem.
+Hipoteza H124: reszta (54% niezrownowazenia po dodaniu tempa pedu ukrytego)
+bierze sie z postaci GRADIENTOWEJ sily na moment.  Model liczy
+grad(mu.B + p.E), a sila na dipol w polu zewnetrznym ma postac konwekcyjna
+(mu.grad)B + (p.grad)E.  Roznica jest tozsamosciowa:
+  grad(mu.B) - (mu.grad)B = mu x (rot B),
+  grad(p.E)  - (p.grad)E  = p  x (rot E),
+a dla pola zewnetrznego rot E = -dB/dt i rot B = (1/c^2) dE/dt, wiec oba
+czlony sa pierwszego rzedu w czestosci, czyli w beta przy stalym promieniu --
+tak samo jak reszta.
+Pomiar w ukladzie syntetycznym z sekcji 122 (kolowy, 1 r*, przechyl 0):
+licze S = suma po czastkach [mu_i x (rot B_i) + p_i x (rot E_i)] z szablonu
+symetrycznego i porownuje z reszta R = F1+F2 (z wlaczonym tempem pedu
+ukrytego).
+Reguly:
+  R124a "to jest drugi brakujacy czlon": |R - S| <= 0.2 |R| przy beta 0.01,
+     0.1 i 0.2, czyli zgodnosc co do wektora, nie tylko co do dlugosci.
+  R124b "czesciowo": rzut S na kierunek R miesci sie w 0.3..0.8 |R|.
+  R124c "nie to": rzut ponizej 0.3 |R| albo zly znak.

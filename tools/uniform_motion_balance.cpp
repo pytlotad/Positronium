@@ -225,6 +225,59 @@ int main(int argc,char** argv) {
                     "ratio %.4f)\n",fieldRate.norm(),net.norm(),
                     fieldRate.norm()/std::max(net.norm(),1.0e-300));
     }
+    // Is the remainder the difference between the GRADIENT form the model uses
+    // and the CONVECTIVE form a dipole force has (audit 124)?
+    //   grad(mu.B) - (mu.grad)B = mu x (curl B),
+    //   grad(p.E)  - (p.grad)E  = p  x (curl E),
+    // and for the partner's field curl E = -dB/dt, curl B = (1/c^2) dE/dt, so
+    // both are first order in the frequency -- the order the remainder has.
+    {
+        const double stencil=1.0e-4*separation;
+        const auto curls=[&](bool targetIsFirst,Vec3& curlE,Vec3& curlB) {
+            const Vec3 position=targetIsFirst?present.firstPosition
+                                             :present.secondPosition;
+            Vec3 electricPlus[3],electricMinus[3];
+            Vec3 magneticPlus[3],magneticMinus[3];
+            for(int axis=0;axis<3;++axis) {
+                Vec3 offset;
+                (axis==0?offset.x:axis==1?offset.y:offset.z)=stencil;
+                const ElectromagneticField plus=fieldFromOtherParticleAt(
+                    position+offset,present.time,present,history,targetIsFirst);
+                const ElectromagneticField minus=fieldFromOtherParticleAt(
+                    position-offset,present.time,present,history,targetIsFirst);
+                electricPlus[axis]=plus.electric;
+                electricMinus[axis]=minus.electric;
+                magneticPlus[axis]=plus.magnetic;
+                magneticMinus[axis]=minus.magnetic;
+            }
+            const auto component=[&](const Vec3* plus,const Vec3* minus) {
+                const double inverse=1.0/(2.0*stencil);
+                return Vec3{
+                    (plus[1].z-minus[1].z)*inverse-(plus[2].y-minus[2].y)*inverse,
+                    (plus[2].x-minus[2].x)*inverse-(plus[0].z-minus[0].z)*inverse,
+                    (plus[0].y-minus[0].y)*inverse-(plus[1].x-minus[1].x)*inverse};
+            };
+            curlE=component(electricPlus,electricMinus);
+            curlB=component(magneticPlus,magneticMinus);
+        };
+        Vec3 curlEFirst,curlBFirst,curlESecond,curlBSecond;
+        curls(true,curlEFirst,curlBFirst);
+        curls(false,curlESecond,curlBSecond);
+        const Vec3 gradientExcess=
+            cross(present.firstDipole,curlBFirst)
+           +cross(present.firstElectricDipole,curlEFirst)
+           +cross(present.secondDipole,curlBSecond)
+           +cross(present.secondElectricDipole,curlESecond);
+        const double projection=net.norm()>0.0
+            ?dot(gradientExcess,net)/net.norm():0.0;
+        std::printf("  gradient-minus-convective excess: |S| %.6e N, "
+                    "projection on the net force %.6e N (%.4f of it), "
+                    "|net - S| %.6e N (%.4f)\n",
+                    gradientExcess.norm(),projection,
+                    projection/std::max(net.norm(),1.0e-300),
+                    (net-gradientExcess).norm(),
+                    (net-gradientExcess).norm()/std::max(net.norm(),1.0e-300));
+    }
     // The same net force with single parts of the dipole sector removed, when
     // the binary carries the probe switches of audit 105.
     const char* switches[]={"CREM_PROBE_NO_POLES","CREM_PROBE_NO_MAGNETIZATION",

@@ -3920,11 +3920,17 @@ inline MutualForces retardedExternalForces(const State& s,
     // has never had (audit sections 105g, 120).  Off by default, so
     // production is bit-identical without it; the moment derivatives come
     // from the same retarded history the rest of this sum uses.
-    // CREM_HIDDEN_MOMENTUM_FORCE: the rate of the loops' own hidden momentum
-    // (audit 123), the term named by section 122e.  Off by default until it
-    // is decided on; with it off every number is unchanged.
+    // The rate of the loops' own hidden momentum (audits 122-124), ON by
+    // decision after audit 123 measured it: a current loop carries
+    // (mu x E)/c^2 outside gamma m v, and the retarded sum has to carry its
+    // rate or it is not Newton's law for the mechanical momentum.  It removes
+    // 46% of the sum's measured imbalance at every speed and leaves the
+    // rigidly drifting pair exactly balanced.  What it does NOT do is improve
+    // a deep passage, because the other 54% is still unsourced (123c): the
+    // orbit at 1 r* ends with twice the momentum.  CREM_NO_HIDDEN_MOMENTUM_
+    // FORCE removes it for comparison.
     static const bool hiddenMomentumForce=
-        std::getenv("CREM_HIDDEN_MOMENTUM_FORCE")!=nullptr;
+        std::getenv("CREM_NO_HIDDEN_MOMENTUM_FORCE")==nullptr;
     MutualForces hiddenRate;
     if(hiddenMomentumForce&&gDipoleForceEnabled)
         hiddenRate={hiddenMomentumRateForce(s,history,true),

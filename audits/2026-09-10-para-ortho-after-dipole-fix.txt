@@ -8285,3 +8285,73 @@ measurement of whether that survives a cascade.
       the material rate, so it inherits its resolution cost and the node-
       crossing sensitivity of section 107e.  The synthetic tests are the same
       as section 122's and share their limits.
+
+124. THE HIDDEN-MOMENTUM RATE TURNED ON IN PRODUCTION, AND A SECOND PIECE OF
+     THE IMBALANCE FOUND: THE GRADIENT GROUPING
+==================================================================
+
+124a. TURNED ON.  hiddenMomentumRateForce is now part of the retarded sum by
+      default (CREM_NO_HIDDEN_MOMENTUM_FORCE removes it).  Audit 123 measured
+      what it does and does not do, and the decision was taken on that
+      evidence: it is Newton's law for the mechanical momentum of a current
+      loop, it leaves a rigidly drifting pair exactly balanced, and it removes
+      46% of the sum's imbalance at every speed.
+
+124b. WHAT PRODUCTION DOES WITH IT.  Experiment 1, 4 trajectories, seed 42,
+      budget 600 s:
+        collapse time          30.6723 +- 0.0045 ps   (was 30.6732 +- 0.0052)
+        against the closed form  0.9855                (unchanged)
+        frame drift at the stop  beta = 2.72e-06       (was 6.12e-04)
+        stop periapsis           15.84 r*              (was 15.91)
+      The collapse time moves by 0.0009 ps, a fifth of its own error, and the
+      pair's self-acceleration over the whole inspiral falls by 225 times.
+      That is the production case for the term: audit 123's worse deep
+      passage lives below 1 r*, where production does not go.
+      Photon-cascade times move as they must: seed 70001 gives para
+      198.975154 ps (was 198.974733) and ortho 198.966547 (was 198.971579),
+      i.e. +0.42 fs and -5.0 fs.  Validation 62/62, header isolation 37/37.
+
+124c. THE SECOND PIECE.  The model's moment force is built as a GRADIENT,
+      grad(mu.B + p.E).  Written convectively that is
+        grad(mu.B) = (mu.grad)B + mu x (curl B),
+        grad(p.E)  = (p.grad)E  + p  x (curl E),
+      and for the partner's field curl B = (1/c^2) dE/dt and curl E = -dB/dt,
+      so the two extra pieces are first order in the frequency -- the order
+      the remainder has.  Measured in the synthetic circular setting of
+      section 122, against the remainder R = F1+F2 that survives the
+      hidden-momentum term:
+        beta    |R| [N]      |S| [N]      S.R/|R|     |R-S|/|R|
+        0.01    2.8545e-04   1.2208e-04   0.4277      0.5723
+        0.1     2.8563e-03   1.1979e-03   0.4194      0.5806
+        0.2     5.7087e-03   2.2877e-03   0.4003      0.6000
+      S is COLLINEAR with R -- its projection equals its length to four
+      digits -- and carries 40-43% of it.  Rule R124b is met, R124a is not.
+
+124d. WHAT THAT IS AND IS NOT.  It is a term of the right size, the right
+      order and the right direction, identified without fitting.  It is NOT
+      established as an error: for an Amperian dipole the standard force IS
+      grad(m.B) - (1/c^2) d(m x E)/dt, which is what the model now has, so
+      the convective regrouping is a candidate reading rather than a
+      correction.  What the measurement does establish is that the remaining
+      imbalance is built from the same curls, i.e. from the time dependence
+      of the partner's field at the particle, and not from the pole or
+      magnetization construction (their ablations leave it unchanged).
+      Accounting so far: 46% the hidden-momentum rate (123), 23% this piece
+      (0.54 x 0.42), and about 31% of the original imbalance with no
+      identified source.
+
+124e. THE TEST THAT WOULD SETTLE IT (named, not done).  A case with an exact
+      closed-form answer: a magnetic moment at rest and a charge in UNIFORM
+      relative motion.  There the fields, the Amperian force, the reaction on
+      the charge and the field momentum are all known analytically, so the
+      model's force can be compared term by term with the exact one rather
+      than with its own bookkeeping.  Section 122's rigid-drift test is the
+      degenerate case of it (zero relative velocity) and already passes; the
+      moving case is where a first-order error must show.
+
+124f. LIMITS.  The synthetic tests are one separation, one tilt, moments
+      along the normal.  The curls come from a symmetric stencil at 1e-4 of
+      the separation, not from an independent analytic field.  The production
+      numbers are four trajectories at one seed.  The ablation lines printed
+      by the probe in this run are vacuous: that binary was built from the
+      working tree without the probe switches of audit 105.

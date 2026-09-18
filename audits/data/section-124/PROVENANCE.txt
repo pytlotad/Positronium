@@ -1,0 +1,9 @@
+Raw outputs behind audit section 124 (2026-09-18).
+  prereg_124.txt      hypothesis H124 and rules R124a-c, timestamped
+  pairs_on.txt        tools/para_ortho_lab_pairs with the term on by default
+  production_on.txt   ./positronium --mode statistical --phenomenon 1 --runs 4
+                      --seed 42 --crem-wallclock-budget-s 600
+  excess_b<beta>.txt  tools/uniform_motion_balance (working-tree build, so its
+                      ablation lines are inert): the remainder after the
+                      hidden-momentum term and the gradient-minus-convective
+                      excess beside it

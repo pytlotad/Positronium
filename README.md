@@ -606,6 +606,14 @@ raportowany czas kolapsu jest mierzony wprost, bez drugiego przebiegu:
 trajektoriach spada z \(388\) s do \(47\) s. Kaskadę fotonową włącza
 `--radiation-reaction stochastic`.
 
+**Samonapęd pary jest w produkcji mniejszy o dwa rzędy (audyt 124).** Do
+sumy sił opóźnionych weszło tempo pędu ukrytego pętli prądowej,
+\(-(1/c^2)\,d(\boldsymbol\mu\times\mathbf E)/dt\). Czas kolapsu zmienia się
+o \(0{,}0009\) ps, czyli piątą część własnego błędu, a prędkość dryfu układu
+na końcu przebiegu spada z \(6{,}1\cdot10^{-4}\) na \(2{,}7\cdot10^{-6}\).
+Poniżej \(1\,r^*\) ten człon pogłębia przejścia (audyt 123), ale produkcja
+tam nie dochodzi.
+
 **To jest czas laboratoryjny (audyt 110).** Para sama się rozpędza, więc
 zegar estymatora był zegarem własnym układu, który dryfuje: elementy
 oskulacyjne noszą tylko ruch względny, a pęd z niesymetrycznego sektora

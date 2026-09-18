@@ -1,0 +1,9 @@
+beta 0.1000  separation 1.00 r*  tilt 0 deg  nodes 512  span 40 r/c
+  |F1| 1.260381e-02  |F2| 9.747502e-03  |F1+F2| 2.856315e-03  ratio 2.266e-01
+  gradient-minus-convective excess: |S| 1.197912e-03 N, projection on the net force 1.197886e-03 N (0.4194 of it), |net - S| 1.658448e-03 N (0.5806)
+  without CREM_PROBE_NO_POLES          |F1+F2| 2.856315e-03  ratio 2.266e-01
+  without CREM_PROBE_NO_MAGNETIZATION  |F1+F2| 2.856315e-03  ratio 2.266e-01
+  without CREM_PROBE_NO_LW_IN_MOMENT   |F1+F2| 2.856315e-03  ratio 2.266e-01
+  without CREM_PROBE_NO_MATERIAL       |F1+F2| 2.856315e-03  ratio 2.266e-01
+  without CREM_PROBE_NO_DIPOLE_ON_CHARGE |F1+F2| 2.856315e-03  ratio 2.266e-01
+  without CREM_PROBE_NO_MOMENT_FORCE   |F1+F2| 2.856315e-03  ratio 2.266e-01
