@@ -40,6 +40,8 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <deque>
 #include <iomanip>
 #include <iostream>
@@ -2799,10 +2801,30 @@ inline LocalElectromagneticFields localRelativisticFields(
     // dipoles themselves.  State's electric dipoles are the boosted
     // components of those same proper magnetic moments, not extra sources;
     // adding them here separately would count the motional channel twice.
-    atFirst.electric+=secondDipole.electric;
-    atFirst.magnetic+=secondDipole.magnetic;
-    atSecond.electric+=firstDipole.electric;
-    atSecond.magnetic+=firstDipole.magnetic;
+    // CREM_SPIN_RATE_SECTOR: diagnostic ablation of the precession rate
+    // (audit section 116).  |S1+S2| is conserved exactly when omega1 =
+    // omega2, so "which sector makes the two rates differ" is answered by
+    // keeping one of them: "charge" drops the partner's dipole field and
+    // leaves its Lienard-Wiechert charge field, "dipole" does the reverse.
+    // It reaches the Thomas-BMT precession and the moment derivatives that
+    // chargeDipoleForces reads, and nothing else: the Lorentz and gradient
+    // forces assemble their own fields.  Unset (the default) leaves every
+    // number bit-identical.
+    static const int rateSector=[]{
+        const char* text=std::getenv("CREM_SPIN_RATE_SECTOR");
+        if(!text) return 0;
+        if(std::strcmp(text,"charge")==0) return 1;
+        if(std::strcmp(text,"dipole")==0) return 2;
+        return 0;
+    }();
+    if(rateSector==2) { atFirst=ElectromagneticField{};
+                        atSecond=ElectromagneticField{}; }
+    if(rateSector!=1) {
+        atFirst.electric+=secondDipole.electric;
+        atFirst.magnetic+=secondDipole.magnetic;
+        atSecond.electric+=firstDipole.electric;
+        atSecond.magnetic+=firstDipole.magnetic;
+    }
     // The external field is uniform, so both roles see the same addition and
     // no gradient force follows from it.  Adding it here rather than only in
     // the force sums is what carries it into Thomas-BMT precession, which for

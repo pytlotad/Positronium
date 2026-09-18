@@ -1,0 +1,19 @@
+Zapisano 2026-09-18T11:33:39+02:00, przed pomiarami.
+(b) Dlaczego |S| nie jest zachowane.  Warunek zachowania to omega1 = omega2,
+bo d|S|^2/dt = 2(S1+S2).(omega1 x S1 + omega2 x S2).  Nowy przelacznik
+diagnostyczny CREM_SPIN_RATE_SECTOR=charge|dipole zostawia w tempie precesji
+tylko pole ladunku partnera albo tylko jego pole dipolowe.
+  Regula b1: "przyczyna to sektor spin-orbita (pole ladunku)", gdy wariant
+      dipole zmniejsza dryf |S| po pelnym kolapsie co najmniej piecio-
+      krotnie wobec kontroli (kontrola: 0.652 -> 0.515, czyli 0.137).
+  Regula b2: "przyczyna to czlon wzajemny dipol-dipol", gdy tak samo zachowa
+      sie wariant charge.
+  Jesli oba zmniejszaja slabo, dryf jest efektem obu sektorow razem.
+(a) Skala sprzezenia spin-spin wobec 116.8 GHz (czlon kontaktowy) i 204.4 GHz
+(cale rozszczepienie).  Sonda liczy wlasna energie dipol-dipol modelu
+(azimuthAveragedDipoleEnergy, z czlonem kontaktowym) przy a = a_pary, dla
+L/hbar od 1 do 0.01, na perycentrum i jako srednia po orbicie.
+  Regula a1: "korzen to L = hbar", gdy przy L <= 0.1 hbar sprzezenie osiaga
+      100 GHz lub wiecej.
+  Regula a2: podaje takze, ile wynosi sprzezenie przy L = hbar z czlonem
+      kontaktowym, wobec 10.98 GHz raportowanych dzis bez niego.

@@ -1,0 +1,8 @@
+Raw outputs behind audit section 116 (2026-09-18).
+  prereg_116.txt        rules a1, a2, b1, b2, timestamped
+  a_scan.txt            tools/spin_spin_coupling_scan 1: the model's own
+                        splitting analogue against L/hbar at a = a_pair
+  b_trace_charge.txt.gz CREM_SPIN_RATE_SECTOR=charge with
+                        CREM_DEBUG_PROJECTION on one production trajectory
+  b_trace_dipole.txt.gz the same with the dipole field kept instead
+  The control trace is audits/data/section-115/R2_libration_trace.txt.gz.

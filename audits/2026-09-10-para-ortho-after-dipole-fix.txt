@@ -7732,3 +7732,89 @@ measurement of whether that survives a cascade.
       and the chirp means the median over the inspiral is a summary of a
       sweep, not a scale.  The comparison uses the measured splitting as a
       number, not as a prediction of this model.
+
+116. WHERE THE QUANTUM DISAGREEMENT COMES FROM: THE TENSOR TERM ON A
+     NON-SPHERICAL ORBIT.  MY OWN PREDICTION WAS WRONG
+==================================================================
+
+116a. TWO CHECKS, ONE ROOT PROPOSED.  Section 115 left two quantitative
+      disagreements with a findable cause: the spin-spin coupling is an order
+      of magnitude below the hyperfine splitting, and |S1+S2| drifts where
+      quantum mechanics conserves it for an S state.  The proposal was that
+      both come from the model's ground state being a circular L = hbar
+      orbit rather than an S state.
+
+116b. (b) WHY |S| DRIFTS.  |S1+S2| is conserved exactly when omega1 = omega2,
+      since d|S|^2/dt = 2(S1+S2).(omega1 x S1 + omega2 x S2).  A new
+      diagnostic switch, CREM_SPIN_RATE_SECTOR, keeps only one source in the
+      precession rate.  One full collapse each, seed 42:
+        sector kept                |S| start -> end   drift  range  |w1-w2|/|w1|
+        both (control)             0.6525 -> 0.5146   0.138  0.294  0.386
+        the partner's CHARGE field 0.6525 -> 0.6525   0.000  0.000  0.000
+        the partner's DIPOLE field 0.6525 -> 0.4682   0.184  0.679  0.256
+      MY PREDICTION WAS WRONG, and cleanly so.  I expected the spin-orbit
+      (charge-field) sector to be the cause; it is the one sector that
+      conserves |S| EXACTLY.  With only the charge field the two rates are
+      equal to every printed digit, the mutual angle does not move at all
+      (cos stays +0.1486 over the whole inspiral), and |S| is frozen: the
+      spin-orbit sector rotates BOTH moments the same way, so it cannot
+      change the angle between them.  The mutual dipole field is what makes
+      the rates differ, and it alone reproduces -- in fact exceeds -- the
+      control's drift.  Rule b2, not b1.
+
+116c. AND THAT IS EXACTLY THE TERM QUANTUM MECHANICS REMOVES.  The
+      dipole-dipole interaction splits into a contact part, which commutes
+      with S^2, and an anisotropic TENSOR part, which does not.  In the
+      physical ground state the tensor part averages to zero over a spherical
+      S state, leaving the contact term, and S^2 is a good quantum number.
+      On this model's L = hbar orbit the pair sits at one separation in one
+      direction, so the tensor part survives at full strength and drives
+      precisely the drift measured above.  The root is therefore not the
+      spin-orbit coupling that an L != 0 state brings in, but the tensor term
+      that an L = 0 state would have averaged away.
+
+116d. (a) HOW BIG THE MODEL'S OWN SPIN-SPIN COUPLING IS.  Its analogue of the
+      splitting is U(aligned) - U(anti-aligned) from azimuthAveragedDipoleEnergy
+      (contact term included), at fixed semi-major axis a_pair, against the
+      angular momentum:
+        L/hbar   periapsis     at periapsis      orbit-averaged [GHz]
+        1.00     547.5 r*            21.9              21.9
+        0.50      73.4 r*          9 120             175.6
+        0.30      25.2 r*        223 128             810.1
+        0.10       2.74 r*     97 795 934          15 646.6
+        0.03       0.246 r*  6 590 226 992          63 182.4
+        0.01       0.027 r*  7 953 185 690          53 667.9
+      Rule a1 is met with room to spare: at L = 0.1 hbar the orbit-averaged
+      coupling is 15 647 GHz, seventy-seven times the whole measured
+      splitting.  The measured 203.3941 GHz corresponds to L = 0.476 hbar and
+      the contact part alone (116.8 GHz) to L = 0.573 hbar.
+      A correction to what I said before the measurement: I suspected the
+      report's dipoleCouplingHz of omitting the model's own contact term.  It
+      does use the bare tensor form, but at a_pair the two agree to 1.0000 --
+      the contact term is negligible at 547 r*, so the reported 10.98 GHz
+      (half the splitting analogue, 21.9 GHz) stands.
+
+116e. WHAT THIS SAYS TOGETHER.  The model's spin-spin scale is a property of
+      the ORBIT, sweeping four orders of magnitude between L = hbar and
+      L = 0.03 hbar, while the physical splitting is a property of the STATE.
+      Nothing in the model picks the L that would reproduce it, and the same
+      tensor term that would have to be tuned is the one destroying |S| along
+      the way.  Both disagreements are the same missing feature: a spherical
+      ground state with density at contact.
+
+116f. WHAT TO MEASURE NEXT (named, not done).  Split the model's own coupling
+      into its contact and tensor parts and follow both against L: the
+      question is whether any orbit makes the contact part reach 116.8 GHz
+      while the tensor part averages small enough to leave |S| nearly
+      conserved.  If none does, the model cannot carry the hyperfine
+      structure at all, which is a sharper statement than the factor of ten.
+
+116g. LIMITS.  (b) is one trajectory per sector; the ablation changes the
+      precession and the moment derivatives that chargeDipoleForces reads, so
+      the three runs are not the same trajectory (they end at L = 0.170,
+      0.170 and 0.180 hbar).  The exact equality of the two rates in the
+      charge-only run is a property of this symmetric preparation and was not
+      tested for a drifting pair.  (a) is analytic in the orbit average: a
+      Kepler ellipse at fixed a with the model's own softened energy, not an
+      integrated trajectory, and the 1/r^3 divergence is cut only by the
+      moment radius 0.9668 r*.
