@@ -1,0 +1,11 @@
+separation 20.00 r*  beta 0.0100  tilt 0 deg
+  stencil check: |coarse-fine|/|fine| 3.001e-08
+  exact Amperian    +7.718170e-09 +0.000000e+00 +0.000000e+00  |F| 7.718170e-09
+  model gradient    +1.543605e-08 +7.705945e-19 +0.000000e+00  |F| 1.543605e-08
+  model hidden rate -7.718097e-09 +7.510203e-18 -0.000000e+00  |F| 7.718097e-09
+  model total       +7.717953e-09 +8.280797e-18 +0.000000e+00  |F| 7.717953e-09
+  exact reaction    -7.717784e-09 +0.000000e+00 +0.000000e+00  |F| 7.717784e-09
+  model reaction    -7.637018e-09 +0.000000e+00 +0.000000e+00  |F| 7.637018e-09
+  |model-exact| reaction / |exact| 1.0465e-02
+  net of the two, model 8.093499e-11 N, exact 3.859995e-13 N (|net|/|action| model 1.0487e-02 exact 5.0012e-05)
+  |model-exact|/|exact| 2.8094e-05   (gradient alone 9.9996e-01)

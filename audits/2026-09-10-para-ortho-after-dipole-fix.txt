@@ -8355,3 +8355,76 @@ measurement of whether that survives a cascade.
       numbers are four trajectories at one seed.  The ablation lines printed
       by the probe in this run are vacuous: that binary was built from the
       working tree without the probe switches of audit 105.
+
+125. THE EXACT TEST: THE MOMENT FORCE IS RIGHT TO 3e-5, AND THE IMBALANCE IS
+     TWO DIFFERENT SOFTENING LENGTHS ON THE TWO SIDES OF ONE INTERACTION
+==================================================================
+
+125a. THE SETTING.  A magnetic moment at rest and a charge in UNIFORM
+      relative motion past it, at the instant of closest approach.  The
+      fields of the charge are the Heaviside ellipsoid in closed form, the
+      Amperian force on the moment is grad(m.B) - (1/c^2) m x dE/dt, and the
+      reaction is the Lorentz force on the charge in the moment's static
+      dipole field.  Everything is analytic, so the model's force can be
+      compared term by term instead of against its own bookkeeping.
+
+125b. THE FORCE ON THE MOMENT IS CORRECT.  Separation 20 r*, where the
+      model's softening is worth a fraction of a per cent:
+        beta    |model total - exact| / |exact|    gradient alone
+        0.01    2.8094e-05                         0.99996
+        0.05    2.8095e-05                         0.99996
+        0.2     2.8099e-05                         0.99996
+      The model's gradient and the hidden-momentum rate are each about twice
+      the answer and nearly cancel: at beta 0.05 the gradient is
+      +7.727e-08 N, the hidden rate -3.864e-08 N, the sum 3.864e-08 N against
+      the exact 3.864e-08 N.  So the term added in audits 123-124 is not a
+      correction of the model's own making -- without it the force on a
+      moment is wrong by 100%, with it correct to 3e-05.  That is an
+      independent confirmation from outside the model.
+
+125c. THE REACTION IS OFF BY THE SOFTENING, AND ONLY BY IT.  At 20 r* the
+      model's Lorentz force on the charge is 1.0465e-02 of the exact one
+      below it, at every beta -- a static, velocity-independent deficit,
+      which is what the Plummer softening at 0.9668 r* plus the contact term
+      predict at that distance.  At 1 r* with the moment in the orbital plane
+      the same comparison gives 0.628, i.e. the model's reaction is a third
+      of the exact one.
+
+125d. THAT IS THE IMBALANCE.  The two sides of one interaction are softened
+      at DIFFERENT lengths: the moment feels the charge's field, softened at
+      separationFloor = 0.05 r*, while the charge feels the moment's field,
+      softened at magneticDipoleRadius = 0.9668 r*.  Newton's third law
+      cannot survive that, and it does not.  Matching the two lengths --
+      CREM_MAGNETIC_RADIUS_SCALE=0.05 -- in the synthetic circular test at
+      1 r*, beta 0.1:
+        default moment radius   |F1+F2| 2.856e-03 N   ratio 0.2266
+        matched to 0.05 r*      |F1+F2| 1.167e-05 N   ratio 0.000966
+      a factor 245.  At 20 r*, where neither softening reaches, the imbalance
+      is 1.1e-04 either way.  On the real trajectory (para, 1 r*, tilt 0, one
+      orbit, depth 26):
+        default                 |P| 1.1714 m c   beta_cm 0.5015   dE +113.1
+        matched                 |P| 0.0305 m c   beta_cm 0.0151   dE +0.045
+      and the orbit no longer plunges at all -- it leaves to 8.13 r*.  This
+      reproduces the number section 104e measured for the same switch and
+      explains it.
+
+125e. WHAT IS AND IS NOT SETTLED.  Settled: the retarded moment force is
+      right, the reaction is right up to the regularization, and the
+      self-propulsion of sections 104-124 is the mismatch of the two
+      regularization lengths rather than a missing force or a missing
+      momentum carrier.  Not settled: what to do about it.  The moment radius
+      is not free -- audit 86 derives it from the current loop that carries
+      mu at speeds below c, and audits 117-118 showed it sets the whole
+      contact sector; matching it to 0.05 r* would multiply the contact
+      coupling by (0.9668/0.05)^3 = 7200.  The principled repair is not to
+      change the radius but to use ONE length on both sides of the
+      interaction: soften the charge's field at the moment radius WHEN it
+      acts on a moment, as the moment's field is softened when it acts on a
+      charge.  That is a physics change and needs its own audit.
+
+125f. LIMITS.  One geometry per case, one instant (closest approach), uniform
+      relative motion only.  The exact Amperian force is differentiated
+      numerically on the closed-form fields, with the stencil converged to
+      3e-08.  The reaction comparison uses the static dipole field, which is
+      exact only because the moment is at rest in this test.  The trajectory
+      numbers are one orbit at one radius.

@@ -1,0 +1,19 @@
+Zapisano 2026-09-18T13:36:12+02:00, przed pomiarem.
+Test rozstrzygajacy z sekcji 124e: nieruchomy moment i ladunek w JEDNOSTAJNYM
+ruchu wzglednym.  Pola poruszajacego sie ladunku sa znane w postaci zamknietej
+(elipsoida Heaviside'a), wiec sila amperowska na dipol
+  F = grad(m.B) - (1/c^2) m x dE/dt
+da sie policzyc niezaleznie od modelu i porownac czlon po czlonie z tym, co
+liczy covariantDipoleGradientForce plus nowy czlon pedu ukrytego.
+Uklad: czastka 1 nieruchoma, z momentem, bez momentu u czastki 2; czastka 2
+porusza sie prostopadle do separacji, chwila najwiekszego zblizenia.
+Separacje 20 r* (zmiekczenie nieistotne) i 1 r* (zmiekczenie widoczne),
+beta 0.01, 0.05, 0.2, moment wzdluz normalnej i w plaszczyznie.
+Reguly:
+  R125a "sila modelu na moment jest poprawna": |F_model - F_analityczna| <=
+     0.05 |F_analityczna| przy 20 r* dla kazdego beta.
+  R125b "blad pierwszego rzedu w v/c": roznica rosnie liniowo z beta i
+     przekracza 0.05 przy ktoryms beta; wtedy podaje jej strukture.
+  R125c kontrola: przy beta = 0 obie sily maja byc zerowe.
+Analityczne pochodne licze szablonem symetrycznym na polach zamknietych, z
+kontrola kroku (dwie wartosci h maja sie zgadzac do 1e-6).

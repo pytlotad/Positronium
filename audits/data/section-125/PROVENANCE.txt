@@ -1,0 +1,9 @@
+Raw outputs behind audit section 125 (2026-09-18).
+  prereg_125.txt        rules R125a-c, timestamped
+  r20_b<beta>.txt       tools/moving_charge_dipole_force at 20 r*: the model's
+                        moment force and reaction against the exact ones
+  r1_b005_t90.txt       the same at 1 r* with the moment in the orbital plane
+  traj_scale005.txt     tools/ledger_engine_drift at 1 r* with
+                        CREM_MAGNETIC_RADIUS_SCALE=0.05
+  The synthetic circular comparisons at matched softening come from
+  tools/uniform_motion_balance.cpp with the same environment variable.
