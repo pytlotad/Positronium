@@ -10158,8 +10158,8 @@ measurement of whether that survives a cascade.
       conservativeParticleEnergy: the Legendre-transform energy,
       T + U_Coulomb + U_dd + U_Darwin + U_constraint, with the velocity-linear
       charge-dipole term absent.  The Noether energy now calls it, which is
-      the one site whose own comment demanded it.  chargeDipoleInteractionEnergy
-      is untouched and so is its use as the radial potential at FIXED angular
+      the one site whose own comment demanded it.  The charge-dipole energy
+      itself is untouched, and so is its use as the radial potential at FIXED
       momentum in dipoleAwarePeriapsis, where a velocity-linear term is a
       function of r and L alone and belongs there.  One function was doing
       two jobs; there are now two functions.
