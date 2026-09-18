@@ -1,0 +1,8 @@
+Raw outputs behind audit section 127 (2026-09-18), all from
+tools/ledger_engine_drift.cpp on today's code.
+  prereg_127.txt   the ledger rule R127a-c and the re-measurement plan
+  c_both_*.txt     force and energy on the matched length
+  c_forceonly_*.txt  the production default: force matched, ledger's own floor
+  c_none_*.txt     CREM_NO_MATCHED_SOFTENING, i.e. the pre-126 behaviour
+  g_r<R>_ch<C>_t<T>.txt  section 106's grid re-measured, one orbit, depth 26
+  s_r<R>_t<T>.txt  section 109's range scan re-measured, one orbit, depth 20

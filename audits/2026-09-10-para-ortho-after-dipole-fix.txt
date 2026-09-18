@@ -8504,3 +8504,77 @@ measurement of whether that survives a cascade.
       trail keeps them as the history of the defect, not as current
       behaviour.  One geometry for the exact test, one orbit for the
       trajectory, positronium only.
+
+127. THE TWO LOOSE ENDS OF AUDIT 126: THE LEDGER'S OWN SOFTENING, AND THE
+     DEEP-PASSAGE NUMBERS RE-MEASURED
+==================================================================
+
+127a. THE LEDGER'S SOFTENING DOES NOT EXPLAIN THE RESIDUAL.  After audit 126
+      the force on a moment reads the partner's charge field softened at
+      0.9668 r* while chargeDipoleInteractionEnergy -- that force's own energy
+      -- still read it at 0.05 r*, so the force was not minus the gradient of
+      the ledger.  Giving the energy the same length and re-running one orbit:
+        case                      1 r* dE [|U_dd|]   0.5 r* dE   |P| [m c]
+        force matched only        -1.084             -0.230      6.13e-03
+        force and energy matched  -1.129             -0.246      6.13e-03
+        neither (before 126)      +113.1             +11.46      1.171
+      Matching the energy moves the drift 4-7% the WRONG way and leaves the
+      momentum untouched, since no force reads that term.  Rule R127a is not
+      met, so the ledger keeps its own floor and the switch is opt-in
+      (CREM_MATCHED_ENERGY).  What the measurement does settle is that the
+      residual drift -- about 1 |U_dd| per orbit at 1 r*, a hundred times
+      smaller than before 126 -- is NOT the force/energy softening mismatch.
+      The obvious remaining candidate is the one this project has carried
+      since section 58: the ledger is instantaneous and the forces are
+      retarded.
+
+127b. THE DEEP-PASSAGE NUMBERS, RE-MEASURED ON TODAY'S CODE.  Section 106's
+      grid, one orbit, depth 26, |P| after the orbit:
+        start, channel, tilt     section 106        now
+        1 r*   para 0            0.6875 m c         6.13e-03    r_min 0.361
+        1 r*   para 90           fail 42, 0.228     fail 45, 0.187
+        1 r*   ortho 0           0 (leaves)         0 (leaves to 2.71)
+        1 r*   ortho 90          0 (leaves)         0 (leaves to 6.43)
+        0.5 r* para 0            1.189              3.70e-03    r_min 0.266
+        0.5 r* para 90           beta_cm 0.943      2.79e-03    r_min 0.205
+        0.5 r* ortho 0           fail 94, 0.158     0 (leaves to 2.75)
+        0.5 r* ortho 90          0 (leaves)         0 (leaves to 3.18)
+        0.35 r* para 0           beta_cm 0.438      2.95e-03    r_min 0.233
+        0.35 r* para 90          beta_cm 0.527      9.71e-05    r_min 0.209
+        0.35 r* ortho 0          fail 38, 0.132     0 (leaves to 1.76)
+        0.35 r* ortho 90         0 (leaves)         0 (leaves to 1.81)
+      Para's self-propulsion is down by factors of 100 to 10000 and every
+      run completes except para at 1 r* with the moments in the plane, which
+      still breaks off at 0.187 r* on the engine defect of section 107e.
+      Exact ortho still carries P = 0 bit for bit, as the symmetry of
+      section 106 requires.
+      A qualitative change worth naming: the ortho runs that used to PLUNGE
+      and fail (0.5 and 0.35 r*, tilt 0) now leave the region instead.  The
+      plunge was driven through the spin-orbit road -- the charge field acting
+      on the moments -- which is exactly the field audit 126 softened.
+
+127c. AND THE RANGE OF WHAT IS LEFT.  Section 109's scan, one orbit, |P|:
+        r        section 109 (tilt 0 / 90)    now (tilt 0 / 90)
+        2.74 r*  6.9e-03 / 1.8e-01            6.8e-06 / 8.3e-07
+        5 r*     1.3e-03 / 1.7e-03            7.1e-06 / 2.4e-06
+        10 r*    1.0e-04 / 1.3e-04            7.7e-07 / 3.6e-07
+        20 r*    7.0e-06 / 8.0e-06            4.1e-07 / 1.1e-09
+        50 r*    1.9e-07 / 1.9e-07            3.7e-11 / 7.8e-12
+      The r^-3.9 law of section 109 is gone with the effect that produced it:
+      what remains is 1e-6 and below, without a clean power, i.e. at the level
+      where the integrator's own residue lives.  The statement of section 109
+      -- that the self-propulsion reaches above 0.01 a0 -- no longer holds on
+      today's code; it described the defect, and the defect is fixed.
+
+127d. WHAT THIS MEANS FOR THE AUDIT TRAIL.  Sections 104-125 measured a
+      defect and its causes; their trajectory numbers are the defect's, not
+      the model's current behaviour, and 127b-127c are the current ones.  The
+      conclusions that survive unchanged are the ones about symmetry (106),
+      about what the imbalance was NOT (119-121), and the two force results
+      (123-126).
+
+127e. LIMITS.  One orbit per configuration and one seed; the ledger residual
+      of 127a was measured at two radii; the retarded-versus-instantaneous
+      candidate named there was not tested.  Para at 1 r*, tilt 90 still
+      fails, so its line in 127b is a lower bound on the passage rather than
+      a completed orbit.

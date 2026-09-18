@@ -639,12 +639,15 @@ W kanale kwantowym para przesuwa się o \(4{,}9\cdot10^{-8}\) ps, a **orto
 zostaje bit w bit**: idealne orto nie nosi pędu (symetria z audytu 106), więc
 nie ma tam czego poprawiać.
 
-**Samonapęd z audytów 104-106 nie wchodzi do tej liczby.** Sięga on powyżej
-\(0{,}01a_0\) — pęd po jednym obiegu to \(6{,}9\cdot10^{-3}\,mc\) przy
-\(2{,}74\,r^*\), \(1{,}3\cdot10^{-3}\) przy \(5\,r^*\) i dalej maleje
-jak \(r^{-3{,}9}\) — ale przebieg zatrzymuje się na marginesie retardacji
-przy perycentrum \(15{,}9\,r^*\), a resztę drogi dokłada człon analityczny
-o wadze \(2{,}3\cdot10^{-5}\). Wyłączenie całego sektora dipolowego
+**Samonapęd nie wchodzi do tej liczby, a po audycie 126 jest go już prawie
+nie ma.** Zanim go naprawiono, pęd po jednym obiegu wynosił
+\(6{,}9\cdot10^{-3}\,mc\) przy \(2{,}74\,r^*\) i malał jak
+\(r^{-3{,}9}\) (audyt 109). Dziś te same przebiegi dają
+\(6{,}8\cdot10^{-6}\) przy \(2{,}74\,r^*\) i \(3{,}7\cdot10^{-11}\)
+przy \(50\,r^*\), bez czytelnej potęgi, czyli na poziomie własnej reszty
+całkowania (audyt 127). Przebieg zatrzymuje się i tak na marginesie
+retardacji przy perycentrum \(15{,}9\,r^*\), a resztę drogi dokłada człon
+analityczny o wadze \(2{,}3\cdot10^{-5}\). Wyłączenie całego sektora dipolowego
 (`CREM_NO_DIPOLE_FORCE=1`) przesuwa średnią o \(0{,}0075\) ps, czyli
 \(1{,}4\sigma\), a przejście na sektor chwilowy poniżej \(1\,r^*\) nie
 zmienia jej wcale.

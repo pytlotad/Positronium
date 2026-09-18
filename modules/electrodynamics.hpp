@@ -4123,7 +4123,19 @@ inline Vec3 noetherAngularMomentum(const State& s) {
 inline double chargeDipoleInteractionEnergy(const State& state) {
     const Vec3 firstMinusSecond = state.firstPosition - state.secondPosition;
     const double distance = firstMinusSecond.norm();
-    const double floor = separationFloor();
+    // This term is the energy of the force audit 126 rebuilt -- the motional
+    // dipole in the partner's charge field -- so in principle it should carry
+    // the same softening length, or the force is not minus the gradient of
+    // the ledger.  Measured (audit 127): giving it that length moves the
+    // one-orbit ledger drift from -1.084 to -1.129 |U_dd| at 1 r* and from
+    // -0.230 to -0.246 at 0.5 r*, i.e. 4-7% the WRONG way, and leaves the
+    // momentum untouched because no force reads this term.  So the residual
+    // drift is not this mismatch, and the ledger keeps its own floor;
+    // CREM_MATCHED_ENERGY switches it over for comparison.
+    static const bool matchedEnergy=
+        std::getenv("CREM_MATCHED_ENERGY")!=nullptr;
+    const double floor = (matchedEnergy&&matchedMomentSoftening()>0.0)
+        ? matchedMomentSoftening() : separationFloor();
     if(!(distance > 0.0) && !(floor > 0.0)) return 0.0;
     // The Plummer charge's field (section 66): k q d / rho^3.
     const double radialFactor = floor > 0.0

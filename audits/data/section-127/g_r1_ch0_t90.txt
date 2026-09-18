@@ -1,0 +1,2 @@
+KONCOWY P/(m c) -1.625e-10 -1.772e-09 +6.712e-04  |P| 6.712e-04  po 45 krokach  r 0.1865 r*
+r 1.0 ch para tilt 90 tol 1e-08 N 256 depth 26 | AWARIA 45/256 | zakres E/|U_dd| 2.136e-01 | E_koniec-E0 /|U_dd| -2.129e-01 | r 0.1865..0.9997 r* | 15 s

@@ -1,0 +1,14 @@
+Zapisano 2026-09-18T15:46:33+02:00, przed pomiarem.
+(1) Spojnosc energii.  Po audycie 126 sila na moment czuje pole ladunku
+zmiekczone na 0.9668 r*, ale chargeDipoleInteractionEnergy nadal liczy to pole
+z podloga 0.05 r*.  Sila nie jest wiec minus gradientem energii z bilansu.
+Zmiana: ten czlon energii uzywa tej samej dlugosci (przelacznik ten sam,
+CREM_NO_MATCHED_SOFTENING wraca do starego).
+  R127a: dryf bilansu po obiegu przy 1 r* ma spasc wobec -1.084 |U_dd|
+     (obecny domyslny) co najmniej dwukrotnie.
+  R127b: przy 0.5 r* ma spasc wobec wartosci zmierzonej teraz jako kontrola.
+  R127c: walidacja 62/62 i izolacja 37/37; produkcja raportowana.
+(2) Odswiezenie liczb z sekcji 104-125 na obecnym kodzie: siatka z sekcji 106
+(1, 0.5, 0.35 r*, para i orto, przechyl 0 i 90, jeden obieg) oraz skan zasiegu
+z sekcji 109 (2.74, 5, 10, 20, 50 r*, para, przechyl 0 i 90).  Bez regul,
+to pomiar odtworzeniowy; podaje tabele obok starych wartosci.
