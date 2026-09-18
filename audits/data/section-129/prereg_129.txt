@@ -1,0 +1,19 @@
+Zapisano 2026-09-18T16:11:38+02:00, przed pomiarem.
+R2 domkniete: dzialanie libracji kata wzajemnego i jego kwantowanie.
+Struktura kanoniczna: dla dwoch spinow o stalej dlugosci s = hbar/2 para
+kanoniczna to (s cos theta, psi), gdzie theta jest katem wzajemnym, a psi
+azymutem wzglednym wokol osi spinu calkowitego (czesci prostopadle S1 i S2 sa
+przeciwne, wiec jeden azymut opisuje obie).  Dzialanie libracji:
+  J = (1/2 pi) * calka po cyklu s cos(theta) d psi.
+Pomiar: nowy slad CREM_DEBUG_SPINPAIR (dt, mu1, mu2, L) na jednej pelnej
+trajektorii produkcyjnej; analiza liczy theta, os spinu calkowitego, azymut
+psi w ramce opartej na L, okres libracji i dzialanie.
+Reguly:
+  R129a "model ma wlasny dublet": h f_lib miesci sie w czynniku 2 od
+     203.3941 GHz (sekcja 115 dala 68.0 GHz w stanie przygotowanym, czyli
+     czynnik 3.0, wiec ta regula jest tu powtorzona na pelnym cyklu).
+  R129b "libracja jest w rezimie polklasycznym": dzialanie J miesci sie w
+     przedziale 0.1..10 hbar; ponizej albo powyzej kwantowanie dzialania nie
+     ma zastosowania i porownanie h f_lib z rozszczepieniem traci podstawe.
+  R129c jesli J zmienia sie wzdluz inspiralu o wiecej niz czynnik 2, podaje
+     to jako brak niezmiennika adiabatycznego.

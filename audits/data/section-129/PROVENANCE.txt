@@ -1,0 +1,8 @@
+Raw outputs behind audit section 129 (2026-09-18).
+  prereg_129.txt         rules R129a-c and the canonical structure used
+  spinpair_trace.txt.gz  CREM_DEBUG_SPINPAIR=400000 on one production
+                         trajectory (seed 42): dt, both moments, the orbital
+                         vector and the gyromagnetic ratios per substep
+  analyse.py             the analysis: mutual angle, total-spin axis, relative
+                         azimuth in the L-based frame, cycle periods, action
+  analysis_output.txt    its output, quoted in 129b

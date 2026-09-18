@@ -874,6 +874,27 @@ inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
                     <<'\n';
             }
         }
+        // CREM_DEBUG_SPINPAIR: the two moments and the orbital vector in full,
+        // so the libration of the mutual angle can be integrated as an ACTION
+        // (audit 129).  For two spins of fixed length the canonical pair is
+        // (s cos theta, psi) with psi the relative azimuth about the total
+        // spin, so the action needs both -- the angle alone, which
+        // CREM_DEBUG_ALIGN prints, cannot give it.
+        if(std::getenv("CREM_DEBUG_SPINPAIR")) {
+            static const int spinPairLimit=
+                std::max(1,std::atoi(std::getenv("CREM_DEBUG_SPINPAIR")));
+            static int spinPairSamples=0;
+            if(spinPairSamples++<spinPairLimit)
+                std::cerr<<"SPINPAIR dt="<<dt
+                    <<" mu1="<<firstBefore.x<<","<<firstBefore.y<<","
+                    <<firstBefore.z
+                    <<" mu2="<<secondBefore.x<<","<<secondBefore.y<<","
+                    <<secondBefore.z
+                    <<" L="<<orbitalAfter.x<<","<<orbitalAfter.y<<","
+                    <<orbitalAfter.z
+                    <<" ratio1="<<firstGyromagneticRatio
+                    <<" ratio2="<<secondGyromagneticRatio<<'\n';
+        }
         // CREM_DEBUG_PROJECTION: is the projection of a moment on the axis it
         // precesses about -- the net field the PARTNER produces, as the
         // orbit-averaged BMT rate sees it -- quantized (audit 114)?  The

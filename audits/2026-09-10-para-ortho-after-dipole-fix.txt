@@ -8634,3 +8634,64 @@ measurement of whether that survives a cascade.
       pair |S_i| is still hbar/2 each, but the gyromagnetic ratios differ and
       the identity's coherent term is no longer symmetric, which was not
       measured.
+
+129. THE LIBRATION'S ACTION IS 0.1 hbar, AND IT CANNOT EXCEED 0.5: THE
+     SEMICLASSICAL DOUBLET DOES NOT EXIST
+==================================================================
+
+129a. WHAT WAS MISSING.  Section 115 measured the libration's FREQUENCY and
+      compared h f_lib with the 203.3941 GHz splitting, but left its ACTION
+      uncomputed, because the trace carried the mutual angle and not the
+      variable conjugate to it.  For two spins of fixed length s = hbar/2 the
+      canonical pair is (s cos theta, psi), psi being the relative azimuth
+      about the total spin -- the perpendicular parts of S1 and S2 are exactly
+      opposite, so one azimuth describes both.  A new trace
+      (CREM_DEBUG_SPINPAIR) prints both moments and the orbital vector, and
+      the action follows as J = (1/2 pi) integral s cos(theta) d psi.
+
+129b. MEASURED, one full collapse, 1842 substeps, 53 turning points of the
+      angle, psi sweeping 13.17 turns:
+        cycle          period      h f_lib        action J
+        first          1.104e-11 s   90.55 GHz    0.0985 hbar
+        last           2.006e-16 s   4.98e+06 GHz 0.1383 hbar
+      The frequency is what section 115 found, sharpened by using whole cycles
+      instead of consecutive extrema: 90.55 GHz against 203.3941, a factor
+      2.25, so rule R129a (within a factor 2) is narrowly missed.
+      The action is nearly an adiabatic invariant: it moves by 1.40 while the
+      frequency moves by five orders, which satisfies rule R129c.
+
+129c. AND THE ACTION IS AN ORDER BELOW THE QUANTUM.  J = 0.0985 hbar at the
+      start, 0.1383 at the end.  Rule R129b asked for 0.1..10 hbar and the
+      measurement sits on its lower edge, which is the answer rather than a
+      near miss: an oscillation carrying a tenth of hbar has no level
+      structure to quantize.
+      The bound is structural, not a property of this trajectory.  The
+      variable is s cos theta with |cos theta| <= 1 and s = hbar/2, so over a
+      full 2 pi of azimuth the largest action the relative orientation can
+      carry is
+        J_max = (1/2 pi) * (hbar/2) * 1 * 2 pi = 0.5 hbar,
+      below one quantum.  Quantizing this libration with Delta J = hbar is
+      therefore impossible in its own phase space, whatever the amplitude.
+
+129d. WHICH IS WHAT QUANTUM MECHANICS SAYS.  Two spin-1/2 particles span a
+      four-dimensional Hilbert space, i.e. a finite phase-space volume with
+      no ladder in it: the singlet-triplet splitting is the WHOLE space, not a
+      spacing between rungs of one.  The semiclassical route asked for a
+      ladder and the model's own phase space says there is none -- so the
+      answer to R2 is no, and it is no for a reason that would hold for any
+      classical two-spin model, not for this one's parameters.
+
+129e. WHAT SURVIVES OF R2.  The libration itself is real, measured, and now
+      characterized: frequency 90.6 GHz at the prepared state rising by five
+      orders into the cascade, action 0.1 hbar and nearly invariant, amplitude
+      |cos theta| swinging within -0.73..-0.13 on this trajectory.  As a
+      classical oscillation it is the mechanism behind the channel weight's
+      spread (sections 111-113).  What it cannot be is the hyperfine doublet.
+
+129f. LIMITS.  One trajectory, one seed, 53 cycles of which the first and the
+      last were integrated; the azimuth frame is built from the orbital
+      vector projected perpendicular to the total spin, which is a choice of
+      gauge -- the action is gauge-invariant over a closed cycle, and the
+      measured |d psi| per cycle (3.14 and 3.22 rad) shows the cycles do
+      close to within 3%.  The J_max bound uses |S1| = |S2| = hbar/2 exactly,
+      which audit 128 measured to fifteen digits.

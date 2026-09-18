@@ -1,0 +1,7 @@
+podkrokow 1842
+cos theta: start -0.1486 koniec -0.5235 min -0.7303 max -0.1265
+psi przebiega -82.776 rad = -13.17 obrotow
+ekstremow kata: 53
+pierwszy cykl: okres 1.1044e-11 s, f_lib 90.551 GHz, h f_lib/h = 90.551 GHz wobec 203.3941, dzialanie J = 0.0985 hbar, |d psi| 3.135 rad
+ostatni cykl: okres 2.0060e-16 s, f_lib 4984973.545 GHz, h f_lib/h = 4984973.545 GHz wobec 203.3941, dzialanie J = 0.1383 hbar, |d psi| 3.222 rad
+|S_pary|/hbar start 0.6525 koniec 0.4881; |S_1|/hbar 0.500000
