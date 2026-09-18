@@ -890,7 +890,21 @@ inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
                     const double scale=moment.norm()*axis.norm();
                     return scale>0.0?dot(moment,axis)/scale:0.0;
                 };
-                std::cerr<<"PROJ cos1w="<<projection(firstBefore,
+                const Vec3 pairSpin=spinTotal(firstBefore,secondBefore);
+                const double firstLength=firstBefore.norm();
+                const double secondLength=secondBefore.norm();
+                const double coherent=(firstBefore+secondBefore).norm()
+                    /std::max(firstLength+secondLength,1.0e-300);
+                std::cerr<<"PROJ dt="<<dt
+                    <<" cos12="<<dot(firstBefore,secondBefore)
+                        /std::max(firstLength*secondLength,1.0e-300)
+                    <<" S1_hbar="<<(firstBefore
+                        /firstGyromagneticRatio).norm()/hbar
+                    <<" Spair_hbar="<<pairSpin.norm()/hbar
+                    <<" identity="<<coherent*coherent
+                        +pairSpin.squaredNorm()/(hbar*hbar)
+                    <<" L_hbar="<<orbitalAfter.norm()/hbar
+                    <<" cos1w="<<projection(firstBefore,
                         midpointRates.first)
                     <<" cos2w="<<projection(secondBefore,midpointRates.second)
                     <<" cos1L="<<projection(firstBefore,orbitalAfter)

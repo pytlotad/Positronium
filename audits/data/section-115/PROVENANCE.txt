@@ -1,0 +1,9 @@
+Raw outputs behind audit section 115 (2026-09-18).
+  prereg_115.txt        rules R1a-c and R2a-c, timestamped
+  R1_free.txt           tools/moment_projection_quantization 400 1 1
+  R1_quant.txt          the same with the imposed angle, para side
+  R1_quant_orto.txt     the same, ortho side: |S1+S2| = 1.000000 hbar exactly
+  R2_libration_trace.txt.gz  CREM_DEBUG_PROJECTION=400000 on one production
+                        trajectory (seed 42): per-substep dt, mutual cosine,
+                        |S_i|, |S1+S2|, the identity residual, |L| and the
+                        precession rates -- the trace both R1 and R2 read

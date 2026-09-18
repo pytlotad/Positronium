@@ -7659,3 +7659,76 @@ measurement of whether that survives a cascade.
       moves 3e4 times faster than the precession, so the projection on THAT
       axis is a different (and even less conserved) quantity, not measured
       here.
+
+115. WHAT SHOULD BE QUANTIZED, CHECKED: THE PAIR'S SPIN NORM CANNOT REACH
+     THE TRIPLET, AND THE LIBRATION IS A FACTOR 3 FROM THE SPLITTING
+==================================================================
+
+115a. WHY THESE TWO.  Section 114 ruled out the single-particle projection on
+      the partner's field: in a two-body problem each particle sees a
+      different field (|B1|/|B2| = 0.617) and that axis turns 1e4 times
+      faster than the precession, so it carries no invariant.  What is
+      axis-independent is the PAIR's total spin, and what could carry a
+      discrete spectrum out of the model's own dynamics is the libration of
+      the mutual angle.  R1 and R2 test exactly those.
+
+115b. R1, THE SPIN-NORM BUDGET.  400 prepared production states:
+        |S_i|/hbar             0.500000016 .. 0.500003328
+        |S1+S2|/hbar, free     0.060 .. 0.997, mean 0.679
+        |S1+S2|/hbar, imposed  0.000000 (para) and 1.000000 (ortho)
+        identity residual      1.3e-05 worst
+        <|S|^2>/hbar^2, free   0.5135
+      The single-particle norm is hbar/2, as it must be from mu/gamma, to
+      3.3e-06; the residue is the lab moment's own boost, beta^2/2 = 6.7e-06
+      at a_pair, and the same boost is what leaves the identity
+      (|mu1+mu2|/2mu)^2 + (|S|/hbar)^2 = 1 at 1.3e-05 rather than at 1e-12,
+      which is what the rule asked for.  Along the trajectory (115c's trace)
+      |S1+S2|/hbar stays inside 0.367..0.661.
+      THE DECISIVE NUMBER: the model's ceiling is |S1+S2| = hbar exactly,
+      reached only at the anti-aligned configuration, while the quantum
+      triplet needs sqrt(2) hbar = 1.414 hbar.  The quantum ENSEMBLE average
+      <|S|^2> = 1.5 hbar^2 is therefore above the model's own MAXIMUM of
+      1.0 hbar^2.  No measure over the classical mutual angle can carry the
+      quantum spin content: a measure tuned to give 1:3 needs
+      <|S|^2> = 0.75 hbar^2 (section 112), which is representable, but it
+      then sits at half the quantum value.  So 1:3 obtained that way would be
+      one matched moment of the distribution, not the spin algebra, and the
+      search for it through the measure is closed.
+
+115c. R2, THE LIBRATION AS A CANDIDATE DOUBLET.  One full collapse, seed 42,
+      1969 transport substeps covering all 30.686 ps, L from 1.000 to
+      0.170 hbar.  The mutual angle turns 61 times, so the libration is
+      there; its frequency, from consecutive extrema:
+        at the prepared state (L = 1 hbar)      68.0 GHz
+        median over the inspiral                5.1e4 GHz
+        at the end (L = 0.17 hbar)              5.1e6 GHz
+      Against the measured o-Ps/p-Ps splitting of 203.3941 GHz the prepared
+      value is a factor 3.0 low: rule R2a (within a factor 2) is missed, rule
+      R2b (same order, within 10) is met.
+      Two things are worth separating here.  The libration beats the STATIC
+      dipolar term by six: |U_dd|/h at a_pair is 11.0 GHz, the libration is
+      68.0 GHz, because the rate difference that drives it contains the
+      charge-field (spin-orbit) part of omega as well as the mutual dipole
+      term -- |omega1-omega2| = 1.80e11 rad/s = 28.6 GHz at the start.
+      But the frequency is NOT a property of the state: it sweeps five orders
+      of magnitude as the orbit shrinks, so reading it as a level splitting
+      requires naming a radius, and a hyperfine splitting may not depend on
+      one.  That is the objection to this route, and it is structural rather
+      than numerical.
+
+115d. WHAT THIS RECOMMENDS NEXT (not done here).  R1 closes the 1:3-through-
+      the-measure line.  R2 leaves one testable statement: if the libration
+      is to be the doublet, its frequency has to be evaluated where the pair
+      actually annihilates rather than where it is prepared, and the
+      resulting spread has to be compared with the splitting's own width.
+      The action of the libration was not computed -- the trace carries the
+      angle but not its conjugate azimuth -- so the semiclassical
+      quantization itself is still untested.
+
+115e. LIMITS.  R1 is 400 prepared states and one trajectory, positronium
+      only; the 3e-06 and 1.3e-05 residues are the covariant-moment boost,
+      not slack in the identity.  R2 is ONE trajectory: 61 extrema is enough
+      to name a frequency at the two ends but not to give it an uncertainty,
+      and the chirp means the median over the inspiral is a summary of a
+      sweep, not a scale.  The comparison uses the measured splitting as a
+      number, not as a prediction of this model.
