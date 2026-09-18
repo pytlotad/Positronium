@@ -1,0 +1,7 @@
+Raw outputs behind audit section 114 (2026-09-18).
+  prereg_114.txt          the prediction and rules R1, R2, timestamped
+  R1_prepared.txt         tools/moment_projection_quantization 400 1 1
+  R1_quant.txt            the same with the imposed mutual angle ("quant")
+  R2_projection_trace.txt.gz  CREM_DEBUG_PROJECTION=200000 on one production
+                          trajectory (seed 42, continuous channel): the
+                          per-substep projections on the BMT axis and on Lhat

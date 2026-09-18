@@ -1,0 +1,17 @@
+Zapisano 2026-09-18T11:06:19+02:00, przed pomiarem.
+Pytanie: czy rzut spinowego momentu magnetycznego jednej czastki na kierunek
+wypadkowego pola magnetycznego drugiej (os precesji BMT) jest w tym modelu
+skwantowany?
+Model: moment jest wektorem klasycznym o stalej dlugosci, transportowanym
+przez Thomasa-BMT wokol osi omega_i; rzut na te os jest niezmiennikiem
+adiabatycznym, a nie wielkoscia skwantowana -- to przewidywanie, ktore ma sie
+albo potwierdzic, albo nie.
+Pomiar: nowy slad CREM_DEBUG_PROJECTION w secular_spin_orbit.hpp wypisuje na
+kazdym podkroku cos(mu_i, omega_i), cos(mu_i, Lhat) oraz |mu_i|.
+  R1 (zespol): 400 przygotowanych stanow, rozklad cos(mu1, omega1).
+      "Skwantowany", gdy co najmniej 90% wartosci lezy w 0.05 od +-1.
+      "Ciagly", gdy udzial w tym pasmie miesci sie w 10% +- 5% (tyle daje
+      rozklad rownomierny).
+  R2 (trajektoria): pelny kolaps, kanal ciagly, ziarno 42.  "Niezmiennik",
+      gdy |cos(mu1,omega1)_koniec - cos_start| < 0.05 i wartosc nie zmierza
+      monotonicznie do +-1; w przeciwnym razie raportuje, co robi.

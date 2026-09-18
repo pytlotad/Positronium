@@ -1,0 +1,6 @@
+prepared 400 states (base seed 1, phenomenon 1)
+cos(mu1, BMT axis of the partner's field): mean -0.0134 median -0.0450 min -0.9968 max +0.9992
+spin projection S1.axis: mean -0.0067 hbar, i.e. no pile-up at +-0.5 unless the next line says so
+within 0.05 of +-1 (a quantized axis would be ~100%): 17/400 = 4.2%  (a uniform cos gives 5%)
+deciles of cos: 33 46 48 38 44 42 32 38 38 41
+for reference, cos(mu1, B_partner) alone: mean -0.0185 over 400 states

@@ -7597,3 +7597,65 @@ measurement of whether that survives a cascade.
       measurement of that drift and of the measure it produces, not a
       branching-ratio prediction.  The +0.03/-0.06 tilt is 12 trajectories
       wide and was not tested for convergence in the step or the budget.
+
+114. IS THE MOMENT'S PROJECTION ON THE PARTNER'S FIELD QUANTIZED?  NO -- IT
+     IS NOT EVEN CONSERVED
+==================================================================
+
+114a. THE QUESTION.  Each particle sits in the net magnetic field of the
+      other.  Is the projection of its spin magnetic moment on that axis
+      quantized?
+
+114b. WHAT THE MODEL CONTAINS.  The moment is a classical vector of FIXED
+      LENGTH -- the measured moment, the one place an hbar enters the moment
+      sector -- rotated by Thomas-BMT about the axis
+      thomasBmtEffectiveField(v, partner's field, g).  A rotation preserves
+      the length and, for a fixed axis, the projection on it; neither
+      operation has a discrete spectrum.  So the prediction is "continuous",
+      and the two measurements below are what could have refuted it.
+
+114c. THE ENSEMBLE (400 prepared production states, the model's own axis).
+        cos(mu1, axis): mean -0.013, median -0.045, min -0.997, max +0.999
+        deciles:        33 46 48 38 44 42 32 38 38 41
+        within 0.05 of +-1: 4.2%   (a uniform cosine gives 5%; a quantized
+                                    projection would give ~100%)
+      The spin projection S1.axis it implies has mean -0.007 hbar and fills
+      the interval; the quantum answer for a spin-1/2 in a field is exactly
+      +-1/2.  (The pre-registered window for this line said "10% +- 5%",
+      which was arithmetic on my part: the band 0.05 around +-1 covers 5% of
+      a uniform cosine, and 4.2% is that.  The verdict does not turn on it.)
+      With --spin-quantization the projection is still spread (8.0% in the
+      band, deciles 28..58): that flag imposes the MUTUAL angle between the
+      two moments, not either one's projection on the field.
+
+114d. ALONG A TRAJECTORY it is not even an adiabatic invariant.  One full
+      collapse, seed 42, 1969 transport substeps traced
+      (CREM_DEBUG_PROJECTION):
+        cos(mu1, omega1): start +0.885, end +0.753, min -0.419, max +0.901,
+                          41 changes of direction, 960 steps up / 1008 down
+        cos(mu2, omega2): start +0.424, end +0.047, min -0.901
+        cos(mu1, Lhat):   start +0.946, end +0.849, min -0.386, max +1.000
+        |omega1| grows by 1e4 from a_pair to the stop
+        time spent within 0.05 of +-1: 0.0% of 1969 substeps
+      So the projection librates over most of its range.  The reason is that
+      the axis is not fixed: it is the orbit-averaged BMT rate, which turns
+      with the apsidal precession and the orbital normal while its magnitude
+      grows by four decades as the orbit shrinks.  The spin projection in
+      hbar runs 0.443 -> 0.376 continuously.
+
+114e. THE ANSWER.  No.  Nothing in the model quantizes that projection, and
+      the dynamics does not select the two values either -- it avoids them:
+      in 1969 substeps the trajectory never came within 0.05 of +-1.  The
+      model's only discrete inputs in this sector are the LENGTH of each
+      moment and the starting radius where L = hbar; a projection is neither.
+      This is the same boundary audit 91 drew for the mutual angle, now drawn
+      for the single-particle projection: it would have to be imposed, and it
+      is not.
+
+114f. LIMITS.  One trajectory for the transport history, 400 states for the
+      ensemble, one preparation radius, positronium only.  The axis traced is
+      the ORBIT-AVERAGED rate the secular layer precesses about; the resolved
+      mechanical integrator uses the instantaneous field, whose direction
+      moves 3e4 times faster than the precession, so the projection on THAT
+      axis is a different (and even less conserved) quantity, not measured
+      here.

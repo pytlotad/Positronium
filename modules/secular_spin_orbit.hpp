@@ -874,6 +874,35 @@ inline SecularSpinOrbitAdvance advanceCoupledSecularSpinOrbit(
                     <<'\n';
             }
         }
+        // CREM_DEBUG_PROJECTION: is the projection of a moment on the axis it
+        // precesses about -- the net field the PARTNER produces, as the
+        // orbit-averaged BMT rate sees it -- quantized (audit 114)?  The
+        // projection on that axis is what a Thomas-BMT rotation leaves
+        // invariant, so this trace is also the adiabatic invariant's own
+        // history.  Lhat is printed beside it because the axis is not the
+        // orbital normal in general.
+        if(std::getenv("CREM_DEBUG_PROJECTION")) {
+            static const int projectionLimit=
+                std::max(1,std::atoi(std::getenv("CREM_DEBUG_PROJECTION")));
+            static int projectionSamples=0;
+            if(projectionSamples++<projectionLimit) {
+                const auto projection=[](const Vec3& moment,const Vec3& axis) {
+                    const double scale=moment.norm()*axis.norm();
+                    return scale>0.0?dot(moment,axis)/scale:0.0;
+                };
+                std::cerr<<"PROJ cos1w="<<projection(firstBefore,
+                        midpointRates.first)
+                    <<" cos2w="<<projection(secondBefore,midpointRates.second)
+                    <<" cos1L="<<projection(firstBefore,orbitalAfter)
+                    <<" cos2L="<<projection(secondBefore,orbitalAfter)
+                    <<" |w1|="<<midpointRates.first.norm()
+                    <<" |w2|="<<midpointRates.second.norm()
+                    <<" mu1/mu="<<firstBefore.norm()/firstMagneticMoment
+                    <<" S1w_hbar="<<0.5*projection(firstBefore,
+                        midpointRates.first)
+                    <<'\n';
+            }
+        }
         result.state.firstDipole=firstAfter;
         result.state.secondDipole=secondAfter;
         result.state.orbitalAngularMomentum=orbitalAfter;
