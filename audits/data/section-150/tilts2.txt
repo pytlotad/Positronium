@@ -1,0 +1,6 @@
+tilt 0  : ok 256/256 | zakres E/|U
+tilt 30 : ok 256/256 | zakres E/|U
+tilt 45 : ok 256/256 | zakres E/|U
+tilt 60 : ok 256/256 | zakres E/|U
+tilt 75 : ok 256/256 | zakres E/|U
+tilt 90 : ok 256/256 | zakres E/|U

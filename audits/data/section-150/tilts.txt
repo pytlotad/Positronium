@@ -1,0 +1,6 @@
+tilt 0  : ok 256/256 | zakres E/|U_dd| 1.329e+00 | E_kon
+tilt 30 : ok 256/256 | zakres E/|U_dd| 9.103e-01 | E_kon
+tilt 45 : ok 256/256 | zakres E/|U_dd| 8.740e-01 | E_kon
+tilt 60 : ok 256/256 | zakres E/|U_dd| 9.146e-01 | E_kon
+tilt 75 : ok 256/256 | zakres E/|U_dd| 5.519e-01 | E_kon
+tilt 90 : ok 256/256 | zakres E/|U_dd| 3.429e-01 | E_kon

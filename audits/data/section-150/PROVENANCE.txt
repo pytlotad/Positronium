@@ -1,0 +1,16 @@
+Raw outputs behind audit section 150 (2026-09-19).
+  prereg_150.txt   rules R150a-e, written before the repair was implemented,
+                   including R150e's requirement that a limiter engaging on a
+                   genuinely smooth field be reported as a defect -- which is
+                   what happened to the first version and is recorded in 150b
+  tilts.txt        the first version of the limiter: all tilts complete
+  balance.txt      the same version on the synthetic balance, where beta 0.01
+                   moved in its third digit and refuted it
+  tilts2.txt       the accepted version: all tilts complete
+  balance2.txt     the accepted version on the synthetic balance, reproducing
+                   the bare stencil exactly at all three speeds
+  band_after.txt   tilt 45 at 1.0, 2.0 and 2.5 r*, the band of audits 148-149,
+                   now completing
+The production numbers of 150c and 150d are tools/checkpoint_photon_trace
+42 300 on the current tree under CREM_HIDDEN_RATE_UNLIMITED and
+CREM_FREE_CHANNEL_DRAW in the four combinations.

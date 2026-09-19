@@ -10443,3 +10443,80 @@ measurement of whether that survives a cascade.
       substep -- the force itself stays finite, which is why 149a finds
       nothing non-finite.  The band edge is located to 0.5 r* at tilt 45 and
       is not mapped in tilt.
+
+150. THE HIDDEN-MOMENTUM RATE REPAIRED: THE STENCIL NO LONGER DIFFERENTIATES
+     A DISCONTINUITY, AND A STALE BINARY IS CORRECTED
+==================================================================
+
+150a. THE REPAIR.  Section 149 measured why every tilted orbit inside 2.5 r*
+      died: the term's one-sided three-point time derivative divides the
+      retarded field's C0 jump at a history-node crossing by a step 1500
+      times finer than the node spacing, turning a 4.01% field jump into
+      15.40 times the Coulomb force.  The stencil now tests whether it is
+      straddling such a jump and refuses to differentiate one.
+        the test     |E(0) - 2E(-h) + E(-2h)| against 1e-04 |E(0)|
+        smooth       the second difference is O((h/tau)^2) ~ 1e-09 of |E|,
+                     so the original expression is used, VERBATIM
+        straddling   a node crossing makes it percent-sized, so each
+                     component falls back to the smaller half-slope
+                     (minmod, zero on opposite signs)
+      The two cases are ten decades apart, so the threshold is not delicate.
+      CREM_HIDDEN_RATE_UNLIMITED restores the bare stencil.
+
+150b. AN EARLIER VERSION OF THE LIMITER WAS WRONG AND IS RECORDED.  It tested
+      the two half-SLOPES against each other.  Where both are tiny they
+      disagree by round-off, so it engaged on smooth fields: the synthetic
+      balance at beta = 0.01 moved from 3.183989e-09 to 3.193326e-09 N, its
+      third digit, which rule R150e had named in advance as a defect of the
+      repair rather than a result.  Testing the second difference against the
+      FIELD's own scale fixes it, because a discontinuity is a percent of the
+      field and smooth curvature is a billionth of it.
+
+150c. ACCEPTANCE, ALL FOUR CRITERIA.
+        R150a  para at 1 r*, hidden-momentum force ON, tilts 0 to 90:
+               256/256 at every tilt, where every nonzero tilt failed at
+               step 6 to 9 before.  The other configurations 148 examined
+               also complete: tilt 45 at 1.0, 2.0 and 2.5 r*, and ortho
+               started at 0.35 r*.
+        R150b  the synthetic balance reproduces EXACTLY -- 3.183989e-09,
+               3.290003e-06 and 2.844708e-05 N at beta 0.01, 0.1 and 0.2,
+               identical to the bare stencil, so the limiter does not engage
+               on a smooth history.
+        R150c  production is bit-identical to the pre-repair tree:
+               198.974492197 ps, with and without the hatch.
+        R150d  validation 62/62, header isolation 37/37.
+      So the limiter engages only where the field jumps, and changes nothing
+      else to the last digit.
+
+150d. AND A CORRECTION TO SECTIONS 146, 148 AND 149.  Each of them quoted
+      seed 42's cascade as 199.039646721 ps and called production
+      bit-identical.  That number was read from a binary built at section 140
+      and never rebuilt, and audit 143 had already moved it.  Measured now,
+      on the current tree, with the repair's hatch open so that only 143 is
+      in play:
+        143's channel conditioning off    199.039646721 ps
+        143's channel conditioning on     198.974492197 ps
+      -- a shift of 0.0653 ps, 3.3e-04 relative.  Audit 143 said in its own
+      text that every seeded number for menus 1 and 2 moves, and then three
+      later sections failed to apply it to the one number they quoted.  The
+      substance of 146's claim survives: reverting its call and reverting
+      140's restructure each leave the cascade unchanged to the last digit,
+      so neither touched the dynamics.  What was wrong was the verification,
+      not the change.  This is the same stale-binary error as sections 110
+      and 123, now for the third time, and the remedy is the obvious one:
+      rebuild in the same command that quotes the number.
+
+150e. WHAT IS STILL NOT DONE.  The limiter is a numerical treatment.  The
+      physical repair is an analytic d(mu x E)/dt, from the moment's
+      precession and the field's own retarded derivatives, which would need
+      no stencil at all; 149g named it and this section does not build it.
+      The limiter's own cost is that where it engages the rate drops to
+      first-order accuracy for that step, which is acceptable exactly
+      because it engages only where the second-order estimate was meaningless.
+
+150f. LIMITS.  One orbit per configuration, 256 steps, depth 20, tolerance
+      1e-8, para at 1 r* except where stated.  The 1e-04 threshold is fixed
+      by the ten-decade separation of 150a and was not tuned: it was chosen
+      before the acceptance runs and no other value was tried.  Whether the
+      limiter engages anywhere in production is answered only indirectly, by
+      the cascade being bit-identical; it is not counted.

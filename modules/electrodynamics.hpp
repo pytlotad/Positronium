@@ -3428,8 +3428,62 @@ inline Vec3 hiddenMomentumRateForce(const State& state,
     const Vec3 now=electricAt(0.0);
     const Vec3 before=electricAt(-derivativeStep);
     const Vec3 twiceBefore=electricAt(-2.0*derivativeStep);
-    const Vec3 fieldRate=
-        (now*3.0-before*4.0+twiceBefore)*(1.0/(2.0*derivativeStep));
+    // LIMITED STENCIL (audit 150).  The step above is about 1/1500 of the
+    // history's own node spacing, and the retarded field is only C0 across a
+    // node: audit 149 measured a +4.01% jump in the dipole field's electric
+    // part, which divided by this step becomes 15.4 times the Coulomb force
+    // and killed every tilted orbit inside 2.5 r* at step 6 of 256.
+    //
+    // The two half-slopes carry the information needed to tell the two cases
+    // apart.  Where the field is smooth they differ by O(h), and
+    // (3 d1 - d2)/2 -- which is exactly the three-point form this replaces --
+    // is the second-order derivative.  Where the stencil straddles a jump,
+    // one half is the jump divided by h and the two disagree by order one.
+    // So each component keeps the second-order value while the halves agree
+    // and falls back to the smaller half (minmod, zero on opposite signs)
+    // when they do not.  That refuses to differentiate a discontinuity
+    // instead of amplifying it.
+    //
+    // It is a numerical treatment and not a physical one.  The honest repair
+    // is an analytic d(mu x E)/dt, expressible from the moment's precession
+    // and the field's own retarded derivatives; this is the cheap one that
+    // makes the term integrable.  CREM_HIDDEN_RATE_UNLIMITED restores the
+    // bare three-point form for reproducing earlier numbers.
+    // The escape hatch evaluates the ORIGINAL expression verbatim rather than
+    // an algebraically equal rearrangement: (3 d1 - d2)/2 and
+    // (3 now - 4 before + twiceBefore)/(2h) agree in exact arithmetic and not
+    // in double, and the difference moves a chaotic cascade in its fourth
+    // digit.  Reproducing earlier numbers is the hatch's whole purpose, so it
+    // has to be bit-faithful.
+    static const bool unlimitedRate=
+        std::getenv("CREM_HIDDEN_RATE_UNLIMITED")!=nullptr;
+    const Vec3 fieldRate=[&]() -> Vec3 {
+        if(unlimitedRate)
+            return (now*3.0-before*4.0+twiceBefore)
+                *(1.0/(2.0*derivativeStep));
+        // The straddle test is on the FIELD's own scale, not on the slopes:
+        // two slopes can disagree by round-off when both are tiny, and an
+        // earlier version of this limiter engaged on exactly that noise and
+        // moved a smooth synthetic case in its third digit.  A node crossing
+        // instead shows up as a second difference that is a PERCENT of the
+        // field, against O((h/tau)^2) ~ 1e-09 where the field is smooth, so
+        // the two cases are ten decades apart and the threshold is not
+        // delicate.
+        const Vec3 secondDifference=now-before*2.0+twiceBefore;
+        const double fieldScale=std::max(now.norm(),1.0e-300);
+        const Vec3 firstHalf=(now-before)*(1.0/derivativeStep);
+        const Vec3 secondHalf=(before-twiceBefore)*(1.0/derivativeStep);
+        if(secondDifference.norm()<=1.0e-4*fieldScale)
+            return (now*3.0-before*4.0+twiceBefore)
+                *(1.0/(2.0*derivativeStep));
+        const auto minmod=[](double first,double second) {
+            if(first*second<=0.0) return 0.0;
+            return std::abs(first)<std::abs(second)?first:second;
+        };
+        return Vec3{minmod(firstHalf.x,secondHalf.x),
+                    minmod(firstHalf.y,secondHalf.y),
+                    minmod(firstHalf.z,secondHalf.z)};
+    }();
     const DipoleDerivatives derivatives=
         thomasBmtDipoleDerivatives(state,history);
     const Vec3 momentRate=targetIsFirst?derivatives.first:derivatives.second;

@@ -1,0 +1,47 @@
+PRE-REGISTRATION, audit section 150 (repairing the hidden-momentum rate's
+time stencil).  Written before any number of this section was computed.
+written 2026-09-19T06:43:43Z
+
+THE DEFECT, from section 149.  hiddenMomentumRateForce takes dE/dt by a
+one-sided three-point backward difference over
+derivativeStep = max(1e-4 r, 1e-3 cutoff)/c, which at 1 r* is 6.36e-26 s
+-- about 1/1500 of the history's own node spacing.  Where the stencil
+straddles a node crossing, the retarded field's C0 discontinuity (+4.01%
+in the dipole field's electric part, measured) is divided by that tiny
+step and becomes 15.40 times the Coulomb force.  Every nonzero tilt at
+r <= 2.5 r* then fails the step-accuracy test at step 6 to 9 of 256.
+
+THE REPAIR.  The stencil keeps its second-order form where the field is
+smooth and refuses to amplify a jump where it is not.  With
+  d1 = (E(0) - E(-h))/h,   d2 = (E(-h) - E(-2h))/h,
+the current estimate is exactly (3 d1 - d2)/2.  Componentwise, that is
+kept when the two halves agree -- |d1 - d2| <= theta max(|d1|,|d2|) --
+and replaced by the smaller-magnitude half (minmod, zero on a sign
+disagreement) when they do not.  Smooth fields have d1 - d2 = O(h), so
+the test passes and nothing changes; a straddle drives the ratio to 1 and
+the limiter engages.  theta = 0.5 is fixed here, before measuring.
+CREM_HIDDEN_RATE_UNLIMITED restores the present stencil.
+
+RULES, decided now.
+R150a  THE REPAIR WORKS if para at 1 r* completes 256/256 at every tilt
+       from 30 to 90 degrees, with the hidden-momentum force ON.
+R150b  IT MUST NOT CHANGE THE SYNTHETIC VALIDATION.  The balance probe's
+       residuals of audit 142 -- 3.184e-09, 3.290e-06 and 2.845e-05 N at
+       beta 0.01, 0.1 and 0.2, third order in beta -- must reproduce to
+       the digits quoted, because that history is smooth and the limiter
+       must not engage there.  Any change refutes the repair.
+R150c  PRODUCTION.  The collapse of seed 42 must either stay
+       199.039646721 ps or move, and if it moves the section reports by
+       how much and states that the limiter engages in production -- which
+       would itself be the finding.
+R150d  Validation 62/62 and header isolation 37/37.
+R150e  The limiter is a numerical treatment, not a physical one, and the
+       section says so: the honest repair is an analytic dE/dt, and this
+       is the cheaper one that makes the term integrable.  If the limiter
+       engages anywhere the field is genuinely smooth, that is a defect of
+       the repair and must be reported.
+
+PREDICTION (mine).  R150a passes; R150b reproduces bit for bit because
+the synthetic histories are analytic; production stays bit-identical
+because at a_pair the node spacing is far larger relative to the field's
+own timescale and no crossing is straddled.
