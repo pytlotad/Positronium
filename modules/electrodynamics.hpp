@@ -3425,6 +3425,24 @@ inline Vec3 hiddenMomentumRateForce(const State& state,
             state.time+offset,state,history,targetIsFirst,1.0e-5,
             matchedMomentSoftening()).electric;
     };
+    // THE THREE SAMPLES READ ONE HISTORY SEGMENT (audit 151).  This is the
+    // analytic rate that audits 149g and 150e asked for, and it needs no new
+    // algebra: RetardedSegmentPin exists so that a group of retarded reads
+    // sees the same polynomial, and a cubic is its own third-order Taylor
+    // series, so one segment continued past its ends reproduces the
+    // interpolant exactly and smoothly.  Differencing inside it is therefore
+    // differentiating a smooth function, not stepping across the C0 jump that
+    // audit 149 measured at 4.01% of the field and 15.40 times the Coulomb
+    // force.  covariantDipoleGradientForce pins its six spatial probes for
+    // the identical reason and against the identical symptom.
+    //
+    // The samples sit at observation times 0, -h and -2h and at positions
+    // shifted by v times those offsets, so their retarded times span about
+    // 2h(1+beta)/(1-beta); eight step lengths cover that for any speed this
+    // integrator reaches, which is the same margin the gradient force uses.
+    const RetardedSegmentPinGuard rateSegment(retardedSegmentPinAt(
+        history,state,!targetIsFirst,position,state.time,
+        8.0*derivativeStep));
     const Vec3 now=electricAt(0.0);
     const Vec3 before=electricAt(-derivativeStep);
     const Vec3 twiceBefore=electricAt(-2.0*derivativeStep);

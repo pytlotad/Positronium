@@ -1,0 +1,43 @@
+PRE-REGISTRATION, audit section 151 (the physical repair: the rate taken
+on ONE history segment instead of across a node).  Written before any
+number of this section was computed.
+written 2026-09-19T07:36:00Z
+
+WHAT 149g AND 150e ASKED FOR.  An analytic d(mu x E)/dt instead of a
+stencil.  Reading further, the model already has what that needs and it is
+not new algebra: RetardedSegmentPin exists precisely so that a GROUP of
+retarded reads sees the same polynomial, and interpolatedChargeWithJerk
+records why -- "a cubic is its own third-order Taylor series", so one
+segment continued past its ends reproduces the interpolant exactly and
+smoothly.  covariantDipoleGradientForce already pins its six spatial
+probes for the identical reason, with the identical symptom measured
+(a 33% jump in a central difference when one probe crossed a node).
+So the repair is to pin the segment across the rate's three time samples.
+The difference is then the derivative of one smooth cubic, which IS the
+analytic derivative of the interpolant, and the limiter of audit 150
+should become unnecessary.
+
+RULES, decided now.
+R151a  THE REPAIR IS PHYSICAL, NOT PALLIATIVE, if para at 1 r* completes
+       256/256 at every tilt from 0 to 90 with the hidden-momentum force ON
+       and the limiter of 150 SWITCHED OFF (CREM_HIDDEN_RATE_UNLIMITED).
+       That is the whole point: the stencil must work unaided.
+R151b  THE LIMITER MUST THEN BE INERT.  With the pin in place, the
+       limited and unlimited stencils must agree to the last digit on the
+       production cascade; if they do not, the pin has not removed the
+       discontinuity and the section says so.
+R151c  THE SYNTHETIC BALANCE MAY MOVE, because the pin changes which
+       segment the offset samples read.  Report by how much against
+       3.183989e-09, 3.290003e-06 and 2.844708e-05 N, and whether the
+       third-order-in-beta behaviour of audit 142 survives.
+R151d  PRODUCTION WILL MOVE and the shift is reported, with the value
+       measured on a binary built in the same command -- the stale-binary
+       error of 110, 123 and 150d is not to be repeated.
+R151e  Validation 62/62 and header isolation 37/37.
+
+PREDICTION (mine).  R151a passes, because the pin is the same instrument
+that fixed the same symptom for the gradient force; R151b passes; the
+synthetic balance moves in its last two digits at most, since that
+history is smooth and the pin only changes which analytic segment is
+read; production moves by of order 1e-4 relative, the size of the field
+samples' change.

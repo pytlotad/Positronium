@@ -10520,3 +10520,75 @@ measurement of whether that survives a cascade.
       before the acceptance runs and no other value was tried.  Whether the
       limiter engages anywhere in production is answered only indirectly, by
       the cascade being bit-identical; it is not counted.
+
+151. THE PHYSICAL REPAIR: THE RATE TAKEN ON ONE HISTORY SEGMENT.  THE LIMITER
+     IS NOW INERT AND AUDIT 142's RESULT IS UNTOUCHED TO EVERY DIGIT
+==================================================================
+
+151a. WHAT THE ANALYTIC RATE TURNED OUT TO BE.  Sections 149g and 150e asked
+      for an analytic d(mu x E)/dt in place of a stencil, expecting new
+      algebra.  It is not new algebra, and the instrument was already in the
+      tree.  RetardedSegmentPin exists so that a GROUP of retarded reads sees
+      the same polynomial, and interpolatedChargeWithJerk records why: "a
+      cubic is its own third-order Taylor series", so one segment continued
+      past its ends reproduces the interpolant exactly and smoothly.
+      covariantDipoleGradientForce pins its six SPATIAL probes for the
+      identical reason, against the identical symptom -- its own comment
+      records a central difference jumping 33% when one probe crossed a node.
+      Differencing inside one pinned segment IS differentiating the
+      interpolant analytically; the discontinuity was never in the
+      derivative, it was in reading two different polynomials.
+
+151b. THE REPAIR.  hiddenMomentumRateForce now pins the source's segment
+      across its three time samples, with a half-width of eight derivative
+      steps -- the samples' retarded times span about 2h(1+beta)/(1-beta), and
+      eight covers that for any speed this integrator reaches, which is the
+      margin the gradient force already uses.  Nothing else changed.
+
+151c. ACCEPTANCE.
+        R151a  para at 1 r*, hidden-momentum force ON and the limiter of
+               audit 150 SWITCHED OFF: 256/256 at tilts 0, 30, 45, 60, 75
+               and 90, and 256/256 for tilt 45 at 1.0, 2.0 and 2.5 r*.  The
+               bare stencil now works unaided, which is what makes this
+               repair physical rather than palliative.
+        R151b  the limiter is INERT: the production cascade is
+               198.974459890 ps with it and 198.974459890 ps without, bit
+               for bit.  So the pin removed the discontinuity rather than
+               masking it.
+        R151c  the synthetic balance of audit 142 is UNCHANGED at every
+               printed digit -- 3.183989e-09, 3.290003e-06 and 2.844708e-05 N
+               at beta 0.01, 0.1 and 0.2 -- so the first-order cancellation
+               and its third-order remainder survive exactly.
+        R151d  production moves by 3.2307e-05 ps, 1.62e-07 relative, from
+               198.974492197 to 198.974459890 ps.  Measured on a binary
+               built in the same command as the number, which is the remedy
+               for the error 150d recorded three times over.
+        R151e  validation 62/62, header isolation 37/37.
+
+151d. WHY THE LIMITER STAYS ANYWAY.  retardedSegmentPinAt declines a pin when
+      the half-width is not small compared with the segment it would pin, and
+      then the bare stencil is back with the node crossing in it.  The
+      limiter costs nothing where the pin holds -- 151b measures it as
+      bit-identical -- and guards the case where the pin declines.  Two
+      independent protections against one failure, one physical and one
+      numerical, is the right arrangement when the numerical one is provably
+      idle.
+
+151e. AND 107e's REMEDY IS NOT NEEDED.  107e asked for a finer retarded
+      history and 107d's cheap version broke other things; the pin's own
+      comment records that a full C2 history (quintic Hermite on the stored
+      accelerations) was built and REJECTED -- it removed the jump but moved
+      trajectory convergence from 3.9e-07 to 3.3e-06 and the long-horizon
+      radiative balance from 0.059 to 0.174, out of their bands, and the
+      tilted trajectories came out no better than with the pin.  So the
+      history stays C1 and the smoothness is bought where it is needed, for
+      one group of reads at a time.  That closes the remedy question 107e
+      opened, in the negative, and by a measurement someone else already made.
+
+151f. LIMITS.  One orbit per configuration, 256 steps, depth 20, tolerance
+      1e-8; the half-width 8h is taken by analogy with the gradient force and
+      is not itself optimized.  Whether the pin ever declines in production is
+      not counted here: the evidence that it holds where it matters is
+      indirect, from the limiter being inert on a full cascade.  The
+      remaining term the rate needs, the moment's own precession, was already
+      analytic and is untouched.

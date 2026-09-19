@@ -1,0 +1,13 @@
+Raw outputs behind audit section 151 (2026-09-19).
+  prereg_151.txt         rules R151a-e, written before the pin was added,
+                         with R151a demanding that the BARE stencil work
+                         unaided so the repair could not pass as palliative
+  tilts_unlimited.txt    para 1 r*, tilts 0 to 90, hidden-momentum force on
+                         and CREM_HIDDEN_RATE_UNLIMITED set: all 256/256
+  band_unlimited.txt     the same for tilt 45 at 1.0, 2.0 and 2.5 r*, the
+                         band of audits 148-150
+  balance.txt            the synthetic balance at beta 0.01, 0.1 and 0.2,
+                         unchanged from audit 142 at every printed digit
+The production numbers of 151c are tools/checkpoint_photon_trace 42 300 on
+a binary built in the same command, with and without
+CREM_HIDDEN_RATE_UNLIMITED.
