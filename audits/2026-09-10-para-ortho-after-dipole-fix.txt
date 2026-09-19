@@ -10630,14 +10630,14 @@ measurement of whether that survives a cascade.
           1.000   0.170750   1.1309e-02     1.9819e-05    3.210e-03
       It scales as beta^3, as the closed form (2/3) beta^3 says: 2.591e-07,
       3.711e-05, 2.968e-04 and 3.319e-03 against the measured shares, agreeing
-      to a factor 2 at the widest separation and to 3% at 1 r*.  At the
+      to a factor 2 at the widest separation and to 3% at 1 r*.  On the
       production orbit the self force is 1.3e-07 of the mutual one.
 
 152e. THE INTRINSIC MOMENT'S OWN RADIATION DOES ACT BACK ON IT.  That is a
       separate channel and it IS a self term: dipoleRadiationReaction's torque,
       applied under every reaction model but `disabled`, whose closure audit
-      136 measured exactly -- the work the torque does on the precession equals
-      the flux it emits, ratio converging on 1.000003 as the history is
+      136 measured exactly: the work the torque does on the precession equals
+      the flux it emits, the ratio converging on 1.000003 as the history is
       refined.  Audit 148 measured that it is live in production, moving a
       cascade's terminal moments by 3.4e-06.
 
@@ -10645,8 +10645,8 @@ measurement of whether that survives a cascade.
       also a MUTUAL radiation term, each charge in the partner's radiation
       field, F_i = (q_i q_j / 6 pi eps0 c^3) a_j-dot.  With the full retarded
       fields that term is ALREADY inside the Lienard-Wiechert field, so
-      including it as well would double count, and individualLandauLifshitz-
-      SelfForces takes includeMutual = false there.  Its own comment records
+      including it as well would double count, and the assembling function
+      takes includeMutual = false there.  Its own comment records
       what the alternatives cost on a two-period balance: 0.88% residual for
       Darwin plus the coherent term, 5.94% for retarded plus self only, and
       51.0% for retarded plus the full coherent term -- the wrong combination
