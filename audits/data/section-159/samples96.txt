@@ -1,0 +1,4 @@
+  E1  the ledger                           0.021077
+  E4  plus the far-zone radiated           0.001445
+  E5  plus the Schott endpoint term        0.000848
+  E6  plus the field-energy correction     0.009413

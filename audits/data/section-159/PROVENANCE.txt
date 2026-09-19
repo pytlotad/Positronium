@@ -1,0 +1,11 @@
+Raw outputs behind audit section 159 (2026-09-19).
+  prereg_159.txt   rules R159a-d, written before any number, with the
+                   convergence criterion (under 20% between the last two
+                   sample counts) fixed in advance
+  samples.txt      3 r*, 12 and 48 samples
+  samples96.txt    the same at 96
+The 24-sample row quoted in 159b is audit 158's, from
+audits/data/section-158/balance_3rstar.txt.
+All from tools/field_energy_integral 3.0 0 0 <samples> 48 12 24 12 with the
+production reaction model on.  The probe uses 64 integration steps per
+sample, which is why the sample count moves the step count with it.

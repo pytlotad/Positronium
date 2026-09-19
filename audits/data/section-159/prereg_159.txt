@@ -1,0 +1,29 @@
+PRE-REGISTRATION, audit section 159 (does the sampling density change the
+answer).  Written before any number of this section was computed.
+written 2026-09-19T13:13:25Z
+
+WHAT 158 LEFT.  Audit 157 asked for the field-energy correction evaluated
+PER STEP; audit 158 evaluated it at 24 samples and said so in its limits.
+A range measured on a coarse sampling can only UNDERSTATE the true range,
+so 158's closure at 3 r* -- E6 = 0.008711 |U_dd| against a 0.2 threshold --
+is a lower bound until the sampling is shown to be converged.
+
+THE TEST.  The same orbit at 3 r*, same grid, at 12, 24 and 48 samples.
+Per-step evaluation is the limit of that sequence, so a converged sequence
+answers 157's request without the 1536 spatial integrals it would cost.
+
+RULES, decided now.
+R159a  THE SAMPLING IS SUFFICIENT if E6's range at 48 samples differs from
+       its value at 24 by less than 20%, and the 12-to-24 step is of the
+       same size or larger.
+R159b  IF IT IS STILL GROWING, the sequence is extrapolated and the
+       extrapolated value is compared with the 0.2 |U_dd| threshold; if the
+       extrapolation crosses it, audit 158's closure is withdrawn.
+R159c  Every ledger is reported at every sample count, not only E6, since a
+       term that converges differently from the others is itself a finding.
+R159d  No model file changes.
+
+PREDICTION (mine).  Converged: on a regular orbit at 3 r* the quantities
+vary smoothly over the period, so 24 samples already resolve a range whose
+extremes are broad.  I expect the 24-to-48 change under 10% and 158's
+closure to stand.

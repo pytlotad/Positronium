@@ -1,0 +1,10 @@
+=== 12 probek ===
+  E1  the ledger                           0.020336
+  E4  plus the far-zone radiated           0.010291
+  E5  plus the Schott endpoint term        0.008885
+  E6  plus the field-energy correction     0.007538
+=== 48 probek ===
+  E1  the ledger                           0.021041
+  E4  plus the far-zone radiated           0.001606
+  E5  plus the Schott endpoint term        0.000707
+  E6  plus the field-energy correction     0.009244

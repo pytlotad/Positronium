@@ -11069,3 +11069,72 @@ measurement of whether that survives a cascade.
       a probe.  The 1 r* rows are reported as a single trajectory's numbers
       and, for the reason 158d gives, should not be compared across step
       counts.
+
+159. THE SAMPLING WAS THE ANSWER: THE BALANCE CLOSES TO 96%, AND THE FIELD
+     CORRECTION IS BELOW ITS OWN QUADRATURE NOISE
+==================================================================
+
+159a. WHAT 158 LEFT.  Audit 157 asked for the field-energy correction
+      evaluated PER STEP; 158 evaluated it at 24 samples and recorded that as
+      a limit.  A range read off a coarse sampling can only understate the
+      truth, so 158's numbers were a lower bound until the sampling was shown
+      converged.  Per-step evaluation is the limit of a sampling sequence, so
+      the sequence answers the request without its 1536 spatial integrals.
+
+159b. THE SEQUENCE, 3 r*, para, tilt 0, same grid.
+        samples      E1        E4        E5        E6     E5 as % of E1
+          12      0.020336  0.010291  0.008885  0.007538     43.7
+          24      0.020972  0.010595  0.009054  0.008711     43.2
+          48      0.021041  0.001606  0.000707  0.009244      3.4
+          96      0.021077  0.001445  0.000848  0.009413      4.0
+      E1 is converged from the start (+0.2% between the last two).  E4 and E5
+      COLLAPSE between 24 and 48 samples and then hold.  E6 rises
+      monotonically and converges on 0.0094.
+
+159c. THE COLLAPSE IS NOT A FLUKE, IT IS THE INTEGRATION.  This probe ties
+      the step size to the sample count -- 64 steps per sample -- so 24
+      samples is 1536 steps and 48 is 3072.  The radiated energy is an
+      accumulation along the trajectory, and at 1536 steps it is not yet
+      resolved; at 3072 and 6144 it is, and E4 and E5 fall by a factor of
+      seven and thirteen.  The two coarse rows were under-integrated, not
+      under-sampled, and they are the rows audit 158 reported.
+
+159d. SO THE BALANCE CLOSES TO 96%, WHICH CORRECTS 158.  At 96 samples the
+      ledger's imbalance over a regular orbit is 0.021077 |U_dd| and what
+      remains after the far-zone radiated energy and the Schott endpoint term
+      is 0.000848 -- 4.0%, against the 41.5% audit 158 reported from its
+      under-integrated rows.  The terms the model already computes account
+      for 96% of the energy imbalance on a regular orbit.
+
+159e. AND THE FIELD CORRECTION CANNOT BE TESTED AT THIS LEVEL, WHICH ANSWERS
+      157 IN THE NEGATIVE.  E6 converges on 0.0094 |U_dd|, thirteen times
+      WORSE than E5.  That number is not physics: the field integral's own
+      validated accuracy is 0.34% of the interaction energy (audit 155c), and
+      at 3 r* the interaction energy is about 2.8 |U_dd|, so its quadrature
+      noise is about 0.009 |U_dd| -- eleven times the residue it would
+      correct.  Evaluating it per step would not change that, because the
+      floor is the SPATIAL quadrature and not the temporal sampling.  Audit
+      157's last instrument is therefore not buildable at the precision its
+      own target requires, and 158's report that the correction helps by 1.6%
+      was that noise appearing with a favourable sign at one sampling.
+
+159f. WHERE THE ENERGY LINE ENDS, FOR GOOD.
+        the ledger's velocity-linear term    3.98 |U_dd|   145, split out 146
+        the far-zone radiated energy         93%           of a regular
+        the Schott endpoint term             3%            orbit's imbalance
+        unexplained                          4.0%          = 0.000848 |U_dd|
+                                                           per orbit
+        the interaction field energy         not measurable at this level
+        the 1 r* excess                      the plunge, mapped in 132, 133,
+                                             139, 148, 149
+      The residue is 0.000848 |U_dd| per orbit, which is 1.7e-19 J, and it is
+      attributed by elimination to the order-reduced Landau-Lifshitz
+      approximation.  Isolating it needs the full Landau-Lifshitz force, a
+      change to the model rather than to a probe.
+
+159g. LIMITS.  One orbit at one radius, one channel, one tilt.  The
+      convergence is shown in the SAMPLE count, which in this probe moves the
+      step count with it, so the two are not separated here: what is
+      established is that the answer stops moving, not which of the two was
+      responsible for it moving.  The 0.34% figure for the field integral is
+      audit 155c's static validation, carried over.
