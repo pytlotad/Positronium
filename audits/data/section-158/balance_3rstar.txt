@@ -1,0 +1,5 @@
+range of the TOTAL (kinetic + interaction) over the sampled orbit, in |U_dd|:
+  E1  the ledger                           0.020972
+  E4  plus the far-zone radiated           0.010595
+  E5  plus the Schott endpoint term        0.009054
+  E6  plus the field-energy correction     0.008711

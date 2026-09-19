@@ -1,0 +1,37 @@
+PRE-REGISTRATION, audit section 158 (the last instrument: every known term
+of the energy balance, on the same samples).  Written before any number of
+this section was computed.
+written 2026-09-19T12:44:01Z
+
+WHAT IS BEING BUILT.  Audit 157 closed the balance to 81.2% with the
+radiation debited and the Schott term added, leaving 0.93 |U_dd| per orbit
+and naming the last missing piece: the interaction field energy of audit
+155, which there removed 34% of the drift but was measured at eight
+samples in a different configuration.  This evaluates every known term at
+the SAME sample points, so the ranges are comparable:
+  E1  T + U, without the velocity-linear charge-dipole term (145, 146)
+  E4  E1 + the far-zone radiated energy
+  E5  E4 + the Schott endpoint term
+  E6  E5 + the retarded interaction field-energy correction (155)
+with the production reaction model enabled, so the particles pay.
+
+RULES, decided now.
+R158a  THE BALANCE IS CLOSED if E6's range falls below 0.2 |U_dd|, the
+       threshold audit 157 set and missed at 0.93.
+R158b  PARTIAL CLOSURE IS REPORTED AS A FRACTION.  If E6 is smaller than E5
+       but above the threshold, report what fraction of E5's range the field
+       correction removes, against the 34% audit 155 measured.
+R158c  ALL RANGES ON THE SAME SAMPLES.  Comparing a coarse-sampled range
+       with a 256-step one understates the first; every number here comes
+       from one sampling and the sample count is stated.
+R158d  THE FIELD CORRECTION IS THE VALIDATED ONE: the frozen-state
+       subtraction of audit 155c, whose static test reproduces the exact
+       Coulomb interaction energy to 0.34%.  The grid is coarser than 155's
+       for cost, so the same static test is run at the coarser grid and
+       reported before the orbital numbers are used.
+R158e  No model file changes.
+
+PREDICTION (mine).  E6 lands between 0.5 and 0.7 |U_dd|, removing a quarter
+to a third of E5 as 155 measured, so R158a fails and the line ends with a
+named, measured residue of order half a |U_dd| per orbit that is the
+order-reduced Landau-Lifshitz approximation's own error.

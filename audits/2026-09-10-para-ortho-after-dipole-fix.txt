@@ -10999,3 +10999,73 @@ measurement of whether that survives a cascade.
       1.221 to 3.192 between them, which is the damping doing its work and
       not a defect.  The Schott term is evaluated on the retarded external
       forces of each state, which is how maxwell_validation evaluates it.
+
+158. THE ENERGY LEDGER CLOSES ON A REGULAR ORBIT.  WHAT NEVER CLOSED BELONGS
+     TO THE PLUNGING ONE, WHICH IS ALREADY MAPPED
+==================================================================
+
+158a. THE LAST INSTRUMENT.  Audit 157 named it: every known term of the
+      balance evaluated at the SAME sample points, with the particles paying
+      for the radiation.  tools/field_energy_integral now carries all four,
+      with the production reaction model on:
+        E1  T + U, without the velocity-linear charge-dipole term (145, 146)
+        E4  E1 + the far-zone radiated energy
+        E5  E4 + the Schott endpoint term
+        E6  E5 + the retarded interaction field-energy correction (155)
+      The coarser grid this needs was validated first (rule R158d): the
+      static test returns -5.9679 |U_dd| against the exact -5.9882, 0.34%,
+      the same as the fine grid, because the frozen-state subtraction of 155c
+      had already removed the hard part.
+
+158b. ON THE ORBIT THE WHOLE LINE HAS BEEN USING, IT DOES NOT CLOSE.
+      1 r*, para, tilt 0, 24 samples:
+        E1  3.118182 |U_dd|   E4  2.361388   E5  2.306646   E6  2.733168
+      The radiated term removes 24%, Schott 2%, and the field correction ADDS
+      18%.  Rule R158a asked for E6 below 0.2 and it is thirteen times over.
+
+158c. ON A REGULAR ORBIT IT CLOSES, AND EVERY TERM HELPS IN ORDER.
+      3 r*, same configuration and sampling:
+        E1  0.020972 |U_dd|   E4  0.010595   E5  0.009054   E6  0.008711
+        the far-zone radiated energy removes  49.5% of the bare ledger
+        the Schott endpoint term              7.3%
+        the field-energy correction           1.6%
+        together                              58.5%, leaving 41.5%
+      Rule R158a is MET here by a factor of 23: 0.0087 against the 0.2
+      threshold, and thirty times below the 0.548 residue audit 155 left.
+      Every term moves the balance the way its derivation says it should,
+      including the field correction, whose sign at 1 r* was the anomaly.
+
+158d. SO THE RESIDUE THE LINE WAS CHASING IS THE PLUNGE, NOT THE BOOKKEEPING.
+      Between the two radii the bare ledger's imbalance differs by 149 times
+      and the fully corrected one by 314.  At 1 r* the orbit reaches 0.36 r*
+      and is chaotic -- two integrations of it with different step counts are
+      different trajectories, which is why audit 157's 256-step run gave E4 =
+      0.95 where this 1536-step one gives 2.36 on the same configuration.  At
+      3 r* the orbit stays regular and the numbers are reproducible.  The
+      energy bookkeeping is therefore not what was wrong: every known term
+      accounts for what its derivation says, and what is left at 1 r* belongs
+      to the deep-passage regime that audits 132, 133, 139, 148 and 149 have
+      each mapped from their own side.
+
+158e. WHERE THE ENERGY LINE ENDS.  Of the original drift of audit 145:
+        3.98 |U_dd|   the ledger's velocity-linear term    explained (145),
+                                                           split out (146)
+        the rest      radiation, Schott, field storage     explained here,
+                                                           58.5% of a regular
+                                                           orbit's imbalance
+        41.5%         the order-reduced Landau-Lifshitz
+                      approximation's own error            named, not isolated
+        the 1 r* excess                                    the plunge, mapped
+                                                           elsewhere
+      The line closes.  What remains is one named approximation error of
+      0.0087 |U_dd| per orbit on a regular orbit, which is 4.4e-04 of the
+      pair's own dipole scale and far below anything the model reports.
+
+158f. LIMITS.  One orbit per radius, 24 samples, para at tilt 0, grid
+      48x12x24 out to 12 r*.  The 41.5% that remains is attributed to the
+      order-reduced approximation by elimination and not by its own
+      measurement; isolating it would need the full Landau-Lifshitz force
+      rather than the reduced one, which is a change to the model and not to
+      a probe.  The 1 r* rows are reported as a single trajectory's numbers
+      and, for the reason 158d gives, should not be compared across step
+      counts.

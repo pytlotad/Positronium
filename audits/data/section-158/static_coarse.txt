@@ -1,0 +1,2 @@
+STATIC validation: exact Coulomb interaction energy -1.193499905e-15 J
+    0.0000 -1.189466588e-15 -1.391320507e-15      -5.967932      -6.980697  (static -5.9882, retarded correction +0.020236)

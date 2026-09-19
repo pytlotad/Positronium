@@ -1,0 +1,13 @@
+Raw outputs behind audit section 158 (2026-09-19).
+  prereg_158.txt        rules R158a-e, written before the probe was
+                        extended, with the closure threshold (0.2 |U_dd|)
+                        carried over from audit 157
+  static_coarse.txt     rule R158d: the coarser grid against the exact
+                        Coulomb interaction energy, 0.34%, the same as the
+                        fine grid
+  balance.txt           1 r*, the plunging orbit: E1, E4, E5, E6 on 24
+                        samples
+  balance_3rstar.txt    3 r*, the regular orbit: the same four
+All from tools/field_energy_integral <r/r*> 0 0 24 48 12 24 12 with the
+production reaction model on (CREM_FIELD_NO_REACTION restores the
+reaction-disabled configuration audits 102-156 used).

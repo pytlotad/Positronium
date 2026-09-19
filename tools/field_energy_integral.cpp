@@ -89,8 +89,15 @@ int main(int argc,char** argv) {
     ClassicalTrajectoryEngine::Accuracy accuracy;
     accuracy.relativeTolerance=1.0e-8;
     accuracy.maximumDepth=20;
-    accuracy.reactionModel=ChargeRadiationReactionModel::disabled;
-    accuracy.computeOutwardFlux=false;
+    // Audit 158: the particles pay for what the far zone receives, so the
+    // quantity tested carries the radiated energy and the Schott term as well
+    // as the field correction.  CREM_FIELD_NO_REACTION restores the
+    // reaction-disabled configuration audit 155 used.
+    const bool payForRadiation=std::getenv("CREM_FIELD_NO_REACTION")==nullptr;
+    accuracy.reactionModel=payForRadiation
+        ?ChargeRadiationReactionModel::individualLandauLifshitz
+        :ChargeRadiationReactionModel::disabled;
+    accuracy.computeOutwardFlux=true;
     accuracy.useRetardedExternalForces=true;
     ClassicalTrajectoryEngine engine(state,accuracy);
     // eps0 E1.E2 + B1.B2/mu0, each particle's charge and dipole field taken
@@ -220,7 +227,7 @@ int main(int argc,char** argv) {
     std::printf("%10s %16s %16s %14s %14s\n","t/period","U_field [J]",
                 "U_inst [J]","U_field/|U_dd|","U_inst/|U_dd|");
     std::vector<double> cumulative,shellRadius,fieldValues,instantValues;
-    std::vector<double> combinedValues;
+    std::vector<double> combinedValues,fullValues;
     const int stepsPerSample=64;
     for(int sample=0;sample<samples;++sample) {
         if(sample>0) {
@@ -236,9 +243,15 @@ int main(int argc,char** argv) {
         const double instant=instantaneous(state);
         const double kinetic=kineticEnergy(state.firstVelocity,firstMass)
             +kineticEnergy(state.secondVelocity,secondMass);
-        fieldValues.push_back(kinetic+field);
-        instantValues.push_back(kinetic+instant);
-        combinedValues.push_back(kinetic+instant+correction);
+        const MutualForces external=
+            retardedExternalForces(state,engine.history());
+        const double schott=explicitChargeSchottEnergy(state,external);
+        const double ledger=kinetic+instant;
+        fieldValues.push_back(ledger);
+        instantValues.push_back(ledger+state.orbitalRadiatedEnergy);
+        combinedValues.push_back(ledger+state.orbitalRadiatedEnergy+schott);
+        fullValues.push_back(ledger+state.orbitalRadiatedEnergy+schott
+                             +correction);
         std::printf("%10.4f %16.9e %16.9e %14.6f %14.6f  (static %+.4f, "
                     "retarded correction %+.6f)\n",
                     static_cast<double>(sample)/samples,field,instant,
@@ -254,10 +267,13 @@ int main(int argc,char** argv) {
         const double fieldRange=range(fieldValues)/dipoleScale;
         const double instantRange=range(instantValues)/dipoleScale;
         std::printf("\nrange of the TOTAL (kinetic + interaction) over the sampled orbit, in |U_dd|:\n");
-        std::printf("  T + U_field (retarded cross energy)  %12.6f\n",fieldRange);
-        std::printf("  T + U_inst  (the ledger)             %12.6f\n",instantRange);
-        std::printf("  T + U_inst + the retarded correction %12.6f\n",
+        std::printf("  E1  the ledger                       %12.6f\n",fieldRange);
+        std::printf("  E4  plus the far-zone radiated       %12.6f\n",
+                    instantRange);
+        std::printf("  E5  plus the Schott endpoint term    %12.6f\n",
                     range(combinedValues)/dipoleScale);
+        std::printf("  E6  plus the field-energy correction %12.6f\n",
+                    range(fullValues)/dipoleScale);
         std::printf("  audit 145e attributed 1.13 |U_dd| of the ledger's "
                     "drift to retardation\n");
     }

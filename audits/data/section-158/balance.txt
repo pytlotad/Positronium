@@ -1,0 +1,12 @@
+    0.8750 -1.997765257e-15 -3.193425576e-15     -10.023423     -16.022431  (static -10.7163, retarded correction +0.692865)
+    0.9167 -1.576126847e-15 -2.334580845e-15      -7.907929     -11.713334  (static -8.4447, retarded correction +0.536802)
+    0.9583 -1.519963504e-15 -2.206510433e-15      -7.626140     -11.070764  (static -8.1168, retarded correction +0.490652)
+
+range of the TOTAL (kinetic + interaction) over the sampled orbit, in |U_dd|:
+  E1  the ledger                           3.118182
+  E4  plus the far-zone radiated           2.361388
+  E5  plus the Schott endpoint term        2.306646
+  E6  plus the field-energy correction     2.733168
+  audit 145e attributed 1.13 |U_dd| of the ledger's drift to retardation
+
+cumulative U_field against the cut-off, last state:
