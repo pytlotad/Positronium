@@ -1,0 +1,8 @@
+a = -4.217729e+22 J/mu^2, b = 1.265303e+23 J/mu^2, |b/a| = 3.0000  (a_pair x 1.0000)
+ channel  states      <cos>    <cos^2>    <|m|/mu> <|m|^2/mu^2>  <iso> [GHz]  <ten> [GHz]    <U> [GHz]
+       1    4000     0.7499     0.5831      1.8692       3.4998      -4.1150       4.1347       0.0198
+       2    4000    -0.2406     0.2509      1.1611       1.5187       1.3205      -1.3818      -0.0613
+       5    4000     0.0110     0.3350      1.3415       2.0219      -0.0602      -0.0458      -0.1059
+
+M1 power ratio para/ortho = <|m|^2>_para / <|m|^2>_ortho = 2.3045
+channel separation in spin-spin energy = 0.0811 GHz against the measured 203.3941, a factor 2508.22

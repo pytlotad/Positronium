@@ -1,0 +1,12 @@
+Raw outputs behind audit section 153 (2026-09-19).
+  prereg_153.txt  rules R153a-e, written before any number, with R153b
+                  fixing in advance that an M1 ratio below 10 would require
+                  correcting the README in place rather than annotating it
+  apair.txt       tools/conditioned_ensemble_coupling, 4000 prepared states
+                  per channel at a_pair: the two moments of the mutual angle,
+                  <|m|/mu> and <|m|^2/mu^2>, and the isotropic and tensor
+                  parts of the azimuth-averaged energy per channel
+  radii.txt       the same at 0.1, 0.01, 0.002 and 0.0005 a_pair, 2000 states
+                  each, where |b/a| drifts from 3.0000 to 0.0589 and the
+                  cancellation of 153c fails
+The README's M1 table was corrected in place in the same commit.

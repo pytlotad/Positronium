@@ -10664,3 +10664,81 @@ measurement of whether that survives a cascade.
       individualLandauLifshitzSelfForces with includeMutual = false, which is
       the production path, and the mutual force from retardedExternalForces on
       the same state with a one-node history.
+
+153. THE RE-MEASUREMENT DEBT PAID: THE ENSEMBLE-AVERAGED COUPLING IS ZERO BY
+     ALGEBRA, AND THE M1 CHANNELS DIFFER BY 2.30, NOT BY 32 ORDERS
+==================================================================
+
+153a. THE DEBT.  Sections 117 and 118 and the README's M1 table are statements
+      about the preparation audit 91 withdrew, the moments exactly collinear.
+      Audit 143 gave the two channels back by CONDITIONING, so the same
+      quantities can be averaged over what the default run actually prepares.
+      tools/conditioned_ensemble_coupling does that on prepared states only,
+      reading a and b off the model's own azimuthAveragedDipoleEnergy exactly
+      as 117b read them.
+
+153b. MEASURED AT a_pair, 4000 prepared states per channel.
+        channel  <cos>   <|m|/mu>  <|m|^2/mu^2>   <iso>     <ten>      <U>
+          para   +0.7499   1.8692     3.4998      -4.1150   +4.1347  +0.0198
+          ortho  -0.2406   1.1611     1.5187      +1.3205   -1.3818  -0.0613
+          free   +0.0110   1.3415     2.0219      -0.0602   -0.0458  -0.1059
+      (the three energies in GHz).  The isotropic and tensor parts CANCEL:
+      each channel's total is a percent of its own components, and 0.065 GHz
+      is the sampling noise of 4000 states on a 4.1 GHz scale.
+
+153c. AND THE CANCELLATION IS AN IDENTITY, NOT A COINCIDENCE.  Conditioning on
+      the MUTUAL angle leaves the pair's orientation relative to the orbital
+      normal isotropic, because rotating both moments together preserves that
+      angle.  For an isotropic pair orientation
+        <(mu1.n)(mu2.n)> = <mu1.mu2>/3,
+      and the model's own coefficients satisfy b = -3a wherever the orbit is
+      outside the moment radius (117c measured |b/a| = 3.000).  So
+        <U> = a<mu1.mu2> + b<(mu1.n)(mu2.n)> = a<mu1.mu2>(1 - 3/3) = 0
+      exactly, for ANY ensemble conditioned only on the mutual angle.  The
+      model's ensemble-averaged spin-spin energy therefore vanishes where the
+      orbit actually is -- and it takes the model's own contact analogue with
+      it, because at |b/a| = 3 the isotropic part is not separable from the
+      tensor one the way an S state separates them.
+
+153d. INSIDE THE MOMENT RADIUS THE CANCELLATION FAILS, AND 117e's VERDICT
+      SURVIVES AS AN ENSEMBLE STATEMENT (rule R153c).
+        a/a_pair   |b/a|    channel separation [GHz]   against 203.3941
+          1.0000   3.0000            0.0811                 4.0e-04
+          0.1000   2.9963           14.5770                 7.2e-02
+          0.0100   2.6673       612 072                     3.0e+03
+          0.0020   0.7285     5.04e+08                       2.5e+06
+          0.0005   0.0589     3.28e+09                       1.6e+07
+      Too small outside by three to four orders, too large inside by six to
+      seven, and the crossing sits where |b/a| is still 2.97 -- i.e. where
+      the separation is the RESIDUAL of a cancellation and is set by how far
+      |b/a| has drifted from 3, not by the coupling's own size.  That is
+      117e's finding in ensemble form: the magnitude and the anisotropy are
+      the same quantity and cannot be satisfied at once.
+
+153e. THE M1 CLAIM DOES NOT SURVIVE, AND THE README IS CORRECTED IN PLACE
+      (rule R153b).  It said para can emit M1 and ortho cannot, with maxima
+      32 orders apart, because |m| = 0 exactly for ortho.  Under the default
+      conditioned ensembles,
+        <|m|^2/mu^2>  para 3.4998   ortho 1.5187   ratio 2.3045.
+      Since P_M1 ~ |m|^2 the two channels differ in M1 power by a factor of
+      2.30.  The exact cancellation happens only at cos = -1, which a uniform
+      draw reaches with probability zero, so the 32 orders are a property of
+      the withdrawn preparation alone.  The README's table now carries the
+      measured ensemble numbers instead of the note audit 143 left beside it.
+
+153f. WHAT THE POINT STATEMENTS STILL MEAN (rule R153a).  Nothing is deleted.
+      117's 21.9 GHz is the model's coupling at a CONFIGURATION, the full
+      swing between the two collinear ends, and it remains the right number
+      for that question.  153b-153d answer a different one: what the default
+      preparation produces on average, which is zero outside the moment
+      radius.  Both are true and they are not interchangeable; the audit's
+      earlier text used the first where it meant the second.
+
+153g. LIMITS.  Prepared states only, no trajectories, so nothing here says
+      what the dynamics does to these averages -- audit 113 measured that the
+      terminal measure is tilted, and this section does not repeat it.  Four
+      thousand states per channel at a_pair, two thousand at the other radii,
+      one seed base; the sampling noise on <U> is 0.065 GHz at a_pair, which
+      is why 153b reports the cancellation as exact-to-noise rather than
+      exact.  The identity of 153c is exact only where |b/a| = 3, which is
+      outside the moment radius.

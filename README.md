@@ -1346,13 +1346,21 @@ koherentnej sumy \(\mathbf m=\boldsymbol\mu_1+\boldsymbol\mu_2\), więc
 | orto | \(0{,}000\)…\(0{,}000\) | \(1{,}15\cdot10^{-48}\) | \(7{,}58\cdot10^{-43}\) |
 
 > **Ta tabela należy do przygotowania z narzuconym kątem**
-> (`--spin-quantization`), a nie do przebiegu domyślnego. Audyt 91 wycofał
-> narzucenie, a audyt 143 przywrócił dwa kanały **warunkowaniem** na własnym
-> klasyfikatorze modelu, nie narzuceniem wartości: domyślnie \(\langle|\mathbf
-> m|/\mu\rangle\) wynosi \(1{,}8697\) dla para i \(1{,}1563\) dla orto
-> (2000 stanów na kanał), więc dokładne kasowanie \(|\mathbf m|=0\) nie
-> zachodzi dla niczego, co domyślny przebieg przygotowuje, i te 32 rzędy
-> różnicy nie są własnością domyślnej konfiguracji.
+> (`--spin-quantization`), a nie do przebiegu domyślnego, i zdanie „para może
+> emitować M1, orto nie może" **nie przenosi się** na przebieg domyślny.
+> Audyt 91 wycofał narzucenie, audyt 143 przywrócił dwa kanały
+> **warunkowaniem** na własnym klasyfikatorze modelu, a audyt 153 przemierzył
+> to, co stąd wynika, na 4000 stanach na kanał:
+>
+> | kanał | \(\langle|\mathbf m|/\mu\rangle\) | \(\langle|\mathbf m|^2/\mu^2\rangle\) |
+> |---|---|---|
+> | para | \(1{,}8692\) | \(3{,}4998\) |
+> | orto | \(1{,}1611\) | \(1{,}5187\) |
+>
+> Ponieważ \(P_{M1}\sim|\mathbf m|^2\), stosunek mocy M1 między kanałami
+> wynosi **2,3045**, a nie 32 rzędy wielkości. Dokładne kasowanie
+> \(|\mathbf m|=0\) zachodzi wyłącznie przy \(\cos=-1\), czyli w punkcie,
+> w który jednorodne losowanie trafia z prawdopodobieństwem zero.
 
 **Para może emitować M1, orto nie może.** Maksima różnią się o
 \(\mathbf{32}\) **rzędy wielkości**, a resztka orto to zaokrąglenie:

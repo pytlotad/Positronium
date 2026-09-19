@@ -1,0 +1,48 @@
+PRE-REGISTRATION, audit section 153 (paying the re-measurement debt of
+117, 118 and the M1 result, which audit 143 made payable).  Written
+before any number of this section was computed.
+written 2026-09-19T09:26:51Z
+
+THE DEBT.  Sections 117 and 118 and the README's M1 table are statements
+about the preparation audit 91 withdrew: the moments exactly collinear,
+cos = +-1.  The audit has carried that caveat ever since.  Audit 143 gave
+the two channels back by CONDITIONING, so the same quantities can now be
+stated as ENSEMBLE averages over what the default run actually prepares.
+
+WHAT IS RE-MEASURED, all on prepared states, no trajectories.
+  E1  <cos> and <cos^2> per conditioned channel;
+  E2  <|m|/mu> and <|m|^2/mu^2>, the second being what M1 power needs,
+      since P_M1 ~ |m|^2;
+  E3  the azimuth-averaged dipole energy per channel, split as
+      a <mu1.mu2> + b <(mu1.n)(mu2.n)> with a and b read off the model's
+      own function on two calibration configurations, which is exactly
+      how 117b split it.
+All at a_pair and at the radii 117c scanned.
+
+RULES, decided now.
+R153a  Each re-measured number REPLACES its point-statement counterpart in
+       the audit's reading, and the point statement is kept as what it was:
+       a statement about cos = +-1.  Neither is deleted.
+R153b  The M1 claim is the sharp one.  The README says para can emit M1 and
+       ortho cannot, with maxima 32 orders apart, because |m| = 0 exactly
+       for ortho.  Under conditioning the ratio is <|m|^2>_para /
+       <|m|^2>_ortho and it is finite; report it, and if it is below 10 the
+       README's claim does not survive as an ensemble statement and must be
+       corrected in place rather than annotated.
+R153c  117's verdict -- no orbit has the isotropic part at 116.8 GHz with
+       |b/a| <= 0.2 -- is re-tested on the ensemble averages.  If it still
+       holds, say so with the new numbers; if the ensemble changes it, that
+       is a correction to 117e.
+R153d  The ensemble-averaged channel separation in spin-spin energy is
+       reported against the measured 203.3941 GHz, so the model's own scale
+       has a CURRENT number and not one from a withdrawn preparation.
+R153e  No model file changes; the README's M1 table is corrected in place
+       if R153b requires it.
+
+PREDICTION (mine).  <|m|^2> comes out 3.50 mu^2 for para and 1.51 for
+ortho, a ratio near 2.3 rather than 32 orders, so R153b bites and the
+README needs the correction rather than the note audit 143 left; 117's
+verdict survives, because conditioning changes the ensemble and not the
+multipole algebra that fixes |b/a| = 3; and the channel separation comes
+out near 11 GHz against 203.3941, a factor near 19 where the point
+statement had 9.3.
