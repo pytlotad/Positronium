@@ -1,0 +1,4 @@
+r  547.509 r*  beta 0.007297  |F_wzajemna| 2.0597e-08 N  |F_wlasna| 2.6680e-15 N  udzial 1.295e-07  (2/3)beta^3 2.591e-07
+r   20.000 r*  beta 0.038181  |F_wzajemna| 1.5330e-05 N  |F_wlasna| 2.8484e-10 N  udzial 1.845e-05  (2/3)beta^3 3.711e-05
+r    5.000 r*  beta 0.076362  |F_wzajemna| 2.2526e-04 N  |F_wlasna| 3.3738e-08 N  udzial 1.366e-04  (2/3)beta^3 2.968e-04
+r    1.000 r*  beta 0.170750  |F_wzajemna| 1.1309e-02 N  |F_wlasna| 1.9819e-05 N  udzial 3.210e-03  (2/3)beta^3 3.319e-03

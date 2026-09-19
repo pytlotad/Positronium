@@ -10592,3 +10592,75 @@ measurement of whether that survives a cascade.
       indirect, from the limiter being inert on a full cascade.  The
       remaining term the rate needs, the moment's own precession, was already
       analytic and is untouched.
+
+152. THE SELF-FIELD QUESTION ANSWERED: THE MUTUAL PART IN FULL, THE SELF PART
+     ONLY AS ITS RADIATIVE RESIDUE, AND ONE EXPLICIT DOUBLE-COUNTING GUARD
+==================================================================
+
+152a. THE QUESTION.  A moving electron makes a magnetic field that acts on the
+      positron, and the same field acts on the electron itself, after the
+      light-travel delay.  Is the second effect in the model?
+
+152b. THE MUTUAL PART IS THERE IN FULL, AND NOT AS A CURRENT LOOP.  The model
+      does not carry an "orbital magnetic moment" object at all; it integrates
+      the retarded Lienard-Wiechert field of the moving point charge, whose
+      magnetic part is what a current loop would approximate, plus the
+      retarded field of the intrinsic moment.  Each particle reads the
+      PARTNER's history only -- fieldFromOtherParticleAt takes sourceIsFirst =
+      !targetIsFirst -- so there is no place in that sum where a particle sees
+      its own past.
+
+152c. THE SELF PART IS NOT EVALUATED AS A FIELD, AND CANNOT BE.  A point
+      charge's own retarded field diverges at its own position.  The model
+      does what classical electrodynamics does: the divergent non-radiative
+      part is absorbed into the observed mass, and what is kept is the finite
+      radiative residue, as the order-reduced Landau-Lifshitz self-force
+        F_i = (q_i^2 / 6 pi eps0 c^3) a_i-dot,
+      built in individualLandauLifshitzSelfForces from the four-force
+      differenced along the particle's own trajectory.  So the answer to the
+      question as asked is: yes, but only through that residue, and the
+      residue is the whole of what a point-particle theory can say.
+
+152d. ITS SIZE, MEASURED.  Circular states, the self force against the Coulomb
+      force at the same separation:
+        r [r*]     beta     |F_mutual| [N]   |F_self| [N]    share
+        547.509   0.007297   2.0597e-08     2.6680e-15    1.295e-07
+         20.000   0.038181   1.5330e-05     2.8484e-10    1.845e-05
+          5.000   0.076362   2.2526e-04     3.3738e-08    1.366e-04
+          1.000   0.170750   1.1309e-02     1.9819e-05    3.210e-03
+      It scales as beta^3, as the closed form (2/3) beta^3 says: 2.591e-07,
+      3.711e-05, 2.968e-04 and 3.319e-03 against the measured shares, agreeing
+      to a factor 2 at the widest separation and to 3% at 1 r*.  At the
+      production orbit the self force is 1.3e-07 of the mutual one.
+
+152e. THE INTRINSIC MOMENT'S OWN RADIATION DOES ACT BACK ON IT.  That is a
+      separate channel and it IS a self term: dipoleRadiationReaction's torque,
+      applied under every reaction model but `disabled`, whose closure audit
+      136 measured exactly -- the work the torque does on the precession equals
+      the flux it emits, ratio converging on 1.000003 as the history is
+      refined.  Audit 148 measured that it is live in production, moving a
+      cascade's terminal moments by 3.4e-06.
+
+152f. AND ONE PLACE WHERE THE CODE GUARDS AGAINST COUNTING IT TWICE.  There is
+      also a MUTUAL radiation term, each charge in the partner's radiation
+      field, F_i = (q_i q_j / 6 pi eps0 c^3) a_j-dot.  With the full retarded
+      fields that term is ALREADY inside the Lienard-Wiechert field, so
+      including it as well would double count, and individualLandauLifshitz-
+      SelfForces takes includeMutual = false there.  Its own comment records
+      what the alternatives cost on a two-period balance: 0.88% residual for
+      Darwin plus the coherent term, 5.94% for retarded plus self only, and
+      51.0% for retarded plus the full coherent term -- the wrong combination
+      being an order worse than either right one.
+
+152g. WHAT IS THEREFORE ABSENT, STATED PLAINLY.  The non-radiative self-field,
+      which is renormalized into the mass; any finite-size self-interaction,
+      the charge being a point and only the moment carrying a softening length;
+      and the O(beta^2) and higher terms of the self force beyond the
+      order-reduced form.  None of these is a gap peculiar to this model: they
+      are where classical point-particle electrodynamics stops.
+
+152h. LIMITS.  Four circular states, one pair, prepared configurations rather
+      than trajectory samples; the self force is read from
+      individualLandauLifshitzSelfForces with includeMutual = false, which is
+      the production path, and the mutual force from retardedExternalForces on
+      the same state with a one-node history.

@@ -1,0 +1,9 @@
+Raw outputs behind audit section 152 (2026-09-19).
+No pre-registration: this answers a question about what the model contains,
+by reading the code and measuring one quantity it already computes.
+  self_size.txt  the order-reduced Landau-Lifshitz self force against the
+                 mutual retarded force at 547.509, 20, 5 and 1 r*, with the
+                 closed form (2/3) beta^3 beside the measured share
+The closure of the moment's own radiation reaction quoted in 152e is audit
+136's measurement, and the double-counting costs quoted in 152f are from
+individualLandauLifshitzSelfForces' own comment.
