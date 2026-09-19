@@ -1,0 +1,45 @@
+PRE-REGISTRATION, audit section 154 (what the dynamics does to the
+ensemble averages of 153).  Written before any number of this section was
+computed.
+written 2026-09-19T09:39:08Z
+
+THE LIMIT BEING CLOSED.  Section 153 measured prepared states only and
+said so.  Audit 113 measured that the dynamics tilts the terminal
+measure.  So the identity of 153c -- <U> = 0 because
+<(mu1.n)(mu2.n)> = <mu1.mu2>/3 for a pair isotropic about the orbital
+normal, with b = -3a -- is a statement about the preparation and not yet
+about what annihilates.
+
+WHY I EXPECT IT TO BREAK, AND HOW.  The spin transport precesses each
+moment about axes set by the orbital normal and the partner's field.
+Precession about n CONSERVES each (mu_i.n) and moves only the azimuth, so
+the tensor structure <(mu1.n)(mu2.n)> should be nearly frozen while the
+isotropic one <mu1.mu2> moves -- which is exactly the quantity 113 saw
+compress.  The two then stop being in the ratio 1/3 and the cancellation
+fails.
+
+THE MEASUREMENT.  The production path -- continuous Landau-Lifshitz,
+photons off, which is the default since audit 109 -- one trajectory per
+seed per conditioned channel, the terminal moments and the terminal
+orbital vector read from the last CREM_DEBUG_SPINPAIR line of each.  Then
+the same six averages 153 computed, at annihilation instead of at
+preparation.
+
+RULES, decided now.
+R154a  THE IDENTITY SURVIVES if the terminal <(mu1.n)(mu2.n)>/<mu1.mu2>
+       stays within 10% of 1/3 in both channels.
+R154b  IF IT BREAKS, report which structure moved: the prediction above is
+       that the tensor one is frozen and the isotropic one moves, and the
+       opposite result refutes the mechanism rather than the finding.
+R154c  Report <|m|^2/mu^2> at annihilation per channel and the M1 power
+       ratio, against 153's prepared 3.4998, 1.5187 and 2.3045.
+R154d  Report the completion rate; censored trajectories are excluded from
+       the averages and counted, not silently dropped.
+R154e  Audit 113's finding -- the dynamics tilts the terminal measure --
+       must be reproduced or contradicted in these numbers explicitly.
+
+PREDICTION (mine).  R154a fails: the tensor structure holds to a few
+percent while the isotropic one moves by tens of percent, so <U> becomes
+nonzero and of the order of a few tenths of the 4.1 GHz component scale.
+The M1 ratio moves toward 1, because the terminal angles compress toward
+the middle of the band.

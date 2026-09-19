@@ -10742,3 +10742,64 @@ measurement of whether that survives a cascade.
       is why 153b reports the cancellation as exact-to-noise rather than
       exact.  The identity of 153c is exact only where |b/a| = 3, which is
       outside the moment radius.
+
+154. WHAT THE DYNAMICS DOES TO THOSE AVERAGES: IT COMPRESSES THE ANGLE AND
+     LEAVES THE CANCELLATION ALONE, FOR A REASON I HAD BACKWARDS
+==================================================================
+
+154a. THE LIMIT BEING CLOSED.  Section 153 measured prepared states and said
+      so; audit 113 measured that the dynamics tilts the terminal measure.  So
+      153c's identity -- <U> = 0 because <(mu1.n)(mu2.n)> = <mu1.mu2>/3 for a
+      pair isotropic about the orbital normal, with b = -3a -- was a statement
+      about the preparation.  Twelve production trajectories per conditioned
+      channel, continuous reaction, terminal moments read from the last
+      CREM_DEBUG_SPINPAIR line of each; 24 of 24 completed, all on the
+      retardation margin.
+
+154b. WHAT THE DYNAMICS DOES, AND IT IS 113's EFFECT.
+        channel   <cos> prepared   <cos> terminal   <|m|^2/mu^2> prep -> term
+        para          +0.7499          +0.5775          3.4998 -> 3.1624
+        ortho         -0.2406          -0.0290          1.5187 -> 1.9465
+      Both channels move TOWARD zero, which is the compression audits 112c and
+      113 recorded, now measured on the conditioned ensembles: para loses 23%
+      of its mean cosine and ortho 88% of its.
+
+154c. AND THE CANCELLATION SURVIVES IT.  The quantity the identity sets to
+      zero is <mu1.mu2> - 3<(mu1.n)(mu2.n)>, and a ratio of two averages is
+      useless here because ortho's denominator sits near zero, so it is
+      reported with its standard error over the twelve trajectories:
+        para    +0.0337 +- 0.2056   ->  <U> = -0.185 +- 1.128 GHz   0.16 sigma
+        ortho   +0.0670 +- 0.1472   ->  <U> = -0.368 +- 0.808 GHz   0.46 sigma
+      Both are consistent with zero.  Rule R154a asked for the tensor-to-
+      isotropic ratio within 10% of 1/3: para gives 0.3139, a 5.8% deviation,
+      and ortho's ratio is not a statistic at all for the reason above.
+
+154d. AND MY PREDICTION HAD THE MECHANISM BACKWARDS.  I expected the tensor
+      structure to be frozen by precession about the normal while the
+      isotropic one moved, breaking the ratio.  The first half is right and
+      the conclusion does not follow: a rotation COMMON to both moments
+      leaves mu1.mu2 invariant -- it is a scalar product of two vectors
+      rotated together -- and a common rotation about n leaves
+      (mu1.n)(mu2.n) invariant as well.  So the dominant precession, which
+      116b measured as common to both moments to every printed digit in the
+      charge sector, moves NEITHER structure.  Only the differential
+      precession can break the identity, and 116b traced that to the dipole
+      tensor term, which at a_pair is the small one.  The identity is
+      therefore protected by the same symmetry that protects |S|, and the
+      angle can compress by 88% without it moving at all -- as it just did.
+
+154e. THE M1 CHANNELS BECOME MORE ALIKE, NOT LESS.  <|m|^2/mu^2> goes 3.4998
+      -> 3.1624 for para and 1.5187 -> 1.9465 for ortho, so the M1 power
+      ratio falls from 2.3045 at preparation to 1.6247 at annihilation.  The
+      README's withdrawn claim of 32 orders is thus even further from the
+      terminal ensemble than from the prepared one, and 153e's correction
+      stands with a second number behind it.
+
+154f. LIMITS, AND THE POWER OF THIS TEST.  Twelve trajectories per channel
+      resolve <U> to about 1.1 GHz for para and 0.8 GHz for ortho, so a break
+      of the identity below that is NOT excluded -- only a break of the size
+      my prediction implied.  Resolving 0.2 GHz would need about twenty-five
+      times the trajectories.  One seed base, one preparation radius, the
+      production reaction model; the terminal state is the retardation margin
+      and not annihilation in any physical sense, which is the model's
+      standing caveat and not this section's.

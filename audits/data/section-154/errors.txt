@@ -1,0 +1,8 @@
+phenomenon 1, 12 trajectories
+  <cos> terminal +0.5775  (prepared +0.7499)
+  <|m|^2/mu^2>   3.1624
+  <iso> - 3<ten> = +0.0337 +- 0.2056  ->  <U> = -0.1849 +- 1.1281 GHz (0.16 sigma from zero)
+phenomenon 2, 12 trajectories
+  <cos> terminal -0.0290  (prepared -0.2406)
+  <|m|^2/mu^2>   1.9465
+  <iso> - 3<ten> = +0.0670 +- 0.1472  ->  <U> = -0.3676 +- 0.8077 GHz (0.46 sigma from zero)

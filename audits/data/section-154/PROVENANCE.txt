@@ -1,0 +1,14 @@
+Raw outputs behind audit section 154 (2026-09-19).
+  prereg_154.txt      rules R154a-e, written before any number, including the
+                      prediction that the identity would break -- which it
+                      did not, for the reason 154d records
+  results.txt         24 trajectories, 12 per conditioned channel, production
+                      reaction model, all completing on the retardation margin
+  terminal.txt        the averages of audit 153 recomputed on the terminal
+                      moments (terminal_stats.py)
+  errors.txt          the combination the identity sets to zero,
+                      <mu1.mu2> - 3<(mu1.n)(mu2.n)>, with its standard error
+                      (errors.py), which is the statistic 154c reports because
+                      a ratio is useless when its denominator is near zero
+Reproduce with tools/terminal_moment_ensemble <phenomenon> 6 <seed> 300 under
+CREM_DEBUG_SPINPAIR.
