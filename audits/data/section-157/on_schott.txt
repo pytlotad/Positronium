@@ -1,0 +1,5 @@
+r 1.00 r*  channel 0  tilt 0 deg  orbits 1  tol 1e-08  steps 256/256 ok  forces retarded
+reaction individual Landau-Lifshitz (the particles pay)
+          E1  minus the charge-dipole term   3.191531e+00  -3.191531e+00     1.0007
+  E4  E1 plus the far-zone radiated energy   9.512256e-01  +8.025973e-01     0.2983
+     E5  and plus the Schott endpoint term   9.314895e-01  +7.493925e-01     0.2921

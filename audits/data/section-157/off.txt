@@ -1,0 +1,4 @@
+r 1.00 r*  channel 0  tilt 0 deg  orbits 1  tol 1e-08  steps 256/256 ok  forces retarded
+reaction disabled (nothing pays)
+          E1  minus the charge-dipole term   1.221002e+00  -1.140710e+00     0.9191
+  E4  E1 plus the far-zone radiated energy   3.398150e+00  +3.398150e+00     2.5578

@@ -10944,3 +10944,58 @@ measurement of whether that survives a cascade.
       0.2 r*.  The ratio of radiated to drift is stable at 3.95-3.98 across
       that change, which is why 156c reports the ratio and not the two
       numbers separately.
+
+157. THE LEDGER WITH THE RADIATION PAID FOR: THE BALANCE CLOSES TO 81%, AND
+     THE CONFIGURATION'S FLOOR IS STILL ABOVE THE RESIDUE
+==================================================================
+
+157a. WHAT WAS BUILT.  Section 156e asked for ledger runs with the reaction
+      ENABLED and the radiated energy debited, so that the quantity tested is
+      T + U + radiated and the configuration stops creating energy from
+      nothing.  tools/velocity_dependent_energy gained two ledgers and a
+      switch: E4 = E1 + orbitalRadiatedEnergy, the exact retarded far-zone
+      Poynting integral, and E5 = E4 + the Schott endpoint term, which the
+      model already computes and which maxwell_validation already uses in the
+      same balance.  No model file changed.
+
+157b. THE CONTROL FIRST (rule R157b).  With the reaction DISABLED, adding the
+      radiated term to a ledger that never paid it makes things worse, as it
+      must:
+        E1  1.221002 |U_dd|   ->   E4  3.398150
+      That is audit 156c's four-to-one seen from the other side, and it
+      confirms the reading rather than assuming it.
+
+157c. AND WITH THE PARTICLES PAYING.  Same orbit, reaction on:
+        E1  the ledger                        3.191531 |U_dd| range
+        E4  plus the far-zone radiated        0.951226
+        E5  plus the Schott endpoint term     0.931490
+      Adding the radiated energy improves the conservation by 3.4 times; the
+      Schott term adds a further 2%.  In net terms over the orbit the
+      particles lost 3.191531 |U_dd| while the far zone received 3.994128, so
+      the balance closes to 79.9%, and to 81.2% with Schott.  The remaining
+      0.749393 |U_dd| is 18.8% of what was radiated.
+
+157d. THE VERDICT ON THE RESIDUE (rule R157d).  Rule R157a asked for the
+      floor to fall below 0.2 |U_dd| so that section 155's 0.548 residue
+      could be attributed.  It falls to 0.93, so the rule FAILS: the residue
+      is still below the configuration's own floor and still cannot be
+      attributed.  What changed is the margin -- the floor was 4.54 |U_dd| of
+      unpaid radiation and is now 0.93 |U_dd| of unclosed balance, an
+      improvement of 4.9 times, and the residue sits 1.7 times below it
+      instead of 8 times.
+
+157e. WHAT IS LEFT, AND IT IS NAMED.  The 18.8% that does not close is the
+      order-reduced Landau-Lifshitz approximation's own error plus the
+      interaction field energy audit 155 measured -- that correction removed
+      34% of the drift in the reaction-disabled configuration, and applying
+      it here would need the spatial integral evaluated at every step rather
+      than at eight samples.  That is the next instrument and the last one
+      this line needs: E5 plus the field-energy correction, per step.  It is
+      expensive and well defined, and it is not built here.
+
+157f. LIMITS.  One orbit at 1 r*, para, tilt 0, 256 steps, tolerance 1e-8.
+      The reaction changes the trajectory, so the reaction-on and
+      reaction-off rows are not the same orbit: E1's own range moves from
+      1.221 to 3.192 between them, which is the damping doing its work and
+      not a defect.  The Schott term is evaluated on the retarded external
+      forces of each state, which is how maxwell_validation evaluates it.

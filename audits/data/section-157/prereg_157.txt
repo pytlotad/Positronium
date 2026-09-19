@@ -1,0 +1,38 @@
+PRE-REGISTRATION, audit section 157 (the ledger with the radiation paid
+for).  Written before any number of this section was computed.
+written 2026-09-19T12:05:52Z
+
+WHAT 156e ASKED FOR.  Every ledger measurement since section 102 runs with
+the radiation reaction disabled, so the far zone receives about four times
+the energy the particles lose and the configuration creates 4.54 |U_dd|
+per orbit from nothing -- four to eight times the residue being chased.
+The fix is to test T + U + radiated with the reaction ENABLED, so that the
+particles pay and the configuration's own floor drops below the residue.
+The engine already computes both halves.
+
+THE PROBE.  tools/velocity_dependent_energy gains a fifth ledger,
+E1 + orbitalRadiatedEnergy, and a switch that enables the production
+reaction model.  E1 is the ledger without the velocity-linear charge-dipole
+term, which audit 145 established and 146 split out in code.
+
+RULES, decided now.
+R157a  THE CONFIGURATION IS USABLE if, with the reaction enabled, the range
+       of E1 + radiated over one orbit falls below 0.2 |U_dd| -- i.e. below
+       the 0.55 |U_dd| residue 155 left, by enough to attribute it.
+R157b  THE COMPARISON IS REPORTED BOTH WAYS.  With the reaction disabled the
+       same combination must be WORSE than E1 alone, because the radiated
+       term is then added to a ledger that never paid it; if it is not, the
+       reading of 156c is wrong and the section says so.
+R157c  If the reaction changes the trajectory enough that the two
+       configurations are not comparable, that is reported with the radial
+       spans rather than glossed.
+R157d  The verdict on the 0.55 |U_dd| residue is stated: attributable,
+       still open, or smaller than the new floor.
+R157e  No model file changes; the switch is in the probe.
+
+PREDICTION (mine).  With the reaction on, E1 + radiated comes out near the
+integration floor -- audit 145 measured 0.091 |U_dd| for the instantaneous
+configuration -- so R157a passes and the residue becomes attributable for
+the first time in this line.  With the reaction off, the same combination
+is about 4.5 |U_dd| worse, which is 156c's number appearing from the other
+side.

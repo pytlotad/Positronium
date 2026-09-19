@@ -1,0 +1,8 @@
+Raw outputs behind audit section 157 (2026-09-19).
+  prereg_157.txt   rules R157a-e, written before the probe was extended,
+                   with the usability threshold (0.2 |U_dd|) fixed in advance
+  off.txt          reaction disabled: E1 against E4, the control of 157b
+  on.txt           reaction enabled: E1 against E4
+  on_schott.txt    the same with the Schott endpoint term as E5
+All from tools/velocity_dependent_energy 1.0 0 0 1 1e-8 256, with
+CREM_LEDGER_REACTION=1 selecting the production reaction model.

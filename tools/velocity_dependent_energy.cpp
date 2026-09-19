@@ -58,8 +58,29 @@ int main(int argc,char** argv) {
     const double dipoleScale=std::abs(pairDipoleInteractionEnergy(
         state.firstPosition-state.secondPosition,
         direction*firstMagneticMoment,direction*secondMagneticMoment));
+    ClassicalTrajectoryEngine::Accuracy accuracy;
+    accuracy.relativeTolerance=tolerance;
+    accuracy.maximumDepth=20;
+    // With the reaction disabled the retarded fields still radiate and nothing
+    // is debited for it, so part of the ledger's drift is simply unpaid
+    // outgoing flux.  The engine accumulates it when asked, and audit 156
+    // compares it with what is left unexplained.
+    // CREM_LEDGER_REACTION enables the production reaction model, so the
+    // particles PAY for what the far zone receives.  Audit 156 measured that
+    // with it disabled -- the configuration every ledger section since 102 has
+    // used -- the far zone gets four times the energy the particles lose, and
+    // the residue being chased is smaller than that hole.  With it enabled the
+    // quantity to test is E1 + radiated, which is the fifth ledger below.
+    const bool payForRadiation=std::getenv("CREM_LEDGER_REACTION")!=nullptr;
+    accuracy.reactionModel=payForRadiation
+        ?ChargeRadiationReactionModel::individualLandauLifshitz
+        :ChargeRadiationReactionModel::disabled;
+    accuracy.computeOutwardFlux=true;
+    accuracy.useRetardedExternalForces=retarded;
+    ClassicalTrajectoryEngine engine(state,accuracy);
+
     // The four ledgers, all read off one state.
-    struct Ledgers { double e0,e1,e2,e3; };
+    struct Ledgers { double e0,e1,e2,e3,e4,e5; };
     const auto ledgers=[&](const State& s) {
         const PairGeometry geometry=clampedPairGeometry(s);
         const double kinetic=kineticEnergy(s.firstVelocity,firstMass)
@@ -78,19 +99,19 @@ int main(int argc,char** argv) {
         out.e1=base+dipoleLab+darwin;
         out.e2=base+dipoleLab-darwin;
         out.e3=base+dipoleProper-darwin;
+        // The fifth: the same E1 with the far-zone Poynting integral added,
+        // which is the conserved quantity once the particles pay (audit 157).
+        out.e4=out.e1+s.orbitalRadiatedEnergy;
+        // The sixth: and the Schott term.  In the Landau-Lifshitz balance the
+        // reaction's work is the radiated energy MINUS a reversible endpoint
+        // term, so the conserved combination carries it; the model already
+        // computes that term and maxwell_validation already uses it for the
+        // same purpose.  The external forces it needs are the retarded ones
+        // on this state.
+        const MutualForces external=retardedExternalForces(s,engine.history());
+        out.e5=out.e4+explicitChargeSchottEnergy(s,external);
         return out;
     };
-    ClassicalTrajectoryEngine::Accuracy accuracy;
-    accuracy.relativeTolerance=tolerance;
-    accuracy.maximumDepth=20;
-    // With the reaction disabled the retarded fields still radiate and nothing
-    // is debited for it, so part of the ledger's drift is simply unpaid
-    // outgoing flux.  The engine accumulates it when asked, and audit 156
-    // compares it with what is left unexplained.
-    accuracy.reactionModel=ChargeRadiationReactionModel::disabled;
-    accuracy.computeOutwardFlux=true;
-    accuracy.useRetardedExternalForces=retarded;
-    ClassicalTrajectoryEngine engine(state,accuracy);
     const Ledgers start=ledgers(state);
     Ledgers lowest=start,highest=start;
     const int steps=orbits*perOrbit;
@@ -105,10 +126,14 @@ int main(int argc,char** argv) {
         lowest.e1=std::min(lowest.e1,last.e1);
         lowest.e2=std::min(lowest.e2,last.e2);
         lowest.e3=std::min(lowest.e3,last.e3);
+        lowest.e4=std::min(lowest.e4,last.e4);
+        lowest.e5=std::min(lowest.e5,last.e5);
         highest.e0=std::max(highest.e0,last.e0);
         highest.e1=std::max(highest.e1,last.e1);
         highest.e2=std::max(highest.e2,last.e2);
         highest.e3=std::max(highest.e3,last.e3);
+        highest.e4=std::max(highest.e4,last.e4);
+        highest.e5=std::max(highest.e5,last.e5);
         ++completed;
     }
     // radiatedEnergy MERGES the channels and M1 dominates it near the barrier
@@ -125,6 +150,9 @@ int main(int argc,char** argv) {
                 r/comptonBarrierRadius,channel,tilt*180.0/pi,orbits,tolerance,
                 completed,steps,ok?"ok":"FAILED",
                 retarded?"retarded":"instantaneous",dipoleScale);
+    std::printf("reaction %s\n",payForRadiation
+                ?"individual Landau-Lifshitz (the particles pay)"
+                :"disabled (nothing pays)");
     std::printf("%42s %14s %14s %10s\n","ledger","range/|U_dd|",
                 "drift/|U_dd|","vs E0");
     const double range0=(highest.e0-lowest.e0)/dipoleScale;
@@ -136,7 +164,11 @@ int main(int argc,char** argv) {
             Row{"E2  and the Darwin sign flipped",
                 lowest.e2,highest.e2,start.e2,last.e2},
             Row{"E3  and U_dd on the proper moments",
-                lowest.e3,highest.e3,start.e3,last.e3}}) {
+                lowest.e3,highest.e3,start.e3,last.e3},
+            Row{"E4  E1 plus the far-zone radiated energy",
+                lowest.e4,highest.e4,start.e4,last.e4},
+            Row{"E5  and plus the Schott endpoint term",
+                lowest.e5,highest.e5,start.e5,last.e5}}) {
         const double range=(entry.high-entry.low)/dipoleScale;
         const double drift=(entry.final-entry.first)/dipoleScale;
         std::printf("%42s %14.6e %+14.6e %10.4f\n",entry.name,range,drift,
