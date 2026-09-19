@@ -1,0 +1,47 @@
+PRE-REGISTRATION, audit section 155 (the last piece of the energy ledger:
+the bound field energy).  Written before any number of this section was
+computed.
+written 2026-09-19T09:48:03Z
+
+WHAT IS LEFT.  Section 145 decomposed the ledger's drift into 3.98 |U_dd|
+per orbit of spurious velocity-linear term and 1.13 |U_dd| of
+retarded-versus-instantaneous mismatch.  The first is explained and split
+out in code (146).  The second has a named candidate and an instrument:
+it should be the energy stored in the bound field between the particles,
+the analogue of the field MOMENTUM audit 121 integrated.
+
+THE QUANTITY.  The cross terms of the field energy,
+  U_field = integral ( eps0 E1.E2 + B1.B2/mu0 ) dV,
+whose self parts diverge at each particle and renormalize its mass, and
+whose static limit is exactly the Coulomb interaction energy the ledger
+already carries.  What the ledger cannot carry is its RETARDED value, so
+the comparison is between the range of U_field over an orbit and the
+range of the instantaneous interaction terms over the same orbit; their
+difference is what 145e attributed to retardation.
+
+RULES, decided now.
+R155a  THE LEDGER IS CLOSED if the retarded U_field's range over one orbit
+       differs from the instantaneous interaction energy's range by
+       1.13 |U_dd| within a factor 2, i.e. between 0.57 and 2.26.
+R155b  A SHORTFALL IS REPORTED AS A NUMBER.  If the difference is smaller,
+       the remaining piece is named with its size and the ledger stays open
+       by that amount; the section does not claim closure on a partial
+       match.
+R155c  CONVERGENCE MUST BE SHOWN, not assumed: the cumulative integral
+       against the cut-off radius, and the same integral at two grid
+       resolutions agreeing to 10%.  Audit 121's own history horizon
+       applies -- beyond about 15 r* the retarded time leaves the stored
+       history -- so the outer radius is bounded and that bound is stated.
+R155d  The self terms are not computed and not estimated; only the cross
+       terms are, which is the same choice audit 121 made and for the same
+       reason.
+R155e  No model file changes.
+
+PREDICTION (mine).  The cross energy's static part will track the Coulomb
+term closely, so the difference will be dominated by the retarded
+correction, of order (v/c)^2 times the interaction energy.  At 1 r* with
+beta about 0.17 that is a few percent of |U_C|, and |U_dd| is 1.4e-06 of
+|U_C| there, so the retarded correction is thousands of |U_dd| -- far more
+than 1.13.  I therefore expect R155a to FAIL in the direction of excess,
+and the interesting number to be how much of that excess cancels between
+the orbit's phases.

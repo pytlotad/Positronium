@@ -1,0 +1,15 @@
+Raw outputs behind audit section 155 (2026-09-19).
+  prereg_155.txt          rules R155a-e, written before any number, with
+                          R155c demanding that convergence be shown rather
+                          than assumed -- which is what caught the instrument
+  coarse.txt              the FIRST attempt, integrating the cross energy
+                          directly; kept because its numbers are what the
+                          static validation then refuted
+  static_validation.txt   the direct integral against the exact Coulomb
+                          interaction energy at four grids and two cut-offs:
+                          74% at 12 r*, wrong sign at 40 r*
+  orbit.txt               the rebuilt integral, subtracted against a frozen
+                          copy of the state, around one orbit
+  variants.txt            the three totals of 155d
+Build: tools/field_energy_integral, with CREM_FIELD_STATIC=1 for the
+validation.  Usage in the tool's own header.

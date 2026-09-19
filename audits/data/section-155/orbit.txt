@@ -1,0 +1,18 @@
+r 1.00 r*  channel 0  tilt 0 deg  samples 8  grid 64x16x32  outer 12.0 r*
+|U_dd| = 1.993097e-16 J
+  t/period      U_field [J]       U_inst [J] U_field/|U_dd|  U_inst/|U_dd|
+    0.0000 -1.187767774e-15 -1.388439698e-15      -5.959408      -6.966243  (static -5.9882, retarded correction +0.028760)
+    0.1250 -1.608422827e-15 -2.209746677e-15      -8.069968     -11.087001  (static -8.1363, retarded correction +0.066284)
+    0.2500 -1.975834348e-15 -3.073931253e-15      -9.913389     -15.422890  (static -10.3919, retarded correction +0.478529)
+    0.3750 -1.177886314e-15 -1.495222715e-15      -5.909830      -7.502007  (static -6.2799, retarded correction +0.370113)
+    0.5000 -1.585808318e-15 -2.254734700e-15      -7.956504     -11.312720  (static -8.2501, retarded correction +0.293590)
+    0.6250 -1.974477411e-15 -3.085320188e-15      -9.906580     -15.480031  (static -10.4231, retarded correction +0.516518)
+    0.7500 -1.219295645e-15 -1.581587815e-15      -6.117594      -7.935328  (static -6.5105, retarded correction +0.392914)
+    0.8750 -1.990066036e-15 -3.052929066e-15      -9.984793     -15.317515  (static -10.3360, retarded correction +0.351209)
+
+range over the sampled orbit, in |U_dd|:
+  U_field (retarded cross energy)      4.074964
+  U_inst  (the ledger's terms)         8.513788
+  difference                          -4.438825  (audit 145e attributed 1.13 to retardation)
+
+cumulative U_field against the cut-off, last state:

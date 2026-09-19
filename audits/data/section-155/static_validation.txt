@@ -1,0 +1,4 @@
+siatka  64x16x32 outer 12 r*: STATIC validation: exact Coulomb interaction energy -1.193499905e-15 J     0.0000 -8.850074999e-16 -1.391320507e-15      -4.440364      -6.980697 
+siatka 128x32x64 outer 12 r*: STATIC validation: exact Coulomb interaction energy -1.193499905e-15 J     0.0000 -8.840473326e-16 -1.391320507e-15      -4.435546      -6.980697 
+siatka 128x32x64 outer 40 r*: STATIC validation: exact Coulomb interaction energy -1.193499905e-15 J     0.0000  2.420611772e-15 -1.391320507e-15      12.144978      -6.980697 
+siatka 256x48x96 outer 40 r*: STATIC validation: exact Coulomb interaction energy -1.193499905e-15 J     0.0000  1.546493006e-14 -1.391320507e-15      77.592467      -6.980697 

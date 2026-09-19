@@ -10803,3 +10803,76 @@ measurement of whether that survives a cascade.
       production reaction model; the terminal state is the retardation margin
       and not annihilation in any physical sense, which is the model's
       standing caveat and not this section's.
+
+155. THE BOUND FIELD ENERGY ACCOUNTS FOR A THIRD OF THE LEDGER'S DRIFT, AND
+     THE INSTRUMENT HAD TO BE REBUILT BEFORE IT COULD SAY SO
+==================================================================
+
+155a. WHAT WAS LEFT.  Section 145 split the ledger's drift into 3.98 |U_dd|
+      per orbit of spurious velocity-linear term, since split out in code
+      (146), and 1.13 |U_dd| of retarded-versus-instantaneous mismatch.  The
+      named candidate for the second was the energy stored in the bound field,
+      the analogue of the field MOMENTUM audit 121 integrated.
+
+155b. THE INSTRUMENT FAILED ITS OWN VALIDATION FIRST.  At rest the cross
+      energy integral has an exact answer -- eps0 int E1.E2 dV is the Coulomb
+      interaction energy -- and the direct integral does not reproduce it:
+        grid 64x16x32, outer 12 r*    -8.850e-16 J against -1.1935e-15, 74%
+        grid 128x32x64, outer 12 r*   -8.840e-16 J, 74%: the grid is not it
+        grid 128x32x64, outer 40 r*   +2.421e-15 J, wrong sign
+        grid 256x48x96, outer 40 r*   +1.546e-14 J, thirteen times over
+      The shortfall is the integrand's 1/r^2 singularity at each particle,
+      which a grid centred on the pair cannot resolve, and the wrong signs are
+      the history horizon: past about 15 r* the retarded time leaves the
+      stored history, exactly as audit 121's own comment warns.
+
+155c. REBUILT BY SUBTRACTION.  The same model functions are evaluated a second
+      time on a FROZEN copy of the state -- velocities and accelerations
+      zeroed -- whose singular structure is identical and whose exact integral
+      is -K/r.  The difference is regular, so the quadrature only has to
+      resolve the retarded correction:
+        U_field = -K/r + integral (u_retarded - u_frozen) dV.
+      No formula is copied; both densities come from lienardWiechertField and
+      retardedMagneticDipoleField.  The static test then returns -5.9677
+      |U_dd| against the exact -5.9882, i.e. 0.34% instead of 26%, the residue
+      being the acceleration term a frozen state does not carry.
+
+155d. MEASURED, one orbit at 1 r*, para, tilt 0, eight samples, grid
+      64x16x32 out to 12 r*.  Range of the total over the orbit:
+        T + U_field   (the cross energy REPLACING the ledger's terms)  4.094
+        T + U_inst    (the ledger as it stands)                        0.829
+        T + U_inst + the retarded correction                           0.548
+      So adding the retarded correction to the existing ledger removes 34% of
+      its drift, while replacing the ledger's interaction terms by the cross
+      field energy makes the conservation five times WORSE.
+
+155e. WHICH ANSWERS THE QUESTION AND REFUSES THE CLOSURE (rules R155a, R155b).
+      Rule R155a asked for the field energy to account for the 1.13 |U_dd|
+      within a factor 2.  It accounts for a third of the drift on the same
+      orbit, 0.281 of 0.829, so the rule FAILS and the ledger stays open by
+      the rest.  The candidate is partly confirmed and not dismissed: the
+      retarded correction to the interaction field energy is a real missing
+      term of the right sign and the right order, and it is not the whole of
+      the mismatch.
+
+155f. AND THE FULL REPLACEMENT'S FAILURE NAMES THE NEXT CANDIDATE.  The cross
+      terms are not the conserved partner by themselves: each particle's SELF
+      field energy also depends on the configuration through its velocity, and
+      that part is excluded here for the same reason audit 121 excluded it for
+      the momentum -- it diverges at the particle and is renormalized into the
+      mass.  The renormalization is exact only to the order the mass is
+      defined at, so a configuration-dependent remainder at O(v^2/c^2) is
+      precisely what a ledger built from point-particle energies cannot carry.
+      That is the next candidate, and it is the last one this line has.
+      It also puts a caveat on 121's own number: that integral shares this
+      exclusion, and its conclusion survives only because its margin was a
+      factor of sixty rather than a factor of three.
+
+155g. LIMITS.  One orbit, eight samples, one geometry; the ledger's own range
+      over those eight samples is 0.829 |U_dd| where the 256-step orbit of
+      audit 145 gave 1.221, so the fractions here are internally consistent
+      and the absolute numbers are not directly comparable with 145's.  The
+      outer radius is 12 r*, inside the history horizon; the static validation
+      bounds the quadrature's own error at 0.34% of the interaction energy,
+      which is 0.02 |U_dd|, well below the effects reported.  The self terms
+      are not computed and not estimated.

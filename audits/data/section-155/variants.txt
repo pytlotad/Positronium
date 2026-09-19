@@ -1,0 +1,7 @@
+range of the TOTAL (kinetic + interaction) over the sampled orbit, in |U_dd|:
+  T + U_field (retarded cross energy)      4.093701
+  T + U_inst  (the ledger)                 0.829453
+  T + U_inst + the retarded correction     0.547807
+  audit 145e attributed 1.13 |U_dd| of the ledger's drift to retardation
+
+cumulative U_field against the cut-off, last state:
