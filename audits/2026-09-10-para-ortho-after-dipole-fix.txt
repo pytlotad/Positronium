@@ -10634,8 +10634,8 @@ measurement of whether that survives a cascade.
       production orbit the self force is 1.3e-07 of the mutual one.
 
 152e. THE INTRINSIC MOMENT'S OWN RADIATION DOES ACT BACK ON IT.  That is a
-      separate channel and it IS a self term: dipoleRadiationReaction's torque,
-      applied under every reaction model but `disabled`, whose closure audit
+      separate channel and it IS a self term: the dipole radiation reaction's
+      torque, applied under every reaction model but `disabled`, whose audit
       136 measured exactly: the work the torque does on the precession equals
       the flux it emits, the ratio converging on 1.000003 as the history is
       refined.  Audit 148 measured that it is live in production, moving a
@@ -10654,8 +10654,8 @@ measurement of whether that survives a cascade.
 
 152g. WHAT IS THEREFORE ABSENT, STATED PLAINLY.  The non-radiative self-field,
       which is renormalized into the mass; any finite-size self-interaction,
-      the charge being a point and only the moment carrying a softening length;
-      and the O(beta^2) and higher terms of the self force beyond the
+      the charge being a point and only the moment carrying a softening
+      length; and the O(beta^2) and higher terms of the self force beyond the
       order-reduced form.  None of these is a gap peculiar to this model: they
       are where classical point-particle electrodynamics stops.
 
