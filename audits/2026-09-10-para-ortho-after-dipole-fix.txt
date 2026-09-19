@@ -10876,3 +10876,71 @@ measurement of whether that survives a cascade.
       bounds the quadrature's own error at 0.34% of the interaction energy,
       which is 0.02 |U_dd|, well below the effects reported.  The self terms
       are not computed and not estimated.
+
+156. THE LAST CANDIDATE IS REFUTED, AND THE MEASUREMENT THAT REFUTES IT SHOWS
+     THE LEDGER RUNS HAVE A BIGGER HOLE THAN THE ONE BEING CHASED
+==================================================================
+
+156a. THE CANDIDATE AND ITS SIGNATURE.  Section 155 left 0.548 |U_dd| per
+      orbit unexplained and named the self field energy's velocity
+      dependence as the only source left.  That candidate has a signature:
+      the self energy is cut off by the model's own softening length,
+      U_self ~ k e^2/(2a), which runs from 15 to 240 |U_dd| as
+      CREM_SEPARATION_FLOOR_SCALE moves the floor from 0.2 to 0.0125 r*.  If
+      the residual is that energy's velocity-dependent part, it must scale
+      as 1/a.
+
+156b. REFUTED.  One orbit at 1 r*, para, tilt 0, the ledger of audit 145:
+        floor [r*]   0.0125   0.025    0.05     0.1      0.2
+        range        1.2838   1.2706   1.2211   1.0582   0.6924
+      Across a sixteen-fold change in the floor the residual moves by 1.854,
+      an exponent of 0.22 where the self energy requires 1.  Rule R156b set
+      the refutation threshold at a factor 2 and the measurement is under it.
+      The direction is right and the magnitude is not, which is what a
+      candidate looks like when it is not the carrier.
+
+156c. AND THE MEASUREMENT THAT REFUTES IT FOUND SOMETHING LARGER.  These runs
+      have the radiation reaction DISABLED, as every ledger measurement since
+      section 102 has, so the retarded fields radiate and nothing is debited
+      for it.  With the flux switched on:
+        floor    far-zone E1 radiated   ledger net drift   ratio
+        0.05          4.5389               1.1407          3.98
+        0.20          2.7420               0.6936          3.95
+      (the merged radiatedEnergy agrees with the far-zone E1 figure to 0.2%,
+      so M1 is not the carrier at this separation, whatever it does near the
+      barrier).  The far zone receives about four times the energy the
+      particles lose, because in this configuration they do not pay for it at
+      all.
+
+156d. WHICH MAKES THE RESIDUE UNATTRIBUTABLE IN THIS CONFIGURATION.  The
+      quantity audits 145 to 155 have been chasing -- 1.13 |U_dd| per orbit,
+      then 0.548 after the field-energy correction -- is smaller than the
+      energy the same run creates from nothing, by a factor of four to eight.
+      No decomposition inside that configuration can separate a residue from
+      a hole four times its size.  That is not a statement about the model:
+      it is a statement about the instrument every ledger section has used.
+
+156e. WHAT WOULD BE NEEDED.  Ledger runs with the reaction ENABLED and the
+      radiated energy debited, so that T + U + radiated is the quantity
+      tested and the configuration's own floor drops below the residue.  The
+      engine already computes both halves -- orbitalRadiatedEnergy is the
+      exact retarded far-zone Poynting integral -- so this is a change to the
+      probes rather than to the model.  It is named here and not built.
+
+156f. WHERE THE LINE STANDS.  Of the energy ledger's original drift:
+        3.98 |U_dd|  the ledger's velocity-linear term        explained (145),
+                                                              split out (146)
+        0.28 |U_dd|  the retarded interaction field energy    explained (155)
+        0.55 |U_dd|  remainder after that correction          no candidate
+        4.54 |U_dd|  unpaid far-zone radiation in the same
+                     configuration                            named here
+      The first two are closed.  The third is smaller than the fourth, so it
+      stays open and cannot be closed without changing the configuration.
+
+156g. LIMITS.  One orbit per floor, one geometry, para at 1 r*, tilt 0.  The
+      floor sweep changes the DYNAMICS as well as the bookkeeping, which rule
+      R156c anticipated: the trajectory's own spread moves with the floor,
+      and that is visible in the ledger range falling 43% between 0.05 and
+      0.2 r*.  The ratio of radiated to drift is stable at 3.95-3.98 across
+      that change, which is why 156c reports the ratio and not the two
+      numbers separately.

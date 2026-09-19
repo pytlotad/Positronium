@@ -1,0 +1,15 @@
+Raw outputs behind audit section 156 (2026-09-19).
+  prereg_156.txt         rules R156a-e, written before any number, with the
+                         refutation threshold (less than a factor 2 across a
+                         sixteen-fold floor change) fixed in advance
+  floor_sweep.txt        the ledger's range at five separation floors,
+                         tools/velocity_dependent_energy
+  radii_span.txt         the same orbits' energy ranges and radial spans from
+                         tools/ledger_engine_drift, for rule R156c's confound
+  radiated.txt           the merged radiatedEnergy over the same orbits
+  orbital_radiated.txt   the far-zone E1 figure beside it, agreeing to 0.2%,
+                         with the ledger's net drift on the same line
+The far-zone quantity is state.orbitalRadiatedEnergy, which state.hpp
+describes as the exact retarded far-zone Poynting integral; it was used
+because radiatedEnergy merges channels and M1 can dominate that merge near
+the barrier.

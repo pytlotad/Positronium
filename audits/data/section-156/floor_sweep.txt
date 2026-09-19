@@ -1,0 +1,5 @@
+floor 0.0125  : zakres E1 1.283762e+00  dryf -1.192071e+00
+floor 0.025   : zakres E1 1.270610e+00  dryf -1.181366e+00
+floor 0.05    : zakres E1 1.221060e+00  dryf -1.141025e+00
+floor 0.1     : zakres E1 1.058247e+00  dryf -1.010477e+00
+floor 0.2     : zakres E1 6.924111e-01  dryf -6.924111e-01

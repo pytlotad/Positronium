@@ -1,0 +1,6 @@
+=== floor 0.05 ===
+radiated over the run: merged 9.065689e-16 J = 4.548544 |U_dd|, orbital (far-zone E1) 9.046387e-16 J = 4.538860 |U_dd|
+          E1  minus the charge-dipole term   1.221002e+00  -1.140710e+00     0.9191
+=== floor 0.2 ===
+radiated over the run: merged 5.473638e-16 J = 2.746298 |U_dd|, orbital (far-zone E1) 5.465005e-16 J = 2.741967 |U_dd|
+          E1  minus the charge-dipole term   6.936461e-01  -6.936461e-01     0.9399

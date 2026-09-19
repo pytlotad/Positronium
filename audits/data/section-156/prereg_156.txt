@@ -1,0 +1,46 @@
+PRE-REGISTRATION, audit section 156 (the last candidate: the self field
+energy's velocity dependence).  Written before any number of this section
+was computed.
+written 2026-09-19T10:00:58Z
+
+THE CANDIDATE.  Section 155 left 0.548 |U_dd| per orbit unexplained and
+named the only remaining source: each particle's SELF field energy depends
+on the configuration through its velocity, and a ledger built from
+point-particle energies with a renormalized mass cannot carry the
+O(v^2/c^2) remainder of that dependence.
+
+WHY IT HAS A SIGNATURE.  The self energy is cut off by the model's own
+softening length: U_self ~ k e^2 / (2 a) with a = separationFloor(), which
+CREM_SEPARATION_FLOOR_SCALE sets in units of r*.  At the default 0.05 r*
+that is 59.9 |U_dd|, and the scale runs 15 to 240 |U_dd| over floors of
+0.2 down to 0.0125 r*.  Its velocity-dependent part is some O(1) fraction
+of that times the orbit's spread in beta^2, so IF the residual drift is
+the self energy, the residual must scale as 1/a.  If it is anything else,
+it must not.
+
+THE TEST.  The ledger's range over one orbit at 1 r*, para, tilt 0, at
+separation floors 0.0125, 0.025, 0.05, 0.1 and 0.2 r*, measured with the
+instrument of audit 145 (T + U_inst, the charge-dipole term excluded as
+146 established).
+
+RULES, decided now.
+R156a  THE CANDIDATE IS CONFIRMED if the residual scales as 1/a within a
+       factor 2 across the sixteen-fold range of floors -- i.e. if the
+       ratio between the 0.0125 and the 0.2 rows is between 8 and 32.
+R156b  IT IS REFUTED if the residual is flat in a, or moves by less than a
+       factor 2 across that range, since the self energy cannot then be
+       what carries it.
+R156c  THE CONFOUND IS STATED AND BOUNDED.  Changing the floor changes the
+       DYNAMICS, not only the bookkeeping: the softened Coulomb force moves
+       and the trajectory with it.  So the orbit's own spread in beta^2 is
+       reported beside each residual, and a residual that tracks that
+       spread rather than 1/a is reported as the confound winning.
+R156d  If the trajectory fails at any floor, that row is reported as a
+       failure and not dropped.
+R156e  No model file changes; the sweep runs through the existing switch.
+
+PREDICTION (mine).  Confirmed but contaminated: I expect the residual to
+rise as the floor falls, by rather less than sixteen-fold, because the
+tighter floor also lets the orbit plunge deeper and changes beta^2 in the
+same direction.  Separating the two would need the floor changed in the
+ledger alone, which this switch cannot do.

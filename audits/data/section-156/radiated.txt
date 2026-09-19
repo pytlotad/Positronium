@@ -1,0 +1,3 @@
+floor 0.0125  : wypromieniowane 1.067132e-15 J =   zakres E1 1.283435e+00
+floor 0.05    : wypromieniowane 9.065689e-16 J =   zakres E1 1.221002e+00
+floor 0.2     : wypromieniowane 5.473638e-16 J =   zakres E1 6.936461e-01

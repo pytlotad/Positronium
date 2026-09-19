@@ -1,0 +1,5 @@
+floor 0.0125  : ok 256/256 | zakres E/|U_dd| 1.397e+00 | E_koniec-E0 /|U_dd| -1.132e+0
+floor 0.025   : ok 256/256 | zakres E/|U_dd| 1.384e+00 | E_koniec-E0 /|U_dd| -1.122e+0
+floor 0.05    : ok 256/256 | zakres E/|U_dd| 1.328e+00 | E_koniec-E0 /|U_dd| -1.084e+0
+floor 0.1     : ok 256/256 | zakres E/|U_dd| 1.143e+00 | E_koniec-E0 /|U_dd| -9.656e-0
+floor 0.2     : ok 256/256 | zakres E/|U_dd| 7.370e-01 | E_koniec-E0 /|U_dd| -7.265e-0

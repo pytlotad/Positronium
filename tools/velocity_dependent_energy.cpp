@@ -83,8 +83,12 @@ int main(int argc,char** argv) {
     ClassicalTrajectoryEngine::Accuracy accuracy;
     accuracy.relativeTolerance=tolerance;
     accuracy.maximumDepth=20;
+    // With the reaction disabled the retarded fields still radiate and nothing
+    // is debited for it, so part of the ledger's drift is simply unpaid
+    // outgoing flux.  The engine accumulates it when asked, and audit 156
+    // compares it with what is left unexplained.
     accuracy.reactionModel=ChargeRadiationReactionModel::disabled;
-    accuracy.computeOutwardFlux=false;
+    accuracy.computeOutwardFlux=true;
     accuracy.useRetardedExternalForces=retarded;
     ClassicalTrajectoryEngine engine(state,accuracy);
     const Ledgers start=ledgers(state);
@@ -107,6 +111,15 @@ int main(int argc,char** argv) {
         highest.e3=std::max(highest.e3,last.e3);
         ++completed;
     }
+    // radiatedEnergy MERGES the channels and M1 dominates it near the barrier
+    // while not recoiling the orbit at all (see state.hpp); orbitalRadiatedEnergy
+    // is the exact retarded far-zone Poynting integral of the charge sector,
+    // which is the part that must come out of the orbital energy.
+    std::printf("radiated over the run: merged %.6e J = %.6f |U_dd|, "
+                "orbital (far-zone E1) %.6e J = %.6f |U_dd|\n",
+                state.radiatedEnergy,state.radiatedEnergy/dipoleScale,
+                state.orbitalRadiatedEnergy,
+                state.orbitalRadiatedEnergy/dipoleScale);
     std::printf("r %.2f r*  channel %d  tilt %.0f deg  orbits %d  tol %.0e  "
                 "steps %d/%d %s  forces %s\n|U_dd| = %.6e J\n",
                 r/comptonBarrierRadius,channel,tilt*180.0/pi,orbits,tolerance,
