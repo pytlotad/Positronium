@@ -1,0 +1,5 @@
+r 2.0   t45: AWARIA 9/256 | zakres E/|U_dd|
+r 2.5   t45: AWARIA 8/256 | zakres E/|U_dd|
+r 3.0   t45: ok 256/256 | zakres E/|U_dd| 1
+r 3.5   t45: ok 256/256 | zakres E/|U_dd| 7
+r 4.0   t45: ok 256/256 | zakres E/|U_dd| 6

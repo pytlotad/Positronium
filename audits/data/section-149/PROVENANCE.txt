@@ -1,0 +1,14 @@
+Raw outputs behind audit section 149 (2026-09-19).
+No pre-registration: this diagnoses a failure section 148 had already
+localized, and every number is a reading of the engine's own diagnostics.
+  order_live.txt     CREM_DEBUG_ORDER_LIVE with CREM_DEBUG_ORDER_TERMS on
+                     para 1 r* tilt 45: the ten-halving error sweep with the
+                     LW, dipE, dipB and gradient magnitudes beside each
+                     halving.  POSITRONIUM_DEBUG_DIPOLE on the same run
+                     prints nothing, which is 149a
+  band_edge.txt      tilt 45 at 2.0, 2.5, 3.0, 3.5 and 4.0 r*, locating the
+                     upper edge between 2.5 and 3.0 r*
+  amplification.txt  the printed dipE jump divided by the model's own
+                     derivativeStep, times mu/c^2, against the Coulomb force
+                     at the same separation: 15.40x (149d)
+The production depths quoted in 149f are from audits 131 and 133.

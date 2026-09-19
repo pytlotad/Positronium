@@ -10353,3 +10353,93 @@ measurement of whether that survives a cascade.
       and why is exactly what the next section would have to print, and
       107b's own diagnostics (POSITRONIUM_DEBUG_DIPOLE) are the instrument
       for it.
+
+149. THE STEP-6 FAILURE DIAGNOSED: A 4% JUMP IN THE DIPOLE FIELD, TAKEN AS A
+     TIME DERIVATIVE, BECOMES 15 TIMES THE COULOMB FORCE
+==================================================================
+
+149a. WHAT IS NOT WRONG.  With POSITRONIUM_DEBUG_DIPOLE on, the failing step
+      prints NOTHING: no non-finite precession, no non-finite forces, no
+      non-finite radiation.  So the quantity that goes out of range is not a
+      field or a force value; it is the step's own accuracy criterion, and the
+      failure is the depth-20 limit being reached with the tolerance unmet.
+
+149b. THE ERROR CONVERGES AT FIRST ORDER, WHICH IS THE SIGNATURE.
+      CREM_DEBUG_ORDER_LIVE at the failing state (r = 1.90645e-13 m =
+      0.9865 r*, 74 history nodes, dt 8.84e-29 s) sweeps ten halvings:
+        8.098e-07  4.049e-07  2.025e-07  1.012e-07  5.061e-08  2.531e-08
+        then 5.613e-16 ...
+      Six halvings each divide the error by exactly 2 -- first order, where
+      the integrator expects more -- and the seventh drops it by 4.5e+07.
+      A clean factor of two per halving followed by a collapse is what a C0
+      DISCONTINUITY looks like, not a lost convergence order.  The
+      instantaneous rows in the same sweep sit at 1e-15 to 1e-17 from the
+      start, i.e. at machine precision.
+
+149c. AND THE DISCONTINUOUS QUANTITY IS THE DIPOLE FIELD, NOT THE CHARGE
+      FIELD.  Printed beside each halving:
+        LW    3.85233e+16 V/m at every one of the ten halvings, to six digits
+        dipE  1.49919e+15 for six halvings, then 1.55935e+15 -- a +4.01% jump
+              at exactly the halving where the error collapses
+        dipB  7.1507e+07 -> 7.15131e+07, a 9e-05 relative move
+      So the Lienard-Wiechert charge field is smooth here to six digits.
+      That is a correction to 107e's mechanism, which attributed the jump to
+      the charge field: for the TILTED configuration in the current model the
+      discontinuity is in the retarded magnetic-dipole field's electric
+      component.
+
+149d. WHY THE HIDDEN-MOMENTUM TERM MAKES IT FATAL.  It is the only term in
+      the sum that takes a TIME DERIVATIVE of the electric field: audit 123
+      built it as -(1/c^2) d(mu x E)/dt, with the rate from three field
+      evaluations a derivativeStep apart.  At the failing state that step is
+        max(1e-4 r, 1e-3 cutoff)/c = 6.359e-26 s,
+      so the 6.016e+13 V/m jump becomes
+        dE/dt = 9.460e+38 V/m/s,   mu/c^2 dE/dt = 9.773e-02 N,
+      against a Coulomb force of 6.348e-03 N at the same separation:
+        15.40 times the Coulomb force.
+      A force spike of that size at one particular dt is what the adaptive
+      stepper cannot integrate, and the depth limit is the symptom.  The
+      ablation agrees: with the term off the same orbit completes 256/256 and
+      reaches 0.1665 r*.
+
+149e. THE BAND'S UPPER EDGE.  Para tilt 45, one orbit each:
+        1.0 r*  FAILS 6/256      3.0 r*  ok 256/256
+        2.0 r*  FAILS 9/256      3.5 r*  ok 256/256
+        2.5 r*  FAILS 8/256      4.0 r*  ok 256/256
+      The edge lies between 2.5 and 3.0 r*.
+
+149f. CAN THIS TOUCH THE 2 GAMMA / 3 GAMMA SPLIT?  Not causally.  The
+      multiplicity is decided in the SECULAR estimator from the moments'
+      mutual angle, w = (1+cos)/2, drawn as a branching ratio; this failure
+      is in the ENGINE's step-accuracy criterion, and no quantity crosses
+      between them.  The mutual angle at the failure has barely moved -- six
+      steps, r from 0.9997 to 0.9896 r* -- so there is nothing for it to
+      change even in principle.  The two do share one input, the moment
+      orientation: the failure needs a nonzero tilt and the channel weight is
+      a function of the mutual angle.  That is a shared dependence on the
+      same variable, not a path from one to the other.
+      What WOULD couple them is censoring: if tilted trajectories failed
+      preferentially, the surviving ensemble would be biased in angle and the
+      branching statistics with it.  That does not happen, because production
+      stays outside the band -- but the margin is thin.  The deepest orbit
+      production integrates MECHANICALLY is 3.56 r* in the margin-50 runs of
+      audit 133 and 5.13 r* at the default stop, against a band edge at
+      2.5-3.0 r*: a factor of 1.2 to 1.8.  That is the honest answer to the
+      question -- no mechanism, and not much room either.
+
+149g. THE REPAIR, NAMED NOT BUILT.  The term differentiates in time a field
+      whose retarded interpolation is only C0 at node crossings, so either
+      that evaluation needs a history smooth enough to differentiate (the
+      remedy 107e asked for, for a different field) or the rate needs to be
+      taken analytically instead of by finite difference.  The second is the
+      cheaper and is the one audit 123's own derivation would support, since
+      d(mu x E)/dt is expressible from the moment's precession and the field's
+      own retarded derivatives.  Neither is done here.
+
+149h. LIMITS.  One failing state diagnosed, para tilt 45 at 1 r*; the sweep
+      is the engine's own ten-halving diagnostic at that state.  The 15.40
+      is an estimate of the spike from the printed jump and the known
+      derivativeStep, not a direct reading of the force at the failing
+      substep -- the force itself stays finite, which is why 149a finds
+      nothing non-finite.  The band edge is located to 0.5 r* at tilt 45 and
+      is not mapped in tilt.

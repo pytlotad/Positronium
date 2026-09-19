@@ -1,0 +1,3 @@
+r 1.906450e-13 m  derivativeStep 6.359233e-26 s  (1e-4 r/c 6.359e-26, 1e-3 cutoff/c 3.336e-26)
+dipE jump 6.016000e+13 V/m -> dE/dt 9.460261e+38 V/m/s
+spurious force mu/c^2 dE/dt = 9.773106e-02 N against Coulomb 6.347626e-03 N = 15.40 x
