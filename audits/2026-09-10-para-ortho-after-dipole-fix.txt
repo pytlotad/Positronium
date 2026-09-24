@@ -11138,3 +11138,188 @@ measurement of whether that survives a cascade.
       established is that the answer stops moving, not which of the two was
       responsible for it moving.  The 0.34% figure for the field integral is
       audit 155c's static validation, carried over.
+
+160. 159e's VERDICT SURVIVES AND ITS REASON DOES NOT: THE FLOOR IS THE
+     CUT-OFF, AND THE RULE THAT REALLY WAS BIASED WAS THE FLUX REFERENCE
+==================================================================
+
+160a. WHAT WAS CHECKED, AND WHY.  Audit 159e closed the energy line by
+      ruling the field-energy correction unmeasurable: E6 converged on
+      0.0094 |U_dd|, and 159e called that "the field integral's own
+      quadrature noise", reasoning from 155c's 0.34% static residue scaled
+      to the interaction energy at 3 r*.  That reasoning is arithmetic on a
+      number 155c had already explained as something else -- 155c
+      attributed the residue to "the acceleration term a frozen state does
+      not carry", a physical term and not a grid error -- and 159e reread
+      it as grid error without measuring it.  A quadrature error falls when
+      the grid is refined.  Nobody had refined the grid.
+
+160b. THE GRID IS NOT THE FLOOR, PART ONE: THE STATIC TEST.  1 r*, para,
+      tilt 0, outer 12 r*, CREM_FIELD_STATIC, grid refined 27-fold:
+        grid          nodes     retarded correction
+        64x16x32      32768     +0.020497 |U_dd|
+        96x24x48     110592     +0.020626
+        128x32x64    262144     +0.020645
+        192x48x96    884736     +0.020627
+      The residue converges on 0.02063 with a spread of 1.5e-04 across the
+      whole sequence.  It is not grid error.
+
+160c. THE GRID IS NOT THE FLOOR, PART TWO: THE ORBIT.  3 r*, para, tilt 0,
+      48 samples, two grids an eightfold apart in node count:
+        grid          E1        E4        E5        E6
+        48x12x24    0.021041  0.001606  0.000707  0.009244
+        96x24x48    0.021041  0.001606  0.000707  0.009291
+      E1, E4 and E5 are identical because they never touch the spatial
+      integral.  E6 moves by 4.7e-05 |U_dd|.  The first row reproduces
+      audit 159b's 48-sample row digit for digit, so this is the same
+      measurement 159 made.  159e's estimate of the grid's contribution was
+      high by a factor of about two hundred.
+
+160d. BUT THE CUT-OFF IS THE FLOOR, AND RULE R160c FAILS.  R160c, registered
+      before this was run, required E6 to hold to 2.0e-04 |U_dd| across
+      outer radii of 8, 12 and 15 r*:
+        outer      E1        E4        E5        E6
+        8 r*     0.021041  0.001606  0.000707  0.007132
+        12 r*    0.021041  0.001606  0.000707  0.009244
+        15 r*    0.021041  0.001606  0.000707  0.010069
+      E6 moves by 2.1e-03 and then 8.3e-04, ten and four times the
+      threshold, and it is still climbing at the edge of the stored
+      history.  R160c FAILS.  The static test says the same thing far more
+      sharply -- same grid, cut-off swept instead:
+        outer      6 r*      8 r*      12 r*     15 r*     20 r*
+        residue  0.003391  0.009537  0.020626  0.029460  0.050119
+      a fifteenfold rise over a threefold rise in radius, roughly as R^2,
+      with no sign of a limit.
+
+160e. SO 159e's CONCLUSION STANDS AND ITS REASON IS WITHDRAWN.  By R160d
+      the correction of 159e needed BOTH tests, and only the grid test
+      passed.  The field-energy correction still cannot be tested at this
+      level.  What changes is the diagnosis: the floor is not the spatial
+      quadrature at 0.009 |U_dd|, it is the outer cut-off, and the
+      quadrature sits three hundred times below the residue it was said to
+      swamp.  159e reached a right answer through a wrong measurement, and
+      a wrong measurement that lands on the right answer is still the thing
+      that has to be corrected, because the next section would have
+      inherited the reason and not the answer.
+
+160f. AND THE 0.34% WAS NEVER AN ACCURACY FIGURE.  155g wrote that "the
+      static validation bounds the quadrature's own error at 0.34% of the
+      interaction energy", 159e scaled that to 3 r*, and 159g carried it
+      forward.  160d shows 0.34% is the value of a cut-off-dependent
+      quantity at one cut-off: at 20 r* the same probe returns 0.84%, at
+      6 r* it returns 0.14%.  It bounds nothing.  The reading this supports
+      -- and it is a reading, not a measurement -- is that the cross energy
+      integral out to R contains the radiation the pair has emitted and
+      that is still inside R, whose cross density falls as 1/r^2 against a
+      volume element of r^2 dr, so the integral accumulates rather than
+      converges; and the ledger already counts that radiation separately in
+      E4, so E6 adds it twice and adds more of it the larger the volume
+      gets.  The measured growth is faster than that argument alone gives
+      and is not diagnosed here.  This also puts a caveat on 155d and 155e:
+      their "a third of the drift" was computed at outer 12 r* and carries
+      the same dependence.
+
+160g. THE INSTRUMENT THAT REALLY WAS BIASED was found while chasing 159e's
+      claim through the code, and it is a different integral.
+      sphereQuadrature tabulated exactly one rule, the 50-node degree-11
+      Lebedev, and returned a Fibonacci lattice for every other count.  The
+      flux tests' REFERENCE is 194 directions, so the tabulated rule was
+      being validated against a lattice:
+        nodes    degree   |<n>|       |<nn> - I/3|
+           26         0   3.83e-03    6.27e-03
+           50         0   1.22e-04    2.11e-03
+           98         0   8.16e-04    5.12e-04
+          194         0   1.38e-05    2.69e-04
+      Not one integrates a constant times n exactly.  The reference carried
+      a quadrupole error of 2.7e-04 and nothing in the suite could see it,
+      because everything compared against it shared the bias.
+
+160h. FIVE RULES, SOLVED RATHER THAN COPIED.  26, 50, 110, 194 and 302
+      nodes, exact through degrees 7, 11, 17, 23 and 29.  The node
+      parameters are not transcribed table values: they are the solution of
+      each rule's defining moment equations by Levenberg-Marquardt on the
+      octahedral-orbit parametrization.  A first attempt from recalled
+      table values was rejected by the verifier at 3e-09 before being
+      solved properly, which is the argument for the verifier:
+      sphereQuadratureExactDegree re-derives every rule's degree at run
+      time from its own nodes against the closed form for the moments of
+      x^i y^j z^k, and the suite now asserts all five.  A mistyped digit
+      cannot reach the physics.  The 50-node rule is unchanged -- node for
+      node identical to the old hand-written one, weights within one ulp --
+      and the production default is still 50 directions, so no production
+      result moves.
+
+160i. WHAT THE EXACT REFERENCE THEN SHOWED, in the validation suite:
+        Larmor normalization, 194     1.0000692  ->  1.0000006    x115
+        boost covariance of the
+          radiated four-vector, 194   6.99e-04   ->  4.06e-06     x172
+        direction sweep               8.23e-03 / 8.53e-04 / 1.14e-03
+                                  ->  9.26e-04 / 4.87e-04 / 2.40e-04
+      The Larmor row is the only far-zone check with an external closed-form
+      answer, and it says the flux integral at the reference count had been
+      carrying 7e-05 of relative error.  The boost row is the sharper one:
+      a boost rotates the emission pattern against a lattice fixed in the
+      laboratory, so the lattice's preferred axis appeared as a violation of
+      Lorentz covariance at 7e-04 -- four times inside a bound of 3e-03 it
+      was never in danger of failing, and now 740 times inside it.  The
+      sweep is a DEGREE ladder now, 26/50/110 at degrees 7/11/17, and falls
+      monotonically for the first time; it used to end at 98, which has no
+      Lebedev rule, and the check carried a written excuse for the denser
+      grid being worse than the sparser rule.
+
+160j. WHAT DEGREE THE FLUX INTEGRAND ACTUALLY NEEDS, against the degree-29
+      rule, radiation field only:
+        relative error in radiated power
+        geometry          deg 7     deg 11    deg 17    deg 23
+        3 r*, tilt 30   6.34e-06  2.26e-06  1.11e-06  3.42e-07
+        1 r*, tilt 60   3.19e-04  2.88e-04  9.36e-06  1.67e-06
+      The production default is degree 11, so its angular error is about
+      2e-06 at 3 r* and 3e-04 at 1 r*: two orders worse exactly where this
+      model's collapse physics happens.  That invites raising the default to
+      110, AND THE INVITATION WAS MEASURED AND DECLINED.  The rows above are
+      radiation-field-only; production samples with the near-field terms in,
+      and there the improvement does not transfer:
+        Larmor normalization, production sampling
+          50 directions, degree 11    1.0000455   error 4.55e-05
+          110 directions, degree 17   0.99998234  error 1.77e-05
+        production wall, 12-run statistical job, twice each
+          50 directions    44.47 s / 45.49 s
+          110 directions   68.80 s / 68.53 s
+      A factor of 2.6 in a normalization already three orders below the
+      energy line's residue, bought with 53% more wall time.  The production
+      path's flux error is dominated by near-field contamination at the
+      control radius and not by the angular rule, so the higher degree fixes
+      what was not broken there.  The default stays at 50.  The suite passes
+      either way, which is how the 110 numbers above were taken.
+      Separately, the 98-node lattice returns 2.33e-04 at 3 r*, thirty-seven
+      times worse than the 26-node degree-7 rule while carrying nearly four
+      times the nodes, which is the case against node count as a figure of
+      merit.
+      THE MOMENTUM CHANNEL DOES NOT FOLLOW.  At 1 r* it stalls near 3e-04
+      and is not monotone in degree (3.34e-04 at 17, 4.04e-04 at 23), so
+      something other than the angular rule limits it and raising the
+      degree buys it about a factor of three.  Not diagnosed here.
+
+160k. THE ALLOCATION, HONESTLY.  sphereQuadrature built a heap vector on
+      every call and electromagneticFieldFluxRates calls it once per
+      integration step; it now returns a view of a rule built once.  The
+      change is correct and it is not a speed-up: three alternating pairs
+      of a 40-run statistical production job measured 134.40 / 135.37 /
+      138.18 s before and 140.50 / 134.13 / 139.95 s after, which is noise.
+      Fifty heap allocations are nothing beside the retarded field solves
+      in the same loop.
+
+160l. LIMITS.  The grid tests vary radial, polar and azimuthal counts
+      together.  The static residue is one radius and one channel; the E6
+      cut-off sweep is one radius, one channel, one tilt, 48 samples.  The
+      15 r* row sits at the edge of the stored history (155b, 121), so part
+      of its motion may be the horizon rather than the cut-off; that does
+      not affect the 8-to-12 step, which already fails R160c on its own.
+      160j is two geometries at one instant each and says nothing about the
+      ACCUMULATED radiated energy, which is what the ledger carries.
+      tools/contact_ensemble.cpp asks for 194 directions and therefore
+      changes from a lattice to a degree-23 rule; section 85's numbers came
+      from it and have not been recomputed.  Sections 160b and 160c were
+      measured before any rule was written for them, which prereg_160.txt
+      states; no threshold enters their conclusion, and the one conclusion
+      that did need a threshold, R160c, was registered first and failed.

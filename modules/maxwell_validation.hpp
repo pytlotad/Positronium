@@ -3815,9 +3815,23 @@ inline int runMaxwellSelfTest(
     const FieldFluxRates farFullReference=electromagneticFieldFluxRates(
         sharedEngineVisualState,visualEngine.history(),
         {194,farReferenceSampling.controlRadius,false});
-    const std::array<int,3> farDirectionCounts{26,50,98};
+    // A DEGREE ladder, not a node-count ladder.  26/50/110 are the tabulated
+    // Lebedev rules of degree 7/11/17, measured against the degree-23 rule at
+    // 194, so each step up is a strictly stronger exactness claim and the
+    // residual has to fall.  The old sweep ended at 98, which has no Lebedev
+    // rule and fell back to the Fibonacci lattice -- a grid of degree 0,
+    // exact for nothing, whose first moment is 8.2e-04 of the sphere.  That
+    // is why the check below used to have to excuse non-monotonicity: the
+    // denser grid really was worse than the sparser rule, and once 194 became
+    // a real rule the degree-7 26-node rule beat it outright (9.3e-04 against
+    // 1.3e-03) and the excuse became a failure.  Node count was never the
+    // figure of merit here; the exactness degree is.
+    const std::array<int,3> farDirectionCounts{26,50,110};
     std::array<double,3> farDirectionResiduals{};
+    std::array<int,3> farDirectionDegrees{};
     for(std::size_t index=0;index<farDirectionCounts.size();++index) {
+        farDirectionDegrees[index]=sphereQuadratureExactDegree(
+            sphereQuadratureView(farDirectionCounts[index]));
         farDirectionResiduals[index]=fluxResidual(
             electromagneticFieldFluxRates(sharedEngineVisualState,
                 visualEngine.history(),{farDirectionCounts[index],
@@ -5477,11 +5491,20 @@ inline int runMaxwellSelfTest(
             [](double value){return std::isfinite(value);})
         &&std::ranges::all_of(farNearFieldContamination,
             [](double value){return std::isfinite(value);})
-        // The symmetric 50-node Lebedev rule can outperform the denser
-        // non-tabulated Fibonacci diagnostic, so strict monotonicity in N is
-        // neither expected nor desirable here.
+        // Every rule in the sweep is now a tabulated Lebedev rule, and each
+        // is exact to a strictly higher degree than the last, so the residual
+        // against the degree-23 reference must fall at every step.  This is
+        // the monotonicity the old node-count sweep could not ask for.
         &&farDirectionResiduals[1]<farDirectionResiduals[0]
-        &&farDirectionResiduals[2]<farDirectionResiduals[0]
+        &&farDirectionResiduals[2]<farDirectionResiduals[1]
+        // And the rules must actually be the degrees they are tabulated as.
+        // The node parameters were solved numerically rather than copied, so
+        // this re-derives each degree from the nodes and is what stands
+        // between a mistyped digit and a silently degraded flux integral.
+        &&farDirectionDegrees[0]==7&&farDirectionDegrees[1]==11
+        &&farDirectionDegrees[2]==17
+        &&sphereQuadratureExactDegree(sphereQuadratureView(194))==23
+        &&sphereQuadratureExactDegree(sphereQuadratureView(302))==29
         // Monotonic in R only above the quadrature's own noise: at 1e4-1e6 a0
         // these residuals sit near 1e-8, three hundred times inside the 1e-5
         // bound, and which of two such readings is larger is decided by the
@@ -5865,11 +5888,18 @@ inline int runMaxwellSelfTest(
               << magneticAngularFluxResidual << " / "
               << magneticMomentumResidual << " / "
               << magneticComMomentumResidual << '\n'
-              << "far N=26/50/98:     " << farDirectionResiduals[0] << " / "
+              << "far deg 7/11/17:    " << farDirectionResiduals[0] << " / "
               << farDirectionResiduals[1] << " / "
               << farDirectionResiduals[2] << '\n'
               << "Lebedev w/moment:   " << lebedevWeightResidual << " / "
               << lebedevMomentResidual << '\n'
+              << "Lebedev degrees:    "
+              << farDirectionDegrees[0] << " / " << farDirectionDegrees[1]
+              << " / " << farDirectionDegrees[2] << " / "
+              << sphereQuadratureExactDegree(sphereQuadratureView(194))
+              << " / "
+              << sphereQuadratureExactDegree(sphereQuadratureView(302))
+              << "  (26/50/110/194/302 nodes)\n"
               << "far R=1e4/5/6 a0:   " << farRadiusResiduals[0] << " / "
               << farRadiusResiduals[1] << " / "
               << farRadiusResiduals[2] << '\n'

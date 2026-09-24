@@ -1,0 +1,41 @@
+PRE-REGISTRATION, audit section 160, PARTIAL.  Written 2026-09-24, before
+the cut-off test of R160c below was run and AFTER the grid-refinement
+measurements of 160b were already in hand.  That asymmetry is stated here
+rather than hidden: this file does not pre-register the whole section.
+
+WHY ONLY PART OF IT IS PRE-REGISTERED.  The grid-refinement test has no
+free parameter to choose after the fact.  A quadrature error either falls
+when the node count rises or it does not, and the conclusion is read off
+the sequence without comparing it to a threshold anyone picked.  There was
+nothing for a pre-registration to protect, so none was written, and the
+numbers were computed first.  The cut-off test below is different: it
+needs a tolerance, so the tolerance is fixed now.
+
+WHAT 159 CLAIMED.  Audit 159e attributed E6's converged 0.0094 |U_dd| to
+"the field integral's own quadrature noise", reasoning from 155c's 0.34%
+static residue scaled to the interaction energy at 3 r*.  If that is right
+the correction cannot be tested; if it is wrong the correction is
+measurable and 157's question is open again.
+
+WHAT 160b ALREADY MEASURED (numbers in grids.txt and orbit_grids.txt).
+The static residue holds at 0.0206 |U_dd| across a 27-fold rise in node
+count, and E6 at 3 r* moves by 4.7e-05 when the grid is refined eightfold.
+
+WHAT REMAINS, and the rule for it, decided now.
+R160c  THE OUTER CUT-OFF IS NOT THE FLOOR if E6 at 3 r*, 48 samples, grid
+       48x12x24, changes by less than 2.0e-04 |U_dd| between outer radii of
+       8, 12 and 15 r*.  2.0e-04 is a quarter of the 0.000848 |U_dd| residue
+       audit 159f left unexplained: a floor above that would matter to the
+       energy line, and one below it would not.
+       IF IT FAILS, the cut-off and not the grid is the instrument's limit,
+       159e's conclusion stands for a reason 159e did not give, and this
+       section reports that instead.
+R160d  159e IS CORRECTED only if BOTH the grid test and R160c pass, so that
+       the quadrature error is bounded below the residue it was said to
+       swamp.  A single passing test is not enough.
+
+WHAT IS NOT CLAIMED EITHER WAY.  Nothing here measures whether the
+retarded correction is the right physical term.  The question is only
+whether the instrument can see it.  The 15 r* row is at the edge of the
+stored history (155b, 121), so a failure there may be the horizon rather
+than the cut-off, and would be reported as such.

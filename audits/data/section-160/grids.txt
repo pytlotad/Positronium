@@ -1,0 +1,13 @@
+STATIC validation, grid refinement.  1 r*, para, tilt 0, outer 12 r*,
+CREM_FIELD_STATIC=1, tools/field_energy_integral 1 0 0 1 <grid> 12.
+Exact Coulomb interaction energy -1.193499905e-15 J = -5.9882 |U_dd|.
+
+  grid          nodes     U_field/|U_dd|   retarded correction
+  64x16x32      32768        -5.967671         +0.020497
+  96x24x48     110592        -5.967542         +0.020626
+  128x32x64    262144        -5.967523         +0.020645
+  192x48x96    884736        -5.967541         +0.020627
+
+STATIC validation, cut-off sweep at fixed grid 96x24x48.
+  outer      6 r*      8 r*      12 r*     15 r*     20 r*
+  residue  0.003391  0.009537  0.020626  0.029460  0.050119

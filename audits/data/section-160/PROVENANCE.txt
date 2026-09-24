@@ -1,0 +1,27 @@
+Raw outputs behind audit section 160 (2026-09-24).
+  prereg_160.txt      PARTIAL pre-registration: rule R160c (the cut-off
+                      tolerance) and R160d, written before the cut-off
+                      sweep was run and after the grid refinements of
+                      160b/160c were already in hand.  The file says so
+                      itself and gives the reason.
+  grids.txt           static validation: grid refinement and cut-off sweep
+  orbit_grids.txt     3 r* orbit: grid refinement and the R160c cut-off
+                      sweep that failed
+  quadrature.txt      the old Fibonacci lattice's moments, the new Lebedev
+                      rules' verified degrees, proof the 50-node rule is
+                      unchanged, and the flux integral's convergence in the
+                      quadrature degree
+  validation_diff.txt the validation suite before and after
+  timing.txt          production timing, base vs new
+
+Field-energy numbers from tools/field_energy_integral with the production
+reaction model on; the probe uses 64 integration steps per sample.  The
+12 r* rows of orbit_grids.txt are the same run as audit 159's 48-sample
+row and agree with it digit for digit.
+
+Quadrature numbers from the production header via
+sphereQuadratureExactDegree.  The Lebedev node parameters were obtained by
+Levenberg-Marquardt on each rule's defining monomial-moment equations, not
+copied from a table; the solver and the verifier are independent, the
+verifier runs inside the shipped header, and the validation suite asserts
+all five degrees.

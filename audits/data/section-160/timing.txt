@@ -1,0 +1,22 @@
+./positronium --mode statistical --phenomenon 4 --runs 40 --seed 42
+  --beam-energy-ev 20 --theta-min-deg 5 --angle-bins 10
+Alternating base/new, same machine, serial.
+  base  134.40 s      new  140.50 s
+  base  135.37 s      new  134.13 s
+  base  138.18 s      new  139.95 s
+Mean 136.0 s vs 138.2 s, spread 134.1-140.5.  No measurable difference:
+removing the per-step heap allocation is correct but is not a speed-up.
+
+RAISING THE DEFAULT TO 110 DIRECTIONS, measured and declined.
+  Larmor normalization, production sampling (radiationFieldOnly=false):
+     50 directions, degree 11   1.0000455    error 4.55e-05
+    110 directions, degree 17   0.99998234   error 1.77e-05
+  ./positronium --mode statistical --phenomenon 4 --runs 12 --seed 42
+    --beam-energy-ev 20 --theta-min-deg 5 --angle-bins 10
+     50 directions    44.47 s / 45.49 s
+    110 directions    68.80 s / 68.53 s
+  Factor 2.6 in the normalization for 53% more wall time.  The radiation-
+  field-only ladder in quadrature.txt suggested a factor of thirty at 1 r*;
+  it does not transfer, because the production path's error is near-field
+  contamination and not the angular rule.  The suite passes with either
+  default.

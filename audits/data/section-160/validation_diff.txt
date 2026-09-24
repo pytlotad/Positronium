@@ -1,0 +1,28 @@
+./positronium_validation --statistics-profile small, before and after the
+quadrature change.  Verdict PASS both, after the far-field-convergence
+check was rewritten from a node-count sweep to a degree sweep (see below).
+Only the lines that moved are shown; timing lines are omitted as noise.
+
+  particle boost F/R:  2.5453314e-09 / 0.00069901345
+                    -> 2.5453314e-09 / 4.0638545e-06
+  far N=26/50/98:      0.0082252067 / 0.00085300857 / 0.0011425878
+  far deg 7/11/17:  -> 0.00092584366 / 0.00048731033 / 0.00023986415
+  Lebedev degrees:  -> 7 / 11 / 17 / 23 / 29  (26/50/110/194/302 nodes)
+  far R=1e4/5/6 a0:    1.1227066e-07 / 1.3578848e-07 / 0
+                    -> 1.3686275e-07 / 1.2103257e-07 / 0
+  Larmor norm ratio:   1.0000692 (radiation-only) / 1.0000455 (production)
+                    -> 1.0000006 (radiation-only) / 1.0000455 (production)
+  near R=1e4/5/6 a0:   1.6164306e-06 / 1.6165248e-07 / 1.6165223e-08
+                    -> 1.5712165e-06 / 1.5713134e-07 / 1.5712975e-08
+  pair-field IDENTITY: 0 / 0 / 8.2028941e-26  ->  0 / 0 / 6.1521706e-26
+  dipole tensor <U>_sphere: 5.8124172e-16  ->  5.0542758e-16
+
+The production Larmor ratio does not move: the 50-node rule is unchanged.
+The last two lines are summation ORDER on the same 50 nodes; both are
+round-off-level zeros either way.
+
+WITHOUT the sweep rewrite the suite FAILS far-field-convergence, because
+the assertion farDirectionResiduals[2] < farDirectionResiduals[0] compared
+the 98-node Fibonacci lattice (1.33e-03) with the 26-node degree-7 Lebedev
+rule (9.26e-04) and the sparser rule is better.  That is the old check's
+own written caveat becoming a failure once the reference became exact.

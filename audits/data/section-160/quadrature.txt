@@ -1,0 +1,36 @@
+THE OLD FIBONACCI LATTICE, which sphereQuadrature returned for every count
+except 50.  Degree is the highest for which every monomial moment on the
+sphere is reproduced to 2e-14; |<n>| and |<nn>-I/3| are the first and second
+moments, which an exact rule of degree 2 or more returns as 0 and I/3.
+  nodes    degree   |<n>|       |<nn> - I/3|
+     26         0   3.830e-03   6.271e-03
+     50         0   1.223e-04   2.106e-03
+     98         0   8.164e-04   5.115e-04
+    194         0   1.381e-05   2.691e-04
+    302         0   1.222e-04   1.300e-04
+
+THE TABULATED LEBEDEV RULES NOW IN sphereQuadratureView, verified through
+the production header by sphereQuadratureExactDegree:
+  nodes   built   degree   sum(w)-4pi   |<n>|
+     26      26        7    0.000e+00   4.417e-18
+     50      50       11    1.066e-14   4.417e-18
+    110     110       17    1.066e-14   2.209e-18
+    194     194       23   -4.619e-14   1.104e-18
+    302     302       29   -6.573e-14   0.000e+00
+     98      98        0   -7.105e-15   8.164e-04   (fallback, unchanged)
+
+THE 50-NODE RULE IS UNCHANGED against the old hand-written one:
+  unmatched nodes          0
+  worst node displacement  0.000e+00
+  worst weight difference  5.551e-17  (2.209e-16 relative)
+  sum of weights           12.566370614359183 both, difference 0
+
+FLUX INTEGRAL vs QUADRATURE DEGREE, radiation field only, control radius
+1e6 a0, relative to the degree-29 rule at 302 nodes:
+  r=3 r*, tilt 30 deg          r=1 r*, tilt 60 deg
+  nodes deg  dP/P     d|p|     dP/P     d|p|
+     26   7  6.34e-06 1.64e-06 3.19e-04 1.08e-03
+     50  11  2.26e-06 8.13e-07 2.88e-04 1.05e-03
+     98   0  2.33e-04 1.34e-03 2.74e-04 1.45e-03
+    110  17  1.11e-06 1.01e-06 9.36e-06 3.34e-04
+    194  23  3.42e-07 6.25e-07 1.67e-06 4.04e-04

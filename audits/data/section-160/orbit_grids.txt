@@ -1,0 +1,17 @@
+3 r*, para, tilt 0, 48 samples, production reaction model.
+tools/field_energy_integral 3.0 0 0 48 <grid> <outer>.
+Range of the total over the sampled orbit, in |U_dd|.
+
+GRID REFINEMENT at outer 12 r*:
+  grid          E1        E4        E5        E6
+  48x12x24    0.021041  0.001606  0.000707  0.009244
+  96x24x48    0.021041  0.001606  0.000707  0.009291
+The 48x12x24 row reproduces audit 159b's 48-sample row exactly.
+
+CUT-OFF SWEEP at fixed grid 48x12x24 (rule R160c):
+  outer      E1        E4        E5        E6
+  8 r*     0.021041  0.001606  0.000707  0.007132
+  12 r*    0.021041  0.001606  0.000707  0.009244
+  15 r*    0.021041  0.001606  0.000707  0.010069
+R160c required E6 to hold to 2.0e-04 across these.  It moves 2.1e-03 and
+then 8.3e-04.  R160c FAILS.

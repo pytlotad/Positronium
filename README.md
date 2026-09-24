@@ -3566,14 +3566,49 @@ precyzyjnych przewidywań pozytonium.
 
 ### Ulepszenia dokładności o małym koszcie
 
-Całka dalekiego pola używa obecnie domyślnie 50-punktowej kwadratury Lebiediewa
-stopnia 11. Reguła zachowuje symetrię oktagonalną sfery i zastępuje dla
-produkcyjnych 50 kierunków siatkę Fibonacciego; ta ostatnia pozostaje tylko dla
-niestandardowych liczebności w teście zbieżności. Reszta sumy wag wynosi
+Całka dalekiego pola używa domyślnie 50-punktowej kwadratury Lebiediewa
+stopnia 11. Reguła zachowuje symetrię oktaedryczną sfery i zastępuje dla
+produkcyjnych 50 kierunków siatkę Fibonacciego. Reszta sumy wag wynosi
 \(8{,}48\cdot10^{-16}\), a reszta pierwszego i drugiego momentu sferycznego
 \(2{,}12\cdot10^{-16}\). Błąd względem gęstej referencji spadł z
 \(5{,}51\cdot10^{-3}\) do \(8{,}59\cdot10^{-4}\) bez zwiększenia liczby
 próbek.
+
+Stabelaryzowanych reguł jest pięć — 26, 50, 110, 194 i 302 węzły, dokładne
+odpowiednio do stopnia 7, 11, 17, 23 i 29 — a siatka Fibonacciego pozostaje
+wyłącznie awaryjnie, dla liczebności spoza tej listy. Ma to znaczenie, bo
+**referencją** testów strumienia jest 194 kierunki: do audytu 160 była nią
+siatka Fibonacciego, która nie całkuje dokładnie nawet stopnia 1 (jej pierwszy
+moment wynosi \(1{,}38\cdot10^{-5}\), a błąd drugiego \(2{,}69\cdot10^{-4}\)),
+więc reguła Lebiediewa była sprawdzana względem siatki bez zdefiniowanego
+stopnia dokładności. Po zastąpieniu referencji regułą stopnia 23 normalizacja
+Larmora poprawiła się z \(1{,}0000692\) do \(1{,}0000006\), a reszta
+kowariancji boostowej czterowektora wypromieniowanego z \(6{,}99\cdot10^{-4}\)
+do \(4{,}06\cdot10^{-6}\).
+
+Parametry węzłów nie są przepisane z tablic: są rozwiązaniem równań momentowych
+definiujących każdą regułę, a `sphereQuadratureExactDegree` wyprowadza stopień
+każdej reguły w czasie wykonania z samych węzłów, względem zamkniętej postaci
+momentów \(x^iy^jz^k\) na sferze. Zestaw walidacyjny sprawdza wszystkie pięć
+stopni, więc pomyłka w cyfrze nie może dotrzeć do fizyki. Reguła 50-węzłowa nie
+zmieniła się przy tym ani o jeden węzeł (wagi zgodne co do jednego ulp), więc
+wyniki produkcyjne nie drgnęły.
+
+Sama liczba węzłów nie jest miarą jakości: 98-węzłowa siatka Fibonacciego daje
+w strumieniu błąd \(2{,}33\cdot10^{-4}\) przy \(3r^*\), czyli trzydzieści
+siedem razy gorszy niż 26-węzłowa reguła stopnia 7, mając blisko czterokrotnie
+więcej węzłów. Przy \(1r^*\) błąd kątowy domyślnej reguły stopnia 11 sięga
+\(3\cdot10^{-4}\) wobec \(2\cdot10^{-6}\) przy \(3r^*\), co zachęca do
+podniesienia domyślnej reguły do 110 węzłów. **Zmierzono to i odrzucono.**
+Powyższe liczby dotyczą samego pola promienistego, a ścieżka produkcyjna
+próbkuje razem z członami bliskiego pola i tam poprawa nie przenosi się:
+normalizacja Larmora przy próbkowaniu produkcyjnym poprawia się z
+\(1{,}0000455\) do \(0{,}99998234\), czyli z błędu \(4{,}55\cdot10^{-5}\)
+do \(1{,}77\cdot10^{-5}\) — współczynnik 2,6 — kosztem 53% dłuższego czasu
+wykonania (44,5 s wobec 68,7 s na tym samym zadaniu). Błąd ścieżki
+produkcyjnej jest zdominowany przez zanieczyszczenie bliskim polem na sferze
+kontrolnej, a nie przez regułę kątową, więc wyższy stopień naprawiałby tam
+coś, co nie jest zepsute. Domyślna reguła pozostaje 50-węzłowa.
 
 Walidator raportuje teraz dwa bilanse. `pair-field dE/dP/dJ` nadal obejmuje
 rekonstruowany rezerwuar `boundField*`, natomiast `raw dE/dP/dJ` całkowicie go
@@ -5317,7 +5352,8 @@ najpierw sumowane, dlatego interferencja wszystkich multipoli sektora
 względem długości fali.
 
 Na sferze kontrolnej o promieniu \(10^6a_0\) wykonywana jest kwadratura po 50
-równomiernie rozłożonych kierunkach. Z wektorów
+kierunkach reguły Lebiediewa stopnia 11 (węzły nie są rozłożone równomiernie —
+to reguła o symetrii oktaedrycznej, nie siatka). Z wektorów
 
 \[
 \mathbf S=\frac{1}{\mu_0}\mathbf E\times\mathbf B,

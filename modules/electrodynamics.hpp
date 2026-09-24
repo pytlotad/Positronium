@@ -47,6 +47,7 @@
 #include <iostream>
 #include <limits>
 #include <random>
+#include <span>
 #include <vector>
 
 namespace two_body = positronium::kinematics;
@@ -131,62 +132,264 @@ struct SphereQuadraturePoint {
     double solidAngleWeight=0.0;
 };
 
-// Degree-11, 50-node Lebedev rule.  Its octahedral symmetry integrates the
-// low electromagnetic multipoles without the small preferred-axis bias of a
-// finite Fibonacci lattice.  We retain the latter as a diagnostic fallback
-// for non-tabulated direction counts used by convergence tests.
-inline std::vector<SphereQuadraturePoint> sphereQuadrature(int directionCount) {
-    std::vector<SphereQuadraturePoint> result;
-    if(directionCount==50) {
-        const auto add=[&](double x,double y,double z,double normalizedWeight) {
-            result.push_back({{x,y,z},4.0*pi*normalizedWeight});
-        };
-        constexpr double axisWeight=0.012698412698412698;
-        for(int axis=0;axis<3;++axis) for(double sign:{-1.0,1.0}) {
-            Vec3 n;
-            if(axis==0) n.x=sign; else if(axis==1) n.y=sign; else n.z=sign;
-            add(n.x,n.y,n.z,axisWeight);
-        }
-        constexpr double edge=0.70710678118654752440;
-        constexpr double edgeWeight=0.022574955908289241;
-        for(int zeroAxis=0;zeroAxis<3;++zeroAxis)
-            for(double first:{-edge,edge}) for(double second:{-edge,edge}) {
-                Vec3 n;
-                if(zeroAxis==0) { n.y=first; n.z=second; }
-                else if(zeroAxis==1) { n.x=first; n.z=second; }
-                else { n.x=first; n.y=second; }
-                add(n.x,n.y,n.z,edgeWeight);
-            }
-        constexpr double corner=0.57735026918962576451;
-        constexpr double cornerWeight=0.02109375;
-        for(double x:{-corner,corner}) for(double y:{-corner,corner})
-            for(double z:{-corner,corner}) add(x,y,z,cornerWeight);
-        constexpr double small=0.30151134457776362265;
-        constexpr double large=0.90453403373329086794;
-        constexpr double mixedWeight=0.020173335537918871;
-        for(int largeAxis=0;largeAxis<3;++largeAxis)
-            for(double sx:{-1.0,1.0}) for(double sy:{-1.0,1.0})
-                for(double sz:{-1.0,1.0}) {
-                    Vec3 n{sx*small,sy*small,sz*small};
-                    if(largeAxis==0) n.x=sx*large;
-                    else if(largeAxis==1) n.y=sy*large;
-                    else n.z=sz*large;
-                    add(n.x,n.y,n.z,mixedWeight);
+// Lebedev rules: spherical quadratures invariant under the octahedral group.
+// Each is a sum of complete orbits of that group, which is what integrates
+// the low electromagnetic multipoles without the small preferred-axis bias a
+// finite Fibonacci lattice carries.  The lattice is retained as a diagnostic
+// fallback for the non-tabulated direction counts the convergence tests use.
+//
+//   nodes  exact through  orbits
+//      26      degree  7  a1 + a2 + a3
+//      50      degree 11  a1 + a2 + a3 + b
+//     110      degree 17  a1 + a3 + 3b + c
+//     194      degree 23  a1 + a2 + a3 + 4b + c + d
+//     302      degree 29  a1 + a3 + 6b + 2c + 2d
+//
+// Before 194 was tabulated here the flux probes' own REFERENCE was the
+// Fibonacci lattice, so the 50-node rule was being validated against a grid
+// with no exactness degree at all; that is what the higher orders fix.
+//
+// The node parameters below are not transcribed constants taken on trust.
+// They are the solution of each rule's defining moment equations, and
+// sphereQuadratureExactDegree re-derives the degree at run time from the
+// nodes themselves -- a mistyped digit cannot survive a degree-23 exactness
+// test, and the validation suite asserts every rule's degree.
+namespace sphere_quadrature {
+
+// Lebedev's orbit names.  axis is the 6 points (1,0,0), edge the 12 points
+// (1,1,0)/sqrt2, corner the 8 points (1,1,1)/sqrt3, doubled the 24 points
+// (l,l,m) with m=sqrt(1-2l^2), planar the 24 points (p,q,0) with
+// q=sqrt(1-p^2), and general the 48 points (r,s,t) with t=sqrt(1-r^2-s^2).
+enum class Orbit { axis, edge, corner, doubled, planar, general };
+
+struct Generator {
+    Orbit orbit;
+    // Unused for the three parameter-free orbits; `second` only for general.
+    double first=0.0, second=0.0;
+    // Per node, normalized so the whole rule sums to 1 over the sphere.
+    double normalizedWeight=0.0;
+};
+
+// Expand one orbit: all distinct coordinate permutations of the seed, each
+// with all eight sign choices.  The duplicate test is what makes the count
+// come out right for the seeds that have a repeated or zero coordinate --
+// (l,l,m) gives 24 rather than 48, (p,q,0) likewise -- so the orbit sizes
+// are produced by the symmetry rather than asserted alongside it.
+//
+// It compares only against THIS orbit's own nodes, from `firstOfOrbit` on.
+// An orbit is a set, so removing its internal repeats is the right
+// operation; two different generators landing on a common node is not, and
+// deduplicating across orbits would silently drop the second one's weight
+// instead of adding it.  Left this way such a collision shows up as a node
+// count that does not match the rule's name, which the degree test then
+// fails on.
+inline void appendOrbit(std::vector<SphereQuadraturePoint>& into,
+                        const Generator& generator) {
+    std::array<double,3> seed{};
+    switch(generator.orbit) {
+    case Orbit::axis: seed={1.0,0.0,0.0}; break;
+    case Orbit::edge: {
+        constexpr double s=0.70710678118654752440;
+        seed={s,s,0.0};
+        break;
+    }
+    case Orbit::corner: {
+        constexpr double s=0.57735026918962576451;
+        seed={s,s,s};
+        break;
+    }
+    case Orbit::doubled: {
+        const double l=generator.first;
+        seed={l,l,std::sqrt(std::max(0.0,1.0-2.0*l*l))};
+        break;
+    }
+    case Orbit::planar: {
+        const double p=generator.first;
+        seed={p,std::sqrt(std::max(0.0,1.0-p*p)),0.0};
+        break;
+    }
+    case Orbit::general: {
+        const double r=generator.first,s=generator.second;
+        seed={r,s,std::sqrt(std::max(0.0,1.0-r*r-s*s))};
+        break;
+    }
+    }
+    const std::size_t firstOfOrbit=into.size();
+    std::sort(seed.begin(),seed.end());
+    do {
+        for(const double signX:{-1.0,1.0})
+            for(const double signY:{-1.0,1.0})
+                for(const double signZ:{-1.0,1.0}) {
+                    const Vec3 node{signX*seed[0],signY*seed[1],
+                                    signZ*seed[2]};
+                    const bool duplicate=std::any_of(
+                        into.begin()+static_cast<std::ptrdiff_t>(firstOfOrbit),
+                        into.end(),
+                        [&](const SphereQuadraturePoint& existing) {
+                            return (existing.direction-node).norm()<1.0e-13;
+                        });
+                    if(!duplicate)
+                        into.push_back(
+                            {node,4.0*pi*generator.normalizedWeight});
                 }
-        return result;
+    } while(std::next_permutation(seed.begin(),seed.end()));
+}
+
+inline std::vector<SphereQuadraturePoint> expand(
+        std::initializer_list<Generator> generators) {
+    std::vector<SphereQuadraturePoint> rule;
+    for(const Generator& generator:generators) appendOrbit(rule,generator);
+    return rule;
+}
+
+// The tabulated rules, built once on first use.  Returning a pointer to the
+// function-local static is what keeps the flux loop off the allocator: the
+// old sphereQuadrature rebuilt a std::vector on the heap at every call, and
+// electromagneticFieldFluxRates calls it once per integration step.
+inline const std::vector<SphereQuadraturePoint>* tabulated(int nodeCount) {
+    switch(nodeCount) {
+    case 26: {
+        // Degree 7.  The weights are exact rationals: 1/21, 4/105, 9/280.
+        static const std::vector<SphereQuadraturePoint> rule=expand({
+            {Orbit::axis,0.0,0.0,0.047619047619047619048},
+            {Orbit::edge,0.0,0.0,0.038095238095238095238},
+            {Orbit::corner,0.0,0.0,0.032142857142857142857}});
+        return &rule;
     }
-    if(directionCount<1) return result;
-    constexpr double goldenAngle=pi*(3.0-2.2360679774997896964);
-    const double weight=4.0*pi/directionCount;
-    result.reserve(static_cast<std::size_t>(directionCount));
-    for(int index=0;index<directionCount;++index) {
-        const double z=1.0-2.0*(index+0.5)/directionCount;
-        const double transverse=std::sqrt(std::max(0.0,1.0-z*z));
-        const double azimuth=goldenAngle*index;
-        result.push_back({{transverse*std::cos(azimuth),
-                           transverse*std::sin(azimuth),z},weight});
+    case 50: {
+        // Degree 11.  Also exact rationals: 4/315, 64/2835, 27/1280,
+        // 14641/725760, with the doubled orbit at l=sqrt(1/11).
+        static const std::vector<SphereQuadraturePoint> rule=expand({
+            {Orbit::axis,0.0,0.0,0.012698412698412698413},
+            {Orbit::edge,0.0,0.0,0.022574955908289241623},
+            {Orbit::corner,0.0,0.0,0.02109375},
+            {Orbit::doubled,0.30151134457776362265,0.0,
+             0.020173335537918871252}});
+        return &rule;
     }
-    return result;
+    case 110: {
+        static const std::vector<SphereQuadraturePoint> rule=expand({
+            {Orbit::axis,0.0,0.0,0.0038282704950077357},
+            {Orbit::corner,0.0,0.0,0.0097937375124621910},
+            {Orbit::doubled,0.18511563534526035,0.0,0.0082117372831938609},
+            {Orbit::doubled,0.39568947305626379,0.0,0.0095954713360612946},
+            {Orbit::doubled,0.69042104838229246,0.0,0.0099428148911751418},
+            {Orbit::planar,0.47836902881218757,0.0,0.0096949963616637085}});
+        return &rule;
+    }
+    case 194: {
+        static const std::vector<SphereQuadraturePoint> rule=expand({
+            {Orbit::axis,0.0,0.0,0.0017823407029467122},
+            {Orbit::edge,0.0,0.0,0.0057169059469172594},
+            {Orbit::corner,0.0,0.0,0.0055733831531803515},
+            {Orbit::doubled,0.44469331839394804,0.0,0.0055187714487162347},
+            {Orbit::doubled,0.28924656407574989,0.0,0.0051582376862526888},
+            {Orbit::doubled,0.67129734427151899,0.0,0.0056087040757898882},
+            {Orbit::doubled,0.12993354723470232,0.0,0.0041067770239256495},
+            {Orbit::planar,0.34577021999433044,0.0,0.0050518460683153729},
+            {Orbit::general,0.15904171061980538,0.52511857256697980,
+             0.0055302489150390339}});
+        return &rule;
+    }
+    case 302: {
+        static const std::vector<SphereQuadraturePoint> rule=expand({
+            {Orbit::axis,0.0,0.0,0.00085441695053510157},
+            {Orbit::corner,0.0,0.0,0.0035992209029283508},
+            {Orbit::doubled,0.70117674239278927,0.0,0.0036500744781326022},
+            {Orbit::doubled,0.65663372553267974,0.0,0.0036049168619254235},
+            {Orbit::doubled,0.47290369278945227,0.0,0.0035768246127088682},
+            {Orbit::doubled,0.35155963103670884,0.0,0.0034498282076958005},
+            {Orbit::doubled,0.22195835915596318,0.0,0.0031089106132587258},
+            {Orbit::doubled,0.09617723338258305,0.0,0.0023518863705014117},
+            {Orbit::planar,0.57189344218093918,0.0,0.0036008355448544334},
+            {Orbit::planar,0.26440477849926736,0.0,0.0029822269762529285},
+            {Orbit::general,0.25100032220726348,0.80007584910134055,
+             0.0035715979404095407},
+            {Orbit::general,0.12335110110856259,0.41276604486477253,
+             0.0033923112909537076}});
+        return &rule;
+    }
+    default: return nullptr;
+    }
+}
+
+}  // namespace sphere_quadrature
+
+// A view of the rule, not a copy of it.  The tabulated orders cost nothing
+// per call; the Fibonacci fallback is cached per thread and rebuilt only
+// when the requested count changes, so the hot loop never allocates either.
+inline std::span<const SphereQuadraturePoint> sphereQuadratureView(
+        int directionCount) {
+    if(const std::vector<SphereQuadraturePoint>* rule=
+           sphere_quadrature::tabulated(directionCount))
+        return *rule;
+    thread_local std::vector<SphereQuadraturePoint> fallback;
+    thread_local int cachedCount=0;
+    if(directionCount<1) return {};
+    if(directionCount!=cachedCount) {
+        constexpr double goldenAngle=pi*(3.0-2.2360679774997896964);
+        const double weight=4.0*pi/directionCount;
+        fallback.clear();
+        fallback.reserve(static_cast<std::size_t>(directionCount));
+        for(int index=0;index<directionCount;++index) {
+            const double z=1.0-2.0*(index+0.5)/directionCount;
+            const double transverse=std::sqrt(std::max(0.0,1.0-z*z));
+            const double azimuth=goldenAngle*index;
+            fallback.push_back({{transverse*std::cos(azimuth),
+                                 transverse*std::sin(azimuth),z},weight});
+        }
+        cachedCount=directionCount;
+    }
+    return fallback;
+}
+
+// Owning form, for the callers that keep a rule alive across other work.
+inline std::vector<SphereQuadraturePoint> sphereQuadrature(int directionCount) {
+    const std::span<const SphereQuadraturePoint> view=
+        sphereQuadratureView(directionCount);
+    return {view.begin(),view.end()};
+}
+
+// The degree through which a rule is exact, re-derived from its own nodes.
+// The integral of x^i y^j z^k over the unit sphere, divided by 4 pi, is
+// zero when any exponent is odd and (i-1)!!(j-1)!!(k-1)!!/(i+j+k+1)!!
+// otherwise, so the rule's claimed degree is a measurement and not a label.
+// This is the guard on the tables above: the parameters were solved
+// numerically, and nothing here depends on them having been typed correctly.
+inline int sphereQuadratureExactDegree(
+        std::span<const SphereQuadraturePoint> rule,
+        double tolerance=2.0e-14,int limit=32) {
+    if(rule.empty()) return -1;
+    const auto doubleFactorial=[](int n) {
+        double value=1.0;
+        for(int factor=n;factor>1;factor-=2) value*=factor;
+        return value;
+    };
+    const auto exactMoment=[&](int i,int j,int k) {
+        if(i%2||j%2||k%2) return 0.0;
+        return doubleFactorial(i-1)*doubleFactorial(j-1)*doubleFactorial(k-1)
+              /doubleFactorial(i+j+k+1);
+    };
+    double totalWeight=0.0;
+    for(const SphereQuadraturePoint& point:rule)
+        totalWeight+=point.solidAngleWeight;
+    if(!(std::abs(totalWeight-4.0*pi)<=tolerance*4.0*pi)) return -1;
+    int degree=0;
+    for(int order=1;order<=limit;++order) {
+        for(int i=0;i<=order;++i) for(int j=0;i+j<=order;++j) {
+            const int k=order-i-j;
+            double sum=0.0;
+            for(const SphereQuadraturePoint& point:rule)
+                sum+=point.solidAngleWeight
+                    *std::pow(point.direction.x,i)
+                    *std::pow(point.direction.y,j)
+                    *std::pow(point.direction.z,k);
+            if(std::abs(sum/(4.0*pi)-exactMoment(i,j,k))>tolerance)
+                return degree;
+        }
+        degree=order;
+    }
+    return degree;
 }
 
 // Defined below historicalDipoleKinematics/historicalElectricDipoleKinematics
@@ -245,8 +448,8 @@ inline FieldFluxRates electromagneticFieldFluxRates(
     FarFieldSampling sampling={}) {
     if(sampling.directionCount<1||!(sampling.controlRadius>0.0)
         ||!std::isfinite(sampling.controlRadius)) return {};
-    const std::vector<SphereQuadraturePoint> quadrature=
-        sphereQuadrature(sampling.directionCount);
+    const std::span<const SphereQuadraturePoint> quadrature=
+        sphereQuadratureView(sampling.directionCount);
     const Vec3 centre=(state.firstPosition+state.secondPosition)*0.5;
     const double sourceExtent=std::max(
         (state.firstPosition-centre).norm(),
