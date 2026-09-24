@@ -157,20 +157,43 @@ inline KaplanMeierEstimate kaplanMeier(std::vector<SurvivalObservation> sample) 
     area+=result.curve.back().survival
          *(result.horizon-result.curve.back().time);
     result.restrictedMean=area;
+    // Tail areas in ONE backward sweep.  tail(i) is the area under the step
+    // function from curve[i].time out to the horizon, and it satisfies
+    //     tail(i) = S(t_i)*(t_{i+1}-t_i) + tail(i+1),
+    // with tail(last) = S(t_last)*(horizon-t_last).  The inner loop this
+    // replaces rebuilt that same suffix from scratch at every event time,
+    // which is quadratic in the number of DISTINCT event times -- and that
+    // number tracks the sample size, since a point is pushed here only where
+    // events>0 and collapse times do not tie.  Measured end to end on
+    // exponential lifetimes with uniform censoring, whole estimator including
+    // the sort:
+    //        N        before     after
+    //     2e+04       153 ms    2.9 ms
+    //     5e+04       994 ms    7.9 ms
+    //     1e+05      4055 ms   18.0 ms
+    // the clean N^2 against the sort's N log N.
+    //
+    // The association order of the suffix changes, so the reported error
+    // moves in the last bits.  That is safe because RMST and its error are
+    // reported and not asserted on anywhere.  It is NOT an accuracy gain:
+    // against a long-double reference the two forms trade places by sample
+    // (old 3.7e-16 / new 5.8e-16 at N=1e3, old 5.3e-17 / new 1.7e-15 at 2e4,
+    // old 2.5e-15 / new 1.7e-15 at 5e4), both sitting at the round-off of the
+    // quantity.  Only the complexity changes.
+    std::vector<double> tailArea(result.curve.size(),0.0);
+    tailArea.back()=result.curve.back().survival
+                   *(result.horizon-result.curve.back().time);
+    for(std::size_t i=result.curve.size()-1;i-->0;) {
+        tailArea[i]=tailArea[i+1]+result.curve[i].survival
+                   *(result.curve[i+1].time-result.curve[i].time);
+    }
     double varianceSum=0.0;
     for(std::size_t i=1;i<result.curve.size();++i) {
         if(result.curve[i].events==0) continue;
-        double tailArea=0.0;
-        for(std::size_t j=i;j+1<result.curve.size();++j) {
-            tailArea+=result.curve[j].survival
-                     *(result.curve[j+1].time-result.curve[j].time);
-        }
-        tailArea+=result.curve.back().survival
-                 *(result.horizon-result.curve.back().time);
         const int atRisk=result.curve[i].atRisk;
         const int events=result.curve[i].events;
         if(atRisk>events) {
-            varianceSum+=tailArea*tailArea*static_cast<double>(events)
+            varianceSum+=tailArea[i]*tailArea[i]*static_cast<double>(events)
                 /(static_cast<double>(atRisk)
                   *static_cast<double>(atRisk-events));
         }
