@@ -12002,3 +12002,89 @@ measurement of whether that survives a cascade.
       applicable to a source-free mode.  The order assertion is a check on
       the FIELD, not on the ZPF power balance, which remains unmeasured and
       is a separate piece of work.
+
+169. PLAN STEP 4 MEASURED FOR THE FIRST TIME: NO BALANCE POINT IN
+     [0.01, 1] a_pair, AND THE MEASUREMENT IS VARIANCE-LIMITED
+==================================================================
+
+169a. WHAT WAS ASKED, AND WHAT OF IT ALREADY EXISTS.  A review proposed four
+      things.  Three are already in the tree and the fourth is the plan's own
+      Step 4:
+        quench E1 in the ground state   IS the ground-state floor, on by
+                                        default at level 2; README row 4
+                                        measures its price (collapse 6206.43
+                                        -> 6245.93 ps, +0.6%, but the
+                                        stopping point moves 547.5 -> 31.10
+                                        r*, a factor of 17.6)
+        first passage to contact        IS tools/contact_first_passage.cpp,
+                                        whose own header states the limit
+                                        this section would otherwise have to:
+                                        reaching contact is a necessary
+                                        condition, not a rate
+        Ore-Powell 3-gamma suppression  README has the full treatment: the
+                                        formula checks (1/1113.9 against the
+                                        measured 142 ns/124.49 ps = 1140.7,
+                                        2.3%), the phase-space density IS in
+                                        annihilationPhotonEnergiesFor and
+                                        integrates to (pi^2-9)/2 exactly, and
+                                        the 1114 splits into 1/8.13 present
+                                        and 1/137.04 absent
+        the ZPF power balance           Step 4, never measured.  This section.
+
+169b. AND ONE OF THEM WOULD BREAK THE METHOD.  Scaling the ortho decay by
+      Gamma_3g = Gamma_2g/1115 means writing a measured quantum lifetime
+      ratio in as a rate.  The project's own rule (PRISM_INSTRUCTIONS section
+      4) is that external lifetimes are comparison curves and are NOT inputs
+      to the calculation, and README's decomposition says what is actually
+      missing: not the ratio but one power of alpha, the annihilation
+      amplitude, which is a QED object this model does not carry.  Importing
+      the ratio would produce the right number by construction and would
+      destroy the only thing the comparison is evidence of.
+
+169c. THE MEASUREMENT.  P_abs is the work the zero-point field does on the
+      two charges, <q1 E.v1 + q2 E.v2>, accumulated along a trajectory the
+      field is acting on, so the correlation that carries absorption is
+      present.  P_rad is the coherent E1 power |d''|^2/(6 pi eps0 c^3) of the
+      same state.  Scale 1, 16 modes over [0.3, 3.0] x omega_orb, seed 42,
+      the step tied to the FASTEST mode at 32 steps per cycle:
+        r/a_pair    P_abs [W]     P_rad [W]    P_abs/P_rad
+           1       6.0822e-06   1.1557e-08      5.26e+02
+           0.3     4.0731e-04   1.3938e-06      2.92e+02
+           0.1     1.8700e-02   1.0617e-04      1.76e+02
+           0.03    1.8729e+00   1.0604e-02      1.77e+02
+           0.01    8.1915e+01   1.2158e-01      6.74e+02
+      No crossing.  Absorption exceeds radiation by two to three orders
+      everywhere over two decades of radius, so at the nominal amplitude the
+      pair is driven OUT, not held.
+
+169d. BUT THE NUMBER IS VARIANCE-LIMITED, WHICH IS THE HONEST HEADLINE.
+      <q E.v> has expectation zero for phases uncorrelated with the motion,
+      so a one-orbit average measures the variance.  Six seeds at 0.1 a_pair:
+        seed      42         43         44         45         46         47
+        P_abs  1.87e-02   3.84e-02   1.88e-03   3.98e-02   1.29e-02   3.44e-02
+      A factor of 21 between the extremes.  No single row of 169c is a
+      measurement of the balance.
+
+169e. WHAT IS ESTABLISHED IS THE SIGN.  All six seeds give POSITIVE net
+      absorption, and all six exceed the radiated power (ratios 17 to 390).
+      Six of six by chance is 1.6%, so there is a systematic absorption under
+      the noise, it is inward-of-zero nowhere, and it is large.  That is
+      enough to say the balance point is not in [0.01, 1] a_pair at scale 1,
+      and not enough to say where it is.
+
+169f. WHAT WOULD FINISH IT.  Averaging the stochastic work down -- many
+      orbits and many seeds, with the variance reported rather than a single
+      trajectory's number -- and then a scan in the ZPF scale, since the
+      balance radius moves with it and scale 1 is a normalization choice the
+      plan has never tested.  tools/zpf_power_balance.cpp is added here so
+      that work starts from a reproducible instrument instead of a throwaway.
+
+169g. LIMITS.  Instantaneous rather than retarded mutual forces and radiation
+      reaction disabled, both for cost, so P_rad is computed from the state's
+      accelerations rather than drained from a dissipating orbit; one
+      channel, one tilt, circular preparation, one orbit per radius.  16
+      modes is a quarter of the production default, which makes the variance
+      of 169d worse than production's would be and does not change its
+      existence.  The step is tied to the fastest mode at 32 per cycle, which
+      the step census in positronium.cpp calls resolved rather than aliased,
+      and that guard is why the sampling column is printed at all.

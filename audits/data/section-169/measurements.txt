@@ -1,0 +1,34 @@
+PLAN STEP 4, the SED power balance.  tools/zpf_power_balance.cpp, scale 1,
+16 modes over [0.3, 3.0] x omega_orb, step tied to the fastest mode at 32
+steps per cycle, one orbit per radius, instantaneous mutual forces, radiation
+reaction disabled.
+
+SEED 42:
+ r/a_pair     P_abs [W]     P_rad [W]   P_abs/P_rad  E_rms [V/m] steps/cyc
+        1    6.0822e-06    1.1557e-08    5.2628e+02   2.877e+08      32.0
+      0.3    4.0731e-04    1.3938e-06    2.9223e+02   1.066e+10      32.0
+      0.1    1.8700e-02    1.0617e-04    1.7613e+02   2.877e+11      32.0
+     0.03    1.8729e+00    1.0604e-02    1.7663e+02   1.066e+13      32.0
+     0.01    8.1915e+01    1.2158e-01    6.7374e+02   2.877e+14      32.0
+No crossing of P_abs/P_rad = 1 anywhere over the two decades.
+
+SEED SCATTER at r = 0.1 a_pair, same everything else:
+  seed    P_abs [W]     P_rad [W]    P_abs/P_rad
+    42   1.8700e-02   1.0617e-04      1.761e+02
+    43   3.8411e-02   9.8329e-05      3.906e+02
+    44   1.8810e-03   1.1373e-04      1.654e+01
+    45   3.9836e-02   1.1001e-04      3.621e+02
+    46   1.2940e-02   1.0163e-04      1.273e+02
+    47   3.4417e-02   1.0998e-04      3.129e+02
+Extremes differ by a factor of 21.  All six are POSITIVE and all six exceed
+the radiated power; six of six positive by chance is 1.6%.
+
+The amplitude coefficient at scale 1 with 16 modes is 2.380749e-25, and
+E_rms = coefficient * omega^2 * sqrt(modes/2), which is the same recipe
+positronium.cpp prints at startup.
+
+WHAT THE PLAN ALREADY HAD, for contrast: the FIELD-equality estimate, ZPF
+E_rms ~ omega^2 ~ r^-3 against a binding field ~ r^-2, ratio 9.93e-04 at
+a_pair, crossing at 1.05e-13 m = 0.272 lambda_C.  The plan states that is not
+the balance measurement, and these numbers are why: the power ratio at
+a_pair is 5.3e+02, not 9.9e-04, and it does not cross.

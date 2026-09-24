@@ -1,0 +1,22 @@
+Raw outputs behind audit section 169 (2026-09-24).
+  measurements.txt   every number the section quotes
+
+No pre-registration: the section is a first measurement of a quantity that
+had none, reported with its own variance rather than against a threshold.
+Nothing here is compared to a bound anyone chose.
+
+The instrument is tools/zpf_power_balance.cpp, added in this section and run
+as
+  zpf_power_balance <scale> <modes> <seed> <steps per fastest ZPF cycle>
+with 1.0 16 <seed> 32.  It builds the production zero-point field through
+makeZeroPointField with the production band defaults (0.3 to 3.0 times the
+osculating orbital frequency) and installs it in gZeroPointField, so the
+field enters the Lorentz force exactly as a production run's would.
+
+The three items of 169a that already exist were read from the tree, not
+remeasured: the ground-state floor's price is README's row 4, the contact
+first-passage tool is tools/contact_first_passage.cpp with its own header,
+and the Ore-Powell decomposition is README's section on that objection.
+
+169b cites PRISM_INSTRUCTIONS.md section 4 for the rule that external
+lifetimes are comparison curves and not inputs.
