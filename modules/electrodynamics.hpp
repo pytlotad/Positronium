@@ -3312,6 +3312,10 @@ inline Vec3 advanceThomasBmtDipole(const Vec3& properDipole,const Vec3& velocity
     const Vec3 axis=angularVelocity/angularSpeed;
     const double angle=angularSpeed*laboratoryDt;
     const double cosine=std::cos(angle),sine=std::sin(angle);
+    // (1.0-cosine) is safe here for the reason written out above
+    // rotateDipoleByAngularVelocity in secular_spin_orbit.hpp: Sterbenz makes
+    // the subtraction exact, and the cosine's own error cancels against
+    // properDipole*cosine in the axis-parallel component.
     return properDipole*cosine+cross(axis,properDipole)*sine
         +axis*(dot(axis,properDipole)*(1.0-cosine));
 }
