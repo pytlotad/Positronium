@@ -430,6 +430,14 @@ inline ElectromagneticField farZoneChargeField(
     source=historicalCharge(history,present,first,emissionTime);
     const Vec3 displacement=observationPosition-source.position;
     const double distance=displacement.norm();
+    // Same guard every near-field solver in this file already carries: a
+    // control sphere drawn through the source leaves the direction undefined
+    // and the division returns NaN, which the flux integral then sums into
+    // the whole Poynting/stress result rather than losing one direction.  It
+    // is not reachable at the control radii anything here uses (1e4-1e6 a0
+    // against a source at r*), but the radius is a caller's parameter and
+    // this was the one member of the family without the check.
+    if(!(distance>std::numeric_limits<double>::min())) return {};
     const Vec3 direction=displacement/distance;
     const Vec3 beta=source.velocity/c;
     const double kappa=std::max(1.0e-12,1.0-dot(direction,beta));
@@ -2909,7 +2917,6 @@ inline MutualForces coulombForces(const State& s) {
 inline bool gDipoleForceEnabled=std::getenv("CREM_NO_DIPOLE_FORCE")==nullptr;
 
 inline MutualForces mutualForces(const State& s) {
-    const PairGeometry geometry = clampedPairGeometry(s);
     const MutualForces electrostatic = coulombForces(s);
     if(!gDipoleForceEnabled) return electrostatic;
     const Vec3 dipoleOnFirst = pairDipoleForce(
@@ -2922,6 +2929,12 @@ inline Vec3 darwinForceOnFirst(const Vec3& firstVelocity, const Vec3& secondVelo
                         const Vec3& secondLeadingAcceleration,
                         const Vec3& firstMinusSecond, double chargeProduct) {
     const double distance = firstMinusSecond.norm();
+    // Both callers pass clampedPairGeometry's separation, which is floored at
+    // separationFloor() -- but that returns 0 for every pair that is not
+    // positronium, and the clamp is then the identity.  Coincidence stays
+    // unreachable behind the terminal surface; this keeps the function's own
+    // contract from depending on which pair is active.
+    if(!(distance>std::numeric_limits<double>::min())) return Vec3{};
     const Vec3 n = firstMinusSecond / distance;
     const double firstRadial = dot(firstVelocity, n);
     const double secondRadial = dot(secondVelocity, n);
