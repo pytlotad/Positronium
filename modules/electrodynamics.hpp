@@ -4704,6 +4704,34 @@ inline void integrateElectrodynamicStep(State& s, double dt,
     const Vec3 initialMechanicalMomentum=noetherMomentum(initialCanonical);
     const Vec3 initialMechanicalAngularMomentum=
         noetherAngularMomentum(balanceStart,initialCanonical);
+    // THIS IS THE OPERATOR SPLITTING, and it is worth naming because it does
+    // not look like one: the half-precession here, the mechanical step below,
+    // and the second half-precession before the accelerations are recomputed
+    // are a Strang splitting of the spin sector against the orbital one.  The
+    // spin half-steps are not integrated, they are EXACT -- see
+    // advanceThomasBmtDipole, a closed-form Rodrigues rotation about a B_eff
+    // held fixed across the half-step -- so the spin sub-step carries no
+    // step-size restriction at all.  Measured: at omega*dt from 1.3e-11 up to
+    // 1.3e+19 radians it stays norm-conserving to 1.1e-16 and two half-steps
+    // reproduce one full step to 2.4e-16.
+    //
+    // So the spin sector is NOT what drives dt down near the barrier, and it
+    // is not the stiff one either.  omega_spin/omega_orbit RISES as the orbit
+    // tightens but SATURATES well below one, and then turns over:
+    //   r/r*     10     5      3      2     1.5     1.2      1     0.5    0.3
+    //   ratio  .0035  .0097  .019   .028   .036   .042   .047   .054   .054
+    // At r* the precession is nineteen times SLOWER than the orbit.  It never
+    // becomes the fast mode, so there is no stiffness here for an implicit or
+    // exponential integrator to buy back.
+    //
+    // What does drive dt down is the DIPOLE FORCE sector, and it is a C0
+    // discontinuity rather than stiffness -- no integrator order helps, this
+    // splitting included.  Ablating that sector at r=1.2 r* restores textbook
+    // second order (3.98-4.03x per halving, out to 8e-15); leaving it in
+    // gives 6.55x, 1.08x, 1.94x on the last three halvings.  Audit section
+    // 149 pins the mechanism: a 4% jump in the retarded magnetic-dipole
+    // field's ELECTRIC component, turned by the hidden-momentum term's
+    // finite-difference d(mu x E)/dt into a force 15.4 times Coulomb.
     applyDipolePrecession(s, 0.5 * dt, history);
     if(std::getenv("POSITRONIUM_DEBUG_DIPOLE")&&!isFinite(s))
         std::cerr<<"STEP_DEBUG nonfinite-after-precession t="<<s.time
