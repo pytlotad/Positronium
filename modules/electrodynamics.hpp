@@ -3502,22 +3502,51 @@ inline double osculatingOrbitalFrequencyDerivative(const State& s) {
 // or at none, which is the opposite of the scale-selecting mechanism the
 // plan's Step 4 was looking for.
 //
-// CREM_ZPF_FIXED_FREQUENCY freezes the band at a given angular frequency
-// instead, in rad/s.  That is the control for exactly that reading: a band
-// that does not ride cannot inherit the orbit's exponent.  It drives all
-// three force sites AND the phase accumulation, so a frozen band is
-// internally consistent.  Unset -- the default -- reproduces the riding band
-// bit for bit.
+// THE RIDE IS A ONE-PARAMETER FAMILY, and the parameter is what audit 172
+// scans.  Write
+//     omega_band = omega_ref * (omega_orb/omega_ref)^p,
+// so p = 1 is the production band, riding exactly, and p = 0 is a band
+// frozen at omega_ref.  CREM_ZPF_RIDE_EXPONENT sets p and
+// CREM_ZPF_REFERENCE_FREQUENCY sets omega_ref in rad/s;
+// CREM_ZPF_FIXED_FREQUENCY remains as the p = 0 shorthand it was.
+//
+// WHY THE FAMILY IS THE RIGHT OBJECT.  Audits 170 and 171 measured the two
+// endpoints and found them to fail for opposite reasons: p = 1 absorbs but
+// inherits r^-4 so the ratio is flat, p = 0 breaks the inheritance but sits
+// off resonance and absorbs nothing.  Between them two things compete.  The
+// band has a finite width, [0.3, 3] times its centre, so it overlaps the
+// orbit while omega_orb/omega_band stays inside about a factor of three;
+// that ratio goes as omega_orb^(1-p), and omega_orb moves by 190 over the
+// radii measured, so resonance survives only for |1-p| <~ 0.21.  Inside that
+// window the amplitude still follows omega_band^2 but with a different
+// exponent, which is what could restore a radial dependence to the balance.
+//
+// Unset, all three variables leave the production band bit for bit.
 struct ZeroPointDrive { double frequency=0.0, derivative=0.0; };
 inline ZeroPointDrive zeroPointDriveFrequency(const State& s) {
-    static const double frozen=[]{
-        const char* text=std::getenv("CREM_ZPF_FIXED_FREQUENCY");
-        const double value=text?std::atof(text):0.0;
-        return (std::isfinite(value)&&value>0.0)?value:0.0;
+    struct Settings { double exponent, reference; };
+    static const Settings settings=[]{
+        const auto read=[](const char* name,double fallback){
+            const char* text=std::getenv(name);
+            if(!text) return fallback;
+            const double value=std::atof(text);
+            return std::isfinite(value)?value:fallback;
+        };
+        const double frozen=read("CREM_ZPF_FIXED_FREQUENCY",0.0);
+        if(frozen>0.0) return Settings{0.0,frozen};
+        const double reference=read("CREM_ZPF_REFERENCE_FREQUENCY",0.0);
+        return Settings{read("CREM_ZPF_RIDE_EXPONENT",1.0),reference};
     }();
-    if(frozen>0.0) return {frozen,0.0};
-    return {osculatingOrbitalFrequency(s),
-            osculatingOrbitalFrequencyDerivative(s)};
+    const double orbital=osculatingOrbitalFrequency(s);
+    const double rate=osculatingOrbitalFrequencyDerivative(s);
+    if(settings.exponent==1.0) return {orbital,rate};
+    if(!(settings.reference>0.0)||!(orbital>0.0)) return {orbital,rate};
+    // omega_band = ref * (orbital/ref)^p, and its rate follows by the chain
+    // rule: d(omega_band)/dt = p * (omega_band/omega_orb) * d(omega_orb)/dt.
+    const double band=settings.reference
+        *std::pow(orbital/settings.reference,settings.exponent);
+    if(!(band>0.0)||!std::isfinite(band)) return {orbital,rate};
+    return {band,settings.exponent*(band/orbital)*rate};
 }
 
 inline LocalElectromagneticFields localRelativisticFields(

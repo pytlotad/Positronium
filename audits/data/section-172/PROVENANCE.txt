@@ -1,0 +1,24 @@
+Raw outputs behind audit section 172 (2026-09-24).
+  ride_exponent_rows.txt   312 ROW lines, five ride exponents x four radii
+                           x 16 seeds, scale 0.3, survivors and
+                           non-survivors both kept
+
+No pre-registration.  The prediction 6(1-p) was written down before the scan
+was run, from the band amplitude's omega^2 law, and is reported as failing;
+no threshold was involved in reading that.
+
+Row format here is ROW <p> followed by the tool's own fields:
+ROW <p> <seed> <scale> <r/a_pair> <P_abs> <P_rad> <orbits> <final/initial>
+<band frequency>.  The leading <p> is prepended by the driver so the file is
+self-describing.
+
+The bootstrap resamples the 16 seeds with replacement 2000 times, refits both
+exponents on each resample and takes the 16th and 84th percentiles of their
+difference.  It is run on this file and on audit 170's grid_rows.txt with the
+same code, which is what makes 172e's comparison between them meaningful.
+
+Source change: modules/electrodynamics.hpp, zeroPointDriveFrequency
+generalized to the one-parameter family.  CREM_ZPF_RIDE_EXPONENT and
+CREM_ZPF_REFERENCE_FREQUENCY are new; CREM_ZPF_FIXED_FREQUENCY keeps its
+audit 171 meaning as the p = 0 shorthand.  All three unset leaves the
+production band bit for bit and the validation suite unmoved.

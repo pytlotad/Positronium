@@ -12267,3 +12267,87 @@ measurement of whether that survives a cascade.
       two prescriptions -- a band that rides with a different exponent, or
       one shaped to be resonant only over part of the inspiral, is neither
       tested nor excluded here.
+
+172. THE RIDE EXPONENT SCANNED: THE GAP 171g LEFT IS CLOSED, AND 170's
+     EXPONENTS WERE QUOTED TO MORE PRECISION THAN THEY HAVE
+==================================================================
+
+172a. THE GAP.  171g left open that a band riding with a DIFFERENT exponent,
+      or resonant over only part of the inspiral, was neither tested nor
+      excluded.  Write the family
+        omega_band = omega_ref * (omega_orb/omega_ref)^p,
+      so p = 1 is production and p = 0 is 171's frozen band, and the gap is
+      the interval between and beyond them.
+
+172b. WHY THE INTERVAL IS NARROW, before measuring anything.  The band is
+      [0.3, 3] times its centre, so it overlaps the orbit while
+      omega_orb/omega_band stays within about a factor of three.  That ratio
+      goes as omega_orb^(1-p), and omega_orb moves by 190 across the radii
+      measured, so resonance survives only for |1-p| <~ 0.21.  The scan is
+      therefore p = 0.8 to 1.2, and the measured overlap column confirms the
+      band never leaves the orbit: omega_orb/omega_band runs 1.00 to 2.86 at
+      p = 0.8 and 1.00 to 0.35 at p = 1.2, both inside [0.3, 3].
+
+172c. THE CONTROL IS EXACT AT BOTH ENDS.  p = 1 with a reference frequency
+      set reproduces the production band bit for bit, and p = 0 reproduces
+      171's frozen band bit for bit -- same P_abs, same P_rad, same band
+      frequency to every digit.  The validation suite does not move with any
+      of the three variables unset.
+
+172d. AND THE PREDICTION FAILS.  If the absorbed power followed the band
+      amplitude in the obvious way the ratio would go as r^(6(1-p)), which
+      spans +1.2 to -1.2 across the scan.  Measured, 16 seeds x 32 orbits per
+      point, scale 0.3, survivors only:
+         p    P_abs ~ r^q   P_rad ~ r^q   ratio ~ r^q   predicted
+        0.80     -3.476        -4.062        +0.586       +1.200
+        0.90     -3.438        -3.974        +0.537       +0.600
+        1.00     -3.394        -4.002        +0.608        0.000
+        1.10     -3.383        -3.999        +0.615       -0.600
+        1.20     -3.575        -3.992        +0.417       -1.200
+      The ratio exponent is +0.42 to +0.62 at EVERY p, with no trend, while
+      the prediction sweeps 2.4 across the same range.  P_rad holds -3.97 to
+      -4.06 throughout, which is the instrument checking itself against
+      Larmor.  Varying the ride exponent inside the resonance window does not
+      restore a radial dependence to the balance.
+
+172e. THE BOOTSTRAP, WHICH ALSO CORRECTS 170.  Resampling seeds, 2000 draws,
+      68% intervals on the ratio exponent:
+        ride p=0.80  +0.57  [+0.19, +0.89]
+        ride p=0.90  +0.61  [+0.22, +1.01]
+        ride p=1.00  +0.51  [+0.36, +0.72]
+        ride p=1.10  +0.60  [+0.21, +1.03]
+        ride p=1.20  +0.56  [+0.03, +1.09]
+        170 scale 0.1  +0.15  [-0.31, +0.50]
+        170 scale 0.3  +0.06  [-0.32, +0.33]
+        170 scale 1    +0.29  [-0.04, +0.52]
+      The intervals are 0.4 to 1.1 wide.  Audit 170 quoted its exponents to
+      three decimals and said the slope was "resolved"; it is not resolved to
+      anything like that.  What 170 established, and this does not disturb,
+      is that the ratio exponent is CONSISTENT WITH ZERO and far too small to
+      make the powers cross within the model's range.  The three-decimal
+      presentation overstated it and is corrected here.
+      Two independent seed sets at the same configuration -- 170's scale 0.3
+      and this scan's p = 1.0 -- give +0.06 and +0.51 with barely overlapping
+      intervals, so the true seed-to-seed spread is at the wide end of those
+      quotes.
+
+172f. SO THE GAP CLOSES, WITH THE SCOPE STATED.  Across the whole interval
+      where the band stays resonant, the balance's radial dependence does not
+      move: the ratio exponent sits near +0.5 and never approaches the +-1.2
+      the prediction needs.  Outside that interval the band leaves the orbit
+      and 171 already showed what happens -- the absorbed power's mean goes
+      to zero.  Between the two there is no window in which the zero-point
+      construction both absorbs and selects a radius.
+
+172g. LIMITS.  One reference frequency, one scale, one channel, 16 seeds and
+      32 orbits per point, 16 modes, instantaneous mutual forces, radiation
+      reaction disabled, circular preparation.  The p = 1.2 row at 0.03
+      a_pair kept only 7 of 16 runs inside the survival window and is the
+      thinnest point in the table.  "Resonant over only part of the inspiral"
+      is addressed here only through the overlap column, which shows the band
+      never leaves the orbit inside the scan; a band deliberately shaped to
+      engage over one stretch and disengage over another is a different
+      construction and is still untested.  And 172d's exponents inherit the
+      uncertainty 172e measures -- the conclusion rests on the absence of a
+      TREND across p, which is visible against that uncertainty, not on any
+      single value.

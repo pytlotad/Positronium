@@ -1,0 +1,42 @@
+The ride family: omega_band = omega_ref * (omega_orb/omega_ref)^p, with
+omega_ref = 2.067069e+16 rad/s = omega_orb(a_pair).  p = 1 is production,
+p = 0 is audit 171's frozen band.  Scale 0.3, 16 modes, 16 seeds x 32
+orbits per point, survivors only (0.5 <= final/initial <= 2).
+
+CONTROL, seed 301 at 0.1 a_pair, identical to every digit:
+  p=1 with reference set   ROW 1.303656506e-03 1.043583853e-04  band 6.536645e+17
+  plain production band    ROW 1.303656506e-03 1.043583853e-04  band 6.536645e+17
+  p=0 with reference set   ROW 4.645956852e-07 1.164161184e-04  band 2.067069e+16
+  CREM_ZPF_FIXED_FREQUENCY ROW 4.645956852e-07 1.164161184e-04  band 2.067069e+16
+
+BAND-ORBIT OVERLAP, omega_orb/omega_band, which must stay inside [0.3, 3]
+for the band to still reach the orbit:
+     p      r=1     r=0.3    r=0.1   r=0.03
+  0.80    1.000    1.435    1.995    2.863
+  0.90    1.000    1.198    1.413    1.692
+  1.00    1.000    1.000    1.000    1.000
+  1.10    1.000    0.835    0.708    0.591
+  1.20    1.000    0.697    0.501    0.349
+Resonance is maintained across the whole scan.
+
+FITTED RADIAL EXPONENTS:
+     p   P_abs ~ r^q   P_rad ~ r^q   ratio ~ r^q   predicted 6(1-p)
+  0.80      -3.476        -4.062        +0.586         +1.200
+  0.90      -3.438        -3.974        +0.537         +0.600
+  1.00      -3.394        -4.002        +0.608          0.000
+  1.10      -3.383        -3.999        +0.615         -0.600
+  1.20      -3.575        -3.992        +0.417         -1.200
+The ratio exponent is flat in p; the prediction sweeps 2.4 across the range.
+
+BOOTSTRAP over seeds, 2000 resamples, 68% interval on the ratio exponent:
+  ride p=0.80   +0.57  [+0.19, +0.89]   width 0.70
+  ride p=0.90   +0.61  [+0.22, +1.01]   width 0.79
+  ride p=1.00   +0.51  [+0.36, +0.72]   width 0.36
+  ride p=1.10   +0.60  [+0.21, +1.03]   width 0.82
+  ride p=1.20   +0.56  [+0.03, +1.09]   width 1.05
+  audit 170, scale 0.1  +0.15  [-0.31, +0.50]  width 0.81
+  audit 170, scale 0.3  +0.06  [-0.32, +0.33]  width 0.65
+  audit 170, scale 1    +0.29  [-0.04, +0.52]  width 0.56
+Audit 170 quoted three decimals on these exponents.  They carry intervals
+0.4 to 1.1 wide.  The conclusion that the ratio exponent is consistent with
+zero survives; the precision implied by the presentation does not.
