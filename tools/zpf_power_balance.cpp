@@ -42,6 +42,12 @@
 // frequency can be aliased by a step that still satisfies the trajectory
 // tolerance, and aliasing would fake exactly the net work being looked for.
 //
+// A FIXED BAND.  CREM_ZPF_FIXED_FREQUENCY (rad/s) freezes the band instead of
+// letting it ride the orbital frequency; this tool honours it everywhere it
+// matters -- the phase accumulation, the sampling step and the reported
+// E_rms all follow the frozen frequency, so the measurement is of a band
+// that genuinely does not ride.  Audit 171 is that experiment.
+//
 // Usage: zpf_power_balance [scale] [modes] [seed] [steps per ZPF cycle]
 //                          [orbits] [r/a_pair, or 0 for the default scan]
 // With a single radius it prints one machine-readable row, which is how the
@@ -96,7 +102,17 @@ int main(int argc,char** argv){
         accuracy.reactionModel=ChargeRadiationReactionModel::disabled;
         accuracy.useRetardedExternalForces=false;
         ClassicalTrajectoryEngine engine(s,accuracy);
-        const double fastestPeriod=2.0*pi/(hi*omega);
+        // Every rate below follows the band's OWN frequency, which is the
+        // orbital one unless CREM_ZPF_FIXED_FREQUENCY froze it.
+        const double drive=zeroPointDriveFrequency(s).frequency;
+        // Resolve the FASTER of the two clocks.  With the riding band the
+        // fastest mode always beats the orbit, so this is the mode; with a
+        // frozen band far below the orbit it is the orbit instead, and
+        // basing the step on the band alone would leave the work integral
+        // sampling a few points per revolution -- which is the aliasing the
+        // step census warns about, arriving from the other side.
+        const double fastestPeriod=
+            std::min(2.0*pi/(hi*drive),period);
         const double step=fastestPeriod/perCycle;
         const int stepCount=static_cast<int>(orbits*period/step);
         double work=0.0,elapsed=0.0,phase=0.0;
@@ -107,8 +123,9 @@ int main(int argc,char** argv){
             const Vec3 secondPosition=s.secondPosition;
             const Vec3 firstVelocity=s.firstVelocity;
             const Vec3 secondVelocity=s.secondVelocity;
-            const double orbital=osculatingOrbitalFrequency(s);
-            const double orbitalRate=osculatingOrbitalFrequencyDerivative(s);
+            const ZeroPointDrive band=zeroPointDriveFrequency(s);
+            const double orbital=band.frequency;
+            const double orbitalRate=band.derivative;
             Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
             gZeroPointField.sample(firstPosition,orbital,orbitalRate,
                 s.zeroPointPhase,firstElectric,firstMagnetic);
@@ -135,13 +152,13 @@ int main(int argc,char** argv){
             dipoleSecond.squaredNorm()/(6.0*pi*epsilon0*c*c*c);
         const double absorbed=work/elapsed;
         const double rootMeanSquare=gZeroPointField.amplitudeCoefficient
-            *omega*omega*std::sqrt(modes/2.0);
+            *drive*drive*std::sqrt(modes/2.0);
         if(singleRadius>0.0)
             // ROW <seed> <scale> <r/a_pair> <P_abs> <P_rad> <orbits>
-            //     <final/initial separation>
-            std::printf("ROW %llu %.6g %.6g %.9e %.9e %.4f %.6g\n",
+            //     <final/initial separation> <band frequency>
+            std::printf("ROW %llu %.6g %.6g %.9e %.9e %.4f %.6g %.6e\n",
                 (unsigned long long)seed,scale,fraction,absorbed,radiated,
-                elapsed/period,separation(s)/initialSeparation);
+                elapsed/period,separation(s)/initialSeparation,drive);
         else
             std::printf("%9.3g %13.4e %13.4e %13.4e %12.3e %9.1f\n",
                 fraction,absorbed,radiated,

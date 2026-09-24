@@ -3485,6 +3485,41 @@ inline double osculatingOrbitalFrequencyDerivative(const State& s) {
     return -1.5*osculatingOrbitalFrequency(s)*radialVelocity/radius;
 }
 
+// THE FREQUENCY THE ZERO-POINT BAND RIDES.
+//
+// Production pins it to the pair's OSCULATING orbital frequency, so every
+// mode stays in resonance the whole way down.  That choice has a history:
+// with a fixed band the orbit outran it -- the measured period falls by a
+// factor of 105 over a collapse -- and the lifetime then depended strongly
+// on where the upper edge was cut.
+//
+// It also has a consequence audit 170 measured.  A band pinned to omega_orb
+// carries an amplitude going as omega_orb^2, so the power it feeds in
+// inherits the orbit's own r^-4; the radiated power carries the same r^-4,
+// their ratio is flat, and the stochastic-electrodynamics balance
+// P_abs = P_rad stops being an equation for a radius at all.  It becomes a
+// condition on the field's normalization, satisfied at every radius at once
+// or at none, which is the opposite of the scale-selecting mechanism the
+// plan's Step 4 was looking for.
+//
+// CREM_ZPF_FIXED_FREQUENCY freezes the band at a given angular frequency
+// instead, in rad/s.  That is the control for exactly that reading: a band
+// that does not ride cannot inherit the orbit's exponent.  It drives all
+// three force sites AND the phase accumulation, so a frozen band is
+// internally consistent.  Unset -- the default -- reproduces the riding band
+// bit for bit.
+struct ZeroPointDrive { double frequency=0.0, derivative=0.0; };
+inline ZeroPointDrive zeroPointDriveFrequency(const State& s) {
+    static const double frozen=[]{
+        const char* text=std::getenv("CREM_ZPF_FIXED_FREQUENCY");
+        const double value=text?std::atof(text):0.0;
+        return (std::isfinite(value)&&value>0.0)?value:0.0;
+    }();
+    if(frozen>0.0) return {frozen,0.0};
+    return {osculatingOrbitalFrequency(s),
+            osculatingOrbitalFrequencyDerivative(s)};
+}
+
 inline LocalElectromagneticFields localRelativisticFields(
     const State& s, const StateHistory& history) {
     ElectromagneticField atFirst = lienardWiechertField(
@@ -3559,9 +3594,9 @@ inline LocalElectromagneticFields localRelativisticFields(
     // positions and changes with time, so each role is sampled separately.
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
-        const double orbitalFrequency=osculatingOrbitalFrequency(s);
-        const double orbitalFrequencyDerivative=
-            osculatingOrbitalFrequencyDerivative(s);
+        const ZeroPointDrive drive=zeroPointDriveFrequency(s);
+        const double orbitalFrequency=drive.frequency;
+        const double orbitalFrequencyDerivative=drive.derivative;
         gZeroPointField.sample(s.firstPosition,orbitalFrequency,
                                orbitalFrequencyDerivative,
                                s.zeroPointPhase,firstElectric,firstMagnetic);
@@ -3988,9 +4023,9 @@ inline MutualForces allExternalForces(const State& s) {
         lorentzForce(secondCharge, s.secondVelocity, {{}, gExternalMagneticField})};
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
-        const double orbitalFrequency=osculatingOrbitalFrequency(s);
-        const double orbitalFrequencyDerivative=
-            osculatingOrbitalFrequencyDerivative(s);
+        const ZeroPointDrive drive=zeroPointDriveFrequency(s);
+        const double orbitalFrequency=drive.frequency;
+        const double orbitalFrequencyDerivative=drive.derivative;
         gZeroPointField.sample(s.firstPosition,orbitalFrequency,
                                orbitalFrequencyDerivative,
                                s.zeroPointPhase,firstElectric,firstMagnetic);
@@ -4835,9 +4870,9 @@ inline MutualForces retardedExternalForces(const State& s,
         lorentzForce(secondCharge,s.secondVelocity,{{},gExternalMagneticField})};
     if(gZeroPointField.active()) {
         Vec3 firstElectric,firstMagnetic,secondElectric,secondMagnetic;
-        const double orbitalFrequency=osculatingOrbitalFrequency(s);
-        const double orbitalFrequencyDerivative=
-            osculatingOrbitalFrequencyDerivative(s);
+        const ZeroPointDrive drive=zeroPointDriveFrequency(s);
+        const double orbitalFrequency=drive.frequency;
+        const double orbitalFrequencyDerivative=drive.derivative;
         gZeroPointField.sample(s.firstPosition,orbitalFrequency,
                                orbitalFrequencyDerivative,
                                s.zeroPointPhase,firstElectric,firstMagnetic);
@@ -5442,7 +5477,7 @@ inline void integrateElectrodynamicStep(State& s, double dt,
     // bases its tolerance on the mechanical (x,v) trajectory; the phase is
     // nevertheless transactional and can never leak out of a rejected step.
     if(gZeroPointField.active())
-        trial.zeroPointPhase += osculatingOrbitalFrequency(s)*dt;
+        trial.zeroPointPhase += zeroPointDriveFrequency(s).frequency*dt;
     // Magnetic-dipole damping changes the constrained internal dipole sector.
     // The charge part is already represented by the particle self-force and
     // its near-field (Schott) term.

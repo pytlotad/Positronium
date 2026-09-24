@@ -1,0 +1,31 @@
+Raw outputs behind audit section 171 (2026-09-24).
+  fixed_band_rows.txt        80 ROW lines, frozen band, scale 0.3,
+                             seeds 401-420, four radii (audit 171c)
+  fixed_band_scale_rows.txt  120 ROW lines, frozen band, scales 1, 3, 10,
+                             seeds 501-520, two radii (audit 171d)
+
+No pre-registration: this is a control for a reading offered in 170g, and
+its outcome is read directly off the two tables.  No threshold enters any
+conclusion; the survival window 0.5 to 2 carried over from audit 170 and
+every run here survived it.
+
+ROW format: ROW <seed> <scale> <r/a_pair> <P_abs> <P_rad> <orbits completed>
+<final/initial separation> <band angular frequency>.  The last field is new
+in this section and is what shows the freeze took effect: it reads
+2.067069e+16 on every row here, against the riding band's r^-3/2 rise.
+
+The frozen frequency is omega_orb(a_pair) = 2.067069e+16 rad/s, chosen so
+the frozen and riding bands coincide at 1 a_pair and the comparison is
+against a common point.
+
+Source changes in this section:
+  modules/electrodynamics.hpp    zeroPointDriveFrequency, one control point
+                                 honoured by all three ZPF force sites and by
+                                 the phase accumulation; CREM_ZPF_FIXED_
+                                 FREQUENCY reads it.  Unset is bit-identical
+                                 to the previous behaviour and the validation
+                                 suite does not move.
+  tools/zpf_power_balance.cpp    honours the freeze in the sampling step, the
+                                 phase and the reported E_rms; the step now
+                                 resolves the faster of the orbit and the
+                                 band; the band frequency is reported.
