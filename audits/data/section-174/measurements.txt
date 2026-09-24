@@ -1,0 +1,20 @@
+PARA , exact preparation:
+   orbit 0.00  |m|/mu_sum=1.000007e+00  |d(m)/dt|/sum=1.000000e+00
+   orbit 0.25  |m|/mu_sum=1.000004e+00  |d(m)/dt|/sum=1.000000e+00
+   orbit 0.50  |m|/mu_sum=1.000007e+00  |d(m)/dt|/sum=1.000000e+00
+   orbit 0.75  |m|/mu_sum=1.000004e+00  |d(m)/dt|/sum=1.000000e+00
+   orbit 1.00  |m|/mu_sum=1.000007e+00  |d(m)/dt|/sum=9.999999e-01
+   worst over the orbit: |m|=1.000007e+00   |dm/dt|=1.000000e+00
+
+ORTHO, exact preparation:
+   orbit 0.00  |m|/mu_sum=0.000000e+00  |d(m)/dt|/sum=0.000000e+00
+   orbit 0.25  |m|/mu_sum=0.000000e+00  |d(m)/dt|/sum=0.000000e+00
+   orbit 0.50  |m|/mu_sum=0.000000e+00  |d(m)/dt|/sum=0.000000e+00
+   orbit 0.75  |m|/mu_sum=0.000000e+00  |d(m)/dt|/sum=0.000000e+00
+   orbit 1.00  |m|/mu_sum=0.000000e+00  |d(m)/dt|/sum=0.000000e+00
+   worst over the orbit: |m|=0.000000e+00   |dm/dt|=0.000000e+00
+
+
+chan             |w1|           |w2|     |w1-w2|/|w1|      M1 flux [W]
+para     1.830842e+11   4.186317e+11        1.287e+00     1.140646e-23
+ortho    4.186353e+11   4.186353e+11        0.000e+00     0.000000e+00

@@ -1,0 +1,23 @@
+Raw outputs behind audit section 174 (2026-09-24).
+  measurements.txt   both probes' output, concatenated
+  m1prot.cpp         |m| and |dm/dt| sampled every checkpoint over one orbit
+  m1rate.cpp         the two precession rates and the M1 power per channel
+
+No pre-registration: both probes read a quantity that is either exactly zero
+or is not, and no threshold enters the conclusion.
+
+Both are built against the production headers.  The state is a circular orbit
+at a_pair with tilt 40 degrees, the moments prepared aligned for para and
+exactly opposite for ortho, tolerance 1e-10.  |m| is normalized by
+mu1 + mu2 and |dm/dt| by the sum of the two moments' own rates, so both
+columns are dimensionless and 1 means "as large as it could be".  The M1
+power is the model's own dipoleRadiationReaction(...).power, not a formula
+re-entered here.
+
+The ensemble figures quoted in 174d and 174e -- <|m|^2/mu^2> para 3.4998,
+ortho 1.5187, ratio 2.3045 over 4000 states per channel -- are audit 153's
+and were not remeasured.
+
+Source change: README.md only.  The contested paragraph now states which
+preparation it describes, carries the measured table, and says what the
+withdrawn "32 orders" was and why it understated the case.

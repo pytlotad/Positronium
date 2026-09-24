@@ -12414,3 +12414,71 @@ measurement of whether that survives a cascade.
       different model, not this one with a different preparation.  The
       collapse times in 173c are quoted from README's stamped runs, not
       remeasured here.  No source behaviour changed in this section.
+
+174. THE M1 GATE VERIFIED, AND THE README CARRIED A WITHDRAWN NUMBER NEXT
+     TO THE QUOTE THAT WITHDREW IT
+==================================================================
+
+174a. THE STRUCTURAL CLAIM, WHICH IS CORRECT.  One quantity gates two
+      channels: |mu1 + mu2| decides the M1 channel during the inspiral and,
+      through w_2g = |mu1+mu2|^2/(|mu1|+|mu2|)^2, the photon multiplicity at
+      annihilation.  For positronium the charges are opposite and the masses
+      equal, so mu is proportional to S1 - S2 and mu1 + mu2 is exactly the
+      operator that mixes singlet with triplet.  The model therefore carries
+      the SHAPE of a charge-parity selection rule without holding any parity
+      quantum number, and it carries it in both places for the same reason --
+      the coherent cancellation of two antiparallel moments.
+
+174b. AND THE PROTECTION IS DYNAMIC, WHICH WAS ALSO CORRECT AND UNMEASURED.
+      Prepared exactly antiparallel at a_pair, tilt 40 degrees, sampled every
+      checkpoint over a full orbit:
+        channel   |m|/(mu1+mu2) worst   |dm/dt| normalized worst
+        para          1.000007              1.000000
+        ortho         0.000000              0.000000
+      Not small: zero at every checkpoint, so the cancellation holds along
+      the trajectory rather than only at preparation.  The mechanism is the
+      exchange parity of the mutual field, and it is visible directly in the
+      two precession rates:
+        channel     |w1| [1/s]      |w2| [1/s]      |w1-w2|/|w1|   M1 [W]
+        para      1.830842e+11    4.186317e+11       1.287e+00    1.1406e-23
+        ortho     4.186353e+11    4.186353e+11       0.000e+00    0.0000e+00
+      In ortho the two moments precess about the same vector at the same
+      rate to a relative difference of exactly zero, so d(mu1+mu2)/dt
+      vanishes identically.  In para the two rates differ by 129%.
+
+174c. BUT "32 ORDERS" IS WRONG IN KIND, NOT ONLY IN VALUE.  The ortho M1
+      power is not small, it is exactly 0.000000, so the ratio between the
+      channels is not a finite number of orders at all.  The residue is not
+      round-off either: the relative difference of the two precession rates
+      prints 0.000e+00, so the derivative vanishes identically rather than
+      below a print threshold.  Both readings in the previous text -- "32
+      orders" and "the ortho residue is round-off" -- understated what is
+      actually there.
+
+174d. AND THE README HELD THAT NUMBER NEXT TO ITS OWN WITHDRAWAL.  Audit 153e
+      measured the conditioned ensembles at <|m|^2/mu^2> para 3.4998 against
+      ortho 1.5187, a ratio of 2.3045, and recorded that it had "corrected
+      the README in place".  It corrected the TABLE.  The bold paragraph
+      immediately below the table went on asserting 32 orders, so the
+      document carried a block quote saying "2.3045, not 32 orders" with a
+      contradiction printed directly underneath it.
+
+174e. THE TWO NUMBERS ANSWER DIFFERENT QUESTIONS, which is what neither
+      passage said.  2.3045 is the CONDITIONED ENSEMBLE, which draws states
+      that never sit exactly antiparallel -- 153e's own note that the exact
+      cancellation happens only at cos = -1, reached with probability zero.
+      Exactly zero and dynamically protected is the EXACT antiparallel
+      PREPARATION.  Both are true and neither is the other's correction.  The
+      README now carries both with their preparations attached, which is
+      audit 167's stamp rule applied to a case where its absence had produced
+      a visible contradiction rather than a quiet one.
+
+174f. LIMITS.  One radius, one tilt, one orbit, the engine's own checkpoints;
+      the ensemble numbers are 153's and are not remeasured here.  174b
+      establishes that the cancellation survives a full orbit under the
+      trajectory integrator, not that it survives a photon emission or a
+      collapse to the barrier -- the secular estimator's own spin transport
+      is a separate path and is not exercised by this probe.  Whether the
+      exchange parity that enforces w1 = w2 is itself exact or holds only for
+      the symmetric preparation used here is not separated: the measurement
+      shows it holding, not why it must.

@@ -1362,12 +1362,29 @@ koherentnej sumy \(\mathbf m=\boldsymbol\mu_1+\boldsymbol\mu_2\), więc
 > \(|\mathbf m|=0\) zachodzi wyłącznie przy \(\cos=-1\), czyli w punkcie,
 > w który jednorodne losowanie trafia z prawdopodobieństwem zero.
 
-**Para może emitować M1, orto nie może.** Maksima różnią się o
-\(\mathbf{32}\) **rzędy wielkości**, a resztka orto to zaokrąglenie:
-\(|\mathbf m|\) wypisuje się jako dokładnie \(0{,}000000\) na każdym
-checkpoincie, a ponieważ oba spiny precesują wokół tego samego wektora
-(\(\omega_1=\omega_2\), sekcja wyżej), pochodna
-\(d(\boldsymbol\mu_1+\boldsymbol\mu_2)/dt\) też znika tożsamościowo.
+**Para może emitować M1, orto nie może — przy dokładnym przygotowaniu.**
+Ten akapit i tabela nad nim odpowiadają na dwa różne pytania i muszą nosić
+swoje przygotowania, bo inaczej czytają się jak sprzeczność (audyt 174).
+Tabela nad nim to **warunkowany zespół**, który nigdy nie trafia dokładnie w
+antyrównoległość; stąd 2,3045. Ten akapit to **stan przygotowany dokładnie
+antyrównolegle**, i tam nie ma żadnej resztki:
+
+| wielkość, orbita przy \(a_{\rm pary}\), tilt 40° | para | orto |
+|---|---|---|
+| \(\|\mathbf m\|/(\mu_1+\mu_2)\), najgorsze przez orbitę | \(1{,}000007\) | \(0{,}000000\) |
+| \(\|d\mathbf m/dt\|\) znormalizowane, najgorsze | \(1{,}000000\) | \(0{,}000000\) |
+| \(\|\omega_1\|\) \(\mathrm{s}^{-1}\) | \(1{,}831\cdot10^{11}\) | \(4{,}186353\cdot10^{11}\) |
+| \(\|\omega_2\|\) \(\mathrm{s}^{-1}\) | \(4{,}186\cdot10^{11}\) | \(4{,}186353\cdot10^{11}\) |
+| \(\|\omega_1-\omega_2\|/\|\omega_1\|\) | \(1{,}287\) | \(\mathbf{0{,}000}\) |
+| moc M1 \([\mathrm W]\) | \(1{,}1406\cdot10^{-23}\) | \(\mathbf{0{,}000000}\) |
+
+Wcześniejsze wydania podawały tu „32 rzędy wielkości". To była liczba
+z wycofanego przygotowania i była **zaniżona co do rodzaju**: moc M1 orto
+nie jest mała, tylko **dokładnie zerowa**, więc stosunek nie jest skończoną
+liczbą rzędów. Nie jest też zaokrągleniem — \(\omega_1=\omega_2\) wychodzi
+z różnicą względną \(0{,}000\), więc pochodna
+\(d(\boldsymbol\mu_1+\boldsymbol\mu_2)/dt\) znika tożsamościowo, a nie
+poniżej progu wydruku.
 
 Niemożność promieniowania M1 przez orto jest więc **dynamicznie chroniona**, a
 nie przypadkiem przygotowania. Zdolność para zmienia się przez librację:
