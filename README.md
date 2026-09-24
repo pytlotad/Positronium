@@ -1387,7 +1387,23 @@ z różnicą względną \(0{,}000\), więc pochodna
 poniżej progu wydruku.
 
 Niemożność promieniowania M1 przez orto jest więc **dynamicznie chroniona**, a
-nie przypadkiem przygotowania. Zdolność para zmienia się przez librację:
+nie przypadkiem przygotowania — ale chroniona **w układzie zerowego pędu**,
+i audyt 176 zmierzył, gdzie ta ochrona się kończy. Jest ścisła względem
+konfiguracji wewnętrznej: przy tilcie 0°, 17°, 40° i 90° oraz przy mimośrodzie
+0,3 i 0,7 wszystkie trzy wielkości (\(|\omega_1-\omega_2|/|\omega_1|\),
+\(|\mathbf m|\), \(|d\mathbf m/dt|\)) wychodzą **dokładnie zero**. Łamie ją
+natomiast wszystko, co rozróżnia obie cząstki w laboratorium: prędkość środka
+masy \(\beta=0{,}01\) podnosi \(|d\mathbf m/dt|\) z zera na \(0{,}91\)
+swojego maksimum, a jednorodne pole \(50\,\mu\mathrm T\) na
+\(2{,}1\cdot10^{-5}\).
+
+Ochrona jest więc własnością **układu zerowego pędu**, a nie warunku orto
+samego w sobie. Estymator kolapsu trzyma
+\(\mathbf v_{\rm CM}=0\) z konstrukcji (`crem_trajectory.hpp`), więc w
+warunkach, w których ten model pracuje, ochrona obowiązuje — i przestaje
+obowiązywać dla pary w ruchu albo w polu zewnętrznym.
+
+Zdolność para zmienia się przez librację:
 \(|\mathbf m|/\mu\) biegnie od \(2{,}000\) w dół do \(1{,}626\), czyli
 czynnik \(1{,}51\) w mocy — ale nigdy nie znika.
 

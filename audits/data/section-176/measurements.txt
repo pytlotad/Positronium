@@ -1,0 +1,11 @@
+ORTHO prepared exactly antiparallel; worst value over the orbit
+preparation                         |w1-w2|/|w1|    |m|/mu_sum  |dm/dt| norm
+baseline: tilt 40, circular           0.0000e+00    0.0000e+00    0.0000e+00
+tilt 0 (moments in the plane)         0.0000e+00    0.0000e+00    0.0000e+00
+tilt 90 (moments along L)             0.0000e+00    0.0000e+00    0.0000e+00
+tilt 17 (generic)                     0.0000e+00    0.0000e+00    0.0000e+00
+eccentric e=0.3                       0.0000e+00    0.0000e+00    0.0000e+00
+eccentric e=0.7                       0.0000e+00    0.0000e+00    0.0000e+00
+centre of mass beta=0.01              2.0789e+01    3.5178e-05    9.1226e-01
+centre of mass beta=0.10              1.8020e+01    3.4858e-04    1.0000e+00
+POSITIVE CONTROL: external B 50 uT    4.2590e-05    1.7202e-09    2.1295e-05

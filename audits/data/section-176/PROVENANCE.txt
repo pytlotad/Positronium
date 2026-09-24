@@ -1,0 +1,24 @@
+Raw outputs behind audit section 176 (2026-09-25).
+  measurements.txt   the probe's output, one line per preparation
+  parity.cpp         the probe
+
+No pre-registration: every column is either exactly zero or it is not, and no
+threshold enters the conclusion.  The external-field row is a positive
+control chosen in advance of reading the drift rows, so that a table of zeros
+could not be mistaken for a probe that cannot see anything.
+
+The probe is built against the production headers.  Every case prepares
+ortho exactly -- secondProperDipole = -secondMagneticMoment along the same
+direction as the first -- and varies only the tilt, the eccentricity, the
+centre-of-mass velocity added to both particles, or gExternalMagneticField.
+The three columns are the worst value over one orbit of
+|w1-w2|/|w1| with w from thomasBmtDipoleDerivatives, |mu1+mu2| normalized by
+mu1 + mu2, and |d(mu1+mu2)/dt| normalized by the sum of the two moments' own
+rates.  Reaction is disabled, tolerance 1e-09, 500 samples per orbit.
+
+The statement in 176f that estimateCremCollapse holds the centre-of-mass
+velocity at zero is read from crem_trajectory.hpp's own comment and was not
+remeasured.
+
+Source change: README.md only, qualifying the "dynamically protected" claim
+with the measured scope.

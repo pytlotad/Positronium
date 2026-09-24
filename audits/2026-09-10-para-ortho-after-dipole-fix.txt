@@ -12564,3 +12564,71 @@ measurement of whether that survives a cascade.
       which is the comparison the claim actually needs and is not quite the
       one it names.  One tilt, one channel, circular preparation, 2000
       samples per orbit.
+
+176. THE EXCHANGE PARITY IS EXACT IN THE ZERO-MOMENTUM FRAME AND BROKEN BY
+     ANYTHING THAT TELLS THE TWO PARTICLES APART
+==================================================================
+
+176a. WHAT 174f LEFT.  Audit 174 measured the ortho M1 protection -- |m| and
+      d(mu1+mu2)/dt exactly zero over a full orbit, with |w1-w2|/|w1| also
+      exactly zero -- and said it showed the exchange parity HOLDING, not why
+      it must, leaving open whether the parity is exact or an artifact of the
+      symmetric preparation used.  That is separated here.
+
+176b. THE TEST.  Keep the ortho condition mu2 = -mu1 exactly, and break the
+      preparation's symmetry in every other way available: the moments'
+      orientation, the orbit's shape, a centre-of-mass velocity, and a
+      uniform external field as a positive control that the probe can see
+      breaking at all.  Worst value over one orbit, ortho throughout:
+        preparation                    |w1-w2|/|w1|   |m|/mu_sum  |dm/dt|
+        tilt 40, circular (174's)       0.0000e+00   0.0000e+00  0.0000e+00
+        tilt 0, moments in the plane    0.0000e+00   0.0000e+00  0.0000e+00
+        tilt 90, moments along L        0.0000e+00   0.0000e+00  0.0000e+00
+        tilt 17, generic                0.0000e+00   0.0000e+00  0.0000e+00
+        eccentric e = 0.3               0.0000e+00   0.0000e+00  0.0000e+00
+        eccentric e = 0.7               0.0000e+00   0.0000e+00  0.0000e+00
+        centre of mass beta = 0.01      2.0789e+01   3.5178e-05  9.1226e-01
+        centre of mass beta = 0.10      1.8020e+01   3.4858e-04  1.0000e+00
+        external field 50 uT (control)  4.2590e-05   1.7202e-09  2.1295e-05
+
+176c. SO IT IS EXACT WITH RESPECT TO THE INTERNAL CONFIGURATION.  Four moment
+      orientations spanning in-plane to along-L, and two eccentricities out
+      to 0.7, all return exactly zero in all three columns.  174's result is
+      therefore not an artifact of its tilt or of circularity: nothing about
+      how the moments are pointed or how elongated the orbit is touches the
+      cancellation.
+
+176d. AND IT IS NOT EXACT IN GENERAL.  A centre-of-mass velocity of 0.01 c
+      takes |dm/dt| from zero to 0.91 of its maximum, and 0.10 c to 1.00 --
+      the protection is not degraded there, it is gone.  The external-field
+      control breaks it too, at 2.1e-05, which is what establishes that the
+      probe can detect breaking rather than only reporting zeros.
+
+176e. WHICH NAMES THE SYMMETRY.  It is a property of the ZERO-MOMENTUM FRAME,
+      not of the ortho condition by itself.  With the pair at rest as a
+      whole, exchanging the two particles and flipping the charge maps the
+      configuration onto itself, so B_eff at one is minus B_eff at the other
+      and the two precession rates are forced equal; mu goes as S1 - S2 for
+      positronium because q1 = -q2 at equal masses, so mu1 + mu2 and its
+      derivative vanish together.  A common drift is SYMMETRIC under that
+      exchange rather than antisymmetric, so the motional v x E terms stop
+      cancelling and the argument fails at first order in the drift.
+
+176f. AND THE MODEL RUNS INSIDE THE CONDITION, which is why 174 saw no hint
+      of this.  estimateCremCollapse holds the centre-of-mass velocity at
+      zero by construction -- crem_trajectory.hpp says so where it warns that
+      a null result from that switch is a statement about the estimator's
+      scope and not about physics.  So the M1 protection is real for
+      everything this model integrates, and is not a general statement about
+      ortho positronium: a pair in flight, or in a field, does not carry it.
+      The README's claim now says so.
+
+176g. LIMITS.  One radius, one orbit per case, 500 samples, reaction off,
+      tolerance 1e-09.  The |w1-w2|/|w1| column exceeds one in the drifting
+      cases because one moment's precession nearly stalls while the other's
+      does not, so its magnitude is not a clean measure of how badly the
+      parity is broken -- |dm/dt| is, and that is why it is quoted alongside.
+      The drift cases are not monotone in beta (20.8 at 0.01 against 18.0 at
+      0.10) and nothing here explains that.  176e is an argument, not a
+      measurement: what is measured is which perturbations break the
+      cancellation, not the mechanism by which they do.
