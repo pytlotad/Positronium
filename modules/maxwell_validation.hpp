@@ -6074,7 +6074,12 @@ inline int runMaxwellSelfTest(
         && gCausalityAudit.futureAtConvergedRead.load()==0
         && gCausalityAudit.observationAheadOfPresent.load()==0
         && gCausalityAudit.unconverged.load()==0
-        && gCausalityAudit.worstLightConeResidual.load()<1.0e-6;
+        && gCausalityAudit.worstLightConeResidual.load()<1.0e-6
+        // The Doppler clamp must never bind on a production trajectory.  It
+        // is not a tolerance: when it binds the field is amplified by up to
+        // 1e+24 and the value is meaningless, so one occurrence is a failure
+        // rather than a small error (audit 165).
+        && gCausalityAudit.dopplerClamped.load()==0;
 
     // PHOTON FOUR-MOMENTUM BALANCE, likewise.  The invariant statement is
     // that what the pair loses must be null and forward in time: dE > 0 and

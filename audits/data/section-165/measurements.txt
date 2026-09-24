@@ -1,0 +1,49 @@
+Characteristic radii, positronium:
+  comptonBarrierRadius   1.9330e-13 m  193.30 fm   1.0000 r*
+  collisionBoundaryRadius 5.2918e-13 m  529.18 fm  2.7375 r*
+  nuclearCutoff          1.0000e-14 m   10.00 fm   0.0517 r*
+  separationFloor()      9.6652e-15 m    9.67 fm   0.0500 r*
+  magneticDipoleRadius() 1.8689e-13 m  186.89 fm   0.9668 r*
+
+FORCES SATURATE AND TURN OVER (tilt 45, circular speed capped at 0.9c):
+   r/r*    |F_coulomb|   |F_dipole|
+  1e+00     6.1511e-03   7.0922e-03
+  5e-01     2.4331e-02   1.6407e-02
+  2e-01     1.4094e-01   1.2562e-02
+  1e-01     4.4179e-01   7.2248e-03
+  5e-02     8.7317e-01   4.0235e-03   <- peak, at the separation floor
+  2e-02     7.9071e-01   1.6212e-03
+  1e-02     4.6572e-01   8.1142e-04
+  1e-03     4.9364e-02   8.1170e-05
+  1e-04     4.9394e-03   8.1170e-06
+  1e-06     4.9394e-05   8.1170e-08
+
+FIELD, HIDDEN MOMENTUM AND ENERGY SATURATE:
+   r/r*    |E| [V/m]      |p_hidden|     U_coulomb [J]
+  1e+00    1.4207e+16     1.0335e-24     -1.1920e-15
+  1e-01    4.3983e+15     3.2147e-25     -1.0675e-14
+  1e-02    2.2401e+15     1.6388e-25     -2.3406e-14
+  1e-03    2.2009e+15     1.6104e-25     -2.3865e-14
+  1e-04    2.1978e+15     1.6088e-25     -2.3870e-14
+  1e-06    2.2007e+15     1.6133e-25     -2.3870e-14
+
+THE DEFECT: lienardWiechertField alone, charge sector, vs beta.
+|E| in V/m; the pole separation is irrelevant (1e-5 and 1e-7 identical).
+   r/r*     beta=0     beta=0.3    beta=0.5    beta=0.7636
+  0.020   2.2829e15   2.2870e15   2.2984e15    2.1979e15
+  0.015   2.2616e15   2.2647e15   2.2733e15    2.1979e15
+  0.013   2.2531e15   2.2558e15   2.2625e15    0.0000e00   ZERO
+  0.012   2.2488e15   2.2513e15   2.2573e15    0.0000e00   ZERO
+  0.011   2.2445e15   2.2468e15   2.2523e15    0.0000e00   ZERO
+  0.010   2.2401e15   2.2424e15   2.2472e15    4.9006e45   BLOWUP
+  0.009   2.2358e15   2.2379e15   2.2423e15    2.2748e15
+  0.005   2.2184e15   2.2198e15   2.2224e15    2.2289e15
+
+CONSEQUENCE for the hidden-momentum term at beta 0.7636, which reads that
+field: |F_hidden| = 2.06e+53 N at 0.010 r* against 1.6e-02 N at 0.020 r*.
+Present before audit 163 as well (3.34e+50 with the pure stencil), so it is
+not introduced by the analytic pole rate.
+
+AFTER: gCausalityAudit.dopplerClamped is asserted zero by the suite and the
+suite passes, so the clamp does not bind on any production trajectory it
+drives.

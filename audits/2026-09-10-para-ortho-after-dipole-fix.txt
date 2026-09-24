@@ -11691,3 +11691,83 @@ measurement of whether that survives a cascade.
       change healthy directions by ~1e-06; it is not verified to be correct
       at a direction where BOTH separations are wrong, which 162's method
       could not detect either.
+
+165. THE PLUNGE IS ALREADY REGULARIZED, AND THE DEFECT THAT IS THERE IS A
+     SILENT DOPPLER CLAMP RATHER THAN A DIVERGENCE
+==================================================================
+
+165a. WHAT WAS ASKED.  A review proposed replacing a "purely geometric
+      cut-off at comptonBarrierRadius" with a relativistic form factor
+      smearing the charge and the moment at the Compton scale, so that the
+      forces saturate smoothly and F -> 0 as r -> 0, on the reading that the
+      dipole fields (1/r^3, 1/r^4) overwhelm the Coulomb field (1/r^2) below
+      r* and produce the jumps audits 149 and 151 dealt with.
+
+165b. THE CUT-OFF IS NOT WHAT REGULARIZES THE FIELD.  comptonBarrierRadius is
+      a derived scale -- g hbar/(4 m c), pinned by static_assert against two
+      independent readings -- and it is used as a TERMINATION and reporting
+      depth, not as a field cut-off.  What regularizes the field is already
+      there and is already covariant: lienardWiechertField scales the whole
+      field by (R/R_c)^3 with R_c = sqrt(R^2+floor^2), so a static source is
+      exactly the gradient of the Plummer potential the energies use, and it
+      carries a Gaussian form factor, erf(u) - 2u exp(-u^2)/sqrt(pi), for a
+      smeared charge.  The moment sector has its own radius
+      (magneticDipoleRadius, 0.967 r*) and the separation floor is 0.05 r*.
+
+165c. AND THE FORCES ALREADY SATURATE AND TURN OVER.  Measured at tilt 45:
+        r/r*     1e+00    5e-02    1e-02    1e-03    1e-04    1e-06
+        Coulomb  6.15e-3  8.73e-1  4.66e-1  4.94e-2  4.94e-3  4.94e-5
+        dipole   7.09e-3  4.02e-3  8.11e-4  8.12e-5  8.12e-6  8.12e-8
+      Both peak near the floor and fall away as r -> 0, which is the
+      behaviour the review asks for.  The field and the energy saturate with
+      them: |E| goes 1.42e+16 at r* to 2.20e+15 and flat below 0.01 r*, and
+      the Coulomb energy to -2.387e-14 J and flat.  The hidden momentum
+      (mu x E)/c^2 saturates at 1.61e-25 for the same reason.  There is no
+      plunge singularity left to remove.
+
+165d. THERE IS A DEFECT, AND IT IS A DIFFERENT ONE.  Scanning the same
+      radii found the CHARGE field itself failing:
+        r/r*     0.015    0.013    0.012    0.011    0.010    0.009
+        |E|    2.20e+15    0        0        0     4.90e+45  2.27e+15
+      Exactly zero at three radii and 4.9e+45 V/m at a fourth, against
+      neighbours at 2.2e+15.  It is not the dipole sector and not the pole
+      construction: retreating the pole separation to 1e-07 changes nothing,
+      and lienardWiechertField alone reproduces it.
+
+165e. THE TRIGGER IS THE DOPPLER CLAMP, AND ONLY WHEN RELATIVISTIC.  The same
+      scan at beta = 0, 0.1, 0.3 and 0.5 is smooth to four digits across
+      every radius; the failure appears only at beta = 0.7636.  The mechanism
+      is kappa = max(1e-8, 1 - nhat.beta), which the field then divides by the
+      CUBE of: a clamp that binds amplifies by up to 1e+24, and 1e+24 times a
+      2e+15 field is the 4.9e+45 observed.  The zeros are the companion guard,
+      the degenerate-distance early return, firing on the same geometry.
+
+165f. THE CLAMP STAYS, THE SILENCE DOES NOT.  Removing the clamp is not an
+      option: the comment beside it records that a genuine source at 0.9999c
+      must keep its Lorentz factor, and clipping it changes the physical field
+      by orders of magnitude.  What was wrong is that binding was invisible.
+      gCausalityAudit now counts it and records the worst 1/kappa, and the
+      suite asserts the count is ZERO -- not a tolerance, because a bound
+      clamp does not make the field slightly wrong, it makes it meaningless.
+      Validation passes, so the clamp does not bind on any production
+      trajectory the suite drives.
+
+165g. WHICH IS ALSO WHY NO FORM FACTOR WAS ADDED.  The failing band sits at
+      0.010 to 0.013 r*, below the separation floor (0.05 r*), below
+      nuclearCutoff (0.0517 r*) and below the terminal surface a bound
+      inspiral stops at, and it needs beta = 0.76 where the reachable radii
+      run at 0.19 to 0.27.  Adding a second regularization on top of the
+      Plummer softening and the form factor already there, to cure a band the
+      model neither reaches nor claims to describe, would change every
+      production number for no measured gain.  The counter costs nothing and
+      turns the one real problem -- a silent failure mode in the core field
+      routine -- into a checked one.
+
+165h. LIMITS.  One tilt, one pair, synthetic states rather than engine
+      trajectories: the sub-floor radii cannot be reached by integrating, so
+      they were constructed, with a circular-orbit speed capped at 0.9c and a
+      causalInitialHistory.  That construction is not a trajectory the model
+      would produce, which is the point of 165g and also a limit on 165d --
+      what is established is that the routine HAS these failure modes on
+      admissible inputs, not that any run reaches them.  The assertion in
+      165f covers only the trajectories the suite drives.

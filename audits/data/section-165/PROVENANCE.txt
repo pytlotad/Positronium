@@ -1,0 +1,14 @@
+Raw outputs behind audit section 165 (2026-09-24).
+  measurements.txt   every number the section quotes
+
+No pre-registration: the section is a premise check followed by a scan, and
+the one assertion added (dopplerClamped == 0) is a zero-tolerance count, not
+a threshold anyone chose.
+
+Every state here is CONSTRUCTED, not integrated: the radii involved sit
+below the terminal surface, so no engine trajectory reaches them.  Each is a
+circular configuration at the stated separation and tilt with the orbital
+speed capped at 0.9c and a causalInitialHistory, which 165h states as the
+limit it is.  Probes were built against the production headers and call
+coulombForces, mutualForces, hiddenMomentumRateForce, retardedExternalForces,
+fieldFromOtherParticleAt and lienardWiechertField directly.

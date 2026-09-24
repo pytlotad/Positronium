@@ -44,6 +44,16 @@ struct CausalityAudit {
     std::atomic<unsigned long long> fieldCalls{0}, advancedRoots{0};
     std::atomic<unsigned long long> unconverged{0}, futureAtConvergedRead{0};
     std::atomic<unsigned long long> observationAheadOfPresent{0};
+    // The Doppler denominator kappa = 1 - nhat.beta is clamped at 1e-8 before
+    // the field divides by its cube.  When that clamp BINDS the field is
+    // amplified by up to 1e+24 and nothing downstream can tell: audit 165
+    // measured a charge field of 4.9e+45 V/m against a neighbouring 2.2e+15
+    // this way, for a source at beta 0.76 inside the separation floor.  The
+    // clamp has to stay -- a genuine source at 0.9999c must keep its Lorentz
+    // factor -- so what is added here is the counter that makes it visible
+    // rather than silent.
+    std::atomic<unsigned long long> dopplerClamped{0};
+    std::atomic<double> worstInverseDoppler{0.0};
     std::atomic<double> worstFutureSeconds{0.0};
     std::atomic<double> worstAdvancedSeconds{0.0};
     std::atomic<double> worstConvergedFutureSeconds{0.0};
@@ -56,6 +66,7 @@ struct CausalityAudit {
     void reset() {
         historyCalls=0; futureSamples=0; fieldCalls=0; advancedRoots=0;
         unconverged=0; futureAtConvergedRead=0; observationAheadOfPresent=0;
+        dopplerClamped=0; worstInverseDoppler=0.0;
         worstFutureSeconds=0.0; worstAdvancedSeconds=0.0;
         worstConvergedFutureSeconds=0.0; worstLightConeResidual=0.0;
     }
@@ -464,7 +475,16 @@ inline ElectromagneticField lienardWiechertField(const Vec3& observationPosition
     const double fieldDistance=std::max(distance,nuclearCutoff);
     const Vec3 beta = source.velocity / c;
     const double betaSquared = beta.squaredNorm();
-    const double kappa = std::max(1.0e-8, 1.0 - dot(direction, beta));
+    const double rawDoppler = 1.0 - dot(direction, beta);
+    const double kappa = std::max(1.0e-8, rawDoppler);
+    if(gCausalityAudit.enabled) {
+        // Counted, not prevented: see the counter's own comment.
+        if(!(rawDoppler>1.0e-8))
+            gCausalityAudit.dopplerClamped.fetch_add(
+                1,std::memory_order_relaxed);
+        recordWorst(gCausalityAudit.worstInverseDoppler,
+            1.0/std::max(rawDoppler,std::numeric_limits<double>::min()));
+    }
     double plummerScale=1.0;
     // plummerFloorOverride replaces separationFloor() for this one call: the
     // field acting ON A MOMENT is softened at the moment's own radius, so
