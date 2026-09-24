@@ -12356,3 +12356,61 @@ measurement of whether that survives a cascade.
       uncertainty 172e measures -- the conclusion rests on the absence of a
       TREND across p, which is visible against that uncertainty, not on any
       single value.
+
+173. THE de BROGLIE READING NAMED: IT IS THE L = hbar ASSUMPTION, NOT AN
+     ALTERNATIVE TO IT, AND IT CARRIES NO STABILITY
+==================================================================
+
+173a. WHY THIS IS WRITTEN DOWN.  With audits 170 to 172 closing the
+      zero-point route, the next suggestion to arrive was to treat the pair
+      as matter waves and let a standing-wave resonance pick the orbit.  It
+      is a natural thing to reach for and nothing in this tree named it --
+      "de Broglie" appeared zero times before this section -- so where it
+      lands is recorded here rather than re-derived each time.
+
+173b. IT LANDS EXACTLY ON THE ASSUMPTION.  On a circular orbit,
+      n lambda = 2 pi r with lambda = h/p and p = mu v = sqrt(mu K/r) gives
+      2 pi sqrt(mu K r) = n h, hence r = n^2 hbar^2/(mu K) and L = n hbar.
+      Against pairBohrRadius:
+        n      de Broglie radius [m]        n^2 a_pair [m]      relative
+        1   1.058354419074555e-10   1.058354419074555e-10      1.221e-16
+        2   4.233417676298220e-10   4.233417676298221e-10      1.221e-16
+        3   9.525189771670995e-10   9.525189771670997e-10      2.171e-16
+      and the n = 1 circle carries L = 1.000000000000000 hbar, which is bit
+      for bit the preparation estimateCremCollapse already uses.  A de
+      Broglie resonance is therefore the L = hbar assumption in another
+      language: adopting it would re-derive the model's one scale input from
+      the same postulate, not remove it.
+
+173c. AND IT SUPPLIES NO STABILITY, with this model as the demonstration.
+      The model already runs orbits at exactly that radius with exactly that
+      angular momentum, and they collapse: about 199 ps at --level 1 and
+      6206 ps at --level 2 with the ground-state floor.  A resonance is a
+      SELECTION RULE, not a force.  It says which orbits are allowed and adds
+      nothing that resists the decay of one already chosen; the charge
+      radiates whether or not the wave closes.  That is precisely the
+      distinction the plan drew when it chose Step 4: it wanted something
+      that resists collapse WITHOUT fixing the angular momentum.
+
+173d. AND AS A SELECTION RULE IT PICKS A STATE THAT DOES NOT EXIST.  The 1S
+      ground state carries L = 0; the n = 1 de Broglie circle carries
+      L = hbar.  That is the Bohr-model argument quantum mechanics
+      overturned, which the plan's Step 5 already records.  Classically L = 0
+      is a head-on plunge rather than an orbit, which is why L = hbar stands
+      in this model as a proxy for the localization energy hbar^2/(2 mu r^2)
+      it does not carry.
+
+173e. SO THE LIST OF CANDIDATE MECHANISMS IS STILL EMPTY, not shorter by one.
+      Audits 170 to 172 removed the zero-point field; this section records
+      that the obvious successor was never a candidate, because it is not a
+      mechanism at all.  What would count is something that changes the
+      dynamics of an orbit already chosen, and the de Broglie condition
+      changes only which orbit is chosen.
+
+173f. LIMITS.  173b is algebra plus one numerical check against the model's
+      own constants; it says nothing about wave mechanics beyond the circular
+      standing-wave condition, and in particular nothing about whether a
+      genuine two-body wave treatment would behave differently -- that is a
+      different model, not this one with a different preparation.  The
+      collapse times in 173c are quoted from README's stamped runs, not
+      remeasured here.  No source behaviour changed in this section.

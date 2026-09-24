@@ -1,0 +1,23 @@
+Audit section 173 (2026-09-24) is algebra plus one numerical check and
+changed no source behaviour.
+  measurements.txt      the check's output
+  debroglie_check.cpp   the throwaway probe that produced it, kept because
+                        it is four lines of physics and reproducing it is
+                        cheaper than re-deriving it
+
+The probe evaluates r = n^2 hbar^2/(mu K) from the model's own
+pairReducedMass and pairCoulombStrength and compares it with
+pairBohrRadius(activePair) * n^2, then computes mu v r / hbar on the n = 1
+circle.  Both quantities come from the shipped headers; nothing is entered
+by hand.
+
+The collapse times quoted in 173c are README's stamped figures (--level 1
+and --level 2 with the ground-state floor, seed 42, runs 3, budget 1200 s)
+and were not remeasured here.  The claim that "de Broglie" appeared nowhere
+in the tree before this section is from
+  grep -rniE "de ?broglie|debroglie" --include=*.hpp --include=*.cpp
+       --include=*.md --include=*.ap --include=*.txt .
+which returned nothing.
+
+Source change: modules/particle_species.hpp only, a comment beside
+pairBohrRadius recording the equivalence.

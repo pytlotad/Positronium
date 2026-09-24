@@ -120,6 +120,40 @@ constexpr bool isAttracting(const ParticlePair& pair) {
 // magnetic moment are NOT independent inputs -- the binding energy this model
 // reports follows from the measured moment through classical electrodynamics,
 // rather than being a second quantum constant entered alongside it.
+//
+// AND THE de BROGLIE READING IS THIS SAME ASSUMPTION, NOT AN ALTERNATIVE TO
+// IT.  The suggestion arrives naturally -- treat the pair as matter waves and
+// let a standing wave pick the orbit -- and it is worth writing down where it
+// lands, because nothing else in this tree names it.  On a circular orbit,
+// n lambda = 2 pi r with lambda = h/p and p = mu v = sqrt(mu K / r) gives
+// 2 pi sqrt(mu K r) = n h, hence
+//
+//     r = n^2 hbar^2/(mu K)  and  L = n hbar.
+//
+// Checked against this function: r matches n^2 a_pair to 1.2e-16 for n = 1,
+// 2 and 3, and the n = 1 circle carries L = 1.000000000000000 hbar, which is
+// bit for bit the preparation estimateCremCollapse already uses.  So a de
+// Broglie resonance is the L = hbar assumption in another language; adopting
+// it would re-derive the model's one scale input from the same postulate
+// rather than removing it.
+//
+// IT ALSO SUPPLIES NO STABILITY, and this model is the demonstration.  It
+// runs orbits at exactly that radius with exactly that L, and they collapse
+// anyway -- about 199 ps at --level 1 and 6206 ps at --level 2 with the
+// ground-state floor.  A resonance is a SELECTION RULE, not a force: it says
+// which orbits are allowed and adds nothing that resists the decay of one
+// already chosen.  The charge radiates whether or not the wave closes.  That
+// is why the plan's Step 4 went looking for a zero-point mechanism instead,
+// wanting something that resists collapse WITHOUT fixing the angular
+// momentum; audits 170 to 172 then closed that route, and this one is not a
+// replacement candidate because it is not a mechanism at all.
+//
+// And as a selection rule it picks a state quantum mechanics does not have:
+// the 1S ground state carries L = 0, where the n = 1 de Broglie circle
+// carries L = hbar.  That is the Bohr-model argument quantum mechanics
+// overturned, which the plan's Step 5 already records -- classically L = 0 is
+// a head-on plunge, not an orbit, which is why L = hbar stands in this model
+// as a proxy for the localization energy hbar^2/(2 mu r^2) it does not carry.
 constexpr double pairBohrRadius(const ParticlePair& pair) {
     return 16.0*(pair.first.mass+pair.second.mass)
         *magneticMoment(pair.first)*magneticMoment(pair.second)

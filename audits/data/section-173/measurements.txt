@@ -1,0 +1,7 @@
+n   de Broglie radius [m]   a_pair*n^2 [m]       relative
+1   1.058354419074555e-10   1.058354419074555e-10   1.221e-16
+2   4.233417676298220e-10   4.233417676298221e-10   1.221e-16
+3   9.525189771670995e-10   9.525189771670997e-10   2.171e-16
+
+L at the n=1 de Broglie circle = 1.000000000000000e+00 hbar
+the model's own preparation uses L = 1 hbar.
