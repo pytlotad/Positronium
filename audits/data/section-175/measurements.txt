@@ -1,0 +1,17 @@
+k/r0 = 2.179872e-18 J = 13.605693 eV,  beta = 7.297353e-03
+
+over one orbit, instantaneous forces, reaction off:
+  U_dd with LAB moments    range 9.013474e-24 J = 4.134863e-06 k/r0
+  U_dd with PROPER moments range 9.013394e-24 J = 4.134826e-06 k/r0
+  conservedParticleEnergy  range 8.949894e-27 J = 4.105696e-09 k/r0
+  proper moment rotated by 4.981150e-05 of itself (precession is ON here)
+  |U_dd| itself            1.741878e-24 J = 7.990732e-07 k/r0
+
+instantaneous forces, reaction off, one orbit, tilt 40
+         r     beta  U_dd lab rng U_dd prop rng lab-prop diff    E_cons rng
+                           [k/r0]        [k/r0]        [k/r0]        [k/r0]
+         1   0.0073    4.1349e-06    4.1348e-06    2.6060e-11    8.2112e-09
+       0.1   0.0231    4.1318e-04    4.1315e-04    2.6024e-08    1.0814e-07
+      0.01   0.0730    4.0282e-02    4.0244e-02    2.4911e-05    4.7699e-05
+     0.003   0.1332    2.5721e+00    2.4430e+00    1.2900e-01    3.1396e-02
+     0.001   0.2308    5.2995e-01    4.9063e-01    4.3399e-02    3.1067e-02

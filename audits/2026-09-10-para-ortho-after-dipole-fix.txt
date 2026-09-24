@@ -12482,3 +12482,71 @@ measurement of whether that survives a cascade.
       exchange parity that enforces w1 = w2 is itself exact or holds only for
       the symmetric preparation used here is not separated: the measurement
       shows it holding, not why it must.
+
+175. THE LAB MOMENTS ARE A VELOCITY-DEPENDENT POTENTIAL, AND THE MODEL
+     ALREADY SOLVED THAT ONCE -- BUT NOT AT THE SIZE CLAIMED
+==================================================================
+
+175a. THE CLAIM.  That the laboratory moments move hundreds of k/r0 of
+      interaction energy even with precession off, because the dipole energy
+      is a velocity-dependent potential whose force does not differentiate
+      it, so KE + U is not what the dynamics conserves.
+
+175b. THE MECHANISM IS REAL AND THE TREE ALREADY ACTS ON IT -- FOR A
+      DIFFERENT TERM.  conservedParticleEnergy is
+      conservativeParticleEnergy(state, 0.0) precisely because the
+      charge-dipole term -p.E with p = (v x mu)/c^2 is homogeneous of degree
+      one in the velocities, cancels in the Legendre transform, and therefore
+      "generates a force ... and that force does no work" (audit 145, split
+      out in 146).  So the model has met this exact objection once and
+      answered it by removing the offending term from the ledger.  The claim
+      raises it for the dipole-DIPOLE term, whose velocity dependence enters
+      through lorentzBoostDipole: the lab moments differ from the proper ones
+      at O(beta^2), and pairDipoleForce differentiates only the separation.
+
+175c. AND THE SIZE DOES NOT SUPPORT THE CONCLUSION.  Instantaneous forces --
+      which is the right test, since the tree's own note says an
+      instantaneous ledger could be exact there -- reaction off, one orbit,
+      tilt 40, ranges over the orbit in units of k/r0:
+        r/a_pair   beta     U_dd lab    U_dd proper   lab-proper   E_cons
+           1      0.0073   4.1349e-06   4.1348e-06   2.6060e-11   8.2112e-09
+           0.1    0.0231   4.1318e-04   4.1315e-04   2.6024e-08   1.0814e-07
+           0.01   0.0730   4.0282e-02   4.0244e-02   2.4911e-05   4.7699e-05
+           0.003  0.1332   2.5721e+00   2.4430e+00   1.2900e-01   3.1396e-02
+           0.001  0.2308   5.2995e-01   4.9063e-01   4.3399e-02   3.1067e-02
+      At the working radius the lab and proper moments differ by 2.6e-11
+      k/r0 over a whole orbit, and the largest value anywhere in the scan is
+      0.129 -- three orders below "hundreds", and reached only at 0.003
+      a_pair, which is 1.64 r*, with the last row already inside the barrier
+      (r*/a_pair = 0.0018264).
+
+175d. AND KE + U IS CONSERVED, WHICH IS THE PART THAT DECIDES IT.  The
+      conserved energy's range over one orbit is 8.2e-09 k/r0 at a_pair --
+      nine significant figures -- and 3.1e-02 at 1.64 r*.  At every radius it
+      is SMALLER than the lab-versus-proper discrepancy in the same row, so
+      whatever the velocity dependence does to U_dd, the ledger the model
+      actually keeps is not carrying it.  "KE + U is not what the dynamics
+      conserves" is true of conservativeParticleEnergy, which includes the
+      charge-dipole term; it is not true of conservedParticleEnergy, which is
+      what the balance uses and what these numbers measure.
+
+175e. WHAT WOULD HAVE MADE IT TRUE.  The objection lands when the neglected
+      velocity dependence is homogeneous of degree one, because then it
+      survives the Legendre transform at full strength -- that is the
+      charge-dipole case, where audit 145 measured including the term
+      inflating the ledger's range by a factor of 24 to 104.  The boost
+      correction to the moments is O(beta^2) instead, and beta is 0.0073 at
+      a_pair, so the same argument arrives four orders weaker.  The
+      structure of the claim is right; the term it is applied to is the one
+      where the structure costs least.
+
+175f. LIMITS.  Instantaneous forces only: the retarded comparison was started
+      and did not finish inside this session, so nothing here separates the
+      boost correction from the retardation drift audit 145 puts at about
+      1.13 |U_dd| per orbit.  Precession is ON in these runs -- there is no
+      switch for it -- but the proper moments rotate by 5.0e-05 of
+      themselves over the orbit at a_pair, so the comparison is between lab
+      and proper moments rather than between precessing and frozen ones,
+      which is the comparison the claim actually needs and is not quite the
+      one it names.  One tilt, one channel, circular preparation, 2000
+      samples per orbit.

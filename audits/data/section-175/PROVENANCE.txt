@@ -1,0 +1,25 @@
+Raw outputs behind audit section 175 (2026-09-24).
+  measurements.txt   both probes' output
+  labmom.cpp         one orbit at a_pair, every checkpoint
+  labscan.cpp        the same across five radii; argv[1] selects retarded
+                     forces, and the runs recorded here all used 0
+
+No pre-registration: the section is a size check on a claim, read directly
+off a scan, with no threshold involved.
+
+Both probes are built against the production headers.  They evaluate
+pairDipoleInteractionEnergy twice on the same separation -- once with
+state.firstDipole/secondDipole, the LAB moments synchronizeCovariantDipoles
+produces, and once with firstProperDipole/secondProperDipole -- and take the
+range of each over one orbit, together with the range of
+conservedParticleEnergy.  Everything is normalized by k/r0 =
+pairCoulombStrength / r0 with r0 the preparation radius, so the columns are
+directly comparable with the claim's units.
+
+Reaction is disabled and the forces are instantaneous, which is the
+configuration the tree's own comment at conservedParticleEnergy identifies as
+the one where an instantaneous ledger could be exact.  The retarded
+comparison was started and did not finish; 175f says so and no number from it
+appears.
+
+No source file was changed by this section.
