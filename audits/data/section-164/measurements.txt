@@ -1,0 +1,60 @@
+All at r=0.778 r*, tilt 60, control radius 1e6 a0, radiationFieldOnly.
+
+ANISOTROPY, why the momentum is the sensitive channel:
+  |p| c / P = 1.94e-02 at every rule from degree 7 to 29.
+CONTROL RADIUS, at degree 23:
+  R/a0    1e+03      1e+04      1e+05      1e+06      1e+07
+  |p|   5.9182e-7  5.9182e-7  5.9182e-7  5.9182e-7  5.9182e-7
+  stable to 6e-09; the radius is not involved.
+
+THE JUMP, farZoneMagneticDipoleField of particle 1, phi=0.3, around
+theta = 0.51407273926360613:
+  theta-centre    |E| [V/m]        cancel ratio
+      -1e-05    6.3770232350e+07     4.7385e+00
+      -1e-09    6.3689299447e+07     4.7325e+00
+      -1e-15    6.3689291712e+07     4.7325e+00
+       0        6.3689291954e+07     4.7325e+00
+      +1e-15    1.5718322882e+06     1.1680e-01
+      +1e-09    1.5718326832e+06     1.1680e-01
+      +1e-05    1.5718349464e+06     1.1680e-01
+A factor of 40 across one ulp of theta.
+
+POLE SEPARATION SWEEP at that direction:
+  eps     1e-04         1e-05         1e-06         1e-07         1e-08
+  |E|  5.09638e+06  6.36893e+07  1.57182e+06  1.57186e+06  1.57192e+06
+  ratio 3.787e-01   4.733e+00    1.168e-01    1.168e-01    1.168e-01
+Production runs at 1e-05, the worst of the five.  Not monotone in eps.
+
+THE BROKEN SET, 200000 directions at phi=0.3, where the 1e-5 field exceeds
+the 1e-7 field by more than 1.5x:
+     theta        |E| at 1e-5    |E| at 1e-7   ratio    oversize
+  0.514066660   6.373850e+07   1.469617e+06   4.7361     43.37
+  1.084171479   1.930267e+08   1.507742e+06  19.843     128.02
+  1.816162567   2.043509e+08   1.051892e+06  24.920     194.27
+  1.816178275   2.043015e+08   9.840254e+05  24.914     207.62
+  2.406986189   6.463287e+07   2.872309e+05   6.0609    225.02
+Five of 200000 = 2.5e-05 of the sphere.
+
+HEALTHY RATIO DISTRIBUTION, 40000 directions:
+  median 6.8167e-02  p90 1.5848e-01  p99 3.7918e-01  p99.9 1.1284e+00
+  max 8.5659e+00
+  above 0.5: 209 (0.522%)   above 1.0: 48 (0.120%)   above 2.0: 11 (0.028%)
+  above 3.0: 7    above 5.0: 2    above 30.0: 0
+A 14400-direction grid found ZERO fields wrong by >1%, including one at
+ratio 5.406 whose error was 1.262e-06: the ranges overlap and the ratio is
+not a clean classifier.  It does not need to be -- see 164f.
+
+AFTER THE FIX
+  200000-direction scan, samples above 3x the smooth level: 5 -> 0
+  Fibonacci 30000 nodes:
+    before  p=(2.7500e-07, -6.6260e-07,  1.0420e-06)  P=9.4146e+03
+    after   p=(2.1024e-07, -5.1975e-07,  1.8226e-07)  P=9.1526e+03
+    for comparison, Fibonacci 10000:
+            p=(2.1075e-07, -5.1994e-07,  1.8264e-07)  P=9.1527e+03
+  Lebedev 26/50/110/194/302: unchanged to every printed digit.
+  Validation: PASS, no physics number moved.
+
+WHAT SURVIVES
+  The integrand's worst second difference over 4000 directions is unchanged
+  at 5.785982e+09, 2.510e-02 of the mean, near the same theta.  A residual
+  C0 step of about 1% is still there and is a different defect.

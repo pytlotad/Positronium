@@ -1988,11 +1988,19 @@ inline ElectromagneticField retardedMagneticDipoleFieldLowVelocity(
 // subtracts two O(controlRadius/c) numbers.  Each pole retains its own
 // kappa, aberrated direction and acceleration field; radiationFieldOnly
 // removes only the 1/R^2 velocity field, exactly as farZoneChargeField does.
+// The same retention measure for the FAR-ZONE two-pole construction, which
+// had none until audit 164.  Kept separate from the near-field global: the
+// two constructions run at different pole separations and on different
+// geometries, and one overwriting the other's reading would hide exactly the
+// case the detector exists for.
+inline thread_local double gFarPoleCancellationRatio=0.0;
+
 template<class MomentSampler>
 inline ElectromagneticField farZoneTwoChargeLimitDipoleField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly,
+    double poleSeparationFraction,
     MomentSampler&& momentAt) {
     const double controlRadius=(observationPosition-centre).norm();
     if(!(controlRadius>std::numeric_limits<double>::min())) return {};
@@ -2020,7 +2028,8 @@ inline ElectromagneticField farZoneTwoChargeLimitDipoleField(
     const double momentScale=std::max({referenceMoment.norm(),
         referenceFirst.norm()*referenceTime,
         referenceSecond.norm()*referenceTime*referenceTime});
-    constexpr double poleSeparationFraction=1.0e-5;
+    if(!(poleSeparationFraction>0.0)
+       ||!std::isfinite(poleSeparationFraction)) return {};
     const double poleCharge=momentScale
         /(poleSeparationFraction*sourceScale);
     if(!(poleCharge>0.0)||!std::isfinite(poleCharge)) return {};
@@ -2090,26 +2099,83 @@ inline ElectromagneticField farZoneTwoChargeLimitDipoleField(
     };
     const ElectromagneticField positive=poleField(1.0);
     const ElectromagneticField negative=poleField(-1.0);
-    if(!polesValid) return {};
-    return {positive.electric+negative.electric,
-            positive.magnetic+negative.magnetic};
+    if(!polesValid) { gFarPoleCancellationRatio=0.0; return {}; }
+    const ElectromagneticField total{positive.electric+negative.electric,
+                                     positive.magnetic+negative.magnetic};
+    // HOW MUCH OF A SINGLE POLE SURVIVED.  By construction the subtraction
+    // should retain a fraction poleSeparationFraction of each pole, so this
+    // ratio is ~1 when the construction behaves and large when it does not.
+    // Both components are measured because the two wrappers read different
+    // ones: the magnetic dipole field is built from `magnetic`, the electric
+    // one from `electric`, and a failure in either is a failure.
+    const double electricPole=std::max(positive.electric.norm(),
+                                       negative.electric.norm());
+    const double magneticPole=std::max(positive.magnetic.norm(),
+                                       negative.magnetic.norm());
+    const double electricRatio=electricPole>0.0
+        ?(total.electric.norm()/electricPole)/poleSeparationFraction:0.0;
+    const double magneticRatio=magneticPole>0.0
+        ?(total.magnetic.norm()/magneticPole)/poleSeparationFraction:0.0;
+    gFarPoleCancellationRatio=std::max(electricRatio,magneticRatio);
+    return total;
 }
+
+// Detect and retreat, the far-zone twin of the one
+// covariantDipoleGradientForce and dipoleCouplingMaterialRate already apply
+// to the near-field construction
+// (audit 164).  Without it the far-zone dipole field returned a value up to
+// forty times oversized on isolated directions -- about five in 200000 at one
+// measured geometry -- which the energy integral barely feels, being a sum of
+// positive terms, and which scatters the MOMENTUM integral, whose net is only
+// about 2% of the same scale and so is dominated by any outlier.
+//
+// The retreat is two decades in one step and then verifies itself, for the
+// reasons written out at covariantDipoleGradientForce: the error is not
+// monotone in the pole separation, so refining gradually can land somewhere
+// worse, and if the fallback is also anomalous the original value is kept
+// rather than a silently different field being substituted.
+// THE LIMIT IS NOT THE NEAR FIELD'S 30.  That constant is set against a
+// healthy near-field ratio of ~1; the far-zone construction's healthy ratio
+// is an order of magnitude smaller -- over 40000 directions at one measured
+// geometry, median 0.068, p99 0.38, p99.9 1.13 -- so 30 never fires and the
+// detector sat dead when it was first written this way.
+//
+// Set from the two distributions instead.  Scanning 200000 directions found
+// five where the production separation returns a field 43 to 225 times the
+// converged one, and their ratios are 4.74, 6.06, 19.8, 24.9 and 24.9.  The
+// healthy and broken ranges do OVERLAP -- a correct field was seen at 5.4 --
+// so this cannot be a clean classifier, and it does not have to be: where
+// the retreat is unnecessary it is also harmless, because the two
+// separations then agree to about 1e-06.  A limit of 1.0 therefore catches
+// every broken direction observed while retreating on 0.12% of the healthy
+// ones at a cost of one extra evaluation each.
+inline constexpr double farPoleCancellationLimit=1.0;
+inline constexpr double farPoleRetreatFraction=1.0e-7;
 
 inline ElectromagneticField farZoneMagneticDipoleField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly) {
-    const ElectromagneticField dual=farZoneTwoChargeLimitDipoleField(
-        observationPosition,normal,wavefrontTime,centre,history,present,
-        sourceIsFirst,radiationFieldOnly,
-        [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
-            const RetardedElectricDipoleKinematics dipole=
-                historicalIntegratedDipoleKinematics(
-                    history,present,sourceIsFirst,time,false);
-            moment=dipole.moment/(c*c);
-            first=dipole.firstDerivative/(c*c);
-            second=dipole.secondDerivative/(c*c);
-        });
+    const auto evaluate=[&](double fraction) {
+        return farZoneTwoChargeLimitDipoleField(
+            observationPosition,normal,wavefrontTime,centre,history,present,
+            sourceIsFirst,radiationFieldOnly,fraction,
+            [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
+                const RetardedElectricDipoleKinematics dipole=
+                    historicalIntegratedDipoleKinematics(
+                        history,present,sourceIsFirst,time,false);
+                moment=dipole.moment/(c*c);
+                first=dipole.firstDerivative/(c*c);
+                second=dipole.secondDerivative/(c*c);
+            });
+    };
+    ElectromagneticField dual=evaluate(1.0e-5);
+    if(gFarPoleCancellationRatio>farPoleCancellationLimit) {
+        const ElectromagneticField retreated=
+            evaluate(farPoleRetreatFraction);
+        if(gFarPoleCancellationRatio<=farPoleCancellationLimit)
+            dual=retreated;
+    }
     return {dual.magnetic*(-c*c),dual.electric};
 }
 
@@ -2117,17 +2183,27 @@ inline ElectromagneticField farZoneElectricDipoleField(
     const Vec3& observationPosition,const Vec3& normal,double wavefrontTime,
     const Vec3& centre,const StateHistory& history,const State& present,
     bool sourceIsFirst,bool radiationFieldOnly) {
-    return farZoneTwoChargeLimitDipoleField(
-        observationPosition,normal,wavefrontTime,centre,history,present,
-        sourceIsFirst,radiationFieldOnly,
-        [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
-            const RetardedElectricDipoleKinematics dipole=
-                historicalIntegratedDipoleKinematics(
-                    history,present,sourceIsFirst,time,true);
-            moment=dipole.moment;
-            first=dipole.firstDerivative;
-            second=dipole.secondDerivative;
-        });
+    const auto evaluate=[&](double fraction) {
+        return farZoneTwoChargeLimitDipoleField(
+            observationPosition,normal,wavefrontTime,centre,history,present,
+            sourceIsFirst,radiationFieldOnly,fraction,
+            [&](double time,Vec3& moment,Vec3& first,Vec3& second) {
+                const RetardedElectricDipoleKinematics dipole=
+                    historicalIntegratedDipoleKinematics(
+                        history,present,sourceIsFirst,time,true);
+                moment=dipole.moment;
+                first=dipole.firstDerivative;
+                second=dipole.secondDerivative;
+            });
+    };
+    const ElectromagneticField direct=evaluate(1.0e-5);
+    if(gFarPoleCancellationRatio>farPoleCancellationLimit) {
+        const ElectromagneticField retreated=
+            evaluate(farPoleRetreatFraction);
+        if(gFarPoleCancellationRatio<=farPoleCancellationLimit)
+            return retreated;
+    }
+    return direct;
 }
 
 // Exact retarded field of a point dipole moving and accelerating

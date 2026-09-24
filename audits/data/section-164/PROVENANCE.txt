@@ -1,0 +1,15 @@
+Raw outputs behind audit section 164 (2026-09-24).
+  measurements.txt   every number the section quotes
+
+No pre-registration.  Each result is a scan, a distribution or a direct
+before/after comparison, and the one threshold that had to be chosen --
+farPoleCancellationLimit -- is chosen from the two measured distributions in
+the same file, with 164f stating that they overlap and why that is tolerable.
+
+All probes were built against the production headers and drive
+farZoneTwoChargeLimitDipoleField, farZoneMagneticDipoleField and
+electromagneticFieldFluxRates directly, with the moment sampler copied
+verbatim from retardedMagneticDipoleFieldExact.  The pole-separation sweep
+calls farZoneTwoChargeLimitDipoleField with an explicit fraction, which is
+the parameter this section added; before it the value was a constexpr 1e-5
+inside the function.

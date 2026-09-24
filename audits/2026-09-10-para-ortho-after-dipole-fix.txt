@@ -11609,3 +11609,85 @@ measurement of whether that survives a cascade.
       floor and bounds what any derivative of it can be worth.  Whether +15%
       of wall time is the right price for that accuracy is a decision this
       section records rather than makes.
+
+164. THE FAR-ZONE POLE CONSTRUCTION HAD NO CANCELLATION GUARD, AND ON
+     ISOLATED DIRECTIONS RETURNED A FIELD 200 TIMES OVERSIZED
+==================================================================
+
+164a. WHAT WAS ASKED.  Audit 160j left the far-zone flux's MOMENTUM channel
+      stalling near 3e-04 and non-monotone in the quadrature degree while the
+      energy converged to 1e-06, and did not diagnose it.
+
+164b. THE MOMENTUM IS A CANCELLING SUM, WHICH IS WHY IT IS THE CHANNEL THAT
+      SHOWS THINGS.  At 0.778 r*, tilt 60, the net momentum is only 1.94% of
+      E/c: the emission pattern is nearly symmetric, so the vector integral
+      cancels about fifty to one where the energy integral, a sum of positive
+      terms, does not.  Any outlier in the integrand therefore costs the
+      momentum fifty times what it costs the energy.  The control radius is
+      not involved: |p| holds to 6e-09 from 1e+03 to 1e+07 a0.
+
+164c. AND THERE ARE OUTLIERS.  Sweeping the integrand over 4000 directions
+      found a second difference of 2.5e-02 of the mean where a smooth
+      integrand gives (pi/N)^2 = 6e-07 -- four decades, the signature of a C0
+      jump.  Bisecting it to one ulp attributed it to
+      farZoneMagneticDipoleField: across a single ulp of theta the field
+      moved by 102%, and just inside the band it sat forty times the value of
+      its neighbours.
+
+164d. THE CAUSE.  farZoneTwoChargeLimitDipoleField had NO pole-cancellation
+      guard at all.  It returns positive+negative with no measurement of how
+      well the two poles cancelled and no retreat, while the near-field
+      twoChargeLimitDipoleField has measured that retention since audit 107
+      and TWO of its callers act on it.  Sweeping the pole separation at a
+      broken direction shows what that costs:
+        eps      1e-04     1e-05     1e-06     1e-07     1e-08
+        |E|    5.10e+06  6.37e+07  1.5718e6  1.5719e6  1.5719e6
+      Production runs at 1e-05, which is the worst of the five.  The error is
+      NOT monotone in eps, exactly as the near-field's own comment warns, so
+      nothing that refines gradually would have found this.
+
+164e. HOW OFTEN.  Scanning 200000 directions at one azimuth found five where
+      the production separation returns a field 43, 128, 194, 208 and 225
+      times the converged one.  That is 2.5e-05 of the sphere -- which is why
+      a 302-node rule almost never lands in it, and why a 30000-node
+      Fibonacci lattice does: 30000 x 2.5e-05 is 0.75 expected hits, and that
+      lattice returned a radiated power 2.9% high and a p_z 5.7 times wrong.
+
+164f. THE LIMIT HAD TO BE SET FROM DATA, NOT COPIED.  The near-field limit of
+      30 is set against a healthy near-field ratio of ~1.  The far-zone
+      construction's healthy ratio is an order of magnitude smaller -- over
+      40000 directions: median 0.068, p99 0.38, p99.9 1.13 -- so 30 never
+      fires, and the detector sat dead when it was first written that way.
+      The five broken directions carry ratios 4.74, 6.06, 19.8, 24.9, 24.9.
+      The two ranges OVERLAP: a correct field was measured at ratio 5.4.  So
+      this is not a clean classifier and does not need to be, because where
+      the retreat is unnecessary it is also harmless -- the two separations
+      then agree to about 1e-06.  The limit is 1.0, which catches every
+      broken direction observed and retreats on 0.12% of healthy ones.
+
+164g. RESULT.  The spikes are gone: the same 200000-direction scan now finds
+      0 directions above three times the smooth level, against 5 before.  The
+      30000-node Fibonacci lattice returns to the family, p_z 1.82e-07 and
+      P 9.1526e+03 against the 1.83e-07 and 9.1527e+03 of the 3000- and
+      10000-node lattices.  Validation PASS with NO physics number moved at
+      all: the far-zone flux is bookkeeping the trajectory never reads, and
+      the production 50-direction rule does not land in the band.
+
+164h. WHAT THIS DID NOT FIX, WHICH IS THE HONEST HALF.  The Lebedev rows of
+      160j are unchanged to every printed digit, so these spikes were NOT the
+      cause of the 1-2% momentum scatter across quadrature degrees that the
+      section set out to explain.  They could not have been: a 302-node rule
+      hits a band of this measure about once in 130 evaluations.  A residual
+      C0 step of about 1% survives in the integrand near the same theta -- the
+      second-difference scan is unchanged at 2.5e-02 -- and it is a different,
+      smaller defect than the one fixed here.  That is the remaining lead on
+      160j's question, and it is not diagnosed.
+
+164i. LIMITS.  One geometry, one azimuth for the 200000-direction scan, one
+      radius.  The ratio distributions come from a single state.  The five
+      broken directions are the ones found at that azimuth; no claim is made
+      about the shape or the total measure of the set on the sphere.  The
+      retreat is verified to land on the converged value at those five and to
+      change healthy directions by ~1e-06; it is not verified to be correct
+      at a direction where BOTH separations are wrong, which 162's method
+      could not detect either.
