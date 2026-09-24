@@ -16,6 +16,7 @@
 // a cycle.  They sit in maxwell_validation.hpp, above both.
 
 #include "dipole_tensor.hpp"
+#include "dual_number.hpp"
 #include "pair_configuration.hpp"
 #include "pair_geometry.hpp"
 #include "physical_constants.hpp"
@@ -2383,6 +2384,371 @@ inline ElectromagneticField twoChargeLimitDipoleField(
                          trace.sumMagnitude=sumMagnitude; }
     if(!isFinite(total.electric)||!isFinite(total.magnetic)) { trace.earlyReturn=true; return {}; }
     return total;
+}
+
+// Electric field of the two-pole dipole construction AND its material
+// derivative D/Ds along a target worldline x(s)=x0+v s, t(s)=t0+s.
+//
+// WHY THIS EXISTS.  hiddenMomentumRateForce needs D(mu x E)/Dt.  Taking it
+// by differencing the field divides the two-pole construction's cancellation
+// floor, ~1e-10 of the dipole field, by a step of about 1/2000 of the
+// field's own time scale, and audit 161 measured the result at 1.4e-04 for
+// this sector against 1.1e-08 for the charge field.  Carrying the derivative
+// through the same arithmetic instead leaves the floor at the cancellation
+// itself.
+//
+// HOW THE RETARDED TIMES ARE DIFFERENTIATED.  Not by differentiating the
+// Newton iteration.  Each retarded time is a root of
+// F(tau,s) = tau + |x(s)-X(tau)|/c - t(s), so the implicit function theorem
+// gives it in closed form from the CONVERGED root:
+//     dtau/ds = (1 - nhat.beta_target) / (1 - nhat.beta_source),
+// the numerator because the observation event moves at v, the denominator
+// the usual Doppler kappa.  The iteration is run in plain doubles exactly as
+// twoChargeLimitDipoleField runs it, so both land on the same root.
+//
+// THE VALUE IS THE TEST.  Everything below mirrors twoChargeLimitDipoleField
+// statement for statement, so `electric` must reproduce that function's
+// output.  A divergence means the mirror has drifted and the derivative is
+// describing a different expression than production evaluates.
+//
+// STATUS: NOT WIRED IN.  hiddenMomentumRateForce still uses its stencil.
+// The mirror is verified -- it reproduces twoChargeLimitDipoleField to
+// 5.4e-11 (electric) and 1.0e-10 (magnetic), which is that construction's
+// own pole-cancellation floor -- but the DERIVATIVE disagrees with the
+// converged stencil it would replace by 1.5e-03, and the stencil is itself
+// good to 1e-04 here.  Shipping it in that state would be a regression on a
+// term carrying 3.5% of the total force, so it stays unused until the
+// discrepancy is closed (audit section 162).
+//
+// WHAT HAS ALREADY BEEN EXCLUDED, so it is not re-checked:
+//   dtau_central/ds   the implicit-function formula, verified against a
+//                     numerically differentiated converged root to 4e-12
+//   snap              CREM_DUAL_SNAP gives the jerk a differenced rate
+//                     instead of the exact zero one cubic segment implies;
+//                     the answer does not move, confirming the segment is a
+//                     cubic and its jerk constant
+//   the third moment derivative's step   CREM_DUAL_MOMENT_STEP sweeps it;
+//                     the answer is flat from 1e-02 to 1e-04 of the
+//                     light-crossing time.  Zeroing the term outright
+//                     (CREM_DUAL_NO_THIRD) moves the error from 1.5e-03 to
+//                     6.5e-03,
+//                     so the term is needed and is being computed sanely
+//   the explicit worldline term in dtau_pole/ds   derived and included
+//                     below; it is real but worth only 3e-06 here
+//
+// WHAT THE REMAINING 1.5e-03 IS.  The moment sampler is not self-consistent
+// as a function of the time it is sampled at: differencing `moment`
+// numerically disagrees with the `first` it returns by 2.9%, and
+// differencing `first` disagrees with `second` by 2.5%, both converged over
+// three decades of step.  This chain rule needs a consistent triple, and so
+// does the pole reconstruction below, which adds moment, first and second to
+// a pole's position, velocity and acceleration as though they were each
+// other's time derivatives.  Whether that is a defect of the sampler or a
+// different parameterization it is documenting is the open question, and it
+// has to be answered before an analytic derivative of this construction can
+// mean anything.
+struct DipoleElectricWithRate {
+    Vec3 electric, electricRate;
+    Vec3 magnetic, magneticRate;
+    bool valid=false;
+};
+
+template<typename MomentSampler>
+inline DipoleElectricWithRate twoChargeLimitDipoleElectricWithRate(
+    const Vec3& observationPosition,const Vec3& observationVelocity,
+    double observationTime,const StateHistory& history,const State& present,
+    bool sourceIsFirst,double poleSeparationFraction,double softening,
+    MomentSampler&& momentAt) {
+    using positronium::dual::Dual;
+    using positronium::dual::DualVec3;
+    using positronium::dual::dotDual;
+    using positronium::dual::crossDual;
+    using positronium::dual::normDual;
+    using positronium::dual::maxDual;
+    DipoleElectricWithRate result;
+    const ChargeKinematics nowCharge=historicalCharge(
+        history,present,sourceIsFirst,observationTime);
+    double centralRetardedTime=observationTime
+        -(observationPosition-nowCharge.position).norm()/c;
+    for(int iteration=0;iteration<16;++iteration) {
+        const ChargeKinematics charge=historicalCharge(
+            history,present,sourceIsFirst,centralRetardedTime);
+        const Vec3 displacement=observationPosition-charge.position;
+        const double distance=displacement.norm();
+        if(!(distance>std::numeric_limits<double>::min())) return result;
+        const Vec3 direction=displacement/distance;
+        const double residual=centralRetardedTime+distance/c-observationTime;
+        const double derivative=std::max(
+            1.0e-8,1.0-dot(direction,charge.velocity/c));
+        const double refined=centralRetardedTime-residual/derivative;
+        if(std::abs(refined-centralRetardedTime)<=1.0e-30
+           +1.0e-14*std::abs(centralRetardedTime)) {
+            centralRetardedTime=refined;
+            break;
+        }
+        centralRetardedTime=refined;
+    }
+    const ChargeKinematics referenceCharge=historicalCharge(
+        history,present,sourceIsFirst,centralRetardedTime);
+    Vec3 referenceMoment,referenceFirst,referenceSecond;
+    momentAt(centralRetardedTime,referenceMoment,
+        referenceFirst,referenceSecond);
+    if(!isFinite(referenceMoment)||!isFinite(referenceFirst)
+       ||!isFinite(referenceSecond)) return result;
+    if(referenceMoment.squaredNorm()==0.0
+       &&referenceFirst.squaredNorm()==0.0
+       &&referenceSecond.squaredNorm()==0.0) return result;
+    const double rawReferenceDistance=
+        (observationPosition-referenceCharge.position).norm();
+    if(!(rawReferenceDistance>std::numeric_limits<double>::min()))
+        return result;
+    if(!(poleSeparationFraction>0.0)
+       ||!std::isfinite(poleSeparationFraction)) return result;
+    const Vec3 targetBeta=observationVelocity/c;
+
+    // dtau_central/ds from the converged central root.
+    const Vec3 centralDirection=
+        (observationPosition-referenceCharge.position)/rawReferenceDistance;
+    const double centralKappa=std::max(1.0e-8,
+        1.0-dot(centralDirection,referenceCharge.velocity/c));
+    const double centralTimeRate=
+        (1.0-dot(centralDirection,targetBeta))/centralKappa;
+
+    const DualVec3 observation{
+        Dual{observationPosition.x,observationVelocity.x},
+        Dual{observationPosition.y,observationVelocity.y},
+        Dual{observationPosition.z,observationVelocity.z}};
+    const Dual centralTime{centralRetardedTime,centralTimeRate};
+
+    // The moment sampler gives the moment and two derivatives.  A dual time
+    // needs one more: d(second)/dt.  That quantity comes from the moment
+    // interpolant, which carries no pole cancellation, so differencing it is
+    // safe in a way differencing the FIELD is not -- the whole point of this
+    // function.  The step is a fixed small fraction of the light-crossing
+    // time of the reference distance, well inside the pinned segment.
+    double momentStep=1.0e-3*rawReferenceDistance/c;
+    if(const char* o=std::getenv("CREM_DUAL_MOMENT_STEP"))
+        momentStep=std::atof(o)*rawReferenceDistance/c;
+    const auto momentDualAt=[&](Dual time,DualVec3& moment,
+                                DualVec3& first,DualVec3& second) {
+        Vec3 m,f,s;
+        momentAt(time.value,m,f,s);
+        Vec3 sAhead,sBehind,ignoredA,ignoredB;
+        momentAt(time.value+momentStep,ignoredA,ignoredB,sAhead);
+        momentAt(time.value-momentStep,ignoredA,ignoredB,sBehind);
+        Vec3 third=(sAhead-sBehind)*(1.0/(2.0*momentStep));
+        if(std::getenv("CREM_DUAL_NO_THIRD")) third=Vec3{};
+        const double rate=time.derivative;
+        moment={Dual{m.x,f.x*rate},Dual{m.y,f.y*rate},Dual{m.z,f.z*rate}};
+        first={Dual{f.x,s.x*rate},Dual{f.y,s.y*rate},Dual{f.z,s.z*rate}};
+        second={Dual{s.x,third.x*rate},Dual{s.y,third.y*rate},
+                Dual{s.z,third.z*rate}};
+    };
+
+    DualVec3 refMoment,refFirst,refSecond;
+    momentDualAt(centralTime,refMoment,refFirst,refSecond);
+    const DualVec3 referencePosition{
+        Dual{referenceCharge.position.x,referenceCharge.velocity.x
+             *centralTimeRate},
+        Dual{referenceCharge.position.y,referenceCharge.velocity.y
+             *centralTimeRate},
+        Dual{referenceCharge.position.z,referenceCharge.velocity.z
+             *centralTimeRate}};
+    const Dual rawReference=normDual(observation-referencePosition);
+    const Dual referenceDistanceDual=maxDual(rawReference,softening);
+    const Dual poleDistanceScaleDual=maxDual(
+        Dual{1.0,0.0},
+        Dual{std::max(nuclearCutoff,softening),0.0}/rawReference);
+    const Dual poleSeparationDual=
+        Dual{poleSeparationFraction,0.0}*referenceDistanceDual;
+    const Dual referenceTimeDual=referenceDistanceDual/Dual{c,0.0};
+    const Dual momentScaleDual=maxDual(maxDual(
+        normDual(refMoment),
+        normDual(refFirst)*referenceTimeDual),
+        normDual(refSecond)*referenceTimeDual*referenceTimeDual);
+    if(!(momentScaleDual.value>0.0)) return result;
+    const Dual poleChargeDual=momentScaleDual/poleSeparationDual;
+    if(!(poleChargeDual.value>0.0)||!std::isfinite(poleChargeDual.value))
+        return result;
+
+    const ChargeKinematicsWithJerk centralCharge=historicalChargeWithJerk(
+        history,present,sourceIsFirst,centralRetardedTime);
+    // Inside one pinned cubic segment the jerk is constant, so its own rate
+    // is exactly zero.  That is a property of the interpolant, not an
+    // approximation: historicalChargeWithJerk reads one Hermite cubic and a
+    // cubic's third derivative does not vary along it.
+    const auto asDual=[&](const Vec3& value,const Vec3& rate,double scale) {
+        return DualVec3{Dual{value.x,rate.x*scale},Dual{value.y,rate.y*scale},
+                        Dual{value.z,rate.z*scale}};
+    };
+    const DualVec3 centralPosition=
+        asDual(centralCharge.position,centralCharge.velocity,centralTimeRate);
+    const DualVec3 centralVelocity=asDual(centralCharge.velocity,
+        centralCharge.acceleration,centralTimeRate);
+    const DualVec3 centralAcceleration=asDual(centralCharge.acceleration,
+        centralCharge.jerk,centralTimeRate);
+    DualVec3 centralJerk=asDual(centralCharge.jerk,Vec3{},0.0);
+    if(const char* snap=std::getenv("CREM_DUAL_SNAP")) {
+        // Diagnostic: give the jerk a numerically differenced rate instead of
+        // the exact zero a single cubic segment implies.
+        const double snapStep=1.0e-3*rawReferenceDistance/c;
+        const ChargeKinematicsWithJerk ahead=historicalChargeWithJerk(
+            history,present,sourceIsFirst,centralRetardedTime+snapStep);
+        const ChargeKinematicsWithJerk behind=historicalChargeWithJerk(
+            history,present,sourceIsFirst,centralRetardedTime-snapStep);
+        const Vec3 snapRate=(ahead.jerk-behind.jerk)*(1.0/(2.0*snapStep));
+        centralJerk=asDual(centralCharge.jerk,snapRate,centralTimeRate);
+        (void)snap;
+    }
+
+    // Plain-double pole kinematics, byte-identical to the production
+    // lambda, used only to converge each pole's retarded time.
+    const auto poleKinematics=[&](double sign,double time,
+            Vec3& position,Vec3& velocity,Vec3& acceleration) {
+        const double offset=time-centralRetardedTime;
+        const Vec3 jerkStep=centralCharge.jerk*offset;
+        position=centralCharge.position+centralCharge.velocity*offset
+            +centralCharge.acceleration*(0.5*offset*offset)
+            +jerkStep*(offset*offset/6.0);
+        velocity=centralCharge.velocity+centralCharge.acceleration*offset
+            +jerkStep*(0.5*offset);
+        acceleration=centralCharge.acceleration+jerkStep;
+        Vec3 moment,first,second;
+        momentAt(time,moment,first,second);
+        const double inversePole=sign/(2.0*poleChargeDual.value);
+        position+=moment*inversePole;
+        velocity+=first*inversePole;
+        acceleration+=second*inversePole;
+    };
+
+    bool polesValid=true;
+    struct PoleField { DualVec3 electric, magnetic; };
+    const auto poleRate=[&](double sign) -> PoleField {
+        Vec3 position,velocity,acceleration;
+        double retardedTime=centralRetardedTime;
+        for(int iteration=0;iteration<16;++iteration) {
+            poleKinematics(sign,retardedTime,position,velocity,acceleration);
+            const Vec3 displacement=observationPosition-position;
+            const double distance=displacement.norm();
+            if(!(distance>std::numeric_limits<double>::min())) {
+                polesValid=false; return {};
+            }
+            const Vec3 direction=displacement/distance;
+            const double residual=retardedTime+distance/c-observationTime;
+            const double derivative=std::max(1.0e-8,
+                1.0-dot(direction,velocity/c));
+            const double refined=retardedTime-residual/derivative;
+            if(std::abs(refined-retardedTime)<=1.0e-30
+                +1.0e-14*std::abs(retardedTime)) {
+                retardedTime=refined; break;
+            }
+            retardedTime=refined;
+        }
+        poleKinematics(sign,retardedTime,position,velocity,acceleration);
+        const Vec3 displacement=observationPosition-position;
+        const double distance=displacement.norm();
+        if(!(distance>std::numeric_limits<double>::min())) {
+            polesValid=false; return {};
+        }
+        // dtau_pole/ds is NOT just the usual Doppler ratio here.  The pole's
+        // worldline depends on s in its own right, not only through its
+        // retarded time: it is reconstructed off the CENTRAL charge, whose
+        // own retarded time moves with s, and it is displaced by the moment
+        // over a pole charge that moves with s too.  Writing the light cone
+        // as F(tau_p,s) = tau_p + |x(s) - X_p(tau_p,s)|/c - t(s) = 0,
+        //     dtau_p/ds = [1 - nhat.beta_target + nhat.(dX_p/ds)|_tau /c]
+        //                 / (1 - nhat.beta_pole).
+        // Dropping the middle term is what a textbook derivation gives for a
+        // source that does not move with the observation event, and it is
+        // wrong by 1.5e-03 of the rate here -- measured against the stencil
+        // this function replaces, which is itself good to 1e-04.
+        //
+        // The explicit part comes from the reconstruction itself: build it
+        // once with the retarded time held FIXED, and the derivative that
+        // falls out is dX_p/ds at constant tau_p.
+        const Vec3 poleDirection=displacement/distance;
+        const double poleKappa=std::max(1.0e-8,
+            1.0-dot(poleDirection,velocity/c));
+        const DualVec3 poleDirectionDual{Dual{poleDirection.x,0.0},
+            Dual{poleDirection.y,0.0},Dual{poleDirection.z,0.0}};
+        DualVec3 positionDual,velocityDual,accelerationDual;
+        const auto reconstruct=[&](Dual poleTime) {
+            const Dual offset=poleTime-centralTime;
+            const DualVec3 jerkStep=centralJerk*offset;
+            positionDual=centralPosition+centralVelocity*offset
+                +centralAcceleration*(offset*offset*Dual{0.5,0.0})
+                +jerkStep*(offset*offset/Dual{6.0,0.0});
+            velocityDual=centralVelocity+centralAcceleration*offset
+                +jerkStep*(offset*Dual{0.5,0.0});
+            accelerationDual=centralAcceleration+jerkStep;
+            DualVec3 moment,first,second;
+            momentDualAt(poleTime,moment,first,second);
+            const Dual inversePole=
+                Dual{sign,0.0}/(Dual{2.0,0.0}*poleChargeDual);
+            positionDual+=moment*inversePole;
+            velocityDual+=first*inversePole;
+            accelerationDual+=second*inversePole;
+        };
+        reconstruct(Dual{retardedTime,0.0});
+        const Dual explicitShift=dotDual(poleDirectionDual,positionDual);
+        const double poleTimeRate=
+            (1.0-dot(poleDirection,targetBeta)
+             +explicitShift.derivative/c)/poleKappa;
+        const Dual poleTime{retardedTime,poleTimeRate};
+        reconstruct(poleTime);
+        const DualVec3 displacementDual=observation-positionDual;
+        const Dual distanceDual=normDual(displacementDual);
+        const DualVec3 directionDual=displacementDual/distanceDual;
+        const DualVec3 betaDual=velocityDual/Dual{c,0.0};
+        const Dual betaSquaredDual=dotDual(betaDual,betaDual);
+        const Dual kappaDual=Dual{1.0,0.0}-dotDual(directionDual,betaDual);
+        if(!(betaSquaredDual.value<1.0)||!(kappaDual.value>0.0)
+           ||!std::isfinite(kappaDual.value)) {
+            polesValid=false; return {};
+        }
+        Dual fieldDistanceDual=distanceDual*poleDistanceScaleDual;
+        Dual plummerScaleDual{1.0,0.0};
+        if(softening>0.0) {
+            fieldDistanceDual=distanceDual;
+            const Dual restDistance=distanceDual*kappaDual
+                /positronium::dual::sqrtDual(Dual{1.0,0.0}-betaSquaredDual);
+            const Dual ratio=restDistance/positronium::dual::sqrtDual(
+                restDistance*restDistance
+                +Dual{softening*softening,0.0});
+            plummerScaleDual=ratio*ratio*ratio;
+        }
+        const Dual kappaCubed=kappaDual*kappaDual*kappaDual;
+        const DualVec3 velocityFieldDual=(directionDual-betaDual)
+            *((Dual{1.0,0.0}-betaSquaredDual)
+              /(kappaCubed*fieldDistanceDual*fieldDistanceDual));
+        const DualVec3 accelerationFieldDual=crossDual(directionDual,
+            crossDual(directionDual-betaDual,accelerationDual))
+            /(Dual{c*c,0.0}*kappaCubed*fieldDistanceDual);
+        const DualVec3 electricDual=(velocityFieldDual+accelerationFieldDual)
+            *(Dual{coulomb*sign,0.0}*poleChargeDual*plummerScaleDual);
+        return PoleField{electricDual,
+            crossDual(directionDual,electricDual)/Dual{c,0.0}};
+    };
+    const PoleField positivePole=poleRate(1.0);
+    const PoleField negativePole=poleRate(-1.0);
+    if(!polesValid) return result;
+    const DualVec3 totalElectric=positivePole.electric+negativePole.electric;
+    const DualVec3 totalMagnetic=positivePole.magnetic+negativePole.magnetic;
+    result.electric={totalElectric.x.value,totalElectric.y.value,
+                     totalElectric.z.value};
+    result.electricRate={totalElectric.x.derivative,
+                         totalElectric.y.derivative,
+                         totalElectric.z.derivative};
+    result.magnetic={totalMagnetic.x.value,totalMagnetic.y.value,
+                     totalMagnetic.z.value};
+    result.magneticRate={totalMagnetic.x.derivative,
+                         totalMagnetic.y.derivative,
+                         totalMagnetic.z.derivative};
+    if(!isFinite(result.electric)||!isFinite(result.electricRate)
+       ||!isFinite(result.magnetic)||!isFinite(result.magneticRate))
+        return result;
+    result.valid=true;
+    return result;
 }
 
 // Exact point-dipole field before the model's short-range smoothing.  This

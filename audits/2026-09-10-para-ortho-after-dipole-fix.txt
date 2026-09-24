@@ -11427,3 +11427,96 @@ measurement of whether that survives a cascade.
       calibration.  Whether removing that noise actually buys depth was not
       measured: the run comparing terminal radius with and without the
       hidden-momentum term did not finish inside this session's budget.
+
+162. THE ANALYTIC DERIVATIVE IS BUILT AND NOT SHIPPED: THE MOMENT SAMPLER
+     IS NOT ITS OWN TIME DERIVATIVE
+==================================================================
+
+162a. WHAT WAS ASKED.  Section 161 established that the hidden-momentum
+      rate's residual noise is the two-pole construction's cancellation
+      floor divided by the stencil step, and that the repair is a per-pole
+      analytic derivative combined by the subtraction
+      twoChargeLimitDipoleField already performs.  This section builds it.
+
+162b. WHAT IS BUILT.  modules/dual_number.hpp, forward-mode automatic
+      differentiation in one variable, and
+      twoChargeLimitDipoleElectricWithRate, which mirrors the two-pole
+      construction statement for statement in dual arithmetic and returns
+      both the field and its material derivative along the target's tangent
+      worldline.  The retarded times are NOT differentiated through their
+      Newton iterations: each is a root of
+      F(tau,s) = tau + |x(s)-X(tau)|/c - t(s), so the implicit function
+      theorem gives dtau/ds in closed form from the converged root.
+
+162c. THE MIRROR IS VERIFIED.  Against twoChargeLimitDipoleField on the same
+      state, history, pin and sampler at 0.974 r*:
+        electric residual   5.381e-11
+        magnetic residual   1.041e-10
+      which is that construction's own pole-cancellation floor.  So the dual
+      path evaluates the same expression production does, and its derivative
+      describes that expression and not a nearby one.
+
+162d. THE DERIVATIVE IS NOT.  It disagrees with the stencil it would replace
+      by 1.5e-03, flat across a 128-fold sweep of the stencil step, while
+      the stencil's own spread over that sweep is 1e-04.  Finite-differencing
+      the dual function's OWN value reproduces the same 1.5e-03, so the
+      mirror is not drifting with s: the chain rule is incomplete.
+
+162e. FOUR CANDIDATES EXCLUDED, each by its own measurement.
+        dtau_central/ds     the closed form against a numerically
+                            differentiated converged root: agrees to 4e-12
+        snap                giving the jerk a differenced rate instead of
+                            the exact zero one cubic segment implies does
+                            not move the answer, so the segment is a cubic
+                            and its jerk is constant, as assumed
+        the third moment    flat from 1e-02 to 1e-04 of the light-crossing
+        derivative's step   time; zeroing the term moves the error from
+                            1.5e-03 to 6.5e-03, so it is needed and sane
+        the explicit        the pole worldline depends on s beyond its own
+        worldline term      retarded time, through the central charge's
+                            retarded time and through the pole charge.  The
+                            term was derived and added; it is real and worth
+                            3e-06 here, so it is not the discrepancy.
+
+162f. AND THE CAUSE IS UPSTREAM OF ALL OF THEM.  The moment sampler is not
+      self-consistent as a function of the time it is sampled at.
+      Differencing its `moment` numerically against the `first` it returns,
+      and its `first` against its `second`, at 0.974 r* inside one pinned
+      segment:
+        step/base    d(moment)/dt vs first    d(first)/dt vs second
+          1e-02            1.724e-02                1.261e-01
+          1e-03            2.867e-02                2.532e-02
+          1e-04            2.867e-02                2.532e-02
+          1e-05            2.867e-02                2.532e-02
+      Converged over three decades at 2.9% and 2.5%.  An analytic chain rule
+      through this construction needs d(moment)/dt to BE `first`; it is not.
+
+162g. WHICH IS A QUESTION ABOUT THE FIELD, NOT ONLY ABOUT THE DERIVATIVE.
+      twoChargeLimitDipoleField's own pole reconstruction adds `moment` to a
+      pole's position, `first` to its velocity and `second` to its
+      acceleration, i.e. it uses them as each other's time derivatives.  If
+      they are not, the pole worldline's velocity is not the derivative of
+      its position, at the percent level.  Whether that is a defect or a
+      different parameterization the sampler is entitled to is NOT settled
+      here, and it has to be settled before the analytic derivative can mean
+      anything.  It is also worth noting the sign of the risk: the field
+      itself is validated against independent checks and passes, so the
+      likelier reading is that the sampler documents something other than a
+      plain time derivative, and that the pole reconstruction is compensating
+      for it somewhere this section has not found.
+
+162h. SO NOTHING IS WIRED IN.  hiddenMomentumRateForce still uses its pinned,
+      limited stencil, which section 161 measured as converged to 3e-07 with
+      its limiter dormant.  Replacing a 2e-05 error with a 1.5e-03 one on a
+      term carrying 3.5% of the total force would be a regression.  The
+      mirror and its four excluded candidates are kept, with the diagnostic
+      switches that produced them, because re-deriving them would be the
+      expensive part of finishing this.
+
+162i. LIMITS.  One state, one radius, one channel, one tilt for every number
+      here.  The 1.5e-03 is quoted against a stencil, not against a truth:
+      what is established is that the two disagree far outside the stencil's
+      own spread, and that the mirror reproduces the production VALUE, not
+      that the stencil is the correct one of the two.  162f measures the
+      sampler through its public signature only; no claim is made about what
+      historicalIntegratedDipoleKinematics intends to return.

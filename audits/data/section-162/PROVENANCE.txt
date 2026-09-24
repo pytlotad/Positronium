@@ -1,0 +1,17 @@
+Raw outputs behind audit section 162 (2026-09-24).
+  measurements.txt   every number the section quotes
+
+No pre-registration: each test is read directly off a convergence sweep or
+is a value comparison, and no threshold enters any conclusion.  The one
+judgement call -- that 1.5e-03 against a stencil good to 1.6e-04 is a defect
+rather than a disagreement to be split -- is stated as such in 162i.
+
+The sampler in every probe is the one retardedMagneticDipoleFieldExact
+passes to twoChargeLimitDipoleField, copied verbatim:
+  historicalIntegratedDipoleKinematics(history,present,sourceIsFirst,time,
+                                       false), each component over c^2.
+Probes were built against the production headers and are not kept in the
+tree; the diagnostic switches they drove (CREM_DUAL_SNAP,
+CREM_DUAL_NO_THIRD, CREM_DUAL_MOMENT_STEP) are kept in
+twoChargeLimitDipoleElectricWithRate so the exclusions of 162e can be
+reproduced without rebuilding them.
