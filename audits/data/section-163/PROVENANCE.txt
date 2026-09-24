@@ -1,0 +1,17 @@
+Raw outputs behind audit section 163 (2026-09-24).
+  measurements.txt   every number the section quotes
+
+No pre-registration: each result is read directly off a sweep, a build
+comparison or the validation suite, and no threshold enters any conclusion.
+
+The derivative comparison uses a throwaway probe built against the
+production headers, which drives twoChargeLimitDipoleElectricWithRate and
+twoChargeLimitDipoleField through the same state, history, pin and sampler.
+CREM_DUAL_CHAINED_MOMENT reproduces audit 162's 1.495e-03 in the shipped
+code; CREM_NO_ANALYTIC_POLE_RATE restores the pure stencil for the timing
+and convergence rows.
+
+The step-error convergence rows come from a probe replicating
+ClassicalTrajectoryEngine::normalizedStepError over a step-doubling sweep,
+with the retarded/Coulomb and dipole-force sectors switched independently;
+the "before" row is audit 161's, from the same probe on the same geometry.

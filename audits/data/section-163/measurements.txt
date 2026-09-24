@@ -1,0 +1,45 @@
+THE CAUSE, settled.  historicalIntegratedDipoleKinematics builds `first`
+and `second` by finite-difference stencils of the moment at
+historyDerivativeStep, a history-node scale.  They are the time derivatives
+to that stencil's truncation, which is what audit 162f measured as 2.9% and
+2.5% against a fine difference.  The sampler is correct; chaining it as an
+exact derivative triple was the bug.
+
+DERIVATIVE vs THE STENCIL IT REPLACES, 0.9739 r*, magnetic component:
+  h/h0      stencil |dB/ds|         chained (162)   each-as-itself (163)
+     8    6.668915245347e+18          1.495e-03           7.137e-06
+     4    6.668913904258e+18                              8.443e-06
+     2    6.668894781670e+18                              7.065e-06
+     1    6.668779830853e+18                              2.327e-05
+   0.5    6.668966459172e+18                              1.968e-05
+  0.25    6.668743895474e+18                              7.883e-05
+ 0.125    6.668055251137e+18                              1.419e-04
+0.0625    6.667834719858e+18                              2.462e-04
+The two agree where the stencil is most accurate and diverge where audit
+161 measured it falling into round-off.
+
+MIRROR FIDELITY, unchanged by the fix:
+  electric residual 6.399e-11   magnetic residual 1.008e-10
+
+ENGINE STEP-ERROR CONVERGENCE at 1.2 r*, ratio per halving, want 4.00:
+  retarded + dipole force, before  3.97 3.54 4.13 3.51 3.45 6.55 1.08 1.94
+  retarded + dipole force, after   3.55 4.09 4.45 2.38 5.94 1.60 3.39 1.99
+  retarded, hidden term ablated    4.00 4.07 3.95 3.18 3.42 4.04 2.41 2.49
+  retarded, NO dipole force        3.18 3.63 3.82 3.91 3.96 3.98 3.98 3.99
+Unchanged: covariantDipoleGradientForce's spatial stencil on the same
+pole-limit field is now the dominant roughness.
+
+COST
+  hiddenMomentumRateForce, 20000 calls   1091 ms -> 3990 ms
+  ./positronium --mode statistical --phenomenon 4 --runs 12 --seed 42
+    --beam-energy-ev 20 --theta-min-deg 5 --angle-bins 10
+      analytic OFF  46.61 s / 46.80 s
+      analytic ON   53.44 s   (+15%)
+      before folding the offset-zero evaluation: 58.62 s (+25%)
+
+VALIDATION: PASS.  Against the run before this change, the suite moves in
+the seventh to ninth significant figure, e.g.
+  raw dE/dP/dJ  5.4838279e-05 -> 5.4838285e-05
+                2.1103141e-11 -> 2.0782005e-11
+  LL validity   7.9962532e-05 -> 7.9962522e-05
+  secular apsidal geometry  2.7755576e-17 -> 0

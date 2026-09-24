@@ -2529,20 +2529,47 @@ inline DipoleElectricWithRate twoChargeLimitDipoleElectricWithRate(
     double momentStep=1.0e-3*rawReferenceDistance/c;
     if(const char* o=std::getenv("CREM_DUAL_MOMENT_STEP"))
         momentStep=std::atof(o)*rawReferenceDistance/c;
+    // EACH OF THE THREE IS DIFFERENTIATED AS ITSELF, not as the next one's
+    // integral.  The sampler's `first` and `second` are not d(moment)/dt and
+    // d(first)/dt: they are finite-difference stencils of the moment taken
+    // at historyDerivativeStep, a HISTORY-NODE scale, so they carry that
+    // stencil's truncation.  Measured against a fine difference of the same
+    // sampler, `first` sits 2.9% off d(moment)/dt and `second` 2.5% off
+    // d(first)/dt, converged over three decades of step (audit 162f).
+    //
+    // Chaining them as though they were exact derivatives is what left this
+    // function's first version 1.5e-03 away from the stencil it replaces.
+    // The pole reconstruction below consumes all three as the field defines
+    // them, so the derivative has to differentiate the functions the field
+    // actually calls -- which means differencing all three, finely.  That is
+    // safe for the same reason it was unsafe for the FIELD: the moment
+    // interpolant carries no pole cancellation, so a fine step costs nothing
+    // here while it cost everything there.
     const auto momentDualAt=[&](Dual time,DualVec3& moment,
                                 DualVec3& first,DualVec3& second) {
         Vec3 m,f,s;
         momentAt(time.value,m,f,s);
-        Vec3 sAhead,sBehind,ignoredA,ignoredB;
-        momentAt(time.value+momentStep,ignoredA,ignoredB,sAhead);
-        momentAt(time.value-momentStep,ignoredA,ignoredB,sBehind);
-        Vec3 third=(sAhead-sBehind)*(1.0/(2.0*momentStep));
-        if(std::getenv("CREM_DUAL_NO_THIRD")) third=Vec3{};
+        Vec3 mAhead,fAhead,sAhead,mBehind,fBehind,sBehind;
+        momentAt(time.value+momentStep,mAhead,fAhead,sAhead);
+        momentAt(time.value-momentStep,mBehind,fBehind,sBehind);
+        const double inverse=1.0/(2.0*momentStep);
+        Vec3 momentRate=(mAhead-mBehind)*inverse;
+        Vec3 firstRate=(fAhead-fBehind)*inverse;
+        Vec3 secondRate=(sAhead-sBehind)*inverse;
+        if(std::getenv("CREM_DUAL_CHAINED_MOMENT")) {
+            // The refuted version of audit 162, kept so its 1.5e-03 can be
+            // reproduced: moment and first chained onto the next quantity,
+            // only `second` differenced as itself.
+            momentRate=f; firstRate=s;
+        }
+        if(std::getenv("CREM_DUAL_NO_THIRD")) secondRate=Vec3{};
         const double rate=time.derivative;
-        moment={Dual{m.x,f.x*rate},Dual{m.y,f.y*rate},Dual{m.z,f.z*rate}};
-        first={Dual{f.x,s.x*rate},Dual{f.y,s.y*rate},Dual{f.z,s.z*rate}};
-        second={Dual{s.x,third.x*rate},Dual{s.y,third.y*rate},
-                Dual{s.z,third.z*rate}};
+        moment={Dual{m.x,momentRate.x*rate},Dual{m.y,momentRate.y*rate},
+                Dual{m.z,momentRate.z*rate}};
+        first={Dual{f.x,firstRate.x*rate},Dual{f.y,firstRate.y*rate},
+               Dual{f.z,firstRate.z*rate}};
+        second={Dual{s.x,secondRate.x*rate},Dual{s.y,secondRate.y*rate},
+                Dual{s.z,secondRate.z*rate}};
     };
 
     DualVec3 refMoment,refFirst,refSecond;
@@ -4029,9 +4056,61 @@ inline Vec3 hiddenMomentumRateForce(const State& state,
     const RetardedSegmentPinGuard rateSegment(retardedSegmentPinAt(
         history,state,!targetIsFirst,position,state.time,
         8.0*derivativeStep));
-    const Vec3 now=electricAt(0.0);
-    const Vec3 before=electricAt(-derivativeStep);
-    const Vec3 twiceBefore=electricAt(-2.0*derivativeStep);
+    // THE POLE SECTOR'S SHARE OF THE RATE IS TAKEN ANALYTICALLY (audit 163).
+    // Audit 161 separated this rate by sector: the charge field differences
+    // cleanly at 1.1e-08, the two-pole dipole field at 1.4e-04, because the
+    // latter's ~1e-10 cancellation floor is divided by a step of about
+    // 1/2000 of the field's own time scale.  So the pole part is computed
+    // with its derivative carried through the same arithmetic
+    // (twoChargeLimitDipoleElectricWithRate), and only the REMAINDER -- the
+    // charge field and the magnetization term, neither of which cancels --
+    // is still differenced.  Where the pole construction is not the path
+    // production takes, the correction is identically zero and this
+    // degenerates to the stencil it replaces.
+    const bool sourceIsFirstHere=!targetIsFirst;
+    const auto momentSampler=[&](double time,Vec3& moment,Vec3& first,
+                                 Vec3& second) {
+        const RetardedElectricDipoleKinematics dipole=
+            historicalIntegratedDipoleKinematics(
+                history,state,sourceIsFirstHere,time,false);
+        moment=dipole.moment/(c*c);
+        first=dipole.firstDerivative/(c*c);
+        second=dipole.secondDerivative/(c*c);
+    };
+    static const bool analyticPoleRate=
+        std::getenv("CREM_NO_ANALYTIC_POLE_RATE")==nullptr;
+    bool poleSectorActive=analyticPoleRate&&separationFloor()>0.0
+        &&!historicalDipoleSourceIsStatic(history,state,sourceIsFirstHere,
+                                          false);
+    const auto poleElectricAt=[&](double offset)->Vec3 {
+        if(!poleSectorActive) return {};
+        const DipoleElectricWithRate pole=
+            twoChargeLimitDipoleElectricWithRate(position+velocity*offset,
+                velocity,state.time+offset,history,state,sourceIsFirstHere,
+                1.0e-5,magneticDipoleRadius(),momentSampler);
+        return pole.valid?pole.magnetic*(-c*c):Vec3{};
+    };
+    // The offset-zero construction is evaluated ONCE: it carries both the
+    // value the remainder needs and the rate that replaces the stencil's
+    // pole share.  Three two-pole evaluations are added in total, not five.
+    Vec3 analyticPoleContribution, poleElectricNow;
+    if(poleSectorActive) {
+        const DipoleElectricWithRate pole=
+            twoChargeLimitDipoleElectricWithRate(position,velocity,
+                state.time,history,state,sourceIsFirstHere,1.0e-5,
+                magneticDipoleRadius(),momentSampler);
+        // An invalid construction leaves the remainder whole and the
+        // correction zero, which is the stencil's own answer.
+        if(pole.valid) {
+            analyticPoleContribution=pole.magneticRate*(-c*c);
+            poleElectricNow=pole.magnetic*(-c*c);
+        } else poleSectorActive=false;
+    }
+    const Vec3 now=electricAt(0.0)-poleElectricNow;
+    const Vec3 before=electricAt(-derivativeStep)
+        -poleElectricAt(-derivativeStep);
+    const Vec3 twiceBefore=electricAt(-2.0*derivativeStep)
+        -poleElectricAt(-2.0*derivativeStep);
     // LIMITED STENCIL (audit 150).  The step above is about 1/1500 of the
     // history's own node spacing, and the retarded field is only C0 across a
     // node: audit 149 measured a +4.01% jump in the dipole field's electric
@@ -4122,7 +4201,12 @@ inline Vec3 hiddenMomentumRateForce(const State& state,
     const DipoleDerivatives derivatives=
         thomasBmtDipoleDerivatives(state,history);
     const Vec3 momentRate=targetIsFirst?derivatives.first:derivatives.second;
-    return (cross(momentRate,now)+cross(moment,fieldRate))*(-1.0/(c*c));
+    // `now` is the remainder, so the FIELD in the first cross product has to
+    // be put back together before it is used.
+    const Vec3 fullField=now+poleElectricNow;
+    const Vec3 totalFieldRate=fieldRate+analyticPoleContribution;
+    return (cross(momentRate,fullField)+cross(moment,totalFieldRate))
+        *(-1.0/(c*c));
 }
 
 inline Vec3 covariantDipoleGradientForce(const State& state,

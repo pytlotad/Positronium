@@ -11520,3 +11520,92 @@ measurement of whether that survives a cascade.
       that the stencil is the correct one of the two.  162f measures the
       sampler through its public signature only; no claim is made about what
       historicalIntegratedDipoleKinematics intends to return.
+
+163. THE ANALYTIC DERIVATIVE SHIPS: THE SAMPLER WAS A COARSE STENCIL, NOT AN
+     INCONSISTENCY, AND CHAINING IT WAS THE BUG
+==================================================================
+
+163a. WHAT 162 LEFT.  The dual mirror of the two-pole construction reproduced
+      the production field to 1e-10 but its derivative missed the stencil it
+      would replace by 1.5e-03.  The cause was traced to the moment sampler,
+      whose `first` differs from a fine difference of its own `moment` by
+      2.9%, and 162g left open whether that was a defect or a
+      parameterization.
+
+163b. IT IS NEITHER: IT IS TRUNCATION, AND IT IS BY CONSTRUCTION.
+      historicalIntegratedDipoleKinematics builds `first` and `second` by
+      finite-difference stencils of the moment at historyDerivativeStep --
+      a HISTORY-NODE scale, not an infinitesimal one.  So they ARE the time
+      derivatives, to that stencil's truncation, and the 2.9% is that
+      truncation measured against a fine difference.  Nothing is wrong with
+      the sampler and nothing is wrong with the pole reconstruction that
+      consumes it.
+
+163c. WHICH MAKES THE CHAIN RULE THE BUG.  The dual path had assumed
+      d(moment)/dt = `first` and d(first)/dt = `second`.  Both are false at
+      the percent level, and the field does not use them that way either:
+      it calls three functions of the retarded time and adds their values.
+      A derivative of that expression has to differentiate each of the three
+      AS ITSELF.  Differencing all three finely -- safe here, where the
+      moment interpolant carries no pole cancellation, and unsafe for the
+      FIELD, which is the whole subject -- closes it:
+        chained (162's version)      1.495e-03
+        each differentiated as itself 7.137e-06
+      a factor of 210, and the switch CREM_DUAL_CHAINED_MOMENT reproduces
+      the old number exactly.
+
+163d. AND THE RESIDUE IS THE STENCIL'S, NOT THE DERIVATIVE'S.  Against the
+      three-point stencil across its step sweep:
+        h/h0        8        4        2        1      0.5     0.25    0.125
+        rel   7.1e-06  8.4e-06  7.1e-06  2.3e-05  2.0e-05  7.9e-05  1.4e-04
+      The two agree to 7e-06 where the stencil is most accurate and part
+      company exactly where audit 161 measured the stencil falling into
+      round-off.  That is the signature of the analytic value being the
+      correct one.
+
+163e. SHIPPED, AND ONLY THE POLE SECTOR.  hiddenMomentumRateForce now
+      subtracts the two-pole contribution from its three samples, differences
+      only the REMAINDER -- the charge field and the magnetization term,
+      neither of which cancels -- and adds the analytic pole rate back.
+      Where the pole construction is not the path production takes (no floor,
+      or a static source) the correction is identically zero and the function
+      degenerates to the stencil it replaces.  Validation PASS; the suite's
+      numbers move in the seventh to ninth significant figure, which is the
+      size of the noise removed.
+
+163f. THE HOPED-FOR BENEFIT DID NOT MATERIALIZE, WHICH IS THE HONEST RESULT.
+      The engine's step-error convergence at 1.2 r* is unchanged:
+        retarded + dipole force, before  3.97 3.54 4.13 3.51 3.45 6.55 1.08
+        1.94
+        retarded + dipole force, after   3.55 4.09 4.45 2.38 5.94 1.60 3.39
+        1.99
+        retarded, hidden term ablated    4.00 4.07 3.95 3.18 3.42 4.04 2.41
+        2.49
+        retarded, NO dipole force        3.18 3.63 3.82 3.91 3.96 3.98 3.98
+        3.99
+      Ablating the hidden-momentum term entirely does not clean it either;
+      only ablating the whole dipole force does.  So
+      covariantDipoleGradientForce
+      -- which differences the SAME pole-limit field spatially, on a six-probe
+      stencil -- is now the dominant roughness, and it is the next lever.
+      What this section bought is accuracy in the term, not depth in the
+      integrator.
+
+163g. COST.  Three extra two-pole evaluations per call, after folding the
+      offset-zero construction into one evaluation that serves both the
+      remainder's value and the rate:
+        the term alone, 20000 calls   1091 ms -> 3990 ms
+        production, 12-run job        46.61 s -> 53.44 s, +15%
+      Before that folding it was +25%.  CREM_NO_ANALYTIC_POLE_RATE restores
+      the pure stencil.
+
+163h. LIMITS.  One geometry for the derivative comparison, one radius for the
+      convergence sweep.  The 7e-06 of 163d is quoted against a stencil, so
+      what is established is that they agree where the stencil is trustworthy
+      and diverge where 161 already showed it is not -- not an independent
+      absolute error bound on the analytic value.  The mirror's own value
+      residual, 6.4e-11 electric and 1.0e-10 magnetic against
+      twoChargeLimitDipoleField, is the two-pole construction's cancellation
+      floor and bounds what any derivative of it can be worth.  Whether +15%
+      of wall time is the right price for that accuracy is a decision this
+      section records rather than makes.
