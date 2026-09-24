@@ -26,6 +26,16 @@
 // measurement of the balance, and only the sign was systematic (six of six
 // positive).  Averaging that down is the work this tool does not do.
 //
+// IS THE FIELD A PERTURBATION AT ALL.  The band rides the orbital frequency,
+// so its modes are RESONANT with the orbit by construction, and over tens of
+// orbits a resonant mode can pump the pair apart instead of holding it.  When
+// that happens the radiated power is computed from an orbit that no longer
+// exists and the ratio means nothing: audit 170 measured <P_rad> jumping
+// from 0.78 W to 5.5e+07 W between scale 0.3 and 1 at 0.01 a_pair, purely
+// from disrupted trajectories.  So every row reports the ratio of the final
+// separation to the initial one, and a row whose orbit did not survive is
+// not a measurement of a balance.
+//
 // SAMPLING.  The step is tied to the FASTEST zero-point mode, not to the
 // orbit, and the steps-per-cycle column reports it.  The step census in
 // positronium.cpp warns why: a band whose upper edge sits above the orbital
@@ -33,6 +43,10 @@
 // tolerance, and aliasing would fake exactly the net work being looked for.
 //
 // Usage: zpf_power_balance [scale] [modes] [seed] [steps per ZPF cycle]
+//                          [orbits] [r/a_pair, or 0 for the default scan]
+// With a single radius it prints one machine-readable row, which is how the
+// seed ensemble of audit 170 is built: run the seeds in parallel and
+// aggregate, rather than averaging inside one process.
 // Build from the repository root:
 // g++ -std=c++20 -O2 -I . $(root-config --cflags)
 //     tools/zpf_power_balance.cpp -o /tmp/zpf $(root-config --libs)
@@ -40,22 +54,29 @@
 #include <cstdio>
 #include <cstdlib>
 #include <initializer_list>
+#include <vector>
 
 int main(int argc,char** argv){
     const double scale=(argc>1?atof(argv[1]):1.0);
     const int modes=(argc>2?atoi(argv[2]):16);
     const std::uint64_t seed=(argc>3?strtoull(argv[3],nullptr,10):42);
     const double perCycle=(argc>4?atof(argv[4]):32.0);
+    const double orbits=(argc>5?atof(argv[5]):1.0);
+    const double singleRadius=(argc>6?atof(argv[6]):0.0);
     constexpr double lo=0.3, hi=3.0;
     const double total=firstMass+secondMass;
     gZeroPointField=makeZeroPointField(lo,hi,modes,scale,seed);
     std::printf("ZPF scale %.3g, %d modes over [%.1f, %.1f] x omega_orb, "
                 "seed %llu, %.0f steps per fastest cycle\n",
                 scale,modes,lo,hi,(unsigned long long)seed,perCycle);
-    std::printf("%9s %13s %13s %13s %12s %9s\n","r/a_pair","P_abs [W]",
-                "P_rad [W]","P_abs/P_rad","E_rms [V/m]","steps/cyc");
+    if(!(singleRadius>0.0))
+        std::printf("%9s %13s %13s %13s %12s %9s\n","r/a_pair","P_abs [W]",
+                    "P_rad [W]","P_abs/P_rad","E_rms [V/m]","steps/cyc");
     const double aPair=pairBohrRadius(activePair);
-    for(double fraction:{1.0,0.3,0.1,0.03,0.01}){
+    const std::vector<double> scan=singleRadius>0.0
+        ?std::vector<double>{singleRadius}
+        :std::vector<double>{1.0,0.3,0.1,0.03,0.01};
+    for(double fraction:scan){
         const double r=fraction*aPair;
         const double speed=std::sqrt(pairCoulombStrength/(pairReducedMass*r));
         const double omega=speed/r;
@@ -77,8 +98,9 @@ int main(int argc,char** argv){
         ClassicalTrajectoryEngine engine(s,accuracy);
         const double fastestPeriod=2.0*pi/(hi*omega);
         const double step=fastestPeriod/perCycle;
-        const int stepCount=static_cast<int>(period/step);
+        const int stepCount=static_cast<int>(orbits*period/step);
         double work=0.0,elapsed=0.0,phase=0.0;
+        const double initialSeparation=separation(s);
         int taken=0;
         for(int index=0;index<stepCount;++index){
             const Vec3 firstPosition=s.firstPosition;
@@ -114,10 +136,17 @@ int main(int argc,char** argv){
         const double absorbed=work/elapsed;
         const double rootMeanSquare=gZeroPointField.amplitudeCoefficient
             *omega*omega*std::sqrt(modes/2.0);
-        std::printf("%9.3g %13.4e %13.4e %13.4e %12.3e %9.1f\n",
-            fraction,absorbed,radiated,
-            absorbed/std::max(std::abs(radiated),1.0e-300),
-            rootMeanSquare,perCycle);
+        if(singleRadius>0.0)
+            // ROW <seed> <scale> <r/a_pair> <P_abs> <P_rad> <orbits>
+            //     <final/initial separation>
+            std::printf("ROW %llu %.6g %.6g %.9e %.9e %.4f %.6g\n",
+                (unsigned long long)seed,scale,fraction,absorbed,radiated,
+                elapsed/period,separation(s)/initialSeparation);
+        else
+            std::printf("%9.3g %13.4e %13.4e %13.4e %12.3e %9.1f\n",
+                fraction,absorbed,radiated,
+                absorbed/std::max(std::abs(radiated),1.0e-300),
+                rootMeanSquare,perCycle);
     }
     gZeroPointField=ZeroPointField{};
 }

@@ -12088,3 +12088,96 @@ measurement of whether that survives a cascade.
       existence.  The step is tied to the fastest mode at 32 per cycle, which
       the step census in positronium.cpp calls resolved rather than aliased,
       and that guard is why the sampling column is printed at all.
+
+170. STEP 4 ANSWERED, AND THE ANSWER IS NO: THE ZPF BALANCE CARRIES NO
+     RADIAL DEPENDENCE, SO IT CANNOT SELECT A SCALE
+==================================================================
+
+170a. WHAT 169 LEFT, AND WHAT OF IT WAS WRONG.  169 measured the balance on
+      one orbit per radius and reported that all six seeds gave positive
+      absorption, six of six being 1.6% by chance, so there was "a systematic
+      absorption under the noise".  THAT WAS A SMALL-SAMPLE ARTIFACT.  With
+      24 seeds and 32 orbits each, 9 to 14 of 24 come out NEGATIVE at the
+      outer radii and the mean sits about one standard error from zero.  169e
+      is withdrawn.
+
+170b. THE INSTRUMENT NEEDED A SURVIVAL COLUMN FIRST.  The band rides the
+      orbital frequency, so its modes are resonant with the orbit by
+      construction, and over tens of orbits a resonant mode can pump the pair
+      apart.  When it does, the radiated power is computed from an orbit that
+      no longer exists: at 0.01 a_pair, <P_rad> jumps from 0.78 W at scale
+      0.3 to 5.5e+07 W at scale 1, and a single seed there ends at 25.5 times
+      its initial separation.  Every row now reports final/initial
+      separation and every number below is filtered to 0.5 <= that <= 2.
+
+170c. THE GRID, 16 seeds x 32 orbits at each point, survivors only.
+        scale  r/a_pair  surv    <P_abs>      sigma   <P_rad>      ratio
+          0.1     1      16/16  7.8249e-09    0.31  1.1674e-08   6.70e-01
+          0.1     0.3    16/16  7.5668e-07    0.44  1.4420e-06   5.25e-01
+          0.1     0.1    16/16  9.6837e-05    1.27  1.1611e-04   8.34e-01
+          0.1     0.03   16/16  1.3671e-02    1.61  1.3101e-02   1.04e+00
+          0.3     1      16/16  2.7943e-08    0.36  1.1678e-08   2.39e+00
+          0.3     0.3    16/16  4.5481e-06    0.87  1.4455e-06   3.15e+00
+          0.3     0.1    16/16  5.2039e-04    1.86  1.0944e-04   4.75e+00
+          0.3     0.03   16/16  3.6344e-02    1.98  1.0471e-02   3.47e+00
+          1       1      16/16  2.1350e-07    0.82  1.1729e-08   1.82e+01
+          1       0.3    16/16  3.1735e-05    1.56  1.3100e-06   2.42e+01
+          1       0.1    15/16  1.1867e-03    1.40  1.0667e-04   1.11e+01
+          1       0.03   12/16  1.0812e-01    2.66  1.3305e-02   8.13e+00
+      "sigma" is <P_abs> divided by its standard error.  It never exceeds
+      2.7: the absorbed power is not resolved from zero at any single point
+      in this grid.
+
+170d. BUT THE SLOPE IS RESOLVED, AND THE SLOPE IS THE ANSWER.  Fitted over
+      four radii spanning a factor of 33 and five orders of magnitude in the
+      power, where the signal-to-noise on a SLOPE is far better than on any
+      one point:
+        scale    P_abs ~ r^p    P_rad ~ r^p    ratio ~ r^p
+          0.1       -4.127         -3.975         -0.153
+          0.3       -4.042         -3.911         -0.130
+          1         -3.706         -3.978         +0.273
+      P_rad comes out at r^-3.98, r^-3.91, r^-3.98 against Larmor's exact
+      r^-4 for a circular orbit, which is the instrument validating itself.
+      And P_abs carries THE SAME EXPONENT.  The ratio therefore goes as
+      r^(-0.15), r^(-0.13), r^(+0.27) -- flat, and not even consistently
+      signed.
+
+170e. WHICH ANSWERS STEP 4 IN THE NEGATIVE.  A balance can select a radius
+      only if the two powers cross, and they cross only if their ratio
+      depends on radius.  It does not.  Over a factor of 33 in r the ratio
+      moves by less than a factor of 2 at every scale, with no monotone
+      trend.  So P_abs = P_rad is not an equation for a radius at all: it is
+      a condition on the ZPF SCALE, satisfied at every radius at once or at
+      none.  Measured, it is satisfied near scale 0.1 (ratios 0.52 to 1.04
+      across the whole radial range) and violated by an order of magnitude at
+      scale 1.
+
+170f. AND THAT IS THE OPPOSITE OF WHAT THE PLAN NEEDED.  The plan calls the
+      zero-point field "the only thing in the model carrying a scale
+      independent of mu, e, m, c" and Step 4 "the single most important
+      measurement, because only it can give the Bohr scale".  A
+      radius-independent balance gives no scale.  Tuning the ZPF scale to
+      0.1 would make the powers match everywhere, which is a normalization
+      choice of exactly the kind the plan set out to eliminate -- the same
+      objection it makes against L = hbar, one level further down.
+
+170g. WHY THE EXPONENTS COINCIDE, offered as a reading and not a measurement.
+      The band is defined as a fixed multiple of the OSCULATING orbital
+      frequency, so its amplitude follows omega^2 and every mode stays in
+      resonance as the orbit tightens.  A field pinned to the orbit's own
+      frequency cannot carry a scale of its own, and the r^-4 it inherits is
+      the orbit's.  A band pinned to a FIXED frequency would not do this, and
+      that is the version of the experiment this section does not run --
+      though the tree's own history says why the band was made to ride: with
+      a fixed band the orbit outran it and the lifetime depended strongly on
+      where the upper edge was cut.
+
+170h. LIMITS.  16 modes against the production 64, instantaneous mutual
+      forces, radiation reaction disabled, circular preparation, one channel,
+      32 orbits per run, 16 seeds per point, and the step tied to the fastest
+      mode at 32 per cycle.  The survival window 0.5 to 2 is a choice and
+      rows outside it are dropped rather than analysed.  The exponent fit
+      assumes a pure power law over the four radii; no curvature is tested.
+      And 170g is an interpretation of why the exponents match, not a
+      measurement of it -- the fixed-band comparison that would test it was
+      not run.

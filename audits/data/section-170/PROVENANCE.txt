@@ -1,0 +1,22 @@
+Raw outputs behind audit section 170 (2026-09-24).
+  measurements.txt            every number the section quotes
+  radius_ensemble_rows.txt    120 raw ROW lines, scale 1, seeds 101-124,
+                              five radii, unfiltered (these predate the
+                              survival column, so they carry no survival
+                              field and are used only for 170a)
+  grid_rows.txt               192 raw ROW lines, seeds 301-316, three
+                              scales x four radii, with the survival column
+
+No pre-registration.  The survival window 0.5 <= final/initial <= 2 was
+chosen after seeing the 25.5 of the disrupted run and is stated as a choice
+in 170h; every raw row is kept here so a different window can be applied
+without rerunning anything.
+
+ROW format: ROW <seed> <scale> <r/a_pair> <P_abs> <P_rad> <orbits completed>
+<final/initial separation>.  The last field is absent in the radius ensemble,
+which was taken before it existed.
+
+tools/zpf_power_balance.cpp gained the orbits argument, the single-radius
+mode, the ROW output and the survival column in this section.  The exponent
+fit is an ordinary least squares of log(power) on log(radius) over the four
+radii, computed from the same rows.
