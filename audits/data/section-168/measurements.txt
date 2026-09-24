@@ -1,0 +1,41 @@
+ZeroPointField chirped single mode, the shipped test's configuration:
+  direction (0,0,1), polarization (1,0,0), magneticDirection (0,1,0),
+  phase 0, frequencyFactor 1, amplitudeCoefficient 1/omega0^2,
+  omega0 = 1.0e16, chirp = 1.0e14, omegaDerivative = omega0*chirp.
+Sampled at the origin with zero accumulated phase; the time pair varies
+omega, omega-dot and the accumulated phase consistently
+(Phi = omega0 (t + chirp t^2/2), so Phi' = omega(t)), and the space pair
+steps by c*h along z.
+
+FARADAY RESIDUAL, dB_y/dt + dE_x/dz:
+    h          dB_y/dt           dE_x/dz          residual      |res|/max
+  1e-16   2.20090691e+05  -4.60909957e+05  -2.40819267e+05   5.2249e-01
+  1e-17   6.62130284e+05  -6.64906097e+05  -2.77581349e+03   4.1747e-03
+  1e-18   6.67078156e+05  -6.67105953e+05  -2.77966187e+01   4.1667e-05
+  1e-19   6.67127690e+05  -6.67127968e+05  -2.77973825e-01   4.1667e-07
+  1e-20   6.67128185e+05  -6.67128188e+05  -2.75458163e-03   4.1290e-09
+  1e-21   6.67128191e+05  -6.67128191e+05  -9.09229275e-05   1.3629e-10
+Second order: each decade of h divides the residual by about a hundred.
+
+The shipped normalizer 2*chirp/c = 6.671282e+05 is the same scale as
+|dB/dt| = 6.671282e+05, so normalizing by either gives the same four
+figures.  It was not hiding anything.
+
+THE RATIO, which is the quantity that tends to one:
+    h      |dB_y/dt| / |dE_x/dz|     1 - ratio
+  1e-18        0.9999583325         4.1667e-05
+  1e-19        0.9999995833         4.1667e-07
+  1e-20        0.9999999959         4.1290e-09
+Reported in the claim as 0.999925 / 0.99999925 / 0.9999999925 -- the same
+three decades and the same h^2 structure.
+
+ANALYTIC, at the origin, no finite differences, from
+A = a(t) eps sin(theta) with E = -dA/dt and B = curl A:
+  dB_y/dt     =  667128.19039630413
+  (curl E)_y  = -667128.19039630413
+  sum         =  0
+
+AFTER: the suite measures the order per decade and requires > 50.
+  ZPF Faraday order/decade: 99.997252 / 100.91326  (h^2 is 100)
+  ZPF Faraday coarse/fine:  4.1666083e-05 / 4.129014e-09
+  validation verdict: PASS

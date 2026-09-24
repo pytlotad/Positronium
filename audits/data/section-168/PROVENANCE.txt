@@ -1,0 +1,21 @@
+Raw outputs behind audit section 168 (2026-09-24).
+  measurements.txt   every number the section quotes
+
+No pre-registration: the section is a premise check read directly off a step
+sweep, plus a closed-form evaluation.  The one threshold added to the suite,
+a convergence order above 50 per decade, is set against a measured 100.0 and
+100.9 and is stated in the code as the wide band it is.
+
+The sweep comes from a throwaway probe built against the production headers
+which drives ZeroPointField::sample directly, with the same mode, the same
+omega0 and chirp, and the same stencil the shipped
+zeroPointFaradayResidual uses; its 1e-18 and 1e-20 rows reproduce the
+suite's own coarse and fine numbers to four figures.
+
+The analytic pair is evaluated from the construction's own definitions
+(amplitude a = coefficient omega^2, potential amplitude a/omega, wave number
+omega/c) rather than by calling sample(), so it is an independent check of
+the identity and not a restatement of the code.
+
+modules/maxwell_validation.hpp is the only source file changed: a third step
+at 1e-19, two order ratios, the assertion, and the reporting line.

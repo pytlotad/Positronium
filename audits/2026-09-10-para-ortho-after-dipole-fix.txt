@@ -11931,3 +11931,74 @@ measurement of whether that survives a cascade.
       number was taken at, from the surrounding commentary and audit history,
       and where that could not be recovered the number is marked
       unattributed rather than guessed.
+
+168. THE ZERO-POINT FIELD DOES SATISFY FARADAY: THE QUANTITY THAT TENDS TO
+     ONE IS THE RATIO, AND THAT IS THE LAW HOLDING
+==================================================================
+
+168a. THE CLAIM.  The variable-band construction was reported to break
+      Faraday's law, on the evidence that a normalized residual converges to
+      non-zero -- 0.999925, 0.99999925, 0.9999999925 at h = 1e-18, 1e-19,
+      1e-20 -- so that the failure is a property of the equation rather than
+      of the discretization.  The urgency given was not that it spoils
+      current results, since ZPF is off by default, but that the ZPF power
+      balance is the plan's single most important remaining measurement and
+      would be made on a field that is not a Maxwell solution.
+
+168b. THE EXACT RESIDUAL IS ZERO, BY CONSTRUCTION AND NOT BY CANCELLATION.
+      ZeroPointField::sample defines E = -dA/dt and B = curl A from
+      A = a(t) eps sin(theta), theta = k(t) n.r - f Phi(t) + phi.  Faraday is
+      then the vector identity curl(-dA/dt) = -d(curl A)/dt, which holds for
+      any a(t) and k(t) whatsoever -- which is exactly why the construction
+      was written in potential form rather than by imposing B = n x E / c.
+      Evaluated in closed form at the origin, with no differencing:
+        dB_y/dt      667128.19039630413
+        (curl E)_y  -667128.19039630413
+        sum          0
+      to all seventeen digits.
+
+168c. AND THE DIFFERENCED RESIDUAL CONVERGES AT SECOND ORDER, which is what
+      a central difference on a vanishing residual must do:
+        h        dB_y/dt        dE_x/dz        |sum| / max
+        1e-16   2.20091e+05   -4.60910e+05      5.2249e-01
+        1e-17   6.62130e+05   -6.64906e+05      4.1747e-03
+        1e-18   6.67078e+05   -6.67106e+05      4.1667e-05
+        1e-19   6.67128e+05   -6.67128e+05      4.1667e-07
+        1e-20   6.67128e+05   -6.67128e+05      4.1290e-09
+        1e-21   6.67128e+05   -6.67128e+05      1.3629e-10
+      Each decade of step divides the residual by a hundred.  Normalizing by
+      the natural scale of the terms and by the shipped 2 chirp/c gives the
+      same numbers to four figures, because those two scales are the same
+      thing here: 2 chirp/c = 6.6713e+05 and |dB/dt| = 6.6713e+05.
+
+168d. SO WHAT WAS THE QUANTITY THAT TENDED TO ONE.  The ratio of the two
+      terms:
+        h        |dB_y/dt| / |dE_x/dz|      1 - ratio
+        1e-18        0.9999583325          4.1667e-05
+        1e-19        0.9999995833          4.1667e-07
+        1e-20        0.9999999959          4.1290e-09
+      The same three decades, the same h^2, and the same leading digits as
+      the reported 0.999925 / 0.99999925 / 0.9999999925.  A ratio tending to
+      one means the two terms are equal and opposite, which is Faraday being
+      SATISFIED; the residual is their SUM, and that is the thing that has to
+      go to zero, and does.  The reading inverted the diagnostic.
+
+168e. WHICH VOIDS THE STATED URGENCY, and leaves a real gap worth closing.
+      The ZPF power balance can be made on this field: it is a Maxwell
+      solution identically, not to some tolerance.  What the suite could NOT
+      previously distinguish is the thing the claim was about -- it asserted
+      the residual was small and shrinking, and a residual settling on a
+      small CONSTANT would have passed both.  Size does not separate a
+      discretization error from a property of the equation; the RATE does.
+      The suite now measures the convergence order per decade and requires
+      better than fifty, against a measured 99.997 and 100.913.  Anything
+      that plateaus returns a ratio near one and fails.
+
+168f. LIMITS.  One mode, one polarization, one direction, at the origin with
+      zero accumulated phase, which is the configuration the shipped test
+      already used.  Faraday is the only Maxwell equation checked here; the
+      construction makes div B = 0 identically as well (B = curl A) but that
+      is not measured, and the two source-carrying equations are not
+      applicable to a source-free mode.  The order assertion is a check on
+      the FIELD, not on the ZPF power balance, which remains unmeasured and
+      is a separate piece of work.

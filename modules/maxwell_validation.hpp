@@ -2249,7 +2249,32 @@ inline int runMaxwellSelfTest(
         return std::abs(faraday)/(2.0*chirp/c);
     };
     const double zeroPointFaradayCoarse=zeroPointFaradayResidual(1.0e-18);
+    const double zeroPointFaradayMedium=zeroPointFaradayResidual(1.0e-19);
     const double zeroPointFaradayFine=zeroPointFaradayResidual(1.0e-20);
+    // THE ORDER, NOT JUST THE SIZE (audit 168).  "Small and shrinking" does
+    // not separate a discretization error from a property of the equation: a
+    // residual settling on a small CONSTANT would pass both tests above it.
+    // What separates them is the rate.  This construction defines
+    // E = -dA/dt and B = curl A, so Faraday is a vector identity and the
+    // exact residual is identically zero -- checked in closed form at the
+    // origin, where dB_y/dt and (curl E)_y are 667128.19039630413 and its
+    // negative to all seventeen digits.  A central difference on a zero
+    // residual therefore has to fall as h^2, and it does: 4.1667e-05,
+    // 4.1667e-07, 4.1290e-09 across the three decades below, ratios 100.0
+    // and 100.9.
+    //
+    // This is also the test that answers a misreading worth naming, because
+    // it will recur: the RATIO |dB/dt| / |curl E| tends to 1 here
+    // (0.99995833, 0.99999958, 0.99999999), and a quantity tending to one
+    // rather than zero looks like a failure to converge.  It is the
+    // opposite -- two terms equal and opposite is Faraday being SATISFIED.
+    // The residual is their SUM, and that is what has to go to zero.
+    const double zeroPointFaradayFirstRatio=zeroPointFaradayCoarse
+        /std::max(zeroPointFaradayMedium,
+                  std::numeric_limits<double>::min());
+    const double zeroPointFaradaySecondRatio=zeroPointFaradayMedium
+        /std::max(zeroPointFaradayFine,
+                  std::numeric_limits<double>::min());
     // Non-degeneracy.  A sample() that returned nothing, or that quietly
     // lost the omega^2 amplitude law, would satisfy Faraday's law trivially.
     // At the origin with zero accumulated phase the mode sits at a cosine
@@ -2266,9 +2291,16 @@ inline int runMaxwellSelfTest(
         std::abs(zeroPointReferenceElectric.x
                  -c*zeroPointReferenceMagnetic.y);
     const bool zeroPointFaradayOk=std::isfinite(zeroPointFaradayCoarse)
+        &&std::isfinite(zeroPointFaradayMedium)
         &&std::isfinite(zeroPointFaradayFine)
         &&zeroPointFaradayFine<zeroPointFaradayCoarse
         &&zeroPointFaradayFine<1.0e-6
+        // Second order per decade of step, which is what says the exact
+        // residual is zero rather than merely small.  Fifty is a wide band
+        // around the measured 100.0 and 100.9; anything that plateaus
+        // returns a ratio near one and fails here.
+        &&zeroPointFaradayFirstRatio>50.0
+        &&zeroPointFaradaySecondRatio>50.0
         &&zeroPointAmplitudeResidual<1.0e-12
         &&zeroPointImpedanceResidual<1.0e-12;
     const double secularM1Coarse=secularM1AverageAtNodes(512);
@@ -5875,6 +5907,9 @@ inline int runMaxwellSelfTest(
                  << " (expected " << secularPhaseRateExpected
                  << ", circular residual " << circularPhaseRateResidual
                  << ")\n"
+              << "ZPF Faraday order/decade: " << zeroPointFaradayFirstRatio
+              << " / " << zeroPointFaradaySecondRatio
+              << "  (h^2 is 100)\n"
               << "ZPF Faraday coarse/fine: " << zeroPointFaradayCoarse
                  << " / " << zeroPointFaradayFine
                  << "  (amplitude " << zeroPointAmplitudeResidual
