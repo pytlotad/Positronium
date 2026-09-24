@@ -173,4 +173,7 @@ inline Vec3 gExternalMagneticField;
 // orbit itself is untouched at the ninth decimal.  What the field does reach
 // is the dipoles, which precess at the same 8.8e6 rad/s -- about 3e-4 rad over
 // a 35 ps collapse.  The effect is real, small, and mostly magnetic.
+// The "35 ps" is UNATTRIBUTED -- see the identical note in
+// configuration_panel.hpp: it matches no configuration this tree has today
+// and carries the order of magnitude only.
 inline constexpr double earthScaleMagneticField=50.0e-6;

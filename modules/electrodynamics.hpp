@@ -1280,7 +1280,11 @@ enum class ChargeRadiationReactionModel {
     // are rare enough per trajectory that 80 bisection steps cost
     // nothing). Statistically close to unchanged in aggregate (10 seeds,
     // o-Ps: median 155.7 ps vs the 147.8-151.6 ps this file already
-    // recorded pre-fix, 0 numerical failures either way) even though the
+    // recorded pre-fix, 0 numerical failures either way) -- STAMP: level 2
+    // (the default at the time), floor on, s_max 0.30, deterministic
+    // emission, 10 seeds, budget not recorded; the two figures are a
+    // BEFORE/AFTER pair from one scan and are comparable with each other
+    // and with nothing else -- even though the
     // per-photon eccentricity value itself moved by O(1) at nearly every
     // event: collapse TIME is set mainly by the energy/hazard integral,
     // which this fix does not touch, while eccentricity feeds the
@@ -1372,6 +1376,8 @@ enum class ChargeRadiationReactionModel {
     // where the unfixed guard gave 1/80.  Collapse time itself barely
     // moved either way (ortho median 100-155 ps across several seeds,
     // versus the 147.8-151.6 ps already on record from before either
+    // (same stamp as above: level 2, floor on, s_max 0.30, deterministic,
+    // 10 seeds -- a before/after pair, not a citable lifetime)
     // change), because collapse time is set by the energy/hazard integral,
     // which none of this touches; eccentricity -- now genuinely reaching
     // values like e^2=0.9-0.95 that the old k-ratio path could never

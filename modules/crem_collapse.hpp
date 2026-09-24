@@ -159,6 +159,44 @@ struct CremCollapseEstimate {
     double initialSemiMajorAxis=std::numeric_limits<double>::quiet_NaN();
     double initialEccentricity=std::numeric_limits<double>::quiet_NaN();
     double analyticCollapseSeconds=std::numeric_limits<double>::quiet_NaN();
+    // CONFIGURATION STAMP -- THE RULE FOR EVERY COLLAPSE TIME IN THIS TREE.
+    //
+    // A collapse time is meaningless without the configuration that produced
+    // it, and this file has already been burned by that once.  The
+    // convergence table at maximumJumpParameter used to read 124.169 /
+    // 124.957 / 125.585 / 124.986 / 124.328 ps and claim +/-0.6% over a 25x
+    // range; it reproduced at NO configuration the file had, because it had
+    // been carried forward across a change of defaults without being
+    // remeasured.  What it hid was a real step dependence of +29.5%, still
+    // climbing at the finest step.  The dependence is closed now (flat to
+    // 0.4% over 6.7x) but the process defect is the thing to prevent, and
+    // the same quantity still appears at 200, 147.8, 199.4, 6206, 35 and
+    // 31.12 ps across this tree, every one of them a different setting.
+    //
+    // SO: a collapse time is quoted here only with all six of
+    //     level      --level 1 or 2 (the DEFAULT MOVED from 2 to 1; a number
+    //                measured before that move must say so)
+    //     floor      ground-state floor on, or --no-ground-state-floor
+    //     s_max      maximumJumpParameter
+    //     emission   deterministic / --emission poisson / continuous
+    //                (--radiation-reaction individual)
+    //     seed       --seed, and --runs if it is a median
+    //     budget     --crem-wallclock-budget-s, since a truncated run is
+    //                censored and its median is not the same estimator
+    // or it is marked UNATTRIBUTED and not used to support a claim.  A number
+    // that cannot be stamped is a number that cannot be cited; README's
+    // "Protokol" paragraph is the worked example of the stamp done right.
+    //
+    // AND THE REASON THAT TABLE SURVIVED IS WORTH KEEPING.  Its five values
+    // ran 124.169 to 125.585 ps, which brackets the MEASURED para-Ps
+    // lifetime of 124.49 ps (configuration_panel.hpp).  A stale simulation
+    // number sitting on top of the experimental one looks like agreement,
+    // so nobody asked it for its configuration.  That coincidence is why a
+    // stamp cannot be optional for plausible-looking numbers: those are
+    // precisely the ones that are not challenged.  Note also that 124.49 ps
+    // is an EXTERNAL reference and needs a source, not a run stamp -- the
+    // two disciplines are different and both apply.
+    //
     // COLLAPSE TIME, as reported since audit section 108: the time the pair
     // takes to pass from its ground-state separation a_pair to the collision
     // boundary 0.005 a_pair (0.01 a0 for e+e-) under CONTINUOUS electric-
@@ -1942,6 +1980,12 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
     // lifetime was therefore late by up to one checkpoint -- 18.675 ps at n=1
     // -- and moved with maximumJumpParameter (199.45 or 216.75, 207.74,
     // 203.38 ps at s_max 0.30, 0.15, 0.075, audit 96).
+    // STAMP: audit 96's configuration, PRE-DEFAULT-MOVE -- level 2 was the
+    // default then, floor on, deterministic emission.  The seed and budget
+    // are not recorded in audit 96 and are not reconstructible, so these
+    // four numbers are historical evidence that the bug MOVED the lifetime
+    // and are not comparable with any of today's; nothing here rests on
+    // their values.
     //
     // The hazard is linear in the number of orbits and the stochastic orbit
     // does not change between photons, so the orbit on which the running
@@ -3654,11 +3698,14 @@ inline CremCollapseEstimate estimateCremCollapse(std::uint64_t seed,
         // shape below is a step-dependent error rather than a correction.
         //
         // What it cost: the collapse time was not converged in s at all,
-        // running 147.8 -> 163.7 -> 180.8 -> 191.4 ps as s_max went
-        // 0.30 -> 0.20 -> 0.10 -> 0.045, monotonically and still climbing,
+        // running monotonically and still climbing at the finest step,
         // because a coarser step both shortened every checkpoint and
-        // inflated its hazard.  With all six sites flat it reads
-        // 199.43 / 198.97 / 198.94 ps over the same range.
+        // inflated its hazard.  Both scans, before and after, are the table
+        // at maximumJumpParameter, which carries the configuration stamp;
+        // they are NOT repeated here.  A second unstamped copy of a
+        // convergence table is exactly how the 124 ps table survived a
+        // change of defaults, so this site points at the stamped one
+        // instead of duplicating it.
         const double checkpointProperTime=
             measuredElapsed*static_cast<double>(orbitsToSkip)
             *(isStochastic?1.0:(1.0-0.5*jumpParameter));

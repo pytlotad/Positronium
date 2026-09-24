@@ -1315,7 +1315,12 @@ inline SimulationResult simulate(std::uint64_t seed, int selectedPhenomenon,
     // no drift term.  So a common drift is projected straight back out of the
     // collapse integral.  Measured at 0.30 c: the Kaplan-Meier collapse time
     // does not move at all (147.818 ps para and 147.819 -> 147.820 ps ortho,
-    // against a 12-run sigma/mean of 1e-5), while the pair's total motional
+    // against a 12-run sigma/mean of 1e-5) -- STAMP: level 2, floor on,
+    // s_max 0.30, deterministic emission, 12 runs, budget not recorded.
+    // What is load-bearing here is the DIFFERENCE being zero, which is
+    // configuration-independent in the way the argument below needs; the
+    // absolute 147.8 is not comparable with today's defaults --
+    // while the pair's total motional
     // dipole changes by 86x.  A null collapse-time result from this switch is
     // therefore a statement about the estimator's scope, NOT about physics,
     // and must not be reported as one.  Making it a real measurement means

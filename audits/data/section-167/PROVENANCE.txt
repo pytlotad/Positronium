@@ -1,0 +1,29 @@
+Audit section 167 (2026-09-24) is a documentation change and produced no
+measurements of its own.
+
+What it touched, all comments:
+  modules/crem_collapse.hpp       the stamp rule, written once at the
+                                  collapse-time definition; the duplicated
+                                  convergence table inside
+                                  checkpointProperTime replaced by a pointer
+                                  to the stamped one; audit 96's four
+                                  historical values stamped and marked
+                                  historical
+  modules/electrodynamics.hpp     two sites quoting 147.8-151.6 / 155.7 ps
+  modules/configuration_panel.hpp the 6398.9 / 6206.4 Poisson-vs-deterministic
+                                  pair; the unattributed 35 ps
+  modules/pair_configuration.hpp  the same unattributed 35 ps
+  modules/crem_trajectory.hpp     the 147.818 / 147.820 null result
+
+Each stamp records the configuration from the surrounding commentary and the
+audit history at that site.  Nothing was remeasured, and where the
+configuration could not be recovered -- audit 96's seed and budget, and the
+35 ps entirely -- the number is marked rather than guessed.
+
+The inventory of remaining "ps" values quoted in 167f comes from
+  grep -rhoE "[0-9]+[.,]?[0-9]* ?ps\b" --include=*.hpp modules/ | sort -u
+which returns about fifty distinct values; 167f states why they were not all
+stamped.
+
+Validation PASS and header isolation 38/37 after the change, as expected for
+a comment-only edit.

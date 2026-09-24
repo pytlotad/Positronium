@@ -205,7 +205,11 @@ inline double gInitialSeparationOverride = 0.0;
 // because every trajectory now shares the identical circular Larmor rate and
 // there is nothing left for the threshold draw to average over. The mean is
 // preserved as claimed: 6398.9+/-568.1 ps (Poisson) against 6206.4 ps
-// (deterministic), 0.34 standard errors apart. Poisson's entire reported
+// (deterministic), 0.34 standard errors apart.  STAMP for both: N=100,
+// seed 7, level 2, floor on, s_max 0.30, budget 1200 s; the pair differs
+// only in the emission rule, which is the whole point of the comparison.
+// The 6206.4 here is the same configuration as README's 6206.43 baseline
+// and is NOT the 199 ps of --level 1. Poisson's entire reported
 // spread is therefore shot noise around that same number, not a competing
 // physical prediction, so deterministic is the better default estimator of
 // the trajectory itself; --emission poisson remains available for whoever
@@ -596,6 +600,11 @@ inline double cremWallClockBudgetSeconds = 90.0;
 // itself is untouched at the ninth decimal.  What the field does reach is the
 // dipoles, which precess at the same 8.8e6 rad/s, about 3e-4 rad over a
 // 35 ps collapse.  The effect is real, small, and mostly magnetic.
+// The "35 ps" is UNATTRIBUTED: it matches no configuration this tree has
+// today (level 1 gives ~199 ps, level 2 with the floor ~6206 ps) and its
+// settings are not recorded.  It survives only as the ORDER OF MAGNITUDE
+// the 3e-4 rad is divided into; nothing rests on its value, and it must
+// not be quoted as a lifetime.
 //
 // OFF THE MAIN PATH: any nonzero value.  Zero is the historical behaviour,
 // the model's own list of excluded effects named external fields, and every

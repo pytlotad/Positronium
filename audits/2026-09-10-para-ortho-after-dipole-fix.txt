@@ -11853,3 +11853,81 @@ measurement of whether that survives a cascade.
       orbit audit 159 measured and not about the plunge.  The radiated energy
       per orbit is the probe's own E1-to-E4 step at 192 samples.  No claim is
       made about what the residue IS.
+
+167. EVERY CITED COLLAPSE TIME NOW CARRIES ITS CONFIGURATION, AND THE
+     DUPLICATE THAT WOULD HAVE REPEATED THE FAILURE IS GONE
+==================================================================
+
+167a. THE DEFECT, WHICH IS A PROCESS ONE.  The convergence table at
+      maximumJumpParameter once read 124.169 / 124.957 / 125.585 / 124.986 /
+      124.328 ps and claimed +/-0.6% over a 25x range.  It reproduced at no
+      configuration the file had, because it had been carried across a change
+      of defaults without being remeasured, and what it hid was a real step
+      dependence of +29.5% still climbing at the finest step.  The dependence
+      was closed (flat to 0.4% over 6.7x) and the table restamped, but the
+      process that produced it was not addressed, and the same quantity is in
+      circulation at 200, 147.8, 199.4, 6206, 35 and 31.12 ps.
+
+167b. WHY THAT TABLE WAS NEVER CHALLENGED, which is the part worth keeping.
+      Its five values bracket 124.49 ps, the MEASURED para-Ps lifetime this
+      tree quotes in configuration_panel.hpp.  A stale simulation number
+      sitting on top of the experimental one reads as agreement, so nobody
+      asked it for its configuration.  Plausible-looking numbers are exactly
+      the ones that are not challenged, which is why the stamp cannot be
+      applied only where something already looks wrong.
+
+167c. THE RULE, written once at the collapse-time definition.  A collapse
+      time is quoted with all six of: level (and whether it predates the
+      default moving from 2 to 1), ground-state floor, s_max, emission rule,
+      seed and run count, wall-clock budget -- or it is marked UNATTRIBUTED
+      and may not support a claim.  README's "Protokol" paragraph already
+      does this correctly and is named as the worked example.
+
+167d. THE DUPLICATE IS GONE.  The same convergence scan appeared twice: once
+      at maximumJumpParameter with its stamp, once inside checkpointProperTime
+      without one.  An unstamped second copy is the exact mechanism that let
+      the 124 ps table outlive its configuration, so that site now points at
+      the stamped table instead of repeating its numbers.
+
+167e. WHAT EACH CIRCULATING NUMBER GOT.
+        199.43 / 198.97 / 198.94 / 199.75  already stamped at
+                                           maximumJumpParameter (level 1, no
+                                           floor, deterministic, seed 42)
+        6206.4 (configuration_panel)       stamped N=100, seed 7, level 2,
+                                           floor on, s_max 0.30, budget 1200,
+                                           and tied to README's 6206.43
+        147.8-151.6 and 155.7              stamped level 2, floor on,
+        (electrodynamics, two sites)       s_max 0.30, deterministic, 10
+                                           seeds; marked a before/after PAIR,
+                                           comparable with each other only
+        147.818 / 147.820 (crem_trajectory) stamped level 2, floor on, 12
+                                           runs; the DIFFERENCE is what the
+                                           argument uses and that is
+                                           configuration-independent
+        199.45 / 216.75 / 207.74 / 203.38  stamped as audit 96's
+                                           pre-default-move configuration,
+                                           seed and budget not recoverable;
+                                           marked historical evidence of a
+                                           bug's SIZE, not citable lifetimes
+        35 ps (two sites)                  marked UNATTRIBUTED: it matches no
+                                           configuration this tree has, and
+                                           now carries only the order of
+                                           magnitude the 3e-04 rad divides by
+        31.12 ps                           left as is: it is a CLOSED FORM,
+                                           not a run, and the comment already
+                                           states the formula and its limits
+        124.49 ps                          left as is: an EXTERNAL measured
+                                           value, which needs a source rather
+                                           than a run stamp
+
+167f. LIMITS.  This covers the collapse-time family the review named.  A
+      sweep of every "ps" in modules/ finds about fifty more values, and they
+      were NOT all stamped: most are differences, sigmas, checkpoint scales
+      or before/after pairs rather than citable lifetimes, and stamping a
+      difference would be noise.  The rule in 167c is what governs the next
+      one; nothing here enforces it mechanically, so it remains a convention
+      a reviewer has to apply, not a check the build runs.  No number was
+      remeasured in this section -- the stamps record the configuration each
+      number was taken at, from the surrounding commentary and audit history,
+      and where that could not be recovered the number is marked
+      unattributed rather than guessed.
