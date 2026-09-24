@@ -1,0 +1,34 @@
+THE EXPANSION PARAMETER OF THE REDUCTION OF ORDER.
+tau0 = q^2/(6 pi eps0 m c^3) = 6.266425e-24 s.
+Circular configurations, tilt 0, para, evolved 200 steps before reading;
+omega is the osculating orbital frequency.  The last two columns are
+independent: tau0*omega is predicted, |F_LL|/|F_ext| is measured.
+
+   r/r*     omega [1/s]    tau0*omega   |F_ext| [N]   |F_LL| [N]  ratio
+   10.1     8.3742e+18     5.2476e-05   5.9362e-05   3.0921e-09   5.2089e-05
+    5.1     2.3686e+19     1.4842e-04   2.1761e-04   3.1641e-08   1.4541e-04
+    3.1     5.0964e+19     3.1936e-04   5.6058e-04   1.7500e-07   3.1217e-04
+    2.0     9.3626e+19     5.8670e-04   1.4830e-03   8.8439e-07   5.9636e-04
+    1.4     1.4415e+20     9.0329e-04   4.0463e-03   4.6547e-06   1.1504e-03
+    0.8     2.6481e+20     1.6594e-03   1.7118e-02   5.9758e-05   3.4909e-03
+
+They agree to 2% down to 2 r*, which establishes tau0*omega as the parameter
+rather than a dimensional guess.  Below 2 r* the measured ratio runs high,
+which is the plunge and is outside what this section claims.
+
+THE RESIDUE IS CONVERGED.  tools/field_energy_integral 3.0 0 0 <samples>
+48 12 24 12, production reaction model, 64 integration steps per sample:
+  samples      E1        E4        E5        E6
+     48     0.021041  0.001606  0.000707  0.009244
+     96     0.021077  0.001445  0.000848  0.009413
+    192     0.021143  0.001464  0.000857  0.009432
+E5 moves 20% between the first two rows and 1.1% between the last two, so
+the 48-sample row was the unconverged one.  The residue is 8.57e-04 |U_dd|,
+4.05% of the imbalance.
+
+THE ARITHMETIC.
+  radiated per orbit, E1 - E4 at 192 samples   0.019679 |U_dd|
+  next order of the reduction, tau0*omega x that  6.28e-06 |U_dd|
+  residue                                       8.57e-04 |U_dd|
+  ratio                                              136
+Closing the energy line with that term would take it from 95.95% to 95.98%.

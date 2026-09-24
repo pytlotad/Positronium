@@ -11771,3 +11771,85 @@ measurement of whether that survives a cascade.
       what is established is that the routine HAS these failure modes on
       admissible inputs, not that any run reaches them.  The assertion in
       165f covers only the trajectories the suite drives.
+
+166. THE 4% RESIDUE IS NOT THE REDUCTION OF ORDER: THAT TERM IS 135 TIMES
+     TOO SMALL, AND THE FORCE IT WOULD CORRECT IS ALREADY COVARIANT
+==================================================================
+
+166a. WHAT WAS ASKED.  A review proposed replacing the order-reduced
+      Landau-Lifshitz force with the full Lorentz-Dirac a-dot term plus a
+      numerical filter for runaways, to close audit 159f's energy line from
+      96% to better than 99.5%.  It described the present force as one where
+      "the acceleration derivative in the Lorentz-Dirac force is replaced by
+      the gradient of the Coulomb force along the trajectory".
+
+166b. THAT IS NOT WHAT THE CODE DOES.  individualLandauLifshitzSelfForces
+      differences the FULL retardedExternalForces -- Lienard-Wiechert charge
+      fields, the retarded dipole sector, the hidden-momentum rate, all of it
+      -- at states advanced forward and backward along the worldline, builds
+      the four-force at each, and projects the derivative orthogonal to the
+      four-velocity before scaling by tau0.  There is no Coulomb-gradient
+      shortcut to remove.  What remains approximate is the reduction of order
+      itself, a-dot -> (1/m) dF/dtau, and nothing else.
+
+166c. AND THE REMAINING APPROXIMATION IS THE WRONG SIZE BY TWO ORDERS.  The
+      expansion parameter of that reduction is tau0 omega, with
+      tau0 = q^2/(6 pi eps0 m c^3) = 6.2664e-24 s.  Measured, with the force
+      ratio confirming the parameter independently:
+        r/r*     omega [1/s]   tau0*omega   |F_LL|/|F_ext|
+        10.1     8.3742e+18    5.2476e-05     5.2089e-05
+         5.1     2.3686e+19    1.4842e-04     1.4541e-04
+         3.1     5.0964e+19    3.1936e-04     3.1217e-04
+         2.0     9.3626e+19    5.8670e-04     5.9636e-04
+         1.4     1.4415e+20    9.0329e-04     1.1504e-03
+         0.8     2.6481e+20    1.6594e-03     3.4909e-03
+      The two columns agree to 2% down to 2 r*, which is the check that
+      tau0 omega IS the parameter and not merely a dimensional guess.
+
+166d. WHICH SETTLES IT.  The next order of the reduction is O(tau0 omega)
+      relative to the Landau-Lifshitz force itself, and that force is what
+      removes the radiated energy, 0.019679 |U_dd| per orbit at 3 r*.  So the
+      neglected term is worth
+        3.1936e-04 x 0.019679 = 6.28e-06 |U_dd| per orbit
+      against a residue of 8.57e-04.  It is 136 TIMES TOO SMALL.  Implementing
+      it would move the energy line from 95.95% to 95.98%, not to 99.5%.
+
+166e. AND THE PROPOSED ROUTE IS BACKWARDS.  The Lorentz-Dirac a-dot term is
+      the source of runaway and pre-acceleration solutions; the reduction of
+      order is the standard, runaway-free cure for exactly that, not a
+      shortcut around it.  Restoring a-dot and filtering the runaways
+      numerically would replace a controlled O(tau0 omega) truncation with an
+      unstable equation plus a filter whose own error nobody has bounded.
+      The legitimate higher-order step is a SECOND reduction of order, which
+      is the 6.3e-06 |U_dd| of 166d.
+
+166f. SO 159f's ATTRIBUTION FALLS, AND THE RESIDUE IS REAL.  Audit 159f
+      assigned the residue to "the order-reduced Landau-Lifshitz
+      approximation" by elimination, having measured neither the term nor its
+      scale.  It cannot be that term.
+      The obvious way out would be that the residue is not converged -- E5
+      moved 20% between 48 and 96 samples, which is not the behaviour of a
+      settled number -- so that was tested and it is not the way out.  At 192
+      samples:
+        samples      E1        E4        E5
+           48     0.021041  0.001606  0.000707
+           96     0.021077  0.001445  0.000848
+          192     0.021143  0.001464  0.000857
+      E5 moves 1.1% between the last two rows against 20% between the first
+      two, so the 48-sample row was the unconverged one and the residue is a
+      genuine 8.57e-04 |U_dd|, 4.05% of the imbalance.  What it IS remains
+      open; what it is not is the reduction of order.
+
+166g. WHAT WAS CHANGED.  Nothing in the model.  This section is a refusal
+      with a measurement behind it: the requested term exists in a correct
+      covariant form already, the part that is genuinely missing is 135 times
+      smaller than the target it was asked to close, and the proposed
+      mechanism for supplying it is less stable than what is there.
+
+166h. LIMITS.  tau0 omega is evaluated on circular configurations at one
+      tilt and one channel, with omega the osculating orbital frequency; a
+      plunging orbit reaches higher omega and the parameter grows with it,
+      reaching 1.7e-03 at 0.8 r*, so the 136 is a statement about the regular
+      orbit audit 159 measured and not about the plunge.  The radiated energy
+      per orbit is the probe's own E1-to-E4 step at 192 samples.  No claim is
+      made about what the residue IS.

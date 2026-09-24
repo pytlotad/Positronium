@@ -1,0 +1,18 @@
+Raw outputs behind audit section 166 (2026-09-24).
+  measurements.txt   every number the section quotes
+
+No pre-registration: the section is a scale estimate checked against an
+independent measurement of the same ratio, plus a convergence sequence read
+directly.  No threshold enters any conclusion.
+
+The tau0*omega table comes from a throwaway probe built against the
+production headers, which evolves each circular configuration 200 steps and
+then calls retardedExternalForces and individualLandauLifshitzSelfForces on
+the resulting state with includeMutual=false, matching the production
+reaction path.
+
+The 48- and 96-sample rows are audit 159's, from
+audits/data/section-159/samples.txt and samples96.txt.  The 192-sample row
+was run here with the same command and the same grid.
+
+No source file was changed by this section.
