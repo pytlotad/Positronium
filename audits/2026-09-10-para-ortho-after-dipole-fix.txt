@@ -12303,7 +12303,7 @@ measurement of whether that survives a cascade.
         0.90     -3.438        -3.974        +0.537       +0.600
         1.00     -3.394        -4.002        +0.608        0.000
         1.10     -3.383        -3.999        +0.615       -0.600
-        1.20     -3.575        -3.992        +0.417       -1.200
+        1.20     -3.455        -4.000        +0.545       -1.200
       The ratio exponent is +0.42 to +0.62 at EVERY p, with no trend, while
       the prediction sweeps 2.4 across the same range.  P_rad holds -3.97 to
       -4.06 throughout, which is the instrument checking itself against
@@ -12316,7 +12316,7 @@ measurement of whether that survives a cascade.
         ride p=0.90  +0.61  [+0.22, +1.01]
         ride p=1.00  +0.51  [+0.36, +0.72]
         ride p=1.10  +0.60  [+0.21, +1.03]
-        ride p=1.20  +0.56  [+0.03, +1.09]
+        ride p=1.20  +0.57  [+0.24, +0.80]
         170 scale 0.1  +0.15  [-0.31, +0.50]
         170 scale 0.3  +0.06  [-0.32, +0.33]
         170 scale 1    +0.29  [-0.04, +0.52]
@@ -12342,8 +12342,13 @@ measurement of whether that survives a cascade.
 172g. LIMITS.  One reference frequency, one scale, one channel, 16 seeds and
       32 orbits per point, 16 modes, instantaneous mutual forces, radiation
       reaction disabled, circular preparation.  The p = 1.2 row at 0.03
-      a_pair kept only 7 of 16 runs inside the survival window and is the
-      thinnest point in the table.  "Resonant over only part of the inspiral"
+      a_pair is the thinnest point, keeping 15 of 16 runs inside the
+      survival window against 16 of 16 everywhere else.  (It was quoted at
+      7 of 16 when this section was first written, from a snapshot taken
+      before the scan finished; the completed scan moved that row's ratio
+      exponent from +0.417 to +0.545 and halved its bootstrap interval,
+      which strengthens 172d rather than weakening it.)
+      "Resonant over only part of the inspiral"
       is addressed here only through the overlap column, which shows the band
       never leaves the orbit inside the scan; a band deliberately shaped to
       engage over one stretch and disengage over another is a different

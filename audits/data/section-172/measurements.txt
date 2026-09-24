@@ -3,6 +3,13 @@ omega_ref = 2.067069e+16 rad/s = omega_orb(a_pair).  p = 1 is production,
 p = 0 is audit 171's frozen band.  Scale 0.3, 16 modes, 16 seeds x 32
 orbits per point, survivors only (0.5 <= final/initial <= 2).
 
+COMPLETENESS.  The scan is 320 rows, all five exponents x four radii x 16
+seeds.  An earlier snapshot of this file held 313 and audit 172 was first
+written from it; the seven missing rows were all p = 1.2 at 0.03 a_pair,
+which was the point 172g flagged as thinnest.  With them the survivor count
+there goes 7 of 16 to 15 of 16, and the numbers below are the complete
+scan.
+
 CONTROL, seed 301 at 0.1 a_pair, identical to every digit:
   p=1 with reference set   ROW 1.303656506e-03 1.043583853e-04  band 6.536645e+17
   plain production band    ROW 1.303656506e-03 1.043583853e-04  band 6.536645e+17
@@ -25,7 +32,7 @@ FITTED RADIAL EXPONENTS:
   0.90      -3.438        -3.974        +0.537         +0.600
   1.00      -3.394        -4.002        +0.608          0.000
   1.10      -3.383        -3.999        +0.615         -0.600
-  1.20      -3.575        -3.992        +0.417         -1.200
+  1.20      -3.455        -4.000        +0.545         -1.200
 The ratio exponent is flat in p; the prediction sweeps 2.4 across the range.
 
 BOOTSTRAP over seeds, 2000 resamples, 68% interval on the ratio exponent:
@@ -33,7 +40,7 @@ BOOTSTRAP over seeds, 2000 resamples, 68% interval on the ratio exponent:
   ride p=0.90   +0.61  [+0.22, +1.01]   width 0.79
   ride p=1.00   +0.51  [+0.36, +0.72]   width 0.36
   ride p=1.10   +0.60  [+0.21, +1.03]   width 0.82
-  ride p=1.20   +0.56  [+0.03, +1.09]   width 1.05
+  ride p=1.20   +0.57  [+0.24, +0.80]   width 0.56
   audit 170, scale 0.1  +0.15  [-0.31, +0.50]  width 0.81
   audit 170, scale 0.3  +0.06  [-0.32, +0.33]  width 0.65
   audit 170, scale 1    +0.29  [-0.04, +0.52]  width 0.56
