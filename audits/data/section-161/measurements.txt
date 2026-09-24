@@ -1,0 +1,54 @@
+149's FAILURE NO LONGER HAPPENS.
+tools/step_failure_jump <r/r*> 0 45 <tol> 20 50, para tilt 45, one orbit:
+  tolerance 1e-08   no failure in 256 steps
+  tolerance 1e-09   no failure in 256 steps
+  tolerance 1e-10   failure in outer step 127: r 0.22104 r*, beta1 0.2672,
+                    dt 8.8389e-29 s, error 1.073e-10, history 131 nodes
+Audit 149 reported this configuration failing at step 6 of 256.
+
+MINMOD LIMITER (audit 150) FIRING COUNT, inspiral 2.0 r* -> 1.2 r*,
+tol 1e-8, 4055 steps, straddle test evaluated for both particles:
+  fired 0 of 8110 stencil evaluations (0.0000%)
+
+PINNED STENCIL CONVERGENCE at 1.1998 r*, production h0 = 7.7364e-26 s.
+|dE/dt| in V/m/s and the relative change from the previous row:
+  h/h0        |dE/dt|                 rel. change
+     8      3.149123149132e+36
+     4      3.149122307705e+36        3.122e-07
+     2      3.149122970798e+36        3.138e-07
+     1      3.149123182606e+36        2.023e-07
+   0.5      3.149121104315e+36        6.658e-07
+  0.25      3.149113620149e+36        2.728e-06
+ 0.125      3.149100124666e+36        1.025e-05
+0.0625      3.149142089896e+36        2.082e-05
+0.03125     3.149073880873e+36        2.697e-05
+0.01562     3.149069067793e+36        1.719e-05
+
+SECTOR SPLIT of the stencil noise, same pin and steps, at 0.9739 r*,
+h0 = 6.2793e-26 s, 129 history nodes.  Worst relative step-to-step change
+of the rate for h <= 2 h0:
+  charge, Lienard-Wiechert    1.106e-08
+  dipole, pole limit          1.378e-04
+  both, production            2.050e-05
+
+SIZE OF THE TERM, circular states, tilt 45, causal initial history:
+  r/r*    |F_total| [N]   |F_hidden| [N]   F_hid/F_tot
+  5.00     2.6409e-04      3.5781e-06       1.355e-02
+  3.00     8.3555e-04      1.9593e-05       2.345e-02
+  2.00     2.3106e-03      6.9552e-05       3.010e-02
+  1.50     4.8770e-03      1.5912e-04       3.263e-02
+  1.20     8.4497e-03      2.8772e-04       3.405e-02
+  1.00     1.2668e-02      4.5060e-04       3.557e-02
+  0.70     2.4146e-02      9.7049e-04       4.019e-02
+  0.50     3.8763e-02      1.7203e-03       4.438e-02
+
+SPIN SUB-STEP STABILITY (section 160, kept here for the same file).
+advanceThomasBmtDipole at fixed field, sweeping dt:
+  omega*dt [rad]    |mu| drift rel   two half-steps vs one full
+  1.328e-11         1.112e-16        5.559e-17
+  1.328e-06         0.000e+00        7.862e-17
+  1.328e-01         1.112e-16        1.243e-16
+  1.328e+04         1.112e-16        1.668e-16
+  1.328e+09         1.112e-16        2.241e-16
+  1.328e+14         1.112e-16        2.439e-16
+  1.328e+19         0.000e+00        1.112e-16

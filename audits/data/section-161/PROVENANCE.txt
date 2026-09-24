@@ -1,0 +1,18 @@
+Raw outputs behind audit section 161 (2026-09-24).
+  measurements.txt   all five measurements the section quotes
+
+No pre-registration: every test here is read directly off a convergence
+sweep or is a count, and no threshold enters any conclusion.  The one
+number that is an estimate rather than a measurement, the 7e-07 of 161g,
+is labelled as an order of magnitude in the section and in 161i.
+
+Tools: tools/step_failure_jump.cpp for 161b, unchanged in the tree.  The
+limiter count, the step sweep, the sector split and the force fractions
+come from throwaway probes built against the production headers, which
+replicate hiddenMomentumRateForce's own stencil, pin and straddle test
+verbatim rather than calling it, because the function returns the assembled
+force and not the field rate inside it.
+
+The run comparing terminal radius with and without CREM_NO_HIDDEN_MOMENTUM_
+FORCE was started and did not finish inside the session's budget; 161i says
+so, and no number from it appears in the section.

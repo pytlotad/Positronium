@@ -11323,3 +11323,107 @@ measurement of whether that survives a cascade.
       measured before any rule was written for them, which prereg_160.txt
       states; no threshold enters their conclusion, and the one conclusion
       that did need a threshold, R160c, was registered first and failed.
+
+161. THE 149 FAILURE IS GONE, THE LIMITER NEVER FIRES, AND THE REMAINING
+     NOISE IS THE POLE LIMIT RATHER THAN THE STENCIL
+==================================================================
+
+161a. WHY THIS WAS OPENED.  A review proposed symplectic operator splitting
+      against a stiffness attributed to Thomas-BMT precession near r*.
+      Section 160's commit answered that: the splitting is already in
+      integrateElectrodynamicStep, the spin sub-step is an exact rotation
+      with no step-size restriction, and omega_spin/omega_orbit saturates at
+      0.054 -- the precession is the SLOW mode everywhere.  What that left
+      was the sector the same measurement identified: the dipole force, and
+      inside it the hidden-momentum rate, whose own comment names an analytic
+      d(mu x E)/dt as the repair still owed.  This section measures what that
+      repair would actually buy, and finds the comment right about the repair
+      and wrong about its target.
+
+161b. FIRST, 149's FAILURE NO LONGER HAPPENS.  tools/step_failure_jump at
+      1 r*, para, tilt 45, one orbit:
+        tolerance 1e-08   no failure in 256 steps
+        tolerance 1e-09   no failure in 256 steps
+        tolerance 1e-10   fails at step 127, r = 0.221 r*, dt 8.84e-29 s
+      Audit 149 reported this configuration failing at step 6 of 256 and
+      every tilted orbit inside 2.5 r* dying with it.  Audits 150 and 151
+      fixed it: 151 pinned the three samples to one history segment, 150 put
+      a minmod limiter behind that.  The surviving failure is at 0.221 r*,
+      deep inside the barrier the model already declares itself invalid
+      below, and only at a tolerance no production path uses.
+
+161c. AND THE LIMITER IS DORMANT, WHICH SAYS WHICH OF THE TWO FIXED IT.
+      Counting the straddle test over a real inspiral, 2 r* to 1.2 r*, 4055
+      steps, both particles:
+        minmod limiter fired 0 of 8110 stencil evaluations
+      So 151's pin removed the node crossings outright, and 150's limiter is
+      a dormant guard rather than something clipping the term.  That matters
+      for reading the model: the hidden-momentum force is not being silently
+      limited anywhere in the production range.
+
+161d. THE PINNED STENCIL IS CONVERGED.  Sweeping the derivative step over a
+      factor of 512 at 1.2 r*, production h0 = 7.74e-26 s:
+        h/h0      8        4        2        1      0.5     0.25    0.125
+        |dE/dt|  3.149123 3.149122 3.149123 3.149123 3.149121 3.149114
+        3.149100
+                 (x1e36 V/m/s)
+      The value holds to six digits from 8h0 down to h0 and then degrades --
+      2.7e-05 of scatter by h0/32 -- which is round-off amplified by 1/h, not
+      truncation.  h0 sits at the turn, so the step is well chosen.
+
+161e. BUT THE NOISE IS ENTIRELY THE POLE-LIMIT DIPOLE FIELD.  Same pin, same
+      steps, sectors separated, at 0.974 r*.  Worst relative step-to-step
+      change of the rate near h0:
+        charge, Lienard-Wiechert    1.106e-08
+        dipole, pole limit          1.378e-04
+        both, production            2.050e-05
+      Four orders between them.  The charge field is already clean, so an
+      analytic derivative of IT would buy nothing; the whole of the residue
+      is the two-pole construction's cancellation error, which the same
+      constant this file quotes elsewhere puts at ~1e-10 of the field and
+      which 1/h multiplies by about 2000.
+
+161f. WHICH CORRECTS THE PLAN RECORDED IN THE CODE.  hiddenMomentumRateForce
+      says "the honest repair is an analytic d(mu x E)/dt, expressible from
+      the moment's precession and the field's own retarded derivatives".  The
+      repair is right and its target is misstated: (dmu/dt) x E is ALREADY
+      analytic there, via thomasBmtDipoleDerivatives, and the charge field's
+      contribution to mu x DE/Dt is clean at 1.1e-08.  The only piece that
+      needs the analytic treatment is the DIPOLE field's DE/Dt, and the
+      reason is not the stencil's order but the 1/h amplification of a
+      cancellation floor.  A per-pole analytic Lienard-Wiechert derivative,
+      combined by the SAME pole subtraction twoChargeLimitDipoleField already
+      performs, would move that floor from 1e-10/h to 1e-10 -- the factor of
+      2000 -- without any new field algebra.
+
+161g. HOW MUCH IT IS WORTH, SIZED.  The term is not small:
+        r/r*                5      3      2     1.5    1.2      1    0.7   
+        0.5
+        |F_hidden|/|F_tot| .0136  .0234  .0301  .0326  .0341  .0356 .0402
+        .0444
+      At 0.974 r* the rate's 2.05e-05 of scatter times a force fraction of
+      0.0356 is about 7e-07 of the total force, against the engine's
+      production relative tolerance of 1e-07 -- so it is ABOVE the tolerance
+      already, and both factors grow inward.  This is a real target, not a
+      cosmetic one, which is the opposite of what 161d alone would suggest.
+
+161h. WHAT IS NOT DONE HERE.  The analytic per-pole derivative is not
+      implemented.  It is not a small change: the path from observation event
+      to field runs through two nested retarded-time Newton solves, a Taylor
+      reconstruction of the pole kinematics off one pinned cubic, a moment
+      sampler, and two std::max clamps on the pole distance that are not
+      differentiable at their switch -- and that switch is exactly the
+      near-floor geometry the clamps were introduced for.  Writing it blind
+      and verifying it against the present numbers is a separate piece of
+      work, and this section stops at establishing that it is worth doing and
+      at what its target actually is.
+
+161i. LIMITS.  One channel, one tilt, two radii for the sector split, one
+      inspiral for the limiter count.  The limiter count covers 2 r* to
+      1.2 r* only; nothing here says it stays dormant below 1 r*, where 161b
+      still finds a failure at a tight tolerance.  The 7e-07 of 161g combines
+      a scatter measured at 0.974 r* with a force fraction measured on a
+      circular state at 1 r*, so it is an order of magnitude and not a
+      calibration.  Whether removing that noise actually buys depth was not
+      measured: the run comparing terminal radius with and without the
+      hidden-momentum term did not finish inside this session's budget.

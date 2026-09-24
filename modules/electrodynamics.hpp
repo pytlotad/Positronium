@@ -3687,6 +3687,37 @@ inline Vec3 hiddenMomentumRateForce(const State& state,
     // and the field's own retarded derivatives; this is the cheap one that
     // makes the term integrable.  CREM_HIDDEN_RATE_UNLIMITED restores the
     // bare three-point form for reproducing earlier numbers.
+    //
+    // AUDIT 161 MEASURED BOTH HALVES OF THAT AND NARROWED THE TARGET.  The
+    // limiter below is dormant in the production range -- it fired 0 of 8110
+    // stencil evaluations over an inspiral from 2 r* to 1.2 r* -- because
+    // audit 151's pin removed the node crossings outright.  So nothing here
+    // is being clipped, and 149's failure no longer reproduces: that orbit
+    // now completes 256/256 at tolerances 1e-08 and 1e-09.
+    //
+    // The repair is still owed, and its target is not what the paragraph
+    // above implies.  (dmu/dt) x E is ALREADY analytic, from
+    // thomasBmtDipoleDerivatives below.  Of the remaining mu x DE/Dt, the
+    // charge field's share is clean: separated by sector at 0.974 r*, the
+    // rate's worst relative scatter near h is 1.1e-08 for the
+    // Lienard-Wiechert field against 1.4e-04 for the pole-limit dipole
+    // field.  The residue is entirely the two-pole construction's
+    // cancellation floor, ~1e-10 of the field, which 1/h multiplies by about
+    // 2000 -- an amplification, not a lost order, so a higher-order stencil
+    // would not touch it and Richardson extrapolation would make it worse.
+    //
+    // What would: a per-pole analytic Lienard-Wiechert derivative combined by
+    // the SAME subtraction twoChargeLimitDipoleField already performs, which
+    // moves the floor from 1e-10/h to 1e-10 and needs no new field algebra.
+    // It is not small work -- the path runs through two nested retarded-time
+    // Newton solves, a Taylor reconstruction off one pinned cubic, and two
+    // std::max clamps on the pole distance that are not differentiable at
+    // exactly the near-floor geometry they exist for.
+    //
+    // It is worth doing: the term carries 1.4% of the total force at 5 r* and
+    // 4.4% at 0.5 r*, so the rate's 2e-05 of scatter is about 7e-07 of the
+    // total force at 1 r*, already past the engine's production relative
+    // tolerance of 1e-07, and both factors grow inward.
     // The escape hatch evaluates the ORIGINAL expression verbatim rather than
     // an algebraically equal rearrangement: (3 d1 - d2)/2 and
     // (3 now - 4 before + twiceBefore)/(2h) agree in exact arithmetic and not
