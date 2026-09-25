@@ -12858,3 +12858,156 @@ measurement of whether that survives a cascade.
       the field expressions -- what 179b replaces is the guess about WHICH
       relation holds, not the absence of a derivation.  Why the norms survive
       a 23% violation of the identity (179c) is unexplained.
+
+180. 179f CLOSED: THE IDENTITY FOLLOWS FROM THREE INPUT RELATIONS, THE NORMS
+     ARE PROTECTED BY A DIFFERENT SYMMETRY, AND THE SLOPE IS NOT GENERAL
+==========================================================================
+
+180a. WHAT 179f LEFT.  Three items: the identity B2 = -M(B1) was verified
+      numerically and not derived; the slope of 2.25e-02 per degree was one
+      configuration's number; and the survival of the norms through a 23%
+      violation of the identity was unexplained.  All three are closed here,
+      and closing the first turned up a naming error in 179b.
+
+180b. THE DERIVATION, ITEM 1.  Do not attack B_eff directly.  Measure which
+      relation each INPUT to the Thomas-BMT combination satisfies, by
+      searching the eight sign patterns for the one each pair obeys.  At the
+      preparation instant, drift 0.01 c along the separation, moments in the
+      mirror, theta 40, r = a_pair:
+        v:      v2 = M(v1)       residual 0.0 exactly
+        E:      E2 = M(E1)       residual 2.835e-11
+        B:      B2 = -M(B1)      residual 5.232e-11
+      The velocity relation is exact because it IS the preparation: the two
+      orbital velocities are opposite and the drift lies in the plane.  So E
+      transforms as a polar vector and B as an axial one under one and the
+      same reflection, which is the whole physical content.
+        Given those three, the identity is algebra.  M is orthogonal, so
+      gamma2 = gamma1 and every scalar coefficient is shared; and det M = -1,
+      so M(a) x M(b) = -M(a x b).  Term by term:
+        magnetic      (a + 1/g) B2          = -M[ (a + 1/g) B1 ]
+        longitudinal  b2 (b2 . B2)          = -M[ b1 (b1 . B1) ]
+        motional      b2 x E2               = -M[ b1 x E1 ]
+      Each picks up exactly one minus sign, and from a DIFFERENT place: the
+      axial B in the first, the dot product b2 . B2 = -b1 . B1 in the second,
+      the determinant of the cross product in the third.  Their sum is
+      therefore -M of the sum, which is the identity.
+
+180c. AND THE PREDICTION IS CHECKED TERM BY TERM, which 179 never did:
+        term                       share of |B_eff|    residual
+        magnetic   (a + 1/g) B          7.664e-01      5.232e-11
+        longitudinal b (b . B)          1.993e-08      1.157e-10
+        motional   b x E                2.514e-01      2.835e-11
+      The magnetic term's residual equals B's to every digit and the motional
+      term's equals E's, as it must when one is a scalar multiple of the
+      other and the other a cross product with an exact factor.  The identity
+      is not a cancellation between terms: it holds separately in each.
+
+180d. A CORRECTION TO 179b: THE PLANE WAS MISNAMED.  179b calls M "reflection
+      in the separation-normal plane".  The measured pattern flips x and z and
+      keeps y, with the separation along x, so the normal is y and the plane
+      is the one CONTAINING the separation -- not normal to it.  Adding
+      velocity components that separate the two candidate names settles it:
+        velocity added                        normal = y    normal = sep
+        none (circular)                       9.4972e-17      6.4648e-01
+        radial 0.01 c (along the separation)  4.3193e-11      6.4645e-01
+        radial 0.05 c                         1.0928e-10      6.4580e-01
+        out of plane 0.01 c (along z)         3.8539e-12      1.2520e+00
+        radial 0.03 + out of plane 0.01       7.2053e-11      1.2520e+00
+      A radial velocity does not break it and neither does an out-of-plane
+      one, because both lie in the x-z plane.  The mirror is the plane
+      SPANNED BY THE SEPARATION AND THE ORBIT NORMAL, equivalently the plane
+      normal to the transverse velocity.  Every number in 179b, 179d and 179e
+      is unaffected -- they were computed with the correct operation and
+      described with the wrong name.
+
+180e. ITEM 3: THE NORMS SURVIVE BECAUSE A DIFFERENT SYMMETRY PROTECTS THEM.
+      179c read the 0.233 and the 3.5e-06 as one breaking seen at two
+      strengths.  They are two symmetries.  Scan the drift at moment azimuth
+      45, where 179c measured:
+        beta_drift    identity residual    |B2|/|B1| - 1
+             0            2.3317e-01          0.000e+00
+          1e-06           2.3317e-01          3.480e-10
+          1e-04           2.3317e-01          3.470e-08
+           0.01           2.3316e-01          3.469e-06
+           0.10           2.3216e-01          3.458e-05
+      The vector residual does not depend on the drift at all; the norm
+      residual is exactly linear in it and exactly zero without it.  So
+      turning the moments out of the plane destroys the MIRROR, which needs
+      the moments in it (180b's E and B relations fail), and leaves the
+      ZERO-MOMENTUM-FRAME EXCHANGE PARITY of 176 untouched, which holds at
+      any moment orientation and is broken only by the drift.  The norms
+      answer to the second symmetry and the identity to the first.  That is
+      why a 23% violation of one costs the other nothing.
+
+180f. AND THE NORM RESIDUAL FOLLOWS |sin 2 phi|, as 178 found for the rates:
+        phi      |B2|/|B1| - 1     ratio to phi 45     sin 2 phi
+         15        1.6754e-06          0.4829            0.5000
+         30        2.9443e-06          0.8487            0.8660
+         45        3.4691e-06          1.0000            1.0000
+         60        3.0669e-06          0.8840            0.8660
+         75        1.7980e-06          0.5183            0.5000
+         90       -2.1573e-11         -0.0000            0.0000
+      Matching to 3%.  The vector residual does not: it rises monotonically
+      to 3.367e-01 at phi 90, where the norm residual is back at the
+      numerical floor.  Two different functions of the same angle, which is
+      the same conclusion as the drift scan by another route.
+
+180g. THE 23% IS A ROTATION, MEASURED.  Splitting the residual d = B2 - target
+      about the target direction:
+        phi     |d|/|B1|     parallel/|d|    -|d|/2|B1|    angle B2 to target
+         15    8.3875e-02     -4.1918e-02    -4.1938e-02        4.81 deg
+         30    1.6322e-01     -8.1590e-02    -8.1608e-02        9.38
+         45    2.3316e-01     -1.1657e-01    -1.1658e-01       13.40
+         60    2.8852e-01     -1.4425e-01    -1.4426e-01       16.60
+         90    3.3668e-01     -1.6834e-01    -1.6834e-01       19.38
+      The parallel component equals -|d|/2|B1| to four digits at every
+      azimuth, which is the chord condition for two vectors of equal length.
+      So 179c's 23% is 13.4 degrees of rotation and nothing else.  Note this
+      is a CONSEQUENCE of the norms being equal, not a reason for it -- the
+      reason is 180e.  It does put a number on what 179c called a rotation.
+
+180h. ITEM 2: THE SLOPE IS NOT A GENERAL COEFFICIENT.  Turning the orbit off
+      the mirror by psi and taking the slope of the residual from psi = 0 to
+      2 degrees.  First with the drift switched off, which 179 never tried:
+        r/a_pair   beta_orb    theta 20      theta 70
+            1       0.0073    2.9868e-03    8.5585e-03
+            0.1     0.0231    5.9408e-03    1.4376e-02
+            0.01    0.0730    8.0096e-03    1.5044e-02
+            0.003   0.1332    3.2586e-03    3.9185e-03
+      There is a drift-free floor, so the breaking is not purely a drift
+      effect, and the floor is not monotonic in the radius -- it turns over
+      between 0.01 and 0.003 a_pair, which is where the softening floor sits.
+      Restoring the drift, at theta 40:
+        r/a_pair    beta_drift    slope per degree
+            1          0.001         6.1159e-03
+            1          0.01          2.4102e-02
+            1          0.05          1.0776e-01
+            0.1        0.001         1.0468e-02
+            0.1        0.05          2.4193e-02
+            0.01       0.001         1.2462e-02
+            0.01       0.05          1.2775e-02
+      Over the full grid (three radii, three polar angles, three drifts) the
+      slope runs from 2.99e-03 to 1.12e-01 per degree, a factor of 38.
+      179e's 2.25e-02 is reproduced here as 2.41e-02 at 179's own
+      configuration -- 7% apart, which is the difference between 179e's
+      crossing at 180 degrees on an evolved orbit and this one at 0 degrees
+      at preparation.  It is that configuration's number, as 179f suspected,
+      and the surrounding range is now measured rather than guessed at.
+
+180i. WHAT DOES NOT SCALE.  Subtracting the drift-free floor leaves a drift
+      term that is not a clean function of beta_drift/beta_orbital: dividing
+      it by the square of that ratio gives 2.5e-02 down to 3.7e-03 across the
+      same grid, so no single power collapses it.  No scaling law is claimed.
+
+180j. LIMITS.  180b derives the identity FROM the three input relations and
+      does not derive those: why the retarded two-body E and B transform as a
+      polar and an axial vector across this plane is still only the statement
+      that the source pair is mirror-symmetric when the moments lie in the
+      plane, checked by the azimuth scan rather than by the field integrals.
+      The term-by-term check in 180c is one configuration.  180e's separation
+      of the two symmetries rests on the drift scan at one azimuth and one
+      radius; the |sin 2 phi| law in 180f is read off six points and not
+      fitted, as in 178.  180h is the preparation instant with the orbit
+      rotated rigidly, not an evolved orbit, which is why its slope differs
+      from 179e's by 7% at the matching configuration -- the two are close
+      but they are not the same measurement.
