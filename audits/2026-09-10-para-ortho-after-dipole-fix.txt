@@ -14715,3 +14715,105 @@ measurement of whether that survives a cascade.
       against 187c's r^-4 law because that was measured for a different
       configuration -- an epsilon mismatch with antiparallel moments -- and
       the two are not the same scan.
+
+195. THE 2-GAMMA / 3-GAMMA EDGE LOOKED FOR AGAIN: THERE IS NO EDGE, THE
+     MOMENT-TO-SPIN MAPPING IS INVERTED FOR THIS PAIR, AND THE COHERENT
+     MOMENT IS THE MIXING OPERATOR RATHER THAN EITHER STATE'S OWN
+==========================================================================
+
+195a. WHERE THE MODEL PUTS THE DIVISION.  crem_collapse.hpp computes
+        weight = |mu1 + mu2|^2 / (|mu1| + |mu2|)^2
+      from the PREPARED moments, calls it annihilationTwoPhotonWeight, and
+      draws the multiplicity against it.  Measured, it is exactly
+      (1 + cos)/2 in the mutual angle:
+        cos(mu1,mu2)   -1.0000  -0.7071   0.0000   0.7071   1.0000
+        weight          0.0000   0.1464   0.5000   0.8536   1.0000
+
+195b. AND THE MAPPING IS INVERTED FOR THIS PAIR, which corrects my own
+      language rather than the code's.  mu = gamma S with gamma = g q/(2m),
+      and the two charges are opposite, so
+        gamma(first)  = -1.760860e+11,  gamma(second) = +1.760860e+11.
+      Therefore
+        SINGLET (para, S = 0): spins antiparallel, S2 = -S1, so
+          mu2 = (-gamma1)(-S1) = +gamma1 S1 = mu1  -- moments PARALLEL
+        TRIPLET (ortho, S = 1): spins parallel, S2 = +S1, so
+          mu2 = (-gamma1)(+S1) = -mu1              -- moments ANTIPARALLEL
+      For positronium, parallel MOMENTS is para and antiparallel MOMENTS is
+      ortho -- the opposite of the spin picture, because the charges are.
+      The code has this right: its weight is 1 for aligned moments and it
+      labels that para.
+
+195c. WHICH INVERTS 182j's CORRESPONDENCE AS I WROTE IT.  182j said the
+      model's exact symmetry is C.P, "its spin condition is exactly
+      antiparallel", and lined that up with "para, spins antiparallel".
+      C.P's condition is antiparallel MOMENTS, which by 195b is ORTHO.  So
+      the configuration C.P protects exactly is the triplet, not the
+      singlet, and every para/ortho label I attached to a delta value from
+      182 onward was reversed.  The measurements are unaffected -- they were
+      always stated in moments -- but the reading was.  183e had already
+      narrowed the correspondence to (-1)^S; with the mapping the right way
+      round it reads: C.P is exact where (-1)^S = -1, the odd-photon side.
+
+195d. AND THERE IS NO KNIFE EDGE, which is the answer to the question.  In
+      QED the division is a selection rule: C-parity is a discrete label and
+      the multiplicity is exactly two or exactly three.  Here the weight is
+      a linear ramp in cos and the multiplicity is a Bernoulli draw against
+      it -- the source comment says so outright, "a configuration two thirds
+      of the way to aligned emits two photons two thirds of the time".
+      Worse, the default preparation draws cos uniformly on [-1,1] (audit 91
+      withdrew the quantization), so
+        P(2 gamma) = E[(1+cos)/2] = 1/2 exactly,
+      which audit 111 measured as 0.506 over 4000 prepared states.  Spin
+      statistics would give para : ortho = 1 : 3 and so P(2 gamma) = 1/4.
+      The model's default branching is therefore twice the statistical
+      value, and it is a coin flip where the physics has a discrete label.
+      An edge exists only under --spin-quantization, where cos is forced to
+      +-1 and the draw becomes degenerate -- that is the edge restored by
+      imposition, not found.
+
+195e. THE ONE EXACT FEATURE ON THAT AXIS IS C.P's ZERO, and it sits at the
+      ortho end.  M1 against the same weight, r = a_pair, evolved:
+        delta  cos      weight    label       M1 [W]
+            0  -1.0000  0.000000  ortho 3g  0.000000e+00
+           45  -0.7071  0.146447  ortho 3g  7.662021e-25
+           90   0.0000  0.500000  ortho 3g  6.180817e-26
+          135   0.7071  0.853553  para 2g   2.288888e-24
+          180   1.0000  1.000000  para 2g   1.140481e-23
+      The zero at cos = -1 is identical, not small, and 182h showed it is
+      held there by the flow.  It is also the only radius-independent
+      feature: 194 measured M1 at 0.1 a_pair peaking near 78 degrees with a
+      deep minimum at 165, so "maximal at para" is an a_pair statement while
+      "identically zero at ortho" is not.
+
+195f. AND WHAT THE COHERENT MOMENT ACTUALLY CORRESPONDS TO, which is the
+      most useful thing here.  Since gamma2 = -gamma1 exactly (185a measured
+      their sum as 0.000e+00),
+        mu1 + mu2 = gamma1 (S1 - S2),
+      the spin DIFFERENCE, not the total spin S1 + S2.  In quantum mechanics
+      S1 - S2 is the operator that connects singlet and triplet -- the one a
+      magnetic field uses to quench o-Ps(m=0) into p-Ps -- and its
+      EXPECTATION vanishes in both pure states, only its off-diagonal
+      element being nonzero.
+        A classical pair of definite vectors has no off-diagonal element.
+      So the model reproduces the ortho zero exactly, for the right reason,
+      and assigns the para configuration a coherent moment that quantum
+      mechanics does not give it.  That is the same failure crem_collapse's
+      own comment names when it says "the classical pair loses the singlet
+      because two classical vectors cannot represent an entangled one" --
+      here it is located in a specific operator rather than described.
+      It also says why the search in this section could not succeed: the
+      quantity the model divides the channels with is not the one whose
+      eigenvalue does the dividing in QED.
+
+195g. LIMITS.  195a and 195b are algebra plus a five-point check; 195e is
+      one radius, five angles and one orbit per point.  195d's P(2 gamma) =
+      1/2 is the expectation of the model's own formula under its own
+      default preparation, quoted from audit 111's measurement and not
+      re-measured here, and the 1:4 comparison assumes statistical formation
+      which this model does not simulate.  195f is an identification, not a
+      derivation: nothing here computes a matrix element, and the claim that
+      the classical para value is spurious rests on the operator identity
+      and on the standard result that both diagonal elements vanish, not on
+      anything measured in this tree.  No change is proposed to the weight
+      formula -- what would replace it is not obvious, and inventing one
+      would put a guess where there is currently an acknowledged limitation.
