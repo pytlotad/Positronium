@@ -14817,3 +14817,101 @@ measurement of whether that survives a cascade.
       anything measured in this tree.  No change is proposed to the weight
       formula -- what would replace it is not obvious, and inventing one
       would put a guess where there is currently an acknowledged limitation.
+
+196. THE PARA MOMENT TRACED TO ITS CAUSE: THE SINGLET NEEDS A SPIN
+     CORRELATION THREE TIMES STRONGER THAN CLASSICAL VECTORS CARRY, AND
+     EVERY WATT OF M1 IN THIS MODEL COMES FROM THE TRUNCATION
+==========================================================================
+
+196a. WHAT 195f LEFT.  It identified the coherent moment as gamma1(S1 - S2)
+      and said the model gives para a moment quantum mechanics does not,
+      calling that the same defect crem_collapse's comment names.  That is
+      still a description.  Below it is a number, a location, and a
+      measurement of what it costs.
+
+196b. THE OPERATOR, AND WHY ITS EXPECTATION VANISHES IN EVERY STATE.  With
+      gamma2 = -gamma1 exactly (185a measured their sum as 0.000e+00),
+        mu1 + mu2 = gamma1 (S1 - S2).
+      S1 - S2 is off-diagonal in the total-spin basis: acting on the singlet
+      it returns the m = 0 triplet and back again, and it annihilates the
+      m = +-1 triplet states.  So <mu1+mu2> = 0 in ALL FOUR spin
+      eigenstates.  Positronium has no coherent magnetic dipole moment in
+      any of them, and the reason is the charge asymmetry that makes the two
+      gyromagnetic ratios cancel.
+
+196c. THE CLASSICAL GAP, AS A NUMBER.  <S1.S2> = (hbar^2/2)[s(s+1) - 3/2],
+      so the triplet carries +0.25 hbar^2 and the singlet -0.75 hbar^2.  A
+      classical pair of spin vectors has |S_i| = hbar/2 and therefore
+        S1.S2 = (hbar^2/4) cos(theta_spin),   cos in [-1, +1].
+      Setting the two equal:
+        triplet  needs cos(theta_spin) = +1.0   representable
+        singlet  needs cos(theta_spin) = -3.0   IMPOSSIBLE
+      The singlet requires a spin anticorrelation THREE TIMES stronger than
+      any pair of classical unit vectors can carry.  That factor of three is
+      "two classical vectors cannot represent an entangled one", written as
+      a number, and it is where the defect lives.
+
+196d. WHICH FIXES WHERE EACH STATE LANDS.  Since mu1 = gamma1 S1 and
+      mu2 = -gamma1 S2, cos(theta_moment) = -cos(theta_spin), so
+        triplet: cos_moment = -1, moments ANTIPARALLEL, |mu1+mu2| = 0
+                 -- exactly what quantum mechanics gives.  Representable.
+        singlet: cos_moment = +3, which does not exist; the nearest
+                 classical point is +1, moments PARALLEL, |mu1+mu2| = 2 mu
+                 -- where quantum mechanics gives 0.  Truncated.
+      So the model represents one of the two states exactly and the other by
+      the nearest available point, and the truncation error is not small: it
+      is the entire moment, 1.856953e-23 J/T against zero.
+
+196e. AND THE CONSEQUENCE, MEASURED.  At the two classical points, averaged
+      over the second half of an evolved orbit:
+        configuration            r/a_pair  |mu1+mu2| [J/T]     M1 [W]
+        triplet, cos_spin = +1       1      2.078000e-39   8.203919e-33
+        singlet's nearest, -1        1      1.856953e-23   1.140482e-23
+        triplet, cos_spin = +1     0.1      2.078000e-39   5.281278e-26
+        singlet's nearest, -1      0.1      1.856953e-23   1.140727e-15
+      The triplet row's 2.078e-39 is round-off, 1.1e-16 of 2 mu, and comes
+      from building the direction through a cosine; constructed exactly
+      antiparallel the model returns 0.000000e+00 (194b, 195e).  Its M1 is
+      likewise at the floor.  The singlet row sits nine orders above it at
+      a_pair and ten at 0.1 a_pair.
+        So: quantum mechanics gives zero coherent moment to both states,
+      hence zero coherent M1 to both; the model gives zero to the triplet
+      and everything to the singlet.  Every watt of M1 this model radiates
+      originates in the truncation of 196c.  That is a stronger statement
+      than 195f's, and it is the answer to what the defect costs.
+
+196f. THE BRANCHING IS A SEPARATE FAILURE, AND A LIGHTER ONE.  At those same
+      two points the model's weight |mu1+mu2|^2/(|mu1|+|mu2|)^2 is exactly 0
+      and exactly 1, giving three photons for the triplet and two for the
+      singlet -- both correct.  The weight formula is right AT the classical
+      images; 195d's P(2 gamma) = 1/2 comes from the default preparation
+      drawing cos uniformly instead of sitting at them.
+        Which puts --spin-quantization in a different light from the one
+      audit 91 left it in.  Forcing cos to +-1 does not impose an answer: it
+      places the pair at precisely the two images 196d derives, where the
+      branching is already correct.  Whatever 91's reasons for withdrawing
+      it, they now have to be weighed against that.  The coherent-moment
+      failure, by contrast, is the truncation itself and no preparation
+      fixes it.
+
+196g. AND THE SAME OPERATOR IS THE ONE QUANTUM MECHANICS ACTUALLY USES.  The
+      real M1 process in positronium is the o-Ps to p-Ps transition, driven
+      by the OFF-DIAGONAL element of S1 - S2 -- the same operator, the same
+      one a magnetic field uses to quench o-Ps(m=0).  A classical pair of
+      definite vectors has no off-diagonal element at all; it carries only a
+      diagonal value, and by 196b that value should be zero.  So the model
+      holds the wrong half of the right operator: it cannot produce the M1
+      physics that exists, and it produces M1 radiation that does not.
+
+196h. LIMITS.  196b, 196c and 196d are algebra, not measurements; nothing
+      here computes a matrix element and the claim that the diagonal
+      elements vanish is the standard result quoted, not rederived.  196e is
+      two radii, one polar angle, one orbit per point; the third radius
+      (0.01 a_pair) had not returned when this was written and is not
+      quoted.  196f's reading of --spin-quantization is an argument from
+      196d and does not address whatever audit 91 measured -- that section
+      has not been re-read here, and this is a reason to re-open it, not a
+      verdict on it.  No change is made to the weight formula or to the
+      preparation: 195g's reason for leaving them alone stands, and 196g
+      makes it sharper, since the missing piece is an off-diagonal element
+      that no classical pair of vectors can be given.
