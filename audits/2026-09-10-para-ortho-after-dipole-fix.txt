@@ -15326,3 +15326,68 @@ measurement of whether that survives a cascade.
       of twenty is read from one of them.  Nothing here is run through the
       collapse estimator, which is what would turn 201d into a statement
       about the lifetimes the model actually reports.
+
+202. WHICH CLOCK, AND IN WHOSE FRAME: 201d's PHRASE CORRECTED AND THE
+     ANSWER MEASURED
+==========================================================================
+
+202a. THE PHRASE INVITED THE QUESTION.  201d wrote that "the clock runs at
+      LARGE r and barely moves at small".  That reads as time dilation, and
+      it is not what was meant.  Nothing in 201d dilates.  The statement is
+      about dt/dr for the inspiral, not about the rate of any clock: with
+      dE ~ dr/r^2 and P ~ r^-4, dt = dE/P goes as r^2 dr, so the pair
+      CROSSES the small radii quickly and almost all of its elapsed time
+      accrues at large ones.  The phrase is withdrawn and replaced by that.
+
+202b. THE FRAME, NAMED.  The t in dt = dE/P is the coordinate time the
+      integrator advances, in the frame the State is written in.  Every
+      measurement in 201 was made at zero drift, so that frame is the
+      ZERO-MOMENTUM frame -- the same one 181 to 183 found C.P exact in.
+      With a drift it would be the laboratory frame instead, but the
+      quantity 201d quotes is a RATIO of two inspiral times whose centre of
+      mass moves identically, so a boost multiplies both by the same
+      gamma_CM and the ratio is unchanged.  201d's number is therefore
+      boost-invariant, which the phrase did not make clear either.
+
+202c. AND THE CHOICE OF TIME DOES NOT MATTER EITHER.  Each particle in the
+      zero-momentum frame, quasi-circular:
+        r/a_pair       beta        gamma - 1
+           1       3.64868e-03    6.65649e-06
+           0.1     1.15381e-02    6.65708e-05
+           0.01    3.64868e-02    6.66307e-04
+           0.001   1.15381e-01    6.72363e-03
+      Integrating the same profile in the particles' proper time,
+      dtau = dt/gamma, instead of coordinate time:
+        coordinate time   t_ortho/t_para - 1 = 2.463181e-05
+        proper time       t_ortho/t_para - 1 = 2.463048e-05
+      Five significant figures apart, a relative difference of 5.4e-05.  The
+      two agree because gamma - 1 is 6.7e-06 where the time actually accrues
+      and only reaches 6.7e-03 at the innermost radius, which contributes
+      nothing.  So 201d's figure is the same in coordinate time, in proper
+      time, and in any boosted frame.
+
+202d. WHERE THE TIME ACTUALLY ACCRUES, which is the substance the phrase was
+      reaching for:
+        0.3  -> 1      a_pair   97.3485% of the total
+        0.1  -> 0.3    a_pair    2.5516%
+        0.03 -> 0.1    a_pair    0.0973%
+        0.01 -> 0.03   a_pair    0.0025%
+        0.003-> 0.01   a_pair    0.0001%
+        0.001-> 0.003  a_pair    0.0000%
+      Ninety-seven percent of the inspiral is spent in the outermost factor
+      of three in radius, and 99.90% outside 0.1 a_pair.  The region where
+      201c measured the para/ortho power ratio at five to twenty --
+      everything inside 0.01 a_pair -- carries 0.0026% of the time.  That is
+      why a factor of twenty in the instantaneous split buys 2.5e-05 in the
+      integral, stated as an arithmetic fact rather than a metaphor.
+
+202e. LIMITS.  The gamma column is the quasi-circular speed at each radius,
+      not measured from an evolved trajectory, and the inspiral is treated
+      as a sequence of circular orbits throughout -- which is 201's
+      assumption too, and is what dt = dE/P means.  The proper-time integral
+      uses the same seven-point profile and the same trapezoid, so its
+      agreement with the coordinate-time one tests the gamma weighting and
+      not the profile.  The boost-invariance argument in 202b is an argument:
+      no drifted run was integrated to confirm that the ratio is unchanged,
+      and 201g's caveat that the whole profile is preparation-instant rather
+      than evolved is untouched by anything here.
