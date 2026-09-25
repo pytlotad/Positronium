@@ -13255,3 +13255,156 @@ measurement of whether that survives a cascade.
       is one radius.  And 177d's "amplification", which 181h shows to be
       largely 2|B1_y|, has not been re-measured against C.P -- it is
       flagged, not corrected.
+
+182. 181q CONTINUED, TOWARD THE EMISSION CONFIGURATION: C.P HAS TWO
+     CONDITIONS, THE ORBIT CAN BREAK NEITHER, AND ONLY THE PREPARATION CAN
+==========================================================================
+
+182a. WHY 181q's FLAGGED ITEM IS THE EMISSION QUESTION.  181 left the
+      radiation reaction off throughout and flagged whether C.P survives a
+      T-odd reaction term as the obvious next test.  It is more than
+      housekeeping, because C.P is a SELECTION RULE: it does not suppress
+      multipoles, it forbids them outright.  So asking where the model can
+      emit a photon outside its one open channel is the same as asking
+      where C.P breaks.
+
+182b. WHICH MULTIPOLES C.P FORBIDS.  Under C.P the charge reverses and the
+      position reverses, so a moment carrying q r^l picks up (-1)^(l+1):
+        electric dipole      d = sum q r            EVEN    allowed
+        electric quadrupole  Q = sum q (3xx - r^2)  ODD     forbidden
+        orbital magnetic     m = sum (q/2) r x v    ODD     forbidden
+        intrinsic magnetic   mu1 + mu2              ODD     forbidden
+      A C.P-symmetric pair therefore has NO even electric multipole and
+      every odd one.  electrodynamics.hpp already derives that rule from the
+      mass ratio, kappa_l = [q1 m2^l + (-1)^l q2 m1^l]/M^l; C.P says why it
+      holds, makes it exact rather than a consequence of equal masses
+      cancelling, and extends it to the magnetic sector in the same step.
+
+182c. AND IT IS NOT SUPPRESSION.  The three leading moments, each divided by
+      its own natural scale, moments antiparallel:
+        pair                   m1/m2    |d| E1   |m| M1orb    |Q| E2
+        electron + positron   1.0000  1.000e+00  0.000e+00  0.000e+00
+        proton + antiproton   1.0000  1.000e+00  0.000e+00  0.000e+00
+        muon + antimuon       1.0000  1.000e+00  0.000e+00  0.000e+00
+        electron + antimuon   0.0048  1.000e+00  9.904e-01  2.426e+00
+        proton + electron     1836.2  1.000e+00  9.989e-01  2.447e+00
+      For a particle-antiparticle pair the forbidden moments are identically
+      zero while the allowed one is at full strength; for an asymmetric pair
+      the same two are at full strength themselves.  Three mass scales
+      spanning a factor of 1836 on the symmetric side.
+
+182d. C.P HAS TWO INDEPENDENT CONDITIONS, AND THEY GATE DIFFERENT CHANNELS:
+        kinematic:  q2 = -q1 and m2 = m1, which give r2 = -r1 and v2 = -v1
+                    in the zero-momentum frame
+        spin:       mu2 = -mu1, the antiparallel preparation
+      The first is a property of the pair and the frame; the second is a
+      property of the PREPARATION.  Neither is a property of the orbit,
+      which is the whole answer to where the emission configuration is.
+
+182e. THE FLAGGED ITEM, ANSWERED: THE REACTION DOES NOT BREAK C.P, and
+      neither does going deep.  Antiparallel moments, zero drift:
+         r/a_pair    reaction off: E, B    reaction on: E, B
+             1        0.000e+00 0.000e+00   0.000e+00 0.000e+00
+             0.1      0.000e+00 0.000e+00   0.000e+00 0.000e+00
+             0.01     0.000e+00 0.000e+00   0.000e+00 0.000e+00
+             0.003    0.000e+00 0.000e+00   0.000e+00 0.000e+00
+             0.001    0.000e+00 0.000e+00   0.000e+00 0.000e+00
+      r* sits at 1.8264e-03 a_pair, so the last row is INSIDE the Compton
+      barrier and the residual is still bitwise zero, with the Landau-
+      Lifshitz reaction switched on.  The reaction is T-odd and C.P carries
+      no T, which is why it costs nothing.
+
+182f. AND ONLY THE SPIN CONDITION OPENS ANYTHING.  Opening the two moments
+      by delta from antiparallel, at r = a_pair:
+        delta  |mu1+mu2|     C.P E      C.P B      E1 [W]      M1 [W]
+           0     0.0000  0.000e+00  0.000e+00  1.1673e-08  0.0000e+00
+           1     0.0087  1.941e-07  9.561e-03  1.1673e-08  8.5104e-28
+          10     0.0872  2.016e-06  9.975e-02  1.1673e-08  6.8998e-26
+          45     0.3827  9.849e-06  4.928e-01  1.1673e-08  3.6565e-25
+          90     0.7071  1.880e-05  9.239e-01  1.1673e-08  1.0488e-25
+         135     0.9239  2.257e-05  1.227e+00  1.1673e-08  5.0247e-24
+         180     1.0000  1.995e-05  1.681e+00  1.1673e-08  1.6200e-23
+      Three things at once.  M1 is identically zero at delta = 0 and nonzero
+      at every other angle, so the gate is exact and not a small-parameter
+      suppression.  E1 does not move at all, to five digits, across the
+      whole sweep -- the spin condition does not touch the charge sector.
+      And the E2 power stays exactly zero throughout (not tabulated because
+      every entry is 0.0000e+00): the moments cannot open an even ELECTRIC
+      multipole, because that one answers to the kinematic condition, which
+      they leave untouched.
+
+182g. THE KINEMATIC CONDITION IS BROKEN BY MASS ASYMMETRY AND BY NOTHING
+      ELSE IN REACH.  Measuring the E2 power beside the C.P residual:
+        pair                  m1/m2     C.P E      C.P B      E2 [W]
+        electron + positron  1.0000  0.000e+00  0.000e+00  0.0000e+00
+        proton + antiproton  1.0000  0.000e+00  0.000e+00  0.0000e+00
+        muon + antimuon      1.0000  0.000e+00  0.000e+00  0.0000e+00
+        electron + antimuon  0.0048  3.449e-05  2.058e+02  3.2608e-12
+        proton + electron    1836.2  5.814e-05  9.992e-01  3.3455e-12
+      E2 is nonzero exactly where C.P fails and zero exactly where it holds.
+      The correspondence is one-to-one across five pairs.
+
+182h. AND THE FLOW CONSERVES BOTH CONDITIONS.  The static checks above are
+      preparation instants; this one evolves, with the reaction on and the
+      moments free to move, at r0 = 0.1 a_pair:
+        t/T     r/r0      C.P E       C.P B     |mu1+mu2|
+        0.00  1.000000  0.0000e+00  0.0000e+00  0.0000e+00
+        0.50  0.998857  0.0000e+00  0.0000e+00  0.0000e+00
+        1.00  0.999895  0.0000e+00  0.0000e+00  0.0000e+00
+        1.50  0.998752  0.0000e+00  0.0000e+00  0.0000e+00
+        2.00  0.999791  0.0000e+00  0.0000e+00  0.0000e+00
+        2.50  0.998647  0.0000e+00  0.0000e+00  0.0000e+00
+        3.00  0.999686  0.0000e+00  0.0000e+00  0.0000e+00
+      The moment SUM stays bitwise zero while the two moments themselves
+      move.  So a pair prepared antiparallel does not merely start with the
+      magnetic channel closed -- it keeps it closed, exactly, for as long as
+      the integration runs.  That is what "dynamically protected" should
+      have meant all along, and it is a symmetry statement rather than the
+      numerical coincidence earlier sections took it for.
+        Started at delta = 10 degrees instead, the breaking is bounded and
+      nearly constant -- the C.P B residual moves from 1.6804e-01 to
+      1.6811e-01 over the same three orbits and |mu1+mu2| from 8.7156e-02
+      to 8.7158e-02.  Note the asymmetry: the ZERO is exact because a
+      symmetry holds it there, while a nonzero value is merely slowly
+      varying, drifting in the sixth digit.  Only the closed channel is
+      protected; the open one is not conserved, just slow.
+
+182i. SO THERE IS NO EMISSION CONFIGURATION ALONG THE INSPIRAL.  This is a
+      negative result and a sharp one.  The orbit has nothing that can break
+      either condition: the kinematic one is fixed by the pair's identity
+      and the frame, and the spin one by the preparation.  Falling inward
+      does not break C.P, going inside r* does not break it, and switching
+      on the radiation reaction does not break it.  A model of this pair
+      therefore cannot find a radius, a phase or a depth at which a channel
+      beyond E1 opens, because no such radius exists.  Every search of that
+      kind -- including the ones this audit series has been running since
+      177 -- was looking along an axis on which the answer is constant.
+        What DOES open a channel is one number fixed before the inspiral
+      starts: the angle between the two moments.  It is not a configuration
+      the dynamics reaches; it is a configuration the pair is born in.
+
+182j. WHAT THIS IS THE CLASSICAL SHADOW OF, stated as a correspondence and
+      not as a derivation.  In the real system the photon multiplicity is
+      fixed by C-parity: para-positronium, spins antiparallel, C = +1,
+      decays to an EVEN number of photons; ortho, spins parallel, C = -1, to
+      an ODD number.  The model's exact symmetry is C.P, its spin condition
+      is exactly "antiparallel", and what that condition gates is exactly
+      the magnetic channel.  The correspondence is close enough to be worth
+      recording and is not more than a correspondence: this model has no
+      photon number, C.P is a symmetry of one configuration rather than a
+      quantum number of a state, and nothing here derives 2 or 3.
+
+182k. LIMITS.  Everything in 182c, 182f and 182g is the preparation
+      instant; only 182e and 182h evolve.  The M1 column of 182f is the
+      model's coherent intrinsic channel, built on the moment SUM, so "M1 is
+      zero when the sum is zero" is in part a statement about how the
+      channel is defined and not only about the pair -- what is not
+      definitional is that the sum is exactly zero and stays so, which is
+      182h.  The M1 power in 182f is not monotonic in |mu1+mu2| (it falls
+      from 3.66e-25 at delta 45 to 1.05e-25 at delta 90), so no scaling law
+      is claimed and the second derivative of the moment, not its size,
+      evidently sets the rate; that is the precession question and is
+      deliberately not pursued here.  182g's one-to-one correspondence is
+      five pairs, three symmetric and two not, at one radius.  And 182b's
+      parity argument is stated for the moments, not carried through the
+      retarded field integrals, which remains 181q's standing gap.
