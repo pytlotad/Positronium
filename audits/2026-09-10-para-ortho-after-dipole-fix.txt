@@ -13612,3 +13612,125 @@ measurement of whether that survives a cascade.
       instant.  184d is the Bohr formula evaluated in the model's own
       constants, not an integration: no inspiral is followed here either,
       for the reason 183i gives.
+
+185. THE g-FACTORS THE MODEL USES, WHAT THEIR EQUALITY IS WORTH, AND A
+     NARROWING OF 184b
+==========================================================================
+
+185a. THE VALUES.  particle_species.hpp carries CODATA 2022 g-factors, the
+      anomalous ones rather than the Dirac 2:
+        species       g                  q               m [kg]
+        electron      2.00231930436092   -e              9.10938371e-31
+        positron      2.00231930436092   +e              9.10938371e-31
+        muon          2.0023318412300002 -e              1.88353163e-28
+        antimuon      2.0023318412300002 +e              1.88353163e-28
+        proton        5.5856946893000003 +e              1.67262193e-27
+        antiproton    5.5856946893000003 -e              1.67262193e-27
+      The electron anomaly it implies is a = g/2 - 1 = 1.159652180460e-03,
+      1159.65 ppm.  Electron and positron share the g-factor and the mass as
+      the SAME LITERAL, so the equality is bitwise and not merely numeric,
+      and the charges are exactly opposite.  What that produces:
+        |mu| first  = |mu| second = 9.2847646860434566e-24 J/T, same bits
+        gamma first + gamma second = 0.000e+00 exactly
+      The sign lives in the charge, not in g: magneticMoment returns a
+      magnitude through |q|, and gamma = g q / (2m) carries the direction,
+      which is why the two gyromagnetic ratios cancel exactly.
+
+185b. AND THAT EQUALITY IS AN ASSUMPTION, WHICH QUALIFIES 181e AND 182p.
+      The comment above the definitions says it plainly -- the antiparticle
+      takes the particle's mass and g "which is CPT rather than an
+      independent measurement".  181e and 182p measured C.P's breaking as
+      |mu1|/|mu2| - 1 and found it zero for e+e-, p+pbar and mu+mubar.  That
+      zero is, in its MAGNITUDE part, a property of the parameter file: the
+      two moments are bitwise equal because they are computed from the same
+      two literals.  So the model cannot test C.P breaking sourced by CPT
+      violation, because CPT is built in upstream of the dynamics.
+        What remains a dynamical result is everything else: the kinematic
+      condition r2 = -r1 and v2 = -v1, verified over evolved orbits in 181o
+      and 182h, and the conservation of the antiparallel condition by the
+      flow.  The magnitude equality is given, not earned, and the audits
+      should have said so.
+
+185c. A NARROWING OF 184b.  I wrote that forcing g "confirms it to every
+      digit printed".  True for the eleven digits printed, and false under
+      the stronger reading: g cancels ALGEBRAICALLY, and the arithmetic is
+      floating point, so 1 to 2 units in the last place survive.  At full
+      precision, g = 1 against CODATA:
+      quantity   g = 1                   g = CODATA              verdict
+      a_pair     1.0583544190745555e-10  1.0583544190745552e-10  differs
+      omega      7751504060950774        7751504060950777        differs
+      L/hbar     1.386722755275906       1.386722755275906       same bits
+      C.P B      0                       0                       same bits
+      The cancellation is exact as algebra and good to 1-2 ULP as code.
+
+185d. THE CONFIRMED RESULT IS UNAFFECTED.  The crossing radius solved from
+      the model's own constants:
+        g = 1      r_cross/a_pair = 1.9229994270765445
+        g = CODATA r_cross/a_pair = 1.9229994270765443
+        analytic   (8/3)^(2/3)    = 1.9229994270765445
+      One ULP apart, and g = 1 happens to land on the analytic value while
+      CODATA sits one bit below.  L/hbar at the crossing is 1.386722755275906
+      with the SAME BIT PATTERN at both g.  So "1.92300 a_pair, L = 1.3867
+      hbar, not a Bohr orbit" stands unchanged at g = 1, to all sixteen
+      digits, and 184's conclusion is not disturbed.
+
+185e. BUT E1 DOES DEPEND ON g, AND THE SIGN IS THE PREPARATION.  184c saw
+      this in a sixth digit without naming it.  Taking g = 1e-4 as a
+      moments-off baseline and differencing:
+        g        antiparallel: dE1/g^2    parallel: dE1/g^2
+        1.0000       -1.39588423e-14          +1.39589917e-14
+        2.0000       -1.39589358e-14          +1.39595335e-14
+        2.0023       -1.39589361e-14          +1.39595352e-14
+        4.0000       -1.39593094e-14          +1.39617002e-14
+        8.0000       -1.39608034e-14          +1.39703651e-14
+      Constant to about one part in 1e4 over a factor of 64 in g^2, so
+        dE1 = +- 1.3959e-14 g^2 W at r = a_pair,
+      the sign set by whether the moments are parallel or antiparallel.  The
+      mechanism is the dipole-dipole force adding to or subtracting from the
+      Coulomb attraction, changing the acceleration that Larmor squares.
+        Which means there is a para/ortho split in the ALLOWED channel:
+        E1 parallel     1.1673121109918508e-08 W
+        E1 antiparallel 1.1673009176877052e-08 W
+        difference      1.11933e-13 W, i.e. 9.59 ppm
+      Small, but it is a spin-gated difference in E1 itself, independent of
+      the M1 channel that 182 was about, and it was not previously recorded.
+
+185f. NEXT STEP, PRE-REGISTERED.  185b says the model cannot currently test
+      CPT-sourced C.P breaking.  The way to resolve that is to put the
+      violation in deliberately and measure the response.  Break the
+      parameter-level CPT by one number, epsilon, in two independent ways --
+      g2 = g1(1+eps), and separately m2 = m1(1+eps) -- with the moments
+      ANTIPARALLEL throughout, and sweep eps from 1e-15 to 1e-3.
+        Rule R185a.  A g-mismatch leaves the kinematic condition intact and
+        breaks only the spin one, so |mu1+mu2| = eps |mu1| and the C.P
+        residual should be LINEAR in eps with slope 1, matching 181e's
+        |mu1|/|mu2| - 1 law.  The sweep also fixes the detection floor: the
+        eps below which the residual is round-off.
+        Rule R185b.  M1 should then open as eps^2, since M1 goes as the
+        square of the moment sum.  E2 should stay exactly zero, because a
+        g-mismatch cannot reach the charge sector -- except through the
+        indirect force route 183h found, which predicts a nonzero E2 of
+        order 1e-22 of E1 rather than a bitwise zero.  This is the sharper
+        half of the prediction, since it is where 182f was wrong.
+        Rule R185c.  A MASS mismatch breaks the KINEMATIC condition instead,
+        because r2 = -r1 fails in the centre-of-mass frame, so it should
+        open E2 at full strength the way 182g's asymmetric pairs do, while a
+        g-mismatch of the same eps should not.  If both mismatches open E2
+        the same way, R185c is refuted and the two conditions are not as
+        independent as 182d claims.
+      Then evaluate at the experimental bounds.  The e+/e- g-factor ratio is
+      tested to roughly 1e-12 and the mass ratio to roughly 1e-8; BOTH
+      NUMBERS NEED A STAMPED SOURCE before anything is quoted from them, per
+      the configuration-stamp rule.  At those epsilon the model would give a
+      predicted residual M1 share for para-positronium -- a CPT-allowed odd
+      channel in the even-channel state.  That is the number worth having,
+      and it is the first thing in this series that would be falsifiable
+      against an experiment rather than against another audit.
+
+185g. LIMITS.  185a is the parameter file, not a measurement.  185c and 185d
+      are one radius and one quantity each.  185e is the preparation instant
+      at r = a_pair only, so the 9.59 ppm is not shown to hold at other
+      radii and its r-dependence is unmeasured; the dipole-dipole force goes
+      as r^-3 against Coulomb's r^-2, so the split should grow inward and
+      that is untested.  185f is a proposal, not a result: nothing in it has
+      been run.
