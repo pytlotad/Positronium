@@ -14170,3 +14170,127 @@ measurement of whether that survives a cascade.
       absorb the zeros or trip a guard is untested -- and that, rather than
       the zeros themselves, is what would decide how much the defect
       matters.
+
+190. 187g TAKEN UP: THE CHANNELS PERSIST BUT THE PREPARATION INSTANT
+     MISSTATES THEM, THE DIPOLE-SHARE IDENTITY IS EXACT TO O(eps^2), AND
+     183h's QUADRUPOLE WAS NOISE
+==========================================================================
+
+190a. THE THREE ITEMS.  187g left the dipole-share identification holding
+      only "to 0.1%", the transfer functions at one eps and the preparation
+      instant with no evolution, and the mode A quadrupole column called
+      noise on its non-monotonicity with no floor under it.  The middle one
+      is 186h's first item too, deferred three times; it is done here and it
+      changes a number in both 186 and 187.
+
+190b. ITEM 2: THE CHANNELS PERSIST AND DO NOT ACCUMULATE.  Mode A, eps =
+      1e-3, r0 = 0.1 a_pair, reaction on, four orbits, with 187c's r^-4 law
+      divided out in the last column:
+        t/T    r/r0     |mu1+mu2|/eps  C.P B/eps    M1/E1     M1/E1 x r^4
+        0.0  1.000000    1.00000e+00    0.787388  3.4647e-18  3.46471e-18
+        0.5  0.998856    1.00000e+00    0.787338  7.5733e-17  7.53874e-17
+        1.0  0.999895    1.00000e+00    0.787341  7.5120e-17  7.50888e-17
+        2.0  0.999791    1.00000e+00    0.787323  7.5314e-17  7.52507e-17
+        3.0  0.999686    1.00001e+00    0.787289  7.5172e-17  7.50773e-17
+        4.0  0.999581    1.00001e+00    0.787230  7.5162e-17  7.50366e-17
+      The moment sum is conserved to five digits, the C.P coefficient drifts
+      by 2.0e-04 relative over four orbits, and M1/E1 x r^4 is flat to half
+      a percent once the first half orbit is past.  Nothing accumulates.
+
+190c. BUT THE PREPARATION INSTANT IS NOT REPRESENTATIVE, which is the
+      finding.  M1/E1 at t = 0 is 3.4647e-18 and settles at 7.55e-17 within
+      half an orbit -- a factor of 21.8 -- and stays there.  In mode C it
+      goes the other way: 1.3864e-17 at t = 0 settling to 9.87e-18, so the
+      preparation OVERstates by 1.40, and its E2/E1 goes 1.7975e-10 to
+      3.199e-10, understating by 1.78.
+        Every transfer function in 186g and 187c/187d was measured at t = 0.
+      They are therefore preparation-instant numbers and the settled values
+      differ by factors between 0.71 and 21.8 depending on mode and channel.
+      The r^-4 and r^-1 SCALINGS are untouched -- 190b's last column shows
+      the r^-4 law holding on the evolved orbit -- but the prefactors are
+      not the ones to quote.  The reason is 186f's: M1 answers to the moment
+      sum's time derivative, and causalInitialHistory is a synthetic
+      time-symmetric construction that does not carry the real precession,
+      so the derivative it implies is not the orbit's.
+
+190d. MODE C, AND THE ONE QUANTITY THAT DOES ACCUMULATE.  Mode C starts with
+      mu2 = mu1 exactly, so the moment sum is zero by construction:
+        t/T    |mu1+mu2|/eps   ratio to t/T = 0.5    M1/E1      E2/E1
+        0.0     0.00000e+00          --           1.3864e-17  1.7975e-10
+        0.5     2.69508e-04         1.0000        9.9248e-18  3.2021e-10
+        1.0     5.39069e-04         2.0002        9.8650e-18  3.1953e-10
+        2.0     1.07827e-03         4.0009        9.8733e-18  3.1956e-10
+        3.0     1.61758e-03         6.0020        9.8086e-18  3.1960e-10
+        4.0     2.15699e-03         8.0034        9.7960e-18  3.1963e-10
+      The sum grows LINEARLY in time from exactly zero, to four significant
+      figures over four orbits, at 5.39e-04 eps per orbit.  Unequal masses
+      make the two moments precess at different rates, so a preparation that
+      starts them exactly antiparallel does not stay that way.  This is the
+      only secularly growing quantity found anywhere in 186 to 190.
+
+190e. AND IT SETTLES 186f.  Over those same four orbits the moment sum grows
+      by a factor of EIGHT while M1/E1 stays at 9.79 to 9.95e-18, flat to
+      under one percent.  So the magnitude of the sum does not drive the
+      channel -- 186f inferred that from mode C radiating at all with the
+      sum held at zero, and this is the stronger version: the sum can grow
+      eightfold and the radiated power not move.  What sets M1 is the sum's
+      derivative, and on a near-circular orbit that derivative is periodic
+      while the sum itself ratchets.
+
+190f. ITEM 1: THE DIPOLE-SHARE IDENTITY IS EXACT TO O(eps^2).  187b reported
+      "tracks to 0.1%" at eps = 1e-3.  Sweeping eps against the vector
+      dipole share of |B1|:
+        r = a_pair, share = 0.490965643
+          eps      residual/eps      gap vs share     gap/eps
+          1e-02    0.488980196        -4.044e-03      -0.4044
+          1e-03    0.490766981        -4.046e-04      -0.4046
+          1e-04    0.490946223        -3.956e-05      -0.3956
+          1e-05    0.490963994        -3.359e-06      -0.3359
+          1e-06    0.490972601        +1.417e-05      +14.17
+        r = 0.1 a_pair, share = 0.787981759
+          1e-02    0.782075441        -7.496e-03      -0.7496
+          1e-03    0.787388085        -7.534e-04      -0.7534
+          1e-04    0.787923309        -7.418e-05      -0.7418
+          1e-05    0.787974873        -8.739e-06      -0.8739
+          1e-06    0.787994858        +1.662e-05      +16.62
+      The gap is exactly proportional to eps over three decades, so the
+      residual IS the dipole share times eps with an O(eps^2) correction
+      whose coefficient is -0.40 at a_pair and -0.75 at 0.1 a_pair.  187b's
+      0.1% was that correction evaluated at eps = 1e-3.  The eps = 1e-6 rows
+      are the round-off floor of the coefficient, which sits near 1e-5
+      relative.
+
+190g. ITEM 3: THE QUADRUPOLE FLOOR MEASURED -- AND 183h WAS READING IT.  A
+      rigid rotation about the orbit normal cannot change the quadrupole
+      power, so its scatter under one IS the floor:
+        moment opening   mean          min           max         spread
+        delta = 0     0.0000e+00    0.0000e+00    0.0000e+00      exact
+        delta = 1     1.5080e-31    7.6633e-33    4.6922e-31      61.2x
+        delta = 45    1.7072e-31    6.7365e-33    3.6912e-31      54.8x
+        delta = 180   2.8194e-31    3.8222e-32    1.0805e-30      28.3x
+      At delta = 0 the zero is exact at every rotation, so that gate is
+      real.  Everywhere else the value moves by up to sixty-one times under
+      a transformation that must leave it alone, and 183h's published
+      column -- 4.6922e-31, 2.5534e-31, 1.0805e-30 -- lies entirely inside
+      that scatter.  Its 4.6922e-31 is exactly the zero-rotation member of
+      the delta = 1 set, which is the configuration it used.
+        So 183h's correction to 182f is withdrawn.  Neither 182f's "exactly
+      zero" nor 183h's "nonzero at 1e-30" is established for delta != 0:
+      what is established is that the quadrupole there is below about
+      1e-30 W and the model cannot resolve whether it vanishes.  186d's and
+      187c's calls of "noise" on the mode A column now have this under them
+      rather than non-monotonicity alone.
+
+190h. LIMITS.  190b to 190e are one eps, one radius and four orbits, with
+      the reaction on and a near-circular orbit; whether the linear growth
+      of 190d continues, saturates or turns over on an inspiral timescale is
+      not measured and four orbits is far too short to say.  190c gives
+      correction factors at one radius only, so 186g and 187d are not
+      re-issued here -- they are flagged as preparation-instant, and
+      re-measuring their prefactors on evolved orbits across the radius
+      range is the work that would replace them.  190f's round-off floor is
+      read off one row per radius.  190g's rotation test uses six angles and
+      reports a spread, not a distribution, and the floor it measures is at
+      r = a_pair; the floor at other radii is not measured, so 190b's mode A
+      quadrupole column is called noise by signature rather than by
+      comparison against a floor measured there.
