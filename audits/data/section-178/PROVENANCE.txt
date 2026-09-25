@@ -1,0 +1,27 @@
+Raw outputs behind audit section 178 (2026-09-25).
+  measurements.txt                      both probes, concatenated
+  drift_direction_and_moment.cpp        the nine named configurations of
+                                        178b's first pass, including the
+                                        drift-along-z and skew-drift rows
+  moment_azimuth_scan.cpp               the file as finally edited: it holds
+                                        the moment-azimuth scan of 178c.
+                                        The drift-direction scan of 178b came
+                                        from the same file before that edit,
+                                        and its numbers are in
+                                        measurements.txt only
+
+No pre-registration: 178 tests a candidate 177f had already named in writing,
+and every row is either exactly zero or it is not.  The |sin 2 phi| column is
+computed from the configuration, not fitted to the result.
+
+All states are ortho prepared exactly antiparallel at a_pair, polar angle 40
+degrees, drift magnitude 0.01 c, read at the preparation instant from
+causalInitialHistory.  The rates are |B_eff| times |q/m| with B_eff from
+thomasBmtEffectiveField on localRelativisticFields, so they are the
+production quantities and not a re-derivation.
+
+"Exactly zero" in the tables means 2e-11 to 9e-13 relative, which is the
+round-off floor of a difference of two quantities near 5e+11; the nonzero
+entries are 1e-06 and larger, five orders above it.
+
+No source file was changed by this section.

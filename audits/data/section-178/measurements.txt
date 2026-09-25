@@ -1,0 +1,29 @@
+ORTHO, a_pair, preparation instant, drift 0.01c unless stated
+configuration                                    |w1-w2|/w1   |m|/mu_sum
+177's case: moments in x-z, drift along x        3.2565e-11   1.1728e-05
+moments out of plane, phi = 30                   2.9443e-06   1.1728e-05
+moments out of plane, phi = 90                   2.1573e-11   1.1728e-05
+moments along y exactly (theta 90, phi 90)       2.5353e-11   1.8245e-05
+drift along y (parallel to v_orb)                3.0226e+00   3.6493e-05
+drift along z (normal to the orbit)              8.5500e-13   1.3976e-05
+drift skew (x+y+z)/sqrt3                         9.1448e-01   2.5771e-05
+orbital phase 30 deg, drift along x              4.9396e-01   1.7278e-05
+no drift, phi = 30 (control)                     0.0000e+00   0.0000e+00
+
+Preparation instant, ortho, drift along x (in the mirror
+plane).  The MOMENT azimuth phi is scanned.  mu is a
+PSEUDOvector: under reflection in y=0 it is odd when it lies
+in the x-z plane (phi=0,180) and even when it lies along y
+(phi=90).  Mixed phi has no definite parity; |sin 2phi| is
+the mixing.
+
+ phi deg     |sin 2phi|     |w1-w2|/w1     |m|/mu_sum
+       0         0.0000     3.2565e-11     1.1728e-05
+      10         0.3420     1.1427e-06     1.1728e-05
+      30         0.8660     2.9443e-06     1.1728e-05
+      45         1.0000     3.4691e-06     1.1728e-05
+      60         0.8660     3.0669e-06     1.1728e-05
+      80         0.3420     1.2338e-06     1.1728e-05
+      90         0.0000     2.1573e-11     1.1728e-05
+     135         1.0000     3.4691e-06     1.1728e-05
+     180         0.0000     3.2565e-11     1.1728e-05

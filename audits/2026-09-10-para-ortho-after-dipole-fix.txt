@@ -12709,3 +12709,80 @@ measurement of whether that survives a cascade.
       preparation while |m| is already nonzero there is not explained: a
       residual reflection symmetry of that particular instant is the obvious
       candidate and was not tested.
+
+178. THE RESIDUAL SYMMETRY IDENTIFIED: A MIRROR IN THE PLANE OF THE
+     SEPARATION AND THE ORBIT NORMAL, WITH THE MOMENT AS A PSEUDOVECTOR
+==================================================================
+
+178a. WHAT 177f LEFT.  At the preparation instant the two precession rates
+      stay exactly equal under a centre-of-mass drift even though
+      |mu1 + mu2| is already nonzero there.  177f named a residual reflection
+      symmetry of that instant as the obvious candidate and did not test it.
+      It is tested here, and it is right -- and the test says which mirror.
+
+178b. THE MIRROR IS THE PLANE OF THE SEPARATION AND THE ORBIT NORMAL.  At
+      preparation the separation lies along x and the orbital velocities
+      along +-y, so that plane is x-z.  Rotating a fixed-magnitude drift
+      within the orbital plane, psi measured from the separation:
+        psi     sin psi     |w1-w2|/w1
+          0      0.0000      3.2565e-11
+          5      0.0872      1.2019e-01
+         15      0.2588      4.0336e-01
+         30      0.5000      9.4508e-01
+         45      0.7071      1.6115e+00
+         60      0.8660      2.3020e+00
+         90      1.0000      3.0226e+00
+        120      0.8660      2.3020e+00
+        180      0.0000      3.2601e-11
+      Exactly zero at psi = 0 and 180, where the drift lies IN the mirror;
+      maximal at 90, where it is normal to it; and symmetric under
+      psi -> 180 - psi to five figures.  A drift along z, also in the mirror,
+      gives 8.5500e-13.  So the protection survives any drift inside the
+      plane and dies with the component out of it.
+
+178c. AND THE MOMENT OBEYS IT AS A PSEUDOVECTOR, which is the part that looked
+      wrong until it was scanned.  Under a reflection a pseudovector's
+      IN-plane components flip and its normal component does not, so mu has
+      definite parity when it lies in the x-z plane (odd) or along y (even),
+      and none in between.  Scanning the moment azimuth with the drift held
+      in the mirror:
+        phi     |sin 2phi|   |w1-w2|/w1     |m|/mu_sum
+          0       0.0000     3.2565e-11     1.1728e-05
+         10       0.3420     1.1427e-06     1.1728e-05
+         30       0.8660     2.9443e-06     1.1728e-05
+         45       1.0000     3.4691e-06     1.1728e-05
+         60       0.8660     3.0669e-06     1.1728e-05
+         80       0.3420     1.2338e-06     1.1728e-05
+         90       0.0000     2.1573e-11     1.1728e-05
+        135       1.0000     3.4691e-06     1.1728e-05
+        180       0.0000     3.2565e-11     1.1728e-05
+      Exactly zero at 0, 90 and 180 -- the three azimuths with definite
+      parity -- maximal at 45 and 135, and proportional to |sin 2 phi|, the
+      parity-mixing amplitude, to within 4% at every point.  A vector would
+      have vanished only at 0 and 180; the extra zero at 90 is what
+      identifies mu as a pseudovector under this mirror.
+
+178d. WHICH ANSWERS 177f's PUZZLE OUTRIGHT.  |m| is 1.1728e-05 at EVERY
+      azimuth in 178c, unchanged to five figures while the rate difference
+      moves over five orders.  So |mu1 + mu2| being nonzero does not break
+      the rate equality and never did: the two are independent.  177d's boost
+      asymmetry seeds |m| at O(beta_CM), and the mirror, for as long as it
+      holds, keeps the two rates equal in spite of it.  Only losing the
+      mirror separates them.
+
+178e. THE TWO CHANNELS ARE SIX ORDERS APART.  Taking the drift out of the
+      mirror reaches 3.02; taking the moment out of definite parity reaches
+      3.47e-06.  Both are real and only the first matters in practice, which
+      is why 176's table -- drifts along x, moments in the x-z plane -- saw
+      exact zeros in every row that had no drift and order-one breaking in
+      every row that did.
+
+178f. LIMITS.  The preparation instant only: this explains why the rates
+      start equal, not how the breaking grows once the orbit turns, which is
+      177d's amplification and is separate.  One radius, one polar angle
+      (theta 40), one drift magnitude (0.01 c), the causalInitialHistory
+      rather than an evolved one.  The |sin 2 phi| proportionality is read
+      off nine points and not fitted.  And the mirror is identified by which
+      perturbations preserve the rates, not by deriving the invariance from
+      the field expressions -- 178c's pseudovector reading is what the
+      pattern of zeros implies, and it was not checked against the algebra.
