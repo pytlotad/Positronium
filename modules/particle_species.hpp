@@ -254,16 +254,58 @@ constexpr double dipoleRegularizationRadius(const ParticlePair& pair) {
 inline double magneticRegularizationRadius=
     dipoleRegularizationRadius(defaultPair);
 
-// True only for e-e+ in either role order.  Not merely "a particle with its
-// own antiparticle": the annihilation data the bound-decay experiments compare
+// True for e-e+ in either role order.  Not merely "a particle with its own
+// antiparticle": the annihilation data the bound-decay experiments compare
 // against is positronium's measured lifetimes, and true muonium and protonium
 // annihilate through different physics that this model does not carry.
+//
+// THE MASS TEST IS BANDED, NOT EXACT (audit 187e).  It used to read ==, which
+// made a pair whose masses differ from the electron's in the fifteenth digit
+// a DIFFERENT SPECIES: this predicate gates separationFloor(), which then
+// returned zero, and pointParticleBoundaryOf, which then switched from
+// comptonBarrierRadius to the generic collision boundary.  A parameter study
+// that perturbs the mass -- the CPT sweep of audit 186 is one -- therefore
+// left the regularization regime it meant to stay inside, silently, and its
+// dipole sector diverged below about 0.003 a_pair and reached NaN at 0.001.
+//
+// The band is chosen so that no SELECTABLE pair changes classification: the
+// nearest other pair --pair can name is the muon at 206.8 electron masses,
+// four orders outside it, and every pair in the menu is either exactly the
+// electron mass or at least that far away.  The static assertions below pin
+// that down, so this is a no-op for every run the CLI can start and changes
+// behaviour only for pairs built in code.
+//
+// The cost inside the band is bounded by the band.  comptonBarrierRadius is a
+// fixed electron-mass constant rather than a pair-dependent one, so a pair
+// admitted at the edge carries a barrier wrong by at most 1%, which is far
+// better than the alternative of losing the floor altogether.
+constexpr double positroniumMassBand=1.0e-2;
 constexpr bool isPositronium(const ParticlePair& pair) {
-    return pair.first.mass==electron.mass
-        && pair.second.mass==electron.mass
+    return magnitude(pair.first.mass-electron.mass)
+               <=positroniumMassBand*electron.mass
+        && magnitude(pair.second.mass-electron.mass)
+               <=positroniumMassBand*electron.mass
         && pair.first.charge==-pair.second.charge
         && magnitude(pair.first.charge)==elementaryCharge;
 }
+// Every pair --pair can name, classified as before the band was introduced.
+static_assert(isPositronium(ParticlePair{electron,positron}));
+static_assert(isPositronium(ParticlePair{positron,electron}));
+static_assert(!isPositronium(ParticlePair{muon,antimuon}));
+static_assert(!isPositronium(ParticlePair{proton,antiproton}));
+static_assert(!isPositronium(ParticlePair{electron,antimuon}));
+static_assert(!isPositronium(ParticlePair{proton,electron}));
+// And what the band newly admits, with its own edge pinned.
+static_assert(isPositronium(ParticlePair{
+    ParticleSpecies{"perturbed",electron.mass*1.001,-elementaryCharge,
+                    electron.gFactor},
+    ParticleSpecies{"stock",electron.mass,+elementaryCharge,
+                    electron.gFactor}}));
+static_assert(!isPositronium(ParticlePair{
+    ParticleSpecies{"far",electron.mass*1.1,-elementaryCharge,
+                    electron.gFactor},
+    ParticleSpecies{"stock",electron.mass,+elementaryCharge,
+                    electron.gFactor}}));
 
 // Separation at which a trajectory is declared to have collided, and the depth
 // at which the collapse estimator stops integrating.

@@ -13955,3 +13955,93 @@ measurement of whether that survives a cascade.
       asymmetry it does not remove, so any future comparison of the mass
       modes against the g mode below 0.01 a_pair is invalid as the code
       stands.
+
+188. 187e FIXED: THE POSITRONIUM MASS TEST IS BANDED, WHICH REMOVES THE
+     DIVERGENCE AND SUPERSEDES TWO NUMBERS IN 187c
+==========================================================================
+
+188a. WHAT WAS WRONG.  187e recorded that isPositronium() tested the two
+      masses for EXACT equality with electron.mass, so a pair perturbed in
+      the fifteenth digit was a different species: separationFloor() dropped
+      to zero and pointParticleBoundaryOf switched from comptonBarrierRadius
+      to the generic collision boundary.  187e declined to change it,
+      calling a tolerance-based version a production behaviour change
+      needing its own justification.  That justification is below, and the
+      change is made.
+
+188b. THE CHANGE.  particle_species.hpp now reads
+        constexpr double positroniumMassBand=1.0e-2;
+      and tests |m - m_e| <= band * m_e on each role instead of ==.  The
+      charge tests are untouched.  Nine static assertions pin the
+      classification of every pair --pair can name, plus the band's own two
+      edges, so the predicate cannot drift silently again:
+        electron+positron and positron+electron   true
+        muon+antimuon, proton+antiproton          false
+        electron+antimuon, proton+electron        false
+        a pair perturbed by 1e-3                  true
+        a pair perturbed by 1e-1                  false
+
+188c. WHY THE BAND IS SAFE.  The nearest other pair the CLI can select is
+      the muon at 206.8 electron masses, four orders outside the band, so no
+      selectable pair changes classification and this is a no-op for every
+      run the CLI can start.  It changes behaviour only for pairs built in
+      code, which is the case that was broken.  The cost inside the band is
+      bounded by the band: comptonBarrierRadius is a fixed electron-mass
+      constant rather than a pair-dependent one, so a pair admitted at the
+      edge carries a barrier wrong by at most 1% -- against the alternative
+      of losing the floor altogether, which was wrong by whatever the
+      unregularized field happened to produce.
+        Checked: the build carries the assertions, validation is 62/62 PASS
+      and header isolation 38/37, unchanged.
+
+188d. AND IT REMOVES THE DIVERGENCE.  Mode C of the 186 sweep, which is the
+      mass-perturbed one, near and inside r* = 1.8264e-3 a_pair:
+        r/a_pair   E1 before     E1 after    M1 before    M1 after
+          0.01     1.1229e+00   1.1063e+00  1.2865e-13  1.2549e-13
+          0.005    1.8149e+01   1.4475e+01  1.4684e-11  1.1084e-11
+          0.003    2.5111e+02   7.1029e+01  3.4446e-10  6.0621e-12
+          0.002    4.5848e+03   2.5559e+02  1.7317e-06  1.1489e-08
+          0.0015   4.4616e+04   5.7745e+02  2.6605e-04  1.0756e-07
+          0.001    4.3801e+06   1.7656e+03     NaN      1.0688e-07
+      The NaN is gone and E1 at 0.001 a_pair falls by a factor of 2480 onto
+      1.7656e+03, against mode A's 1.7602e+03 at the same radius.  The two
+      modes now agree to four digits everywhere, which they must at
+      eps = 1e-3 and did not before.
+
+188e. AND MODE A IS UNTOUCHED, WHICH IS THE CHECK THAT MATTERS.  Mode A
+      perturbs only g, so it satisfied the old predicate already; re-running
+      187c's scan reproduces its entire column to every digit printed --
+      3.4220e-22, 4.2836e-20, 3.4647e-18, 4.2014e-16, 2.8243e-14 for M1/E1
+      and 0.49077 through 0.92906 for C.P/eps.  So the change moved exactly
+      what it was meant to move and nothing else.
+
+188f. WHICH SUPERSEDES TWO NUMBERS IN 187c.  Mode C's row at 0.01 a_pair was
+      computed in the wrong regime:
+        quantity        187c        corrected     shift
+        E2/E1        1.8826e-09    1.8717e-09     0.6%
+        C.P/eps      0.12387       0.13259        7.0%
+      The power laws are unaffected -- over 1 down to 0.03 a_pair the M1/E1
+      slopes now read -4.0143, -3.9993, -3.9859 against 187c's -4.0108,
+      -3.9989, -3.9861, and the E2/E1 slopes -1.0001, -1.0009, -1.0053
+      against -1.0001, -1.0009, -1.0054.  187c's conclusions stand; its two
+      innermost mode C entries are replaced by the ones above.
+
+188g. AND THE INNER DEPARTURE IS NOW THE MODEL'S OWN REGULARIZATION.  Below
+      about 0.01 a_pair both modes leave the r^-4 law together -- the M1
+      slope reads +0.2186 in mode A and +0.2363 in mode C at 0.003, then
+      -5.9787 and -5.9750 at 0.001 -- and E1 rises by 64 and 24.8 across
+      those steps where r^-4 would give 123 and 81.  That is the short-range
+      field weight softening the field, which is what it is there for, and
+      it now applies identically to both modes.  It is not a power law and
+      187c's range of 1 down to 0.01 a_pair remains the range in which the
+      transfer functions are quoted.
+
+188h. LIMITS.  The band is 1e-2 because that is comfortably wider than any
+      parameter study this series has run and four orders narrower than the
+      nearest selectable pair; it is not derived from anything physical, and
+      nothing measures what a pair at the edge of it actually does beyond
+      the 1% barrier bound argued in 188c.  188d and 188e are one eps and
+      the preparation instant.  The change does not touch
+      pointParticleBoundaryOf's OTHER branch, so what a band-admitted pair
+      should use as a collision boundary is decided by the same gate and has
+      not been examined separately.
