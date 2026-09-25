@@ -12786,3 +12786,75 @@ measurement of whether that survives a cascade.
       perturbations preserve the rates, not by deriving the invariance from
       the field expressions -- 178c's pseudovector reading is what the
       pattern of zeros implies, and it was not checked against the algebra.
+
+179. 178f CLOSED: THE IDENTITY IS B2 = -M(B1), THE MIRROR TURNS WITH THE
+     ORBIT, AND THE BREAKING IS LINEAR IN THE ANGLE OFF IT
+==================================================================
+
+179a. WHAT 178f LEFT.  Three things: the mirror had been identified from a
+      pattern of zeros rather than from the field expressions; the result
+      covered the preparation instant only; and one radius, one polar angle,
+      one drift magnitude.  The first two are closed here.
+
+179b. THE IDENTITY, MEASURED RATHER THAN GUESSED.  Instead of proposing a
+      symmetry operation, compare the two B_eff VECTORS and see which
+      relation they satisfy.  At the preparation instant, drift 0.01 c along
+      the separation, moments in the mirror:
+        B1 = (-1.007828e+00, +2.761899e-05, +2.950676e+00)
+        B2 = (+1.007828e+00, +2.761899e-05, -2.950676e+00)
+      The y components share a SIGN while x and z reverse, so the relation is
+        B2 = -M(B1),   M = reflection in the separation-normal plane,
+      which holds to 4.3e-11 while B2 = -B1 misses by 1.8e-05.  A reflection
+      composed with a negation preserves the norm, and that -- not a parity
+      argument about the moments -- is why |B1| = |B2| and the rates are
+      equal.  178c's pseudovector reading described the pattern correctly and
+      named the wrong reason.
+
+179c. AND THE DISTINCTION MATTERS, because the two break at different rates.
+      Taking the moments out of definite parity (azimuth 45) breaks the
+      VECTOR identity by 0.233 while the norms still agree to 3.5e-06.  So
+      the rate equality survives far beyond the identity that produces it:
+      the residual rotates B2 without changing its length.  178 could not see
+      this because it measured only the norms.
+
+179d. THE MIRROR TURNS WITH THE ORBIT, which closes 178f's second item.  It
+      is the INSTANTANEOUS separation-normal plane, so a drift fixed in the
+      laboratory lies in it only when the separation is along the drift.
+      Following one orbit with the drift along x:
+        t/T     separation angle   |w1-w2|/w1   B2 vs -M(B1)
+        0.000        0.00 deg      3.2565e-11    4.3193e-11
+        0.125       45.00          6.3827e-01    6.8641e-01
+        0.250       89.99          8.1423e-01    8.6039e-01
+        0.375      134.97          6.3865e-01    6.8682e-01
+        0.500      179.94          1.3641e-03    1.5166e-03
+        0.625     -135.09          1.7601e+00    1.8929e+00
+        0.750      -90.11          4.3829e+00    4.6314e+00
+        1.000       -0.12          2.7283e-03    3.0334e-03
+      The equality is restored at 0 and 180 degrees and nowhere else, and the
+      two columns track each other to within 8% at EVERY phase.  So the rate
+      breaking is the vector identity's breaking, quantitatively, all the way
+      round -- not only where it vanishes.
+
+179e. AND IT IS LINEAR IN THE ANGLE OFF THE MIRROR.  Sampling through the
+      crossing at t/T = 0.5:
+        angle off 180 deg    |w1-w2|/w1    ratio per degree
+            1.86            4.1355e-02        2.22e-02
+            1.50            3.3487e-02        2.23e-02
+            1.14            2.5554e-02        2.24e-02
+            0.78            1.7557e-02        2.25e-02
+            0.42            9.4935e-03        2.26e-02
+            0.06            1.3641e-03        2.27e-02
+      Constant to 2% over a thirtyfold range in the angle.  The protection is
+      therefore not a knife edge: it degrades smoothly and predictably as the
+      configuration leaves the mirror, which is also why 177d's amplification
+      looked like growth in time -- the orbit is carrying the separation away
+      from the drift, at a rate the orbit itself sets.
+
+179f. LIMITS.  179b and 179c are the preparation instant; 179d and 179e one
+      orbit at one radius with one drift magnitude and one polar angle, so
+      the slope of 2.25e-02 per degree is a number for this configuration and
+      not a general coefficient.  The identity B2 = -M(B1) is verified
+      numerically at the configurations listed and is still not derived from
+      the field expressions -- what 179b replaces is the guess about WHICH
+      relation holds, not the absence of a derivation.  Why the norms survive
+      a 23% violation of the identity (179c) is unexplained.

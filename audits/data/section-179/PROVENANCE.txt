@@ -1,0 +1,29 @@
+Raw outputs behind audit section 179 (2026-09-25).
+  measurements.txt   both probes, concatenated
+  algebra.cpp        prints both B_eff vectors componentwise and the residual
+                     against five candidate relations, so the identity is
+                     read off the numbers rather than assumed
+  phase.cpp          follows one orbit and, at each sampled phase, rebuilds
+                     the mirror from the CURRENT separation and the orbit
+                     normal, then compares B2 with -M(B1)
+
+No pre-registration: 179 tests relations 178f had already flagged as guessed,
+and each row is a residual read directly.  No threshold enters a conclusion.
+The candidate list in algebra.cpp was written before the numbers were seen
+and includes the relation that turned out to hold as well as four that did
+not, which is what makes the identification a measurement.
+
+All states are ortho prepared exactly antiparallel at a_pair, polar angle 40
+degrees, drift magnitude 0.01 c.  B_eff is thomasBmtEffectiveField on
+localRelativisticFields, the production quantities.  The rates are |B_eff|
+times |q/m|.
+
+In 179d the mirror is rebuilt per sample as reflection about the plane
+spanned by the instantaneous separation and the z axis, implemented as
+v - 2 (v.p) p with p the unit normal to that plane; it is not the fixed x-z
+plane of the preparation instant.
+
+The linearity of 179e is read from six samples through one crossing and the
+per-degree column is quoted as the ratio, not as a fit.
+
+No source file was changed by this section.
