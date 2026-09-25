@@ -15802,3 +15802,96 @@ measurement of whether that survives a cascade.
       "ortho has no bound circular motion in the window", not as "para
       plunges and ortho escapes", which overstates what the common initial
       condition can support.
+
+208. UNIFYING THE COLLAPSE RADIUS TO separationFloor(): FOUR REASONS NOT TO,
+     AND WHAT THE MODEL ALREADY HAS INSTEAD
+==========================================================================
+
+208a. THE PROPOSAL.  Put to me: unify the collapse radius to
+      separationFloor(), unless there is a better idea.  That would move it
+      from comptonBarrierRadius = 193.3035 fm to 9.6652 fm, inward by a
+      factor of twenty.  I recommend against it, on four measured grounds,
+      and I do not have a better unification to offer -- the case below is
+      that the radii are not duplicates.
+
+208b. IT LANDS INSIDE THE ONE REGION THIS SERIES HAS MEASURED TO BE BROKEN.
+      189e found localRelativisticFields returning EXACTLY ZERO over a band
+      from 12.6 fm down to 5.0 fm, while the mechanical force stays finite
+      and smooth across it, and NaN below 1.26 fm.  189f traced the zeros to
+      the two-pole dipole construction, whose validity guards return an
+      empty field that zeroes the Coulomb part with it.
+        separationFloor() = 9.6652 fm sits INSIDE that band.  Terminating
+      trajectories there would end every one of them at a separation where
+      the field solver returns a plausible-looking zero rather than a
+      refusal.  That alone settles it.
+
+208c. AND separationFloor() IS NOT A RADIUS OF THAT KIND.  Three properties
+      it has that a collapse radius must not:
+        - It is a numerical guard by its own documentation:
+          pair_geometry.hpp says "the floor is a numerical guard, not a
+          physical barrier" and "The floor exists for a NUMERICAL reason
+          (the kink described above)".
+        - It is environment-settable.  CREM_SEPARATION_FLOOR_SCALE exists
+          "for one measurement"; making it the collapse radius would put
+          every reported collapse time under a debug knob.
+        - It is ZERO for every pair but positronium.  isPositronium gates
+          it (188), so muonium and protonium would get a collapse radius of
+          0.0 and never terminate.
+
+208d. AND IT BUYS NOTHING MEASURABLE.  The collapse time goes as
+      a^3 - r_end^3, and the endpoint enters only through (r_end/a)^3:
+        end at r*                 6.0929e-09
+        end at separationFloor()  7.6162e-13
+      so the whole move changes the collapse time by 6.09e-09 of itself --
+      six parts per billion, below every digit this series reports.  202d
+      says why in general: dt ~ r^2 dr puts 97% of the elapsed time in the
+      outermost factor of three in radius, so the inner endpoint cannot
+      matter.  What the move WOULD change is where trajectories terminate
+      and what their terminal quantities report, which is a cost with no
+      corresponding benefit.
+
+208e. WHAT THE MODEL ALREADY HAS INSTEAD, and it is a two-level structure
+      rather than a duplication.  comptonBarrierRadius is the DECLARED
+      boundary, returned by pointParticleBoundaryOf and used by
+      positronium.cpp in three places.  nuclearCutoff = 10 fm is the deeper
+      guard used where the declared one would fire immediately, and
+      crem_collapse says exactly why: measurementState's own position is
+      allowed to sit at or below comptonBarrierRadius once the orbit has
+      circularized, so passing the barrier there "would make this
+      measurement start already past its own trajectoryCutoff, a zero-step
+      degenerate case (measured directly: startSep=189.5fm < cutoff=193.3fm,
+      elapsed=0ps, NumericalFailure)".  The two radii exist because one
+      measurement needs to start inside the other.
+
+208f. THE ONE NEAR-DUPLICATE, AND WHY I WOULD NOT MERGE IT EITHER.
+      nuclearCutoff at 10.0000 fm and separationFloor() at 9.6652 fm are
+      3.5% apart, which looks like the redundancy the proposal is reaching
+      for.  It is not one: the first is a hard TERMINATION radius and the
+      second a Plummer SOFTENING length, and tying them would put a
+      termination criterion under CREM_SEPARATION_FLOOR_SCALE -- 208c's
+      objection in a smaller place.  Their being nearly equal is a
+      coincidence of scale, both being "about a point-particle length", not
+      evidence that one number would do.
+
+208g. RECOMMENDATION: LEAVE ALL FIVE.  comptonBarrierRadius declares
+      validity, nuclearCutoff guards the degenerate start, separationFloor
+      softens the field, collisionBoundaryRadius serves the non-positronium
+      branch, and a_pair starts the integration.  Five jobs, five numbers.
+      The one thing in this area that IS anomalous is 189b's factor of
+      2.7375 between the two branches of pointParticleBoundaryOf, which 188
+      recorded and declined to change; nothing here disturbs that decision.
+        If the motivation is that the deep region is untidy, the defect
+      worth fixing is 189e's zero band, not the radii -- and fixing it is
+      also what would make a deeper termination radius safe, if one were
+      ever wanted.
+
+208h. LIMITS.  208b's band is 189e's measurement at the default floor scale;
+      it moves with the floor, so the overlap with separationFloor() is a
+      property of the default and not of every setting -- though that the
+      band tracks the floor is precisely why the two coincide.  208d prices
+      the change in the collapse TIME only; it does not price what
+      terminating deeper would do to the terminal-state reporting that 190c
+      and 203 have already shown to be preparation- and path-sensitive.  And
+      208f's judgement that the two near-equal constants are not
+      interchangeable rests on reading their roles, not on a measurement of
+      what merging them would do.
