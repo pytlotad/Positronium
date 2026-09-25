@@ -13011,3 +13011,247 @@ measurement of whether that survives a cascade.
       rotated rigidly, not an evolved orbit, which is why its slope differs
       from 179e's by 7% at the matching configuration -- the two are close
       but they are not the same measurement.
+
+181. 180j INVESTIGATED: THE SYMMETRY IS C.P, EXACT AND UNCONDITIONAL IN THE
+     ZERO-MOMENTUM FRAME, AND 178 TO 180 WERE TRACKING THE WRONG TARGET
+==========================================================================
+
+181a. WHAT 180j LEFT.  Five items: the three input relations of 180b were
+      asserted and not derived; the term-by-term check was one
+      configuration; 180e's separation of the two symmetries rested on one
+      azimuth and one radius; the |sin 2 phi| law was read off six points;
+      and 180h was the preparation instant with a rigidly rotated orbit.
+      Looking for the derivation produced an operation, and testing that
+      operation produced a second and better one.  The first four items are
+      closed; the fifth is superseded, because the quantity 180h was
+      measuring turns out not to be the symmetry's residual.
+
+181b. THE FIRST OPERATION: A ROTATION, NOT A REFLECTION.  As matrices the
+      reflection 179 and 180 used is minus a rotation, M = -R_y(pi), with y
+      the orbital-velocity direction.  Written as the rotation
+        A = R_y(pi) = diag(-1, +1, -1)
+      it maps particle 1 onto particle 2 outright:
+        A(r1) = r2       the separation is normal to the axis
+        A(v1) = -v2      needs the drift to have no component on y
+        q2 = -q1         so A(source 1) carries the SAME current, both the
+                         charge and the velocity reversing, and the opposite
+                         charge density
+        A(mu1) = -mu1    needs the moments to have no component on y, and
+               = mu2     needs them equal in magnitude
+      Three preconditions, each falsifiable, none of them tested by 179 or
+      180.  All three hold.
+
+181c. PRECONDITION 1: a drift along the orbital velocity must break it,
+      while one along the separation or the orbit normal must not.  180d
+      tested exactly the two that do not and concluded the mirror was
+      robust; the one direction it never tried is the one that breaks:
+        drift direction                     E           B       B_eff
+        none                        3.667e-16   1.239e-16   9.497e-17
+        0.01 c along x (separation) 2.835e-11   5.232e-11   4.319e-11
+        0.01 c along z (orbit nrml) 1.137e-15   2.969e-12   3.854e-12
+        0.01 c along y (orbital v)  1.114e-04   3.649e+00   3.321e+00
+        0.001 c along y             1.113e-05   4.274e-01   1.470e-01
+        1e-5 c along y              1.113e-07   3.598e-03   1.376e-03
+      Nine orders of magnitude between the y direction and the other two at
+      the same speed, and the E residual is exactly linear in the y
+      component over the three decades measured.
+
+181d. PRECONDITION 2: the moments must have no component on the axis.  The
+      breaking is exactly linear in the azimuth over three decades:
+        moment azimuth         E             B          B_eff
+        phi = 0        2.835e-11     5.232e-11      4.319e-11
+        phi = 0.001    4.108e-10     7.361e-06      5.641e-06
+        phi = 0.01     4.098e-09     7.361e-05      5.641e-05
+        phi = 0.1      4.098e-08     7.361e-04      5.641e-04
+        phi = 1        4.098e-07     7.361e-03      5.641e-03
+        phi = 45       1.660e-05     3.087e-01      2.332e-01
+      7.361e-03 per degree for B, 5.641e-03 for B_eff, no fitted parameter.
+
+181e. PRECONDITION 3: the two moments must be equal in magnitude, because
+      the step that maps mu1 to mu2 is the charge conjugation.  Quantitative:
+        pair                 |B2|/|B1|   |mu1|/|mu2|    residual    ratio-1
+        electron + positron  1.0000e+00  1.0000e+00   5.2321e-11          0
+        electron + antimuon  2.0677e+02  2.0677e+02   2.05765e+02 2.05767e+02
+        proton + antiproton  1.0000e+00  1.0000e+00   1.9687e-11          0
+      The residual IS |mu1|/|mu2| - 1 to five significant figures.  And
+      protonium, a pair 1836 times heavier, holds to 2.0e-11: the condition
+      is on the moments, not on the species.
+
+181f. AND THE PRECONDITIONS WERE THE CLUE I ALMOST MISSED.  A symmetry of
+      the LAWS carries no preconditions; only a symmetry of a CONFIGURATION
+      does.  Three conditions on the state therefore said this was not the
+      deepest relation available, and that a conditionless one might exist.
+      For a particle-antiparticle pair the exchange of the two labels is
+      charge conjugation, so the candidate to try is C composed with the
+      spatial inversion.  At the preparation instant P and R_y(pi) both send
+      r1 to r2 -- the separation lies along x and has no y or z component to
+      tell them apart -- which is why 179 and 180 could not distinguish
+      them, and why the whole line of work settled on the wrong one.
+
+181g. C.P IS EXACT AND UNCONDITIONAL.  Its field relations are
+        E2 = +E1        B2 = -B1
+      and in the zero-momentum frame they hold BITWISE:
+         r/a_pair   theta     phi      E2 - E1      B2 + B1
+             1        40       0     0.000e+00    0.000e+00
+             1        40      20     0.000e+00    0.000e+00
+             1        40      45     0.000e+00    0.000e+00
+             1        40      80     0.000e+00    0.000e+00
+             1        15      33     0.000e+00    0.000e+00
+             1        65      77     0.000e+00    0.000e+00
+          0.01        15      33     0.000e+00    0.000e+00
+          0.01        65      77     0.000e+00    0.000e+00
+      Not "to the floor" -- identically zero, at every moment azimuth, every
+      polar angle and every radius tried.  There is no azimuth condition and
+      no polar-angle condition.  The only precondition C.P inherits is 181e's
+      181e's equal moments, which is what makes particle 2 the antiparticle
+      of particle 1.  It survives an evolved orbit unchanged; see 181o.
+
+181h. SO 178, 179 AND 180's AZIMUTH DEPENDENCE WAS THE WRONG TARGET, and it
+      can be named exactly.  Since B2 = -B1 identically, testing against
+      axial(B1) = (-B1x, +B1y, -B1z) instead leaves precisely 2|B1_y|:
+        phi    axial residual    2|B1y|/|B1|    difference
+         10      7.338554e-02    7.338554e-02     0.000e+00
+         20      1.453892e-01    1.453892e-01     0.000e+00
+         45      3.087033e-01    3.087033e-01     0.000e+00
+         80      4.451490e-01    4.451490e-01     0.000e+00
+        130      3.365288e-01    3.365288e-01     0.000e+00
+      Zero difference at every azimuth.  179c's 0.233, 179d's whole orbit
+      column, 180f's vector residual and 180h's drift-free slope are all
+      this one quantity: the y component of B1, mis-signed by the target.
+      They are arithmetic about the test, not physics about the pair.
+
+181i. AND THIS CLOSES 180j's FIRST ITEM PROPERLY.  180b derived the identity
+      from three input relations it could not itself derive.  C.P supplies
+      them outright, exactly and without conditions:
+        v2 = -v1        E2 = +E1        B2 = -B1
+      and every Thomas-BMT term is then odd, each taking its minus from a
+      different place -- B itself in the magnetic term; the dot product in
+      the longitudinal one, where beta's two minuses cancel and B supplies
+      the one that survives; the cross product in the motional one, where
+      beta supplies it and E none.  So B_eff2 = -B_eff1.  Measured over 27
+      configurations, three radii by three polar angles by three azimuths:
+        every term, every configuration, residual 0.000e+00 exactly.
+      Not a floor.  This is the derivation 180j asked for, and unlike 180b's
+      it rests on relations that are themselves derived rather than
+      measured.
+
+181j. THE DRIFT IS WHAT BREAKS C.P, AND IT BREAKS IT LINEARLY:
+        beta_drift    phi      E2 - E1      B2 + B1
+             0          0    0.000e+00    0.000e+00
+             0         45    0.000e+00    0.000e+00
+          1e-04          0    2.798e-07    7.693e-08
+          1e-04         45    3.254e-07    2.322e-07
+          1e-02          0    2.798e-05    7.693e-06
+          1e-02         45    3.254e-05    2.322e-05
+      Four digits of linearity over two decades.  P reverses velocities, and
+      the drift is COMMON to the two particles rather than opposite, so it
+      is the one part of the state P cannot exchange.  That is the whole
+      mechanism, and it is frame-dependent by construction.
+
+181k. WHICH IDENTIFIES 176's EXCHANGE PARITY EXACTLY.  176 found the
+      exchange parity exact in the zero-momentum frame and only there, and
+      could not say what the operation was.  It is C.P: for a
+      particle-antiparticle pair the exchange of the labels IS charge
+      conjugation, the spatial part is the inversion through the centre of
+      mass, and the zero-momentum frame is precisely the frame in which the
+      drift -- the part P cannot exchange -- vanishes.  176 was right and is
+      now named.
+
+181l. A READING OF MINE THAT DID NOT SURVIVE EITHER.  The preparation
+      residual of the ROTATION relation grows as r^-2, which I took for an
+      acceleration field breaking an identity exact for the velocity field.
+      Its own test refutes it -- scaling the orbital speed down at fixed
+      geometry, which scales the acceleration as its square:
+        orbit scale   acceleration share   E residual   B residual
+            1            1.0000e+00       2.8353e-11   5.2321e-11
+            0.1          1.0000e-02       2.8353e-11   1.2323e-11
+            0            0                2.8351e-11   1.2443e-11
+      With the orbit stopped dead the residual is unchanged to five digits.
+      It is round-off, and its r^-2 growth is the floor rising as the field
+      evaluation stiffens.
+
+181m. 180j's REMAINING ITEMS, WITH WHAT THEY NOW MEAN.  Item 2, the
+      term-by-term check, is done at 27 configurations in 181i rather than
+      one, and exactly rather than at a floor.  Item 3, 180e's split of the
+      two symmetries, survives in substance and gains its names: the norms
+      answer to C.P, which no moment orientation touches and only the drift
+      breaks, and the vector residual answers to nothing -- it is 181h's
+      2|B1_y|.  Item 4, the |sin 2 phi| law, is a law about C.P's DRIFT
+      breaking, and fitting it densely rather than reading six points shows
+      it is SIGNED:
+        A |sin 2 phi| through the origin    A = -2.1e-11, i.e. nothing
+        A sin(2 phi), 179 points            A = 3.470579e-06
+        rms residual  5.02e-08 (1.45% of A)
+        worst         7.18e-08 (2.07% of A) at phi = 112 deg
+      178 and 180f saw a modulus because they measured |w1 - w2|, which is
+      unsigned by construction.  Item 5 is superseded: 180h measured the
+      angle dependence of 2|B1_y|, accurately, but that is not a symmetry's
+      residual and its range of 2.99e-03 to 1.12e-01 per degree describes
+      the test rather than the pair.
+
+181n. IS IT CPT?  No, and the distinction is not bookkeeping.  CPT is a
+      theorem about the LAWS of a Lorentz-invariant local quantum field
+      theory and holds unconditionally; this model is classical
+      Maxwell-Lorentz, and what is measured here is a symmetry of one
+      CONFIGURATION.  The laws' own C, P and T invariances are separately
+      true and say nothing about this pair.  What is exact here is C.P, with
+      no T at all.  T does enter the secondary rotation relation -- R_y(pi)
+      carries particle 1's ORBIT onto particle 2's only under t -> -t, which
+      is why that relation is exact at the time-symmetric synthetic
+      preparation history and degrades once a genuine retarded history
+      accumulates.  Since R_y(pi) = P.M_y, that operation is (C.P.T).M_y:
+      CPT is a FACTOR of it, composed with a reflection, and the reflection
+      is what carries the three preconditions.  A relation needing
+      preconditions is not a law-level symmetry, which is 181f's argument
+      running the other way.
+
+181o. AND C.P SURVIVES AN EVOLVED ORBIT, WHICH RETIRES THE REST.  Six
+      orbits, moment azimuth 37 degrees chosen to be generic, reporting the
+      WORST value reached anywhere within each turn rather than at the
+      turns:
+        turn    zero drift: worst E2-E1   worst B2+B1
+          0             0.0000e+00         0.0000e+00
+          1             0.0000e+00         0.0000e+00
+          2             0.0000e+00         0.0000e+00
+          3             0.0000e+00         0.0000e+00
+          4             0.0000e+00         0.0000e+00
+          5             0.0000e+00         0.0000e+00
+          6             0.0000e+00         0.0000e+00
+      Exactly zero at all 2400 steps, not at the symmetric points only.  So
+      three things I had measured on the way here were measurements of the
+      wrong target and are withdrawn: that the identity fails by 34%
+      mid-orbit at zero drift; that it grows with accumulated retarded
+      history at 2.2e-04 per orbit; and that it is therefore exact only at
+      the preparation instant.  None of that is true of the pair.  It was
+      true of 2|B1_y| as the orbit turned.
+        With the drift on the breaking is bounded and does not accumulate
+      either -- E stays at 1.0607e-04 across all six turns and B moves from
+      7.6925e+00 to 7.7155e+00, a third of one percent over six orbits.
+
+181p. AND C.P INHERITS THE MOMENT CONDITION, which is the one precondition
+      that is real:
+        pair                     E2 - E1        B2 + B1
+        electron + positron    0.0000e+00     0.0000e+00
+        proton + antiproton    0.0000e+00     0.0000e+00
+        electron + antimuon    2.7792e-05     2.0576e+02
+      2.0576e+02 is |mu1|/|mu2| - 1 again.  This is not a fourth condition
+      bolted on: it is the statement that particle 2 must BE the
+      antiparticle of particle 1, without which the label exchange is not
+      charge conjugation and there is no C to compose with P.
+
+181q. LIMITS.  C.P is verified, not proved: 181i derives B_eff2 = -B_eff1
+      FROM v2 = -v1, E2 = +E1 and B2 = -B1, and those three are measured at
+      the configurations listed rather than obtained from the
+      Lienard-Wiechert integrals.  What makes them more than 180b's
+      equivalents is that they are exact and carry no conditions, and that
+      the operation producing them is named -- but the field-integral
+      argument is still absent.  The zero-drift results are bitwise zero at
+      every configuration tried, which is strong but is not a proof that no
+      configuration breaks them; in particular every orbit here is circular
+      and every history either synthetic or six turns long, and the
+      radiation reaction is off throughout, so whether C.P survives a
+      T-odd reaction term is untested and is the obvious next question.
+      181j's linearity in the drift is two decades at two azimuths.  181o
+      is one radius.  And 177d's "amplification", which 181h shows to be
+      largely 2|B1_y|, has not been re-measured against C.P -- it is
+      flagged, not corrected.
