@@ -15458,3 +15458,84 @@ measurement of whether that survives a cascade.
       a_pair rather than a formation radius, and nothing has been put
       through the collapse estimator, which remains what would turn any of
       this into a statement about the lifetimes the model reports.
+
+204. CAN THE TWO PARA/ORTHO DIVISIONS BE UNIFIED?  NOT BY ADJUSTING EITHER
+     -- THEY ARE ONE CLASSIFIER EVALUATED OFF ITS DOMAIN
+==========================================================================
+
+204a. THE QUESTION.  197f found the model carries two divisions that
+      disagree: a LABEL, dipoleAlignment >= 0.5 in crem_trajectory.hpp,
+      which splits a uniform cosine 25/75; and a MULTIPLICITY, drawn against
+      the weight (1+cos)/2 in crem_collapse.hpp, which gives P(2 gamma) =
+      1/2 and takes nine of every sixteen two-photon events from
+      ortho-labelled states.  Asked whether they could be made one.
+
+204b. THEIR PROVENANCE IS NOT EQUAL.  The weight is derived: it is
+      |mu1+mu2|^2/(|mu1|+|mu2|)^2, which at equal moment magnitudes is
+      exactly (1+cos)/2.  The threshold is not: 91a introduced it as a
+      CLASSIFICATION of the free draw, in place of the rejection loop it
+      replaced, and called that loop "a threshold imposed in place of a
+      point".  Nothing in the tree derives 0.5, and by 196's account the
+      only two configurations that are classical images of anything sit at
+      cos = +1 and cos = -1, where a threshold anywhere strictly between
+      them classifies identically.
+
+204c. AND NO THRESHOLD UNIFIES THEM.  Writing the disagreement rate --
+      label says para and the draw gives three photons, or the reverse --
+      as a function of the threshold t under the default uniform cosine:
+        threshold    disagreement
+           -1          1/2
+           -1/2        5/16
+            0          1/4
+            1/4       17/64
+            1/2        5/16     <- current
+            3/4       25/64
+            1          1/2
+      Its derivative is t/2, so the minimum is at t = 0 and its value there
+      is 1/4.  A QUARTER of all events have the label and the multiplicity
+      on opposite sides no matter where the threshold is put.  The current
+      5/16 reconciles exactly with 197f's 9/16: P(2g and ortho label) is
+      9/32 and P(3g and para label) is 1/32, and those sum to 10/32 = 5/16.
+
+204d. BECAUSE THEY ARE ALREADY IDENTICAL WHERE THE PREPARATION IS A
+      CLASSICAL IMAGE.  Under the quantized preparation cos is +-1 exactly,
+      the weight is 1 or 0, the draw is degenerate, and the disagreement is
+      ZERO at every threshold in (-1, 1).  The two divisions are not two
+      competing classifiers.  They are one classifier -- "which of the two
+      images is this?" -- extended off its domain in two different ways: the
+      weight interpolates linearly between the images, the label snaps to
+      the nearer one.  They agree wherever the question is well posed and
+      differ only on configurations that are the image of no spin
+      eigenstate, which by 196c is every configuration strictly between.
+
+204e. WHAT MOVING THE THRESHOLD WOULD BUY AND COST.  Moving it from 1/2 to 0
+      -- snapping to the nearer image, which is the geometrically natural
+      choice -- cuts the disagreement from 5/16 to 4/16, a fifth of it, and
+      changes the label split from 25/75 to 50/50.  That trades one
+      agreement for another: 91b recorded the 25/75 as matching spin
+      statistics, though 197f noted it does so by arithmetic -- P(cos >= 1/2)
+      is 1/4 for a uniform cosine -- rather than by any derivation.
+
+204f. RECOMMENDATION: CHANGE NEITHER.  The move buys 1/16 of disagreement
+      and costs the one number in the pair that currently lines up with an
+      experiment; the residual 1/4 is irreducible under this preparation, so
+      the move trims the symptom without touching the cause.  The cause is
+      the preparation populating the interior, which 91 chose deliberately,
+      on a principle the project owner reaffirmed and which 197d found still
+      untouched by anything measured since.  The useful change is
+      documentary: that the two divisions are one classifier off its domain,
+      that their disagreement is floored at 1/4, and that both become exact
+      together under a quantized preparation.  Recorded here rather than
+      encoded, because encoding it would mean choosing the preparation, and
+      that decision is not this section's to make.
+
+204g. LIMITS.  204c and 204e are exact integrals of the model's own weight
+      under its own default preparation, not measurements of a run; they
+      assume the cosine is uniform, which 91b measured as -0.0038 mean over
+      2000 draws and is taken as exact here.  The disagreement rate counts
+      events, not consequences: nothing here weighs a mislabelled event by
+      what it costs downstream, and a 1/4 disagreement in a label that only
+      bins output is not the same defect as a 1/4 error in the
+      multiplicity itself.  204b's claim that the threshold is underived is
+      an absence of evidence in the tree, not a proof that no derivation
+      exists.  And no code is changed, so nothing here is verified by a run.
