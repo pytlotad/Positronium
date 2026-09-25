@@ -13853,3 +13853,105 @@ measurement of whether that survives a cascade.
       is not the same as a Lagrangian that violates it -- the model has no
       mechanism that would distinguish the two, which is 185b's point
       restated rather than resolved.
+
+187. 186h TAKEN UP: THE TRANSFER FUNCTIONS RUN AS r^-4 AND r^-1, 186b's
+     COEFFICIENT IS THE DIPOLE SHARE, AND THE MASS MODES SILENTLY LEAVE
+     THE POSITRONIUM REGIME
+==========================================================================
+
+187a. WHICH OF 186h's LIMITS, AND WHY THAT ONE.  The transfer functions are
+      186's deliverable and quoting them at a single radius is their weakest
+      point, because the pair spends its whole life falling from a_pair
+      toward r*.  If the channel shares run with radius, the a_pair figures
+      describe the one place the pair is least interesting.  Two cheaper
+      items from the same list are taken with it.
+
+187b. 186b's UNEXPLAINED COEFFICIENT, CLOSED.  186b measured the C.P
+      residual for a g-mismatch as 0.49096 eps and said only that the
+      residual is normalised by the full |B1| while the mismatch rides the
+      dipole part.  That is testable: scale the moments down by 1e-6 to
+      isolate the charge-motion field and difference.
+        r/a_pair   |B| full     |B| charge   |B| dipole   share   measured
+            1     2.387252e+00 1.564572e+00 1.172059e+00 0.490966 0.49077
+            0.1   1.486281e+03 4.946721e+02 1.171162e+03 0.787982 0.78739
+            0.01  1.175655e+06 1.561296e+05 1.093245e+06 0.929903 0.92906
+      The coefficient IS the dipole share, to 0.1% at three radii spanning
+      two decades.  And it is not a constant: the dipole field grows as r^-3
+      against the charge field's r^-2, so the share climbs toward one as the
+      pair falls, which the measured column follows.
+
+187c. THE TRANSFER FUNCTIONS ALONG THE RADIUS, eps = 1e-3, with local
+      power-law slopes in log r:
+        MODE A (g-mismatch, spin condition)
+        r/a_pair     E1 [W]      M1/E1     slope    E2/E1     C.P/eps
+            1     1.1673e-08  3.4220e-22    --    noise      0.49077
+            0.3   1.4410e-06  4.2836e-20  -4.0115 noise      0.66141
+            0.1   1.1666e-04  3.4647e-18  -3.9987 noise      0.78739
+            0.03  1.4327e-02  4.2014e-16  -3.9851 noise      0.87938
+            0.01  1.1052e+00  2.8243e-14  -3.8303 noise      0.92906
+        MODE C (kinematic condition only)
+        r/a_pair     E1 [W]      M1/E1     slope    E2/E1     slope
+            1     1.1685e-08  1.3702e-21    --    1.7955e-11   --
+            0.3   1.4424e-06  1.7137e-19  -4.0108 5.9860e-11 -1.0001
+            0.1   1.1678e-04  1.3864e-17  -3.9989 1.7975e-10 -1.0009
+            0.03  1.4344e-02  1.6832e-15  -3.9861 6.0305e-10 -1.0054
+            0.01  1.1229e+00  1.1457e-13  -3.8416 1.8826e-09 -1.0362
+      Two clean laws.  M1/E1 goes as r^-4 in BOTH modes, and since E1 itself
+      goes as r^-4 (1.1673e-08 to 1.1666e-04 over one decade is 1e4), the M1
+      power runs as r^-8.  E2/E1 goes as r^-1 for the kinematic mode, slope
+      1.000 to three decimals over two decades.  A g-mismatch still never
+      opens E2 at any radius -- that column neither scales nor stays
+      monotonic, exactly as 186d found at a_pair.
+
+187d. SO 186g's NUMBERS ARE a_pair NUMBERS AND UNDERSTATE THE CHANNELS.
+      M1/E1 climbs from 3.42e-22 at a_pair to 2.82e-14 at 0.01 a_pair, eight
+      orders of magnitude for the same eps; E2/E1 climbs from 1.80e-11 to
+      1.88e-09, two orders.  186g's transfer functions should be read as
+        g-mismatch     M1/E1 = 3.47e-20 e^2 (r/a_pair)^-4
+        mass mismatch  M1/E1 = 1.40e-19 e^2 (r/a_pair)^-4
+                       E2/E1 = 1.80e-09 e^2 (r/a_pair)^-1
+      over 1 down to 0.01 a_pair, and 186g's bare figures are the r = a_pair
+      case of these.  The qualitative conclusion of 186g is unchanged --
+      both channels are quadratic in the violation, so a small bound
+      suppresses them hard -- but the radius enters at the fourth power and
+      any bound applied at a_pair alone would be eight orders too generous
+      by 0.01 a_pair.
+
+187e. AND A TRAP THE SWEEP WALKED INTO.  isPositronium() tests the two
+      masses for EXACT equality with electron.mass, so a mass-perturbed pair
+      is not positronium and separationFloor() returns zero, while
+      pointParticleBoundaryOf switches from comptonBarrierRadius to the
+      generic collision boundary:
+        pair                          isPositronium   floor [a_pair]
+        stock electron + positron          yes         9.132269e-05
+        mode A: g2 = g1(1+1e-3)            yes         9.132269e-05
+        mode B: m2 = m1(1+1e-3)            NO          0
+        mode C: m2 and g2 both             NO          0
+      So mode A keeps the positronium regularization and modes B and C do
+      not, which is an asymmetry between the modes that nothing in 185f or
+      186 controlled for.  It is not the floor itself biting -- the stock
+      floor sits at 9.13e-05 a_pair, below every radius quoted -- it is the
+      dipole sector running unregularized, which diverges below about 0.003
+      a_pair in mode C and reaches NaN at 0.001.  The gating is deliberate
+      and its comment says why, so it is recorded here rather than changed:
+      a tolerance-based isPositronium would be a production behaviour change
+      needing its own justification.
+
+187f. WHICH BOUNDS WHERE 186 AND 187 HOLD.  Everything in 186 is at
+      r = a_pair, four orders above the floor and far outside the divergent
+      region, so 186 is untouched.  187c is quoted only over 1 down to 0.01
+      a_pair; the 0.01 rows already show the M1 slope drifting off -4 to
+      -3.83 and -3.84, which is the same departure setting in, so even they
+      are the edge rather than the middle of the valid range.  Nothing at or
+      inside r* is quoted from the mass modes at all.
+
+187g. LIMITS.  187b's identification is three radii and holds to 0.1%, not
+      exactly; the residual is not claimed to BE the dipole share times eps,
+      only to track it.  187c is one eps and the preparation instant, with
+      no evolution, so 186h's first item -- whether these channels persist
+      or accumulate over an orbit -- is still open and is the obvious next
+      thing.  The mode A E2 column is called noise on the strength of its
+      non-monotonicity, not on a floor estimate.  And 187e documents an
+      asymmetry it does not remove, so any future comparison of the mass
+      modes against the g mode below 0.01 a_pair is invalid as the code
+      stands.
