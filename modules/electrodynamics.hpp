@@ -794,7 +794,20 @@ inline RetardedDipoleKinematics historicalDipoleKinematics(
             history,present,sourceIsFirst,time-4.0*derivativeStep);
         first=(moment(middle)*3.0-moment(before)*4.0+moment(twiceBefore))
              /(2.0*derivativeStep);
-        second=(moment(middle)-moment(before)*2.0+moment(twiceBefore))
+        // Second order, matching first and third beside it.  This used to
+        // read (m - 2m(-h) + m(-2h))/h^2, whose Taylor expansion is
+        // f'' - h f''' + O(h^2) -- FIRST order, alone in this block, while
+        // the first and third derivatives here are both second order.  On a
+        // moment whose dominant motion is the local field swinging round at
+        // the ORBITAL frequency, f''' ~ omega f'', so that -h f''' term is a
+        // relative error of order omega*h, and it does not cancel between
+        // the two particles: audit 192 measured the resulting M1 power at
+        // half to two thirds of the converged value through the middle of
+        // the opening-angle scan and three to four ORDERS too large at the
+        // parallel end, where the true power comes from a near-exact
+        // cancellation the first-order error swamps.
+        second=(moment(middle)*2.0-moment(before)*5.0
+               +moment(twiceBefore)*4.0-moment(threeBefore))
               /(derivativeStep*derivativeStep);
         third=(moment(middle)*5.0-moment(before)*18.0
               +moment(twiceBefore)*24.0-moment(threeBefore)*14.0
@@ -811,7 +824,10 @@ inline RetardedDipoleKinematics historicalDipoleKinematics(
             history,present,sourceIsFirst,time+4.0*derivativeStep);
         first=(moment(after)*4.0-moment(middle)*3.0-moment(twiceAfter))
              /(2.0*derivativeStep);
-        second=(moment(twiceAfter)-moment(after)*2.0+moment(middle))
+        // The mirror of the backward branch above, and second order for the
+        // same reason.
+        second=(moment(middle)*2.0-moment(after)*5.0
+               +moment(twiceAfter)*4.0-moment(threeAfter))
               /(derivativeStep*derivativeStep);
         third=(moment(middle)*-5.0+moment(after)*18.0
               -moment(twiceAfter)*24.0+moment(threeAfter)*14.0

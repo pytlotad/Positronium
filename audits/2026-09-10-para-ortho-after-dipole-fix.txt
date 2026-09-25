@@ -14516,3 +14516,115 @@ measurement of whether that survives a cascade.
       Nothing in this section is propagated back into 182, 186g, 187 or 191:
       those numbers stand as what the model reports, now with a measured
       correction factor against what its own moment trajectory implies.
+
+193. THE STENCIL REPLACED AND RE-MEASURED -- AND 192's CENTRAL CLAIM IS
+     WITHDRAWN: THE CHANNEL WAS RIGHT AND I WAS DIFFERENTIATING THE WRONG
+     MOMENT
+==========================================================================
+
+193a. THE REPLACEMENT, WHICH IS CORRECT AND CHANGED NOTHING.  192e named a
+      one-sided backward stencil as the likely mechanism.  Reading it
+      properly, the two one-sided branches of historicalDipoleKinematics
+      computed the first and third derivatives with second-order formulas
+      and the SECOND derivative with a first-order one, alone in the block.
+      By Taylor expansion of the weights:
+        current   m(t) - 2m(t-h) + m(t-2h)        [0, 0, 1, -1, 7/12, ...]
+        replaced  2m(t) - 5m(t-h) + 4m(t-2h) - m(t-3h)
+                                                  [0, 0, 1,  0, -11/12, ...]
+      so the old form carried a -h f''' term and the new one does not.  Both
+      branches were replaced, using samples the function already fetched, so
+      the history reach is unchanged.  Validation 62/62 PASS.
+        And it moved no measured number.  Re-running 192's whole angle scan
+      against the patched header reproduces its P code column to every digit
+      printed.  That is the first sign 192e was wrong.
+
+193b. WHY IT CHANGED NOTHING: THE STEP WAS NEVER THE PROBLEM.  Instrumented,
+      the stencil uses h = 1.501914e-21 s, exactly 2.000 history spacings,
+      landing on stored nodes with no interpolation.  The orbital period is
+      9.6122e-18 s, so omega_orb * h = 9.8e-04 and a first-order error is a
+      tenth of a percent, not the factor of two 192 reported.
+
+193c. AND THE TRUE SECOND DERIVATIVE IS NOT AMBIGUOUS.  A central second
+      difference of the stored moment track, at stencil widths from one to
+      forty-eight spacings:
+        k    h [s]        omega_orb*h     |m''| sum     implied P [W]
+         1   7.5096e-22    4.9087e-04    2.531284e+09   1.585361e-14
+         2   1.5019e-21    9.8175e-04    2.531287e+09   1.585365e-14
+         8   6.0077e-21    3.9270e-03    2.531307e+09   1.585390e-14
+        16   1.2015e-20    7.8540e-03    2.531310e+09   1.585394e-14
+        32   2.4031e-20    1.5708e-02    2.531237e+09   1.585303e-14
+        48   3.6046e-20    2.3562e-02    2.531060e+09   1.585081e-14
+      Five digits stable over a forty-eight-fold range, and matching 192's
+      independently converged 1.5878e-14 to 0.15%.  So 192's number was not
+      a numerical artifact.  It was a number about a different object.
+
+193d. THE ERROR, NAMED.  historicalSource picks state.firstDipole and
+      state.secondDipole -- the LABORATORY moments.  Every "true" value in
+      192 differenced state.firstProperDipole and secondProperDipole -- the
+      PROPER moments.  At beta = 2.3076e-02 the two differ in magnitude by
+      almost nothing, but their derivatives do not:
+                        proper            lab           lab/proper
+        |mu1|      9.2847646860e-24  9.2851283574e-24   1.000039
+        |m'| sum   4.2897376830e-09  3.7176483817e-09   0.866638
+        |m''| sum  2.5312774623e+09  1.7811268245e+09   0.703647
+      A magnitude ratio of 1.000039 and a second-derivative ratio of 0.7036,
+      because the boost relating them turns with the velocity and its own
+      derivative enters at the same order as the precession's.
+        And against the channel:
+        code's |m''| sum         1.7811316175e+09
+        central on LAB dipole    1.7811268245e+09    ratio 1.000003
+      Six digits.  The channel's stencil reproduces a central difference of
+      the lab moment exactly.  There is no stencil defect, there never was,
+      and the M1 radiation formula is a laboratory-frame formula whose
+      moment is the laboratory one -- so the channel is right and 192's
+      "truth" was the wrong quantity.
+
+193e. WHAT 192 LOSES.  Withdrawn outright: 192e, that the model's M1 channel
+      does not reproduce the law and is three to four orders too large at
+      the parallel end; and 192f, that M1 is gated by the moments being
+      perpendicular and that 182f's and 191d's readings are reversed.  Both
+      rested on comparing the channel against the proper-dipole curve.
+        192d's sin^2 delta law survives only as a statement about the PROPER
+      moment sum, which does not radiate.  The operative curve is the lab
+      one, and it obeys no such law:
+        delta     P [W]        P/P(90)   sin^2 delta
+            0   0.0000e+00     0.0000      0.0000
+           30   2.5392e-15     0.3241      0.2500
+           45   4.8427e-15     0.6181      0.5000
+           60   6.8705e-15     0.8769      0.7500
+           90   7.8352e-15     1.0000      1.0000
+          120   4.3208e-15     0.5515      0.7500
+          150   4.3576e-16     0.0556      0.2500
+          180   1.1407e-15     0.1456      0.0000
+      Not symmetric about ninety, not sin^2, with a local minimum near a
+      hundred and fifty and a rise again to the parallel end.  No law is
+      offered for it.
+        192b survives as measured -- the analytic form does reproduce the
+      proper moment's evolution to 0.22% -- but it is an identity about the
+      proper moment and not about the radiating one.  192c's finding that
+      the effective field turns some three thousand times faster than the
+      moments precess is a statement about the FIELD and is untouched.
+
+193f. WHAT SURVIVES OF 191 AND 182.  191d's "peaks at 90 and falls by 6.87
+      to 180" was read off the channel, which is the right object, so it
+      stands.  182f's reading that opening the moments from antiparallel
+      turns M1 on also stands: on the lab curve delta = 0 is an exact zero
+      and delta = 180 is 1.14e-15 W, nonzero.  My 192f reversal of both is
+      withdrawn.  190e stands unchanged, having been measured on the
+      channel throughout.
+
+193g. LIMITS, AND WHAT I SHOULD HAVE DONE.  The stencil replacement is kept:
+      it removes a real first-order-among-second-order inconsistency, it is
+      verified by Taylor expansion, it costs no history reach and validation
+      is unchanged at 62/62 -- but it fixes nothing that was measured to be
+      broken, and it is recorded here as a tidy-up rather than a repair.
+      Everything in 193 is one radius, one angle for 193b to 193d, and the
+      preparation of 192's scan otherwise.  The lab curve in 193e is
+      reproduced from 192's own P code column and has not been re-measured
+      at other radii.  No law is fitted to it and none should be read into
+      its shape from eight points.
+        The methodological failure is worth stating plainly: 192 compared a
+      channel against a quantity I constructed, and I never checked that the
+      channel and I were reading the same field of the State.  One line --
+      printing which member historicalSource picks -- would have caught it
+      before the audit was written.
