@@ -13734,3 +13734,122 @@ measurement of whether that survives a cascade.
       as r^-3 against Coulomb's r^-2, so the split should grow inward and
       that is untested.  185f is a proposal, not a result: nothing in it has
       been run.
+
+186. 185f RUN: R185c CONFIRMED, R185a's SLOPE REFUTED, R185b SPLIT -- AND
+     M1 IS NOT GATED BY THE MOMENT SUM AT ALL
+==========================================================================
+
+186a. THE DESIGN, WITH ONE CASE 185f DID NOT ANTICIPATE.  Writing the rules
+      I missed that a MASS mismatch necessarily drags the moments with it,
+      since mu = g|q|hbar/(4m).  So mode B below breaks both conditions at
+      once and cannot discriminate.  The fix is a third mode that
+      compensates: setting g2 = g1(1+eps) TOGETHER with m2 = m1(1+eps)
+      leaves mu2 = mu1 exactly while the masses still differ, isolating the
+      kinematic condition.  Three modes, moments antiparallel throughout,
+      eps swept over six decades at r = a_pair:
+        A   g2 = g1(1+eps)                     spin condition only
+        B   m2 = m1(1+eps)                     both
+        C   m2 and g2 both (1+eps)             kinematic condition only
+      Mode C's |mu1+mu2| reads 0.0000e+00 at every eps, so the compensation
+      works, and |r1+r2|/a reads exactly eps/2 in modes B and C, which is
+      the centre-of-mass asymmetry the kinematic condition forbids.
+
+186b. RULE R185a: LINEARITY MET, SLOPE REFUTED.  The C.P residual against
+      eps, with the decade-to-decade slope in logs:
+        eps      mode A       slope    mode B      slope    mode C     slope
+        1e-07  4.9096e-08      --    1.0001e-07     --    6.5537e-08     --
+        1e-06  4.9097e-07    1.0000  9.9999e-07   1.0000  6.5537e-07   1.0000
+        1e-05  4.9096e-06    1.0000  9.9999e-06   1.0000  6.5537e-06   1.0000
+        1e-04  4.9095e-05    1.0000  9.9999e-05   1.0000  6.5535e-05   1.0000
+        1e-03  4.9077e-04    0.9998  9.9999e-04   1.0000  6.5511e-04   0.9998
+        1e-02  4.8898e-03    0.9984  9.9999e-03   1.0000  6.5272e-03   0.9984
+      Exactly linear over five decades in all three modes, so the linearity
+      half of R185a is met.  The predicted SLOPE of one is not: mode A gives
+      0.49096, mode C gives 0.65537, and only mode B gives 1.0000.  What the
+      rule got right is the mechanism -- |mu1+mu2| does come out exactly
+      eps |mu1| -- and what it got wrong is carrying that to the B residual,
+      which is normalised by the FULL |B1|, of which the dipole part is only
+      a share.  The three coefficients do not add or cancel in any way I can
+      account for (0.491, 1.000, 0.655) and I am not going to invent a
+      decomposition for them; they are reported as measured.
+
+186c. AND THE DETECTION FLOOR.  At eps = 1e-15 mode A gives a residual of
+      1.4882e-15 against a moment sum of 1.0646e-15, so the model still
+      resolves the breaking there; at eps = 1e-12 the residual is 2.3588e-13
+      where linearity would want 4.9e-13, so the floor is biting by then but
+      the signal is not lost.  The model therefore resolves a g-mismatch
+      down to roughly 1e-15, which is below any bound an experiment would
+      impose.
+
+186d. RULE R185c: CONFIRMED, AND DECISIVELY.  The quadrupole power:
+        eps      mode A  (g only)      mode B and mode C    slope
+        1e-07    2.5100e-32           2.0983e-27             --
+        1e-06    9.4808e-35           2.0980e-25           2.0000
+        1e-05    2.7806e-32           2.0980e-23           2.0000
+        1e-04    3.7609e-32           2.0980e-21           2.0000
+        1e-03    7.0933e-36           2.0980e-19           2.0000
+        1e-02    4.2929e-32           2.0979e-17           2.0000
+      A mass mismatch opens E2 as eps^2, slope 2.0000 to four decimals over
+      five decades, which is what kappa_2 = q1 eps/2 predicts analytically.
+      A g-mismatch does not open it at all: mode A's column does not scale,
+      does not stay monotonic, and scatters over four orders of magnitude
+      with slopes running from -3.72 to +3.78.  That is round-off, not a
+      channel.
+        And modes B and C give the SAME E2 to five digits at every eps,
+      although mode C has mu2 = mu1 exactly.  So the quadrupole is gated by
+      the kinematic condition alone and the moments do not reach it.  182d's
+      claim that the two conditions are independent survives its first real
+      test.
+
+186e. RULE R185b: MET FOR M1, REFUTED FOR E2.  M1 opens as eps^2 once it is
+      above the floor -- mode A's slopes run 2.0434, 2.0113, 2.0061 over the
+      last three decades, mode B's 1.8788, 2.0434, 2.0022, mode C's 1.8073,
+      2.0544, 2.0090.  The E2 half is wrong: I predicted a nonzero
+      quadrupole of order 1e-22 of E1 from 183h's indirect force route, and
+      mode A shows nothing above round-off.  183h's 1e-30 W was measured at
+      FULL moment opening; scaled by eps^2 to eps = 1e-2 it would be 1e-34 W,
+      below what the arithmetic here can carry.  So the prediction is not
+      contradicted by physics, it was simply made at the wrong amplitude,
+      and as a rule it fails.
+
+186f. AND SOMETHING NOT PRE-REGISTERED: M1 IS NOT GATED BY THE MOMENT SUM.
+      Mode C carries |mu1+mu2| = 0.0000e+00 at every eps and still radiates
+      M1 -- 1.6344e-27 W at eps = 1e-2 against mode A's 4.0510e-28, a factor
+      of 4.03 MORE than the mode that actually has a nonzero moment sum.
+      So the magnitude of the sum is not what opens the channel: unequal
+      masses make the two moments precess at different rates, so the sum's
+      time derivative is nonzero even where the sum itself vanishes
+      identically, and it is the derivative the radiation formula squares.
+      182k flagged exactly this suspicion from the non-monotonic delta scan
+      and could not separate it; here it is separated, because mode C holds
+      the sum at exactly zero by construction.
+        This weakens 182f's reading.  The M1 gate is real -- at eps = 0
+      everything is exactly zero -- but "the spin condition gates M1" is too
+      narrow: the KINEMATIC condition gates it too, and more strongly.
+
+186g. THE TRANSFER FUNCTIONS, WHICH ARE THE POINT OF THE EXERCISE.  At
+      r = a_pair, normalising by E1 = 1.1673e-08 W and writing e = eps/1e-2:
+        g-mismatch      M1/E1 = 3.47e-20 e^2      E2/E1 = not opened
+        mass mismatch   M1/E1 = 1.40e-19 e^2      E2/E1 = 1.797e-09 e^2
+      These are the model's response to a CPT-violating parameter, and they
+      are what an experimental bound would be fed into.  NO BOUND IS QUOTED
+      HERE: the e+/e- g-factor and mass ratios need a stamped source before
+      any number is taken from them, per the configuration-stamp rule, and
+      supplying one is the remaining step.  What can be said without it is
+      the shape -- both channels are quadratic in the violation, so a bound
+      of 1e-12 on eps suppresses the M1 share by 1e-20 relative to the
+      eps = 1e-2 figures above, which puts it far below anything this model
+      could be held to.
+
+186h. LIMITS.  One radius, the preparation instant, antiparallel moments
+      only; nothing here is evolved, so whether these channels persist or
+      accumulate over an orbit is untested and 182h's conservation result
+      was measured at eps = 0 only.  The floor in 186c is read off two
+      points rather than fitted.  186b reports three coefficients it does
+      not explain.  186g's transfer functions are single-radius
+      normalisations and the r-dependence of both is unmeasured, which
+      matters because E1 itself runs as r^-4 while the quadrupole runs
+      steeper.  And the whole exercise breaks CPT in the PARAMETERS, which
+      is not the same as a Lagrangian that violates it -- the model has no
+      mechanism that would distinguish the two, which is 185b's point
+      restated rather than resolved.
