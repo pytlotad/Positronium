@@ -15539,3 +15539,93 @@ measurement of whether that survives a cascade.
       multiplicity itself.  204b's claim that the threshold is underived is
       an absence of evidence in the tree, not a proof that no derivation
       exists.  And no code is changed, so nothing here is verified by a run.
+
+205. "PARA ANNIHILATES TO TWO, ORTHO TO THREE" IS ALREADY THE MODEL'S RULE
+     -- WHAT IT LACKS IS A PREPARATION THAT MAKES EVERY PAIR ONE OR THE
+     OTHER
+==========================================================================
+
+205a. THE PROPOSAL, AND IT IS RIGHT.  Put to me: the best rule would be that
+      para annihilates to two photons and ortho to three.  That is the
+      physics -- C-parity is a discrete quantum number and an eigenstate
+      does not branch; there is no ratio between two and three photons for a
+      given spin state, only the rate difference between states that cannot
+      do both.  The model's current weight, used as a branching PROBABILITY,
+      models something that does not exist.
+
+205b. AND IT IS ALREADY THE MODEL'S RULE.  The weight
+      |mu1+mu2|^2/(|mu1|+|mu2|)^2 is not a competing prescription.  Its own
+      comment says what it is for: "Under --spin-quantization that is
+      exactly 1 or exactly 0, because the imposed angle fixes cos = +-1, and
+      the channel is then DETERMINISTIC with no draw needed."  195e measured
+      it: 0.000000 at antiparallel moments and 1.000000 at parallel, the two
+      classical images 196d derives.  At those two configurations the weight
+      IS the proposed rule, exactly, with the draw degenerate.
+
+205c. WHAT BROKE IT WAS THE PREPARATION, NOT THE BRANCHING.  The same
+      comment continues: "Audit 91 withdrew that imposition, so by default
+      the prepared angle is drawn freely: cos is uniform on [-1,1], the
+      weight is (1+cos)/2, and the multiplicity is a genuine Bernoulli
+      draw."  So the probabilistic behaviour is not a design choice about
+      annihilation.  It is what a deterministic rule degrades into when it is
+      handed configurations that are neither of the states it is a rule
+      about -- which by 196c is every configuration strictly between the two
+      images, and by 204c is where a quarter of all events sit however the
+      label is thresholded.
+
+205d. SO IMPLEMENTING THE RULE IS NOT A CODE CHANGE.  There is a flag that
+      looks like one.  CREM_CHANNEL_FROM_FLAG takes the multiplicity from
+      the --phenomenon label instead of the draw, which under the current
+      threshold would give P(2 gamma) = 1/4 and drive 204c's disagreement to
+      zero by construction.  It would not be the proposed rule.  The rule
+      presupposes that every pair IS para or ortho; the label only asserts
+      which side of cos = 0.5 a continuum landed on, and 204b found nothing
+      in the tree deriving that 0.5.  Adopting the flag would make an
+      underived constant decide an observable, and would look like the
+      selection rule while being a threshold -- which is the objection 91a
+      raised against the rejection loop it removed, in a new place.
+        The flag's own comment also warns it "hides the 42% of para
+      trajectories whose terminal configuration no longer supports two
+      photons".  That warning does not apply to the default path, which
+      reads the PREPARED moments and not the terminal ones, for the reason
+      crem_collapse gives: real positronium conserves S, so the state that
+      annihilates is the state that was prepared, and the classical drift
+      away from collinear is a model defect rather than physics.
+
+205e. WHAT DOES IMPLEMENT IT.  --spin-quantization, which is still present
+      (gSpinQuantization in configuration_panel.hpp) and still restores
+      cos = +-1 exactly.  Under it the weight is 1 or 0, the draw is
+      degenerate, the label agrees with the multiplicity at every threshold
+      (204d), and P(2 gamma) equals the para share of the preparation.  The
+      proposed rule and the quantized preparation are one package: the rule
+      is already coded and waits for a preparation that satisfies its
+      premise.
+        That is the third independent route to the same place.  196f reached
+      it from the classical images, 197d from audit 91's own cost statement,
+      204f from the threshold arithmetic, and now the annihilation rule
+      reaches it from the branching side.  None of them touches 91's
+      principle -- that quantization should come out of the physics rather
+      than be handed to it -- and none of them can, because the model has no
+      mechanism that would produce cos = +-1 dynamically.  What they do is
+      price the principle: what it costs is that the model's annihilation
+      rule cannot be exercised.
+
+205f. RECOMMENDATION.  Adopt the rule as the statement of what the model
+      means -- it already is -- and do not implement it through the label
+      flag, which would trade a defensible probability for an underived
+      threshold.  No code is changed here.  If the preparation is revisited,
+      the rule needs nothing further; if it is not, the rule stays correct
+      and unexercised, and the 1/4 floor of 204c stays with it.
+
+205g. LIMITS.  This section reads intent from comments and measures nothing
+      new: 205b's "0.000000 and 1.000000" is 195e's measurement and 205c's
+      "uniform cosine" is audit 91b's.  Whether --spin-quantization still
+      runs cleanly through the current collapse path is not tested here --
+      the flag exists and its comment says it reproduces earlier seeded
+      numbers, but no run was made to confirm that under everything changed
+      since 91.  And the claim in 205d that the flag would look like the
+      rule while being a threshold is an argument about what the two mean,
+      not a measurement of a difference in output: at threshold 0.5 under
+      the current preparation the flag and the rule-under-quantization give
+      different P(2 gamma), 1/4 against the para share, and only the second
+      is the rule.
