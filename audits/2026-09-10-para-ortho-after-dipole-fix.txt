@@ -15163,3 +15163,79 @@ measurement of whether that survives a cascade.
       actually lands in -- the transform is of the SOURCE d'', not of a
       spectral decomposition of the emitted flux, and those differ by the
       k-dependent weighting the Larmor formula applies.
+
+200. 199f CONTINUED: THE HARMONICS MATCH THE KEPLER BESSEL FORMS TO 0.08%,
+     THE PARSEVAL WORRY WAS UNNECESSARY, AND THE FIRST CLOSED FORM I WROTE
+     WAS WRONG
+==========================================================================
+
+200a. THE FOUR ITEMS.  199f left the harmonic amplitudes uncompared against
+      the Bessel forms, the sampling floor unmeasured, 199b's algebra
+      unchanged, and a doubt that the transform of the SOURCE is the power
+      spectrum at all.  Three are settled below.  The first settled itself
+      by catching an error of mine.
+
+200b. ITEM 1, AND THE CONTROL THAT CAUGHT ME.  Deriving the Kepler Fourier
+      coefficients I wrote
+        |d''_n| ~ 2n sqrt( J'_n(ne)^2 + ((1-e^2)^2/e^2) J_n(ne)^2 ),
+      and the model missed it by 0.8% to 2% at e = 0.7, drifting up with
+      both e and k.  Before blaming the model, the same comparison was run
+      against a PURE Kepler ellipse -- solve Kepler's equation, transform x
+      and y, scale by n^2, no model involved.  It missed by the same amount:
+      1.0080, 1.0126, 1.0156, 1.0178, 1.0195 at e = 0.7 against the model's
+      1.0084, 1.0130, 1.0163, 1.0185, 1.0203.  The discrepancy was in the
+      reference, not the measurement.
+        The error: from Kepler's equation e sin(xi) = xi - M directly, and
+      xi = M + 2 sum (1/n) J_n(ne) sin(nM), so
+        sin(xi) = (2/e) sum (1/n) J_n(ne) sin(nM)
+      with no sqrt(1-e^2) in it.  I had carried one there and then
+      multiplied by the sqrt(1-e^2) of b = a sqrt(1-e^2) a second time,
+      squaring a factor that belongs once.  The weight is (1-e^2)/e^2, not
+      its square.  Both forms agree as e -> 0, which is why the small-e
+      check passed.  With the correction the pure Kepler DFT matches the
+      closed form at 1.000000 for every harmonic at e = 0.3 and e = 0.7.
+
+200c. AND THE MODEL AGAINST THE CORRECTED FORM.  Each normalised to its own
+      fundamental, no fitted parameter:
+        e      k=2        k=3        k=4        k=5        k=6
+        0.10  1.000352   0.999690   1.001790   0.990203   1.049516
+        0.30  1.000232   1.000198   1.000380   1.000148   1.000562
+        0.50  1.000240   1.000281   1.000403   1.000411   1.000505
+        0.70  1.000360   1.000450   1.000599   1.000646   1.000789
+      Two to eight parts in ten thousand across four eccentricities and six
+      harmonics.  The two outliers are e = 0.10 at k = 5 and 6, where the
+      amplitudes are 8.1e-04 and 1.2e-04 and the floor of 199f's estimate
+      is reached.  The residual drifts upward with k at the larger
+      eccentricities -- 1.00036 to 1.00079 at e = 0.7 -- which is the
+      model's own non-Keplerian content and is not attributed here.
+
+200d. ITEM 4 WAS AN UNNECESSARY WORRY.  199f doubted that transforming the
+      source gives the power spectrum, "since those differ by the
+      k-dependent weighting the Larmor formula applies".  There is no such
+      weighting: Larmor is instantaneous and quadratic in d'', so Parseval
+      carries the decomposition straight through.  Measured, the summed
+      harmonic power over the time-averaged |d''|^2 reads
+        1.000000000
+      at every eccentricity and every sample count tried.  The source
+      transform IS the power spectrum, and 199c's table can be read as one.
+
+200e. ITEM 2: THE SAMPLING IS CONVERGED.  Doubling from 256 to 1024 samples
+      over the period:
+        ecc = 0.00   k=2  3.38023e-05 -> 3.38039e-05
+        ecc = 0.30   k=2  5.86583e-01 -> 5.86583e-01  (identical to six)
+      So 199f's leakage concern does not bite: with uniform sampling over
+      exactly one period the bins align with the harmonics and there is
+      nothing to leak.  The circular row's 1e-06 entries are not leakage but
+      the integrator's own floor, and 199d already attributed the k = 2
+      entry above them to beta^2.
+
+200f. LIMITS.  Still one semi-major axis and one polar angle.  200c's
+      residual drift with k is measured and not explained; the obvious
+      candidates, the relativistic correction and the dipole forces, were
+      separated for the CIRCULAR case in 199d but not for the eccentric
+      ones, where 199d only showed the moments are irrelevant at e = 0.1.
+      The e = 0.70 row at 1024 samples had not returned when this was
+      written, so 200e's convergence claim rests on e = 0.00 and e = 0.30.
+      199b's algebra is still algebra.  And 200b is a correction to a
+      formula written in this audit series, not to anything in the model:
+      no code changed, and the model's numbers in 199c were right all along.
