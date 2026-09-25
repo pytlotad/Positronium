@@ -16051,3 +16051,78 @@ measurement of whether that survives a cascade.
       the strength of the counter firing, not traced through the solve.  And
       210f's fence protects production runs; it does not protect a probe
       like 189e's, which is how this was reached in the first place.
+
+211. THE COLLAPSE TIME FROM a_pair, PARA AGAINST ORTHO, MEASURED BY THE
+     MODEL'S OWN ESTIMATOR
+==========================================================================
+
+211a. HOW IT IS DRIVEN.  201d estimated this from a preparation-instant
+      force profile and 203 withdrew that profile.  This section instead
+      calls estimateCremCollapse, which is what the model itself reports,
+      with gSpinQuantization on so the preparation sits at cos = +-1 -- the
+      two classical images of 196d, where 205b showed the model's own
+      annihilation rule is exact and the channel deterministic.  Both runs
+      start at a_pair and end at the point-particle boundary.
+
+211b. THE PHENOMENON INDICES, ESTABLISHED EMPIRICALLY BECAUSE I GOT THEM
+      WRONG FIRST.  The quantization branch keys on sampledScenario, where 2
+      is para and 3 ortho, but the selectedPhenomenon the CLI and
+      estimateCremCollapse take is offset.  Measured through simulate():
+        selectedPhenomenon 1 -> alignment +1.000000 -> Para
+        selectedPhenomenon 2 -> alignment -1.000000 -> Ortho
+        selectedPhenomenon 3 -> unquantized alignment -> DirectCollision
+      My first run used 2 and 3 and reported ortho as 0.000000000e+00 with
+      outcome ReachedCutoff.  That zero is not a finding: index 3 is
+      DirectCollision, which terminates at once.  Recorded because a
+      lifetime of exactly zero with a clean outcome is easy to misread.
+
+211c. THE RESULT.  Six seeds, both channels each:
+        seed        para [s]            ortho [s]       ortho/para - 1
+          1    3.0664040611e-11    3.0779038867e-11       3.750e-03
+          2    3.0665603476e-11    3.0699782786e-11       1.115e-03
+          3    3.0660383809e-11    3.0695494464e-11       1.145e-03
+          4    3.0658659626e-11    3.0696861523e-11       1.246e-03
+          5    3.0665624982e-11    3.0671456784e-11       1.902e-04
+          6    3.0666546401e-11    3.0699562026e-11       1.077e-03
+        para  mean 30.6635 ps, seed spread 2.572e-04
+        ortho mean 30.7070 ps, seed spread 3.503e-03
+        ratio - 1: mean 1.4205e-03, sd 1.2050e-03, sem 4.9192e-04
+      So ortho lives LONGER, by 0.14%, at 2.89 sigma on six seeds, with all
+      six ratios positive (p = 1/64 against a random-sign null).  The
+      direction is the physical one.  Note the asymmetry in the noise: para
+      is reproducible to 2.6e-04 across seeds while ortho scatters by
+      3.5e-03, more than the effect itself, which is why six seeds give
+      three sigma and not more.
+
+211d. AND THE SIGN DOES NOT FOLLOW FROM THE LOCAL SPLIT.  203 measured the
+      EVOLVED E1 split at a_pair as -9.41e-05, ortho radiating MORE, which
+      taken alone would make ortho collapse FASTER.  The integrated result
+      is the opposite.  Whatever produces the collapse difference is
+      therefore not the local power split at the starting radius, and 201d's
+      whole method -- integrate the local split over the profile -- is
+      wrong in principle and not only in its numbers.  What the integral
+      actually weights is not measured here.
+
+211e. AGAINST THE PHYSICAL NUMBER, WITH 201f's CAVEAT INTACT.  Positronium
+      gives tau(o-Ps)/tau(p-Ps) = 142 ns / 125 ps = 1136; the model gives
+      1.001420.  Short by a factor of 8.0e+05.  That is an improvement on
+      201d's 2.46e-05, which was short by 4.6e+07, but the comparison is
+      still not like for like: 1136 is an ANNIHILATION-rate ratio and this
+      is an INSPIRAL-time ratio, and 195 established the model has no
+      annihilation rate that depends on the configuration at all.
+        Worth noting separately: the absolute number, 30.7 ps, is the same
+      order as the physical para lifetime of 125 ps.  That is the model's
+      known collapse scale and not a new result; the configuration stamps
+      already carry a 35 ps figure, marked UNATTRIBUTED.
+
+211f. LIMITS.  Six seeds, one reaction model (the production default), one
+      starting radius, and gSpinQuantization on -- which 91 withdrew from
+      the default, so this is a measurement of a configuration the model
+      does not run by default, chosen because 205e showed it is the only one
+      where the channel is defined at all.  Under the free draw the two
+      phenomena are identical (91d) and the comparison does not exist.  The
+      ortho scatter of 3.5e-03 across seeds is not explained; it is three
+      times para's and larger than the effect, and whether it is physical
+      spread or an integration artefact is untested.  Nothing here measures
+      WHERE along the inspiral the difference accumulates, which 211d says
+      is the open question.
