@@ -14915,3 +14915,86 @@ measurement of whether that survives a cascade.
       preparation: 195g's reason for leaving them alone stands, and 196g
       makes it sharper, since the missing piece is an off-diagonal element
       that no classical pair of vectors can be given.
+
+197. 196h CONTINUED: THE SPIN ALGEBRA COMPUTED RATHER THAN QUOTED, THE
+     THIRD RADIUS IN, AND 196f WITHDRAWN -- AUDIT 91 HAD ALREADY SAID IT
+==========================================================================
+
+197a. THE THREE ITEMS.  196h left its spin algebra quoted rather than
+      derived, one radius outstanding, and a suggestion that 196f's reading
+      of --spin-quantization was a reason to re-open audit 91.  91 has now
+      been read.  It is not.
+
+197b. THE ALGEBRA, COMPUTED.  Building S1.S2 and (S1 - S2)_z as exact
+      rational 4x4 matrices in the product basis and transforming to the
+      total-spin basis:
+        <S1.S2>, units hbar^2:   singlet -3/4,  t+ +1/4,  t0 +1/4,  t- +1/4
+        (S1 - S2)_z, units hbar, in the basis (singlet, t+, t0, t-):
+                     singlet    t+     t0     t-
+          singlet       0        0      1      0
+          t+            0        0      0      0
+          t0            1        0      0      0
+          t-            0        0      0      0
+      Every diagonal element is zero and exactly one off-diagonal pair is
+      not, connecting the singlet to the m = 0 triplet.  196b's claim is now
+      computed in this tree rather than cited, and 196c's -3/4 against a
+      classical range of +-1/4 -- the factor of three -- falls out of the
+      same table.
+
+197c. THE THIRD RADIUS.  196e quoted two and said the third had not
+      returned.  It has: at r = 0.01 a_pair the triplet configuration gives
+        |mu1+mu2| = 2.078000e-39 J/T,  M1 = 0.000000e+00 W,
+      an exact zero even through the trigonometric construction that left
+      round-off at the two outer radii.  Three radii spanning two decades,
+      and the triplet zero holds at all of them.
+
+197d. AND 196f IS WITHDRAWN.  It said the analysis "puts
+      --spin-quantization in a different light from the one audit 91 left it
+      in".  Reading 91: it left it in exactly this light.  91c states the
+      cost in the same terms 196e re-derived -- that result N2 "rests on
+      |mu1+mu2| vanishing EXACTLY for ortho, which is a property of
+      cos = -1", that "a uniform draw reaches that point with probability
+      zero", and that this is "not a degradation of the measurement; it is
+      the removal of the configuration the measurement was about".
+        91 also records why it was done anyway: the principle that
+      quantization should come out of the physics rather than be handed to
+      it, argued against by the author, reaffirmed, and then carried out.
+      196d does not touch that principle.  It explains why cos = -1 and
+      cos = +1 are the right classical images; it does not make them emerge
+      from the dynamics, which is the whole of what 91 was asked for.  So
+      there is nothing here to re-open, and 196f's sentence is wrong.
+
+197e. WHAT 196 DOES ADD TO 91, which is worth keeping.  91 asserted cos = -1
+      as the ortho point and left it at that.  196c and 196d derive it, by
+      matching <S1.S2>, and in doing so show that the two ends are not
+      symmetric: the triplet's image is EXACT while the singlet's is a
+      TRUNCATION of an unreachable cos = -3.  91's cost statement is
+      therefore stronger than it knew -- the free draw does not merely miss
+      one exact point and one other point, it misses one exact point and one
+      point that was never right to begin with.
+
+197f. AND READING 91 TURNED UP A SECOND DIVISION THE MODEL CARRIES.  The
+      para/ortho LABEL is cos >= 0.5, which under a uniform cosine splits
+      25/75 -- 91b measured 24.7/75.3 -- matching spin statistics, though by
+      arithmetic rather than by physics, and 91a already calls that
+      threshold "imposed in place of a point".  The photon MULTIPLICITY is a
+      separate draw against (1+cos)/2.  Integrating the two together
+      exactly:
+        P(2 gamma)                  = 1/2     (audit 111 measured 0.506)
+        P(2 gamma | para label)     = 7/8     (measured 0.878)
+        P(2 gamma | ortho label)    = 3/8     (measured 0.383)
+        share of 2-gamma events drawn from ORTHO-labelled states = 9/16
+      So nine of every sixteen two-photon events the model produces come
+      from configurations it has itself labelled ortho.  The source comment
+      at the weight already notes "the two divisions are NOT the same one
+      any more"; the 9/16 is how far apart they are.
+
+197g. LIMITS.  197b is exact rational arithmetic over a four-dimensional
+      space and proves nothing about this model's dynamics -- it establishes
+      what quantum mechanics gives, which 196 compares against.  197c is one
+      configuration at the new radius.  197f's fractions are integrals of
+      the model's own weight under its own default preparation, and agree
+      with audits 91 and 111 to the third digit; they are not a new
+      measurement.  Nothing is changed: 197d concludes that 91's decision
+      stands on its own principle, and this section proposes no revision to
+      the preparation, the label threshold or the weight.
