@@ -15720,3 +15720,85 @@ measurement of whether that survives a cascade.
       enters the window at a tilt above 41.79 degrees is untested.  And
       203's finding stands over all of it: the preparation instant misstated
       the E1 split by a sign, and no equivalent check has been run on d.
+
+207. 206h CONTINUED: THE WINDOW'S EDGES DO NOT DEPEND ON THE SPEED
+     ASSUMPTION, AND A TRAJECTORY PLACED INSIDE IT DOES BIFURCATE
+==========================================================================
+
+207a. THE ITEMS.  206h left four: the circular speed assumed from Coulomb
+      alone, which 52e had already flagged; no trajectory integrated through
+      the window; no check that d survives evolution the way 203 found the
+      E1 split did not; and no entitlement to the fields inside r*.  The
+      first three are taken here.
+
+207b. ITEM 1: SOLVED SELF-CONSISTENTLY, AND IT BARELY MOVES.  The motional
+      term depends on the speed, so the circular condition
+      v^2 = |F_r| r / mu is implicit.  Iterating it to convergence and
+      bisecting the window where ORTHO has no circular orbit at all:
+        tilt   outer r/r*   inner r/r*   206d at Coulomb speed
+          42      0.89290      0.86055    (below its threshold)
+          45      0.96875      0.83311    0.96858 / 0.83331
+          70      1.55035      0.80553    1.55031 / 0.80559
+          90      1.77243      0.80311    1.77241 / 0.80315
+      Four to five digits of agreement, and the critical tilt moves from
+      41.7942 to 41.7741 -- five parts in ten thousand.
+        There is a reason the assumption did not matter, and it is worth
+      stating because 52e's caveat sounded fatal: the window's edge is where
+      the required circular speed passes through ZERO, and at zero speed
+      there is no motional term to get wrong.  The bracket 52e worried about
+      is real for quantities evaluated INSIDE the window at an assumed speed
+      -- 206d's max d is one -- and absent for the edges themselves.
+
+207c. ITEMS 3 AND 4: A TRAJECTORY PLACED INSIDE THE WINDOW DOES BIFURCATE.
+      Both configurations started on the Coulomb circular orbit at 1.2 r*,
+      tilt 90 degrees, reaction off, separation in r* at each quarter of the
+      nominal period:
+        para  (2 gamma)   integrator stopped inside the first quarter
+        ortho (3 gamma)   2.38488   4.05639   5.63698   7.14289
+      Para reaches the cutoff before a quarter turn; ortho leaves, monotonic
+      and nearly linear in time, sitting at seven r* after one nominal
+      period.  So the split is not an artefact of evaluating forces at an
+      instant: 203's failure mode does not repeat here, and the dynamics
+      carries the same sign the force did.
+
+207d. BUT THE INITIAL CONDITION IS RIGHT FOR NEITHER, AND 207b SAYS WHY.
+      The Coulomb circular speed is the equilibrium of neither
+      configuration.  Para's own circular speed at 1.2 r* and 90 degrees is
+      1.486349 times it, so starting at the Coulomb value under-rotates para
+      by half and it falls -- its plunge is the deficit as much as the
+      force.  Ortho has NO circular speed there at all, so nothing could
+      have been the right start, and its departure is the statement rather
+      than an artefact of the choice.  The honest reading of 207c is
+      therefore asymmetric: ortho's escape is the finding, para's plunge is
+      consistent with it but not independent evidence.
+
+207e. WHAT ORTHO'S ORBIT LOOKS LIKE WHERE IT EXISTS.  Outside the window its
+      circular speed is far below Coulomb's, because the dipole force
+      cancels part of the attraction: at tilt 90 it reads 0.335126 at 2 r*,
+      then nothing from 1.5 down to 0.9, then 0.112481 at 0.8 and 0.386294
+      at 0.7.  Para's, by contrast, never leaves 1.16 to 1.49 at any radius
+      or tilt measured.  So the two configurations do not merely differ
+      inside the window; outside it they orbit at speeds differing by a
+      factor of four.
+
+207f. ITEM 2 IS NOT ANSWERABLE BY MEASUREMENT, and should stop being listed
+      as though it were.  The whole window lies at or inside r*, where the
+      model declares classical point-particle electrodynamics invalid.  No
+      measurement inside that region can establish that the model is
+      entitled to the fields it computes there; 206c showed the floor does
+      not manufacture the effect, which is the most a measurement can do.
+      What would settle it is a physical argument about the validity
+      boundary, and this series does not have one.
+
+207g. LIMITS.  207c is one radius and one tilt: the tilt-60 para run was
+      launched with the same probe and did not return within fifteen
+      minutes, the integrator grinding down the plunge, so nothing is
+      reported for it.  The integration is reaction-off, so it shows the
+      conservative bifurcation and not what an inspiralling pair would do.
+      207b's window is the locus where a circular orbit ceases to exist,
+      which is not the same as the locus where a pair on a general orbit
+      turns around -- nothing here computes a turning point for an eccentric
+      approach.  And 207d's asymmetry means the headline should be read as
+      "ortho has no bound circular motion in the window", not as "para
+      plunges and ortho escapes", which overstates what the common initial
+      condition can support.
