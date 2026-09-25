@@ -12632,3 +12632,80 @@ measurement of whether that survives a cascade.
       0.10) and nothing here explains that.  176e is an argument, not a
       measurement: what is measured is which perturbations break the
       cancellation, not the mechanism by which they do.
+
+177. 176g's THREE OPEN ITEMS MEASURED, AND 176e's MECHANISM IS WRONG
+==================================================================
+
+177a. WHY THE RATIO EXCEEDS ONE -- CONFIRMED, AND IT IS THE DENOMINATOR.
+      Following both rates around the orbit at beta_CM = 0.01:
+        t/T     w1 [1/s]      w2 [1/s]     |dw|/w1
+        0.00   4.69369e+11   4.69369e+11   4.97e-11
+        0.20   5.21445e+11   9.53555e+10   8.17e-01
+        0.40   5.55669e+11   2.85538e+11   4.86e-01
+        0.60   2.86197e+11   5.55626e+11   9.41e-01
+        0.80   9.47501e+10   5.21284e+11   4.50e+00
+      At t/T = 0.80 the FIRST moment's precession has fallen to 18% of the
+      second's, and the metric divides by that one.  The roles swap at
+      t/T = 0.20, where the second is the stalled one.  So 176g's guess was
+      right and is now measured: the column is asymmetric by construction and
+      its large values mark where its own denominator is small.
+
+177b. THE NON-MONOTONICITY IS IN THAT COLUMN ONLY.  Worst over the orbit:
+        beta_CM     |dw|/w1      |dm/dt|
+          0         0.0000e+00   0.0000e+00
+          0.01      2.0789e+01   9.1226e-01
+          0.10      1.8020e+01   1.0000e+00
+      |dm/dt| is monotone and saturates at one.  The 20.8-then-18.0 of 176g
+      is the near-vanishing denominator of 177a, not a physical trend: at
+      beta = 0.01 the dip takes w1 to 9.5e+10 out of 4.7e+11, while at
+      beta = 0.10 every rate is larger and the dip is relatively shallower.
+      The question 176g could not answer has no physical content.
+
+177c. AND 176e's MECHANISM IS NOT THE ONE.  176e argued that a common drift
+      is symmetric under exchange, so the motional v x E terms stop
+      cancelling.  Tested by rebuilding B_eff with that term switched off, at
+      the preparation instant:
+        beta_CM   |dw|/w1 full   |dw|/w1 with no motional term
+          0        0.0000         0.0000e+00
+          0.01     0.0000         3.7745e-11
+          0.10     0.0000         1.7925e-10
+          0.30     0.0000         5.8240e-10
+      The two rates are equal at the preparation instant at EVERY drift up to
+      0.3 c, with the motional term in or out.  Whatever breaks the parity,
+      it is not that term failing to cancel at an instant.
+
+177d. WHAT DOES BREAK IT IS THE LAB-FRAME BOOST, SEEDED AND THEN AMPLIFIED.
+      With a drift the two particles move at different lab velocities, so
+      their lab moments are boosted differently and mu1 + mu2 is already
+      nonzero at preparation -- and it is linear in the drift:
+        beta_CM    |m|/mu_sum at t/T = 0.2    divided by beta
+          0.001         2.6957e-06              2.6957e-03
+          0.003         8.0871e-06              2.6957e-03
+          0.01          2.6954e-05              2.6954e-03
+          0.03          8.0778e-05              2.6926e-03
+          0.10          2.6614e-04              2.6614e-03
+      Constant to four figures out to beta = 0.03 and 2% off by 0.1, which is
+      the first relativistic correction.  The precession then amplifies that
+      seed: |dm/dt| reaches 0.75 of its maximum by a fifth of an orbit at
+      beta = 0.01 and 0.999 at beta = 0.1.  So the parity is broken at
+      O(beta_CM) by the boost asymmetry in the moments themselves -- the same
+      object audit 175 measured -- and the rates only follow.
+
+177e. WHICH JOINS TWO AUDITS.  175 found the lab-versus-proper moment
+      discrepancy to be kinematic, independent of retardation, and negligible
+      at the working radius because it goes as beta_orb^2.  Here the same
+      discrepancy appears at first order in a DIFFERENT beta, the drift of
+      the pair as a whole, and there it is not negligible: it is what removes
+      the M1 protection entirely.  The lab moments are harmless where the
+      model runs and decisive one step outside it, and both statements are
+      about the same term.
+
+177f. LIMITS.  One radius, one tilt, one orbit per drift, 500 samples,
+      tolerance 1e-09, reaction off.  177c switches the motional term off
+      only at the preparation instant, not along the orbit, so it excludes
+      that term as the INSTANTANEOUS mechanism and not as a contributor to
+      the growth.  177d's amplification is read from two drifts at four
+      phases rather than fitted.  Why the rates stay exactly equal at
+      preparation while |m| is already nonzero there is not explained: a
+      residual reflection symmetry of that particular instant is the obvious
+      candidate and was not tested.

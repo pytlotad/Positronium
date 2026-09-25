@@ -1,0 +1,27 @@
+Raw outputs behind audit section 177 (2026-09-25).
+  measurements.txt   both probes, concatenated: mech's beta scan at the
+                     preparation instant with the motional term switched
+                     off, then mech2 at drifts 0, 0.01 and 0.1 following the
+                     rates around the orbit
+  mech.cpp           rebuilds thomasBmtEffectiveField with each of its three
+                     terms switchable, so the motional v x E piece can be
+                     removed without touching the rest
+  mech2.cpp          follows w1, w2, |m| and |dm/dt| along one orbit
+
+No pre-registration: 177a and 177b read a guess 176g had already written
+down against the numbers that test it, and 177c is a switch-off control
+whose outcome is read directly.  No threshold enters any conclusion.
+
+The linear-scaling table of 177d is sampled at t/T = 0.2 rather than at
+preparation, because that is the row mech2 prints; the same linearity holds
+at preparation with a different coefficient (|m|/beta = 1.17e-03 there
+against 2.70e-03 at t/T = 0.2), read from the beta = 0.01 and 0.1 runs in
+measurements.txt.
+
+All states are ortho prepared exactly antiparallel at a_pair, tilt 40, with
+a common velocity added to both particles.  Reaction disabled.
+
+No source file was changed by this section.  176e's mechanism is contradicted
+in the audit text; the sentence in 176e itself is left standing, since the
+audit file's convention is that later sections correct earlier ones by
+number rather than by edit.
