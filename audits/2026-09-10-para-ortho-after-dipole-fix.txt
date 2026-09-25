@@ -15629,3 +15629,94 @@ measurement of whether that survives a cascade.
       the current preparation the flag and the rule-under-quantization give
       different P(2 gamma), 1/4 against the para share, and only the second
       is the rule.
+
+206. THE EDGE FOUND: INSIDE THE COMPTON RADIUS ORTHO IS REPELLED AND PARA
+     IS PULLED AT TWICE COULOMB, AND THE TWO DIFFER BY ONE NUMBER
+==========================================================================
+
+206a. WHERE TO LOOK, AND WHY THERE.  195, 196 and 204 looked at the
+      preparation and found no edge in it.  201 looked at the radiated
+      power and 203 withdrew the profile.  Put to me: look inside the
+      Compton radius.  pair_geometry.hpp already points there -- it records
+      that audit 52 found "the para dipole repulsion, net of the motional
+      attraction, overtakes Coulomb at 1.606 r*", and that the separation
+      floor regularizes exactly that zone "so the model as it runs cannot
+      show it".  52 measured one configuration and never asked whether the
+      crossing is a para/ortho division.  It is.
+
+206b. THE STRUCTURE IS ONE NUMBER.  Flipping mu2 reverses the dipole force
+      and leaves the charge force untouched, so the net radial force in
+      Coulomb units is
+        para  = -1 - d(r,theta),     ortho = -1 + d(r,theta),
+      with d the dipole force in the same units.  Measured, para + ortho
+      holds at -2 to seven digits -- -1.9999813, -1.9999667, -1.9999479,
+      -1.9999250, -1.9998828 from 2 r* down to 0.8 r* -- the small drift
+      being the softening acting on the charge sector, which cancels out of
+      the DIFFERENCE entirely.  Everything about the division is therefore
+      carried by d, and ortho is repelled exactly where d > 1.
+
+206c. AND THE DIFFERENCE IS FLOOR-INDEPENDENT, which matters because 52
+      blamed the floor.  Scaling CREM_SEPARATION_FLOOR_SCALE over a hundred-
+      fold, from 0.05 to 0.0005, moves para and ortho individually in the
+      third decimal and leaves para - ortho identical to six digits at every
+      radius: -0.269146, -0.708276, -0.935685, -1.100211, -1.237450,
+      -1.673795, -1.923619.  The floor touches the common charge sector and
+      not the dipole sector that separates the two.
+
+206d. THE EDGE, MAPPED.  The locus d = 1, by bisection in r at each tilt of
+      the moments from the separation:
+        tilt    outer r/r*    inner r/r*    max d
+          30        none          none      0.984524
+          40        none          none      0.996102
+          45       0.96858       0.83331    1.008597
+          55       1.19184       0.81359    1.049664
+          70       1.55031       0.80559    1.136185
+          90       1.77241       0.80315    1.200684
+      A closed region: no repulsion below a critical tilt, and above it a
+      window whose outer edge opens from 0.97 r* to 1.77 r* while its inner
+      edge sits nearly fixed at 0.80 r*.  The critical tilt, bisected, is
+        41.7942 degrees
+      with max d = 0.997751 one degree below and 1.002451 one degree above.
+
+206e. WHAT IT MEANS DYNAMICALLY.  Inside that window the two channels do
+      not merely differ in degree.  At 90 degrees and 1.2 r*:
+        para  (2 gamma)   -2.200296   pulled inward at 2.2 times Coulomb
+        ortho (3 gamma)   +0.200348   pushed OUTWARD
+      One configuration plunges and the other is turned back, at the same
+      radius, with the same orbit, differing only in the sign of one moment.
+      That is a knife edge in the strict sense -- a qualitative bifurcation
+      rather than a ratio -- and it is simultaneously the 2 gamma / 3 gamma
+      division, because by 195b parallel moments are para and antiparallel
+      are ortho.
+
+206f. AND IT CORRECTS 52e's LABEL.  52e reported the crossing for what it
+      called the para geometry.  With the mapping 195b established -- the
+      charges being opposite, parallel MOMENTS are the singlet -- the
+      configuration that gets repelled is ORTHO, not para.  52e's 1.606 r*
+      sits between this table's 70-degree and 80-degree outer edges, so the
+      radius is reproduced; the label is the same inversion 195c corrected
+      across 182 to 194, now found in a section forty audits earlier.
+
+206g. THE CORRESPONDENCE, AND ITS LIMITS AS A CORRESPONDENCE.  The direction
+      is right: ortho is the state physics keeps away from annihilation, and
+      here it is the one held off from contact by a barrier while para
+      plunges.  The mechanisms have nothing to do with each other -- the
+      physical suppression is a C-parity selection rule on a three-photon
+      final state, and this is classical dipole repulsion overtaking
+      Coulomb -- so this is a correspondence of direction and not of cause.
+      It is also not a lifetime: nothing here integrates a trajectory
+      through the window or shows that the barrier holds.
+
+206h. LIMITS.  Every number is the preparation instant on a circular orbit
+      whose speed is set by Coulomb alone, which 52e already flagged stops
+      being true as d approaches 1 -- so the window's edges are bracketed
+      rather than fixed, and 52e's own caveat that the moving and static
+      crossings bracket the true radius applies here unchanged.  The whole
+      window lies at or inside r*, where the model declares point-particle
+      electrodynamics invalid; 206c shows the floor does not manufacture the
+      effect, but nothing shows the model is entitled to the fields it is
+      computing there.  The tilt is measured from the separation at one
+      instant and the moments are not evolved, so whether a real trajectory
+      enters the window at a tilt above 41.79 degrees is untested.  And
+      203's finding stands over all of it: the preparation instant misstated
+      the E1 split by a sign, and no equivalent check has been run on d.
