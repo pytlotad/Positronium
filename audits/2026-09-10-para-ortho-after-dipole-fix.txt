@@ -14401,3 +14401,118 @@ measurement of whether that survives a cascade.
       so the two agree in shape and not in value.  Nothing here re-measures
       182f's or 186g's numbers at other radii; they remain flagged, as 190h
       left them.
+
+192. 191h's REMAINING WORK DONE: THE CROSS PRODUCTS CARRIED, THE LAW IS
+     sin^2 delta, AND THE MODEL'S M1 CHANNEL DOES NOT REPRODUCE IT
+==========================================================================
+
+192a. WHAT WAS LEFT.  191f identified the orbit-driven term as the one that
+      matters by an order-of-magnitude construction that dropped the angles,
+      and its error ran over a factor of four.  191h called carrying the
+      cross products the remaining work.  Carried, the agreement is not a
+      factor of four but two parts in a thousand -- and it exposes a defect
+      in the model's own M1 channel that the estimate was too coarse to see.
+
+192b. THE ALGEBRA, CARRIED, AND CHECKED TWO WAYS.  With
+        m_i'' = gamma_i^2 (m_i x B_i) x B_i  +  gamma_i (m_i x B_i')
+      and B_i' a central difference along the evolved orbit, against an
+      independent second difference of the moment SUM itself:
+        delta  steps   P full algebra   P 2nd difference   agreement
+            1    400     4.7811e-18        4.7708e-18        0.22%
+            1    800     4.7822e-18        4.7713e-18        0.23%
+           45    400     7.9242e-15        7.9071e-15        0.22%
+           45    800     7.9259e-15        7.9078e-15        0.23%
+           90    400     1.5878e-14        1.5844e-14        0.21%
+           90    800     1.5881e-14        1.5845e-14        0.23%
+      Doubling the sampling moves either by two parts in ten thousand, so
+      both are converged, and they agree with each other to 0.2% at every
+      angle.  The analytic form therefore reproduces the moment evolution
+      the integrator actually performs, and the angles were what 191f's
+      factor of four was made of.
+
+192c. THE ORBIT TERM DOMINATES BY THREE THOUSAND FOUR HUNDRED.  The ratio of
+      the precession term's norm to the orbit-driven term's reads 2.907e-04
+      at delta 1, 2.912e-04 at 45 and 3.212e-04 at 90 -- so 191f's
+      identification holds exactly, with no hand-waving: what turns the
+      moments fast enough to radiate is the local field swinging round with
+      the separation, not the moments turning about that field.
+
+192d. AND THE LAW IS sin^2 delta.  Mapping the true power across the opening
+      angle, normalised at its peak:
+        delta   P true [W]    P/P(90)    sin^2 delta   ratio
+            0   0.0000e+00   0.000000     0.000000      --
+            1   4.7811e-18   0.000301     0.000305    0.9886
+           30   3.9517e-15   0.248879     0.250000    0.9955
+           45   7.9242e-15   0.499068     0.500000    0.9981
+           60   1.1906e-14   0.749843     0.750000    0.9998
+           90   1.5878e-14   1.000000     1.000000    1.0000
+          120   1.1858e-14   0.746819     0.750000    0.9958
+          150   3.9207e-15   0.246927     0.250000    0.9877
+          179   4.4517e-18   0.000280     0.000305    0.9200
+          180   3.2218e-20   0.000002     0.000000      --
+      Within about 1% over the whole range, symmetric about 90 degrees, and
+      vanishing at BOTH ends.  Since |mu1+mu2| = 2 mu |sin(delta/2)|, the
+      law restates as
+        P proportional to |mu1+mu2|^2 cos^2(delta/2),
+      the coherent moment squared times a factor that kills it when the
+      moments are parallel.  At delta = 0 the vanishing is exact and has a
+      reason: gamma2 = -gamma1 for opposite charges, mu2 = -mu1, and C.P
+      gives B2 = -B1 hence B2' = -B1', so the two orbit terms cancel term
+      for term.  At delta = 180 the cancellation is numerical rather than
+      structural here -- 3.22e-20 against a peak of 1.59e-14 -- and why the
+      law is sin^2 delta rather than something else is NOT derived: the
+      fields themselves depend on delta, which a substitution into the
+      formula does not capture, and no derivation is offered.
+
+192e. THE MODEL'S OWN M1 CHANNEL DOES NOT REPRODUCE THIS.  Against the same
+      configurations:
+        delta   P code [W]    P true [W]    code/true
+            0   0.0000e+00   0.0000e+00      exact
+            1   3.3483e-18   4.7811e-18       0.700
+           30   2.5392e-15   3.9517e-15       0.643
+           45   4.8427e-15   7.9242e-15       0.611
+           60   6.8705e-15   1.1906e-14       0.577
+           90   7.8352e-15   1.5878e-14       0.493
+          120   4.3208e-15   1.1858e-14       0.364
+          150   4.3576e-16   3.9207e-15       0.111
+          179   1.0208e-15   4.4517e-18     229.3
+          180   1.1407e-15   3.2218e-20   35406.
+      Half to two-thirds too small through the middle, and then three to
+      four ORDERS too large at the parallel end, where it reports 1.14e-15 W
+      against a true 3.22e-20.  So the channel does not merely misscale: it
+      misses the shape, and in particular it misses the suppression at
+      delta = 180 entirely.
+        The likely mechanism, by inspection rather than measurement:
+      historicalDipoleKinematics builds the second derivative from a
+      ONE-SIDED BACKWARD stencil at twice the history spacing, because it is
+      always called at the present time.  A one-sided stencil on a signal
+      whose dominant component oscillates at the orbital frequency will not
+      resolve a cancellation between two nearly equal contributions, which
+      is exactly what delta = 180 is.  Supporting evidence: the code's value
+      moved by 4% between integrator tolerances 1e-10 and 1e-12 while both
+      converged methods moved not at all.
+
+192f. WHICH REVERSES A READING THAT HAS STOOD SINCE 182.  182f read the
+      delta scan as the moments opening from antiparallel turning M1 on, and
+      191d, working from the same channel, said the evolved power peaks at
+      90 and falls by 6.87 to 180.  The true fall is 493000, to essentially
+      zero.  M1 is gated by the moments being PERPENDICULAR, and is
+      suppressed at antiparallel and at parallel alike.  Both of the
+      preparations the para/ortho reading cares about therefore sit in the
+      channel's minima, which is not what 182f, 182j or 191d imply.
+        And unlike 189e and 189f, this defect is not in a disclaimed region:
+      r = 0.1 a_pair is two orders outside r*, inside the model's declared
+      domain.
+
+192g. LIMITS.  One radius, one orbit per angle with the first half discarded
+      as settling, and the reaction on; whether the sin^2 law survives other
+      radii, eccentricities or the deep inspiral is untested.  The law is
+      fitted to nothing -- it is a comparison against sin^2 with no free
+      parameter -- but its 1% agreement degrades at the ends, to 0.92 at
+      delta = 179, where the power is four orders below the peak and the
+      subtraction carries fewest digits.  192e names a mechanism by reading
+      the stencil, not by instrumenting it; replacing that stencil and
+      re-measuring is the work that would confirm it, and is not done here.
+      Nothing in this section is propagated back into 182, 186g, 187 or 191:
+      those numbers stand as what the model reports, now with a measured
+      correction factor against what its own moment trajectory implies.
