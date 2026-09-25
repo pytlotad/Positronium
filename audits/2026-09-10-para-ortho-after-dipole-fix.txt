@@ -15963,3 +15963,91 @@ measurement of whether that survives a cascade.
       the collapse TIME is insensitive to the endpoint at the 1e-9 level,
       but terminal-state reporting is not, and no run compares the two
       branches on the same pair because no pair takes both.
+
+210. ASKED TO FIX 189e's ZERO BAND: THERE IS NOTHING TO FIX.  THE PATH WAS
+     MISATTRIBUTED, THE VARIABLE WAS WRONG, IT IS NOT A BAND, AND
+     VALIDATION ALREADY FAILS ON IT
+==========================================================================
+
+210a. THE INSTRUCTION.  208g named 189e's zero band as the defect worth
+      fixing and I was asked to fix it.  Four measurements later there is
+      nothing to fix, and three of my own statements are withdrawn instead.
+
+210b. 189f's ATTRIBUTION WAS WRONG: IT IS THE CHARGE PATH.  189f concluded
+      the zeros came from the two-pole dipole construction, whose guards
+      return an empty field.  They cannot: localRelativisticFields ADDS the
+      dipole field to the charge field, so an empty dipole return contributes
+      zero and leaves Coulomb intact.  Measured separately:
+        r/a_pair      |E| charge     |E| dipole      |E| total
+        3.0000e-04   1.202140e+18   1.639784e+16   1.189747e+18
+        1.2651e-04   4.225015e+18   2.606245e+16   4.205620e+18
+        9.4868e-05   0.000000e+00   0.000000e+00   0.000000e+00
+        4.0006e-05   0.000000e+00   0.000000e+00   0.000000e+00
+        3.0000e-05   7.914066e+18   7.612145e+16   7.855916e+18
+      The CHARGE field is the one returning zero.  189f's "with the moments
+      off the field is smooth" was real but coincidental: scaling the
+      moments changes the synthetic history, which moves the retarded solve.
+
+210c. AND IT IS NOT A BAND IN RADIUS.  Arming the causality counters, the
+      Doppler clamp binds at exactly the zero radii and nowhere else.
+      Holding the radius and setting the speed by hand instead of from the
+      non-relativistic circular formula, at r = 7.1141e-05 a_pair:
+        beta   0.30   0.35   0.40   0.42   0.44   0.46   0.50   0.60
+        clamp     0      0      0      0      0      1      0      1
+      Zero at 0.46, fine at 0.50, zero again at 0.60.  Not a threshold in
+      beta either -- a sporadic degeneracy of the retarded geometry, where
+      whether n.beta approaches one at the converged retarded time depends
+      on the exact configuration.  189e's "band" was that sporadic failure
+      sampled at log-spaced radii.
+
+210d. WHICH MY OWN PROBE WALKED INTO.  189e set the speed from
+      v = sqrt(k/(mu r)), which is non-relativistic, so beta ran 0.42, 0.56,
+      0.75, 0.87, 1.00 and then SUPERLUMINAL across the scanned radii -- the
+      Coulomb circular speed reaches c at 5.325135e-05 a_pair, inside the
+      band.  Half of 189e's scan fed the model velocities above c.  The
+      apparent coincidence of the band with the separation floor is that
+      beta goes as r^-1/2 and crosses the degenerate range just where r
+      crosses the floor.
+
+210e. IT DOES NOT OCCUR IN THE VALID DOMAIN.  The same test at radii the
+      model actually declares itself valid over:
+        r/a_pair    beta 0.30 ... 0.90    clamped    |E| charge
+        1.0e+00     all six values            0      1.30e+11 .. 1.44e+11
+        1.0e-01     all six                   0      1.30e+13 .. 1.44e+13
+        1.0e-02     all six                   0      1.30e+15 .. 1.43e+15
+        1.0e-03     all six                   0      1.28e+17 .. 1.43e+17
+      Smooth and unclamped at every radius down to 0.55 r*, at speeds up to
+      0.9c.  The failure needs r at or inside the separation floor, which is
+      0.05 r* -- twenty times inside the boundary the model terminates at.
+
+210f. AND VALIDATION ALREADY FAILS ON IT.  maxwell_validation.hpp asserts
+        gCausalityAudit.dopplerClamped.load()==0
+      with the comment "The Doppler clamp must never bind on a production
+      trajectory.  It is not a tolerance: when it binds the field is
+      amplified by up to 1e+24 and the value is meaningless, so one
+      occurrence is a failure rather than a small error (audit 165)."  So
+      the condition is already fenced: no run can ship having entered it.
+      The counter that makes it visible is the one added earlier in this
+      series for audit 165, and this is it earning its keep.
+
+210g. SO THERE IS NOTHING TO FIX, AND THREE THINGS ARE WITHDRAWN.  189f's
+      attribution of the zeros to the dipole construction; 189e's
+      description of them as a band in radius; and 208g's recommendation
+      that this is the defect worth fixing.  What is left is a sporadic
+      degeneracy of the retarded geometry that needs a radius twenty times
+      inside the termination boundary AND a speed above about 0.45c, is
+      reached only by an initial condition that is itself unphysical, and is
+      already a hard validation failure if it ever occurs.  Changing a guard
+      in the retarded solver to serve that would be risk without benefit,
+      and no code is changed.
+
+210h. LIMITS.  210c's non-monotonic table is eight speeds at one radius; the
+      sporadic character is established by the 0.46 / 0.50 / 0.60 pattern
+      and not mapped.  210e is four radii and six speeds, all with the
+      synthetic causalInitialHistory rather than an evolved one, so it shows
+      the solve is well-conditioned there for this history and not for every
+      history.  Nothing here explains WHY the clamp binds at beta 0.46 and
+      not 0.50 -- the mechanism is named as degenerate retarded geometry on
+      the strength of the counter firing, not traced through the solve.  And
+      210f's fence protects production runs; it does not protect a probe
+      like 189e's, which is how this was reached in the first place.
