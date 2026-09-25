@@ -15079,3 +15079,87 @@ measurement of whether that survives a cascade.
       183g's original billing, which 184e withdrew and which stays
       withdrawn: the crossing is where the frequencies agree, not where the
       model emits.
+
+199. 198g CONTINUED: THE MIDPOINT GENERALISES ONCE THE RIGHT HARMONIC IS
+     USED, AND THE MODEL DOES CARRY THOSE HARMONICS -- MEASURED, NOT
+     ASSUMED
+==========================================================================
+
+199a. THE THREE ITEMS.  198g left the whole section as arithmetic on the
+      model's constants with no orbit integrated, noted that the
+      semiclassical midpoint is a Kepler result rather than a property of
+      this model, and checked the half-integer limit for adjacent
+      transitions only.  The third turns out to explain the first two.
+
+199b. ITEM 3: THE MIDPOINT GENERALISES, ONCE THE HARMONIC IS THE RIGHT ONE.
+      For n = m + k, matching the FUNDAMENTAL to the photon gives
+        L/hbar = [2 m^2 (m+k)^2 / (k(2m+k))]^(1/3)  ->  m / k^(1/3),
+      which walks away from the Bohr orbits for k > 1.  Matching the k-th
+      HARMONIC instead gives
+        L/hbar = [2 m^2 (m+k)^2 / (2m+k)]^(1/3)  ->  m + k/2,
+      the midpoint of the two levels for every k:
+          k    m    fundamental    k-th harmonic    m + k/2
+          1  200   200.49916874    200.49916874    200.5000
+          2    5     4.67360080      5.88836803      6.0000
+          2  200   159.53117321    200.99668324    201.0000
+          3    5     4.34538696      6.26713248      6.5000
+          3  200   139.70713524    201.49255576    201.5000
+      So 198's half-integer result is the k = 1 case of the correspondence
+      principle in its usual form, and the restriction to adjacent
+      transitions was not a limitation of the result but a consequence of
+      having matched the fundamental.
+
+199c. ITEMS 1 AND 2: THE MODEL DOES RADIATE THOSE HARMONICS, and here an
+      orbit is integrated.  Discrete transform of the E1 source
+      d'' = q1 a1 + q2 a2 over one radial period, 256 samples, semi-major
+      axis a_pair, reaction off so decay does not broaden the peaks,
+      amplitudes normalised to the fundamental:
+       ecc      k=1        k=2        k=3        k=4        k=5        k=6
+       0.00 1.0000e+00 3.3802e-05 1.4237e-05 6.8419e-06 5.2040e-06 4.2182e-06
+       0.10 1.0000e+00 1.9957e-01 3.3571e-02 5.3029e-03 7.9780e-04 1.2593e-04
+       0.30 1.0000e+00 5.8658e-01 2.9025e-01 1.3453e-01 6.0181e-02 2.6359e-02
+       0.50 1.0000e+00 9.3686e-01 7.4075e-01 5.4860e-01 3.9230e-01 2.7452e-01
+       0.70 1.0000e+00 1.2222e+00 1.2629e+00 1.2233e+00 1.1445e+00 1.0481e+00
+      A circular orbit carries the fundamental alone; eccentricity switches
+      the harmonics on, each one roughly a sixth of its predecessor at
+      e = 0.1, and by e = 0.7 the spectrum peaks at k = 3 with the first
+      six harmonics all above the fundamental.  That is the Kepler harmonic
+      structure, reproduced by a model that was never told about it.
+
+199d. AND THE CIRCULAR RESIDUAL IS NOT NOISE -- IT IS beta^2.  The 3.38e-05
+      second harmonic of the "circular" orbit is a real non-Keplerian
+      content, and scaling the moments down by 1e-6 separates it:
+        ecc    moments      k = 2        k = 3
+        0.00   full       3.3802e-05   1.4237e-05
+        0.00   off        5.2869e-05   1.4262e-05
+        0.10   full       1.9957e-01   3.3571e-02
+        0.10   off        1.9947e-01   3.3573e-02
+      With the dipole forces off the circular second harmonic is 5.2869e-05
+      against beta^2 = 5.3253e-05 at a_pair -- a ratio of 0.993, so it is
+      the relativistic correction and nothing else.  Turning the moments on
+      cuts it to 3.38e-05, a 36% partial cancellation.  At e = 0.1 the
+      moments make no difference at all (0.19957 against 0.19947, five parts
+      in ten thousand): once the orbit is eccentric the harmonics are pure
+      Kepler geometry.
+
+199e. WHICH COMPLETES THE PICTURE.  A transition of Delta n = k corresponds
+      classically to the k-th harmonic; the model carries the k-th harmonic
+      only when the orbit is eccentric; so a circular orbit has a classical
+      analogue for Delta n = 1 and for nothing else, and 198's whole result
+      -- the 1.92300 radius, the L = 1.3867, the approach to m + 1/2 -- is
+      the circular, Delta n = 1 corner of that.  198g's first two items are
+      answered: an orbit is now integrated, and what it shows is a property
+      of this model rather than of Kepler alone, namely that its harmonic
+      content matches Kepler's to within a beta^2 term it also accounts for.
+
+199f. LIMITS.  199c and 199d are one semi-major axis, a_pair, and one polar
+      angle; the harmonic amplitudes are not compared against the Bessel
+      forms the Kepler problem predicts, only against each other and against
+      zero.  The transform is 256 samples over one period with no windowing,
+      so leakage sets a floor somewhere near the 1e-06 the circular row
+      shows at k = 5 and 6, and the circular k = 3 through k = 6 entries are
+      at or near it.  199b is algebra, unchanged in status from 198.  And
+      nothing here measures WHICH harmonic the model's radiated power
+      actually lands in -- the transform is of the SOURCE d'', not of a
+      spectral decomposition of the emitted flux, and those differ by the
+      k-dependent weighting the Larmor formula applies.
