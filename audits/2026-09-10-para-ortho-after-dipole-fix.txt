@@ -14294,3 +14294,110 @@ measurement of whether that survives a cascade.
       r = a_pair; the floor at other radii is not measured, so 190b's mode A
       quadrupole column is called noise by signature rather than by
       comparison against a floor measured there.
+
+191. 182k TAKEN UP: THE SECOND-DERIVATIVE STATEMENT IS DEFINITIONAL, THE
+     NON-MONOTONICITY WAS A PREPARATION ARTIFACT, AND THE DRIVER IS THE
+     ORBIT RATHER THAN THE PRECESSION
+==========================================================================
+
+191a. WHAT 182k LEFT.  It recorded that the M1 power is not monotonic in
+      |mu1+mu2| -- falling from 3.66e-25 at delta = 45 to 1.05e-25 at
+      delta = 90 -- concluded that the rate is therefore set by the moment's
+      second derivative rather than its size, and stopped there, calling it
+      a precession question and deliberately not pursuing it.  Three things
+      turn out to be wrong with that, and the answer is not about precession
+      at all.
+
+191b. THE SECOND-DERIVATIVE PART IS DEFINITIONAL, not a finding.
+      coherentMagneticDipoleRadiationReaction computes
+        P = (mu0 / 6 pi c^3) |m1'' + m2''|^2
+      so "the second derivative sets the rate" is the formula restated.
+      182k, 186f and 190e were circling that.  What 190e did establish is
+      dynamical and survives: the sum can grow eightfold while the power
+      stays flat, so the DERIVATIVE and the MAGNITUDE genuinely part company.
+      What was never asked is why the derivative behaves as it does.
+
+191c. AND 182k's NON-MONOTONICITY IS A PREPARATION ARTIFACT.  Repeating the
+      delta scan at the preparation instant and again averaged over the
+      second half of an evolved orbit, r0 = 0.1 a_pair:
+        delta  |mu1+mu2|  M1 at prep     M1 evolved    evolved/prep
+            1    0.0087   8.5621e-20    3.3482e-18        39.10
+           10    0.0872   6.9552e-18    3.2379e-16        46.55
+           30    0.2588   3.3399e-17    2.5391e-15        76.02
+           45    0.3827   3.7032e-17    4.8423e-15       130.76
+           60    0.5000   2.1106e-17    6.8699e-15       325.49
+           90    0.7071   1.0638e-17    7.8344e-15       736.47
+          135    0.9239   5.0752e-16    2.0608e-15         4.06
+          180    1.0000   1.6240e-15    1.1407e-15         0.70
+      The preparation column reproduces 182f's shape at this radius -- it
+      falls by 3.48 from delta 45 to 90 where 182f fell by 3.49 at a_pair --
+      and the evolved column RISES by 1.62 across the same step.  The
+      direction reverses.  And the correction factor is not a constant: it
+      runs from 0.70 to 736, three orders, so no rescaling of 182f's column
+      recovers the evolved one.  This is 190c's finding again, sharper.
+
+191d. A REAL NON-MONOTONICITY IS THERE, BUT ELSEWHERE.  The evolved column
+      peaks at delta = 90 and falls by 6.87 to delta = 180 -- where
+      |mu1+mu2| is at its MAXIMUM.  So the configuration with the largest
+      coherent moment radiates nearly the least M1 of any delta above 45.
+      That is the fact worth explaining, and it is not the one 182k named.
+
+191e. THE PRECESSION DOES NOT SET THE RATE.  A moment precessing rigidly
+      about a fixed axis has m'' = -omega^2 m_perp, so the pure-precession
+      estimate is omega_prec^2 |m_perp|.  Measured against the |m''| the
+      reported power implies:
+        delta  |m_perp| [J/T]   omega_prec   precession est.  est./measured
+            1    1.0826e-25     2.7512e+14     8.1942e+03       2.23e-04
+           10    1.1859e-24     2.7370e+14     8.8841e+04       2.46e-04
+           45    6.8180e-24     2.7014e+14     4.9755e+05       3.56e-04
+           90    1.1567e-23     2.7683e+14     8.8643e+05       4.98e-04
+          135    1.2375e-23     2.4560e+14     7.4645e+05       8.18e-04
+          180    1.6189e-23     1.3947e+14     3.1490e+05       4.64e-04
+      Short by twelve hundred to four thousand five hundred times.  Whatever
+      is driving m'', it is not the moments turning about their own fields.
+
+191f. THE ORBIT IS.  At r = 0.1 a_pair the orbital angular frequency is
+      6.5367e+17 rad/s against a precession rate of about 2.7e+14 -- the
+      orbit turns 2421 times faster.  So in
+        m'' = gamma (m' x B) + gamma (m x B')
+      the second term dominates by that ratio, and B' is the local effective
+      field swinging round as the SEPARATION turns, not anything the spins
+      do.  The estimate omega_prec omega_orb |m_perp|:
+        delta   orbit-driven est.   est./measured
+            1      1.9469e+07          0.529
+           10      2.1218e+08          0.587
+           45      1.2040e+09          0.861
+           90      2.0931e+09          1.176
+          135      1.9867e+09          2.177
+          180      1.4759e+09          2.174
+      Within a factor of two over the whole range, with no fitted parameter,
+      against the precession estimate's three orders.  The residual trend --
+      the ratio climbing monotonically from 0.53 to 2.18 -- is geometry in
+      the cross products that this estimate does not carry, and is not
+      explained here.  Where that error is flat between two points the
+      estimate predicts their RATIO well: between delta 135 and 180 it gives
+      a power ratio of 0.552 against a measured 0.553.
+        So the answer to 182k is that the M1 rate is set by the orbital
+      frequency through the rotation of the local field, not by the spin
+      precession and not by the moment's size.
+
+191g. AND THE delta = 180 DROP IS THE PRECESSION RATE HALVING.  The one
+      place the spins do enter is the rate itself: omega_prec reads
+      2.75e+14 down to 2.46e+14 across delta 1 to 135 and then 1.3947e+14 at
+      delta = 180, a factor of two, because parallel moments change the
+      mutual dipole field each particle sits in.  |m_perp|/|m| is 0.8718
+      there, near its highest, so the fall is not an alignment effect -- it
+      is omega_prec, entering the orbit-driven estimate linearly.
+
+191h. LIMITS.  One radius, r0 = 0.1 a_pair, and one orbit per delta with the
+      first half discarded as settling; the averages in 191e to 191g are
+      over the second half only, so anything varying on a longer timescale
+      is invisible.  omega_orb is the Keplerian value at r0, not measured
+      from the trajectory.  The orbit-driven estimate in 191f is an order-of
+      magnitude construction, not a derivation -- it keeps one term of m''
+      and drops the angles, which is why its error runs over a factor of
+      four, and no attempt is made here to carry the cross products.  191c's
+      preparation column is at r0 = 0.1 a_pair while 182f's was at a_pair,
+      so the two agree in shape and not in value.  Nothing here re-measures
+      182f's or 186g's numbers at other radii; they remain flagged, as 190h
+      left them.
