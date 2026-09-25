@@ -15239,3 +15239,90 @@ measurement of whether that survives a cascade.
       199b's algebra is still algebra.  And 200b is a correction to a
       formula written in this audit series, not to anything in the model:
       no code changed, and the model's numbers in 199c were right all along.
+
+201. THE 2-GAMMA / 3-GAMMA EDGE, THIRD SEARCH: THERE IS ONE, IT IS AT THE
+     COMPTON BARRIER, AND IT ARRIVES TOO LATE TO MATTER
+==========================================================================
+
+201a. WHERE THE EARLIER SEARCHES LOOKED.  195 looked at the branching weight
+      and found a linear ramp with no edge.  196 looked at the coherent
+      moment and found the edge is unrepresentable -- the singlet needs a
+      spin correlation three times stronger than classical vectors carry.
+      Both looked at the preparation.  This one looks at the DYNAMICS, and
+      at a quantity the earlier searches treated as spin-blind: the allowed
+      E1 channel.
+
+201b. THE SPLIT IN THE ALLOWED CHANNEL GROWS AS r^-2.  Comparing the E1
+      power of the two configurations -- parallel moments (para, 2 gamma)
+      against antiparallel (ortho, 3 gamma) -- at the preparation instant:
+        r/a_pair   r/r*    E1 para [W]      E1 ortho [W]     split    slope
+           1        548  1.1673121110e-08 1.1673009177e-08 9.589e-06     --
+           0.3      164  1.4411508358e-06 1.4409972454e-06 1.066e-04  -2.0003
+           0.1     54.8  1.1677263065e-04 1.1666036128e-04 9.619e-04  -2.0025
+           0.03    16.4  1.4485722905e-02 1.4327070408e-02 1.101e-02  -2.0249
+           0.01    5.48  1.2473157007e+00 1.1052770488e+00 1.208e-01  -2.1797
+           0.003   1.64  3.7360634350e+02 7.0996330697e+01 1.361e+00  -2.0120
+           0.001  0.548  3.4764632528e+04 1.7626547589e+03 1.807e+00  -0.2578
+      Five decades of r^-2, which is exactly the dipole-to-Coulomb force
+      ratio: the dipole-dipole force goes as r^-4 against Coulomb's r^-2.
+      The magnitude agrees too -- the dipole-dipole to Coulomb ENERGY ratio
+      at a_pair is 3.34e-06 against a measured split of 9.59e-06, a factor
+      of 2.9.  The last row's slope breaks because the split is saturating
+      against its ceiling of 2.
+
+201c. AND NEAR THE BARRIER IT IS A FACTOR OF TWENTY.  The same rows as a
+      power ratio rather than a split:
+        r/a_pair      1     0.1    0.03    0.01   0.003   0.001
+        P_para/P_ortho  1.0000  1.0010  1.0111  1.1285  5.2623 19.7229
+      At a_pair the two spin configurations are indistinguishable at ten
+      parts per million.  At 1.64 r* they differ by a factor of five, and at
+      0.548 r* by a factor of twenty.  So the model DOES have a para/ortho
+      knife edge in its dynamics, and it is at the Compton barrier.
+
+201d. BUT IT ARRIVES TOO LATE.  The inspiral time is dt = dE/P with
+      dE ~ dr/r^2 and P ~ r^-4, so dt ~ r^2 dr: the clock runs at LARGE r
+      and barely moves at small.  Integrating the measured profile from
+      0.001 a_pair out to a_pair,
+        t_para  = 1.6786016030e+07      (arbitrary units)
+        t_ortho = 1.6786429500e+07
+        t_ortho / t_para - 1 = 2.4632e-05.
+      A factor of twenty in the instantaneous power buys two and a half
+      parts in a hundred thousand of separation in the time, because the
+      pair has already spent its whole life at radii where the two
+      configurations agree to ten parts per million.
+
+201e. WHICH IS WHY THE SEARCH KEEPS FAILING.  195 and 196 concluded the
+      model has no para/ortho edge.  That was too strong: it has one, in the
+      only channel it radiates through, and the mechanism is identified and
+      clean.  What it does not have is an edge anywhere the pair spends
+      time.  The distinction is worth keeping because the two failures have
+      different cures: a representation failure (196) cannot be fixed by any
+      preparation, whereas a weighting failure -- the clock running at the
+      wrong radius -- is a statement about where the model's time integral
+      puts its mass, and that is a property of the E1 r^-4 law rather than
+      of the spins.
+
+201f. AGAINST THE PHYSICAL NUMBER, WITH THE CAVEAT IT NEEDS.  Positronium's
+      measured lifetimes give tau(o-Ps)/tau(p-Ps) = 142 ns / 125 ps = 1136.
+      The model's 2.4632e-05 is not the same quantity: 1136 is an
+      ANNIHILATION-rate ratio and the model's figure is an INSPIRAL-time
+      ratio, and the model has no annihilation-rate mechanism that depends
+      on the configuration at all -- 195 established that the multiplicity
+      is drawn from the prepared moments while the rate is not.  So the two
+      numbers are not a like-for-like test.  What can be said is that no
+      timescale this model computes separates para from ortho by more than
+      2.5e-05, where the physical separation of the only timescale the
+      experiment measures is three orders.
+
+201g. LIMITS.  201b is the preparation instant at seven radii, not an
+      evolved orbit; 190c showed the preparation misstates M1 badly, and
+      whether it misstates the E1 SPLIT is untested -- the split is a ratio
+      of two E1 powers and the preparation bias may cancel in it, but that
+      is an argument and not a measurement.  201d integrates a
+      seven-point profile with a trapezoid in r, and its outer limit is
+      a_pair rather than the formation radius, so the absolute times are
+      arbitrary and only their ratio is quoted.  The two innermost radii are
+      inside r*, where the model declares itself invalid, and 201c's factor
+      of twenty is read from one of them.  Nothing here is run through the
+      collapse estimator, which is what would turn 201d into a statement
+      about the lifetimes the model actually reports.
