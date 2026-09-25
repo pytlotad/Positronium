@@ -13530,3 +13530,85 @@ measurement of whether that survives a cascade.
       argument about what the model's symmetry can represent, not a
       measurement of C-parity, which this model does not carry: it has no
       photon number and no discrete L, and 183f is the price of that.
+
+184. THE 8/3 IS NOT A g-FACTOR: g CANCELS OUT OF a_pair ENTIRELY, AND THE
+     GAP IS THE CORRESPONDENCE PRINCIPLE
+==========================================================================
+
+184a. THE SUSPICION, WHICH IS A REASONABLE ONE.  183g put the
+      frequency crossing at 1.92300 a_pair carrying L = 1.3867 hbar, not a
+      Bohr orbit.  pairBohrRadius in particle_species.hpp is written through
+      the two magnetic MOMENTS and then divided by g1*g2, so an anomalous g
+      leaking into the orbital sector would be exactly the kind of thing
+      that produces an off-integer L.  It is worth checking rather than
+      assuming, because the definition genuinely does mention g.
+
+184b. IT DOES NOT LEAK: g CANCELS EXACTLY.  With mu = g|q|hbar/(4m),
+        16 M mu1 mu2 / (g1 g2 |q1q2| k |q1q2|)
+          = 16 M [g1|q1|hbar/(4m1)][g2|q2|hbar/(4m2)]
+            / (g1 g2 |q1q2|^2 k)
+          = M hbar^2 / (m1 m2 |q1q2| k)
+          = hbar^2 / (mu_red * k|q1q2|),
+      which is the Bohr radius with no g in it.  Forcing g by hand over a
+      tenfold range confirms it to every digit printed:
+            g      a_pair [m]        L/hbar      bind [eV]   om1/om_gamma
+        1.000000  1.0583544191e-10  1.000000000  6.802846579  2.666666667
+        2.000000  1.0583544191e-10  1.000000000  6.802846579  2.666666667
+        2.002319  1.0583544191e-10  1.000000000  6.802846579  2.666666667
+        5.585695  1.0583544191e-10  1.000000000  6.802846579  2.666666667
+       10.000000  1.0583544191e-10  1.000000000  6.802846579  2.666666667
+      1.0583544191e-10 m is 2 a_0, the positronium Bohr radius, and L is
+      exactly one hbar.  The 8/3 is g-free.
+
+184c. AND HERE IS WHERE g ACTUALLY ACTS, for contrast -- the magnetic
+      sector and nothing else.  Moments parallel so the channel is open:
+            g     a_pair [m]      E1 [W]       M1 [W]     |B1| [T]   C.P B
+        1.0000  1.058354e-10  1.167308e-08  4.0406e-24  1.3612e+00  8.60e-01
+        2.0000  1.058354e-10  1.167312e-08  1.6163e-23  1.3940e+00  1.68e+00
+        2.0023  1.058354e-10  1.167312e-08  1.6200e-23  1.3944e+00  1.68e+00
+        4.0000  1.058354e-10  1.167329e-08  6.4656e-23  2.0444e+00  2.29e+00
+        8.0000  1.058354e-10  1.167396e-08  2.5871e-22  4.1076e+00  2.28e+00
+      M1 scales as g^2 to four digits across a factor of eight, |B1| grows
+      with it, a_pair does not move at all and E1 moves only in its sixth
+      digit, through the dipole forces' small effect on the accelerations.
+      With the moments ANTIPARALLEL instead, M1 is 0.0000e+00 and the C.P
+      residual is 0.000e+00 at every one of those g values: the symmetry
+      does not care about g either.
+
+184d. SO WHAT THE 8/3 IS: THE CORRESPONDENCE PRINCIPLE, at the small n where
+      it is expected to fail.  For the n -> n-1 jump, the orbital frequency
+      at n against the emitted photon's:
+            n     omega_orb(n)     omega_photon      ratio
+            2     2.583836e+15     7.751508e+15    0.333333
+            3     7.655810e+14     1.435464e+15    0.533333
+            5     1.653655e+14     2.325452e+14    0.711111
+           10     2.067069e+13     2.424340e+13    0.852632
+           50     1.653655e+11     1.704621e+11    0.970101
+          200     2.583836e+09     2.603345e+09    0.992506
+         1000     2.067069e+07     2.070173e+07    0.998500
+      Exactly 1/3 at n = 2 and tending to 1 as n grows.  This is Bohr's own
+      statement that the classical and quantum frequencies agree only in the
+      large-n limit, and the n = 2 -> n = 1 jump is the worst case in the
+      whole series.  The model reproduces the failure correctly; it is not
+      a defect in the model and it is not a parameter choice.
+
+184e. WHICH DEMOTES 183g.  I called 1.92300 a_pair "a genuine emission
+      configuration in the frequency-matching sense".  That was too
+      generous.  The orbital frequency omega ~ r^-3/2 falls monotonically
+      from infinity to zero, so it crosses ANY positive target exactly once
+      -- a crossing radius exists for every transition one might name, and
+      its existence carries no information.  Nothing happens there: C.P is
+      bitwise zero at 1.92300 a_pair as it is everywhere, the radiated power
+      is unremarkable, and the curve being crossed is wrong by a factor of
+      three on one side and 8/3 on the other.  183g's table stands as
+      arithmetic; its billing as an emission configuration is withdrawn.
+      182i's claim -- that no configuration along the inspiral opens a
+      channel -- was not in fact qualified by it.
+
+184f. LIMITS.  184b and 184c force g through ParticleSpecies directly and
+      keep the masses and charges at the electron's, so they test the
+      cancellation in pairBohrRadius and not whatever else a physically
+      different g would imply.  184c is one radius and the preparation
+      instant.  184d is the Bohr formula evaluated in the model's own
+      constants, not an integration: no inspiral is followed here either,
+      for the reason 183i gives.
