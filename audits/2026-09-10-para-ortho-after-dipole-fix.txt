@@ -13408,3 +13408,125 @@ measurement of whether that survives a cascade.
       five pairs, three symmetric and two not, at one radius.  And 182b's
       parity argument is stated for the moments, not carried through the
       retarded field integrals, which remains 181q's standing gap.
+
+183. 182j CHECKED AT THE BOHR n=2 -> n=1 TRANSITION: C.P IS BLIND TO L, SO
+     THE CORRESPONDENCE IS WITH (-1)^S AND NOT WITH C-PARITY
+==========================================================================
+
+183a. WHY A RADIATIVE TRANSITION IS THE TEST.  182j recorded, as a
+      correspondence and not a derivation, that the model's C.P lines up
+      with the C-parity rule for annihilation: antiparallel spins give
+      C = +1 and an even photon count, parallel give C = -1 and an odd one.
+      Annihilation is a bad discriminator, because both states there carry
+      L = 0 and C-parity, which is (-1)^(L+S), reduces to (-1)^S.  A
+      radiative transition changes L by one and therefore FLIPS the state's
+      C-parity, so it separates the two readings.  Bohr positronium's
+      n = 2 -> n = 1 jump is the cleanest such case the model can be put in.
+
+183b. THE CONSTRUCTION, VERIFIED FIRST.  Circular orbits at r = n^2 a_pair:
+        n    r/a_pair    L/hbar
+        1        1       1.0000
+        2        4       2.0000
+        3        9       3.0000
+      and the binding at n = 1 is 6.8028 eV, so the n = 2 -> n = 1 photon
+      carries 0.75 x 6.8028 = 5.1021 eV.  Both are the textbook values for
+      positronium, so the model's a_pair is the Bohr radius it should be.
+
+183c. C.P IS EXACTLY ZERO AT BOTH ENDS OF THE TRANSITION, moments
+      antiparallel:
+        n    r/a_pair    C.P E       C.P B       E1 [W]      M1 [W]
+        1        1     0.000e+00   0.000e+00   1.1673e-08  0.0000e+00
+        2        4     0.000e+00   0.000e+00   4.5598e-11  0.0000e+00
+        3        9     0.000e+00   0.000e+00   1.7792e-12  0.0000e+00
+      Identical before and after.  Whatever the model's symmetry is, it does
+      not change across the jump.
+
+183d. AND IT IS BLIND TO L, which is the decisive measurement.  Holding the
+      ENERGY at n = 2 (semi-major axis 4 a_pair) and varying the
+      eccentricity sweeps L without touching anything else:
+        eccentricity    L/hbar      C.P E       C.P B
+            0.00        2.0000    0.000e+00   0.000e+00
+            0.30        1.9079    0.000e+00   0.000e+00
+            0.60        1.6000    0.000e+00   0.000e+00
+            0.90        0.8718    0.000e+00   0.000e+00
+            0.99        0.2821    0.000e+00   0.000e+00
+      A sevenfold range in L, bitwise zero throughout.  C.P does not see the
+      orbital angular momentum at all, and the algebra says why: under C.P
+      both r and v reverse, so r x v is even and L is C.P-even for any
+      value it takes.
+
+183e. SO 182j's CORRESPONDENCE IS WITH (-1)^S, NOT WITH C-PARITY, and it is
+      narrowed here.  In the real 2P -> 1S transition the state's C-parity
+      flips, from (-1)^(1+S) to (-1)^(0+S), and the single photon's C = -1
+      balances the books.  The model's C.P does not move: it is exactly zero
+      at L = 2 hbar, at L = 1 hbar and at every L between.  So what the
+      model carries is the classical shadow of the SPIN factor alone.  182j
+      read it as the full C-parity because annihilation, the only case it
+      looked at, cannot tell the two apart.  The annihilation statement
+      stands; the general one does not.
+
+183f. AND THE MODEL'S SELECTION RULE DOES NOT DISCRIMINATE.  It gets this
+      transition's channel right -- 2P -> 1S is E1, and E1 is exactly what
+      C.P leaves open -- but it would give the same answer for any
+      transition, since it cannot see the quantum number that decides which
+      transitions are allowed.  A rule that is right everywhere because it
+      is constant everywhere is not evidence for the rule.
+
+183g. THERE IS A CLASSICAL EMISSION CONFIGURATION AFTER ALL, and it is
+      kinematic rather than symmetric.  A classical orbit radiates at its
+      ORBITAL frequency, which sweeps through the Bohr photon's during the
+      inspiral and equals it at exactly one radius.  With omega ~ r^-3/2 and
+        omega(a)/omega_photon = [hbar/(mu a^2)] / [3k/(8 a hbar)] = 8/3
+      exactly, once mu a k = hbar^2 is used, the crossing sits at
+      (8/3)^(2/3) = 1.92300 a_pair.  Measured:
+        r/a_pair   L/hbar     omega      om/photon    E1 [W]     C.P E
+          1.0000   1.0000   2.0671e+16     2.6667   1.1673e-08  0.000e+00
+          1.5000   1.2247   1.1252e+16     1.4515   2.3058e-09  0.000e+00
+          1.9230   1.3867   7.7515e+15     1.0000   8.5363e-10  0.000e+00
+          2.5000   1.5811   5.2293e+15     0.6746   2.9883e-10  0.000e+00
+          4.0000   2.0000   2.5838e+15     0.3333   4.5598e-11  0.000e+00
+      So the radius at which the model radiates the right COLOUR carries
+      L = 1.3867 hbar and is not a Bohr orbit at all.  It is a genuine
+      emission configuration in the frequency-matching sense, which 182i
+      said did not exist -- 182i's claim was about C.P breaking, and this is
+      not that.  Note also that C.P is bitwise zero at this radius like
+      every other, so the one place the model's emission looks quantally
+      right is a place where its symmetry says nothing.
+
+183h. A CORRECTION TO 182f: E2 IS NOT EXACTLY ZERO WHEN THE MOMENTS OPEN.
+      182f reported the quadrupole column as identically zero across the
+      whole azimuth sweep and concluded that the spin condition "cannot
+      reach the charge sector".  That column was computed with the reaction
+      model DISABLED, and needsQuadrupolePower in electrodynamics.hpp is
+      true only for the automatic and stochasticElectricDipole models, so
+      the quadrupole power was never evaluated.  I had caught exactly this
+      gating one measurement earlier, for 182g, and did not go back.  Rerun
+      with the automatic model:
+        delta   |mu1+mu2|     E1 [W]       E2 [W]       M1 [W]
+            0     0.0000   1.1673e-08   0.0000e+00   0.0000e+00
+            1     0.0087   1.1673e-08   4.6922e-31   8.5104e-28
+           10     0.0872   1.1673e-08   6.7005e-31   6.8998e-26
+           45     0.3827   1.1673e-08   2.5534e-31   3.6565e-25
+           90     0.7071   1.1673e-08   1.9170e-31   1.0488e-25
+          135     0.9239   1.1673e-08   2.7959e-31   5.0247e-24
+          180     1.0000   1.1673e-08   1.0805e-30   1.6200e-23
+      E2 is exactly zero at delta = 0 and nonzero at every other angle, so
+      the GATE is real and C.P still holds it shut.  What is wrong is the
+      reason: the moments do reach the charge sector, indirectly.  The
+      quadrupole power depends on time derivatives of Q, and with the
+      moments opened the two particles feel different dipole-dipole forces,
+      so a2 is no longer -a1 and Q-dot-dot-dot is nonzero even where Q
+      itself vanishes.  The share is about 1e-22 of E1, negligible in any
+      accounting but not zero as a matter of principle, and 182f's sentence
+      is withdrawn.
+
+183i. LIMITS.  183c, 183d, 183g and 183h are preparation instants; nothing
+      here evolves, and in particular the n = 2 -> n = 1 inspiral is NOT
+      integrated -- at roughly 1e5 orbits between the two radii it is out of
+      reach of the direct integrator, so the transition is characterised by
+      its endpoints and by the frequency crossing rather than followed.
+      No radiated energy or transition time is compared against 5.1021 eV
+      and 3.19 ns here.  183d's sweep is one semi-major axis.  183e is an
+      argument about what the model's symmetry can represent, not a
+      measurement of C-parity, which this model does not carry: it has no
+      photon number and no discrete L, and 183f is the price of that.
