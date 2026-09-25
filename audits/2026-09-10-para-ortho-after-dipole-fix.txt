@@ -15895,3 +15895,71 @@ measurement of whether that survives a cascade.
       208f's judgement that the two near-equal constants are not
       interchangeable rests on reading their roles, not on a measurement of
       what merging them would do.
+
+209. THE 2.7375 EXAMINED: IT IS 0.04/(g alpha), IT IS NOT A CONSTANT, AND
+     208g OVERSTATED IT BY CALLING IT ANOMALOUS
+==========================================================================
+
+209a. THE FACTOR HAS A CLOSED FORM.  r* is the moment's own length,
+      mu/(|q|c) = g hbar/(4 m c), and for a symmetric pair
+      a_pair = hbar^2/(mu_red k q^2) with mu_red = m/2, so
+        r* / a_pair = g alpha / 8.
+      Checked against the model's own constants: g alpha/8 = 1.826454e-03
+      and the measured ratio is 1.826454e-03, to every digit printed.  The
+      other branch is 0.005 a_pair by definition, so
+        branch ratio = 0.005 / (g alpha / 8) = 0.04 / (g alpha).
+
+209b. WHICH IS NOT A CONSTANT.  It carries the pair's g:
+        pair                      g      0.005*a [fm]   moment [fm]   ratio
+        electron + positron   2.0023       529.1772      193.3035    2.7375
+        muon + antimuon       2.0023         2.5593        0.9349    2.7375
+        proton + antiproton   5.5857         0.2882        0.2937    0.9813
+      For the two light pairs the generic branch is 2.74 times the moment
+      length; for protonium the two agree to 1.9%.  The 2.7375 that 189b
+      measured and 208g called anomalous is therefore the g = 2 value of a
+      function, not a discrepancy with a single value.
+
+209c. AND 0.005 IS DOCUMENTED, NOT ARBITRARY.  particle_species.hpp states
+      its origin: "The coefficient is chosen to reproduce the historical
+      0.01*a0 = 529 fm for positronium, whose pair radius is 2*a0", and its
+      purpose: expressing it as a fraction of the pair's own Bohr radius "so
+      the experiments stay geometrically similar from one pair to the next".
+      So it is a convention with a stated reason, sitting beside a physical
+      length with a different one.  204b found the label threshold 0.5
+      underived; this is not that case.
+
+209d. AND THE PHYSICAL ALTERNATIVE IS NOT AVAILABLE FOR EVERY PAIR, which
+      is the substantive finding here.  Replacing 0.005 a_pair by the
+      moment length would need one moment length, and an asymmetric pair has
+      two:
+        p + e-:  electron 193.3035 fm,  proton 0.2937 fm  -- a factor 658.2
+        0.005 * a_pair for that pair is 264.7327 fm
+      There is no non-arbitrary way to pick between lengths 658 apart, and
+      neither the sum nor the reduced-mass version lands on the convention
+      either -- both give a ratio of 1.369, which is just 2.7375/2.  The
+      convention's virtue is exactly that it is unique and scales with the
+      orbit; the physical length's is that it means something.  Neither
+      dominates, which is why the model carries both.
+
+209e. SO 208g OVERSTATED IT.  What is there is a designed discontinuity
+      between a physical length and a conventional one, each defensible
+      where it is used, differing by a factor that happens to be 2.74 at
+      g = 2 and 0.98 at g = 5.59.  Calling it "the one thing that IS
+      anomalous" was wrong, and 188's decision to record rather than change
+      it stands better than 208g's phrasing implied.
+        What remains genuinely awkward is narrower, and 188c already stated
+      it: the branch SWITCHES at the isPositronium band edge, so a pair one
+      percent off positronium jumps from 193.3 fm to 529.2 fm.  That jump is
+      real whatever the two branches mean, and 188c's reason for tolerating
+      it is that no pair --pair can name sits near the edge -- the nearest
+      is the muon at 206.8 electron masses.  It affects pairs built in code
+      and nothing else.
+
+209f. LIMITS.  209a's closed form is derived for a SYMMETRIC pair; for an
+      asymmetric one a_pair still follows from the reduced mass but there is
+      no single r* to form a ratio with, which is 209d's point restated.
+      209b is three pairs, all the symmetric ones the CLI offers.  Nothing
+      here measures what either boundary does to a trajectory -- 208d showed
+      the collapse TIME is insensitive to the endpoint at the 1e-9 level,
+      but terminal-state reporting is not, and no run compares the two
+      branches on the same pair because no pair takes both.
