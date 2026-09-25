@@ -14045,3 +14045,128 @@ measurement of whether that survives a cascade.
       pointParticleBoundaryOf's OTHER branch, so what a band-admitted pair
       should use as a collision boundary is decided by the same gate and has
       not been examined separately.
+
+189. 188h TAKEN UP: THE BAND IS NOW MEASURED RATHER THAN CHOSEN, THE OTHER
+     BRANCH IS A FACTOR 2.74, AND THE FIELD RETURNS EXACT ZEROS DEEP INSIDE
+     r*
+==========================================================================
+
+189a. THE THREE ITEMS.  188h left the band's width justified only by
+      convenience, 188d and 188e at one eps and the preparation instant, and
+      pointParticleBoundaryOf's second branch never examined beside the
+      first.  All three are taken; the second branch turned up a factor that
+      should be on the record, and the floor sweep turned up a defect that
+      has nothing to do with the band.
+
+189b. ITEM 3: THE OTHER BRANCH, MEASURED.  For a positronium-like pair the
+      two branches are not close:
+        pair                   isPs   compton [a_p]  collision [a_p]  ratio
+        stock e- e+             yes    1.826454e-03   5.000000e-03   2.7375
+        perturbed 1e-3          yes    1.827367e-03   5.000000e-03   2.7362
+        band edge 0.99e-2       yes    1.835450e-03   5.000000e-03   2.7241
+        just outside 1.01e-2    NO     1.835631e-03   5.000000e-03   2.7239
+      So what the model actually declares as its boundary jumps by 2.7375
+      across the band edge, while inside the band it drifts by 0.49%:
+        stock                   1.826454e-03 a_pair    1.0000
+        band edge 0.99e-2       1.835450e-03 a_pair    1.0049
+        just outside 1.01e-2    5.000000e-03 a_pair    2.7375
+      That discontinuity is NOT new.  The exact test had the same jump, at
+      eps of one ULP instead of 1e-2, so 188's change moved it outward
+      rather than creating it -- and moving it outward is the improvement,
+      since the whole interval 0 < eps < 1e-2 now takes the branch that
+      suits it.  What remains unaddressed is that the jump exists at all:
+      nothing makes collisionBoundaryOf and comptonBarrierRadius meet at the
+      band edge, and a pair a hair either side of it is declared to have
+      collided at radii differing by a factor of 2.74.
+
+189c. ITEM 1: WHAT THE BAND'S ONE PERCENT ACTUALLY COSTS.  188c argued the
+      cost is bounded by 1% in the barrier and left it at that.  The
+      question is what a 1% error in the floor length propagates to, which
+      is measurable: run the same configuration with
+      CREM_SEPARATION_FLOOR_SCALE at 0.05 and 0.0505 and difference the E1
+      power.
+        r            r/r*      relative change in E1 for a 1% floor change
+        1e-4 a_pair  0.055     2.71e-02
+        1e-3 a_pair  0.55      8.44e-04
+        1 r*         1.0       1.57e-05
+        3 r*         3.0       1.78e-05
+        10 r*        10        1.52e-06
+        100 r*       100       1.51e-08
+        a_pair       547.5     5.03e-11
+      At the floor itself the 1% is AMPLIFIED, to 2.7%, so "negligible" is
+      the wrong word for it.  What is true, and is the actual
+      justification, is that the amplification is confined to the region the
+      model already declares invalid: by r* the figure is 1.6e-05 and by
+      a_pair 5e-11.  The band therefore cannot disturb anything quoted
+      outside r*, and inside r* the model disclaims itself for reasons far
+      larger than 2.7%.  The 1 r* and 3 r* entries sit out of order, both
+      being differences of nearly equal numbers at the edge of what the
+      subtraction carries; nothing is read from their ordering.
+
+189d. ITEM 2: THE FIX ACROSS eps.  188d and 188e used eps = 1e-3.  At small
+      eps modes A and C must agree, both being near-positronium, and before
+      the fix they did not -- mode C was a factor 2480 out at 0.001 a_pair.
+      After:
+        r/a_pair    eps       mode A E1        mode C E1      C/A - 1
+          1e-03    1e-06   1.76265232e+03  1.76265767e+03   3.036e-06
+          1e-03    1e-04   1.76241058e+03  1.76294569e+03   3.036e-04
+          1e-03    1e-03   1.76021931e+03  1.76556759e+03   3.038e-03
+          1e-03    1e-02   1.73893291e+03  1.79212790e+03   3.059e-02
+          1e-02    1e-06   1.10527700e+00  1.10527809e+00   9.868e-07
+          1e-02    1e-02   1.10478434e+00  1.11565726e+00   9.842e-03
+      The remaining difference is linear in eps with a coefficient of 3.04
+      at 1e-3 a_pair and 0.987 at 1e-2, over four decades.  That is the
+      physical O(eps) difference a mass mismatch must produce, not a regime
+      discontinuity, which is what the fix was for.
+
+189e. AND A DEFECT FOUND ON THE WAY, unrelated to the band.  Scanning the
+      field inward at the stock pair, localRelativisticFields returns
+      EXACTLY ZERO over a band of radii, while the mechanical force stays
+      finite and smooth across the same band:
+        r/a_pair    |E at first|   |E at second|  |B at first|  |F| on first
+        1.3925e-04  3.788381e+18   3.788381e+18   3.721725e+09  6.153705e-01
+        1.1494e-04  0.000000e+00   0.000000e+00   0.000000e+00  7.434323e-01
+        9.4868e-05  0.000000e+00   0.000000e+00   0.000000e+00  8.516015e-01
+        6.4633e-05  0.000000e+00   0.000000e+00   0.000000e+00  9.474973e-01
+        4.4034e-05  0.000000e+00   0.000000e+00   0.000000e+00  8.679082e-01
+        3.6346e-05  7.285260e+18   7.285260e+18   1.453560e+10  7.861906e-01
+        1.3925e-05  1.458350e+19   1.458350e+19   4.751947e+10  3.517640e-01
+        1.1494e-05           nan            nan           nan           nan
+      Two separate failures.  A zero band from about 1.19e-04 down to
+      4.75e-05 a_pair -- which straddles the floor at 9.13e-05, running from
+      1.31 floor lengths down to 0.52 -- and NaN below about 1.19e-05.
+
+189f. THE ZERO BAND IS THE DIPOLE PATH; THE NaN IS NOT.  Repeating the scan
+      with the moments scaled to 1e-8 separates them:
+        r/a_pair      |E| moments on    |E| moments off
+        1.1943e-04      0.000000e+00       4.511964e+18
+        9.4868e-05      0.000000e+00       5.536536e+18
+        4.7547e-05      0.000000e+00       6.536280e+18
+        3.7768e-05      7.191006e+18       7.052429e+18
+        1.1943e-05               nan                nan
+      With the moments off the field is smooth and finite right through the
+      band, so the zeros come from the two-pole dipole construction, whose
+      validity guards return an empty field.  The defect is not that they
+      guard -- it is that an empty return zeroes the TOTAL field, Coulomb
+      part and all, so a caller cannot tell "the field here is zero" from "I
+      could not build the dipole contribution", and gets a plausible number
+      instead of a refusal.  The NaN below 1.19e-05 a_pair appears with the
+      moments off too and is a second, separate failure in the charge path.
+        Both sit far inside r*: the zero band is 0.065 r* to 0.026 r* and
+      the NaN below 0.0065 r*, in a region the model already declares
+      invalid, so nothing quoted anywhere in this series is affected.  It is
+      recorded and not fixed: the zeroing is in field code I do not yet
+      understand well enough to change safely, and the region is disclaimed.
+      Taking it up is the obvious next item.
+
+189g. LIMITS.  189c measures one observable, E1, at one configuration, and
+      infers the band's safety from its radial profile rather than from a
+      survey of everything the floor touches.  189b names the 2.74 jump and
+      does not decide which branch a band-admitted pair ought to use; it
+      only shows the model currently picks the compton one and that the
+      alternative is 2.74 times larger.  189d is two radii.  189e and 189f
+      are the preparation instant with causalInitialHistory, not an evolved
+      trajectory, so whether an integrator crossing that band would silently
+      absorb the zeros or trip a guard is untested -- and that, rather than
+      the zeros themselves, is what would decide how much the defect
+      matters.
