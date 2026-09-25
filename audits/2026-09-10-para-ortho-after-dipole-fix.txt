@@ -15391,3 +15391,70 @@ measurement of whether that survives a cascade.
       no drifted run was integrated to confirm that the ratio is unchanged,
       and 201g's caveat that the whole profile is preparation-instant rather
       than evolved is untouched by anything here.
+
+203. 201g ITEM 1 MEASURED: THE E1 SPLIT IS A PREPARATION ARTEFACT, IT
+     REVERSES SIGN ON AN EVOLVED ORBIT, AND 201b TO 201d GO WITH IT
+==========================================================================
+
+203a. THE ARGUMENT THAT WAS WRONG.  201g flagged that its whole profile was
+      the preparation instant, that 190c had found the preparation
+      misstates M1 by factors between 0.7 and 736, and that whether it
+      misstates the E1 SPLIT was untested -- adding that "the split is a
+      ratio of two E1 powers and the preparation bias may cancel in it, but
+      that is an argument and not a measurement".  Measured, the argument
+      fails, and not narrowly.
+
+203b. THE MEASUREMENT.  Each configuration evolved one orbit with the
+      reaction on, E1 averaged over the second half, against the same
+      quantity at the preparation instant:
+        r/a_pair   r/r*   split at prep    split evolved   evolved/prep
+            1       548    9.589002e-06   -9.407546e-05     -9.810767
+            0.1    54.8    9.618980e-04   -3.816043e-03     -3.967201
+      The split REVERSES SIGN and grows by a factor of four to ten.  At the
+      preparation instant para radiates more E1 than ortho; on an evolved
+      orbit ortho radiates more.  The inner radii had not returned when this
+      was written.
+
+203c. WHY THE RATIO DID NOT PROTECT IT.  The reasoning in 201g was that a
+      bias common to both configurations divides out.  It is not common to
+      both: causalInitialHistory is a synthetic time-symmetric construction
+      and the dipole forces it implies differ from the evolved ones by an
+      amount that depends on the moment configuration -- which is precisely
+      what a split measures.  A ratio protects against a bias that acts the
+      same way on numerator and denominator, and this one does not.  190c
+      had already shown the preparation misstating M1 by a
+      CONFIGURATION-DEPENDENT factor, from 0.70 to 736 across the azimuth
+      scan; the same dependence is what reverses the sign here.
+
+203d. WHAT 201 LOSES.  201b's r^-2 law was fitted to the preparation
+      profile; over the one decade measured here the evolved split goes as
+      r^-1.61, from a two-point slope.  201c's "factor of twenty near the
+      barrier" and 201d's integrated 2.4632e-05 are both built on the same
+      profile and are withdrawn as numbers.  What survives is the
+      qualitative shape -- a split that is negligible at a_pair and grows
+      steeply inward -- and 201d's structural point, that dt ~ r^2 dr puts
+      the elapsed time at large r whatever the split does there, which 202d
+      quantified independently of the split's value.
+        No replacement figure is offered.  Two radii are not a profile, and
+      substituting a new integral from them would repeat the error this
+      section is correcting.
+
+203e. AND 201g's ITEM 3, WHICH IS ARITHMETIC.  201c read its factor of
+      twenty at 0.001 a_pair, which is 0.548 r* -- inside the barrier, where
+      the model declares point-particle electrodynamics invalid.  The
+      innermost row outside r* is 0.003 a_pair at 1.64 r*, where the
+      preparation-instant power ratio is 5.26 rather than 19.72.  Since
+      203b withdraws the preparation profile anyway, the honest statement is
+      that no power ratio at any radius is currently measured on an evolved
+      orbit outside r*.
+
+203f. LIMITS, AND WHAT IS STILL OPEN.  203b is two radii and one orbit per
+      point, with the first half discarded as settling; three inner radii
+      were launched and had not returned.  The sign reversal is measured at
+      both radii and in the same direction, but two points cannot establish
+      that it holds everywhere, and in particular nothing says what happens
+      between 0.1 a_pair and the barrier, which is where 201c's claim lived.
+      201g's items 2 and 4 are untouched: the integral still runs from
+      a_pair rather than a formation radius, and nothing has been put
+      through the collapse estimator, which remains what would turn any of
+      this into a statement about the lifetimes the model reports.
