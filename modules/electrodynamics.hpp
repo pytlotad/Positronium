@@ -732,6 +732,23 @@ struct RetardedSourceSample { Vec3 position, velocity, moment; };
 inline RetardedSourceSample historicalSource(const StateHistory& history,
                                       const State& present,
                                       bool sourceIsFirst, double time) {
+    // THE MOMENT HERE IS THE LABORATORY ONE, state.firstDipole, and NOT
+    // state.firstProperDipole.  That is deliberate: everything downstream of
+    // this sampler -- the retarded dipole fields and the coherent M1 power --
+    // is written in the laboratory frame, so the moment entering them must be
+    // too.
+    //
+    // It is worth a warning because the two are nearly impossible to tell
+    // apart by inspection and very easy to tell apart by consequence.  At an
+    // orbital beta of 2.3e-02 they agree in MAGNITUDE to 1.000039, so a check
+    // that compares |mu| will pass whichever one you picked; but the boost
+    // relating them turns with the velocity, so its own derivative enters at
+    // the same order as the precession's, and their first and second time
+    // derivatives stand at 0.8666 and 0.7036 of each other.  Audit 192 built
+    // a whole comparison against the proper moment, found the channel
+    // "wrong" by a factor of two and three orders at one end, and published
+    // it; audit 193 withdrew the lot.  Differentiate the same member the
+    // channel does, or the disagreement you measure is your own.
     const auto pick=[sourceIsFirst](const State& state) {
         return RetardedSourceSample{
             sourceIsFirst?state.firstPosition:state.secondPosition,

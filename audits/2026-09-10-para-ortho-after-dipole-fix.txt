@@ -14628,3 +14628,90 @@ measurement of whether that survives a cascade.
       channel and I were reading the same field of the State.  One line --
       printing which member historicalSource picks -- would have caught it
       before the audit was written.
+
+194. 193g TAKEN UP: THE LAB CURVE MEASURED DENSELY AND AT TWO RADII -- ITS
+     SHAPE IS RADIUS-DEPENDENT, WHICH RECONCILES 182f WITH 191d
+==========================================================================
+
+194a. THE ITEMS.  193g left the operative curve reproduced from eight points
+      at one radius with a warning against reading a shape into it, and the
+      methodological failure recorded but not removed.  Both are taken.
+
+194b. THE DENSE CURVE AT r = 0.1 a_pair, thirteen angles, M1 averaged over
+      the second half of an evolved orbit:
+        delta   |mu1+mu2|     M1 [W]         M1/E1
+            0     0.0000    0.000000e+00   0.000000e+00
+           15     0.1305    7.097743e-16   6.051475e-12
+           30     0.2588    2.539065e-15   2.161279e-11
+           45     0.3827    4.842269e-15   4.116641e-11
+           60     0.5000    6.869835e-15   5.835728e-11
+           75     0.6088    7.982495e-15   6.778961e-11
+           90     0.7071    7.834353e-15   6.654759e-11
+          105     0.7934    6.471954e-15   5.501626e-11
+          120     0.8660    4.320362e-15   3.677066e-11
+          135     0.9239    2.060774e-15   1.756712e-11
+          150     0.9659    4.356943e-16   3.720984e-12
+          165     0.9914    3.765245e-17   3.222083e-13
+          180     1.0000    1.140726e-15   9.781378e-12
+      An exact zero at antiparallel, a peak between 75 and 90 degrees, and a
+      DEEP minimum at 165 -- 3.77e-17, two hundred and twelve times below
+      the peak -- before rising again to the parallel end.  The eight-point
+      version in 193e missed that minimum entirely.
+
+194c. AND AT r = a_pair THE SHAPE IS DIFFERENT, which is the finding:
+        delta   |mu1+mu2|     M1 [W]         M1/E1
+            0     0.0000    0.000000e+00   0.000000e+00
+           30     0.2588    5.512476e-25   4.721971e-17
+           60     0.5000    6.946794e-25   5.950491e-17
+           90     0.7071    6.180817e-26   5.294424e-18
+          120     0.8660    7.315577e-25   6.266679e-17
+          150     0.9659    4.762954e-24   4.080265e-16
+          180     1.0000    1.140481e-23   9.770667e-16
+      Here the curve DIPS at 90, an order below its neighbours, and rises
+      monotonically from 120 to a maximum at the parallel end.  That is very
+      nearly the mirror image of 194b, at ten times the radius.  So M1's
+      dependence on the opening angle is not one curve rescaled: the shape
+      itself moves with r.
+
+194d. WHICH RECONCILES 182f WITH 191d.  182f scanned at a_pair and read the
+      moments opening from antiparallel as turning M1 on, maximal at
+      parallel.  191d scanned at 0.1 a_pair and found a peak near 90 falling
+      away to 180.  I had been carrying those as one curve described twice,
+      and 192f went so far as to call one of them reversed.  They are two
+      radii, and each is right where it was measured.  194c reproduces
+      182f's shape on an evolved orbit -- the dip at 90 and the maximum at
+      180 are both there, within the factor of about 1.4 that 191c measured
+      between the preparation instant and the evolved value -- and 194b
+      reproduces 191d's.
+
+194e. NO LAW IS OFFERED, and 193g's warning is upheld rather than overcome.
+      The 0.1 a_pair curve is suggestively symmetric: the pairs (15,150),
+      (30,135), (45,120), (60,105) and (75,90) each sum to 165, putting an
+      axis at 82.5 degrees rather than 90.  But sin^2(pi delta / 165),
+      normalised at 75, tracks it only to +10%/-33% across the range --
+      1.097 at 15 degrees falling monotonically to 0.673 at 150 -- so the
+      symmetry is an observation about where the turning points sit and not
+      a fit.  Nothing here is a law, and the a_pair curve is not even
+      approximately of that form.
+
+194f. THE METHODOLOGICAL ITEM, FIXED AT THE SOURCE RATHER THAN NOTED.  193g
+      said one printed line would have caught 192's error.  A note now sits
+      on the pick lambda in historicalSource, where the choice is made,
+      saying which member it takes and why the mistake is easy: that the two
+      moments agree in magnitude to 1.000039 at orbital beta, so a check on
+      |mu| passes whichever one was picked, while their first and second
+      derivatives stand at 0.8666 and 0.7036 of each other.  It names audit
+      192 as the case in point.  Validation 62/62 PASS, unchanged.
+
+194g. LIMITS.  Two radii, thirteen angles at one and seven at the other, one
+      polar angle, one eccentricity, and one orbit per point with the first
+      half discarded.  The dip at 90 in 194c rests on a single sampled
+      angle with 30-degree neighbours, so its depth is bounded by the
+      sampling and not resolved; the same is true of the minimum at 165 in
+      194b, which has 15-degree neighbours.  Neither curve is measured
+      between a_pair and 0.1 a_pair, so 194c's "the shape moves with r" is
+      two points and says nothing about how it moves.  The M1/E1 columns
+      differ by five orders between the two radii, which is not compared
+      against 187c's r^-4 law because that was measured for a different
+      configuration -- an epsilon mismatch with antiparallel moments -- and
+      the two are not the same scan.
