@@ -16788,3 +16788,104 @@ measurement of whether that survives a cascade.
       exactly what a gross covariance violation would look like. The
       magnitudes agreeing to four digits while the vectors disagreed by
       twice the z-component is what gave it away.
+
+217. THE 3-5e-05 COVARIANCE FLOOR WAS THE OBSERVABLE'S OWN NOISE:
+     216f's VERDICT IS WITHDRAWN, AND REBUILT ON THE ACCUMULATED
+     FOUR-MOMENTUM THE TEST SHOWS COVARIANCE HOLDING TO 3e-06
+==========================================================================
+
+217a. THE QUESTION.  216f reported that the boost-covariance residual of
+      the radiated four-vector rate floors at 3-5e-05 and moves for no
+      knob -- not tolerance, not direction count, not the near field,
+      not a hundredfold control radius -- and 216h read that as the test
+      failing its own criterion.  But the two runs being compared are
+      two separately integrated trajectories, so part of that residual
+      is the difference between two numerical solutions rather than
+      between two frames.  At beta = 0 covariance holds identically, so
+      anything left there is exactly that noise and nothing else.
+
+217b. THE NULL, AND IT IS AS LARGE AS THE SIGNAL.  Same orbit, same
+      quarter period, same tolerance and direction count as 216f, beta =
+      0 throughout, each row compared against the 400-step run:
+          steps  tolerance     gap: rate    gap: integral
+            400      1e-08   0.000000e+00     0.000000e+00
+            200      1e-08   0.000000e+00     0.000000e+00
+            214      1e-08   1.650292e-05     1.684897e-06
+            201      1e-08   1.790970e-07     2.339937e-07
+            204      1e-08   1.649368e-04     2.606526e-07
+            231      1e-08   1.378294e-04     1.067125e-06
+            187      1e-08   3.237351e-06     3.402414e-06
+            150      1e-08   7.141104e-06     1.511714e-07
+            800      1e-08   9.965017e-06     1.607070e-07
+            200      1e-07   1.321744e-06     3.425567e-06
+            200      1e-09   9.965017e-06     1.607070e-07
+            200      1e-10   1.488040e-05     5.149989e-07
+      The rate is reproducible only to between 1.8e-07 and 1.65e-04
+      under a change of step pattern, with several rows at 1e-04.
+      216f's 3.556e-05 sits inside that band.  The 200-step and 400-step
+      runs agree to the last bit, which is the harness null and confirms
+      the comparison itself is exact when the two solutions coincide.
+
+217c. SO 216f's AND 216h's VERDICT IS WITHDRAWN.  The covariance test as
+      built in 216 did not fail; it had no resolution.  A residual of
+      3.5e-05 measured with an observable whose own reproducibility is
+      1e-05 to 1.6e-04 supports no statement about covariance in either
+      direction.  216g's boost scaling falls with it: each beta carries
+      its own gamma and therefore its own step lengths, so the trend it
+      reported across beta is confounded with the noise of 217b and
+      cannot be attributed to the boost.  What survives from 216 is test
+      B, which is unaffected, and 216b's observation about
+      boundFieldEnergy, which is a reading of the source.
+
+217d. THE FIX IS THE OBSERVABLE, NOT THE KNOBS.  The right-hand column
+      of 217b is the ACCUMULATED radiated four-momentum over the same
+      interval, an integral rather than an instantaneous rate.  Its
+      step-pattern noise is 1.5e-07 to 3.4e-06, about fifty times
+      quieter at the worst row and six hundred times at 204 steps.
+      That is the observable a covariance test can actually be built on.
+      It is also the cleaner object theoretically: the total radiated
+      four-momentum is a four-vector, so the prediction is
+      P'^mu = Lambda^mu_nu P^nu with no 1/gamma -- that factor in 216f
+      was correct for a rate and does not belong here.
+
+217e. REBUILT, AND COVARIANCE HOLDS TO 3e-06 UP TO beta = 0.35.
+           beta   steps  tolerance      residual
+           0.05     200      1e-08    3.715936e-07
+           0.10     200      1e-08    1.376590e-06
+           0.20     200      1e-08    7.573925e-07
+           0.35     200      1e-08    2.695692e-06
+           0.50     200      1e-08    6.796851e-05
+           0.70     200      1e-08    3.567967e-04
+           0.35     400      1e-08    2.695692e-06
+           0.35     800      1e-08    7.817163e-05
+           0.35     200      1e-07    3.620049e-06
+           0.35     200      1e-09    7.817163e-05
+      Every row at beta <= 0.35 lands at or below the 3.4e-06 null, so
+      the boost covariance of the radiated four-momentum is satisfied to
+      the resolution available -- an actual bound, where 216 had none.
+
+217f. WHAT STILL CANNOT BE SAID, AND WHY.  The beta = 0.50 and 0.70 rows
+      are 20x and 100x above the null and look like a real excess, but
+      the last four rows forbid that reading: at fixed beta = 0.35,
+      going from 200 or 400 steps to 800, or from tolerance 1e-8 to
+      1e-9, moves the residual from 2.696e-06 to 7.817e-05 -- the same
+      size as the beta = 0.50 excess.  The 200/400 pair agrees to the
+      last digit and the 800/1e-9 pair agrees to the last digit, so the
+      integrator has two solution branches here and a boosted pair can
+      straddle them.  The high-beta excess is therefore not separable
+      from that, and the honest statement is a bound at beta <= 0.35 and
+      silence above it.
+
+217g. LIMITS.  One orbit, one radius, one boost axis, one quarter
+      period; the null is at that same configuration and does not
+      establish the noise anywhere else.  The branch behaviour of 217f
+      is observed, not diagnosed -- nothing here says what distinguishes
+      the two branches or which is right, and until that is understood
+      the 3.4e-06 null is itself only a lower bound on the comparison
+      noise, since it was measured without a boost and so could not see
+      a straddle.  The rebuilt test bounds covariance; it does not
+      demonstrate it, and a bound at beta <= 0.35 says nothing about the
+      regime near the barrier where the model's own betas are far
+      higher.  Finally the retraction in 217c is of a verdict, not of a
+      measurement: every number in 216f and 216g stands, it is the
+      conclusion drawn from them that does not.
