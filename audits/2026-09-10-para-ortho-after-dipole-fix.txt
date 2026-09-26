@@ -17344,3 +17344,109 @@ measurement of whether that survives a cascade.
       "the k-th harmonic is present" to "a Delta n = k transition can
       occur" is the correspondence argument of 198-199, which is
       classical throughout.
+
+222. 221h's TWO ITEMS, BOTH RESOLVED: THE "COEFFICIENT 3.55" WAS NEVER
+     A COEFFICIENT, AND THE k=2 MINIMUM IS A CANCELLATION -- THE TRUE
+     IRREDUCIBLE FLOOR IS 0.112 beta^2, NOT ZERO AND NOT 0.99 beta^2
+==========================================================================
+
+222a. THE TWO ITEMS.  221h left the minimum of 221f bracketed by three
+      points and unresolved, so its 6.141e-06 was where the scan landed
+      rather than a measured floor; and it left a factor 1.78 between
+      the measured k=2 per unit realized eccentricity, 3.55 to 3.86,
+      and the 2e of the small-e Bessel limit.  Both are settled with a
+      finer scan at tolerance 1e-12 and 512 samples.
+
+222b. ITEM 2: THE COEFFICIENT WAS AN ARTEFACT OF THE DIVISION.  Imposing
+      a Kepler eccentricity on top of the Coulomb-circular launch, at
+      a_pair with moments and reaction off:
+        e imposed   e realized    k=2         2e+C       k2/(2e_real)
+        0.000e+00   1.373768e-05  5.280076e-05    --        1.922
+        1.000e-05   2.373618e-05  7.261053e-05  7.280e-05   1.530
+        3.000e-05   4.373623e-05  1.124350e-04  1.128e-04   1.285
+        1.000e-04   1.137394e-04  2.522711e-04  2.528e-04   1.109
+        3.000e-04   3.137526e-04  6.522322e-04  6.528e-04   1.039
+        1.000e-03   1.013799e-03  2.052370e-03  2.053e-03   1.012
+      Two facts fall out.  The realized eccentricity is the imposed one
+      plus a constant 1.3738e-05, to every digit -- the relativistic
+      residual and the imposed ellipse add in phase.  And the harmonic
+      obeys
+          k=2  =  2 e_imposed  +  5.2801e-05
+      to between 0.03% and 0.4% across two decades.  The Kepler part
+      carries exactly the Bessel coefficient 2; the relativistic
+      residual contributes an ADDITIVE constant, not a term
+      proportional to an eccentricity.  221f's 3.55 was that constant
+      divided by twice the realized eccentricity: 5.2801e-05 /
+      (2 x 1.3738e-05) = 1.922, which is the first row of the last
+      column exactly.  There was never a coefficient to reconcile, and
+      the last column's decay from 1.922 to 1.012 is simply the
+      constant being diluted as the Kepler term takes over.  The
+      constant itself is 0.9915 beta^2, reproducing 199d's 0.993.
+
+222c. ITEM 1: THE MINIMUM IS A CANCELLATION, NOT A FLOOR.  Scanning the
+      launch speed about the Coulomb-circular value, x = (v/v_C - 1)
+      in units of beta^2:
+             x      e realized   /beta^2        k=2
+          -0.3000   1.903110e-05  0.3574   6.022072e-05
+          -0.2000   8.385577e-06  0.1575   2.260632e-05
+          -0.1600   4.134963e-06  0.0776   7.676427e-06
+          -0.1400   2.028586e-06  0.0381   1.739395e-06
+          -0.1300   1.040845e-06  0.0195   4.196840e-06
+          -0.1250   8.087715e-07  0.0152   5.961721e-06
+          -0.1200   1.064931e-06  0.0200   7.782070e-06
+          -0.1100   2.057594e-06  0.0386   1.148334e-05
+      The realized eccentricity has a clean, symmetric minimum at
+      x = -0.125, and the symmetry is convincing: 1.041e-06 against
+      1.065e-06 at +-0.005 either side, 2.029e-06 against 2.058e-06 at
+      +-0.015.  So the TRUE circular orbit of the full potential sits
+      at v = v_Coulomb (1 - 0.125 beta^2), and its residual
+      eccentricity is 8.088e-07 = 0.0152 beta^2, seventeen times below
+      the Coulomb launch's 0.258 beta^2.
+        But k=2 does not bottom out there.  It keeps falling past
+      x = -0.125 to a minimum of 1.739e-06 at x = -0.140, then rises
+      again.  That displacement is the signature of two contributions
+      whose sum passes through zero: the eccentric one flips sign
+      across the true circular orbit, because the launch point changes
+      from apoapsis to periapsis, and it cancels part of the constant.
+      Fitting k=2 = |C +- A (e - e_min)| on the two branches gives
+      C = 5.96e-06 and A = 4.3, and that form reproduces x = -0.11 to
+      2%, -0.16 to 7% and -0.20 to 16%.
+
+222d. SO THE TRUE FLOOR IS 0.112 beta^2.  At the true circular orbit
+      the k=2 amplitude is 5.9617e-06 = 0.1120 beta^2, and that is the
+      irreducible, eccentricity-independent relativistic content.
+      Against 199d's Coulomb-launch figure of 0.9915 beta^2, 89% of
+      what 199d measured is the launch convention and 11% is the model.
+      221f's 6.141e-06 was within 3% of the true floor, but by
+      coincidence: it was read at a coarser tolerance and at the
+      eccentricity minimum rather than at the k=2 minimum, and 221h was
+      right to distrust it.
+
+222e. WHAT THIS SETTLES.  199d's statement that the circular k=2
+      residual "is the relativistic correction and nothing else" is now
+      resolved into two parts that behave differently: a genuine
+      irreducible relativistic term of 0.112 beta^2, and a launch
+      artefact of 0.88 beta^2 that a corrected launch removes.  221f's
+      claim that k=2 tracks the realized eccentricity at a constant
+      3.55 to 3.86 is withdrawn: the relationship is additive, not
+      multiplicative, and the apparent constant was the ratio of an
+      additive term to the eccentricity that contains it.  And 221d's
+      knife edge is unchanged in position -- the edge is still at
+      e of order beta^2 -- but its floor is now known to be reducible
+      by a factor 8.9 by changing nothing but the launch speed.
+
+222f. LIMITS.  One semi-major axis, a_pair, and one moment orientation;
+      the 0.125 beta^2 offset of the true circular orbit is measured
+      there and its scaling with radius is untested, though it should
+      follow beta^2 by the same argument that 221d verified over a
+      factor 100.  The minimum in 222c is located to +-0.005 in x, i.e.
+      the true circular speed is known to about 4% of the offset, and
+      e_min = 8.088e-07 is therefore an upper bound on the residual
+      rather than its value.  222c's two-branch fit has three free
+      quantities and eight points and is a description, not a
+      derivation; in particular the sign flip is inferred from the
+      shape and was not confirmed by reading the phase of the k=2
+      component.  222b's linear law is verified from e = 0 to 1e-03 and
+      the run was stopped there, so the crossover to the Bessel regime
+      at larger e rests on 221d rather than on this table.  And
+      everything remains reaction-off: none of these orbits radiates.
