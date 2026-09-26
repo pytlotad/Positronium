@@ -219,6 +219,25 @@ public:
         // Coulomb-Darwin force while leaving the selected reaction and the
         // independently measured far flux unchanged.
         bool useRetardedExternalForces = true;
+        // Angular resolution and control radius of the far-zone Poynting
+        // quadrature that computeOutwardFlux above switches on and off.
+        // It used to be frozen at the FarFieldSampling
+        // defaults -- 50 directions, degree 11 -- with no way to reach it
+        // from here, and 50 directions is not enough once the source
+        // drifts.  The Lienard distribution carries (1 - n.beta)^-k up to
+        // k = 6, whose dynamic range over the sphere is
+        // ((1+beta)/(1-beta))^k: 80 at beta = 0.35 but 729 at 0.50 and
+        // 3.3e+04 at 0.70.  Measured against the exact integral, the
+        // 50-direction rule's relative error on that factor is 1.0e-06,
+        // 5.7e-05 and 4.7e-04 at those three speeds, and raising the rule
+        // to 194 directions cut a measured boost-covariance residual at
+        // beta = 0.50 by a factor 22, from 6.8e-05 onto the 3.0e-06 floor
+        // (audit sections 219a-219b).  The default is unchanged, so every
+        // existing caller keeps the behaviour it was tuned against; a
+        // caller that drifts the pair above about beta = 0.4, or that
+        // reads the radiated four-momentum rather than only the
+        // trajectory, should raise directionCount to 194 or 302.
+        FarFieldSampling farFieldSampling{};
     };
     explicit ClassicalTrajectoryEngine(const State& initial)
         :history_(causalInitialHistory(initial)) {}
@@ -432,7 +451,8 @@ private:
         StateHistory fineHistory=history;
         integrateElectrodynamicStep(fine,0.5*dt,fineHistory,
             accuracy_.computeOutwardFlux,accuracy_.reactionModel,
-            accuracy_.useRetardedExternalForces);
+            accuracy_.useRetardedExternalForces,
+            accuracy_.farFieldSampling);
         if(!isFinite(fine)) {
             rejectionReason="fine1-nonfinite";
             return subdivide();
@@ -447,7 +467,8 @@ private:
         appendStateHistory(fineHistory,fine);
         integrateElectrodynamicStep(fine,0.5*dt,fineHistory,
             accuracy_.computeOutwardFlux,accuracy_.reactionModel,
-            accuracy_.useRetardedExternalForces);
+            accuracy_.useRetardedExternalForces,
+            accuracy_.farFieldSampling);
         if(!isFinite(fine)) {
             rejectionReason="fine2-nonfinite";
             return subdivide();

@@ -1618,7 +1618,8 @@ inline ParticleMultipoleRadiation particleMultipoleRadiation(
     const StateHistory& history,bool computeOutwardFlux=true,
     ChargeRadiationReactionModel reactionModel=
         ChargeRadiationReactionModel::individualLandauLifshitz,
-    bool mutualRadiationAlreadyRetarded=false) {
+    bool mutualRadiationAlreadyRetarded=false,
+    const FarFieldSampling& farFieldSampling={}) {
     ParticleMultipoleRadiation result;
     // Only the automatic model consults the blending gates, and only the two
     // coherent models need the coherent reaction force itself.  Under the
@@ -1669,7 +1670,8 @@ inline ParticleMultipoleRadiation particleMultipoleRadiation(
             ll.first.norm()/std::max(externalForces.first.norm(),1.0e-300),
             ll.second.norm()/std::max(externalForces.second.norm(),1.0e-300));
     if(computeOutwardFlux)
-        result.outwardFlux=electromagneticFieldFluxRates(state,history);
+        result.outwardFlux=electromagneticFieldFluxRates(
+            state,history,farFieldSampling);
 
     const Vec3 firstAcceleration = relativisticAcceleration(
         state.firstVelocity, externalForces.first, firstMass);
@@ -5309,7 +5311,8 @@ inline void integrateElectrodynamicStep(State& s, double dt,
                                  bool computeOutwardFlux=true,
                                  ChargeRadiationReactionModel reactionModel=
                                     ChargeRadiationReactionModel::individualLandauLifshitz,
-                                 bool useRetardedExternalForces=true) {
+                                 bool useRetardedExternalForces=true,
+                                 const FarFieldSampling& farFieldSampling={}) {
     const State balanceStart=s;
     // The M1 sector has two back-reactions, and they are NOT the same
     // decision, which is why they now sit behind two flags rather than one.
@@ -5405,7 +5408,7 @@ inline void integrateElectrodynamicStep(State& s, double dt,
     const ParticleMultipoleRadiation radiation =
         particleMultipoleRadiation(
             s,forces,history,computeOutwardFlux,reactionModel,
-            useRetardedExternalForces);
+            useRetardedExternalForces,farFieldSampling);
     if (!finiteRadiationResponse(radiation)) {
         if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
             std::cerr<<"STEP_DEBUG nonfinite-radiation t="<<s.time
@@ -5442,7 +5445,7 @@ inline void integrateElectrodynamicStep(State& s, double dt,
     const ParticleMultipoleRadiation trialRadiation =
         particleMultipoleRadiation(
             trial,trialForces,history,computeOutwardFlux,reactionModel,
-            useRetardedExternalForces);
+            useRetardedExternalForces,farFieldSampling);
     if (!finiteRadiationResponse(trialRadiation)) {
         if(std::getenv("POSITRONIUM_DEBUG_DIPOLE"))
             std::cerr<<"STEP_DEBUG nonfinite-trial-radiation t="<<trial.time

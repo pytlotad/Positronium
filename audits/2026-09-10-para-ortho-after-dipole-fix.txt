@@ -17131,3 +17131,74 @@ measurement of whether that survives a cascade.
       boundary at dt/gate = 4 is read off six points at one beta and
       one tolerance, and whether it is the gate or simply the step
       count that matters is not separated.
+
+220. PRODUCTION CHANGE: THE FAR-FIELD QUADRATURE IS NO LONGER FROZEN AT
+     50 DIRECTIONS -- FarFieldSampling IS NOW REACHABLE THROUGH Accuracy,
+     WITH THE DEFAULT BIT-IDENTICAL
+==========================================================================
+
+220a. WHAT CHANGED AND WHY.  219a found that every accumulated radiated
+      four-momentum in the model is a degree-11, 50-direction Lebedev
+      integral, because electrodynamics.hpp called
+      electromagneticFieldFluxRates with a default-constructed
+      FarFieldSampling and ClassicalTrajectoryEngine::Accuracy had no
+      way to reach it.  219b proved that this is the quantitative limit
+      above about beta = 0.4.  FarFieldSampling is now a field of
+      Accuracy and is threaded to the call site along the path
+      computeOutwardFlux already took:
+        crem_engine.hpp    Accuracy::farFieldSampling added; passed at
+                           the two integrateElectrodynamicStep calls
+                           that actually compute flux (the coarse probe
+                           and the live diagnostic pass false and are
+                           untouched);
+        electrodynamics.hpp  integrateElectrodynamicStep and
+                           particleMultipoleRadiation each take a
+                           trailing const FarFieldSampling& = {}, and
+                           the flux call now forwards it.
+      Every parameter added is trailing and defaulted, so the seven
+      existing call sites in maxwell_validation.hpp compile and behave
+      unchanged without being touched.
+
+220b. VERIFIED BIT-IDENTICAL AT THE DEFAULT, AND THE KNOB VERIFIED
+      AGAINST THE MODULE-TREE HACK IT REPLACES.  One binary, the
+      direction count switched through Accuracy, against the two
+      separately built trees of 219b:
+          beta   dirs=50 (this build)   previously measured
+          0.00      0.000000e+00          0.000000e+00
+          0.35      1.888994e-06          1.888994e-06
+          0.50      6.843735e-05          6.843735e-05
+          0.70      3.554639e-04          3.554639e-04
+          beta   dirs=194 (this build)  219b's 194-tree
+          0.35      1.415531e-06          1.415531e-06
+          0.50      3.047466e-06          3.047466e-06
+          0.70      1.228853e-04          1.228853e-04
+      Both columns reproduce to the last digit, so the default path is
+      unchanged and the new field does exactly what rebuilding the
+      module tree did.
+
+220c. THE SUITE PASSES.  make validation-small: 62/62 enforced checks,
+      algebraic identities 25/25, numerical regressions 20/20,
+      convergence checks 10/10, independent balances 2/2,
+      physical-domain guards 5/5, verdict PASS.  The build is clean
+      under -Wall -Wextra -Wpedantic.
+
+220d. README.  The passage on the far-field quadrature now records that
+      the resolution is reachable, carries 219a's dynamic-range and
+      error figures and 219b's factor of 22, and states the rule: a
+      caller that drifts the pair above about beta = 0.4, or that reads
+      the radiated four-momentum rather than only the trajectory,
+      should raise directionCount to 194 or 302.  The default stays 50
+      and is documented as staying 50.
+
+220e. LIMITS.  This exposes a knob; it does not change any default, so
+      every number the model has ever reported above beta = 0.4 still
+      carries 219a's quadrature error until its producer opts in.
+      Nothing here decides what the default OUGHT to be -- 194
+      directions cost roughly four times the flux evaluation, and no
+      measurement in this file weighs that against the accuracy it
+      buys on a production trajectory, whose own beta stays near
+      7e-03 in the outer inspiral where most of the time is spent.  The
+      verification in 220b is at one orbit, one radius and one step
+      count.  And the second change 219f implied -- whether
+      retentionTime should carry a gamma, which 219d showed it does not
+      -- is untouched.

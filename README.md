@@ -3607,6 +3607,23 @@ produkcyjnych 50 kierunków siatkę Fibonacciego. Reszta sumy wag wynosi
 \(5{,}51\cdot10^{-3}\) do \(8{,}59\cdot10^{-4}\) bez zwiększenia liczby
 próbek.
 
+Rozdzielczość tej kwadratury jest osiągalna przez
+`ClassicalTrajectoryEngine::Accuracy::farFieldSampling` i nie jest już
+zamrożona na wartości domyślnej. Ma to znaczenie ilościowe, gdy para niesie
+dryf: rozkład Liénarda zawiera \((1-\mathbf{n}\cdot\boldsymbol\beta)^{-k}\)
+do \(k=6\), którego zakres dynamiczny na sferze wynosi
+\(((1+\beta)/(1-\beta))^k\) — \(80\) przy \(\beta=0{,}35\), ale \(729\)
+przy \(0{,}50\) i \(3{,}3\cdot10^{4}\) przy \(0{,}70\). Zmierzony wobec
+całki ścisłej błąd względny reguły 50-punktowej na tym czynniku wynosi
+odpowiednio \(1{,}0\cdot10^{-6}\), \(5{,}7\cdot10^{-5}\) i
+\(4{,}7\cdot10^{-4}\); podniesienie do 194 kierunków zbiło zmierzoną resztę
+kowariancji boostowej przy \(\beta=0{,}50\) dwudziestodwukrotnie, z
+\(6{,}8\cdot10^{-5}\) na podłogę \(3{,}0\cdot10^{-6}\) (sekcje audytu
+219a–219b). Domyślna wartość pozostaje 50, więc zachowanie dotychczasowych
+wywołań jest niezmienione co do bitu; wywołanie, które dryfuje parę powyżej
+około \(\beta=0{,}4\) albo odczytuje wypromieniowany czteropęd, a nie samą
+trajektorię, powinno podnieść `directionCount` do 194 lub 302.
+
 Stabelaryzowanych reguł jest pięć — 26, 50, 110, 194 i 302 węzły, dokładne
 odpowiednio do stopnia 7, 11, 17, 23 i 29 — a siatka Fibonacciego pozostaje
 wyłącznie awaryjnie, dla liczebności spoza tej listy. Ma to znaczenie, bo
