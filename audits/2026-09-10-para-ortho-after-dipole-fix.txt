@@ -17202,3 +17202,145 @@ measurement of whether that survives a cascade.
       count.  And the second change 219f implied -- whether
       retentionTime should carry a gamma, which 219d showed it does not
       -- is untouched.
+
+221. THE KNIFE EDGE OF PHOTON GENERATION: k=2 OVERTAKES k=1 AT
+     e = 0.53998 AGAINST A PREDICTED 0.540055, THE LOW EDGE SCALES AS
+     beta^2 OVER A FACTOR 100 IN RADIUS -- AND 199d's beta^2 FLOOR IS
+     A LAUNCH ARTEFACT, NOT A PROPERTY OF THE MODEL
+==========================================================================
+
+221a. THE QUESTION AND TWO EDGES, BOTH PRE-REGISTERED.  199c/199d found
+      that a circular orbit radiates only the fundamental, its k=2
+      residual sitting at 3.3802e-05 with the moments on and 5.2869e-05
+      with them off, the latter equal to beta^2 = 5.3253e-05 at a_pair
+      to a ratio of 0.993, and that eccentricity switches the harmonics
+      on.  200c then validated the Bessel closed form against the model
+      to 2-8 parts in 1e4 and 200d showed Parseval holds exactly, so the
+      source transform IS the power spectrum.  The instrument is
+      therefore trustworthy and the edge is computable.  Two definitions
+      were written down before any orbit was integrated
+      (audits/data/section-221/pre-registration.txt):
+        EDGE A, where the Kepler harmonic overtakes the relativistic
+        floor, predicted at e_A = beta_rel^2/2 from the small-e limit
+        A2/A1 -> 2e, hence proportional to 1/r;
+        EDGE B, where k=2 overtakes k=1 in radiated power, solved from
+        the closed form at e_B = 0.540055, with k=3 at 0.599048.
+      One correction was made to that file BEFORE measuring: its first
+      version used the individual particle's beta^2 = K/(2 mu c^2 r)
+      rather than the relative one 199d measured, and came out a factor
+      two low.  The probe measures the circular floor itself at each
+      radius rather than taking it from the prediction.
+
+221b. THE INSTRUMENT, REBUILT AND CAUGHT BY ITS OWN SELF-CHECK.  199's
+      probes are three-line stubs in the archive, so the transform was
+      written again.  Its first run failed the self-check outright: at
+      e = 0 it read 5.49e-03 where 199d has 5.2869e-05, and it read
+      5.49e-03, 5.54e-03, 5.54e-03 for k = 2, 3, 4 -- FLAT, which is a
+      delta in time and not a spectrum.  The cause was sampling the
+      state before the first step: osculatingPeriapsisState leaves
+      firstAcceleration at its default zero, so one null sample sat in
+      the series and put a pedestal under every harmonic.  Advancing
+      first and recording after, the self-check passes: 5.29874e-05 at
+      e = 0 against 199d's 5.2869e-05 (0.22%), and 0.199623, 0.586654,
+      0.937052 at e = 0.10, 0.30, 0.50 against 199c's 0.19957, 0.58658,
+      0.93686 -- 0.01% to 0.05%.  The moments-ON column does not
+      reproduce 199d's 3.3802e-05; it reads 9.36e-05, because the
+      moment ORIENTATION governs it and 199d's is not recorded.  Edge A
+      uses the moments-off column, which is the pure beta^2 one.
+
+221c. EDGE B, CONFIRMED TO 1.4e-04.
+          ecc      k=2/k=1     k=3/k=1
+        0.5300     0.984712    0.818727
+        0.5350     0.992530    0.831794
+        0.5400     1.000306    0.844895
+        0.5450     1.008038    0.858024
+        0.6000     1.090152    1.003727
+      The crossing is at e = 0.53998 against a predicted 0.540055, and
+      k=3 crosses at about 0.5998 against 0.599048.  Both land inside
+      200c's 2-8e-04 band, so the closed form and the model agree on
+      where the spectrum's weight leaves the fundamental.
+
+221d. EDGE A, MEASURED, AND IT SCALES EXACTLY AS beta^2.  Moments off,
+      k=2 amplitude in units of the measured circular floor:
+          e/beta^2     a_pair    0.01 a_pair
+             0.10       1.000       1.000
+             0.25       1.000       0.999
+             0.50       1.000       0.998
+             1.00       1.000       0.991
+             2.00       3.060       3.328
+             4.00       8.253       9.332
+            10.00      20.792      23.837
+      The two radii differ by a factor 100 and their columns agree to
+      within 15% everywhere, so the edge is at e of order beta^2 and its
+      1/r scaling is confirmed.  But the shape is not what EDGE A
+      predicted: at e = beta^2/2 the Kepler contribution 2e already
+      EQUALS the floor, so even an incoherent sum would read 1.41.  It
+      reads 1.000 to four digits.  The harmonic is absent, not masked.
+
+221e. WHY: THE ORBIT DOES NOT CARRY THE ECCENTRICITY IT IS GIVEN.
+      Measured directly from the separation over one radial period, at
+      a_pair:
+          e imposed      e realized     realized/imposed
+          0.00000e+00   1.37269e-05        (0.258 beta^2)
+          6.65642e-06   1.37269e-05            2.062
+          1.33128e-05   1.37269e-05            1.031
+          2.66257e-05   1.37269e-05            0.516
+          5.32514e-05   1.37269e-05            0.258
+          1.06503e-04   6.85263e-05            0.643
+          2.66257e-04   2.63845e-04            0.991
+      The realized eccentricity is pinned at 1.37269e-05 -- identical to
+      five digits -- for every imposed value below it, and only tracks
+      the imposed one above.  There is no eccentricity below 0.258
+      beta^2 to make a harmonic from, which is exactly why 221d's
+      column does not move.
+
+221f. AND THAT FLOOR IS A LAUNCH ARTEFACT, WHICH REFINES 199d.  A
+      Coulomb-circular launch is not circular in a potential carrying
+      O(beta^2) corrections, so it oscillates radially.  Scanning the
+      launch speed about the Coulomb value, at a_pair, moments off:
+          v/v_Coulomb    e realized   /beta^2         k=2
+          0.999973374   4.025716e-05   0.7560   1.353041e-04
+          0.999986687   1.363841e-05   0.2561   4.118558e-05
+          0.999993344   7.455527e-07   0.0140   6.141424e-06
+          1.000000000   1.373902e-05   0.2580   5.301211e-05
+          1.000013313   4.036259e-05   0.7580   1.471331e-04
+          1.000053251   1.202467e-04   2.2581   4.295267e-04
+      At 1 - 0.125 beta^2 the realized eccentricity falls eighteenfold
+      to 0.0140 beta^2 and the k=2 amplitude falls 8.6-fold to
+      6.141e-06, and across the whole scan k=2 tracks the realized
+      eccentricity at a constant 3.55 to 3.86 times it.  So 199d's
+      reading -- that the circular k=2 residual "is the relativistic
+      correction and nothing else" -- is right about the SCALING and
+      wrong about the origin: it is ordinary eccentric radiation from a
+      real residual eccentricity that the launch convention imposes,
+      and correcting the launch removes most of it.  The beta^2
+      proportionality survives; the coefficient 0.258 does not.
+
+221g. A PROBE DEFECT WORTH RECORDING.  The first version of 221f built
+      its states through osculatingPeriapsisState with elements
+      {-k/2a, sqrt(ka) s0}.  For s0 > 1 that pair has discriminant
+      1 - s0^2 < 0 -- more angular momentum than the energy allows --
+      and the helper defends itself rather than failing, returning a
+      state that is not the one asked for.  The symptom was a realized
+      eccentricity pinned at 1.3726e-05 for every s0 > 1 while the k=2
+      amplitude grew fourfold, which cannot both be true.  221f builds
+      the state directly.
+
+221h. LIMITS.  Reaction is off throughout, matching 199c, so nothing
+      here is a radiating orbit; 221d and 221f are one semi-major axis
+      each except where two are stated, one moment orientation, and one
+      sample count.  221f's minimum is bracketed by three points and is
+      not resolved -- 6.141e-06 is where the scan landed, not a measured
+      floor, and whether a finer scan reaches zero or stops somewhere is
+      untested.  The constant 3.55 relating k=2 to the realized
+      eccentricity does not match the 2e of the small-e Bessel limit,
+      by a factor 1.78 that is not explained; the likely cause is that
+      (r_max - r_min)/(r_max + r_min) over a COULOMB period is not the
+      Kepler eccentricity of a distorted orbit, but that is a guess.
+      221c is at a_pair only and the crossing was located by
+      interpolation between two rows rather than by a root find.  And
+      the whole section speaks about the model's harmonic content, not
+      about photons: nothing here counts a quantum, and the bridge from
+      "the k-th harmonic is present" to "a Delta n = k transition can
+      occur" is the correspondence argument of 198-199, which is
+      classical throughout.

@@ -1,0 +1,48 @@
+PRE-REGISTERED, audit 221, before any orbit was integrated.
+
+199c/199d established that a circular orbit radiates only the
+fundamental, its k=2 residual being 3.3802e-05 with the moments
+on and 5.2869e-05 with them off, the latter equal to beta^2 =
+5.3253e-05 at a_pair to a ratio of 0.993 -- i.e. the 'harmonic'
+of a circular orbit is the relativistic correction and not
+Kepler geometry.  200c then validated the Bessel closed form
+against the model to 2-8 parts in 1e4.  So the edge is sharp
+and computable.  TWO definitions, both registered here.
+
+EDGE A -- where the Kepler harmonic overtakes the relativistic
+floor, i.e. where the k=2 content stops being beta^2 and starts
+being eccentricity.  Small-e expansion of the Bessel form gives
+A2/A1 -> 2e, so the crossing is at
+    e_A = beta_rel^2 / 2,  beta_rel^2 = K/(mu c^2 r),
+hence e_A proportional to 1/r: the edge moves UP as the orbit
+tightens.  Predicted, with the moments off:
+    r =  1.000000 a_pair   beta_rel^2 = 5.3251e-05   e_A = 2.6626e-05
+    r =  0.100000 a_pair   beta_rel^2 = 5.3251e-04   e_A = 2.6626e-04
+    r =  0.010000 a_pair   beta_rel^2 = 5.3251e-03   e_A = 2.6626e-03
+    r =  0.001826 a_pair   beta_rel^2 = 2.9156e-02   e_A = 1.4578e-02
+With the moments ON the floor is 3.3802e-05 instead, a factor
+0.635 lower, so e_A should drop by the same factor.
+
+EDGE B -- where the second harmonic overtakes the fundamental
+in radiated power.  Parseval holds (200d), so the amplitude
+ratio squared IS the power ratio and the crossing is A2/A1 = 1.
+Solved from the closed form:
+    e_B = 0.540055
+and for the third and fourth harmonics against the fundamental:
+    k = 3 overtakes k = 1 at e = 0.599048
+    k = 4 overtakes k = 1 at e = 0.638715
+    k = 5 overtakes k = 1 at e = 0.668015
+
+PREDICTION.  The model reproduces e_B to the 2-8e-04 of 200c,
+and reproduces e_A's 1/r scaling.  Edge A is the physically
+interesting one: below it a Delta n = 2 transition has no
+classical analogue in this model at all, because what sits at
+k = 2 is a relativistic correction to a Delta n = 1 orbit.
+
+CORRECTION made before any orbit was integrated: the first version
+of this file used beta^2 = K/(2 mu c^2 r), which is the individual
+particle's, and came out a factor two below 199d's 5.3253e-05.  The
+quantity 199d measured is the RELATIVE beta, K/(mu c^2 r).  The
+probe measures the circular floor at each radius directly rather
+than taking either from this file, so the closed form is a
+prediction to be checked and not an input.
