@@ -16490,3 +16490,137 @@ measurement of whether that survives a cascade.
       are an open defect that the curve's parameters were fitted
       WITHOUT, which means those parameters are conditional on a removal
       that has no mechanism behind it.
+
+215. WHERE THE PARA-ORTHO DIFFERENCE ACCUMULATES: NOT AT a_pair, WHERE
+     211d LOOKED, BUT BETWEEN 0.1 AND 0.5 a_pair -- THE SIGN CLOSES,
+     THE MAGNITUDE DOES NOT, AND THE INTEGRAND WAS NOT WHAT I READ
+==========================================================================
+
+215a. THE TOOL AND THE TASK.  211d found that the sign of the collapse-
+      time split does not follow from the local E1 split at the starting
+      radius, and left the mechanism unknown.  212 supplied the right
+      instrument -- the orbit-AVERAGED quantity rather than the
+      instantaneous one that 201d used and 203 withdrew.  The collapse
+      time is t = integral of dE/P over the inspiral, so the question
+      "where does the difference accumulate" is answered by measuring
+      P(r) and E(r) for both quantized channels on the model's own
+      resolved orbits and integrating.  Eighteen radii from a_pair to
+      the Compton barrier, at delta = 60 deg (on 214e's flat positive
+      branch) and delta = 160 deg (on its negative branch), with a third
+      channel duplicating para as a null.  The null reads exactly
+      0.000e+00 at every radius in both runs.
+
+215b. THE INTEGRAND IS NOT WHAT THE COMMENT NEXT TO IT COMPUTES.  The
+      measuredDelta lambda in crem_collapse.hpp takes the difference of
+      conservativeParticleEnergy across the measurement orbit and
+      subtracts a reaction-disabled background run, and its surrounding
+      comment explains at length why.  That is the ANGULAR MOMENTUM
+      channel.  The energy channel is replaced at line 3213 with
+        deltaEnergyPerOrbit = -run.finalState.orbitalRadiatedEnergy/mu,
+      the E1 far-zone flux with M1 already excluded and no background
+      subtraction at all.  A first version of this probe used
+      measuredDelta for both.  It reproduced the estimator's checkpoint-0
+      dL/L to six figures (-8.13554e-07 against the estimator's own
+      -8.13548e-07) while its dE/E came out 1.62710e-06 against
+      3.35404e-06 -- a factor 2.06 -- and its integrated collapse time
+      was 6.49e-11 s against the estimator's 3.10e-11.  Running the
+      estimator under CREM_DEBUG is what pinned it: the debug line
+      prints the orbitalRadiatedEnergy the dE/E was built from.  This is
+      192's failure again in a different sector: I read the recipe from
+      the comment beside the value instead of following where the value
+      goes.
+
+215c. WITH THE RIGHT INTEGRAND THE MODEL REPRODUCES THE COLLAPSE TIME.
+      dE/E at a_pair is now 3.33448e-06 against the estimator's
+      3.35404e-06 (0.6%), dL/L unchanged at six figures, and integrating
+      dE/P from a_pair to the barrier gives t_para = 3.064e-11 s at
+      delta = 60 and 3.078e-11 s at delta = 160, against the estimator's
+      3.100e-11 s -- 1.2% and 0.7%.  So a quasi-circular orbit-averaged
+      model, built entirely from the model's own measured per-orbit
+      quantities, is an adequate description of the inspiral.  That it
+      is quasi-circular is measured and not assumed: dL/L = -(1/2) dE/E
+      holds to five figures at every radius down to 0.5 a_pair, where
+      89% of the collapse time is spent.
+
+215d. AND IT REPRODUCES THE SIGN AT BOTH ANGLES.
+          delta        predicted        measured (214e)
+           60 deg     +1.4604e-02        +1.1300e-03
+          160 deg     -3.9233e-03        -5.0000e-05
+      Both signs are right, including the reversal between the two
+      branches of 214e's curve.  The mechanism is therefore in the
+      orbit-averaged radiated power, which is what 212's tool measures
+      and what 201d's instantaneous split could not see.
+
+215e. WHERE IT ACCUMULATES -- THE ANSWER.  Integrating inward from
+      a_pair, as a percentage of each total:
+                        delta = 60            delta = 160
+        r/a_pair    cum t     cum dt      cum t     cum dt
+          0.70      67.32       0.01      67.02       0.48
+          0.50      88.79      22.85      88.39       0.87
+          0.35      96.47      60.00      96.14      28.67
+          0.25      98.79      81.11      98.57      42.71
+          0.15      99.79      94.15      99.67      66.14
+          0.10      99.95      98.04      99.89      87.80
+          0.05     100.00      99.98      99.99      99.81
+      The collapse TIME is made outside: two thirds of it above 0.70
+      a_pair, 89% above 0.50.  The DIFFERENCE is made far inside: at
+      delta = 60 only 0.01% of it exists by 0.70 a_pair and 23% by 0.50,
+      half of it is generated between 0.35 and 0.25, and it is complete
+      by 0.10; at delta = 160 it is deeper still, 0.9% by 0.50 and 88% by
+      0.10.  The two distributions barely overlap.
+
+215f. WHICH RESOLVES 211d.  211d measured the local E1 split at the
+      starting radius, found it did not predict the sign, and concluded
+      the mechanism was unknown.  It is now clear why that test could
+      not work: at r = a_pair the split contributes 0.01% of the total
+      difference.  211d was not using the wrong quantity -- 215d shows
+      the orbit-averaged version of exactly that quantity does carry the
+      sign -- it was evaluating it at a radius where the effect does not
+      yet exist.  The difference is made three to ten times further in.
+
+215g. PRECESSION DOES NOT DILUTE IT, MEASURED.  The probe holds delta
+      fixed along the whole inspiral while the estimator advances the
+      spin at every checkpoint (its debug prints "coupled spin-orbit
+      half substeps=69 maxAngle=0.05"), so a washing-out of delta was
+      the obvious reason the prediction might overshoot.  It is not:
+      over one orbit the moment turns by 0.0047 deg at a_pair rising to
+      0.0154 deg at 0.05 a_pair, and delta itself reads 60.0000 deg at
+      the end of the orbit at every radius tested.  The precession is
+      azimuthal about the orbit normal, which is the one rotation that
+      leaves delta alone, so the fixed-delta assumption is sound.
+
+215h. THE MAGNITUDE IS NOT ESTABLISHED: THE ONE-PERIOD WINDOW CARRIES A
+      START TRANSIENT.  Measuring the same radius over one, two and four
+      periods:
+          r/a_pair      1 period     2 periods     4 periods
+            0.50      -3.8886e-02   -2.5815e-02   -1.3357e-02
+            0.35      -1.0894e-01   -7.9965e-02   -4.2466e-02
+            0.25      -1.3120e-01   -1.1149e-01   -6.1132e-02
+            0.15      -2.1491e-01   -1.9299e-01   -1.1065e-01
+      Every row roughly halves as the window doubles, which is what a
+      fixed one-off contribution divided by the elapsed time does.
+      Extrapolating P itself as P_inf + A/n at r = 0.50 gives
+      1.868e-07 W for para and 1.868e-07 W for ortho, i.e. dP/P about
+      -1.6e-04 against the -3.9e-02 the one-period window reports: a
+      factor of order 240.  So the 12.9x and 78x by which 215d overshoots
+      are consistent with a transient-dominated split, and nothing here
+      fixes the size of the effect.  What this does NOT explain is why
+      the estimator, which uses the same one-period window, measures
+      1.13e-03 where the same window here gives 1.46e-02; that gap is
+      open.
+
+215i. LIMITS.  Two values of delta and one preparation, the circular
+      orbit at a_pair.  The dP/P table has outliers inside exactly the
+      band that carries the difference -- the delta = 60 row at r = 0.025
+      reads +3.65 among neighbours near -0.3, and delta = 160 is erratic
+      between 0.05 and 0.15 a_pair -- so 215e's percentages are the
+      shape of the accumulation, not precise quantiles, and they inherit
+      215h's convergence failure besides.  The 1/n form fitted in 215h
+      is assumed from the halving, not derived, and it is fitted at one
+      radius.  215c's agreement with the estimator is at checkpoint 0
+      only; nothing here checks that the agreement survives down the
+      inspiral, and the probe's launched state is the COULOMB circular
+      orbit rather than each channel's own, which the dipole force
+      displaces.  Finally, the probes archived for sections 193, 211 and
+      212 are three-line header stubs with no code, so 212's orbit
+      average could not be reused and was rebuilt here from scratch.
