@@ -16368,3 +16368,125 @@ measurement of whether that survives a cascade.
       average over a uniform sphere, which is the model's sampling
       choice, not a statement that physical positronium is prepared that
       way.
+
+214. THE TWENTY-FOUR SEEDS REPEATED AT A QUARTER OF THE STEP: 213's
+     ERROR BAR WAS HONEST, ITS cos delta CURVE IS REAL AND SHARPENS
+     UNDER REFINEMENT, AND I PREDICTED THE OPPOSITE
+==========================================================================
+
+214a. THE RUN.  213h recommended the twenty-four seeds be redone at
+      s_max <= 0.075 before anything is built on them, both for an
+      honest number and to decide whether 213h's own cos delta shape is
+      physics or the coarse step.  Four chunks of six seeds each against
+      the s_max = 0.075 module tree, about 55 minutes on four cores, no
+      censored rows.  Three outcomes were named in advance, in
+      audits/data/section-214/pre-registration.txt, written with the
+      chunks already running and no row of theirs yet seen: A the shape
+      survives, B the shape is gone, C the mean lands outside 213's
+      quoted interval.  I wrote that I expected B and not-C.  I was half
+      right, and wrong on the half that mattered.
+
+214b. THE NUMBER.  At s_max = 0.075 the mean is 6.9918e-04 with sd
+      7.3722e-04 and sem 1.5049e-04, t = 4.65, 19 of 24 positive,
+      against 9.2994e-04 / 1.4622e-03 / 2.9847e-04, t = 3.12, 22 of 24
+      at s_max = 0.30.  Outcome C fails: 6.9918e-04 lies inside 213's
+      two-sem interval [3.3299e-04, 1.5269e-03], so that bar was honest.
+      The effect became MORE significant under refinement, not less --
+      the mean fell by 25% but the sd halved.  It is still not
+      converged: fitting A + B s^p with the order p = 0.746 that 213f
+      measured on seed 1's three points extrapolates to 5.73e-04, so the
+      number to carry forward is "of order 6e-04, still drifting down".
+
+214c. THE ARTEFACT CONVERGES ROUGHLY AS ADVERTISED.  Range over mean:
+                        s=0.30       s=0.075      factor   step factor
+          para       5.4345e-03    1.5377e-03      0.283        0.25
+          ortho      6.2579e-03    2.5916e-03      0.414        0.25
+      Para's discreteness is first order in the step, as 213f said from
+      four seeds; ortho's converges more slowly and is the larger of the
+      two at the finer step, which reverses 211's original impression
+      for a reason that is now measured rather than guessed.
+
+214d. OUTCOME A, AND MY PREDICTION WAS WRONG.  Spearman rho between the
+      ratio and delta:
+                          s=0.30     s=0.075
+          all 24 seeds    -0.871      -0.914
+          delta > 90      -0.943      -0.982   (n=15)
+          delta < 90      +0.300      -0.133   (n= 9)
+      Every figure sharpens with refinement.  A coarse-step artefact
+      does not become more strongly ordered in a physical angle when the
+      step is cut fourfold; the trend is in the model, not in the
+      integrator.  213h's shape stands, and outcome B -- which I
+      expected on the strength of four seeds whose amplitudes had moved
+      -- is refuted.  What had moved was the amplitude, and I read it as
+      the shape.
+
+214e. THE SHAPE, QUANTIFIED.  Setting aside the five seeds of 214f:
+        delta < 90 (n=6):  flat at 1.1307e-03, sd 7.8251e-05, i.e. 6.9%
+        delta > 90 (n=13): ratio = 9.5520e-04 + 1.2327e-03 cos(delta),
+                           R^2 = 0.9445, zero at delta = 140.8 deg
+      The two branches join: the fit's value at cos delta = 0 is
+      9.5520e-04 against the flat branch's 1.1307e-03, and seed 15 at
+      delta = 90.20 measured 1.0713e-03, between them.  But the line does
+      NOT continue below 90 -- extrapolated to seed 9's cos delta =
+      0.749 it predicts 1.88e-03 against 9.96e-04 measured -- so the
+      curve saturates for cos delta > 0 rather than being linear
+      throughout.  That asymmetry about 90 deg is the whole point: an
+      orbit-averaged dipole-dipole term goes as 1 - (3/2) sin^2 delta,
+      which is symmetric about 90 deg, and this is not.  What the ratio
+      depends on is the SIGN of the moment's projection on the orbital
+      angular momentum, which is spin-orbit in character.  Ortho
+      collapses more slowly than para when the moment has any component
+      along L, by a nearly constant 1.13e-03; the advantage falls away
+      as the moment turns against L and reverses past 141 deg.
+
+214f. FIVE SEEDS STILL STAND OFF THE CURVE, AND IT IS NOT A DIFFERENT
+      TERMINATION.  Seeds 1, 8, 17 and 20 sit about 0.8e-03 above the
+      curve (1.7238, 1.7974, 1.9190, 1.9232 e-03) and seed 13 sits below
+      it (-6.9157e-04).  They are the same five as at s_max = 0.30,
+      where the first four formed a tighter cluster at 3.646-3.750e-03,
+      so membership is step-independent while the offset is not.  Their
+      delta are 95.60, 43.56, 66.21, 53.53 and 164.35 and their azimuths
+      7.57, -50.39, -118.58, 75.87 and 133.75 degrees: no pattern in
+      either.  The excess is in the ortho column, not para -- seed 1's
+      para is the lowest of all twenty-four but by only 8.4e-05
+      relative, far too little to make 8.7e-04 of ratio.  And they do
+      not terminate differently: the product of mean power and lifetime
+      in the ortho channel reads 2.9311, 2.9315 and 2.9306 e-17 J for
+      seeds 8, 17 and 20 against 2.9304, 2.9317 and 2.9314 e-17 J for
+      main-branch seeds 2, 9 and 13, which is the same number.  So the
+      offset is not a different stopping radius, and it remains
+      unexplained.  The twenty-four-seed mean in 214b therefore keeps
+      them: there is no measured ground to drop them on.
+
+214g. A CORRECTION TO 213e.  213e wrote that the mean power carries no
+      independent information because <P> times lifetime was 3.745e-17 J
+      to one part in 1e-04 across seven seeds.  Those seven were all
+      PARA runs, and the ortho channel does not behave that way: over
+      eight seeds its <P> takes at least three values -- 9.52 to
+      9.55e-07 W for six of them, 1.21684e-06 for seed 1 and 1.55728e-06
+      for seed 3 -- giving products of 2.931, 3.745 and 4.780 e-17 J.
+      The product is uniform within the para channel and not across the
+      model.  213e's conclusion survives (the discreteness is not the
+      power, and it is not the photon count, which is zero), but the
+      reason given for it was generalised from one channel and is
+      withdrawn.  The most likely reading of the three <P> values is the
+      one-orbit measurement window landing at different radii, a factor
+      1.276 in power being a factor 1.063 in radius at P ~ r^-4, but
+      that is an inference and no window radius was read out.
+
+214h. LIMITS.  The mean is still falling with the step and 214b's
+      extrapolation borrows an order measured on a single seed, so
+      6e-04 is a bound on the drift and not a converged value; only two
+      steps exist for the full ensemble, which is not enough to fit an
+      order of its own.  214e's linear fit is 13 points over one
+      hemisphere and its R^2 of 0.9445 is against a straight line chosen
+      by eye from 213h, not against any derived form -- the saturation
+      below 90 deg in particular is described, not modelled.  The zero
+      crossing moved from about 143 deg at s_max = 0.30 to 140.8 deg at
+      0.075, so it is not converged either.  Everything remains the one
+      preparation of 213b, the circular orbit at exactly a_pair with a
+      uniformly sampled moment direction, so the ensemble mean is an
+      average over the model's sampling choice; and 214f's five seeds
+      are an open defect that the curve's parameters were fitted
+      WITHOUT, which means those parameters are conditional on a removal
+      that has no mechanism behind it.

@@ -1,0 +1,43 @@
+2026-09-26T09:12:14+02:00
+PRE-REGISTERED, audit 214, written with the four s=0.075 chunks running
+and none of their rows yet seen beyond the four of 213f.
+
+WHAT 213 LEFT.  At s_max = 0.30 the 24-seed mean was 9.2994e-04 (sem
+2.9847e-04), and with five seeds set aside as step artefacts (1, 8, 17,
+20, 13) the remaining nineteen looked like a function of cos delta:
+flat near 1.0-1.25e-03 below delta = 90 deg, decaying monotonically to
+zero between 90 and 145 deg.  213h called that a shape to test.
+
+THE FOUR SEEDS ALREADY MEASURED AT s=0.075 DO NOT SIT ON IT.  Against
+what the s=0.30 curve predicts at their own delta:
+    seed  delta    curve at s=0.30    measured at s=0.075
+       8  43.56        ~1.0e-03            1.7974e-03
+      15  90.20         8.80e-04           1.0713e-03
+       1  95.60        ~9.0e-04            1.7238e-03
+      13 164.35        ~4.0e-05           -6.9157e-04
+Three of four came out ABOVE the curve and seed 13 far below it, so
+refinement does not simply pull the outliers down onto a fixed curve --
+the curve itself moves.
+
+THREE OUTCOMES, named in advance.
+  A. The cos delta shape survives with a shifted amplitude: the 24 rows
+     at s=0.075, sorted by delta, are again monotone from 90 to 145 deg
+     with at most one or two exceptions, and seeds 1, 8, 17, 20 are no
+     longer separable as a cluster.  Then the shape is physical and 213h
+     stands, with its amplitude remeasured.
+  B. The shape is gone: the s=0.075 ratios show no monotone trend in
+     delta (Spearman |rho| over 90-180 deg below about 0.5).  Then 213h
+     was an artefact of the coarse step and must be withdrawn, and the
+     only surviving claim is the sign and order of magnitude of the mean.
+  C. The mean itself moves outside 213's error bar, i.e. the s=0.075
+     mean lands outside 9.2994e-04 +- 2 x 2.9847e-04 = [3.3e-04,
+     1.53e-03].  213f's four-seed mean moved from 1.4514e-03 to
+     9.7523e-04 on the same refinement, so a move is expected; C is
+     about whether 213's quoted interval was honest, and it fails if the
+     new mean lands outside it.
+Outcomes A/B and C are independent: either can happen with either.
+
+I EXPECT B and not-C: the four points above already break the curve's
+amplitude, and the ensemble mean was much more stable under refinement
+than any individual seed (213f: sd fell from 2.9332e-03 to 1.1581e-03
+while the mean moved by a third of that).
