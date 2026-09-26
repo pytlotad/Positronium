@@ -16624,3 +16624,167 @@ measurement of whether that survives a cascade.
       displaces.  Finally, the probes archived for sections 193, 211 and
       212 are three-line header stubs with no code, so 212's orbit
       average could not be reused and was rebuilt here from scratch.
+
+216. THE TWO TESTS README SAYS ARE MISSING, BUILT AND RUN: THE
+     HYPERSURFACE INTEGRAL PASSES TO 1e-05 AND SHOWS boundFieldEnergy
+     IS A RESIDUAL; THE COVARIANCE RESIDUAL DOES NOT GO TO ZERO
+==========================================================================
+
+216a. WHAT WAS ASKED.  README states that what is quantitatively
+      trustworthy are the single-operator unit tests at the stated
+      resolution, while long-time trajectories, radiation, radiation
+      reaction, the para/ortho classification and the behaviour at the
+      cutoff are outputs of the adopted model needing a convergence and
+      sensitivity analysis of their own, and that without an independent
+      stress-energy integral on a common hypersurface and a covariance
+      test tending to zero with step and resolution they may not be read
+      as predictions.  Both tests are now built and run.  No audit file
+      had touched a stress-energy integral before; the covariance
+      figures README quotes -- 9.89e-16 for one Lienard-Wiechert field,
+      1.10e-06 for the boosted force, 6.99e-04 improved to 4.06e-06 for
+      the radiated four-vector -- are single numbers at one
+      configuration, and a number is not a convergence claim.
+
+216b. FIRST, WHAT boundFieldEnergy ACTUALLY IS.  crem_trajectory.hpp:672
+      sets
+        boundFieldEnergy = (E_particle + E_rad + E_bound)_before
+                           - E_particle(now) - E_rad(now)
+      and boundFieldMomentum and boundFieldAngularMomentum the same way.
+      They are the residuals that close the balance, defined so that it
+      closes.  The conservation the model reports for them therefore
+      cannot fail and carries no information.  This is not a defect of
+      the arithmetic -- it is a correct way to carry an unmodelled
+      remainder -- but it does mean the balance is a tautology until
+      something independent measures the field's own energy.
+
+216c. TEST B: THE HYPERSURFACE INTEGRAL, AND IT PASSES.  On a t = const
+      slice of an evolved orbit the CROSS (interaction) part of the
+      field's stress-energy is integrated directly from the retarded
+      fields the model produces at arbitrary points:
+        u_x = eps0 E1.E2 + B1.B2/mu0,  g_x = eps0 (E1 x B2 + E2 x B1).
+      The cross part is the piece that is finite with no self-energy
+      regulator, and in the static limit it has an exact value over a
+      ball of radius R about the pair, -K(1/d - 1/R), so the probe is
+      checked against a closed form before it judges anything.  At
+      0.250058 a_pair, where beta^2 = 5.3e-05 is below the quadrature
+      error:
+        radial  angular   s_in/d  s_out/d   measured/exact   rejected
+           200       50    1e-04    1e+02      1.00000           0
+           400       50    1e-04    1e+02      1.00000           0
+           800       50    1e-04    1e+02      1.00000           0
+          1600       50    1e-04    1e+02      1.00000           0
+           800       26    1e-04    1e+02      1.00400           0
+           800      194    1e-04    1e+02      0.99999           0
+           800      302    1e-04    1e+02      0.99999           0
+           800      194    1e-06    1e+02      0.99999           0
+           800      194    1e-04    1e+01      1.00036           0
+           800      194    1e-04    1e+03      0.99998           0
+      Converged in all four grid parameters, with 26 angular nodes the
+      only under-resolved case, and no node rejected anywhere.
+
+216d. TWO GEOMETRIC CONSTRAINTS THE TEST IMPOSES, BOTH FINDINGS.  The
+      first two designs failed and the reasons are structural.  (1) A
+      CAUSAL HORIZON: evaluating a retarded field at distance R needs
+      history reaching back R/c, and past that the solver extrapolates
+      and the integral diverges outright -- at s_out = 1e6 d it returned
+      +2.9e+02 J for a -8.7e-18 J quantity.  A hypersurface integral is
+      bounded by c times the history duration, here 215 d after half an
+      orbit.  (2) A single grid about the centre of mass cannot resolve
+      the two 1/s^2 singularities: masking balls around the charges gave
+      0.82 to 1.40 of the exact value with no convergence in either node
+      count.  A Becke partition of unity, one grid per charge, makes the
+      measure s^2 ds cancel each singularity exactly, needs no mask, and
+      is what produces 216c.
+
+216e. WHAT THE INTEGRAL SAYS ABOUT THE BOOKKEEPING.  At the measured
+      instant the independent interaction field energy is -8.630e-18 J,
+      which is -K/d; conservativeParticleEnergy reads -4.359e-18 J,
+      which is -K/(2d), i.e. the circular-orbit sum of +K/2d kinetic and
+      -K/d potential.  So the field side and the particle side agree on
+      the interaction energy, and it is not double counted.  What
+      boundFieldEnergy reads at the same instant is 3.476e-24 J -- six
+      orders of magnitude below the field energy its name suggests.  It
+      is not the bound field's energy in any T^{00} sense; it is the
+      retardation-and-radiation remainder of 216b, and the name
+      oversells it.
+
+216f. TEST A: THE COVARIANCE RESIDUAL, AND IT DOES NOT GO TO ZERO.  The
+      observable is the far-zone flux four-vector rate dP^mu/dt,
+      computed in the pair's rest frame and in a frame boosted along the
+      ORBIT NORMAL.  That axis is exact rather than convenient: the
+      orbit lies in z = 0, so both charges sit at z = 0 at t = 0 and a
+      z-boost maps both to t' = 0, which makes the boosted initial data
+      the honest Lorentz transform of the rest data instead of an
+      approximation to it.  Residual = |measured - Lambda(rate)/gamma|
+      over |predicted|, at beta = 0.35:
+          tolerance  dirs  radOnly  R/R0    residual
+            1e-05     50      0       1    6.632656e-05
+            1e-06     50      0       1    6.632656e-05
+            1e-07     50      0       1    6.632656e-05
+            1e-08     50      0       1    3.556318e-05
+            1e-09     50      0       1    3.310739e-05
+            1e-10     50      0       1    3.271854e-04
+            1e-08     26      0       1    3.918499e-03
+            1e-08    194      0       1    4.380604e-05
+            1e-08    302      0       1    4.950966e-05
+            1e-08     50      1       1    3.554998e-05
+            1e-08    194      1       1    4.377779e-05
+            1e-08     50      0     100    3.555006e-05
+            1e-08    194      1     100    4.377771e-05
+      The resolution axis improves by a factor 110 from 26 to 50
+      directions and then FLOORS, worsening slightly at 194 and 302.
+      The step axis is flat from 1e-05 to 1e-07, gains a factor two by
+      1e-09, and gets an order of magnitude WORSE at 1e-10.  Restricting
+      the sampling to the radiation field changes the figure in the
+      fourth digit (3.554998e-05 against 3.556318e-05) and multiplying
+      the control radius by 100 changes it in the seventh.  So the floor
+      is neither near-field contamination nor the finite sphere.
+
+216g. THE FLOOR'S BOOST SCALING, WHICH DOES NOT NAME IT EITHER.
+            beta   residual      /beta^2    /beta^4
+            0.05   6.612e-06   2.645e-03   1.058e+00
+            0.10   7.591e-06   7.591e-04   7.591e-02
+            0.20   1.366e-05   3.416e-04   8.539e-03
+            0.35   3.556e-05   2.903e-04   2.370e-03
+            0.50   5.202e-05   2.081e-04   8.323e-04
+      Neither column is constant: the log-log slope from 0.10 to 0.50 is
+      1.20, and there is a floor near 6.6e-06 that persists to beta =
+      0.05 where a pure power would have fallen far below it.  A plain
+      geometric beta^2 artefact of the comoving control sphere is
+      therefore ruled out, and so is a clean higher power.  The 6.6e-06
+      is plausibly the irreducible difference between two independently
+      adaptively-integrated trajectories rather than non-covariance, but
+      that is an interpretation and it is not measured here.
+
+216h. THE ANSWER TO THE RECOMMENDATION.  The hypersurface integral is
+      built, validated against a closed form to one part in 1e-05, and
+      it converts the bound-field balance from a tautology into a
+      checked statement -- with the correction that the quantity named
+      boundFieldEnergy is not the field energy.  The covariance test is
+      built and it FAILS its own criterion: the residual does not tend
+      to zero with step and resolution, it sits on a floor of 3 to 5
+      e-05 at beta = 0.35 that four separate knobs do not move.  So the
+      recommendation's first half is now satisfied and its second half
+      is now measured to be unsatisfied, which is a better position than
+      before only because the number exists.
+
+216i. LIMITS.  One instant of one orbit at 0.25 a_pair for test B, and
+      one orbit, one radius and one boost axis for test A; neither is a
+      sweep over configuration.  Test B integrates only the CROSS part
+      of T^{0nu}, so the self-energy sectors -- where the model's
+      CovariantExtendedBody electromagnetic mass lives -- are untouched,
+      and the momentum density g_x was computed but is compared against
+      no closed form, so only the energy component is validated.  The
+      static closed form is exact only to O(beta^2), which is 5.3e-05
+      here and therefore inside the agreement being claimed; a test at
+      larger beta would separate them and has not been run.  Test A's
+      floor is unexplained, its step axis is non-monotonic in a way that
+      suggests the adaptive controller rather than the scheme, and the
+      comparison is between two separately integrated trajectories,
+      which sets a noise floor of its own that 216g can only guess at.
+      Finally, a caution about test A rather than about the model: the
+      first version of it had the boost sign backwards and returned a
+      flat 0.66 residual, unmoved by step or resolution -- which is
+      exactly what a gross covariance violation would look like. The
+      magnitudes agreeing to four digits while the vectors disagreed by
+      twice the z-component is what gave it away.
