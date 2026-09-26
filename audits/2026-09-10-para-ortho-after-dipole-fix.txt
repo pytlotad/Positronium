@@ -17550,3 +17550,88 @@ measurement of whether that survives a cascade.
       about the three-photon width, whose alpha dependence is one power
       higher and which the same argument would have to address
       separately.
+
+224. THE SAME TEST FOR ORTHO: THE IDENTITY DOES NOT EXTEND, AND THE
+     REASON IS THE ONE POWER OF alpha THE CLASSICAL INSPIRAL CANNOT
+     MAKE -- THE MODEL IS SHORT BY 1.6e+06 ON THE PARA/ORTHO RATIO
+==========================================================================
+
+224a. THE ARITHMETIC, FROM THE CODE'S CONSTANTS AS IN 223b.  The
+      three-photon width is
+        Gamma_3g = (2/(9 pi)) (pi^2 - 9) alpha^6 m c^2 / hbar,
+      so tau_3g = [9 pi/(2(pi^2 - 9))] lambda_C/(alpha^6 c) with the
+      coefficient 16.257009.  Measured off the model's own alpha:
+        t_inspiral      31.123549 ps     alpha^-5
+        tau_2gamma LO  124.494196 ps     alpha^-5
+        tau_3gamma LO  138.673807 ns     alpha^-6
+        tau_3gamma / t_inspiral  = 4455.5911
+        9 pi/(pi^2-9) / alpha    = 4455.5911   ratio 1.000000000000
+        tau_3gamma / tau_2gamma  = 1113.8978
+        9 pi/(4(pi^2-9)) / alpha = 1113.8978
+      The O(alpha) check passes on this channel too: the leading order
+      is short of the measured 142.05 ns by 2.4346% against a predicted
+      10.286 alpha/pi = 2.3893%, agreeing to 1.9% of itself.
+
+224b. AND THAT IS THE POINT: THE IDENTITY DOES NOT EXTEND.  223's
+      statement was that the SAME alpha^-5 governs the classical
+      inspiral and the two-photon width, so their ratio is a pure
+      number -- exactly 4, with no alpha in it.  For ortho that is
+      false.  The three-photon width carries alpha^-6 while the
+      inspiral still carries alpha^-5, because the inspiral is the
+      SAME orbit for both channels: 213b measured that the estimator
+      prepares one circular orbit at a_pair and that the seed sets only
+      the moment direction.  So the ortho ratio is not a pure number,
+      it is [9 pi/(pi^2 - 9)]/alpha, and the extra alpha^-1 comes from
+      the third vertex.  There is nothing in a classical inspiral that
+      makes a power of alpha out of a photon count.
+
+224c. WHICH IS WHERE THE MODEL'S GAP BECOMES A NUMBER.  Physics puts
+      the two channels a factor 1113.90 apart in lifetime.  The model
+      puts them 1 + 6.9918e-04 apart -- 214b's twenty-four-seed mean at
+      s_max = 0.075, the most carefully measured number in this file.
+      The shortfall is a factor 1.59e+06.  This is not a defect to fix
+      by tuning: the model produces ONE collapse time, which both
+      channels share because they share the orbit, while physics
+      produces two that differ by 1/alpha.  At most one of them can be
+      near the inspiral, and the one that is near it is para, to a
+      factor 4.
+
+224d. WHAT THIS DOES TO 223's READING.  It sharpens it rather than
+      weakening it.  223 established that alpha^-5 assembles itself out
+      of a^3/C with nobody writing it, and that stands unchanged --
+      224a re-verifies the same alpha and the same inspiral.  What 224
+      adds is that the factor 4 is a statement about the TWO-PHOTON
+      channel specifically and not about annihilation in general: the
+      three-photon channel, run through the identical argument, yields
+      no pure number at all.  So "the same power governs the classical
+      inspiral and the annihilation width" is true of para and false of
+      ortho, and the para case is the coincidence of a shared alpha
+      power rather than a general correspondence.
+
+224e. AND IT AGREES WITH WHAT 204, 205 AND 214 ALREADY FOUND, FROM A
+      NEW DIRECTION.  204 found the model carries the para/ortho
+      distinction as a label plus a separate channel draw rather than
+      as a rate; 214 measured the dynamical difference at 6.99e-04 with
+      a delta-dependent sign; 196-197 located the representational
+      defect in the coherent moment the model gives a configuration
+      that quantum mechanics does not.  224c is the same conclusion in
+      units of lifetime: the dynamical difference the model can produce
+      is six orders of magnitude below the physical one, and no amount
+      of work on the 7e-04 changes that, because the missing quantity
+      is a power of alpha and not a coefficient.
+
+224f. LIMITS.  Everything here is leading order on the quantum side and
+      taken from the literature; the model appears only through alpha,
+      lambda_C, a_pair and its own measured collapse time, and it is on
+      neither side of the O(alpha) comparisons in 224a.  The 6.9918e-04
+      of 224c is itself still drifting with the integration step
+      (214b's extrapolation gives about 5.7e-04), but no plausible
+      convergence changes a factor 1.6e+06.  224b's claim that the
+      inspiral is the same orbit for both channels is 213b's
+      measurement of this estimator at this preparation, not a
+      statement about classical inspirals in general -- a model that
+      gave the triplet a different orbit would have a different
+      argument to answer.  And nothing here addresses whether the
+      model's 3-photon channel gets the right BRANCHING, which is a
+      separate question that 204 and 205 took up and 209 measured at
+      0.04/(g alpha).
