@@ -17450,3 +17450,103 @@ measurement of whether that survives a cascade.
       the run was stopped there, so the crossover to the Bessel regime
       at larger e rests on 221d rather than on this table.  And
       everything remains reaction-off: none of these orbits radiates.
+
+223. THE alpha^-5 IDENTITY BETWEEN THE CLASSICAL INSPIRAL AND THE
+     2-GAMMA WIDTH, CHECKED FROM THE CODE'S OWN CONSTANTS AND AGAINST
+     THE MODEL'S OWN MEASURED COLLAPSE TIME
+==========================================================================
+
+223a. THE IDENTITY, WHICH IS THE AUTHOR'S AND WAS COMPUTED
+      INDEPENDENTLY OF THE CODE.  The quasi-circular Larmor inspiral of
+      a pair prepared at L = hbar has the closed form
+        t_inspiral = a_pair^3/(3C) = lambda_C/(2 alpha^5 c) = 31.1235 ps,
+      against the leading-order two-photon width
+        tau_2gamma = 2 hbar/(alpha^5 m c^2) = 2 lambda_C/(alpha^5 c)
+                   = 124.4942 ps,
+      so the SAME alpha^-5 governs both and the ratio is exactly 4.  The
+      non-tautology argument is that alpha enters the model in exactly
+      one place, as the coupling k = alpha hbar c, and the fifth power
+      assembles itself from a^3/C -- three from the radius, a ~
+      alpha^-1, and two from the Larmor coefficient, C ~ alpha^2.  What
+      follows is the check from the other side: the code's own
+      constants, and the model's own measured number.
+
+223b. VERIFIED FROM THE CODE'S CONSTANTS, TO FOURTEEN DIGITS.  Reading
+      alpha back out of the coupling the model actually uses,
+        alpha = pairCoulombStrength/(hbar c) = 0.007297352574,
+        1/alpha = 137.035999,
+        a_pair / (2 lambda_C/alpha) = 1.000000000000,
+        a_pair^3/(3C) with C = 4k^2/(3 mu^2 c^3)  = 31.123549 ps,
+        lambda_C/(2 alpha^5 c)                    = 31.123549 ps,
+        the ratio of those two                    = 1.00000000000000,
+        tau_2gamma = 2 lambda_C/(alpha^5 c)       = 124.494196 ps,
+        tau_2gamma / t_inspiral                   = 4.00000000000000.
+      Every figure in 223a reproduces.  The ratio is exactly four to
+      the last bit a double carries, which is what an identity looks
+      like as against a coincidence.  Against the measured para-Ps
+      lifetime of 125.164 ps the leading order is short by 0.5380%,
+      and the O(alpha) coefficient alpha(5 - pi^2/4)/pi is 0.5883% --
+      the right size and the right sign, agreeing to 9% of itself.
+
+223c. AND AGAINST THE MODEL'S OWN COLLAPSE TIME, WHICH IS THE PIECE
+      THAT CANNOT BE CHECKED FROM OUTSIDE THE CODE.  The estimator's
+      seed-1 para lifetime reads 30.664041 ps at s_max = 0.30 and
+      30.998994 ps at 0.075, and it is still rising with refinement.
+      Extrapolating A + B s^p at the order p = 0.746 that 213f measured
+      on seed 1's own three steps gives 31.183767 ps against the closed
+      form's 31.123549 ps, a gap of +0.19%.  The extrapolation is
+      order-sensitive and that has to be said: p = 0.5 gives 31.334 ps
+      (+0.68%), p = 1 gives 31.111 ps (-0.04%), p = 2 gives 31.021 ps
+      (-0.33%).  So the honest statement is that the model's measured
+      collapse time BRACKETS the closed form, with an extrapolation
+      uncertainty of a few tenths of a percent that exceeds the gap.
+      That is a real check: the full machinery -- retardation, Darwin,
+      dipole coupling, individual Landau-Lifshitz reaction, spin-orbit
+      transport -- reproduces the bare quasi-circular Larmor closed
+      form to within its own step convergence, which is not something
+      the closed form's derivation assumes.
+
+223d. THE STRUCTURAL CLAIM TESTED WHERE THE CODE ALLOWS IT.  If
+      t = hbar^6 c^3/(4 mu k^5) is structure rather than arithmetic, it
+      should survive changing the one ingredient that moves without
+      touching the coupling.  Across the pairs the model supports,
+      alpha, hbar and c fixed:
+        pair            mu/m_e    a_pair [fm]   closed [ps]  measured
+        positronium     0.5000     105835.44     31.123549   30.664041
+        true muonium  103.3841        511.86      0.150524    0.144052
+        protonium     918.0763         57.64      0.016950    censored
+      Over a factor 207 in reduced mass the predicted ratio is 206.768
+      and the measured one 212.869 -- agreement to 2.9%, with the
+      residual the two pairs' different step biases (positronium's
+      alone is 1.5% at this s_max).  Nothing in the model was told that
+      the collapse time goes as 1/mu.  Protonium is censored for a
+      mundane reason worth recording: its a_pair is 57.6 fm, only 5.8
+      nuclear cutoffs, so there is no inspiral left to measure.
+
+223e. WHAT IS ESTABLISHED AND WHAT IS NOT.  Established: the closed
+      form is exact in the code's own constants; the alpha^-5
+      decomposition is three powers from a_pair and two from the Larmor
+      coefficient, verifiable term by term from the definitions the
+      model uses; the ratio to the leading-order two-photon width is
+      exactly 4; the model's integrated dynamics reproduce the closed
+      form to within its step convergence; and the 1/mu structure
+      survives a factor 207.  NOT established, and correctly not
+      claimed by 223a: the factor 4 itself.  It is the entire distance
+      between a classical inspiral time and an annihilation rate, it is
+      not derived here or anywhere in this file, and naming it as that
+      distance rather than folding it into a fitted coefficient is what
+      keeps the statement about structure honest.
+
+223f. LIMITS.  223c rests on two step points and an order borrowed from
+      one seed; a third point would replace a bracket with a
+      measurement.  223d is two usable pairs, not three, and the 2.9%
+      is attributed to differing step bias without that bias having
+      been measured for muonium.  The comparison in 223b is against the
+      LEADING-ORDER width only; the model contains no QED correction
+      and the 0.54% agreement with the O(alpha) term is a comparison
+      between the literature's correction and the literature's measured
+      lifetime, with the model on neither side of it.  And the whole
+      section concerns the para channel: nothing here says anything
+      about the three-photon width, whose alpha dependence is one power
+      higher and which the same argument would have to address
+      separately.
