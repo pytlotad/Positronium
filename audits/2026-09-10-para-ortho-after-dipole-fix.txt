@@ -16889,3 +16889,119 @@ measurement of whether that survives a cascade.
       higher.  Finally the retraction in 217c is of a verdict, not of a
       measurement: every number in 216f and 216g stands, it is the
       conclusion drawn from them that does not.
+
+218. THE TWO BRANCHES DIAGNOSED: THE HISTORY NODE COUNT IS THE LABEL,
+     THE GATE IS retentionTime/128, AND ONCE BOTH FRAMES SIT ON THE
+     SAME RUNG THE beta = 0 NULL IS EXACTLY ZERO AND THE HIGH-beta
+     RESIDUAL SURVIVES -- 217f's STRADDLE HYPOTHESIS IS REFUTED
+==========================================================================
+
+218a. THE MECHANISM, READ FROM THE SOURCE AND THEN MEASURED.
+      electrodynamics.hpp:5743 commits a history node only when at
+      least retentionTime/targetHistoryNodes has elapsed since the last
+      committed one, with retentionTime = max(1e-20, 4 separation/c)
+      and targetHistoryNodes = 128; otherwise the leading edge is
+      overwritten in place and the grid is not densified.  Above
+      maximumHistoryNodes = 256 the history is decimated.  So the
+      retarded grid's spacing is pinned to the SEPARATION, not to the
+      integration step.  The code says why: storing one node per
+      accepted step ties the spacing to dt, and the Schott sector needs
+      a third derivative whose stencil divides by h^3, so halving dt
+      multiplies its round-off amplification by eight.  The cap is a
+      deliberate trade, not an oversight.
+
+218b. THE LADDER, MEASURED.  Quarter period at 0.25 a_pair, beta = 0,
+      tolerance 1e-8, retentionTime = 3.5303e-19 s and the gate
+      2.7580e-21 s:
+          steps      dt [s]   dt/gate   history    |dP/dt| [W]
+            200   4.7495e-20    17.220      31   2.98439132e-06
+            400   2.3747e-20     8.610      31   2.98439132e-06
+            800   1.1874e-20     4.305      61   2.98442106e-06
+           1600   5.9368e-21     2.153     120   2.98443573e-06
+           3200   2.9684e-21     1.076     239   2.98455192e-06
+           6400   1.4842e-21     0.538     161   2.98451144e-06
+          12800   7.4210e-22     0.269     138   2.98450541e-06
+      While dt is above the gate the node count doubles as the step
+      halves; it peaks at 239 exactly where dt/gate crosses 1, then
+      FALLS BACK to 138 as the gate starts blocking commits, settling
+      on the design target of 128.  Refining the integration step past
+      the gate cannot refine the retarded grid, and through the
+      transition it coarsens it.  That non-monotone count is 217f's
+      "two solution branches": the branch label is the node count.
+
+218c. AND THE MECHANICS ARE FINE; IT IS THE RADIATED SECTOR THAT IS
+      NOT.  Against the finest run, the final position and velocity
+      converge cleanly -- 3.68e-06, 9.98e-07, 1.62e-07, 3.40e-08,
+      1.49e-08 across the same ladder -- while the flux moves only from
+      4.16e-05 to 1.36e-05 over a fifteenfold increase in nodes and is
+      non-monotone besides.  The flux settles near 2.98450e-06 W, so the
+      coarse runs carry a relative error of about 4e-05.  That is
+      216f's floor, to the order of magnitude, and it is now named.
+
+218d. THE FIX FOR THE COVARIANCE TEST: PUT BOTH FRAMES ON THE SAME
+      RUNG.  The boosted run covers gamma*span, so giving it the same
+      step COUNT gives it a coordinate step gamma times longer and a
+      different dt/gate.  Measured, at the same count the node counts
+      diverge -- 31 against 29 at beta = 0.35, 31 against 27 at 0.50,
+      31 against 23 at 0.70.  Scaling the count by gamma restores them
+      to 31 against 31 at every beta tested.
+
+218e. WITH THE RUNGS MATCHED THE NULL IS EXACTLY ZERO.
+          beta   N_rest  N_moving  nodes      residual
+          0.00      200       200  31/31   0.000000e+00
+          0.00      400       400  31/31   0.000000e+00
+          0.00      800       800  61/61   0.000000e+00
+          0.00     1600      1600 120/120  0.000000e+00
+      Not small -- zero, at every refinement.  So the comparison has no
+      intrinsic noise of its own, and 217's estimate of a 3.4e-06 noise
+      floor is superseded: that figure was the noise of MISMATCHED
+      rungs, which is a defect of the test's construction rather than a
+      property of the observable.
+
+218f. WHICH MEANS THE HIGH-beta RESIDUAL IS REAL, AND 217f's
+      EXPLANATION OF IT IS WRONG.
+          beta   N_rest  N_moving  nodes      residual
+          0.35      200       214  31/31   1.888994e-06
+          0.35      400       427  31/31   1.958820e-06
+          0.35      800       854  61/61   2.062126e-06
+          0.35     1600      1708 120/120  9.054904e-05
+          0.70      200       280  31/31   3.554639e-04
+          0.70      400       560  31/31   3.554639e-04
+          0.70      800      1120  61/61   2.976243e-04
+          0.70     1600      2240 120/120  3.113372e-04
+      At beta = 0.35 the residual is 1.9 to 2.1e-06, stable to 10% over
+      a fourfold refinement; at 0.70 it is 3.0 to 3.6e-04, stable to
+      20%.  Both sit far above a null that is identically zero, and
+      matching the rung -- which removes the straddle completely -- does
+      not remove them.  217f proposed that the beta = 0.50 and 0.70
+      excesses were the straddle; they are not.
+
+218g. WHAT IS NOW ESTABLISHED, AND WHAT IS NOT.  The covariance test
+      finally has an instrument: an exactly-zero null, and a residual
+      stable under refinement.  Its reading is that the boost
+      covariance of the accumulated radiated four-momentum holds to
+      about 2e-06 at beta = 0.35 and shows a residual of about 3.2e-04
+      at beta = 0.70 which refinement does not remove.  Calling the
+      latter a proven violation would still be too strong -- the two
+      runs remain genuinely different computations and only their
+      rung-mismatch has been eliminated -- but it is no longer
+      attributable to any artefact this audit can name.  The onset is
+      sharp rather than a power law: 3.7e-07, 1.33e-06, 7.25e-07,
+      1.89e-06, 6.84e-05, 3.55e-04 at beta = 0.05, 0.10, 0.20, 0.35,
+      0.50 and 0.70, i.e. flat near 1e-06 up to 0.35 and then a factor
+      36 between 0.35 and 0.50.
+
+218h. LIMITS.  One orbit, one radius, one boost axis, one quarter
+      period, tolerance fixed at 1e-8.  The beta = 0.35 row at N = 1600
+      jumps to 9.05e-05 with the rungs matched at 120/120, which 218f's
+      stability claim excludes without explaining; N = 1600 is the
+      dt/gate = 2.15 transition where 218b shows the ladder about to
+      overshoot, so the transition region is not clean even matched.
+      Below about 2e-06 nothing can be said: the low-beta column is
+      non-monotone, 0.10 reading higher than 0.20.  218a's rationale
+      for the gate is the code's own comment, not something remeasured
+      here, so whether 128 nodes is the right trade against the Schott
+      stencil's roundoff is untested.  And the sharp onset between
+      beta = 0.35 and 0.50 is described, not explained; the obvious
+      suspect is an O(beta^2) near-field expansion, but no term has
+      been identified and the magnitudes do not obviously match.
