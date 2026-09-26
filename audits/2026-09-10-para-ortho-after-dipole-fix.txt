@@ -17635,3 +17635,98 @@ measurement of whether that survives a cascade.
       model's 3-photon channel gets the right BRANCHING, which is a
       separate question that 204 and 205 took up and 209 measured at
       0.04/(g alpha).
+
+225. IS mu.rhat QUANTIZED FOR PARA AND ORTHO?  NO, FOR NEITHER, IN THE
+     MODEL OR IN QUANTUM MECHANICS -- BUT (mu1+mu2).rhat IS EXACTLY
+     ZERO, AND THE MODEL GETS THAT RIGHT FOR ORTHO AND MAXIMALLY
+     WRONG FOR PARA
+==========================================================================
+
+225a. THE QUANTUM SIDE.  For the 1S ground state there is no orbital
+      radius direction to project onto: the state is spherically
+      symmetric and rhat has no expectation.  More generally rhat is a
+      dynamical variable, not a quantization axis, and the tensor
+      operator 3(S1.rhat)(S2.rhat) - S1.S2 is not diagonal in
+      |L,S,J> for L > 0 -- it mixes L with L +- 2.  What IS quantized
+      is the spin projection on a FIXED external axis: zero for the
+      singlet, -hbar, 0, +hbar for the triplet.  So the answer to the
+      question as asked is no, for both channels, and for a reason
+      that has nothing to do with which channel it is.
+        One thing is nevertheless exactly valued.  With opposite
+      charges the total moment operator is mu1 + mu2 = (g e/2m)(S1 -
+      S2), which is purely off-diagonal between singlet and triplet,
+      so <mu1+mu2> = 0 in all four spin eigenstates -- and therefore
+      <(mu1+mu2).rhat> = 0 for every direction, dynamical or not, in
+      BOTH para and ortho.
+
+225b. THE MODEL SIDE, MEASURED.  Under --spin-quantization, where 213b
+      measured mu1.mu2 = +-1.00000 exactly, over one orbit at 0.25
+      a_pair with delta the angle between mu1 and the orbit normal:
+        delta  chan   min m1.rh   max m1.rh   sin(delta)  max|(m1+m2).rh|
+          0.0  para    0.000000    0.000000     0.000000     0.000e+00
+          0.0 ortho    0.000000    0.000000     0.000000     0.000e+00
+         30.0  para   -0.500013    0.500012     0.500000     1.000e+00
+         30.0 ortho   -0.500013    0.500010     0.500000     0.000e+00
+         60.0  para   -0.866048    0.866048     0.866025     1.732e+00
+         60.0 ortho   -0.866048    0.866048     0.866025     0.000e+00
+         90.0  para   -1.000026    1.000026     1.000000     2.000e+00
+         90.0 ortho   -1.000025    1.000020     1.000000     0.000e+00
+        135.0  para   -0.707125    0.707125     0.707107     1.414e+00
+        135.0 ortho   -0.707125    0.707122     0.707107     0.000e+00
+      The individual projection is NOT quantized in either channel: it
+      sweeps the full interval [-sin(delta), +sin(delta)] continuously,
+      identically for para and ortho, with the envelope reproducing
+      sin(delta) to 2e-05 and the orbit mean at 1e-04, i.e. zero.  And
+      delta is not quantized either -- 213b measured that the seed
+      draws it uniformly on the sphere.
+
+225c. WHAT IS EXACTLY VALUED, AND FOR THE WRONG CHANNEL.  The last
+      column is the whole result.  (mu1+mu2).rhat is identically
+      0.000e+00 for ortho at every point of every orbit, and it is
+      2 sin(delta) for para -- 1.000, 1.732, 2.000, 1.414 at the four
+      angles, exactly twice the envelope.  That follows from the
+      quantization the model imposes: mu2 = +mu1 for para makes the
+      sum 2 mu1, and mu2 = -mu1 for ortho makes it vanish.
+        Against 225a this is half right.  Quantum mechanics requires
+      the total moment's projection to vanish in BOTH channels.  The
+      model delivers that identically for ortho and violates it
+      maximally for para, by the largest amount the geometry allows.
+
+225d. WHICH IS 196's DEFECT SEEN THROUGH THIS PROJECTION.  196 located
+      the representational failure in the coherent moment the model
+      assigns the para configuration, which quantum mechanics does not
+      give it, and named it as the operator-level version of the
+      comment in crem_collapse that "two classical vectors cannot
+      represent an entangled state".  225c is that same defect
+      expressed in the observable the question asks about: the
+      projection of the total moment on the separation is the exact
+      zero quantum mechanics demands, the model honours it for ortho,
+      and for para it is as far from zero as it can be.  Note the
+      inversion is the expected one -- 181's moment-to-spin inversion
+      makes parallel MOMENTS the singlet -- so the channel the model
+      gets right on this observable is the one with unit total spin,
+      not the one with none.
+
+225e. ONE ORIENTATION WHERE THE MODEL DOES NOT VIOLATE IT.  At
+      delta = 0, the moment along the orbit normal, (mu1+mu2).rhat is
+      zero for para as well, because a moment perpendicular to the
+      orbital plane has no radial component at any phase.  That is the
+      only orientation where the model's para configuration satisfies
+      225a, and it is a measure-zero set in the uniform sphere the seed
+      samples, so it is reached with probability zero.
+
+225f. LIMITS.  225b is one radius, one sample count, reaction off, and
+      five angles; nothing is swept over the azimuth, though by
+      symmetry the envelope cannot depend on it.  The exact zeros in
+      the ortho column are exact by construction rather than by
+      dynamics -- the quantization branch sets mu2 = -mu1 at
+      preparation and the transport keeps both moments rigidly
+      antiparallel, so the column tests that the transport preserves
+      the relation, not that the dynamics produce it.  225a is textbook
+      quantum mechanics quoted, not derived here, and the statement
+      about the tensor operator mixing L with L +- 2 is not used
+      anywhere below the 1S case this model actually prepares.  And
+      nothing here measures what the violation in 225c COSTS: whether
+      the spurious para moment changes any observable of the inspiral
+      is 196's and 197's question, and 214's 7e-04 is the only number
+      in this file that bears on it.
