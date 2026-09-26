@@ -17005,3 +17005,129 @@ measurement of whether that survives a cascade.
       beta = 0.35 and 0.50 is described, not explained; the obvious
       suspect is an O(beta^2) near-field expansion, but no term has
       been identified and the magnitudes do not obviously match.
+
+219. 218h's TWO OPEN ITEMS: THE beta = 0.50 ONSET IS THE HARDCODED
+     50-DIRECTION FLUX QUADRATURE (PROVEN, 22x), THE RETENTION WINDOW
+     DOES NOT DILATE UNDER A BOOST (1 - 1/gamma, EXACTLY), AND THE
+     RESIDUAL DIVERGES WITH REFINEMENT PAST dt/gate = 4
+==========================================================================
+
+219a. ITEM 2 FIRST: THE ONSET IS A QUADRATURE, AND IT WAS PREDICTED
+      BEFORE IT WAS PROVEN.  electrodynamics.hpp:1672 calls
+      electromagneticFieldFluxRates(state,history) with a DEFAULT
+      FarFieldSampling, i.e. directionCount = 50 and controlRadius =
+      1e6 a0, and ClassicalTrajectoryEngine::Accuracy exposes no way to
+      change either.  Every accumulated radiated four-momentum in the
+      model is therefore a degree-11 Lebedev integral.  The Lienard
+      angular distribution carries (1 - n.beta)^-k up to k = 6, whose
+      dynamic range over the sphere is ((1+beta)/(1-beta))^k: 80 at
+      beta = 0.35, 729 at 0.50, 3.3e+04 at 0.70.  The exact integral is
+      known, so the rule's own error can be measured against it.  For
+      k = 6, against 218g's residuals:
+          beta   range     50 dirs    194 dirs   218g residual
+          0.05    1.82   1.39e-15    3.33e-15      3.72e-07
+          0.10    3.33   3.61e-13    6.59e-16      1.33e-06
+          0.20    11.4   1.41e-09    2.13e-16      7.25e-07
+          0.35    80.3   1.02e-06    6.25e-15      1.89e-06
+          0.50     729   5.74e-05    3.16e-11      6.84e-05
+          0.70   3.3e4   4.73e-04    3.51e-08      3.55e-04
+      The 50-direction error reproduces the measured residual to 19% at
+      beta = 0.50 and 33% at 0.70, and collapses below it everywhere
+      the residual is flat.
+
+219b. PROVEN BY RAISING IT.  Rebuilding the module tree with the
+      default directionCount changed from 50 to 194 and rerunning the
+      matched-rung covariance test unchanged:
+          beta    50 dirs      194 dirs    factor
+          0.00   0.000e+00    0.000e+00      --
+          0.35   1.889e-06    1.416e-06     1.3
+          0.50   6.844e-05    3.047e-06      22
+          0.70   3.555e-04    1.229e-04     2.9
+      At beta = 0.50 the residual falls by a factor 22 and lands
+      exactly on the beta = 0.35 level.  The onset 218g called sharp and
+      unexplained is the flux bookkeeping's fixed angular resolution,
+      not the model's dynamics.  218f and 218g are corrected on that
+      point: the beta = 0.50 excess is attributed.
+
+219c. BUT beta = 0.70 IS NOT, AND IT IS NOT THE CONTROL RADIUS EITHER.
+      At 194 directions the predicted quadrature error at beta = 0.70 is
+      3.51e-08, four orders below the 1.229e-04 that remains.
+      Rebuilding again with controlRadius scaled by 100 in each
+      direction, at 194 directions:
+          beta    1e4 a0      1e6 a0      1e8 a0
+          0.35   3.890e-06   1.416e-06   1.414e-06
+          0.50   8.460e-06   3.047e-06   3.045e-06
+          0.70   1.415e-04   1.229e-04   1.229e-04
+      A hundredfold larger sphere changes beta = 0.70 in the fourth
+      digit; a hundredfold smaller one makes every row worse, as a
+      less-far-zone sphere should.  So the surviving 1.2e-04 at
+      beta = 0.70 is not the rung, not the angular rule and not the
+      control radius, and remains unattributed.
+
+219d. A NON-COVARIANCE THAT IS IDENTIFIED: THE RETENTION WINDOW DOES
+      NOT DILATE.  Comparing the history node TIMES rather than their
+      count -- the moving frame's divided by gamma to reach the rest
+      clock -- the spacing discrepancy is
+          N_rest   dt/gate   nodes      max gap
+             200    17.220   31/31   6.542056e-02
+             400     8.610   31/31   6.323185e-02
+             800     4.305   61/61   6.323185e-02
+            1600     2.153  120/120  6.323185e-02
+            3200     1.076  239/239  6.323185e-02
+      and 1 - 1/gamma at beta = 0.35 is 0.0632510.  The agreement is
+      exact to six figures and the value does not move with N.
+      retentionTime = max(1e-20, 4 separation/c) carries no gamma, and
+      the separation here is perpendicular to the boost and therefore
+      unchanged, so the retarded window has the same COORDINATE length
+      in both frames when it should be gamma times longer in the moving
+      one.  The retarded grid is thus not the Lorentz image of the rest
+      grid, by exactly 1 - 1/gamma.  This is a real defect of the
+      retention policy rather than of the dynamics, and it is a
+      candidate for 219c's residue that this audit has not tested.
+
+219e. ITEM 1: THE N = 1600 JUMP IS NOT ISOLATED -- THE RESIDUAL
+      DIVERGES WITH REFINEMENT.  At beta = 0.35, rungs matched
+      throughout:
+          N_rest  N_moving  nodes     residual
+             800       854   61/61  2.062126e-06
+            1200      1281   91/91  2.083129e-05
+            1600      1708  120/120 9.054904e-05
+            2000      2135  150/150 2.145552e-05
+            2400      2562  180/180 2.488784e-05
+            3200      3416  239/239 4.624383e-05
+      Past N = 800, where dt/gate falls below about 4, the residual
+      rises by an order of magnitude and becomes erratic between 2e-05
+      and 9e-05.  218h treated the N = 1600 row as an anomaly to be
+      explained; it is instead the second point of a divergence.  The
+      usable window for this test is dt/gate >~ 4, i.e. N <= 800 here,
+      which is where 218f's stable 1.9-2.1e-06 came from.  The cause is
+      not node placement: 219d shows that discrepancy is constant in N.
+
+219f. WHAT THIS LEAVES.  Of 218h's two items, the second is solved and
+      the first is reclassified from an anomaly to a convergence
+      failure with a named boundary.  The covariance test's honest
+      reading is now: with the rungs matched, the flux rule raised to
+      194 directions and dt/gate kept above 4, the boost covariance of
+      the accumulated radiated four-momentum holds to about 1.4e-06 at
+      beta = 0.35 and 3.0e-06 at beta = 0.50 against an identically zero
+      null, and shows 1.2e-04 at beta = 0.70 that nothing here explains.
+      Two concrete changes are implied and neither is made: expose
+      FarFieldSampling through Accuracy so the flux resolution is not
+      frozen at a value that fails above beta = 0.4, and decide whether
+      retentionTime should carry a gamma.  Both are production changes
+      and both need their own convergence work.
+
+219g. LIMITS.  One orbit, one radius, one boost axis, tolerance fixed
+      at 1e-8 throughout, and beta sampled at six points.  219a's
+      agreement is between the error of an ISOLATED quadrature on an
+      analytic beaming factor and a residual produced by a full
+      trajectory; that the two agree to 19% and 33% is strong but it is
+      not a derivation, and the exponent k = 6 was chosen as the
+      steepest term rather than measured.  219b's proof is at one step
+      count, N = 200.  219d establishes that the grids differ by
+      1 - 1/gamma but does NOT show that this is what produces any
+      residual -- the obvious test, forcing the moving frame's
+      retentionTime to gamma times the rest value, was not run.  219e's
+      boundary at dt/gate = 4 is read off six points at one beta and
+      one tolerance, and whether it is the gate or simply the step
+      count that matters is not separated.
