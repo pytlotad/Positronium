@@ -17730,3 +17730,105 @@ measurement of whether that survives a cascade.
       the spurious para moment changes any observable of the inspiral
       is 196's and 197's question, and 214's 7e-04 is the only number
       in this file that bears on it.
+
+226. SECTION 69 REOPENED AND ANSWERED: HALF THE LEGENDRE TRANSFORM IS
+     ALREADY IN THE CODE AND MEASURABLY WORKS, THE OTHER HALF IS
+     MISSING AND ITS NON-CONSERVATION FLOORS AT 7e-09 k/r0 PER ORBIT
+==========================================================================
+
+226a. THE QUESTION, RESTATED SHARPER THAN 69 PUT IT.  69 asked whether
+      one Lagrangian gives the force, the precession and the energy
+      ledger together, measured the lab-moment velocity dependence at
+      2-4 k/r0 per deep passage and <= 2.2e-04 k/r0 over three periods
+      where the model is valid, and decided not to implement on the
+      grounds that the effect is small there.  That answers "how big".
+      It does not answer "is the balance a test of anything", which is
+      the real question and is separable by the method 215-218
+      established: refine the step and see whether the residual falls
+      or floors.
+
+226b. HALF THE TRANSFORM IS ALREADY THERE, AND IT IS DOCUMENTED.
+      conservedParticleEnergy's own comment states that the
+      charge-dipole term is -p.E with p = (v x mu)/c^2, homogeneous of
+      degree one in both velocities, so it cancels in
+      H = sum v.(dL/dv) - L and does not belong to the conserved
+      energy; it generates a force that does no work.  That is a
+      Legendre argument applied to exactly the piece 69 was worried
+      about, and the weight-0 overload implements it.  What it does NOT
+      cover is the lab moments' own velocity dependence, which enters
+      pairDipoleInteractionEnergy through the boost and is not
+      homogeneous of degree one in anything.
+
+226c. AND IT MEASURABLY WORKS.  With the force made conservative on
+      purpose -- useRetardedExternalForces = false and the reaction
+      disabled, so a Lagrangian system conserves exactly -- one orbit
+      at 0.25 a_pair, energy ranges in k/r0:
+        tilt  tolerance   range E_cons   range E_full   range U_dd
+         0.0     1e-12    7.99192e-09    1.54773e-08    6.82591e-08
+         0.0     1e-13    3.99596e-09    1.33690e-08    6.82591e-08
+         0.0     1e-14    9.99109e-10    1.18349e-08    6.82594e-08
+      At tilt 0 the energy WITHOUT the charge-dipole term falls by 2
+      and then by 4 as the tolerance tightens, with no floor down to
+      1.0e-09, while the energy WITH it floors at about 1.2e-08.
+      Including the degree-one term breaks conservation at a level
+      refinement cannot remove; excluding it restores it.  That is the
+      code's own Legendre argument confirmed by measurement rather than
+      by assertion.
+
+226d. THE OTHER HALF IS MISSING, AND HERE IS ITS SIZE.
+        tilt  tolerance   range E_cons   range U_dd
+        90.0     1e-12    1.31837e-08    1.60247e-04
+        90.0     1e-13    1.01312e-08    1.60247e-04
+        90.0     1e-14    8.03455e-09    1.60247e-04
+      At tilt 90, where the dipole energy is 2300 times larger than at
+      tilt 0, E_cons falls by only 1.30 and then 1.26 and is flattening
+      near 8e-09, against tilt 0's 1.0e-09 at the same tolerance.  The
+      floor therefore SCALES WITH THE DIPOLE SECTOR and the integrator
+      error does not, which is the discriminator this test was built
+      around.  Subtracting tilt 0's integrator level leaves about
+      7e-09 k/r0 per orbit of genuine, refinement-independent
+      non-conservation.  An independent estimate agrees to a factor
+      2.4: the lab and proper moment magnitudes differ by about
+      beta^2/2 = 1.07e-04 at this radius (194 measured 1.000039 at
+      a_pair), which on a dipole energy of 1.60e-04 k/r0 is 1.7e-08.
+
+226e. SO THE ANSWER IS NO.  The force and the precession are not the
+      Euler-Lagrange equations of one Lagrangian.  If they were, the
+      conserved energy would be conserved, and it is not: there is a
+      definite violation of about 7e-09 k/r0 per orbit at 0.25 a_pair
+      that no amount of refinement removes and that scales with the
+      dipole sector.  69's decision not to implement stands on its own
+      terms -- the effect is small where the model is valid -- but
+      69 argued from size and the structural question is now answered
+      from convergence, which is the stronger ground.
+
+226f. AND THE METHODOLOGICAL POINT SURVIVES INTACT WHERE IT MATTERS.
+      This test could only be run by switching the retarded forces OFF.
+      In the production configuration they are ON, and a retarded
+      system is not conservative at all: energy genuinely leaves
+      through the field, and the model books that through
+      boundFieldEnergy, which 216b showed is DEFINED as the residual
+      that closes the balance.  So in the configuration the model
+      actually runs, there is no independent conserved quantity to
+      test against, and every energy balance of the dipole sector there
+      is exactly what the question called it -- a check that the
+      integrator agrees with itself.  What 226c and 226d add is a
+      threshold: any claim of conservation in the dipole sector better
+      than 7e-09 k/r0 per orbit is meaningless even in the conservative
+      configuration, and no section of this file had stated that number
+      before.
+
+226g. LIMITS.  One radius, 0.25 a_pair, one orbit, two tilts, and the
+      floor at tilt 90 is inferred from three tolerances that are
+      flattening rather than flat -- 1e-15 would settle it and was not
+      run because double precision is close there.  The 7e-09 is
+      tilt 90 minus tilt 0 and assumes the integrator error is
+      tilt-independent, which the coarse table of 226c supports at
+      1e-8 to 1e-12 but does not prove at 1e-14.  226c's floor for
+      E_full is likewise read off a flattening rather than a flat
+      sequence.  Nothing here constructs the missing term or shows that
+      adding -d/dt(dU/dv) to the force and -v.dU/dv to the ledger would
+      remove the floor; that is 69's unimplemented variant and it
+      remains unimplemented.  And the deep region below r*, where 69a
+      measured the velocity part at 2-4 k/r0 per passage, is untouched:
+      this section is entirely inside the declared-valid range.
