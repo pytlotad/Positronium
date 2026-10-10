@@ -1,4 +1,7 @@
 #pragma once
+#include <atomic>
+#include <cstdio>
+#include <type_traits>
 
 // CREM numerics: reconstruction of a causal retarded history for a freshly
 // prepared state, and the adaptive integrator that advances a trajectory with
@@ -378,6 +381,25 @@ private:
                 // historicalState's piecewise interpolation across a 31-node
                 // history, which is the difference from the 94-node synthetic
                 // case that hid the effect.
+                // CREM_DUMP_FAIL=<path> (audit 404, diagnosis): write the
+                // failing step's start state, its history and dt as raw
+                // bytes (State is trivially copyable), once per process, so
+                // the step can be replayed offline in seconds.
+                if(const char* dumpPath=std::getenv("CREM_DUMP_FAIL")) {
+                    static std::atomic<bool> dumped{false};
+                    if(!dumped.exchange(true)) {
+                        static_assert(std::is_trivially_copyable_v<State>);
+                        if(std::FILE* f=std::fopen(dumpPath,"wb")) {
+                            const std::uint64_t nodes=history.size();
+                            std::fwrite(&dt,sizeof dt,1,f);
+                            std::fwrite(&start,sizeof(State),1,f);
+                            std::fwrite(&nodes,sizeof nodes,1,f);
+                            for(const State& node:history)
+                                std::fwrite(&node,sizeof(State),1,f);
+                            std::fclose(f);
+                        }
+                    }
+                }
                 if(std::getenv("CREM_DEBUG_ORDER_LIVE")) {
                     static int liveSweeps=0;
                     if(liveSweeps++<1) {

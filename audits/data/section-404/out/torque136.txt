@@ -1,0 +1,2 @@
+dump: dt=1.208906e-24 t=1.763574460e-15 r=6.557605e-13 history=128 nodes (1.763564355e-15 .. 1.763574460e-15)
+BMT rate: 2.3896e+19 2.7021e+19 1/s; M1 reaction torque rate gamma_g|T|/|mu|: 3.8009e+21 3.8035e+21 1/s

@@ -1,0 +1,4 @@
+Audit 404: out/fail136.bin -- CREM_VELOCITY_CORRECTOR=1 CREM_INTERACTION_EVENT_INDEX=136 CREM_DUMP_FAIL=... crem_interactions --mode statistical --phenomenon 5 --runs 400 --seed 394 --radiation-reaction stochastic (kod przed CREM_M1_TORQUE_REDUCED).
+h0404.cpp (argv: zrzut, tryb): out/scan136 (scan 400), split136, timesplit136, nodes136, probesplit136, fields136, mdd136, bmt136, torque136 (CREM_VELOCITY_CORRECTOR=1 tam, gdzie zaznaczono w audycie); torque136-reduced (CREM_M1_TORQUE_REDUCED=1).  Tryb momentu przypietego (CREM_MOMENT_PIN) usuniety z kodu po tescie.
+out/nom1-e{136,94,385}: + CREM_NO_M1_TORQUE=1 CREM_VELOCITY_CORRECTOR=1 CREM_INTERACTION_EVENT_INDEX=i POSITRONIUM_DEBUG_DIPOLE=1.
+out/red-e{136,94,385}, exp5-stochastic-corr-red, exp5-default-red, validation-red, red-n1-p{1,2}, red-Ps-n2-p{1,2}: CREM_M1_TORQUE_REDUCED=1 (+ korektor tam, gdzie w nazwie corr / zdarzenia), Ps wobec section-401/out.

@@ -2322,3 +2322,67 @@ LIMITS.  Wodor, nie pozytonium (model ogolny); 3 ziarna, prog deterministyczny.
      decyzji (W NASTEPNYM KROKU).
 403e. LIMITS.  Trzy zdarzenia, jedno ziarno; przemiatanie tylko w pierwszej
      porazce kazdego przebiegu.
+
+404. "NIECIAGLOSC" SILY GRADIENTOWEJ DIPOLA (403) TO SKUTEK NIESTABILNEGO
+     MOMENTU SILY REAKCJI M1: m''' ROZNICOWANE PO HISTORII WPADA PRZY BARIERZE
+     W SPRZEZENIE ZWROTNE (3,8e21 1/s WOBEC BMT 2,4e19, FIZYCZNIE ~1e14);
+     WERSJA ZREDUKOWANA (m''' Z PRECESJI BMT) USUWA BLEDY I CALA CENZURE EKSP. 5
+     (400/0/0), WALIDACJA 65/65, Ps BEZ ZMIAN; PRZELACZNIK TESTOWY, PRODUKCJA BEZ
+     ZMIAN (decyzja autora: "Napraw nieciaglosc").  Prereg404.txt: czesc
+     diagnostyczna eksploracyjna (zaznaczone), testy naprawy przed przebiegami.
+
+404a. NARZEDZIA.  CREM_DUMP_FAIL (crem_engine.hpp): zrzut stanu, historii i
+     dt pierwszego kroku z porazka dokladnosci.  Uprzaz h0404 odtwarza krok
+     offline (0,13 s): przemiatanie silnika co do cyfry (out/fail136.bin).
+404b. DIAGNOZA (zdarzenie 136, krok r = 0,656 pm, dtFail = 1,21e-24 s):
+       scan136/split136: |grad| sily gradientowej przechodzi 0,043 -> 0,026
+         gladko, ale w ~0,4 dtFail; segment historii staly, retreat zdrowy
+         (~10 przy progu 30); wywoluje to sam CZAS obserwacji (polozenia,
+         predkosci, dipole zamrozone -- bez wplywu).
+       timesplit/nodes: gradient pola dipola rampuje przez czas rowny
+         roznicy czasow opoznionych sond +-y; t_ret w srodku segmentu 97-98
+         (0,70-0,72) -- nie przekroczenie wezla ladunku.
+       CREM_MOMENT_PIN (test, usuniety): rozwiniecie Taylora momentu wokol
+         jednego t0 dla sond -- rampa zostaje (0,022 -> 0,038): nie to.
+       probesplit/fields: gradient y = roznica dwoch czlonow ~1,6e7
+         (konstrukcja dwubiegunowa i magnetyzacja) z reszta 4e-2: znoszenie
+         1e-9; pola dipola zrodla: |B| 1,6e8 T (statyczny dipol 6,6e6), |E|
+         4,9e16 V/m (15 x Coulomb) -- zdominowane przez czlon promieniowania
+         m''.
+       mdd: |m''| zrodla 1,3-2,7e20 przez wezly 95-100 wobec omega^2|m| ~1e18
+         (100-2000 x).
+       bmt: zmiana momentow miedzy wezlami 2e21-1,4e22 1/s (obu jednakowo),
+         precesja BMT 2,4-2,7e19.
+       torque: moment sily reakcji M1 gamma|T|/|mu| = 3,80e21 1/s (oba) --
+         to on obraca momenty.  Fizyczna skala gamma mu0 m omega^3/(6 pi c^3)
+         ~ 1e14.  Mechanizm: T = m x (m1''' + m2''') mu0/(6 pi c^3), m''' z
+         jednostronnej roznicy piecio-punktowej po historii (krok 2 odstepy
+         wezlow) -- spinowy Abraham-Lorentz calkowany jawnie; rozrzucone
+         momenty zawyzaja m''', to zwieksza moment sily.
+       Ablacja CREM_NO_M1_TORQUE=1 (z korektorem): 136, 94, 385 -- Scattering,
+         0 odrzucen silnika.
+404c. NAPRAWA (test, electrodynamics.hpp, CREM_M1_TORQUE_REDUCED=1): m''' =
+     Omega x (Omega x (Omega x m)), Omega = -(q/m) B_eff (BMT, pole lokalne),
+     dOmega/dt pominiete; moc M1 bez zmian.
+404d. WYNIKI (out/):
+       torque136-reduced: 1,39e14 i 1,50e14 1/s.  H404a TAK.
+       red-e136/94/385 (z korektorem): Scattering, 0 odrzucen.  H404b TAK.
+       eksp. 5 stochastic + korektor + reduced: 400/0/0 (bylo 387/10/3);
+         Collision 17, Scattering 381, Ortho 2 (zdarzenia 12 i K = 1,052 eV,
+         dawniej bledy/cenzura, r_min 0,196-0,212 pm); sigma_capture
+         1,2e6 +- 0,8e6 barn; 1096 s.  H404c TAK.
+       eksp. 5 domyslny + reduced: 400/0/0 (bylo 388/12/0); Para 10, Ortho
+         35 (bylo 9, 32), sigma 3,15e7 +- 0,45e7 barn; 978 s (bylo 1066).
+         H404d TAK.
+       walidacja z reduced 65/65.  H404e TAK.
+       Ps n = 1 i --level 2 (p1, p2) z reduced: wydruk jak w 401 poza jedna
+         liczba diagnostyczna dryfu ukladu (9,37659e-5 -> 9,37642e-5).  H404f
+         TAK.
+404e. WNIOSEK.  Zrodlem porazek korektora, "nieciaglosci" sily gradientowej
+     i calej dotychczasowej cenzury eksp. 5 (10-12 z 400) jest niestabilny
+     moment sily reakcji M1.  Postac zredukowana jest fizycznie poprawnej
+     skali i niczego nie psuje w tym, co sprawdzone.  Promocja obu zmian
+     (zredukowany moment M1, korektor predkosci) do domyslnych -- nastepny
+     krok (przesuwa wyniki produkcji).
+404f. LIMITS.  dOmega/dt pominiete w m'''; moc M1 (licznik fotonow M1) nadal
+     z m'' historii -- przy barierze tez zawyzona; jedno ziarno eksp. 5.

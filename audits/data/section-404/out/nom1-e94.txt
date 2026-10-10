@@ -1,0 +1,55 @@
+CREM attribution: publications based on this program or modified versions should cite https://github.com/pytlotad/CREM-QI and credit Tadeusz Slawomir Pytlos (tadeusz.slawomir.pytlos@gmail.com).
+External magnetic field: none.
+Charge radiation reaction: stochastic (Poissonian E1-dipole photon kicks).
+Trajectory integrator: adaptive symmetric second-order step.
+Pair: electron + positron (reduced mass 0.5 m_e, Bohr radius 2 a0, binding 6.80285 eV).
+Starting separation: a_n = 1 a_pair (n = 1) = 105.835 pm -- an initial condition for the classical inspiral, not a claimed energy eigenstate.
+Interaction experiment: EACH particle's lab kinetic energy ~ N(0.6, 0.4) eV truncated at 0.012 eV, drawn independently, so the pair carries a net momentum and the centre of mass moves; K_CM below is the invariant derived from the two, and each trajectory is integrated in that COM frame.  (b_y,b_z) ~ N_2(0, sigma^2 I), hence b ~ Rayleigh(sigma = 60 pm), truncated by rejection at R_match/2; both dipoles isotropic.
+Start/escape separation 2645.89 pm; collision boundary 0.193304 pm; bound states observed for 8 orbits (capped at 0.2 fs).
+Running 400 interaction trajectories on 4 workers.
+EVENT index=94 K=1.538805e+00 b=1.995728e-11 outcome=Scattering
+Interaction trajectories: 400/400
+
+Explicit outcome-censoring model:
+  physical outcome observed / administratively censored / numerical failure = 1 / 0 / 0
+  P(physical classification | K_CM,b): constant rate 1 (1/1); covariate effects not estimable
+  P(numerical failure | K_CM,b): constant rate 0 (0/1); covariate effects not estimable
+  IPCW positivity: min fitted completion probability=1, max clipped weight=1 (floor 0.05), effective N=1
+  399 trajectories lacked finite K_CM or b and were excluded from this covariate model.
+  IPCW assumption: physical classification is missing at random conditional on sampled (K_CM,b); NumericalFailure is modeled separately and is not called a physical event.
+
+Interaction outcome summary (400 trajectories):
+  Collision              0  (0.0%)
+  Scattering             1  (0.2%)
+  Para-Positronium       0  (0.0%)
+  Ortho-Positronium      0  (0.0%)
+  NumericalFailure     399  (99.8%)
+Para = parallel magnetic moments (antiparallel spins, S=0); ortho = antiparallel moments (S=1).
+IPCW physical-class distribution under MAR(K_CM,b) (Hajek normalized):
+  Collision                0%
+  Scattering             100%
+  Para-Positronium         0%
+  Ortho-Positronium        0%
+This is a censoring-sensitivity estimate, not a replacement for the raw counts above.
+
+Sampled beam parameters:
+  all trajectories   <K_CM> = 1.5388 eV,  <b> = 19.9573 pm
+  Scattering        <K_CM> = 1.5388 eV,  <b> = 19.9573 pm
+Bookkeeping identity residual (not a conservation test): median 1.08047e-05; independent |dE_LL-vs-flux|/E_rad median 1.65681.
+Capture observables (audit 393): sigma_capture = 0 +/- 0 barn over 1 classified events (Horvitz-Thompson weights of the truncated Rayleigh b); Kramers total at <E_CM> = 1.5388 eV: 4987.68 barn (ratio 0); para:ortho = 0:0; classical radiative capture (Delta E_dipole > E) at <E_CM>: 2.11806e+07 barn (audit 394)
+  self-tests: HT weight over b < 2 sigma / (pi (2 sigma)^2) = 0.528439 +/- 0; Kramers sum / integral form at eta^2 = 1e4: 1.12533
+Saved plot: distributions/5_3_b_1_capture_cross_section.pdf
+Saved plot: distributions/5_3_b_2_captured_level_distribution.pdf
+Saved plot: distributions/5_3_b_3_captured_angular_momentum.pdf
+Saved plot: distributions/5_3_b_4_capture_spin_channels.pdf
+Saved plot: distributions/5_1_b_1_outcome_summary.pdf
+Saved plot: distributions/5_1_a_2_collision_energy.pdf
+Saved plot: distributions/5_1_a_3_impact_parameter.pdf
+Saved plot: distributions/5_1_a_4_dipole_alignment.pdf
+Saved plot: distributions/5_1_b_5_diagnostic_collapse_time_para.pdf
+Saved plot: distributions/5_1_b_6_diagnostic_collapse_time_ortho.pdf
+Saved plot: distributions/5_2_b_1_diagnostic_summary.pdf
+Saved plot: distributions/5_2_b_2_censoring_vs_energy.pdf
+Saved plot: distributions/5_2_b_3_censoring_vs_impact_parameter.pdf
+Saved plot: distributions/5_2_b_4_censoring_model_summary.pdf
+Saved scientific-reference catalogue: ScientificalReferences.txt

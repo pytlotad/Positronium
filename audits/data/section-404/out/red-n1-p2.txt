@@ -1,0 +1,82 @@
+CREM attribution: publications based on this program or modified versions should cite https://github.com/pytlotad/CREM-QI and credit Tadeusz Slawomir Pytlos (tadeusz.slawomir.pytlos@gmail.com).
+External magnetic field: none.
+Charge radiation reaction: individual (reduced-order Landau-Lifshitz per particle).
+Trajectory integrator: adaptive symmetric second-order step.
+Pair: electron + positron (reduced mass 0.5 m_e, Bohr radius 2 a0, binding 6.80285 eV).
+Starting separation: a_n = 1 a_pair (n = 1) = 105.835 pm -- an initial condition for the classical inspiral, not a claimed energy eigenstate.
+Charge radiation reaction switched to stochastic (photons, Delta l = -1) for bound-state statistics -- the default since audit 341; --radiation-reaction individual keeps the continuous drag.
+Preparation: Langer L = (l + 1/2) hbar with n = 1, l = 0 (audit 361); --circular-start restores L = n hbar.
+Spins: quantized (p-Ps singlet, o-Ps triplet m = +-1; audit 362); --free-spins restores the free mutual angle.
+Photon energy: action rule (audit 352) -- each photon removes hbar of the principal Kepler action, E(n) - E(n-1); n = 1 is final, so a start at --level 1 emits nothing.  CREM_NO_ACTION_PHOTON=1 restores k hbar omega.
+Running 4 CREM collapse calibrations on 4 workers (per-event wall-clock budget 3600 s).
+CREM calibrations: 4/4
+Ortho-positronium study: 4 CREM trajectories (4 reached the collision boundary, 0 censored by the per-event wall-clock budget, 0 not decaying, 0 numerical failures).
+Photon panels are exact reference curves, not samples: the annihilation generator is a quantum prescription independent
+of the classical model, and its self-consistency is checked in crem_interactions_validation.  The curves are THEORY:
+the 2 gamma line at m_e c^2 (measured 510.99895 keV, CODATA 2018) and the leading-order Ore-Powell 3 gamma
+spectrum (no measured spectrum shape is cited here).
+Collapse time = transit from a_pair to 0.005 a_pair (0.01 a0) under continuous electric-dipole radiation reaction,
+measured by a second run of each seed, over 4 usable trajectories (4 observed, 0 right-censored).  Completion fraction: 100%.
+Annihilation (step n = 1 -> 0, Quigga-Rosner contact density, audit 361): lifetime at the final state 138.674 ns (mean over 4 runs; spread <1/G><G> = 1, 1 = single exponential), measured 142.037 ns (ratio 0.976319);
+  E[T] from the preparation (cascade + annihilation) 138.674 ns.
+  closed form            0.0311235 ns  (mu^2 c^3 r0^3/(4 k^2 e^4) [1-(r/r0)^3], r0 = a_pair, r = 0.005 a_pair)
+                         classical THEORY, an integrator check only: no measured counterpart exists, real
+                         positronium does not collapse (measured lifetimes 125.14 ps / 142.04 ns, below)
+  Kaplan-Meier median    0.00152796 ns
+  Kaplan-Meier RMST      0.00157167 +/- 2.70735e-05 ns  (area under S(t) out to 0.00164312 ns)
+  mean of completed runs 0.00157167 +/- 2.70735e-05 ns (sigma/mean = 0.0344518)
+  mean / closed form     0.0504979
+  closed-form tail       3.4237e-07 ns of it, added from where the run stopped to the boundary (0.000217838 of the total)
+  frame drift at the stop  beta = 0 (summed per-orbit momentum residual of the retarded dipole sector, audits 110, 127);
+    diagnostic only since audit 382 -- the lab clock carries photon recoil alone (gamma-1 would be 0)
+  stopped by             0 Compton barrier (0%), 0 retardation limit (0%), 4 emission channel closed (100%)
+  landed at periapsis    73.3587 r* (median), range 73.3079-73.3701 r*
+  period/light-crossing  6426.76 at the stop (median), lowest 6426.76 against a threshold of 150 -- values far below it mean the last photon jumped clean over the limit
+  terminal radius        105835 fm (semi-major axis implied by the mean binding)
+  terminal binding       0.00680285 keV
+  terminal dipole-dipole 1.21034e-07 keV (spin-coupling U of the bookkeeping, QR contact: -/+ half the model's 1s HFS for p-Ps / o-Ps, audit 379)
+  annihilation W         1021.99 keV against 1022 keV at rest, i.e. -0.00066563% shifted (binding and dipole-dipole together)
+  W/2 (2g line, 3g end)  510.996 keV against 510.999 keV at rest
+  leading photon sampled 454.803 keV (89.0033% of W/2)
+Model: full CREM mechanical integration under the active --radiation-reaction model, run until EITHER of two
+independent physical limits is reached, whichever comes first: the pair's periapsis reaches the Compton barrier
+(193.30 fm, where classical point-particle electrodynamics stops applying), or the osculating period/light-crossing-
+time ratio drops to 150 (where the Darwin/retardation approximation breaks down; this bound tracks the pair's
+angular momentum, not its radius, so it can trigger above or below the Compton barrier depending on the orbit) --
+or the per-event wall-clock budget is spent (then censored, not extrapolated).  External lifetime is comparison only.
+The collapse-time run uses the same limits under individual Landau-Lifshitz reaction; the closed-form remainder from where it stops
+to 0.005 a_pair (~1e-6 of the total) is added.
+Caution: the CREM collapse time is a classical inspiral time. Para and ortho differ here only through the initial dipole
+alignment, whose coupling is ~1e-5 of the Coulomb potential, so both channels yield the same collapse distribution while
+their measured annihilation lifetimes differ by ~1000x.  The comparison is a scale reference, not a prediction.
+
+Quasi-closed orbit (the 4 trajectories that reached the boundary):
+  T of the sampled initial orbit  0.303966 +/- 0 fs
+  T of the last resolved orbit    0.303966 +/- 1.08048e-14 fs
+  revolutions between them        1 +/- 0
+The orbit is not closed: it is an inspiral, so T shrinks as a^(3/2) while the pair sinks and no single period
+describes the whole run.  T is the Kepler period 2*pi*sqrt(mu*a^3/(k e^2)) of the osculating orbit.  Every trajectory is prepared as an
+EXACT circular Bohr state at a_n = n^2 a_Ps (L = n hbar and E = -R/n^2 identically, so e_0 = 0); the run ends when the
+PERIAPSIS reaches the Compton barrier (193.30 fm) or the period/light-crossing-time ratio drops to 150, whichever
+comes first.  The revolution count is accumulated by the orbit-averaged integrator,
+resolved and skipped orbits alike.
+Laboratory observables (audit 390; source at rest (the model's frame), no detector response):
+  annihilation time on the lab clock: tau (MLE) 383.705 +/- 191.852 ns over 4 events (0 during the cascade, 0 without a final state); KS vs measured 142.037 ns: D = 0.685994, p = 0.0233023
+  photons: 0 two-photon and 4 three-photon decays; W/2 = 510.995549 keV; max |E - W/2| of 2 gamma at zero velocity 0 keV
+  photon energy: mean 340.6637 keV, sd 78.0215 keV
+  three-photon energy fractions (pair frame) vs Ore-Powell: KS D = 0.335142, p = 0.106028 over 12 photons
+Saved plot: distributions/2_1_b_1_annihilation_time_spectrum.pdf
+Saved plot: distributions/2_1_b_2_annihilation_survival.pdf
+Saved plot: distributions/2_1_b_3_annihilation_photon_energy.pdf
+Saved plot: distributions/2_1_b_4_annihilation_photon_angles.pdf
+Saved plot: distributions/2_2_b_1_annihilation_photon_multiplicity.pdf
+Saved plot: distributions/2_2_b_2_cascade_photon_energy_lab.pdf
+Saved plot: distributions/2_2_b_3_cascade_photon_angle_lab.pdf
+Saved plot: distributions/2_2_b_4_cascade_photon_count.pdf
+Saved plot: distributions/2_3_b_1_diagnostic_classical_collapse_time.pdf
+Saved plot: distributions/2_3_b_2_diagnostic_collapse_time_distribution.pdf
+Saved plot: distributions/2_3_b_3_diagnostic_collapse_time_vs_theory.pdf
+Saved plot: distributions/2_3_b_4_diagnostic_radiated_power_vs_larmor.pdf
+Saved plot: distributions/2_4_b_1_diagnostic_calibration_power.pdf
+Saved plot: distributions/2_4_a_2_dipole_coupling_vs_hyperfine.pdf
+Saved scientific-reference catalogue: ScientificalReferences.txt

@@ -1,0 +1,15 @@
+Prerejestracja 404 (2026-10-11).  "Napraw nieciaglosc" (decyzja autora po 403).
+CZESC DIAGNOSTYCZNA -- eksploracyjna, bez hipotez z gory (zapis wynikow w audycie): CREM_DUMP_FAIL (zrzut kroku
+porazki), uprzaz h0404 (sweep/scan/split/timesplit/nodes/probesplit/fields/mdd/bmt/torque), przypiecie momentu
+CREM_MOMENT_PIN (test, nieskuteczne), ablacja CREM_NO_M1_TORQUE na zdarzeniach 136/94/385.  Wynik: moment sily reakcji M1
+(m x (m1''' + m2''') mu0/(6 pi c^3), m''' z jednostronnej roznicy w historii) obraca momenty ~3,8e21 1/s wobec BMT
+2,4e19 i fizycznego ~1e14 -- sprzezenie zwrotne; bez niego trzy zdarzenia przechodza bez odrzucen.
+TESTY NAPRAWY (zarejestrowane przed przebiegami): CREM_M1_TORQUE_REDUCED=1 -- m''' kazdego momentu analitycznie z
+precesji BMT, m''' = Omega x (Omega x (Omega x m)), Omega = -(q/m) B_eff (pominiete dOmega/dt); moc M1 bez zmian.
+ H404a: uprzaz (fail136): tempo momentu reakcji < 1e-2 tempa BMT (fizyczna skala ~1e14 1/s).
+ H404b: zdarzenia 136, 94, 385 z korektorem i CREM_M1_TORQUE_REDUCED: Scattering bez odrzucen silnika.
+ H404c: eksp. 5 stochastic (400, seed 394) z korektorem i reduced: bledy numeryczne <= 0 (z 3), klasy w szumie wobec 401.
+ H404d: eksp. 5 domyslny z reduced (bez korektora): zwiazane w 2 sqrt(N) od 41, bledy <= 2.
+ H404e: walidacja z CREM_M1_TORQUE_REDUCED=1: 65/65.
+ H404f: Ps (--runs 4 --seed 42, n = 1 i --level 2) z reduced: czasy zycia w 10 % od 403/out (moment reakcji M1 przy
+        promieniach produkcji jest maly; zmiana w szumie).

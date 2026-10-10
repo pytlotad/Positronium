@@ -1980,6 +1980,9 @@ inline DipoleRadiationReaction dipoleRadiationReaction(
 // first explicit multipole is the time-dependent magnetic dipole.  Keeping
 // forces, torques and outward flux together prevents the integrator from
 // silently enabling only one side of a radiation channel.
+inline LocalElectromagneticFields localRelativisticFields(
+    const State& s, const StateHistory& history);
+
 struct ParticleMultipoleRadiation {
     MutualForces chargeReaction;
     Vec3 firstDipoleTorque, secondDipoleTorque;
@@ -2071,6 +2074,37 @@ inline ParticleMultipoleRadiation particleMultipoleRadiation(
         dipoleRadiationReaction(state, history);
     result.firstDipoleTorque = magnetic.firstTorque;
     result.secondDipoleTorque = magnetic.secondTorque;
+    // REDUCED-ORDER M1 TORQUE (audit 404, test: CREM_M1_TORQUE_REDUCED=1).
+    // The torque m x m'''_total reads m''' from a one-sided difference over
+    // the history, the spin analogue of the Abraham-Lorentz third
+    // derivative integrated explicitly: near the barrier it fed back on
+    // itself (event 136 of experiment 5: 3.8e21 1/s against a BMT
+    // precession of 2.4e19 and a physical ~1e14), jittered the stored
+    // moments by ~20 % per history node and drove the dipole fields' m''
+    // two orders above omega^2 m.  As Landau-Lifshitz does for the charge,
+    // take m''' from the leading-order motion instead: dm/dt = Omega x m
+    // with Omega = -(q/m) B_eff, so m''' = Omega x (Omega x (Omega x m))
+    // (dOmega/dt dropped).  The radiated power keeps its own estimate.
+    static const bool reducedM1Torque=
+        std::getenv("CREM_M1_TORQUE_REDUCED")!=nullptr;
+    if(reducedM1Torque) {
+        const LocalElectromagneticFields fields=
+            localRelativisticFields(state,history);
+        const Vec3 firstOmega=thomasBmtEffectiveField(state.firstVelocity,
+            fields.atFirst,firstGFactor)*(-firstCharge/firstMass);
+        const Vec3 secondOmega=thomasBmtEffectiveField(state.secondVelocity,
+            fields.atSecond,secondGFactor)*(-secondCharge/secondMass);
+        const auto third=[](const Vec3& omega,const Vec3& moment) {
+            return cross(omega,cross(omega,cross(omega,moment)));
+        };
+        const Vec3 totalThird=third(firstOmega,state.firstDipole)
+            +third(secondOmega,state.secondDipole);
+        constexpr double coefficient=mu0/(6.0*pi*c*c*c);
+        result.firstDipoleTorque=
+            cross(state.firstDipole,totalThird)*coefficient;
+        result.secondDipoleTorque=
+            cross(state.secondDipole,totalThird)*coefficient;
+    }
     // pattern pozostaje domyslnie wyzerowany: kanal M1 nie nosi
     // wlasnego wzoru katowego (emisja magnetyczna jest probkowana
     // wokol photonEmissionAxis, a nie z momentow -- patrz bramka

@@ -1,0 +1,13 @@
+dump: dt=1.208906e-24 t=1.763574460e-15 r=6.557605e-13 history=128 nodes (1.763564355e-15 .. 1.763574460e-15)
+BMT |dmu1/dt|/|mu1|=2.3867e+19  |dmu2/dt|/|mu2|=2.6951e+19 1/s
+node 116->117 span=7.401e-23  |dmu1|/|mu1|/span=6.5864e+21 |dmu2|/|mu2|/span=6.5766e+21  |dmu1_proper|/span=6.5927e+21 r=6.3816e-13
+node 117->118 span=7.401e-23  |dmu1|/|mu1|/span=9.9775e+21 |dmu2|/|mu2|/span=9.9725e+21  |dmu1_proper|/span=9.9879e+21 r=6.4000e-13
+node 118->119 span=7.092e-23  |dmu1|/|mu1|/span=1.1299e+22 |dmu2|/|mu2|/span=1.1269e+22  |dmu1_proper|/span=1.1288e+22 r=6.4178e-13
+node 119->120 span=7.472e-23  |dmu1|/|mu1|/span=3.0115e+21 |dmu2|/|mu2|/span=3.0087e+21  |dmu1_proper|/span=3.0108e+21 r=6.4366e-13
+node 120->121 span=7.472e-23  |dmu1|/|mu1|/span=9.1018e+21 |dmu2|/|mu2|/span=9.1107e+21  |dmu1_proper|/span=9.0952e+21 r=6.4553e-13
+node 121->122 span=7.705e-23  |dmu1|/|mu1|/span=1.3644e+22 |dmu2|/|mu2|/span=1.3643e+22  |dmu1_proper|/span=1.3655e+22 r=6.4743e-13
+node 122->123 span=7.788e-23  |dmu1|/|mu1|/span=2.0152e+21 |dmu2|/|mu2|/span=2.0194e+21  |dmu1_proper|/span=2.0153e+21 r=6.4933e-13
+node 123->124 span=7.737e-23  |dmu1|/|mu1|/span=1.0339e+22 |dmu2|/|mu2|/span=1.0323e+22  |dmu1_proper|/span=1.0343e+22 r=6.5130e-13
+node 124->125 span=7.737e-23  |dmu1|/|mu1|/span=4.8198e+21 |dmu2|/|mu2|/span=4.8188e+21  |dmu1_proper|/span=4.8257e+21 r=6.5329e-13
+node 125->126 span=7.737e-23  |dmu1|/|mu1|/span=2.8100e+21 |dmu2|/|mu2|/span=2.8194e+21  |dmu1_proper|/span=2.8158e+21 r=6.5523e-13
+node 126->127 span=2.176e-23  |dmu1|/|mu1|/span=3.8035e+21 |dmu2|/|mu2|/span=3.8244e+21  |dmu1_proper|/span=3.8068e+21 r=6.5576e-13
