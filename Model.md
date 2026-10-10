@@ -10,7 +10,7 @@ jest w nim klasyczne, co jest importem kwantowym i jak wypada wobec pomiarów.
 Szczegóły pomiarów, historia zmian i wycofane twierdzenia są w `README.md` i w
 pliku audytu `audits/2026-09-10-para-ortho-after-dipole-fix.txt` (z danymi w
 `audits/data/section-NNN/`); tutaj są tylko odsyłacze do nich. Stan opisu:
-audyt 402 (2026-10-11; 379 dopisany po 380). Każda zmiana modelu trafia tutaj w tym samym
+audyt 403 (2026-10-11; 379 dopisany po 380). Każda zmiana modelu trafia tutaj w tym samym
 commicie co audyt.
 
 ## 1. Czym jest model
@@ -894,6 +894,8 @@ czas życia, a nie że je wyprowadza. Różnice \(-0{,}5\%\) / \(-2{,}4\%\) i
 | `CREM_MECHANICAL_STEPS_PER_ORBIT=<N>` | gęstość kroku ścieżki mechanicznej (domyślnie 128) | 401 |
 | `CREM_MECHANICAL_TOLERANCE=<tol>` | tolerancja względna integratora ścieżki mechanicznej (domyślnie 1e-5) | 401 |
 | `CREM_VELOCITY_CORRECTOR=1` | siły końca kroku liczone ponownie przy prowizorycznej prędkości końcowej (usuwa błąd rzędu 1 członów zależnych od prędkości; test) | 402 |
+| `CREM_INTERACTION_SAMPLE_ONLY=1` | eksp. 5: tylko losowanie (indeks, K, b) bez całkowania — do odnalezienia zdarzenia | 403 |
+| `CREM_INTERACTION_EVENT_INDEX=<i>` | eksp. 5: całkuje tylko zdarzenie i (pozostałe zostają NumericalFailure; diagnoza) | 403 |
 | `CREM_LAB_DIPOLE_DRIFT=1` | zegar laboratoryjny z \(\gamma\) zsumowanego dryfu dipolowego (audyt 110) zamiast samego odrzutu fotonów | 382 |
 | `CREM_STOP_BELOW_SURVIVAL=<S>` | kończy trajektorię, gdy przeżycie anihilacyjne spadnie poniżej \(S\) (przyczyna zatrzymania `SurvivalThreshold`); do długożyjących stanów s | 381 |
 | `CREM_EXP6_PARA_ONLY=1` | eksperyment 6 bez trajektorii o-Ps | 381 |
@@ -1090,7 +1092,14 @@ parę daje rozrzut temp.
   eksp. 5 (400, ziarno 394, tryb domyślny): związane 41 → 38, σ_capture
   3,00 → 2,76·10⁷ barn (±0,45) — w szumie; czas ×1,09. W trybie `stochastic`
   korektor dodaje 3 błędy numeryczne przy przelotach blisko bariery (r_min
-  0,2–0,4 pm). **Otwarte:** korektor nie jest domyślny — najpierw te błędy.
+  0,2–0,4 pm). Audyt 403: to odrzucenia dokładności na maksymalnej głębokości
+  tuż nad progiem (1,05–1,56e-5 przy 1e-5) w zdarzeniach, które i bez
+  korektora były marginalne; eksp. 5 całkuje z polami opóźnionymi, a w nich
+  siła gradientowa dipola (covariantDipoleGradientForce) skacze o 60 % między
+  połowieniami dt (nieciągłość C0, audyt 149), sektor Coulomba jest czysto
+  drugiego rzędu. **Otwarte:** korektor nie jest domyślny; wybór: włączyć go
+  tylko tam, gdzie siły są chwilowe (ścieżka mechaniczna stochastic), albo
+  najpierw usunąć nieciągłość siły gradientowej.
   Pomiar: `CREM_MECHANICAL_STEPS_PER_ORBIT`, `CREM_MECHANICAL_TOLERANCE`.
 
 ## 11. Gdzie szukać

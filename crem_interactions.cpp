@@ -2568,6 +2568,9 @@ InteractionEvent simulateInteractionEvent(
         labIncoming.pair.centreOfMomentumKineticEnergy;
     if (!(kineticEnergy > 0.0)) return result;
     result.kineticEnergyEv = kineticEnergy/eCharge;
+    // CREM_INTERACTION_SAMPLE_ONLY (audit 403, diagnosis): stop after the
+    // draw, so an event can be found by (K, b) and replayed alone.
+    if (std::getenv("CREM_INTERACTION_SAMPLE_ONLY")) return result;
 
     // Transform the independently sampled lab beams to their COM invariant,
     // then define and integrate the matching sphere in that COM frame.  A
@@ -3007,6 +3010,14 @@ std::vector<InteractionEvent> runInteractionExperiment(
             const std::uint64_t eventSeed = splitMix64(
                 masterSeed + 0x5bf03635ULL
                 + static_cast<std::uint64_t>(index));
+            // CREM_INTERACTION_EVENT_INDEX (audit 403, diagnosis): integrate
+            // only that event; the others stay default (NumericalFailure).
+            static const char* onlyIndex=
+                std::getenv("CREM_INTERACTION_EVENT_INDEX");
+            if (onlyIndex && index != std::atoi(onlyIndex)) {
+                completed.fetch_add(1);
+                continue;
+            }
             // Same accuracy ladder as the beam experiment.  A tighter setting
             // is unaffordable here: the final plunge toward the collision
             // boundary is stiff, and every extra subdivision level doubles the
@@ -3039,6 +3050,13 @@ std::vector<InteractionEvent> runInteractionExperiment(
                     eventSeed, configuration, {.relativeTolerance=1.0e-5,
                                                .maximumDepth=12,
                                                .reactionModel=gRadiationReactionModel});
+            }
+            if (std::getenv("CREM_INTERACTION_SAMPLE_ONLY")
+                || std::getenv("CREM_INTERACTION_EVENT_INDEX")) {
+                std::lock_guard<std::mutex> lock(outputMutex);
+                std::printf("EVENT index=%d K=%.6e b=%.6e outcome=%s\n", index,
+                            event.kineticEnergyEv, event.impactParameter,
+                            interactionOutcomeName(event.outcome));
             }
             events[static_cast<size_t>(index)] = std::move(event);
             const int done = completed.fetch_add(1) + 1;

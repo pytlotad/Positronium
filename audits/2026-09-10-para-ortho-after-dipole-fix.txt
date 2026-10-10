@@ -2281,3 +2281,44 @@ LIMITS.  Wodor, nie pozytonium (model ogolny); 3 ziarna, prog deterministyczny.
 402e. LIMITS.  Jedna ewaluacja korekcyjna (nie iteracja do zbieznosci);
      dryf mierzony w Ps n = 1, e = 0,917; eksp. 5 przy 400 zdarzeniach,
      jednym ziarnie; walidacji z korektorem nie uruchamialem.
+
+403. BLEDY NUMERYCZNE KOREKTORA (402) W EKSP. 5 STOCHASTIC: ODRZUCENIA
+     DOKLADNOSCI TUZ NAD PROGIEM (1,05-1,56e-5 PRZY 1e-5) NA MAKSYMALNEJ
+     GLEBOKOSCI PRZY r ~ 0,37-0,39 pm, W ZDARZENIACH MARGINALNYCH TAKZE BEZ
+     KOREKTORA; ZRODLO: SILA GRADIENTOWA DIPOLA W POLACH OPOZNIONYCH SKACZE O
+     60 % MIEDZY POLOWIENIAMI dt (NIECIAGLOSC C0, AUDYT 149), SEKTOR COULOMBA
+     CZYSTO RZEDU 2; PRODUKCJA BEZ ZMIAN (decyzja autora: "Robmy nastepny
+     krok").  Prereg403.txt przed odtworzeniami.
+
+403a. NARZEDZIA (crem_interactions.cpp, diagnostyczne):
+     CREM_INTERACTION_SAMPLE_ONLY (tylko losowanie, wydruk EVENT index/K/b),
+     CREM_INTERACTION_EVENT_INDEX (calkuje jedno zdarzenie).  Zdarzenia
+     (seed 394, 400): 136 (K = 1,645 eV, b = 19,8 pm), 94 (1,539 eV), 385
+     (1,186 eV); z korektorem oba podejscia padaja, bez -- 136 przechodzi
+     (Scattering), 94 i 385 padaja w pierwszym (1e-3/8) i przechodza w
+     drugim (1e-5/12).  Pierwsze podejscia 9 i 12 padaja tylko z korektorem
+     (ratowane w drugim).
+403b. ODTWORZENIA (out/e*-corr, e136-base): ENGINE_DEBUG reason=accuracy
+     (H403a TAK): 136 -- 1,06e-3 przy glebokosci 8 (r 0,656 pm), 1,56e-5 przy
+     12 (r 0,387 pm); 94 -- 1,18e-3 / 1,30e-5 (0,376 pm); 385 -- 1,23e-3 /
+     1,05e-5 (0,380 pm).  Eksp. 5 calkuje z polami opoznionymi (wylaczenie
+     pol miedzy fotonami dotyczy tylko runMechanicalTrajectory): metryka
+     odrzucenia = wiersz "retarded+prod" przemiatania co do cyfry.
+403c. PRZEMIATANIE dt (CREM_DEBUG_ORDER_LIVE, 136, 16 dtFail -> dtFail/32):
+       retarded+prod: 8,9e-3, 3,8e-3 (2,37x), 6,5e-3 (0,58x), 1,5e-3 (4,44x),
+         1,06e-3 (1,39x), 1,8e-5 (57,9x), 2,5e-6 (7,4x), ...
+       Coulomb+prod: 1,07e-6 ... 4,8e-12, stosunki 3,68 -> 4,00 (rzad 2).
+     CREM_DEBUG_ORDER_TERMS (out/e136-corr-terms): LW 3,33274e15 ->
+     3,33688e15 (gladkie), dipE 6,19e16 -> 4,86e16 (gladko), siła gradientowa
+     dipola 0,02655 -> 0,03893 -> 0,04300 miedzy polowieniami 4-6 -- skok 60 %
+     dokladnie tam, gdzie blad spada 58x.  H403b TAK: sektor dipolowy
+     (covariantDipoleGradientForce), nie Lienard-Wiechert.
+403d. WNIOSEK.  Korektor niczego nie psuje sam: dodaje ewaluacje w
+     nieciaglym sektorze i przesuwa trzy marginalne zdarzenia (bez korektora
+     bledy przy glebokosci 12 tuz ponizej 1e-5) tuz ponad prog.  Przyczyna
+     jest istniejaca nieciaglosc sily gradientowej dipola w polach
+     opoznionych (149, otwarta).  Na sciezce mechanicznej stochastic (sily
+     chwilowe, tam mierzony dryf 401) tej nieciaglosci nie ma.  H403c -- do
+     decyzji (W NASTEPNYM KROKU).
+403e. LIMITS.  Trzy zdarzenia, jedno ziarno; przemiatanie tylko w pierwszej
+     porazce kazdego przebiegu.

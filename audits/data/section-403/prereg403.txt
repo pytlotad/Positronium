@@ -1,0 +1,11 @@
+Prerejestracja 403 (2026-10-11, przed odtworzeniami).  Bledy numeryczne korektora predkosci (CREM_VELOCITY_CORRECTOR) w
+eksp. 5 stochastic (audyt 402; decyzja autora: "Robmy nastepny krok").  Zdarzenia (seed 394): index 136 (K = 1,645 eV,
+bez korektora bez bledu), 94 i 385 (bez korektora: blad pierwszego podejscia tol 1e-3/glebokosc 8, ratowany w drugim
+1e-5/12; z korektorem oba podejscia padaja).  Narzedzia: CREM_INTERACTION_SAMPLE_ONLY, CREM_INTERACTION_EVENT_INDEX
+(nowe, diagnostyczne), POSITRONIUM_DEBUG_DIPOLE, CREM_DEBUG_ORDER_LIVE (przemiatanie dt po sektorach przy porazce).
+Hipotezy:
+ H403a: porazki z korektorem to odrzucenie dokladnosci na maksymalnej glebokosci przy r blisko bariery (ENGINE_DEBUG
+        reason=accuracy), nie wartosci nieskonczone.
+ H403b: przemiatanie po sektorach wskazuje sektor dipolowy (nieciaglosc C0, audyt 149) jako ten bez zbieznosci, a
+        Coulomb czysto 4x -- korektor przenosi skok sily dipolowej przez ponowna ewaluacje.
+ H403c: wylaczenie korektora tylko dla sektora dipolowego (gdyby H403b TAK) -- do sprawdzenia w nastepnym kroku.
