@@ -10,7 +10,7 @@ jest w nim klasyczne, co jest importem kwantowym i jak wypada wobec pomiarów.
 Szczegóły pomiarów, historia zmian i wycofane twierdzenia są w `README.md` i w
 pliku audytu `audits/2026-09-10-para-ortho-after-dipole-fix.txt` (z danymi w
 `audits/data/section-NNN/`); tutaj są tylko odsyłacze do nich. Stan opisu:
-audyt 404 (2026-10-11; 379 dopisany po 380). Każda zmiana modelu trafia tutaj w tym samym
+audyt 405 (2026-10-11; 379 dopisany po 380). Każda zmiana modelu trafia tutaj w tym samym
 commicie co audyt.
 
 ## 1. Czym jest model
@@ -893,10 +893,10 @@ czas życia, a nie że je wyprowadza. Różnice \(-0{,}5\%\) / \(-2{,}4\%\) i
 | `CREM_MECHANICAL_FORCE_E2=1` | każdy foton ładunkowy ścieżki mechanicznej pary z kwadrupolem jest E2 (pomiar) | 401 |
 | `CREM_MECHANICAL_STEPS_PER_ORBIT=<N>` | gęstość kroku ścieżki mechanicznej (domyślnie 128) | 401 |
 | `CREM_MECHANICAL_TOLERANCE=<tol>` | tolerancja względna integratora ścieżki mechanicznej (domyślnie 1e-5) | 401 |
-| `CREM_VELOCITY_CORRECTOR=1` | siły końca kroku liczone ponownie przy prowizorycznej prędkości końcowej (usuwa błąd rzędu 1 członów zależnych od prędkości; test) | 402 |
+| `CREM_NO_VELOCITY_CORRECTOR=1` | siły końca kroku przy prędkości po połowie kopnięcia (stan sprzed 405; domyślnie ponowna ewaluacja przy prowizorycznej prędkości końcowej, audyt 402) | 402, 405 |
 | `CREM_INTERACTION_SAMPLE_ONLY=1` | eksp. 5: tylko losowanie (indeks, K, b) bez całkowania — do odnalezienia zdarzenia | 403 |
 | `CREM_INTERACTION_EVENT_INDEX=<i>` | eksp. 5: całkuje tylko zdarzenie i (pozostałe zostają NumericalFailure; diagnoza) | 403 |
-| `CREM_M1_TORQUE_REDUCED=1` | moment siły reakcji M1 z m‴ = Ω×(Ω×(Ω×m)) (precesja BMT) zamiast z różnic po historii (test) | 404 |
+| `CREM_M1_TORQUE_HISTORY=1` | moment siły reakcji M1 z m‴ różnicowanego po historii (stan sprzed 405; domyślnie m‴ = Ω×(Ω×(Ω×m)) z precesji BMT, audyt 404) | 404, 405 |
 | `CREM_DUMP_FAIL=<plik>` | zrzut stanu i historii pierwszego kroku, który nie spełnił tolerancji (diagnoza offline) | 404 |
 | `CREM_LAB_DIPOLE_DRIFT=1` | zegar laboratoryjny z \(\gamma\) zsumowanego dryfu dipolowego (audyt 110) zamiast samego odrzutu fotonów | 382 |
 | `CREM_STOP_BELOW_SURVIVAL=<S>` | kończy trajektorię, gdy przeżycie anihilacyjne spadnie poniżej \(S\) (przyczyna zatrzymania `SurvivalThreshold`); do długożyjących stanów s | 381 |
@@ -1111,8 +1111,11 @@ parę daje rozrzut temp.
   1,4·10¹⁴ 1/s; eksp. 5 (400, ziarno 394) bez cenzury i błędów (domyślny
   400/0/0 zamiast 388/12/0, szybciej; stochastic z korektorem 400/0/0 zamiast
   387/10/3, 2 wychwyty Ortho z dawniej ocenzurowanych przelotów przy
-  barierze), walidacja 65/65, Ps bez zmian. **Otwarte:** promocja obu
-  (zredukowany moment M1 i korektor) do domyślnych; moc M1 nadal z m″ historii.
+  barierze), walidacja 65/65, Ps bez zmian. **Od audytu 405 oba domyślne**
+  (zredukowany moment M1, korektor prędkości): walidacja 65/65, Ps n = 1 p-Ps
+  1,7486 → 1,7562 ps, o-Ps 1,5717 → 1,5735 ps, n = 2 i eksp. 6 bez zmian, eksp. 5
+  domyślny i stochastic 400/0/0. **Otwarte:** moc M1 (licznik fotonów M1) nadal
+  z m″ historii; wykresy distributions/ sprzed 405.
   Pomiar: `CREM_MECHANICAL_STEPS_PER_ORBIT`, `CREM_MECHANICAL_TOLERANCE`.
 
 ## 11. Gdzie szukać

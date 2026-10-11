@@ -1,0 +1,3 @@
+start n = 0.999999, L/hbar = 0.398887, e = 0.917000, J_r = n - L/hbar = 0.601112; n(conserved, no charge-dipole) = 1.000000
+end   n = 1.017771, L/hbar = 0.398884, e = 0.920000, J_r = n - L/hbar = 0.618887; n(conserved, no charge-dipole) = 1.017772
+outcome 1, elapsed 300.000 start orbits

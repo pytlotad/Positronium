@@ -1,0 +1,10 @@
+Prerejestracja 405 (2026-10-11, po zmianie domyslnych, przed przebiegami).  Promocja do domyslnych: zredukowany moment
+sily reakcji M1 (404) i korektor predkosci (402) -- decyzja autora po 403: "Napraw nieciaglosc" (opcja: najpierw usunac
+nieciaglosc, potem wlaczyc korektor wszedzie).  Powrot: CREM_M1_TORQUE_HISTORY=1, CREM_NO_VELOCITY_CORRECTOR=1.
+Hipotezy (wobec produkcji sprzed 405 -- out z 401/402/404):
+ H405a: walidacja 65/65.
+ H405b: Ps e+e- (--runs 4 --seed 42) n = 1 i --level 2, p1 i p2: czasy zycia (srednie) w 10 % od 401/out.
+ H405c: eksp. 6 (--runs 4 --seed 42): klasy jak w 401/out lub roznica w szumie.
+ H405d: eksp. 5 domyslny (400, seed 394): 400/0/0 i zwiazane w 2 sqrt(N) od 45 (404, reduced bez korektora).
+ H405e: eksp. 5 stochastic (400, seed 394): bledy 0, cenzura 0.
+ H405f: dryf sondy 402 (n = 1, e = 0,917, 300 obiegow, bez fotonow, krok 128): +0,0178 (= c128 z 402) w 10 %.

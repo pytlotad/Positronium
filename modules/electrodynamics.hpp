@@ -2074,7 +2074,8 @@ inline ParticleMultipoleRadiation particleMultipoleRadiation(
         dipoleRadiationReaction(state, history);
     result.firstDipoleTorque = magnetic.firstTorque;
     result.secondDipoleTorque = magnetic.secondTorque;
-    // REDUCED-ORDER M1 TORQUE (audit 404, test: CREM_M1_TORQUE_REDUCED=1).
+    // REDUCED-ORDER M1 TORQUE (audit 404; DEFAULT since audit 405,
+    // CREM_M1_TORQUE_HISTORY=1 restores the history-differenced m''').
     // The torque m x m'''_total reads m''' from a one-sided difference over
     // the history, the spin analogue of the Abraham-Lorentz third
     // derivative integrated explicitly: near the barrier it fed back on
@@ -2086,7 +2087,7 @@ inline ParticleMultipoleRadiation particleMultipoleRadiation(
     // with Omega = -(q/m) B_eff, so m''' = Omega x (Omega x (Omega x m))
     // (dOmega/dt dropped).  The radiated power keeps its own estimate.
     static const bool reducedM1Torque=
-        std::getenv("CREM_M1_TORQUE_REDUCED")!=nullptr;
+        std::getenv("CREM_M1_TORQUE_HISTORY")==nullptr;
     if(reducedM1Torque) {
         const LocalElectromagneticFields fields=
             localRelativisticFields(state,history);
@@ -5884,12 +5885,15 @@ inline void integrateElectrodynamicStep(State& s, double dt,
 
     MutualForces trialForces = useRetardedExternalForces
         ?retardedExternalForces(trial,history):allExternalForces(trial);
-    // CREM_VELOCITY_CORRECTOR (audit 402, test): the end-of-step forces are
-    // evaluated with the HALF-kicked velocity; for the velocity-dependent
-    // parts (Darwin, the dipoles' v x B, charge-dipole) that is a first-order
-    // error.  Re-evaluate once at the provisional end velocity.
+    // VELOCITY CORRECTOR (audit 402; DEFAULT since audit 405,
+    // CREM_NO_VELOCITY_CORRECTOR=1 restores the old step): the end-of-step
+    // forces were evaluated with the HALF-kicked velocity; for the
+    // velocity-dependent parts (Darwin, the dipoles' v x B, charge-dipole)
+    // that is a first-order error -- the energy drift of audit 401 (n = 1,
+    // e = 0.917: +0.047 in n over 300 orbits).  Re-evaluate once at the
+    // provisional end velocity.
     static const bool velocityCorrector=
-        std::getenv("CREM_VELOCITY_CORRECTOR")!=nullptr;
+        std::getenv("CREM_NO_VELOCITY_CORRECTOR")==nullptr;
     if(velocityCorrector) {
         State corrected=trial;
         corrected.firstVelocity=velocityFromMomentum(

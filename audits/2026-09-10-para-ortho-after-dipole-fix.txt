@@ -2386,3 +2386,33 @@ LIMITS.  Wodor, nie pozytonium (model ogolny); 3 ziarna, prog deterministyczny.
      krok (przesuwa wyniki produkcji).
 404f. LIMITS.  dOmega/dt pominiete w m'''; moc M1 (licznik fotonow M1) nadal
      z m'' historii -- przy barierze tez zawyzona; jedno ziarno eksp. 5.
+
+405. PROMOCJA: ZREDUKOWANY MOMENT SILY REAKCJI M1 (404) I KOREKTOR
+     PREDKOSCI (402) DOMYSLNE; WALIDACJA 65/65; Ps n = 1: p-Ps +0,4 %, o-Ps
+     +0,1 %, n = 2 I EKSP. 6 BEZ ZMIAN; EKSP. 5 DOMYSLNY I STOCHASTIC 400/0/0
+     (decyzja autora po 403: najpierw usunac nieciaglosc, potem wlaczyc
+     korektor wszedzie).  Powrot: CREM_M1_TORQUE_HISTORY=1,
+     CREM_NO_VELOCITY_CORRECTOR=1.  Prereg405.txt przed przebiegami.
+
+405a. ZMIANA (electrodynamics.hpp): korektor -- domyslnie (przelacznik
+     CREM_VELOCITY_CORRECTOR zastapiony przez CREM_NO_VELOCITY_CORRECTOR);
+     moment M1 -- domyslnie zredukowany (CREM_M1_TORQUE_REDUCED zastapiony
+     przez CREM_M1_TORQUE_HISTORY).
+405b. WYNIKI (out/, wobec 401/out dla Ps i eksp. 6, 404/out dla eksp. 5):
+       walidacja 65/65 (H405a TAK).
+       Ps n = 1: p-Ps RMST 1,74855 +- 0,0854 -> 1,75622 +- 0,0832 ps (+0,4 %),
+         o-Ps 1,57167 -> 1,57350 ps (+0,1 %); --level 2: wydruk jak w 401
+         poza jedna cyfra niepewnosci okresu (H405b TAK).
+       eksp. 6: wydruk jak w 401 (H405c TAK).
+       eksp. 5 domyslny: 400/0/0; Collision 17, Scattering 335, Para 10,
+         Ortho 35 (= 404 reduced bez korektora); sigma 3,10e7 +- 0,44e7 barn;
+         1067 s (H405d TAK).
+       eksp. 5 stochastic: 400/0/0; Scattering 381, Ortho 2 (H405e TAK).
+       dryf sondy 402 (n = 1, e = 0,917, 300 obiegow, krok 128): +0,017771
+         = c128 z 402 (H405f TAK).
+405c. WNIOSEK.  Obie poprawki w produkcji.  Eksp. 5 bez cenzury
+     administracyjnej i bez bledow numerycznych po raz pierwszy; Ps
+     praktycznie bez zmian.  Wykresy distributions/ (N = 1000) pochodza
+     sprzed 405 i nie zostaly odswiezone.
+405d. LIMITS.  Ps i eksp. 6 przy --runs 4, eksp. 5 przy 400, jedno ziarno;
+     pozostale fenomeny i tryby nieuruchamiane.
